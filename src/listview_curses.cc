@@ -337,7 +337,7 @@ void listview_curses::shift_selection(int offset)
 
 static int scroll_polarity(mouse_button_t button)
 {
-    return button == BUTTON_SCROLL_UP ? -1 : 1;
+    return button == mouse_button_t::BUTTON_SCROLL_UP ? -1 : 1;
 }
 
 bool listview_curses::handle_mouse(mouse_event &me)
@@ -351,33 +351,33 @@ bool listview_curses::handle_mouse(mouse_event &me)
     inner_height = this->get_inner_height();
 
     switch (me.me_button) {
-    case BUTTON_SCROLL_UP:
-    case BUTTON_SCROLL_DOWN:
-        if (diff.tv_sec > 0 || diff.tv_usec > 80000) {
-            this->lv_scroll_accel = 1;
-            this->lv_scroll_velo = 0;
-        }
-        else {
-            this->lv_scroll_accel += 2;
-        }
-        this->lv_scroll_velo += this->lv_scroll_accel;
+        case mouse_button_t::BUTTON_SCROLL_UP:
+        case mouse_button_t::BUTTON_SCROLL_DOWN:
+            if (diff.tv_sec > 0 || diff.tv_usec > 80000) {
+                this->lv_scroll_accel = 1;
+                this->lv_scroll_velo = 0;
+            }
+            else {
+                this->lv_scroll_accel += 2;
+            }
+            this->lv_scroll_velo += this->lv_scroll_accel;
 
-        this->shift_top(vis_line_t(scroll_polarity(me.me_button) *
-                                   this->lv_scroll_velo),
-                        true);
-        break;
-    default:
-        break;
+            this->shift_top(vis_line_t(scroll_polarity(me.me_button) *
+                                       this->lv_scroll_velo),
+                            true);
+            break;
+        default:
+            break;
     }
     this->lv_mouse_time = me.me_time;
 
-    if (me.me_button != BUTTON_LEFT ||
+    if (me.me_button != mouse_button_t::BUTTON_LEFT ||
         inner_height == 0 ||
         (this->lv_mouse_mode != LV_MODE_DRAG && me.me_x < (int)(width - 2))) {
         return false;
     }
 
-    if (me.me_state == BUTTON_STATE_RELEASED) {
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
         this->lv_mouse_y = -1;
         this->lv_mouse_mode = LV_MODE_NONE;
         return true;

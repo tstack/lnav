@@ -29,8 +29,8 @@
  * @file sql_util.hh
  */
 
-#ifndef _sql_util_hh
-#define _sql_util_hh
+#ifndef lnav_sql_util_hh
+#define lnav_sql_util_hh
 
 #include <time.h>
 #include <sys/time.h>

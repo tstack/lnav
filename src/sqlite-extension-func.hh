@@ -29,8 +29,8 @@
  * @file sqlite-extension-func.h
  */
 
-#ifndef _sqlite_extension_func_h
-#define _sqlite_extension_func_h
+#ifndef lnav_sqlite_extension_func_h
+#define lnav_sqlite_extension_func_h
 
 #include <stdint.h>
 #include <sqlite3.h>

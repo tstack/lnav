@@ -900,7 +900,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
 
             this->map_output(buffer, rc);
             if (this->vc_x != old_x) {
-                this->rc_change.invoke(this);
+                this->rc_change(this);
             }
         }
     }
@@ -916,7 +916,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 this->rc_matches.emplace_back(msg);
                 this->rc_matches_remaining -= 1;
                 if (this->rc_matches_remaining == 0) {
-                    this->rc_display_match.invoke(this);
+                    this->rc_display_match(this);
                 }
             }
             else if (msg[0] == 'm') {
@@ -928,7 +928,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 }
                 this->rc_matches.clear();
                 if (this->rc_matches_remaining == 0) {
-                    this->rc_display_match.invoke(this);
+                    this->rc_display_match(this);
                 }
                 this->rc_match_index = 0;
             }
@@ -936,7 +936,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 if (sscanf(msg, "n:%d", &this->rc_match_index) != 1) {
                     require(0);
                 }
-                this->rc_display_next.invoke(this);
+                this->rc_display_next(this);
             }
             else {
                 switch (msg[0]) {
@@ -952,13 +952,13 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->vc_line.clear();
                     this->rc_active_context = -1;
                     this->rc_matches.clear();
-                    this->rc_abort.invoke(this);
-                    this->rc_display_match.invoke(this);
-                    this->rc_blur.invoke(this);
+                    this->rc_abort(this);
+                    this->rc_display_match(this);
+                    this->rc_blur(this);
                     break;
 
                 case 't':
-                    this->rc_timeout.invoke(this);
+                    this->rc_timeout(this);
                     break;
 
                 case 'd':
@@ -967,25 +967,25 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_active_context = -1;
                     this->rc_matches.clear();
                     if (msg[0] == 'D' || this->rc_is_alt_focus) {
-                        this->rc_alt_perform.invoke(this);
+                        this->rc_alt_perform(this);
                     } else {
-                        this->rc_perform.invoke(this);
+                        this->rc_perform(this);
                     }
-                    this->rc_display_match.invoke(this);
-                    this->rc_blur.invoke(this);
+                    this->rc_display_match(this);
+                    this->rc_blur(this);
                     break;
 
                 case 'l':
                     this->rc_line_buffer = &msg[2];
-                    this->rc_change.invoke(this);
+                    this->rc_change(this);
                     this->rc_matches.clear();
-                    this->rc_display_match.invoke(this);
+                    this->rc_display_match(this);
                     break;
 
                 case 'c':
                     this->rc_line_buffer = &msg[2];
-                    this->rc_change.invoke(this);
-                    this->rc_display_match.invoke(this);
+                    this->rc_change(this);
+                    this->rc_display_match(this);
                     break;
                 }
             }

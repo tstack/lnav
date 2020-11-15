@@ -9,6 +9,7 @@ noinst_LIBRARIES = libbase.a
 noinst_HEADERS = \
     enum_util.hh \
     file_range.hh \
+    func_util.hh \
     future_util.hh \
 	humanize.hh \
 	intern_string.hh \

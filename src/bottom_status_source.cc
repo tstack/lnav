@@ -33,11 +33,6 @@
 
 
 bottom_status_source::bottom_status_source()
-    : line_number_wire(*this, &bottom_status_source::update_line_number),
-      percent_wire(*this, &bottom_status_source::update_percent),
-      marks_wire(*this, &bottom_status_source::update_marks),
-      bss_prompt(1024, view_colors::VCR_STATUS),
-      bss_error(1024, view_colors::VCR_ALERT_STATUS)
 {
     this->bss_fields[BSF_LINE_NUMBER].set_min_width(10);
     this->bss_fields[BSF_LINE_NUMBER].set_share(1000);

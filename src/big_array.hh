@@ -29,8 +29,8 @@
  * @file big_array.hh
  */
 
-#ifndef _big_array_hh
-#define _big_array_hh
+#ifndef lnav_big_array_hh
+#define lnav_big_array_hh
 
 #include <sys/mman.h>
 

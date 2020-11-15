@@ -41,10 +41,6 @@ class bottom_status_source
     : public status_data_source,
       public grep_proc_control {
 public:
-
-    typedef listview_curses::action::mem_functor_t<
-            bottom_status_source> lv_functor_t;
-
     typedef enum {
         BSF_LINE_NUMBER,
         BSF_PERCENT,
@@ -57,10 +53,6 @@ public:
     } field_t;
 
     bottom_status_source();
-
-    lv_functor_t line_number_wire;
-    lv_functor_t percent_wire;
-    lv_functor_t marks_wire;
 
     status_field &get_field(field_t id) { return this->bss_fields[id]; };
 
@@ -114,8 +106,8 @@ public:
     void update_loading(off_t off, size_t total);
 
 private:
-    status_field bss_prompt;
-    status_field bss_error;
+    status_field bss_prompt{1024, view_colors::VCR_STATUS};
+    status_field bss_error{1024, view_colors::VCR_ALERT_STATUS};
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner{0};
     int          bss_load_percent{0};

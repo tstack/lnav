@@ -48,10 +48,12 @@
 #include <utility>
 #include <vector>
 #include <exception>
+#include <functional>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "base/func_util.hh"
 #include "base/result.h"
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
@@ -226,7 +228,7 @@ private:
 class readline_curses
     : public vt52_curses {
 public:
-    typedef view_action<readline_curses> action;
+    using action = std::function<void(readline_curses*)>;
 
     class error
         : public std::exception {
@@ -241,27 +243,28 @@ public:
 
     static const int VALUE_EXPIRATION = 20;
 
+
     readline_curses();
-    virtual ~readline_curses();
+    ~readline_curses() override;
 
     void add_context(int id, readline_context &rc)
     {
         this->rc_contexts[id] = &rc;
     };
 
-    void set_change_action(action va) { this->rc_change = va; };
-    void set_perform_action(action va) { this->rc_perform = va; };
-    void set_alt_perform_action(action va) { this->rc_alt_perform = va; };
-    void set_timeout_action(action va) { this->rc_timeout = va; };
-    void set_abort_action(action va) { this->rc_abort = va; };
-    void set_display_match_action(action va) { this->rc_display_match = va; };
-    void set_display_next_action(action va) { this->rc_display_next = va; };
-    void set_blur_action(action va) { this->rc_blur = va; };
+    void set_change_action(const action& va) { this->rc_change = va; };
+    void set_perform_action(const action& va) { this->rc_perform = va; };
+    void set_alt_perform_action(const action& va) { this->rc_alt_perform = va; };
+    void set_timeout_action(const action& va) { this->rc_timeout = va; };
+    void set_abort_action(const action& va) { this->rc_abort = va; };
+    void set_display_match_action(const action& va) { this->rc_display_match = va; };
+    void set_display_next_action(const action& va) { this->rc_display_next = va; };
+    void set_blur_action(const action& va) { this->rc_blur = va; };
 
     void set_value(const std::string &value)
     {
         this->rc_value            = value;
-        this->rc_value_expiration = time(NULL) + VALUE_EXPIRATION;
+        this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
     };
     std::string get_value() const { return this->rc_value; };
 
@@ -313,7 +316,7 @@ public:
 
     void start();
 
-    void do_update();
+    void do_update() override;
 
     void window_change()
     {
@@ -415,13 +418,13 @@ private:
     std::vector<std::string> rc_matches;
     bool rc_is_alt_focus{false};
 
-    action rc_change;
-    action rc_perform;
-    action rc_alt_perform;
-    action rc_timeout;
-    action rc_abort;
-    action rc_display_match;
-    action rc_display_next;
-    action rc_blur;
+    action rc_change{noop_func{}};
+    action rc_perform{noop_func{}};
+    action rc_alt_perform{noop_func{}};
+    action rc_timeout{noop_func{}};
+    action rc_abort{noop_func{}};
+    action rc_display_match{noop_func{}};
+    action rc_display_next{noop_func{}};
+    action rc_blur{noop_func{}};
 };
 #endif

@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _top_status_source_hh
-#define _top_status_source_hh
+#ifndef lnav_top_status_source_hh
+#define lnav_top_status_source_hh
 
 #include <string>
 
@@ -39,10 +39,6 @@
 class top_status_source
     : public status_data_source {
 public:
-
-    typedef listview_curses::action::mem_functor_t<
-            top_status_source> lv_functor_t;
-
     typedef enum {
         TSF_TIME,
         TSF_PARTITION_NAME,
@@ -56,8 +52,6 @@ public:
     } field_t;
 
     top_status_source()
-        : filename_wire(*this, &top_status_source::update_filename),
-          view_name_wire(*this, &top_status_source::update_view_name)
     {
         this->tss_fields[TSF_TIME].set_width(28);
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
@@ -83,12 +77,9 @@ public:
         this->tss_fields[TSF_FILENAME].right_justify(true);
     };
 
-    lv_functor_t filename_wire;
-    lv_functor_t view_name_wire;
+    size_t statusview_fields() override { return TSF__MAX; };
 
-    size_t statusview_fields() { return TSF__MAX; };
-
-    status_field &statusview_value_for_field(int field)
+    status_field &statusview_value_for_field(int field) override
     {
         return this->tss_fields[field];
     };
@@ -164,7 +155,7 @@ public:
         }
         else {
             sf_format.clear();
-            if (lc->get_data_source() != NULL) {
+            if (lc->get_data_source() != nullptr) {
                 sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
             }
         }

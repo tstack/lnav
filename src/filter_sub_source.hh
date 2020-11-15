@@ -37,8 +37,6 @@
 class filter_sub_source
     : public text_sub_source, public list_input_delegate {
 public:
-    using fss_functor_t = readline_curses::action::mem_functor_t<filter_sub_source>;
-
     filter_sub_source();
 
     bool list_input_handle_key(listview_curses &lv, int ch) override;
@@ -75,11 +73,6 @@ public:
     textview_curses fss_match_view;
 
     bool fss_editing{false};
-    fss_functor_t fss_change_wire;
-    fss_functor_t fss_perform_wire;
-    fss_functor_t fss_abort_wire;
-    fss_functor_t fss_display_match_wire;
-    fss_functor_t fss_display_next_wire;
     bool fss_filter_state{false};
 };
 

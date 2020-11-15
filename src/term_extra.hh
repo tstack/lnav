@@ -46,11 +46,7 @@
 
 class term_extra {
 public:
-    typedef listview_curses::action::mem_functor_t<term_extra> lv_functor_t;
-
-    lv_functor_t filename_wire;
-
-    term_extra() : filename_wire(*this, &term_extra::update_title) {
+    term_extra() {
         const char *term_name = getenv("TERM");
 
         this->te_enabled = (term_name != NULL && strstr(term_name, "xterm") != NULL);

@@ -100,6 +100,16 @@ private:
     WINDOW *sc_main_window;
 };
 
+template<typename T>
+class action_broadcaster : public std::vector<std::function<void(T *)>> {
+public:
+    void operator()(T *t) {
+        for (auto& func : *this) {
+            func(t);
+        }
+    }
+};
+
 class ui_periodic_timer {
 public:
     static const struct itimerval INTERVAL;
@@ -114,11 +124,11 @@ public:
         return false;
     };
 
-    void start_fade(sig_atomic_t &counter, size_t decay) {
+    void start_fade(sig_atomic_t &counter, size_t decay) const {
         counter = this->upt_counter + decay;
     };
 
-    int fade_diff(sig_atomic_t &counter) {
+    int fade_diff(sig_atomic_t &counter) const {
         if (this->upt_counter >= counter) {
             return 0;
         }
@@ -161,133 +171,9 @@ public:
     };
 
 private:
-    alerter() : a_enabled(true), a_do_flash(true), a_last_input(-1) { };
-
-    bool a_enabled;
-    bool a_do_flash;
-    int a_last_input;
-};
-
-/**
- * Class that encapsulates a method to execute and the object on which to
- * execute it.
- *
- * @param Sender The type of object that will be triggering an action.
- */
-template<class Sender>
-class view_action {
-public:
-
-    /**
-     *
-     * @param Receiver The type of object that will be triggered by an action.
-     */
-    template<class Receiver>
-    class mem_functor_t {
-public:
-        mem_functor_t(Receiver &receiver,
-                      void(Receiver::*selector)(Sender *))
-            : mf_receiver(receiver),
-              mf_selector(selector) { };
-
-        void operator()(Sender *sender) const
-        {
-            (this->mf_receiver.*mf_selector)(sender);
-        };
-
-        static void invoke(mem_functor_t *self, Sender *sender)
-        {
-            (*self)(sender);
-        };
-
-private:
-        Receiver & mf_receiver;
-        void        (Receiver::*mf_selector)(Sender *);
-    };
-
-    class broadcaster
-        : public std::vector<view_action> {
-public:
-
-        broadcaster()
-            : b_functor(*this, &broadcaster::invoke) { };
-        virtual ~broadcaster() = default;
-
-        void invoke(Sender *sender)
-        {
-            typename std::vector<view_action>::iterator iter;
-
-            for (iter = this->begin(); iter != this->end(); ++iter) {
-                (*iter).invoke(sender);
-            }
-        };
-
-        mem_functor_t<broadcaster> *get_functor()
-        {
-            return &this->b_functor;
-        };
-
-private:
-        mem_functor_t<broadcaster> b_functor;
-    };
-
-    /**
-     * @param receiver The object to pass as the first argument to the selector
-     * function.
-     * @param selector The function to execute.  The function should take two
-     * parameters, the first being the value of the receiver pointer and the
-     * second being the sender pointer as passed to invoke().
-     */
-    view_action(void(*invoker)(void *, Sender *) = nullptr)
-        : va_functor(nullptr),
-          va_invoker(invoker) { };
-
-    template<class Receiver>
-    view_action(mem_functor_t<Receiver> *mf)
-        : va_functor(mf),
-          va_invoker((void(*) (void *, Sender *))
-                     mem_functor_t<Receiver>::invoke) { };
-
-    /**
-     * Performs a shallow copy of another view_action.
-     *
-     * @param va The view_action to copy the receiver and selector pointers
-     * from.
-     */
-    view_action(const view_action &va)
-        : va_functor(va.va_functor),
-          va_invoker(va.va_invoker) { };
-
-    /**
-     * @param rhs The view_action to shallow copy.
-     * @return *this
-     */
-    view_action &operator=(const view_action &rhs)
-    {
-        this->va_functor = rhs.va_functor;
-        this->va_invoker = rhs.va_invoker;
-
-        return *this;
-    };
-
-    /**
-     * Invoke the action by calling the selector function, if one is set.
-     *
-     * @param sender Pointer to the object that called this method.
-     */
-    void invoke(Sender *sender)
-    {
-        if (this->va_invoker != NULL) {
-            this->va_invoker(this->va_functor, sender);
-        }
-    };
-
-private:
-
-    /** The object to pass as the first argument to the selector function.*/
-    void *va_functor;
-    /** The function to call when this action is invoke()'d. */
-    void (*va_invoker)(void *functor, Sender *sender);
+    bool a_enabled{true};
+    bool a_do_flash{true};
+    int a_last_input{-1};
 };
 
 /**
@@ -456,7 +342,7 @@ private:
     std::map<std::pair<short, short>, int> vc_dyn_pairs;
 };
 
-enum mouse_button_t {
+enum class mouse_button_t {
     BUTTON_LEFT,
     BUTTON_MIDDLE,
     BUTTON_RIGHT,
@@ -465,15 +351,15 @@ enum mouse_button_t {
     BUTTON_SCROLL_DOWN,
 };
 
-enum mouse_button_state_t {
+enum class mouse_button_state_t {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_DRAGGED,
     BUTTON_STATE_RELEASED,
 };
 
 struct mouse_event {
-    mouse_event(mouse_button_t button = BUTTON_LEFT,
-                mouse_button_state_t state = BUTTON_STATE_PRESSED,
+    mouse_event(mouse_button_t button = mouse_button_t::BUTTON_LEFT,
+                mouse_button_state_t state = mouse_button_state_t::BUTTON_STATE_PRESSED,
                 int x = -1,
                 int y = -1)
             : me_button(button),
@@ -533,7 +419,7 @@ public:
         this->vc_visible = value;
     }
 
-    bool is_visible() {
+    bool is_visible() const {
         return this->vc_visible;
     }
 
@@ -541,7 +427,7 @@ public:
         this->vc_width = width;
     }
 
-    long get_width() {
+    long get_width() const {
         return this->vc_width;
     }
 

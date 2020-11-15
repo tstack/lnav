@@ -140,7 +140,7 @@ void rl_set_help()
     }
 }
 
-void rl_change(void *dummy, readline_curses *rc)
+void rl_change(readline_curses *rc)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
@@ -269,7 +269,7 @@ void rl_change(void *dummy, readline_curses *rc)
     }
 }
 
-static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode, bool complete = false)
+static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complete = false)
 {
     textview_curses *tc = get_textview_for_mode(mode);
     string term_val;
@@ -440,15 +440,15 @@ static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode,
     tc->execute_search(rc->get_value());
 }
 
-void rl_search(void *dummy, readline_curses *rc)
+void rl_search(readline_curses *rc)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
-    rl_search_internal(dummy, rc, lnav_data.ld_mode);
+    rl_search_internal(rc, lnav_data.ld_mode);
     tc->set_follow_search_for(0, {});
 }
 
-void rl_abort(void *dummy, readline_curses *rc)
+void lnav_rl_abort(readline_curses *rc)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
@@ -480,7 +480,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_mode = LNM_PAGING;
 }
 
-static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
+static void rl_callback_int(readline_curses *rc, bool is_alt)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
     exec_context &ec = lnav_data.ld_exec_context;
@@ -532,7 +532,7 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
     case LNM_SEARCH_FILTERS:
     case LNM_SEARCH_FILES:
     case LNM_CAPTURE:
-        rl_search_internal(dummy, rc, old_mode, true);
+        rl_search_internal(rc, old_mode, true);
         if (!rc->get_value().empty()) {
             auto_mem<FILE> pfile(pclose);
             vis_bookmarks &bm = tc->get_bookmarks();
@@ -658,17 +658,17 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
     }
 }
 
-void rl_callback(void *dummy, readline_curses *rc)
+void rl_callback(readline_curses *rc)
 {
-    rl_callback_int(dummy, rc, false);
+    rl_callback_int(rc, false);
 }
 
-void rl_alt_callback(void *dummy, readline_curses *rc)
+void rl_alt_callback(readline_curses *rc)
 {
-    rl_callback_int(dummy, rc, true);
+    rl_callback_int(rc, true);
 }
 
-void rl_display_matches(void *dummy, readline_curses *rc)
+void rl_display_matches(readline_curses *rc)
 {
     const std::vector<std::string> &matches = rc->get_matches();
     textview_curses &tc = lnav_data.ld_match_view;
@@ -717,7 +717,7 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     tc.reload_data();
 }
 
-void rl_display_next(void *dummy, readline_curses *rc)
+void rl_display_next(readline_curses *rc)
 {
     textview_curses &tc = lnav_data.ld_match_view;
 

@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include "base/func_util.hh"
+
 #include "lnav.hh"
 
 #include "filter_sub_source.hh"
@@ -38,20 +40,20 @@
 using namespace std;
 
 filter_sub_source::filter_sub_source()
-    : fss_change_wire(*this, &filter_sub_source::rl_change),
-      fss_perform_wire(*this, &filter_sub_source::rl_perform),
-      fss_abort_wire(*this, &filter_sub_source::rl_abort),
-      fss_display_match_wire(*this, &filter_sub_source::rl_display_matches),
-      fss_display_next_wire(*this, &filter_sub_source::rl_display_next)
 {
     this->filter_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
     this->fss_editor.add_context(LNM_FILTER, this->filter_context);
-    this->fss_editor.set_change_action(&this->fss_change_wire);
-    this->fss_editor.set_perform_action(&this->fss_perform_wire);
-    this->fss_editor.set_abort_action(&this->fss_abort_wire);
-    this->fss_editor.set_display_match_action(&this->fss_display_match_wire);
-    this->fss_editor.set_display_next_action(&this->fss_display_next_wire);
+    this->fss_editor.set_change_action(bind_mem(
+        &filter_sub_source::rl_change, this));
+    this->fss_editor.set_perform_action(bind_mem(
+        &filter_sub_source::rl_perform, this));
+    this->fss_editor.set_abort_action(bind_mem(
+        &filter_sub_source::rl_abort, this));
+    this->fss_editor.set_display_match_action(
+        bind_mem(&filter_sub_source::rl_display_matches, this));
+    this->fss_editor.set_display_next_action(
+        bind_mem(&filter_sub_source::rl_display_next, this));
     this->fss_match_view.set_sub_source(&this->fss_match_source);
     this->fss_match_view.set_height(0_vl);
     this->fss_match_view.set_show_scrollbar(true);
@@ -144,17 +146,20 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::INCLUDE, *filter_index);
+            auto ef = make_shared<empty_filter>(text_filter::type_t::INCLUDE,
+                                                *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*", top_view);
+            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+                                        top_view);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor.set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "", "");
@@ -174,17 +179,20 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::EXCLUDE, *filter_index);
+            auto ef = make_shared<empty_filter>(text_filter::type_t::EXCLUDE,
+                                                *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*", top_view);
+            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+                                        top_view);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor.set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "", "");
@@ -206,10 +214,12 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*", top_view);
+            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+                                        top_view);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor.set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "");
@@ -242,7 +252,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
 size_t filter_sub_source::text_line_count()
 {
-    return (lnav_data.ld_view_stack.top() | [] (auto tc) {
+    return (lnav_data.ld_view_stack.top() | [](auto tc) {
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
 
@@ -290,7 +300,8 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
     if (this->fss_editing && line == tc.get_selection()) {
         snprintf(hits, sizeof(hits), "%6s hits | ", "-");
     } else {
-        snprintf(hits, sizeof(hits), "%6d hits | ", tss->get_filtered_count_for(tf->get_index()));
+        snprintf(hits, sizeof(hits), "%6d hits | ",
+                 tss->get_filtered_count_for(tf->get_index()));
     }
     value_out.append(hits);
 
@@ -305,11 +316,13 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     text_sub_source *tss = top_view->get_sub_source();
     filter_stack &fs = tss->get_filters();
     shared_ptr<text_filter> tf = *(fs.begin() + line);
-    bool selected = lnav_data.ld_mode == LNM_FILTER && line == tc.get_selection();
+    bool selected =
+        lnav_data.ld_mode == LNM_FILTER && line == tc.get_selection();
     int bg = selected ? COLOR_WHITE : COLOR_BLACK;
 
     if (selected) {
-        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
+        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC,
+                               ACS_RARROW);
     }
 
     chtype enabled = tf->is_enabled() ? ACS_DIAMOND : ' ';
@@ -327,7 +340,8 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_STYLE, A_BOLD);
 
     value_out.emplace_back(line_range{8, 14}, &view_curses::VC_STYLE, A_BOLD);
-    value_out.emplace_back(line_range{20, 21}, &view_curses::VC_GRAPHIC, ACS_VLINE);
+    value_out.emplace_back(line_range{20, 21}, &view_curses::VC_GRAPHIC,
+                           ACS_VLINE);
 
     fg = selected ? COLOR_BLACK : COLOR_WHITE;
     value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND,
@@ -369,7 +383,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
                              &eoff,
                              nullptr)) == nullptr) {
         lnav_data.ld_filter_help_status_source.fss_error
-                 .set_value("error: %s", errptr);
+            .set_value("error: %s", errptr);
     } else {
         textview_curses::highlight_map_t &hm = top_view->get_highlights();
         highlighter hl(code.release());
@@ -414,7 +428,8 @@ void filter_sub_source::rl_perform(readline_curses *rc)
         tss->text_filters_changed();
 
         auto pf = make_shared<pcre_filter>(tf->get_type(),
-                                           new_value, tf->get_index(), code.release());
+                                           new_value, tf->get_index(),
+                                           code.release());
 
         *iter = pf;
         tss->text_filters_changed();
@@ -476,7 +491,8 @@ void filter_sub_source::rl_display_matches(readline_curses *rc)
 
         this->fss_match_view.set_selection(selected_line);
         this->fss_match_source.replace_with(al);
-        this->fss_match_view.set_height(std::min(vis_line_t(matches.size()), 3_vl));
+        this->fss_match_view.set_height(
+            std::min(vis_line_t(matches.size()), 3_vl));
     }
 
     this->fss_match_view.set_window(this->tss_view->get_window());
@@ -494,8 +510,7 @@ void filter_sub_source::rl_display_next(readline_curses *rc)
 
     if (tc.get_top() >= (tc.get_top_for_last_row() - 1)) {
         tc.set_top(0_vl);
-    }
-    else {
+    } else {
         tc.shift_top(tc.get_height());
     }
 }

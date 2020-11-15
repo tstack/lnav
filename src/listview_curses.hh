@@ -39,6 +39,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "base/func_util.hh"
 #include "strong_int.hh"
 #include "view_curses.hh"
 
@@ -123,7 +124,7 @@ public:
 class listview_curses
     : public view_curses, private log_state_dumper {
 public:
-    typedef view_action<listview_curses> action;
+    using action = std::function<void(listview_curses*)>;
 
     void set_title(const std::string &title) {
         this->lv_title = title;
@@ -173,12 +174,6 @@ public:
      * @todo Allow multiple observers.
      */
     void set_scroll_action(action va) { this->lv_scroll = va; };
-
-    template<class Receiver>
-    void set_scroll_action(action::mem_functor_t<Receiver> *mf)
-    {
-        this->lv_scroll = action(mf);
-    };
 
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
@@ -572,7 +567,7 @@ public:
     };
 
     virtual void invoke_scroll() {
-        this->lv_scroll.invoke(this);
+        this->lv_scroll(this);
     }
 
 protected:
@@ -595,7 +590,7 @@ protected:
     list_data_source *lv_source{nullptr}; /*< The data source delegate. */
     std::list<list_input_delegate *> lv_input_delegates;
     list_overlay_source *lv_overlay_source{nullptr};
-    action       lv_scroll;         /*< The scroll action. */
+    action       lv_scroll{noop_func{}};         /*< The scroll action. */
     WINDOW *     lv_window{nullptr};         /*< The window that contains this view. */
     unsigned int lv_x{0};
     unsigned int lv_y{0};              /*< The y offset of this view. */

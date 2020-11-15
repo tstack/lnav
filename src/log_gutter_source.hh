@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _log_gutter_source_hh
-#define _log_gutter_source_hh
+#ifndef lnav_log_gutter_source_hh
+#define lnav_log_gutter_source_hh
 
 #include "logfile_sub_source.hh"
 #include "command_executor.hh"

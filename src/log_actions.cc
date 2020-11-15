@@ -97,7 +97,7 @@ static string execute_action(log_data_helper &ldh,
             for (size_t lpc = 0; lpc < action.ad_cmdline.size(); lpc++) {
                 args[lpc] = action.ad_cmdline[lpc].c_str();
             }
-            args[action.ad_cmdline.size()] = NULL;
+            args[action.ad_cmdline.size()] = nullptr;
             execvp(args[0], (char *const *) args);
             fprintf(stderr,
                     "error: could not exec process -- %s:%s\n",
@@ -153,7 +153,7 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
 {
     bool retval = false;
 
-    if (me.me_button != BUTTON_LEFT) {
+    if (me.me_button != mouse_button_t::BUTTON_LEFT) {
         return false;
     }
 
@@ -161,7 +161,7 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
     int mouse_left = tc.get_left() + me.me_x;
 
     switch (me.me_state) {
-        case BUTTON_STATE_PRESSED:
+        case mouse_button_state_t::BUTTON_STATE_PRESSED:
             if (mouse_line >= vis_line_t(0) && mouse_line <= tc.get_bottom()) {
                 size_t line_end_index = 0;
                 int x_offset;
@@ -190,7 +190,7 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
                 }
             }
             break;
-        case BUTTON_STATE_DRAGGED:
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
             if (mouse_line != this->ad_press_line) {
                 this->ad_press_value = -1;
             }
@@ -198,7 +198,7 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
                 retval = true;
             }
             break;
-        case BUTTON_STATE_RELEASED:
+        case mouse_button_state_t::BUTTON_STATE_RELEASED:
             if (this->ad_press_value != -1 && this->ad_press_line == mouse_line) {
                 logline_value &lv = this->ad_log_helper.ldh_line_values[this->ad_press_value];
                 int x_offset = this->ad_line_index + mouse_left;
@@ -208,7 +208,7 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
                     const vector<string> *actions;
 
                     actions = lf->get_format()->get_actions(lv);
-                    if (actions != NULL && !actions->empty()) {
+                    if (actions != nullptr && !actions->empty()) {
                         string rc = execute_action(
                             this->ad_log_helper, this->ad_press_value, actions->at(0));
 

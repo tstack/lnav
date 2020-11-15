@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _preview_status_source_hh
-#define _preview_status_source_hh
+#ifndef lnav_preview_status_source_hh
+#define lnav_preview_status_source_hh
 
 #include <string>
 

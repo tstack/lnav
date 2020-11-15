@@ -300,7 +300,7 @@ CREATE TABLE lnav_view_stack (
             textview_curses *tc = *lnav_data.ld_view_stack.top();
 
             tc->set_needs_update();
-            lnav_data.ld_view_stack_broadcaster.invoke(tc);
+            lnav_data.ld_view_stack_broadcaster(tc);
         }
 
         return SQLITE_OK;

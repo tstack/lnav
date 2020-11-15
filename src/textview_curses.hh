@@ -35,6 +35,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/func_util.hh"
 #include "ring_span.hh"
 #include "grep_proc.hh"
 #include "bookmarks.hh"
@@ -586,7 +587,7 @@ class textview_curses
       public lnav_config_listener {
 public:
 
-    typedef view_action<textview_curses> action;
+    using action = std::function<void(textview_curses*)>;
 
     static bookmark_type_t BM_USER;
     static bookmark_type_t BM_SEARCH;
@@ -599,7 +600,6 @@ public:
     static string_attr_type SA_REMOVED;
 
     textview_curses();
-    virtual ~textview_curses() = default;
 
     void reload_config(error_reporter &reporter);
 
@@ -758,12 +758,6 @@ public:
     };
 
     void set_search_action(action sa) { this->tc_search_action = sa; };
-
-    template<class _Receiver>
-    void set_search_action(action::mem_functor_t<_Receiver> *mf)
-    {
-        this->tc_search_action = action(mf);
-    };
 
     void grep_end_batch(grep_proc<vis_line_t> &gp);
     void grep_end(grep_proc<vis_line_t> &gp);
@@ -971,8 +965,8 @@ protected:
         textview_curses::highlight_map_t &gh_hl_map;
     };
 
-    text_sub_source *tc_sub_source;
-    text_delegate *tc_delegate;
+    text_sub_source *tc_sub_source{nullptr};
+    text_delegate *tc_delegate{nullptr};
 
     vis_bookmarks tc_bookmarks;
 
@@ -980,14 +974,14 @@ protected:
     struct timeval tc_follow_deadline{0, 0};
     vis_line_t tc_follow_top{-1_vl};
     std::function<bool()> tc_follow_func;
-    action tc_search_action;
+    action tc_search_action{noop_func{}};
 
-    highlight_map_t           tc_highlights;
+    highlight_map_t tc_highlights;
 
-    vis_line_t tc_selection_start;
-    vis_line_t tc_selection_last;
-    bool tc_selection_cleared;
-    bool tc_hide_fields;
+    vis_line_t tc_selection_start{-1_vl};
+    vis_line_t tc_selection_last{-1_vl};
+    bool tc_selection_cleared{false};
+    bool tc_hide_fields{true};
     bool tc_paused{false};
 
     std::string tc_last_search;

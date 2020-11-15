@@ -80,6 +80,7 @@
 #include "help-txt.h"
 #include "init-sql.h"
 #include "logfile.hh"
+#include "base/func_util.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "log_accel.hh"
@@ -646,7 +647,7 @@ void rebuild_indexes()
 
     lnav_data.ld_view_stack.top() | [] (auto tc) {
         lnav_data.ld_filter_status_source.update_filtered(tc->get_sub_source());
-        lnav_data.ld_scroll_broadcaster.invoke(tc);
+        lnav_data.ld_scroll_broadcaster(tc);
     };
 }
 
@@ -857,7 +858,7 @@ static void handle_rl_key(int ch)
     }
 }
 
-void rl_blur(void *dummy, readline_curses *rc)
+void rl_blur(readline_curses *rc)
 {
     field_overlay_source *fos;
 
@@ -923,7 +924,7 @@ static void usage()
     fprintf(stderr, usage_msg, lnav_data.ld_program_name);
 }
 
-static void clear_last_user_mark(void *, listview_curses *lv)
+static void clear_last_user_mark(listview_curses *lv)
 {
     textview_curses *tc = (textview_curses *) lv;
     if (lnav_data.ld_select_start.find(tc) != lnav_data.ld_select_start.end() &&
@@ -980,30 +981,30 @@ public:
 
         switch (button & xterm_mouse::XT_BUTTON__MASK) {
         case xterm_mouse::XT_BUTTON1:
-            me.me_button = BUTTON_LEFT;
+            me.me_button = mouse_button_t::BUTTON_LEFT;
             break;
         case xterm_mouse::XT_BUTTON2:
-            me.me_button = BUTTON_MIDDLE;
+            me.me_button = mouse_button_t::BUTTON_MIDDLE;
             break;
         case xterm_mouse::XT_BUTTON3:
-            me.me_button = BUTTON_RIGHT;
+            me.me_button = mouse_button_t::BUTTON_RIGHT;
             break;
         case xterm_mouse::XT_SCROLL_UP:
-            me.me_button = BUTTON_SCROLL_UP;
+            me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
             break;
         case xterm_mouse::XT_SCROLL_DOWN:
-            me.me_button = BUTTON_SCROLL_DOWN;
+            me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
             break;
         }
 
         if (button & xterm_mouse::XT_DRAG_FLAG) {
-            me.me_state = BUTTON_STATE_DRAGGED;
+            me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
         }
         else if (release) {
-            me.me_state = BUTTON_STATE_RELEASED;
+            me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
         }
         else {
-            me.me_state = BUTTON_STATE_PRESSED;
+            me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
         }
 
         gettimeofday(&me.me_time, nullptr);
@@ -1128,7 +1129,7 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *keyseq)
     return input_dispatcher::escape_match_t::NONE;
 }
 
-void update_hits(void *dummy, textview_curses *tc)
+void update_hits(textview_curses *tc)
 {
     auto top_tc = lnav_data.ld_view_stack.top();
 
@@ -1273,10 +1274,8 @@ static void looper()
                                    " \t\n(),");
         exec_context.set_highlighter(readline_shlex_highlighter);
 
-        listview_curses::action::broadcaster &sb =
-            lnav_data.ld_scroll_broadcaster;
-        listview_curses::action::broadcaster &vsb =
-            lnav_data.ld_view_stack_broadcaster;
+        auto &sb = lnav_data.ld_scroll_broadcaster;
+        auto &vsb = lnav_data.ld_view_stack_broadcaster;
 
         rlc.add_context(LNM_COMMAND, command_context);
         rlc.add_context(LNM_SEARCH, search_context);
@@ -1369,16 +1368,14 @@ static void looper()
 
         rlc.set_window(lnav_data.ld_window);
         rlc.set_y(-1);
-        rlc.set_change_action(readline_curses::action(rl_change));
-        rlc.set_perform_action(readline_curses::action(rl_callback));
-        rlc.set_alt_perform_action(readline_curses::action(rl_alt_callback));
-        rlc.set_timeout_action(readline_curses::action(rl_search));
-        rlc.set_abort_action(readline_curses::action(rl_abort));
-        rlc.set_display_match_action(
-            readline_curses::action(rl_display_matches));
-        rlc.set_display_next_action(
-            readline_curses::action(rl_display_next));
-        rlc.set_blur_action(readline_curses::action(rl_blur));
+        rlc.set_change_action(rl_change);
+        rlc.set_perform_action(rl_callback);
+        rlc.set_alt_perform_action(rl_alt_callback);
+        rlc.set_timeout_action(rl_search);
+        rlc.set_abort_action(lnav_rl_abort);
+        rlc.set_display_match_action(rl_display_matches);
+        rlc.set_display_next_action(rl_display_next);
+        rlc.set_blur_action(rl_blur);
         rlc.set_alt_value(HELP_MSG_2(
             e, E, "to move forward/backward through error messages"));
 
@@ -1391,10 +1388,8 @@ static void looper()
             lnav_data.ld_views[lpc].set_y(1);
             lnav_data.ld_views[lpc].
             set_height(vis_line_t(-(rlc.get_height() + 1)));
-            lnav_data.ld_views[lpc].
-            set_scroll_action(sb.get_functor());
-            lnav_data.ld_views[lpc].set_search_action(
-                textview_curses::action(update_hits));
+            lnav_data.ld_views[lpc].set_scroll_action(sb);
+            lnav_data.ld_views[lpc].set_search_action(update_hits);
             lnav_data.ld_views[lpc].tc_state_event_handler = [](auto &&tc) {
                 lnav_data.ld_bottom_source.update_search_term(tc);
             };
@@ -1438,15 +1433,15 @@ static void looper()
         lnav_data.ld_status[LNS_PREVIEW].set_data_source(
             &lnav_data.ld_preview_status_source);
 
-        vsb.push_back(sb.get_functor());
+        vsb.push_back(sb);
 
-        sb.push_back(view_action<listview_curses>(clear_last_user_mark));
-        sb.push_back(&lnav_data.ld_top_source.filename_wire);
-        vsb.push_back(&lnav_data.ld_top_source.view_name_wire);
-        sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
-        sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
-        sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
-        sb.push_back(&lnav_data.ld_term_extra.filename_wire);
+        sb.push_back(clear_last_user_mark);
+        sb.push_back(bind_mem(&top_status_source::update_filename, &lnav_data.ld_top_source));
+        vsb.push_back(bind_mem(&top_status_source::update_view_name, &lnav_data.ld_top_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_line_number, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_percent, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_marks, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&term_extra::update_title, &lnav_data.ld_term_extra));
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
 
@@ -1457,8 +1452,8 @@ static void looper()
         auto session_path = dotlnav_path() / "session";
         execute_file(ec, session_path.string());
 
-        sb.invoke(*lnav_data.ld_view_stack.top());
-        vsb.invoke(*lnav_data.ld_view_stack.top());
+        sb(*lnav_data.ld_view_stack.top());
+        vsb(*lnav_data.ld_view_stack.top());
 
         {
             input_dispatcher &id = lnav_data.ld_input_dispatcher;

@@ -71,7 +71,7 @@ struct exec_context {
 
 exec_context INIT_EXEC_CONTEXT;
 
-static void rl_callback(void *dummy, readline_curses *rc)
+static void rl_callback(readline_curses *rc)
 {
     string line = rc->get_value();
 
@@ -81,7 +81,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
     drive_data.dd_active = false;
 }
 
-static void rl_timeout(void *dummy, readline_curses *rc)
+static void rl_timeout(readline_curses *rc)
 {
     fprintf(stderr, "timeout\n");
 }
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
     
     rlc.set_window(sc.get_window());
     rlc.set_y(-1);
-    rlc.set_perform_action(readline_curses::action(rl_callback));
-    rlc.set_timeout_action(readline_curses::action(rl_timeout));
+    rlc.set_perform_action(rl_callback);
+    rlc.set_timeout_action(rl_timeout);
 
     drive_data.dd_looping = true;
     while (drive_data.dd_looping) {

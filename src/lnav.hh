@@ -227,8 +227,8 @@ struct lnav_data_t {
     doc_status_source                       ld_doc_status_source;
     preview_status_source                   ld_preview_status_source;
     bool                                    ld_preview_hidden;
-    listview_curses::action::broadcaster    ld_scroll_broadcaster;
-    listview_curses::action::broadcaster    ld_view_stack_broadcaster;
+    action_broadcaster<listview_curses>     ld_scroll_broadcaster;
+    action_broadcaster<listview_curses>     ld_view_stack_broadcaster;
 
     plain_text_source                       ld_help_source;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,28 +25,34 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file column_namer.hh
  */
 
-#ifndef lnav_column_namer_hh
-#define lnav_column_namer_hh
+#ifndef lnav_func_util_hh
+#define lnav_func_util_hh
 
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include <utility>
 
-class column_namer {
-public:
-    column_namer() : cn_builtin_names({"col"}) {}
+template<typename F, typename FrontArg>
+decltype(auto) bind_mem(F&& f, FrontArg&& frontArg)
+{
+    return [f=std::forward<F>(f),
+        frontArg = std::forward<FrontArg>(frontArg)]
+        (auto&&...backArgs)
+    {
+        return (frontArg->*f)(std::forward<decltype(backArgs)>(backArgs)...);
+    };
+}
 
-    bool existing_name(const std::string &in_name) const;
-
-    std::string add_column(const std::string &in_name);
-
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
-    std::unordered_map<std::string, int> cn_name_counters;
+struct noop_func {
+    struct anything {
+        template<class T>
+        operator T(){ return {}; }
+        // optional reference support.  Somewhat evil.
+        template<class T>
+        operator T&()const{ static T t{}; return t; }
+    };
+    template<class...Args>
+    anything operator()(Args&&...)const{return {};}
 };
 
 #endif

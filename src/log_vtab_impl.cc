@@ -253,7 +253,7 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor *)p_cur;
 
     p_cur->base.pVtab = p_svt;
-    p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
+    p_cur->log_cursor.lc_curr_line = -1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
     vt_next((sqlite3_vtab_cursor *)p_cur);
@@ -669,7 +669,7 @@ static int vt_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid)
 void log_cursor::update(unsigned char op, vis_line_t vl, bool exact)
 {
     if (vl < 0) {
-        vl = vis_line_t(-1);
+        vl = -1_vl;
     }
     switch (op) {
     case SQLITE_INDEX_CONSTRAINT_EQ:
@@ -703,7 +703,7 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
         sqlite3_index_info::sqlite3_index_constraint *)idxStr;
 
     log_info("(%p) filter called: %d", vt, idxNum);
-    p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
+    p_cur->log_cursor.lc_curr_line = -1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     vt_next(p_vtc);
 
@@ -740,7 +740,7 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
     }
 
     while (!p_cur->log_cursor.is_eof() && !vt->vi->is_valid(p_cur->log_cursor, *vt->lss)) {
-        p_cur->log_cursor.lc_curr_line += vis_line_t(1);
+        p_cur->log_cursor.lc_curr_line += 1_vl;
     }
 
     return SQLITE_OK;

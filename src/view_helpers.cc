@@ -445,7 +445,7 @@ bool toggle_view(textview_curses *toggle_tc)
     }
     tc = *lnav_data.ld_view_stack.top();
     tc->set_needs_update();
-    lnav_data.ld_view_stack_broadcaster.invoke(tc);
+    lnav_data.ld_view_stack_broadcaster(tc);
 
     return retval;
 }
