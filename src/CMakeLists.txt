@@ -377,6 +377,8 @@ add_library(diag STATIC
         log_actions.hh
         log_data_helper.hh
         log_data_table.hh
+        log_format.hh
+        log_format_fwd.hh
         log_format_impls.cc
         log_gutter_source.hh
         log_level.hh
