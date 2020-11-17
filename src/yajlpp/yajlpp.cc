@@ -865,6 +865,21 @@ const char *yajlpp_parse_context::get_path_fragment(int offset, char *frag_in,
     return retval;
 }
 
+int yajlpp_parse_context::get_line_number() const
+{
+    if (this->ypc_handle != NULL && this->ypc_json_text) {
+        size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+        long current_count = std::count(&this->ypc_json_text[0],
+                                        &this->ypc_json_text[consumed],
+                                        '\n');
+
+        return this->ypc_line_number + current_count;
+    }
+    else {
+        return this->ypc_line_number;
+    }
+}
+
 void yajlpp_gen_context::gen()
 {
     yajlpp_map root(this->ygc_handle);

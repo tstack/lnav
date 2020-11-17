@@ -292,19 +292,7 @@ public:
 
     yajl_status parse(const unsigned char *jsonText, size_t jsonTextLen);
 
-    int get_line_number() const {
-        if (this->ypc_handle != NULL && this->ypc_json_text) {
-            size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
-            long current_count = std::count(&this->ypc_json_text[0],
-                                            &this->ypc_json_text[consumed],
-                                            '\n');
-
-            return this->ypc_line_number + current_count;
-        }
-        else {
-            return this->ypc_line_number;
-        }
-    };
+    int get_line_number() const;
 
     yajl_status complete_parse();
 
