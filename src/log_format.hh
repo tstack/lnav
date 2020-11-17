@@ -61,250 +61,12 @@
 #include "highlighter.hh"
 #include "log_level.hh"
 #include "line_buffer.hh"
+#include "log_format_fwd.hh"
 
 struct sqlite3;
 class logfile;
-class log_format;
 class log_vtab_manager;
 struct exec_context;
-
-/**
- * Metadata for a single line in a log file.
- */
-class logline {
-public:
-    static string_attr_type L_PREFIX;
-    static string_attr_type L_TIMESTAMP;
-    static string_attr_type L_FILE;
-    static string_attr_type L_PARTITION;
-    static string_attr_type L_MODULE;
-    static string_attr_type L_OPID;
-    static string_attr_type L_META;
-
-    /**
-     * Construct a logline object with the given values.
-     *
-     * @param off The offset of the line in the file.
-     * @param t The timestamp for the line.
-     * @param millis The millisecond timestamp for the line.
-     * @param l The logging level.
-     */
-    logline(off_t off,
-            time_t t,
-            uint16_t millis,
-            log_level_t l,
-            uint8_t mod = 0,
-            uint8_t opid = 0)
-        : ll_offset(off),
-          ll_time(t),
-          ll_millis(millis),
-          ll_opid(opid),
-          ll_sub_offset(0),
-          ll_valid_utf(1),
-          ll_level(l),
-          ll_module_id(mod)
-    {
-        memset(this->ll_schema, 0, sizeof(this->ll_schema));
-    };
-
-    logline(off_t off,
-            const struct timeval &tv,
-            log_level_t l,
-            uint8_t mod = 0,
-            uint8_t opid = 0)
-        : ll_offset(off),
-          ll_opid(opid),
-          ll_sub_offset(0),
-          ll_valid_utf(1),
-          ll_level(l),
-          ll_module_id(mod)
-    {
-        this->set_time(tv);
-        memset(this->ll_schema, 0, sizeof(this->ll_schema));
-    };
-
-    /** @return The offset of the line in the file. */
-    off_t get_offset() const { return this->ll_offset; };
-
-    uint16_t get_sub_offset() const { return this->ll_sub_offset; };
-
-    void set_sub_offset(uint16_t suboff) { this->ll_sub_offset = suboff; };
-
-    /** @return The timestamp for the line. */
-    time_t get_time() const { return this->ll_time; };
-
-    void to_exttm(struct exttm &tm_out) const {
-        tm_out.et_tm = *gmtime(&this->ll_time);
-        tm_out.et_nsec = this->ll_millis * 1000 * 1000;
-    };
-
-    void set_time(time_t t) { this->ll_time = t; };
-
-    /** @return The millisecond timestamp for the line. */
-    uint16_t get_millis() const { return this->ll_millis; };
-
-    void set_millis(uint16_t m) { this->ll_millis = m; };
-
-    uint64_t get_time_in_millis() const {
-        return (this->ll_time * 1000ULL + (uint64_t) this->ll_millis);
-    };
-
-    struct timeval get_timeval() const {
-        struct timeval retval = { this->ll_time, this->ll_millis * 1000 };
-
-        return retval;
-    };
-
-    void set_time(const struct timeval &tv) {
-        this->ll_time = tv.tv_sec;
-        this->ll_millis = tv.tv_usec / 1000;
-    };
-
-    void set_mark(bool val) {
-        if (val) {
-            this->ll_level |= LEVEL_MARK;
-        }
-        else {
-            this->ll_level &= ~LEVEL_MARK;
-        }
-    };
-
-    bool is_marked() const { return this->ll_level & LEVEL_MARK; };
-
-    void set_time_skew(bool val) {
-        if (val) {
-            this->ll_level |= LEVEL_TIME_SKEW;
-        }
-        else {
-            this->ll_level &= ~LEVEL_TIME_SKEW;
-        }
-    };
-
-    bool is_time_skewed() const {
-        return this->ll_level & LEVEL_TIME_SKEW;
-    };
-
-    void set_valid_utf(bool v) {
-        this->ll_valid_utf = v;
-    }
-
-    bool is_valid_utf() const {
-        return this->ll_valid_utf;
-    }
-
-    /** @param l The logging level. */
-    void set_level(log_level_t l) { this->ll_level = l; };
-
-    /** @return The logging level. */
-    log_level_t get_level_and_flags() const {
-        return (log_level_t)this->ll_level;
-    };
-
-    log_level_t get_msg_level() const {
-        return (log_level_t)(this->ll_level & ~LEVEL__FLAGS);
-    };
-
-    const char *get_level_name() const
-    {
-        return level_names[this->ll_level & ~LEVEL__FLAGS];
-    };
-
-    bool is_continued() const {
-        return this->ll_level & LEVEL_CONTINUED;
-    };
-
-    uint8_t get_module_id() const {
-        return this->ll_module_id;
-    };
-
-    void set_opid(uint8_t opid) {
-        this->ll_opid = opid;
-    };
-
-    uint8_t get_opid() const {
-        return this->ll_opid;
-    };
-
-    /**
-     * @return  True if there is a schema value set for this log line.
-     */
-    bool has_schema() const
-    {
-        return (this->ll_schema[0] != 0 ||
-                this->ll_schema[1] != 0);
-    };
-
-    /**
-     * Set the "schema" for this log line.  The schema ID is used to match log
-     * lines that have a similar format when generating the logline table.  The
-     * schema is set lazily so that startup is faster.
-     *
-     * @param ba The SHA-1 hash of the constant parts of this log line.
-     */
-    void set_schema(const byte_array<2, uint64_t> &ba)
-    {
-        memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
-    };
-
-    char get_schema() const {
-        return this->ll_schema[0];
-    };
-
-    /**
-     * Perform a partial match of the given schema against this log line.
-     * Storing the full schema is not practical, so we just keep the first four
-     * bytes.
-     *
-     * @param  ba The SHA-1 hash of the constant parts of a log line.
-     * @return    True if the first four bytes of the given schema match the
-     *   schema stored in this log line.
-     */
-    bool match_schema(const byte_array<2, uint64_t> &ba) const
-    {
-        return memcmp(this->ll_schema, ba.in(), sizeof(this->ll_schema)) == 0;
-    }
-
-    /**
-     * Compare loglines based on their timestamp.
-     */
-    bool operator<(const logline &rhs) const
-    {
-        return (this->ll_time < rhs.ll_time) ||
-               (this->ll_time == rhs.ll_time &&
-                this->ll_millis < rhs.ll_millis) ||
-               (this->ll_time == rhs.ll_time &&
-                this->ll_millis == rhs.ll_millis &&
-                this->ll_offset < rhs.ll_offset) ||
-               (this->ll_time == rhs.ll_time &&
-                this->ll_millis == rhs.ll_millis &&
-                this->ll_offset == rhs.ll_offset &&
-                this->ll_sub_offset < rhs.ll_sub_offset);
-    };
-
-    bool operator<(const time_t &rhs) const { return this->ll_time < rhs; };
-
-    bool operator<(const struct timeval &rhs) const {
-        return ((this->ll_time < rhs.tv_sec) ||
-                ((this->ll_time == rhs.tv_sec) &&
-                 (this->ll_millis < (rhs.tv_usec / 1000))));
-    };
-
-    bool operator<=(const struct timeval &rhs) const {
-        return ((this->ll_time < rhs.tv_sec) ||
-                ((this->ll_time == rhs.tv_sec) &&
-                 (this->ll_millis <= (rhs.tv_usec / 1000))));
-    };
-private:
-    off_t    ll_offset;
-    time_t   ll_time;
-    unsigned int ll_millis : 10;
-    unsigned int ll_opid : 6;
-    unsigned int ll_sub_offset : 15;
-    unsigned int ll_valid_utf : 1;
-    uint8_t  ll_level;
-    uint8_t  ll_module_id;
-    char     ll_schema[2];
-};
 
 enum class scale_op_t {
     SO_IDENTITY,
@@ -635,7 +397,7 @@ public:
         return nullptr;
     };
 
-    virtual const std::set<std::string> get_source_path() const {
+    virtual std::set<std::string> get_source_path() const {
         std::set<std::string> retval;
 
         retval.insert("default");
@@ -857,13 +619,12 @@ public:
     };
 
     std::unique_ptr<log_format> specialized(int fmt_lock) {
-        external_log_format *elf = new external_log_format(*this);
-        std::unique_ptr<log_format> retval(elf);
+        auto retval = std::make_unique<external_log_format>(*this);
 
-        elf->lf_specialized = true;
+        retval->lf_specialized = true;
         this->lf_pattern_locks.clear();
         if (fmt_lock != -1) {
-            elf->lf_pattern_locks.emplace_back(0, fmt_lock);
+            retval->lf_pattern_locks.emplace_back(0, fmt_lock);
         }
 
         if (this->elf_type == ELF_TYPE_JSON) {
@@ -912,7 +673,7 @@ public:
         return retval;
     };
 
-    const std::set<std::string> get_source_path() const {
+    std::set<std::string> get_source_path() const {
         return this->elf_source_path;
     };
 

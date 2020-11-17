@@ -949,6 +949,30 @@ logfile_sub_source::get_grepper()
     );
 }
 
+bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
+{
+    iterator existing;
+
+    require(lf->size() < MAX_LINES_PER_FILE);
+
+    existing = std::find_if(this->lss_files.begin(),
+                            this->lss_files.end(),
+                            logfile_data_eq(nullptr));
+    if (existing == this->lss_files.end()) {
+        if (this->lss_files.size() >= MAX_FILES) {
+            return false;
+        }
+
+        this->lss_files.push_back(new logfile_data(this->lss_files.size(), this->get_filters(), lf));
+    }
+    else {
+        (*existing)->set_file(lf);
+    }
+    this->lss_force_rebuild = true;
+
+    return true;
+}
+
 void log_location_history::loc_history_append(vis_line_t top)
 {
     if (top >= vis_line_t(this->llh_log_source.text_line_count())) {

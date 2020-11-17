@@ -44,6 +44,7 @@
 
 #include "base/string_util.hh"
 #include "logfile.hh"
+#include "log_format.hh"
 #include "lnav_util.hh"
 
 using namespace std;
@@ -105,6 +106,11 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
     this->lf_is_visible = loo.loo_is_visible;
 
     ensure(this->invariant());
+}
+
+logfile::~logfile()
+{
+
 }
 
 bool logfile::exists() const

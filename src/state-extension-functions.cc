@@ -83,7 +83,7 @@ int state_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"msg", "The error message"})
         ).with_flags(SQLITE_UTF8),
 
-        { NULL }
+        { nullptr }
     };
 
     *basic_funcs = state_funcs;

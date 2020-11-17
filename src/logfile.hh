@@ -1,5 +1,3 @@
-#include <utility>
-
 /**
  * Copyright (c) 2007-2012, Timothy Stack
  *
@@ -42,20 +40,18 @@
 
 #include <string>
 #include <vector>
-#include <algorithm>
+#include <utility>
 
 #include "base/lnav_log.hh"
 #include "base/result.h"
 #include "byte_array.hh"
 #include "line_buffer.hh"
-#include "log_format.hh"
 #include "unique_path.hh"
 #include "text_format.hh"
 #include "shared_buffer.hh"
 #include "ghc/filesystem.hpp"
-
-class logfile;
-class logline_observer;
+#include "logfile_fwd.hh"
+#include "log_format_fwd.hh"
 
 /**
  * Observer interface for logfile indexing progress.
@@ -74,58 +70,6 @@ public:
     virtual void logfile_indexing(const std::shared_ptr<logfile>& lf,
                                   off_t off,
                                   size_t total) = 0;
-};
-
-struct logfile_open_options {
-    logfile_open_options &with_filename(const std::string& val) {
-        this->loo_filename = val;
-
-        return *this;
-    };
-
-    logfile_open_options &with_fd(auto_fd fd) {
-        this->loo_fd = std::move(fd);
-
-        return *this;
-    };
-
-    logfile_open_options &with_detect_format(bool val) {
-        this->loo_detect_format = val;
-
-        return *this;
-    };
-
-    logfile_open_options &with_include_in_session(bool val) {
-        this->loo_include_in_session = val;
-
-        return *this;
-    };
-
-    logfile_open_options &with_visibility(bool val) {
-        this->loo_is_visible = val;
-
-        return *this;
-    }
-
-    logfile_open_options &with_non_utf_visibility(bool val) {
-        this->loo_non_utf_is_visible = val;
-
-        return *this;
-    };
-
-    logfile_open_options &with_visible_size_limit(ssize_t val) {
-        this->loo_visible_size_limit = val;
-
-        return *this;
-    }
-
-    std::string loo_filename;
-    auto_fd loo_fd;
-    bool loo_detect_format{true};
-    bool loo_include_in_session{true};
-    bool loo_is_visible{true};
-    bool loo_non_utf_is_visible{true};
-    ssize_t loo_visible_size_limit{-1};
 };
 
 struct logfile_activity {
@@ -169,7 +113,7 @@ public:
      */
     logfile(const std::string &filename, logfile_open_options &loo);
 
-    virtual ~logfile() = default;
+    ~logfile() override;
 
     const logfile_activity &get_activity() const {
         return this->lf_activity;
@@ -342,7 +286,7 @@ public:
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
     iterator line_base(iterator ll) {
-        iterator retval = ll;
+        auto retval = ll;
 
         while (retval != this->begin() && retval->get_sub_offset() != 0) {
             --retval;
@@ -352,7 +296,7 @@ public:
     };
 
     iterator message_start(iterator ll) {
-        iterator retval = ll;
+        auto retval = ll;
 
         while (retval != this->begin() &&
                 (retval->get_sub_offset() != 0 || retval->is_continued())) {

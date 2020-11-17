@@ -53,7 +53,6 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <sys/socket.h>
 #include <sys/wait.h>
 
 #include <readline/readline.h>
@@ -83,11 +82,9 @@
 #include "base/func_util.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
-#include "log_accel.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "listview_curses.hh"
-#include "statusview_curses.hh"
 #include "vt52_curses.hh"
 #include "readline_curses.hh"
 #include "textview_curses.hh"
@@ -100,10 +97,8 @@
 #include "bottom_status_source.hh"
 #include "piper_proc.hh"
 #include "log_vtab_impl.hh"
-#include "db_sub_source.hh"
 #include "pcrecpp.h"
 #include "termios_guard.hh"
-#include "data_parser.hh"
 #include "xterm_mouse.hh"
 #include "lnav_commands.hh"
 #include "column_namer.hh"
@@ -114,20 +109,17 @@
 #include "lnav_config.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
-#include "sysclip.hh"
 #include "term_extra.hh"
 #include "log_data_helper.hh"
 #include "readline_highlighters.hh"
 #include "environ_vtab.hh"
 #include "views_vtab.hh"
-#include "pretty_printer.hh"
 #include "all_logs_vtab.hh"
 #include "file_vtab.hh"
 #include "regexp_vtab.hh"
 #include "fstat_vtab.hh"
 #include "textfile_highlighters.hh"
 #include "base/future_util.hh"
-#include "base/humanize.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -140,14 +132,12 @@
 #include "yajlpp/yajlpp.hh"
 #include "readline_callbacks.hh"
 #include "command_executor.hh"
-#include "plain_text_source.hh"
 #include "hotkeys.hh"
 #include "readline_possibilities.hh"
 #include "field_overlay_source.hh"
 #include "url_loader.hh"
 #include "shlex.hh"
 #include "log_actions.hh"
-#include "archive_manager.hh"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/usr/etc"

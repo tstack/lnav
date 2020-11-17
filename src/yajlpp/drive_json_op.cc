@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "yajl/api/yajl_gen.h"

@@ -107,3 +107,21 @@ void hist_source2::text_attrs_for_line(textview_curses &tc, int row,
             value_out);
     }
 }
+
+void hist_source2::add_value(time_t row, hist_source2::hist_type_t htype,
+                             double value)
+{
+    require(row >= this->hs_last_row);
+
+    row = rounddown(row, this->hs_time_slice);
+    if (row != this->hs_last_row) {
+        this->end_of_row();
+
+        this->hs_last_bucket += 1;
+        this->hs_last_row = row;
+    }
+
+    bucket_t &bucket = this->find_bucket(this->hs_last_bucket);
+    bucket.b_time = row;
+    bucket.b_values[htype].hv_value += value;
+}

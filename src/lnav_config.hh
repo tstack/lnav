@@ -39,7 +39,7 @@
 #include <unordered_map>
 
 #include "base/result.h"
-#include "yajlpp/yajlpp.hh"
+#include "base/file_range.hh"
 #include "log_level.hh"
 #include "styling.hh"
 #include "ghc/filesystem.hpp"

@@ -51,7 +51,7 @@ hash_str(const char *str, size_t len)
     return retval;
 }
 
-const intern_string *intern_string::lookup(const char *str, ssize_t len)
+const intern_string *intern_string::lookup(const char *str, ssize_t len) noexcept
 {
     unsigned long h;
     intern_string *curr;
@@ -62,7 +62,7 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len)
     h = hash_str(str, len) % TABLE_SIZE;
 
     curr = TABLE[h];
-    while (curr != NULL) {
+    while (curr != nullptr) {
         if (curr->is_len == len && strncmp(curr->is_str, str, len) == 0) {
             return curr;
         }
@@ -79,12 +79,12 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len)
     return curr;
 }
 
-const intern_string *intern_string::lookup(const string_fragment &sf)
+const intern_string *intern_string::lookup(const string_fragment &sf) noexcept
 {
     return lookup(sf.data(), sf.length());
 }
 
-const intern_string *intern_string::lookup(const std::string &str)
+const intern_string *intern_string::lookup(const std::string &str) noexcept
 {
     return lookup(str.c_str(), str.size());
 }

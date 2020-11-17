@@ -369,21 +369,7 @@ public:
         this->init();
     };
 
-    void add_value(time_t row, hist_type_t htype, double value = 1.0) {
-        require(row >= this->hs_last_row);
-
-        row = rounddown(row, this->hs_time_slice);
-        if (row != this->hs_last_row) {
-            this->end_of_row();
-
-            this->hs_last_bucket += 1;
-            this->hs_last_row = row;
-        }
-
-        bucket_t &bucket = this->find_bucket(this->hs_last_bucket);
-        bucket.b_time = row;
-        bucket.b_values[htype].hv_value += value;
-    };
+    void add_value(time_t row, hist_type_t htype, double value = 1.0);
 
     void end_of_row() {
         if (this->hs_last_bucket >= 0) {

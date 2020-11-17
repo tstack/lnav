@@ -380,7 +380,7 @@ struct lnav_view_filter_base {
     }
 
     iterator end() {
-        return iterator(LNV__MAX, -1);
+        return {LNV__MAX, -1};
     }
 
     sqlite_int64 get_rowid(iterator iter) {
@@ -605,7 +605,6 @@ int register_views_vtab(sqlite3 *db)
     char *errmsg;
     if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, &errmsg) != SQLITE_OK) {
         log_error("Unable to create filter view: %s", errmsg);
-
     }
 
     return rc;

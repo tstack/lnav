@@ -38,6 +38,7 @@
 #include <vector>
 #include <string>
 
+#include "base/opt_util.hh"
 #include "pcrepp/pcrepp.hh"
 
 enum class shlex_token_t {

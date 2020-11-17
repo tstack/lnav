@@ -36,7 +36,6 @@
 #include <stack>
 #include <vector>
 #include <iterator>
-#include <algorithm>
 
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"

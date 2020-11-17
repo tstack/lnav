@@ -41,6 +41,7 @@
 #include "yajlpp/json_op.hh"
 #include "mapbox/variant.hpp"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"

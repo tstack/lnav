@@ -29,17 +29,15 @@
 
 #include "config.h"
 
-#include <fstream>
-
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"
 
 #include "lnav_config.hh"
-#include "view_curses.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
 #include "logfile.hh"
 #include "base/humanize.hh"
+#include "log_format.hh"
 
 using namespace std;
 

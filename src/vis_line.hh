@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,46 +25,19 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_search_table.hh
  */
 
-#ifndef lnav_log_search_table_hh
-#define lnav_log_search_table_hh
+#ifndef lnav_vis_line_hh
+#define lnav_vis_line_hh
 
-#include <string>
-#include <vector>
+#include "strong_int.hh"
 
-#include "shared_buffer.hh"
-#include "log_vtab_impl.hh"
+/** Strongly-typed integer for visible lines. */
+STRONG_INT_TYPE(int, vis_line);
 
-class log_search_table : public log_vtab_impl {
-public:
-
-    log_search_table(const char *regex, intern_string_t table_name);
-
-    void get_columns_int(std::vector<vtab_column> &cols);
-
-    void get_columns(std::vector<vtab_column> &cols) const override {
-        cols = this->lst_cols;
-    }
-
-    void get_foreign_keys(std::vector<std::string> &keys_inout) const override;
-
-    bool next(log_cursor &lc, logfile_sub_source &lss) override;
-
-    void extract(std::shared_ptr<logfile> lf,
-                 uint64_t line_number,
-                 shared_buffer_ref &line,
-                 std::vector<logline_value> &values) override;
-
-    std::string lst_regex_string;
-    pcrepp lst_regex;
-    shared_buffer_ref lst_current_line;
-    pcre_context_static<128> lst_match_context;
-    std::vector<logline_value::kind_t> lst_column_types;
-    int64_t lst_instance;
-    std::vector<vtab_column> lst_cols;
-};
+constexpr vis_line_t operator "" _vl(unsigned long long line) noexcept
+{
+    return vis_line_t((int) line);
+}
 
 #endif

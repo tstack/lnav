@@ -29,7 +29,8 @@
 
 #include "config.h"
 
-#include "pcrepp/pcrepp.hh"
+#include <ctype.h>
+
 #include "log_level.hh"
 
 const char *level_names[LEVEL__MAX + 1] = {
@@ -48,7 +49,7 @@ const char *level_names[LEVEL__MAX + 1] = {
     "critical",
     "fatal",
 
-    NULL
+    nullptr
 };
 
 log_level_t abbrev2level(const char *levelstr, ssize_t len)

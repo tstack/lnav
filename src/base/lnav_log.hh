@@ -32,21 +32,16 @@
 #ifndef lnav_log_hh
 #define lnav_log_hh
 
-#include <errno.h>
 #include <stdio.h>
-#include <termios.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
-
-#include <vector>
-#include <algorithm>
 
 #ifndef lnav_dead2
 #define lnav_dead2 __attribute__((noreturn))
 #endif
 
-#include "opt_util.hh"
+#include "optional.hpp"
+
+struct termios;
 
 enum class lnav_log_level_t : uint32_t {
     TRACE,
@@ -79,19 +74,15 @@ public:
 
     log_state_dumper(const log_state_dumper&) = delete;
     log_state_dumper& operator=(const log_state_dumper&) = delete;
-
-    static std::vector<log_state_dumper*> DUMPER_LIST;
 };
 
 struct log_crash_recoverer {
 public:
     log_crash_recoverer();
 
-    virtual ~log_crash_recoverer();;
+    virtual ~log_crash_recoverer();
 
     virtual void log_crash_recover() = 0;
-
-    static std::vector<log_crash_recoverer*> CRASH_LIST;
 };
 
 extern nonstd::optional<FILE *> lnav_log_file;

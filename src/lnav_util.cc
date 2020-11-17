@@ -38,9 +38,12 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+#include <sstream>
+
 #include "auto_fd.hh"
 #include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "base/opt_util.hh"
 #include "base/result.h"
 #include "ansi_scrubber.hh"
 #include "view_curses.hh"
@@ -57,43 +60,6 @@ bool is_url(const char *fn)
     pcre_input pi(fn);
 
     return url_re.match(pc, pi);
-}
-
-std::string hash_string(const std::string &str)
-{
-    byte_array<2, uint64> hash;
-    SpookyHash context;
-
-    context.Init(0, 0);
-    context.Update(str.c_str(), str.length());
-    context.Final(hash.out(0), hash.out(1));
-
-    return hash.to_string();
-}
-
-std::string hash_bytes(const char *str1, size_t s1len, ...)
-{
-    byte_array<2, uint64> hash;
-    SpookyHash context;
-    va_list args;
-
-    va_start(args, s1len);
-
-    context.Init(0, 0);
-    while (str1 != nullptr) {
-        context.Update(str1, s1len);
-
-        str1 = va_arg(args, const char *);
-        if (str1 == nullptr) {
-            break;
-        }
-        s1len = va_arg(args, size_t);
-    }
-    context.Final(hash.out(0), hash.out(1));
-
-    va_end(args);
-
-    return hash.to_string();
 }
 
 std::string time_ago(time_t last_time, bool convert_local)

@@ -40,9 +40,9 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 #include "base/lnav_log.hh"
+#include "base/time_util.hh"
 #include "log_accel.hh"
 #include "strong_int.hh"
 #include "logfile.hh"
@@ -50,6 +50,7 @@
 #include "big_array.hh"
 #include "textview_curses.hh"
 #include "filter_observer.hh"
+#include "log_format.hh"
 
 STRONG_INT_TYPE(uint64_t, content_line);
 
@@ -57,7 +58,7 @@ class logfile_sub_source;
 
 class index_delegate {
 public:
-    virtual ~index_delegate() { };
+    virtual ~index_delegate() = default;
 
     virtual void index_start(logfile_sub_source &lss) {
 
@@ -376,29 +377,7 @@ public:
         }
     };
 
-    bool insert_file(std::shared_ptr<logfile> lf)
-    {
-        iterator existing;
-
-        require(lf->size() < MAX_LINES_PER_FILE);
-
-        existing = std::find_if(this->lss_files.begin(),
-                                this->lss_files.end(),
-                                logfile_data_eq(NULL));
-        if (existing == this->lss_files.end()) {
-            if (this->lss_files.size() >= MAX_FILES) {
-                return false;
-            }
-
-            this->lss_files.push_back(new logfile_data(this->lss_files.size(), this->get_filters(), lf));
-        }
-        else {
-            (*existing)->set_file(lf);
-        }
-        this->lss_force_rebuild = true;
-
-        return true;
-    };
+    bool insert_file(const std::shared_ptr<logfile>& lf);
 
     void remove_file(std::shared_ptr<logfile> lf)
     {

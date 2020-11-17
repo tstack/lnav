@@ -46,9 +46,7 @@
 #include <future>
 #include <string>
 #include <vector>
-#include <sstream>
 #include <numeric>
-#include <algorithm>
 #include <type_traits>
 
 #include "ptimec.hh"
@@ -262,28 +260,6 @@ time_t convert_log_time_to_local(time_t value) {
 struct tm *secs2tm(time_t *tim_p, struct tm *res);
 
 extern const char *std_time_fmt[];
-
-inline
-bool operator<(const struct timeval &left, time_t right) {
-    return left.tv_sec < right;
-};
-
-inline
-bool operator<(time_t left, const struct timeval &right) {
-    return left < right.tv_sec;
-};
-
-inline
-bool operator<(const struct timeval &left, const struct timeval &right) {
-    return left.tv_sec < right.tv_sec ||
-        ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
-};
-
-inline
-bool operator!=(const struct timeval &left, const struct timeval &right) {
-    return left.tv_sec != right.tv_sec ||
-           left.tv_usec != right.tv_usec;
-};
 
 struct date_time_scanner {
     date_time_scanner() : dts_keep_base_tz(false),

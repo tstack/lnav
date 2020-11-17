@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include "log_format.hh"
+
 #include "filter_observer.hh"
 
 void line_filter_observer::logline_new_lines(const logfile &lf,

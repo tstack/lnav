@@ -43,13 +43,13 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <algorithm>
 #include <functional>
 
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
 #include "json_ptr.hh"
 #include "base/intern_string.hh"
+#include "base/file_range.hh"
 
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_gen.h"
@@ -226,19 +226,6 @@ struct json_path_handler_base {
 
 struct json_path_handler;
 
-struct source_location {
-    source_location()
-        : sl_source(intern_string::lookup("unknown")),
-          sl_line_number(-1) {
-    }
-
-    source_location(intern_string_t source, int line)
-        : sl_source(source), sl_line_number(line) {};
-
-    intern_string_t sl_source;
-    int sl_line_number;
-};
-
 class yajlpp_parse_context {
 public:
     typedef void (*error_reporter_t)(const yajlpp_parse_context &ypc,
@@ -321,7 +308,7 @@ public:
 
     yajl_status complete_parse();
 
-    void report_error(lnav_log_level_t level, const char *format, ...) {
+    void report_error(lnav_log_level_t level, const char *format, ...) const {
         va_list args;
 
         va_start(args, format);
@@ -577,6 +564,20 @@ public:
 
 private:
     auto_mem<yajl_gen_t> yg_handle;
+};
+
+struct json_string {
+    explicit json_string(yajl_gen_t *gen) {
+        const unsigned char *buf;
+
+        yajl_gen_get_buf(gen, &buf, &this->js_len);
+
+        this->js_content = (const unsigned char *) malloc(this->js_len);
+        memcpy((void *) this->js_content.in(), buf, this->js_len);
+    };
+
+    auto_mem<const unsigned char> js_content;
+    size_t js_len{0};
 };
 
 void dump_schema_to(const json_path_container &jpc, const char *internals_dir, const char *name);

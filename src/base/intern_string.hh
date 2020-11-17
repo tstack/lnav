@@ -168,11 +168,11 @@ inline bool operator<(const string_fragment &left, const char *right) {
 class intern_string {
 
 public:
-    static const intern_string *lookup(const char *str, ssize_t len);
+    static const intern_string *lookup(const char *str, ssize_t len) noexcept;
 
-    static const intern_string *lookup(const string_fragment &sf);
+    static const intern_string *lookup(const string_fragment &sf) noexcept;
 
-    static const intern_string *lookup(const std::string &str);
+    static const intern_string *lookup(const std::string &str) noexcept;
 
     const char *get() const {
         return this->is_str;

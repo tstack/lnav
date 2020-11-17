@@ -65,12 +65,13 @@ EOF
     run_test env TMPDIR=rotmp ${lnav_test} -n test-logs.tgz
 
     sed -e "s|lnav-[0-9]*-archives|lnav-NNN-archives|g" \
+        -e "s|arc-[0-9a-z]*-test|arc-NNN-test|g" \
         -e "s|${builddir}||g" \
         `test_err_filename` | head -1 \
         > test_logfile.rotmp.out
     mv test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/test-logs.tgz/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
+error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/arc-NNN-test-logs.tgz/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
 EOF
 fi
 

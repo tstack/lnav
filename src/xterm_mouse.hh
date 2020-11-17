@@ -32,12 +32,6 @@
 #ifndef xterm_mouse_hh
 #define xterm_mouse_hh
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <string>
-
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
@@ -51,8 +45,6 @@
 #else
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
-
-#include "base/lnav_log.hh"
 
 /**
  * Base class for delegates of the xterm_mouse class.

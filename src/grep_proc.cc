@@ -43,7 +43,7 @@
 #include "base/string_util.hh"
 #include "lnav_util.hh"
 #include "grep_proc.hh"
-#include "listview_curses.hh"
+#include "vis_line.hh"
 
 using namespace std;
 

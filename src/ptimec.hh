@@ -35,17 +35,13 @@
 // XXX
 #define __STDC_FORMAT_MACROS
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <inttypes.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
 
 #include <cstdlib>
-#include <iomanip>
-#include <ostream>
 
 struct tm *secs2tm(time_t *tim_p, struct tm *res);
 time_t tm2sec(const struct tm *t);
@@ -87,8 +83,6 @@ struct exttm {
         return retval;
     };
 };
-
-std::ostream& operator<< (std::ostream& os, const exttm& value);
 
 #define PTIME_CONSUME(amount, block) \
     if ((off_inout + amount) > len) { \

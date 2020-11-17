@@ -27,6 +27,7 @@
 #include "data_parser.hh"
 #include "elem_to_json.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 
 #include "optional.hpp"
 #include "mapbox/variant.hpp"

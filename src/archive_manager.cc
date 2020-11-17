@@ -126,11 +126,24 @@ fs::path
 filename_to_tmp_path(const std::string &filename)
 {
     auto fn_path = fs::path(filename);
-    auto basename = fn_path.filename();
+    auto basename = fn_path.filename().string();
     auto subdir_name = fmt::format("lnav-{}-archives", getuid());
     auto tmp_path = fs::temp_directory_path();
+    hasher h;
 
-    // TODO include a content-hash in the path name
+    h.update(basename);
+    auto fd = auto_fd(openp(filename, O_RDONLY));
+    if (fd != -1) {
+        char buffer[1024];
+        int rc;
+
+        rc = read(fd, buffer, sizeof(buffer));
+        if (rc >= 0) {
+            h.update(buffer, rc);
+        }
+    }
+    basename = fmt::format("arc-{}-{}", h.to_string(), basename);
+
     return tmp_path / fs::path(subdir_name) / basename;
 }
 

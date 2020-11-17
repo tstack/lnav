@@ -355,9 +355,8 @@ public:
 public:
         error(std::string msg, int offset = 0)
             : e_msg(std::move(msg)), e_offset(offset) { };
-        virtual ~error() { };
 
-        const char *what() const noexcept {
+        const char *what() const noexcept override {
             return this->e_msg.c_str();
         };
 

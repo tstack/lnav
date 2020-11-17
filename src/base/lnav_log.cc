@@ -41,6 +41,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <termios.h>
 #include <sys/resource.h>
 
 #ifdef HAVE_EXECINFO_H
@@ -55,6 +56,7 @@
 
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #ifdef HAVE_PCRE_H
 #include <pcre.h>
@@ -83,6 +85,7 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include "opt_util.hh"
 #include "lnav_log.hh"
 #include "enum_util.hh"
 
@@ -107,8 +110,8 @@ nonstd::optional<const struct termios *> lnav_log_orig_termios;
 // Otherwise, any attempts to log will fail.
 static std::mutex *lnav_log_mutex = new std::mutex();
 
-std::vector<log_state_dumper*> log_state_dumper::DUMPER_LIST;
-std::vector<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
+static std::vector<log_state_dumper*> DUMPER_LIST;
+static std::vector<log_crash_recoverer*> CRASH_LIST;
 
 struct thid {
     static uint32_t COUNTER;
@@ -397,7 +400,7 @@ static void sigabrt(int sig)
 
         log_host_info();
 
-        for (auto lsd : log_state_dumper::DUMPER_LIST) {
+        for (auto lsd : DUMPER_LIST) {
             lsd->log_state();
         }
 
@@ -422,7 +425,7 @@ static void sigabrt(int sig)
     }
 
     lnav_log_orig_termios | [](auto termios) {
-        for (auto lcr : log_crash_recoverer::CRASH_LIST) {
+        for (auto lcr : CRASH_LIST) {
             lcr->log_crash_recover();
         }
 

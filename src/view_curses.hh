@@ -58,12 +58,10 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include <algorithm>
 
 #include "base/lnav_log.hh"
 #include "attr_line.hh"
 #include "optional.hpp"
-#include "lnav_util.hh"
 #include "styling.hh"
 #include "log_level.hh"
 #include "lnav_config.hh"

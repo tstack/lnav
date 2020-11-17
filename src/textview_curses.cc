@@ -34,9 +34,9 @@
 
 #include <pcrecpp.h>
 
+#include "base/time_util.hh"
 #include "shlex.hh"
 #include "fmt/format.h"
-#include "lnav_util.hh"
 #include "data_parser.hh"
 #include "ansi_scrubber.hh"
 #include "log_format.hh"
@@ -298,7 +298,7 @@ bool textview_curses::handle_mouse(mouse_event &me)
     unsigned long width;
     vis_line_t height;
 
-    if (this->tc_selection_start == -1 &&
+    if (this->tc_selection_start == -1_vl &&
         listview_curses::handle_mouse(me)) {
         return true;
     }

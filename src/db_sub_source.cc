@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#include "lnav_util.hh"
+#include "base/time_util.hh"
+
 #include "yajlpp/json_ptr.hh"
 #include "db_sub_source.hh"
 
@@ -212,6 +215,33 @@ void db_label_source::clear()
     }
     this->dls_rows.clear();
     this->dls_time_column.clear();
+}
+
+long db_label_source::column_name_to_index(const std::string &name) const
+{
+    std::vector<header_meta>::const_iterator iter;
+
+    iter = std::find(this->dls_headers.begin(),
+                     this->dls_headers.end(),
+                     name);
+    if (iter == this->dls_headers.end()) {
+        return -1;
+    }
+
+    return std::distance(this->dls_headers.begin(), iter);
+}
+
+int db_label_source::row_for_time(struct timeval time_bucket)
+{
+    std::vector<struct timeval>::iterator iter;
+
+    iter = std::lower_bound(this->dls_time_column.begin(),
+                            this->dls_time_column.end(),
+                            time_bucket);
+    if (iter != this->dls_time_column.end()) {
+        return std::distance(this->dls_time_column.begin(), iter);
+    }
+    return -1;
 }
 
 size_t db_overlay_source::list_overlay_count(const listview_curses &lv)

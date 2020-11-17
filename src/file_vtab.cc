@@ -36,6 +36,7 @@
 #include "file_vtab.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"
+#include "log_format.hh"
 
 using namespace std;
 

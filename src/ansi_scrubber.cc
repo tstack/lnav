@@ -33,6 +33,7 @@
 
 #include <vector>
 
+#include "base/opt_util.hh"
 #include "view_curses.hh"
 #include "pcrepp/pcrepp.hh"
 #include "ansi_scrubber.hh"

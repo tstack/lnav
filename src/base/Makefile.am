@@ -17,7 +17,8 @@ noinst_HEADERS = \
     lnav_log.hh \
     opt_util.hh \
     result.h \
-    string_util.hh
+    string_util.hh \
+    time_util.hh
 
 libbase_a_SOURCES = \
 	humanize.cc \

@@ -33,12 +33,14 @@
 #define lnav_file_collection_hh
 
 #include <map>
+#include <set>
+#include <list>
 #include <string>
 
 #include "safe/safe.h"
 
 #include "base/future_util.hh"
-#include "logfile.hh"
+#include "logfile_fwd.hh"
 #include "archive_manager.hh"
 #include "lnav_util.hh"
 

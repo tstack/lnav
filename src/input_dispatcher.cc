@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
 #include <array>
@@ -50,9 +51,9 @@
 #endif
 
 #include "base/lnav_log.hh"
+#include "base/time_util.hh"
 #include "ww898/cp_utf8.hpp"
 #include "input_dispatcher.hh"
-#include "lnav_util.hh"
 
 using namespace ww898;
 

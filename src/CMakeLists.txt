@@ -275,6 +275,7 @@ add_library(diag STATIC
         log_format.cc
         log_format_loader.cc
         log_level.cc
+        log_search_table.cc
         logfile.cc
         logfile_sub_source.cc
         network-extension-functions.cc
@@ -380,6 +381,8 @@ add_library(diag STATIC
         log_gutter_source.hh
         log_level.hh
         log_search_table.hh
+        logfile.hh
+        logfile_fwd.hh
         logfile_stats.hh
         optional.hpp
         papertrail_proc.hh
@@ -392,6 +395,7 @@ add_library(diag STATIC
         regexp_vtab.hh
         relative_time.hh
         base/result.h
+        base/time_util.hh
         styling.hh
         ring_span.hh
         safe/accessmode.h
@@ -415,7 +419,9 @@ add_library(diag STATIC
         url_loader.hh
         view_helpers.hh
         views_vtab.hh
+        vis_line.hh
         vtab_module.hh
+        vtab_module_json.hh
         yajlpp/yajlpp.hh
         yajlpp/yajlpp_def.hh
 

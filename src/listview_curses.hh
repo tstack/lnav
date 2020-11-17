@@ -37,19 +37,10 @@
 #include <list>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "base/func_util.hh"
-#include "strong_int.hh"
 #include "view_curses.hh"
-
-/** Strongly-typed integer for visible lines. */
-STRONG_INT_TYPE(int, vis_line);
-
-constexpr vis_line_t operator "" _vl(unsigned long long line)
-{
-    return vis_line_t((int) line);
-}
+#include "vis_line.hh"
 
 class listview_curses;
 

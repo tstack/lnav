@@ -551,7 +551,7 @@ static string COLOR_NAMES[] = {
 
 class color_listener : public lnav_config_listener {
 public:
-    void reload_config(error_reporter &reporter) {
+    void reload_config(error_reporter &reporter) override {
         auto &vc = view_colors::singleton();
 
         for (const auto &pair : lnav_config.lc_ui_theme_defs) {

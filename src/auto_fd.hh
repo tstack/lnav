@@ -32,6 +32,7 @@
 #ifndef auto_fd_hh
 #define auto_fd_hh
 
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/select.h>

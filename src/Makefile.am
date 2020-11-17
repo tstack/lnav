@@ -304,6 +304,7 @@ noinst_HEADERS = \
 	log_level_re.re \
 	log_search_table.hh \
 	logfile.hh \
+	logfile_fwd.hh \
 	logfile_sub_source.hh \
 	mapbox/recursive_wrapper.hpp \
 	mapbox/variant.hpp \
@@ -355,8 +356,10 @@ noinst_HEADERS = \
 	view_curses.hh \
 	view_helpers.hh \
 	views_vtab.hh \
+	vis_line.hh \
 	vt52_curses.hh \
 	vtab_module.hh \
+	vtab_module_json.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
 	xterm_mouse.hh \
@@ -425,6 +428,7 @@ libdiag_a_SOURCES = \
 	log_format_loader.cc \
 	log_level.cc \
 	log_level_re.cc \
+	log_search_table.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \

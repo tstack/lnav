@@ -32,6 +32,7 @@
 #include <glob.h>
 #include <sys/stat.h>
 #include <fnmatch.h>
+#include <termios.h>
 
 #include <string>
 #include <vector>

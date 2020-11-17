@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,46 +25,34 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_search_table.hh
  */
 
-#ifndef lnav_log_search_table_hh
-#define lnav_log_search_table_hh
+#ifndef lnav_time_util_hh
+#define lnav_time_util_hh
 
-#include <string>
-#include <vector>
+#include <time.h>
+#include <sys/time.h>
 
-#include "shared_buffer.hh"
-#include "log_vtab_impl.hh"
+inline
+bool operator<(const struct timeval &left, time_t right) {
+    return left.tv_sec < right;
+};
 
-class log_search_table : public log_vtab_impl {
-public:
+inline
+bool operator<(time_t left, const struct timeval &right) {
+    return left < right.tv_sec;
+};
 
-    log_search_table(const char *regex, intern_string_t table_name);
+inline
+bool operator<(const struct timeval &left, const struct timeval &right) {
+    return left.tv_sec < right.tv_sec ||
+           ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
+};
 
-    void get_columns_int(std::vector<vtab_column> &cols);
-
-    void get_columns(std::vector<vtab_column> &cols) const override {
-        cols = this->lst_cols;
-    }
-
-    void get_foreign_keys(std::vector<std::string> &keys_inout) const override;
-
-    bool next(log_cursor &lc, logfile_sub_source &lss) override;
-
-    void extract(std::shared_ptr<logfile> lf,
-                 uint64_t line_number,
-                 shared_buffer_ref &line,
-                 std::vector<logline_value> &values) override;
-
-    std::string lst_regex_string;
-    pcrepp lst_regex;
-    shared_buffer_ref lst_current_line;
-    pcre_context_static<128> lst_match_context;
-    std::vector<logline_value::kind_t> lst_column_types;
-    int64_t lst_instance;
-    std::vector<vtab_column> lst_cols;
+inline
+bool operator!=(const struct timeval &left, const struct timeval &right) {
+    return left.tv_sec != right.tv_sec ||
+           left.tv_usec != right.tv_usec;
 };
 
 #endif

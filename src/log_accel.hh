@@ -35,7 +35,6 @@
 #include <stdint.h>
 
 #include <cmath>
-#include <algorithm>
 
 #include "base/lnav_log.hh"
 
@@ -52,15 +51,6 @@ public:
         A_ACCEL,
     };
 
-    log_accel()
-        : la_last_point(0),
-          la_last_point_set(false),
-          la_min_velocity(INT64_MAX),
-          la_max_velocity(INT64_MIN),
-          la_velocity_size(0) {
-
-    };
-
     /**
      * Add a time point that will be used to compute velocity and then
      * acceleration.  Points should be added in reverse order, from most
@@ -69,56 +59,14 @@ public:
      * @param  point The point in time.
      * @return       True if more points can be added.
      */
-    bool add_point(int64_t point) {
-        require(this->la_velocity_size < HISTORY_SIZE);
-
-        if (this->la_last_point_set) {
-            // TODO Reenable this when we find the bug that causes some older
-            // timestamps to show up after more recent ones.
-            // require(this->la_last_point >= point);
-
-            // Compute the message velocity.
-            this->la_velocity[this->la_velocity_size] = (
-                this->la_last_point - point);
-
-            // Find the range of velocities so we can normalize.
-            this->la_min_velocity = std::min(this->la_min_velocity,
-                this->la_velocity[this->la_velocity_size]);
-            this->la_max_velocity = std::max(this->la_max_velocity,
-                this->la_velocity[this->la_velocity_size]);
-
-            this->la_velocity_size += 1;
-        }
-
-        this->la_last_point = point;
-        this->la_last_point_set = true;
-
-        return this->la_velocity_size < HISTORY_SIZE;
-    };
+    bool add_point(int64_t point);
 
     /**
      * Get the average acceleration based on the time points we've received.
      * 
      * @return The average message acceleration.
      */
-    double get_avg_accel() const {
-        double avg_accel = 0, total_accel = 0;
-        // Compute the range of values so we can normalize.
-        double range = (double) (this->la_max_velocity - this->la_min_velocity);
-
-        range = std::max(range, MIN_RANGE);
-        for (int lpc = 0; lpc < (this->la_velocity_size - 1); lpc++) {
-            double accel =
-                (this->la_velocity[lpc] - this->la_velocity[lpc + 1]) / range;
-            total_accel += accel;
-        }
-
-        if (this->la_velocity_size > 1) {
-            avg_accel = total_accel / (double) (this->la_velocity_size - 1);
-        }
-
-        return avg_accel;
-    };
+    double get_avg_accel() const;
 
     /**
      * Compute the message rate direction.  If the average acceleration is less
@@ -127,22 +75,7 @@ public:
      *
      * @return The direction of the message rate.
      */
-    direction_t get_direction() const {
-        double avg_accel = this->get_avg_accel();
-        direction_t retval;
-
-        if (std::fabs(avg_accel) <= THRESHOLD) {
-            retval = A_STEADY;
-        }
-        else if (avg_accel < 0.0) {
-            retval = A_ACCEL;
-        }
-        else {
-            retval = A_DECEL;
-        }
-
-        return retval;
-    };
+    direction_t get_direction() const;
 
 private:
     /** 
@@ -157,12 +90,12 @@ private:
     static const double MIN_RANGE;
     static const double THRESHOLD;
 
-    int64_t la_last_point;
-    bool la_last_point_set;
-    int64_t la_min_velocity;
-    int64_t la_max_velocity;
+    int64_t la_last_point{0};
+    bool la_last_point_set{false};
+    int64_t la_min_velocity{INT64_MAX};
+    int64_t la_max_velocity{INT64_MIN};
     int64_t la_velocity[HISTORY_SIZE];
-    int la_velocity_size;
+    int la_velocity_size{0};
 };
 
 #endif

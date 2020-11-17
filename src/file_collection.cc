@@ -33,6 +33,10 @@
 
 #include <glob.h>
 
+#include <unordered_map>
+
+#include "base/opt_util.hh"
+#include "logfile.hh"
 #include "file_collection.hh"
 
 static std::mutex REALPATH_CACHE_MUTEX;
@@ -210,18 +214,20 @@ file_collection::watch_logfile(const std::string &filename,
                     nonstd::optional<std::list<archive_manager::extract_progress>::iterator>
                         prog_iter_opt;
 
+                    if (loo.loo_source == logfile_name_source::ARCHIVE) {
+                        // Don't try to open nested archives
+                        return retval;
+                    }
+
                     auto res = archive_manager::walk_archive_files(
                         filename,
                         [prog, &prog_iter_opt](
                             const auto &path,
                             const auto total) {
-                            safe::WriteAccess<safe_scan_progress> sp(
-                                *prog);
+                            safe::WriteAccess<safe_scan_progress> sp(*prog);
 
-                            prog_iter_opt |
-                            [&sp](auto prog_iter) {
-                                sp->sp_extractions.erase(
-                                    prog_iter);
+                            prog_iter_opt | [&sp](auto prog_iter) {
+                                sp->sp_extractions.erase(prog_iter);
                             };
                             auto prog_iter = sp->sp_extractions.emplace(
                                 sp->sp_extractions.begin(),
@@ -233,43 +239,30 @@ file_collection::watch_logfile(const std::string &filename,
                         [&filename, &retval](
                             const auto &tmp_path,
                             const auto &entry) {
-                            auto ext = entry.path().extension();
-                            if (ext == ".jar" ||
-                                ext == ".war" ||
-                                ext == ".zip") {
-                                return;
-                            }
-
                             auto arc_path = ghc::filesystem::relative(
                                 entry.path(), tmp_path);
-                            auto custom_name =
-                                filename / arc_path;
+                            auto custom_name = filename / arc_path;
                             bool is_visible = true;
 
                             if (entry.file_size() == 0) {
-                                log_info(
-                                    "hiding empty archive file: %s",
-                                    entry.path().c_str());
+                                log_info("hiding empty archive file: %s",
+                                         entry.path().c_str());
                                 is_visible = false;
                             }
 
-                            log_info(
-                                "adding file from archive: %s/%s",
-                                filename.c_str(),
-                                entry.path().c_str());
+                            log_info("adding file from archive: %s/%s",
+                                     filename.c_str(),
+                                     entry.path().c_str());
                             retval.fc_file_names[entry.path().string()]
-                                .with_filename(
-                                    custom_name.string())
+                                .with_filename(custom_name.string())
+                                .with_source(logfile_name_source::ARCHIVE)
                                 .with_visibility(is_visible)
-                                .with_non_utf_visibility(
-                                    false)
-                                .with_visible_size_limit(
-                                    128 * 1024);
+                                .with_non_utf_visibility(false)
+                                .with_visible_size_limit(128 * 1024);
                         });
                     if (res.isErr()) {
-                        log_error(
-                            "archive extraction failed: %s",
-                            res.unwrapErr().c_str());
+                        log_error("archive extraction failed: %s",
+                                  res.unwrapErr().c_str());
                         retval.clear();
                         retval.fc_name_to_errors[filename] = res.unwrapErr();
                     } else {
@@ -286,13 +279,11 @@ file_collection::watch_logfile(const std::string &filename,
                 }
 
                 default:
-                    log_info("loading new file: filename=%s",
-                             filename.c_str());
+                    log_info("loading new file: filename=%s", filename.c_str());
 
                     /* It's a new file, load it in. */
                     try {
-                        auto lf = std::make_shared<logfile>(
-                            filename, loo);
+                        auto lf = std::make_shared<logfile>(filename, loo);
 
                         retval.fc_files.push_back(lf);
                     } catch (logfile::error &e) {

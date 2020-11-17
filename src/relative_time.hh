@@ -30,8 +30,6 @@
 #ifndef LNAV_RELATIVE_TIME_HH
 #define LNAV_RELATIVE_TIME_HH
 
-#include <stdio.h>
-#include <string.h>
 #include <sys/time.h>
 
 #define __STDC_FORMAT_MACROS

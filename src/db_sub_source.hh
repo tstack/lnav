@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 #include <iterator>
-#include <algorithm>
 
 #include <sqlite3.h>
 
@@ -78,30 +77,9 @@ public:
 
     void clear();
 
-    long column_name_to_index(const std::string &name) const {
-        std::vector<header_meta>::const_iterator iter;
+    long column_name_to_index(const std::string &name) const;;
 
-        iter = std::find(this->dls_headers.begin(),
-                         this->dls_headers.end(),
-                         name);
-        if (iter == this->dls_headers.end()) {
-            return -1;
-        }
-
-        return std::distance(this->dls_headers.begin(), iter);
-    };
-
-    int row_for_time(struct timeval time_bucket) {
-        std::vector<struct timeval>::iterator iter;
-
-        iter = std::lower_bound(this->dls_time_column.begin(),
-                                this->dls_time_column.end(),
-                                time_bucket);
-        if (iter != this->dls_time_column.end()) {
-            return std::distance(this->dls_time_column.begin(), iter);
-        }
-        return -1;
-    };
+    int row_for_time(struct timeval time_bucket);;
 
     struct timeval time_for_row(int row) {
         if ((row < 0) || (((size_t) row) >= this->dls_time_column.size())) {

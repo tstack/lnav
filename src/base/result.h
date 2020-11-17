@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <iostream>
+#include <stdio.h>
 #include <functional>
 #include <type_traits>
 
@@ -764,7 +764,7 @@ struct Result {
 
     T expect(const char* str) const {
         if (!isOk()) {
-            std::fprintf(stderr, "%s\n", str);
+            ::fprintf(stderr, "%s\n", str);
             std::terminate(); 
         }
         return expect_impl(std::is_same<T, void>());
@@ -851,7 +851,7 @@ struct Result {
             return storage().template get<U>();
         }
 
-        std::fprintf(stderr, "Attempting to unwrap an error Result\n");
+        ::fprintf(stderr, "Attempting to unwrap an error Result\n");
         std::terminate();
     }
 
@@ -860,7 +860,7 @@ struct Result {
             return storage().template get<E>();
         }
 
-        std::fprintf(stderr, "Attempting to unwrapErr an ok Result\n");
+        ::fprintf(stderr, "Attempting to unwrapErr an ok Result\n");
         std::terminate();
     }
 

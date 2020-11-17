@@ -32,6 +32,8 @@
 
 #include <sys/types.h>
 
+#include "intern_string.hh"
+
 class file_range {
 public:
     off_t fr_offset{0};
@@ -49,6 +51,19 @@ public:
     bool empty() const {
         return fr_size == 0;
     }
+};
+
+struct source_location {
+    source_location()
+        : sl_source(intern_string::lookup("unknown")),
+          sl_line_number(-1) {
+    }
+
+    source_location(intern_string_t source, int line)
+        : sl_source(source), sl_line_number(line) {};
+
+    intern_string_t sl_source;
+    int sl_line_number;
 };
 
 #endif

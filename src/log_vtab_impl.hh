@@ -101,7 +101,7 @@ public:
     log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
         this->vi_attrs.resize(128);
     };
-    virtual ~log_vtab_impl() { };
+    virtual ~log_vtab_impl() = default;
 
     const intern_string_t get_name() const
     {
@@ -168,9 +168,9 @@ public:
             return true;
         }
 
-        content_line_t    cl(lss.at(lc.lc_curr_line));
-        std::shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto cl = content_line_t(lss.at(lc.lc_curr_line));
+        auto lf = lss.find(cl);
+        auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
         if (lf_iter->is_continued()) {
