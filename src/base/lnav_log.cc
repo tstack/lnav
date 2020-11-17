@@ -57,6 +57,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <algorithm>
 
 #ifdef HAVE_PCRE_H
 #include <pcre.h>
