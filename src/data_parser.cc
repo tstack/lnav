@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <algorithm>
+
 #include "spookyhash/SpookyV2.h"
 #include "data_parser.hh"
 
