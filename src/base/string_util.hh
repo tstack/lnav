@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <string>
+#include <vector>
 
 #include "ww898/cp_utf8.hpp"
 
