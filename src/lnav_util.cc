@@ -41,6 +41,7 @@
 #include "base/result.h"
 #include "ansi_scrubber.hh"
 #include "fmt/format.h"
+#include "view_curses.hh"
 
 using namespace std;
 
