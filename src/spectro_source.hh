@@ -32,6 +32,7 @@
 #ifndef spectro_source_hh
 #define spectro_source_hh
 
+#include <math.h>
 #include <time.h>
 
 #include <map>
