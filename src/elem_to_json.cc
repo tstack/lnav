@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <algorithm>
+
 #include "elem_to_json.hh"
 #include "yajlpp/yajlpp.hh"
 
