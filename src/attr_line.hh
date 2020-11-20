@@ -40,6 +40,7 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "base/intern_string.hh"
+#include "string_attr_type.hh"
 
 /**
  * Encapsulates a range in a string.
@@ -144,16 +145,6 @@ typedef union {
     const void *sav_ptr;
     int64_t sav_int;
 } string_attr_value_t;
-
-class string_attr_type {
-public:
-    explicit string_attr_type(const char *name = nullptr) noexcept
-        : sat_name(name) {
-    };
-
-    const char *sat_name;
-};
-typedef string_attr_type *string_attr_type_t;
 
 struct string_attr {
     string_attr(const struct line_range &lr, string_attr_type_t type, void *val)

@@ -269,6 +269,7 @@ noinst_HEADERS = \
 	environ_vtab.hh \
 	field_overlay_source.hh \
 	file_collection.hh \
+	file_format.hh \
 	file_vtab.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
@@ -298,6 +299,7 @@ noinst_HEADERS = \
     log_data_helper.hh \
     log_data_table.hh \
 	log_format.hh \
+	log_format_ext.hh \
 	log_format_fwd.hh \
 	log_format_loader.hh \
 	log_gutter_source.hh \
@@ -340,6 +342,7 @@ noinst_HEADERS = \
 	sql_util.hh \
 	sqlite-extension-func.hh \
 	statusview_curses.hh \
+	string_attr_type.hh \
 	strnatcmp.h \
 	strong_int.hh \
 	sysclip.hh \
@@ -349,6 +352,7 @@ noinst_HEADERS = \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
+	textview_curses_fwd.hh \
 	time_T.hh \
 	timer.hh \
 	top_status_source.hh \
@@ -403,6 +407,7 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_collection.cc \
+	file_format.cc \
 	file_vtab.cc \
 	files_sub_source.cc \
 	filter_observer.cc \
@@ -412,6 +417,7 @@ libdiag_a_SOURCES = \
     fs-extension-functions.cc \
     fts_fuzzy_match.cc \
 	grep_proc.cc \
+	help_text.cc \
 	help_text_formatter.cc \
 	highlighter.cc \
 	hist_source.cc \
@@ -449,9 +455,11 @@ libdiag_a_SOURCES = \
 	sequence_matcher.cc \
 	shared_buffer.cc \
 	shlex.cc \
+	spectro_source.cc \
 	sqlite-extension-func.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	string_attr_type.cc \
 	styling.cc \
 	text_format.cc \
 	textfile_sub_source.cc \
@@ -464,6 +472,7 @@ libdiag_a_SOURCES = \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
+	unique_path.cc \
 	view_curses.cc \
 	view_helpers.cc \
 	views_vtab.cc \

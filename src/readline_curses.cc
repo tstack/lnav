@@ -458,11 +458,14 @@ readline_context::readline_context(const std::string &name,
 }
 
 readline_curses::readline_curses()
-    : rc_active_context(-1),
-      rc_child(-1),
-      rc_value_expiration(0),
-      rc_matches_remaining(0),
-      rc_max_match_length(0)
+    : rc_change(noop_func{}),
+      rc_perform(noop_func{}),
+      rc_alt_perform(noop_func{}),
+      rc_timeout(noop_func{}),
+      rc_abort(noop_func{}),
+      rc_display_match(noop_func{}),
+      rc_display_next(noop_func{}),
+      rc_blur(noop_func{})
 {
 }
 

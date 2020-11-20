@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "base/lnav_log.hh"
+#include "logfile.hh"
 #include "file_vtab.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"

@@ -31,7 +31,7 @@
 
 #include <assert.h>
 
-#include "lnav_util.hh"
+#include "base/string_util.hh"
 
 static struct test_data {
     const char *str;
@@ -43,7 +43,7 @@ static struct test_data {
     { "com.example.foo.bar", "c.e.foo.bar", 15 },
     { "no dots in here", "no dots in here", 5 },
 
-    { NULL }
+    { nullptr }
 };
 
 int main(int argc, char *argv[])

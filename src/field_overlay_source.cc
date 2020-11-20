@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "vtab_module.hh"
 #include "relative_time.hh"
@@ -523,7 +524,7 @@ void field_overlay_source::build_meta_line(const listview_curses &lv,
 
             const auto *tc = dynamic_cast<const textview_curses *>(&lv);
             if (tc) {
-                const textview_curses::highlight_map_t &hm = tc->get_highlights();
+                const auto &hm = tc->get_highlights();
                 auto hl_iter = hm.find({highlight_source_t::PREVIEW, "search"});
 
                 if (hl_iter != hm.end()) {

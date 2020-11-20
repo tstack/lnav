@@ -55,7 +55,7 @@ static pcre *xpcre_compile(const char *pattern, int options = 0)
     return retval;
 }
 
-void setup_highlights(textview_curses::highlight_map_t &hm)
+void setup_highlights(highlight_map_t &hm)
 {
     hm[{highlight_source_t::INTERNAL, "python"}] = highlighter(xpcre_compile(
         "(?:"

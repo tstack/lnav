@@ -34,7 +34,7 @@
 
 #include <sys/mman.h>
 
-#include "lnav_util.hh"
+#include "base/math_util.hh"
 
 template<typename T>
 struct big_array {

@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "base/math_util.hh"
 #include "lnav.hh"
 #include "bookmarks.hh"
 #include "sql_util.hh"
@@ -44,6 +45,7 @@
 #include "hotkeys.hh"
 #include "base/opt_util.hh"
 #include "shlex.hh"
+#include "lnav_util.hh"
 
 using namespace std;
 

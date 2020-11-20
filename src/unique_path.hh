@@ -67,104 +67,12 @@ private:
 
 class unique_path_generator {
 public:
-    unique_path_generator() : upg_max_len(0) {
+    void add_source(const std::shared_ptr<unique_path_source>& path_source);
 
-    };
-
-    void add_source(const std::shared_ptr<unique_path_source>& path_source) {
-        ghc::filesystem::path path = path_source->get_path();
-
-        path_source->set_unique_path(path.filename());
-        path_source->set_path_prefix(path.parent_path());
-        this->upg_unique_paths[path.filename()].push_back(path_source);
-    };
-
-    void generate() {
-        int loop_count = 0;
-
-        while (!this->upg_unique_paths.empty()) {
-            std::vector<std::shared_ptr<unique_path_source>> collisions;
-
-            for (auto pair : this->upg_unique_paths) {
-                if (pair.second.size() == 1) {
-                    if (loop_count > 0) {
-                        std::shared_ptr<unique_path_source> src = pair.second[0];
-
-                        src->set_unique_path("[" + src->get_unique_path());
-                    }
-
-                    this->upg_max_len = std::max(
-                        this->upg_max_len,
-                        pair.second[0]->get_unique_path().size());
-                } else {
-                    bool all_common = true;
-
-                    do {
-                        std::string common;
-
-                        for (auto &src : pair.second) {
-                            auto &path = src->get_path_prefix();
-
-                            if (common.empty()) {
-                                common = path.filename();
-                                if (common.empty()) {
-                                    all_common = false;
-                                }
-                            } else if (common != path.filename()) {
-                                all_common = false;
-                            }
-                        }
-
-                        if (all_common) {
-                            for (auto &src : pair.second) {
-                                auto &path = src->get_path_prefix();
-                                auto par = path.parent_path();
-
-                                if (path.empty() || path == par) {
-                                    all_common = false;
-                                } else {
-                                    src->set_path_prefix(path.parent_path());
-                                }
-                            }
-                        }
-                    } while (all_common);
-
-                    collisions.insert(collisions.end(),
-                                      pair.second.begin(),
-                                      pair.second.end());
-                }
-            }
-
-            this->upg_unique_paths.clear();
-
-            for (auto &src : collisions) {
-                const auto unique_path = src->get_unique_path();
-                auto &prefix = src->get_path_prefix();
-
-                if (loop_count == 0) {
-                    src->set_unique_path(prefix.filename().string() + "]/" + unique_path);
-                } else {
-                    src->set_unique_path(prefix.filename().string() + "/" + unique_path);
-                }
-
-                ghc::filesystem::path parent = prefix.parent_path();
-
-                src->set_path_prefix(parent);
-
-                if (parent.empty() || parent == prefix) {
-                    src->set_unique_path("[" + src->get_unique_path());
-                } else {
-                    this->upg_unique_paths[src->get_unique_path()].push_back(
-                        src);
-                }
-            }
-
-            loop_count += 1;
-        }
-    }
+    void generate();
 
     std::map<std::string, std::vector<std::shared_ptr<unique_path_source>>> upg_unique_paths;
-    size_t upg_max_len;
+    size_t upg_max_len{0};
 };
 
 #endif //LNAV_UNIQUE_PATH_HH

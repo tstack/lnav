@@ -103,7 +103,7 @@ static void open_pretty_view()
             lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
 
             line_range orig_lr = find_string_attr_range(
-                al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                al.get_attrs(), &SA_ORIGINAL_LINE);
             attr_line_t orig_al = al.subline(orig_lr.lr_start, orig_lr.length());
             attr_line_t prefix_al = al.subline(0, orig_lr.lr_start);
 

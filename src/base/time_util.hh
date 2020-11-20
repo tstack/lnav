@@ -32,27 +32,96 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <string.h>
+
+struct tm *secs2tm(time_t *tim_p, struct tm *res);
+/**
+ * Convert the time stored in a 'tm' struct into epoch time.
+ *
+ * @param t The 'tm' structure to convert to epoch time.
+ * @return The given time in seconds since the epoch.
+ */
+time_t tm2sec(const struct tm *t);
+void secs2wday(const struct timeval &tv, struct tm *res);
+
+constexpr time_t MAX_TIME_T = 4000000000LL;
+
+enum exttm_bits_t {
+    ETB_YEAR_SET,
+    ETB_MONTH_SET,
+    ETB_DAY_SET,
+    ETB_MACHINE_ORIENTED,
+    ETB_EPOCH_TIME,
+};
+
+enum exttm_flags_t {
+    ETF_YEAR_SET = (1UL << ETB_YEAR_SET),
+    ETF_MONTH_SET = (1UL << ETB_MONTH_SET),
+    ETF_DAY_SET = (1UL << ETB_DAY_SET),
+    ETF_MACHINE_ORIENTED = (1UL << ETB_MACHINE_ORIENTED),
+    ETF_EPOCH_TIME = (1UL << ETB_EPOCH_TIME),
+};
+
+struct exttm {
+    struct tm et_tm;
+    int32_t et_nsec;
+    unsigned int et_flags;
+    long et_gmtoff;
+
+    bool operator==(const exttm &other) const {
+        return memcmp(this, &other, sizeof(exttm)) == 0;
+    };
+
+    struct timeval to_timeval() const {
+        struct timeval retval;
+
+        retval.tv_sec = tm2sec(&this->et_tm);
+        retval.tv_usec = this->et_nsec * 1000;
+
+        return retval;
+    };
+};
 
 inline
 bool operator<(const struct timeval &left, time_t right) {
     return left.tv_sec < right;
-};
+}
 
 inline
 bool operator<(time_t left, const struct timeval &right) {
     return left < right.tv_sec;
-};
+}
 
 inline
 bool operator<(const struct timeval &left, const struct timeval &right) {
     return left.tv_sec < right.tv_sec ||
            ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
-};
+}
 
 inline
 bool operator!=(const struct timeval &left, const struct timeval &right) {
     return left.tv_sec != right.tv_sec ||
            left.tv_usec != right.tv_usec;
-};
+}
+
+typedef int64_t mstime_t;
+
+inline mstime_t getmstime() {
+    struct timeval tv;
+
+    gettimeofday(&tv, nullptr);
+
+    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
+}
+
+inline time_t day_num(time_t ti)
+{
+    return ti / (24 * 60 * 60);
+}
+
+inline time_t hour_num(time_t ti)
+{
+    return ti / (60 * 60);
+}
 
 #endif

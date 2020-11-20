@@ -26,38 +26,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file view_helpers.hh
+ * @file file_format.hh
  */
 
-#ifndef lnav_view_helpers_hh
-#define lnav_view_helpers_hh
+#include "config.h"
 
-#include "help_text.hh"
-#include "attr_line.hh"
+#include "base/intern_string.hh"
+#include "auto_fd.hh"
+#include "lnav_util.hh"
+#include "file_format.hh"
+#include "archive_manager.hh"
 
-class textview_curses;
+file_format_t detect_file_format(const ghc::filesystem::path &filename)
+{
+    if (archive_manager::is_archive(filename)) {
+        return file_format_t::FF_ARCHIVE;
+    }
 
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
+    file_format_t retval = file_format_t::FF_UNKNOWN;
+    auto_fd       fd;
 
-    LNV__MAX
-} lnav_view_t;
+    if ((fd = openp(filename, O_RDONLY)) != -1) {
+        char buffer[32];
+        ssize_t rc;
 
-extern const char *lnav_view_strings[LNV__MAX + 1];
+        if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+            static auto SQLITE3_HEADER = "SQLite format 3";
+            auto header_frag = string_fragment(buffer, 0, rc);
 
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
+            if (header_frag.startswith(SQLITE3_HEADER)) {
+                retval = file_format_t::FF_SQLITE_DB;
+            }
+        }
+    }
 
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
-
-#endif
+    return retval;
+}

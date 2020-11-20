@@ -44,6 +44,7 @@
 #include "text_format.hh"
 #include "logfile.hh"
 #include "highlighter.hh"
+#include "textview_curses_fwd.hh"
 
 class logline;
 class textview_curses;
@@ -558,21 +559,13 @@ private:
 
 class text_delegate {
 public:
-    virtual ~text_delegate() { };
+    virtual ~text_delegate() = default;
     
     virtual void text_overlay(textview_curses &tc) { };
 
     virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
         return false;
     };
-};
-
-enum class highlight_source_t {
-    INTERNAL,
-    THEME,
-    PREVIEW,
-    CONFIGURATION,
-    INTERACTIVE,
 };
 
 /**
@@ -592,12 +585,6 @@ public:
     static bookmark_type_t BM_USER;
     static bookmark_type_t BM_SEARCH;
     static bookmark_type_t BM_META;
-
-    static string_attr_type SA_ORIGINAL_LINE;
-    static string_attr_type SA_BODY;
-    static string_attr_type SA_HIDDEN;
-    static string_attr_type SA_FORMAT;
-    static string_attr_type SA_REMOVED;
 
     textview_curses();
 
@@ -837,9 +824,6 @@ public:
         }
     };
 
-    using highlight_map_t =
-        std::map<std::pair<highlight_source_t, std::string>, highlighter>;
-
     highlight_map_t &get_highlights() { return this->tc_highlights; };
 
     const highlight_map_t &get_highlights() const { return this->tc_highlights; };
@@ -944,7 +928,7 @@ protected:
         grep_highlighter(std::unique_ptr<grep_proc<vis_line_t>> &gp,
                          highlight_source_t source,
                          std::string hl_name,
-                         textview_curses::highlight_map_t &hl_map)
+                         highlight_map_t &hl_map)
             : gh_grep_proc(std::move(gp)),
               gh_hl_source(source),
               gh_hl_name(std::move(hl_name)),
@@ -962,7 +946,7 @@ protected:
         std::unique_ptr<grep_proc<vis_line_t>> gh_grep_proc;
         highlight_source_t gh_hl_source;
         std::string gh_hl_name;
-        textview_curses::highlight_map_t &gh_hl_map;
+        highlight_map_t &gh_hl_map;
     };
 
     text_sub_source *tc_sub_source{nullptr};
@@ -974,7 +958,7 @@ protected:
     struct timeval tc_follow_deadline{0, 0};
     vis_line_t tc_follow_top{-1_vl};
     std::function<bool()> tc_follow_func;
-    action tc_search_action{noop_func{}};
+    action tc_search_action;
 
     highlight_map_t tc_highlights;
 

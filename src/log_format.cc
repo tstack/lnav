@@ -38,11 +38,12 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "sql_util.hh"
-#include "log_format.hh"
+#include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
 #include "log_search_table.hh"
 #include "command_executor.hh"
+#include "lnav_util.hh"
 
 using namespace std;
 
@@ -894,7 +895,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         // A continued line still needs a body.
         lr.lr_start = 0;
         lr.lr_end = line.length();
-        sa.emplace_back(lr, &textview_curses::SA_BODY);
+        sa.emplace_back(lr, &SA_BODY);
         return;
     }
 
@@ -932,7 +933,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         lr.lr_start = line.length();
         lr.lr_end = line.length();
     }
-    sa.emplace_back(lr, &textview_curses::SA_BODY);
+    sa.emplace_back(lr, &SA_BODY);
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def &ivd = pat.p_value_by_index[lpc];
@@ -1273,7 +1274,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         }
                         else if (lv_iter->lv_name == this->elf_body_field) {
                             this->jlf_line_attrs.emplace_back(
-                                lr, &textview_curses::SA_BODY);
+                                lr, &SA_BODY);
                         }
                         else if (lv_iter->lv_name == this->elf_opid_field) {
                             this->jlf_line_attrs.emplace_back(
@@ -2053,7 +2054,7 @@ public:
 
                 this->vi_attrs.clear();
                 format->annotate(cl, line, this->vi_attrs, values, false);
-                this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
+                this->elt_container_body = find_string_attr_range(this->vi_attrs, &SA_BODY);
                 if (!this->elt_container_body.is_valid()) {
                     return false;
                 }
@@ -2118,6 +2119,32 @@ log_vtab_impl *external_log_format::get_vtab_impl() const
     return new external_log_table(*this);
 }
 
+std::unique_ptr<log_format> external_log_format::specialized(int fmt_lock)
+{
+    auto retval = std::make_unique<external_log_format>(*this);
+
+    retval->lf_specialized = true;
+    this->lf_pattern_locks.clear();
+    if (fmt_lock != -1) {
+        retval->lf_pattern_locks.emplace_back(0, fmt_lock);
+    }
+
+    if (this->elf_type == ELF_TYPE_JSON) {
+        this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(this->elf_name.to_string());
+        this->jlf_yajl_handle.reset(yajl_alloc(
+            &this->jlf_parse_context->ypc_callbacks,
+            nullptr,
+            this->jlf_parse_context.get()));
+        yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
+        this->jlf_cached_line.reserve(16 * 1024);
+    }
+
+    this->lf_value_stats.clear();
+    this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
+
+    return retval;
+}
+
 int log_format::pattern_index_for_line(uint64_t line_number) const
 {
     auto iter = lower_bound(this->lf_pattern_locks.cbegin(),
@@ -2133,6 +2160,12 @@ int log_format::pattern_index_for_line(uint64_t line_number) const
     }
 
     return iter->pfl_pat_index;
+}
+
+std::string log_format::get_pattern_name(uint64_t line_number) const
+{
+    int pat_index = this->pattern_index_for_line(line_number);
+    return fmt::format("builtin ({})", pat_index);
 }
 
 log_format::pattern_for_lines::pattern_for_lines(

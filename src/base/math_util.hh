@@ -25,39 +25,39 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file view_helpers.hh
  */
 
-#ifndef lnav_view_helpers_hh
-#define lnav_view_helpers_hh
+#ifndef lnav_math_util_hh
+#define lnav_math_util_hh
 
-#include "help_text.hh"
-#include "attr_line.hh"
+#include <sys/types.h>
 
-class textview_curses;
+#undef rounddown
 
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
+/**
+ * Round down a number based on a given granularity.
+ *
+ * @param
+ * @param step The granularity.
+ */
+template<typename Size, typename Step>
+inline int rounddown(Size size, Step step)
+{
+    return size - (size % step);
+}
 
-    LNV__MAX
-} lnav_view_t;
+inline int rounddown_offset(size_t size, int step, int offset)
+{
+    return size - ((size - offset) % step);
+}
 
-extern const char *lnav_view_strings[LNV__MAX + 1];
+inline size_t roundup_size(size_t size, int step)
+{
+    size_t retval = size + step;
 
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
+    retval -= (retval % step);
 
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
+    return retval;
+}
 
 #endif

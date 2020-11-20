@@ -402,29 +402,29 @@ private:
 
     friend class readline_context;
 
-    int     rc_active_context;
-    pid_t   rc_child;
+    int     rc_active_context{-1};
+    pid_t   rc_child{-1};
     auto_fd rc_pty[2];
     auto_fd rc_command_pipe[2];
     std::map<int, readline_context *> rc_contexts;
     std::string rc_value;
     std::string rc_line_buffer;
-    time_t      rc_value_expiration;
+    time_t      rc_value_expiration{0};
     std::string rc_alt_value;
     int rc_match_start{0};
-    int rc_matches_remaining;
-    int rc_max_match_length;
+    int rc_matches_remaining{0};
+    int rc_max_match_length{0};
     int rc_match_index{0};
     std::vector<std::string> rc_matches;
     bool rc_is_alt_focus{false};
 
-    action rc_change{noop_func{}};
-    action rc_perform{noop_func{}};
-    action rc_alt_perform{noop_func{}};
-    action rc_timeout{noop_func{}};
-    action rc_abort{noop_func{}};
-    action rc_display_match{noop_func{}};
-    action rc_display_next{noop_func{}};
-    action rc_blur{noop_func{}};
+    action rc_change;
+    action rc_perform;
+    action rc_alt_perform;
+    action rc_timeout;
+    action rc_abort;
+    action rc_display_match;
+    action rc_display_next;
+    action rc_blur;
 };
 #endif

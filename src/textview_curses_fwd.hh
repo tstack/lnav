@@ -25,39 +25,24 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file view_helpers.hh
  */
 
-#ifndef lnav_view_helpers_hh
-#define lnav_view_helpers_hh
+#ifndef lnav_textview_curses_fwd_hh
+#define lnav_textview_curses_fwd_hh
 
-#include "help_text.hh"
-#include "attr_line.hh"
+#include <map>
+#include <utility>
 
-class textview_curses;
+#include "highlighter.hh"
 
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
+enum class highlight_source_t {
+    INTERNAL,
+    THEME,
+    PREVIEW,
+    CONFIGURATION,
+    INTERACTIVE,
+};
 
-    LNV__MAX
-} lnav_view_t;
-
-extern const char *lnav_view_strings[LNV__MAX + 1];
-
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
-
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
+using highlight_map_t = std::map<std::pair<highlight_source_t, std::string>, highlighter>;
 
 #endif

@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#include <regex>
+#include <sstream>
+
 #include "lnav_log.hh"
 #include "is_utf8.hh"
 #include "string_util.hh"
@@ -101,4 +104,50 @@ void truncate_to(std::string &str, size_t len)
     size_t half_width = str.size() / 2 - 1;
     str.erase(half_width, str.length() - (half_width * 2));
     str.insert(half_width, ELLIPSIS);
+}
+
+bool is_url(const char *fn)
+{
+    static auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
+
+    return std::regex_match(fn, url_re);
+}
+
+size_t abbreviate_str(char *str, size_t len, size_t max_len)
+{
+    size_t last_start = 1;
+
+    if (len < max_len) {
+        return len;
+    }
+
+    for (size_t index = 0; index < len; index++) {
+        switch (str[index]) {
+            case '.':
+            case '-':
+            case '/':
+            case ':':
+                memmove(&str[last_start], &str[index], len - index);
+                len -= (index - last_start);
+                index = last_start + 1;
+                last_start = index + 1;
+
+                if (len < max_len) {
+                    return len;
+                }
+                break;
+        }
+    }
+
+    return len;
+}
+
+void split_ws(const std::string &str, std::vector<std::string> &toks_out)
+{
+    std::stringstream ss(str);
+    std::string buf;
+
+    while (ss >> buf) {
+        toks_out.push_back(buf);
+    }
 }

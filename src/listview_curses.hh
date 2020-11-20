@@ -117,6 +117,8 @@ class listview_curses
 public:
     using action = std::function<void(listview_curses*)>;
 
+    listview_curses();
+
     void set_title(const std::string &title) {
         this->lv_title = title;
     };
@@ -581,7 +583,7 @@ protected:
     list_data_source *lv_source{nullptr}; /*< The data source delegate. */
     std::list<list_input_delegate *> lv_input_delegates;
     list_overlay_source *lv_overlay_source{nullptr};
-    action       lv_scroll{noop_func{}};         /*< The scroll action. */
+    action       lv_scroll;         /*< The scroll action. */
     WINDOW *     lv_window{nullptr};         /*< The window that contains this view. */
     unsigned int lv_x{0};
     unsigned int lv_y{0};              /*< The y offset of this view. */

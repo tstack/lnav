@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "all_logs_vtab.hh"
+#include "string_attr_type.hh"
 
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
@@ -57,7 +58,7 @@ void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
     this->vi_attrs.clear();
     format->annotate(line_number, line, this->vi_attrs, sub_values, false);
 
-    auto body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
+    auto body = find_string_attr_range(this->vi_attrs, &SA_BODY);
     if (body.lr_start == -1) {
         body.lr_start = 0;
         body.lr_end = line.length();

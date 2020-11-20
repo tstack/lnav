@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 
                 if (format.get() != NULL) {
                     format->annotate(0, sbr, sa, ll_values);
-                    body = find_string_attr_range(sa, &textview_curses::SA_BODY);
+                    body = find_string_attr_range(sa, &SA_BODY);
                 }
 
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");

@@ -129,35 +129,15 @@ struct help_text {
         return *this;
     }
 
-    help_text &with_parameters(const std::initializer_list<help_text> &params) noexcept {
-        this->ht_parameters = params;
-        for (auto &param : this->ht_parameters) {
-            param.ht_context = help_context_t::HC_PARAMETER;
-        }
-        return *this;
-    }
+    help_text &with_parameters(const std::initializer_list<help_text> &params) noexcept;
 
-    help_text &with_parameter(const help_text &ht) noexcept {
-        this->ht_parameters.emplace_back(ht);
-        this->ht_parameters.back().ht_context = help_context_t::HC_PARAMETER;
-        return *this;
-    };
+    help_text &with_parameter(const help_text &ht) noexcept;
 
-    help_text &with_result(const help_text &ht) noexcept {
-        this->ht_results.emplace_back(ht);
-        this->ht_results.back().ht_context = help_context_t::HC_RESULT;
-        return *this;
-    };
+    help_text &with_result(const help_text &ht) noexcept;
 
-    help_text &with_examples(const std::initializer_list<help_example> &examples) noexcept {
-        this->ht_example = examples;
-        return *this;
-    }
+    help_text &with_examples(const std::initializer_list<help_example> &examples) noexcept;
 
-    help_text &with_example(const help_example &example) noexcept {
-        this->ht_example.emplace_back(example);
-        return *this;
-    }
+    help_text &with_example(const help_example &example) noexcept;
 
     help_text &optional() noexcept {
         this->ht_nargs = help_nargs_t::HN_OPTIONAL;
@@ -179,26 +159,13 @@ struct help_text {
         return *this;
     }
 
-    help_text &with_enum_values(const std::initializer_list<const char*> &enum_values) noexcept {
-        this->ht_enum_values = enum_values;
-        return *this;
-    };
+    help_text &with_enum_values(const std::initializer_list<const char*> &enum_values) noexcept;
 
-    help_text &with_tags(const std::initializer_list<const char*> &tags) noexcept {
-        this->ht_tags = tags;
-        return *this;
-    };
+    help_text &with_tags(const std::initializer_list<const char*> &tags) noexcept;
 
-    help_text &with_opposites(const std::initializer_list<const char*> &opps) noexcept {
-        this->ht_opposites = opps;
-        return *this;
-    };
+    help_text &with_opposites(const std::initializer_list<const char*> &opps) noexcept;
 
-    void index_tags() {
-        for (const auto &tag: this->ht_tags) {
-            TAGGED.insert(std::make_pair(tag, this));
-        }
-    };
+    void index_tags();
 
     static std::multimap<std::string, help_text *> TAGGED;
 };

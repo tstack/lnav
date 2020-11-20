@@ -38,7 +38,6 @@
 #include <iterator>
 
 #include "base/lnav_log.hh"
-#include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
@@ -220,7 +219,7 @@ public:
 
     static FILE *TRACE_FILE;
 
-    typedef byte_array<2, uint64> schema_id_t;
+    typedef byte_array<2, uint64_t> schema_id_t;
 
     struct element;
     /* typedef std::list<element> element_list_t; */

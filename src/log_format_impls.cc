@@ -207,7 +207,7 @@ class generic_log_format : public log_format {
 
         lr.lr_start = prefix_len;
         lr.lr_end   = line.length();
-        sa.emplace_back(lr, &textview_curses::SA_BODY);
+        sa.emplace_back(lr, &SA_BODY);
     };
 
     unique_ptr<log_format> specialized(int fmt_lock)

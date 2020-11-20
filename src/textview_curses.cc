@@ -114,13 +114,8 @@ bookmark_type_t textview_curses::BM_USER("user");
 bookmark_type_t textview_curses::BM_SEARCH("search");
 bookmark_type_t textview_curses::BM_META("meta");
 
-string_attr_type textview_curses::SA_ORIGINAL_LINE("original_line");
-string_attr_type textview_curses::SA_BODY("body");
-string_attr_type textview_curses::SA_HIDDEN("hidden");
-string_attr_type textview_curses::SA_FORMAT("format");
-string_attr_type textview_curses::SA_REMOVED("removed");
-
 textview_curses::textview_curses()
+    : tc_search_action(noop_func{})
 {
     this->set_data_source(this);
 }
@@ -556,7 +551,7 @@ void textview_curses::execute_search(const std::string &regex_orig)
 
             hl.with_role(view_colors::VCR_SEARCH);
 
-            textview_curses::highlight_map_t &hm = this->get_highlights();
+            highlight_map_t &hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
             unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, *this);

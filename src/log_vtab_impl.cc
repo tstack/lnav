@@ -550,7 +550,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     struct line_range body_range;
 
                     body_range = find_string_attr_range(
-                        vt->vi->vi_attrs, &textview_curses::SA_BODY);
+                        vt->vi->vi_attrs, &SA_BODY);
                     if (!body_range.is_valid()) {
                         sqlite3_result_null(ctx);
                     }

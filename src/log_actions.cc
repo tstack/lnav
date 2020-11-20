@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "lnav.hh"
+#include "lnav_util.hh"
 #include "log_actions.hh"
 
 using namespace std;
@@ -138,7 +139,7 @@ static string execute_action(log_data_helper &ldh,
                          action.ad_cmdline[0].c_str());
                 lnav_data.ld_active_files.fc_file_names[desc]
                     .with_fd(pp->get_fd());
-                lnav_data.ld_files_to_front.push_back({ desc, 0 });
+                lnav_data.ld_files_to_front.emplace_back( desc, 0 );
             }
 
             return "";

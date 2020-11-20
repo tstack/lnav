@@ -26,38 +26,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file view_helpers.hh
+ * @file file_format.hh
  */
 
-#ifndef lnav_view_helpers_hh
-#define lnav_view_helpers_hh
+#ifndef lnav_file_format_hh
+#define lnav_file_format_hh
 
-#include "help_text.hh"
-#include "attr_line.hh"
+#include "fmt/format.h"
+#include "ghc/filesystem.hpp"
 
-class textview_curses;
+enum class file_format_t {
+    FF_UNKNOWN,
+    FF_SQLITE_DB,
+    FF_ARCHIVE,
+};
 
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
+file_format_t detect_file_format(const ghc::filesystem::path& filename);
 
-    LNV__MAX
-} lnav_view_t;
+namespace fmt {
+template<>
+struct formatter<file_format_t> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(file_format_t ff, FormatContext &ctx)
+    {
+        string_view name = "unknown";
+        switch (ff) {
+            case file_format_t::FF_SQLITE_DB:
+                name = "SQLite Database";
+                break;
+            case file_format_t::FF_ARCHIVE:
+                name = "Archive";
+                break;
+            default:
+                break;
+        }
+        return formatter<string_view>::format(name, ctx);
+    }
+};
+}
 
-extern const char *lnav_view_strings[LNV__MAX + 1];
-
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
-
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
 
 #endif

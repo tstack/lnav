@@ -49,6 +49,7 @@
 #include "lnav_config.hh"
 #include "session_data.hh"
 #include "command_executor.hh"
+#include "log_format_ext.hh"
 
 using namespace std;
 
@@ -1390,17 +1391,13 @@ static void save_session_with_id(const std::string session_id)
                         }
                     }
 
-                    textview_curses::highlight_map_t &hmap =
-                        lnav_data.ld_views[lpc].get_highlights();
-                    textview_curses::highlight_map_t::iterator hl_iter;
+                    auto &hmap = lnav_data.ld_views[lpc].get_highlights();
 
-                    for (hl_iter = hmap.begin();
-                         hl_iter != hmap.end();
-                         ++hl_iter) {
-                        if (hl_iter->first.first != highlight_source_t::INTERACTIVE) {
+                    for (auto & hl : hmap) {
+                        if (hl.first.first != highlight_source_t::INTERACTIVE) {
                             continue;
                         }
-                        cmd_array.gen("highlight " + hl_iter->first.second);
+                        cmd_array.gen("highlight " + hl.first.second);
                     }
 
                     if (lpc == LNV_LOG) {

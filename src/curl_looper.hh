@@ -66,7 +66,7 @@ public:
 
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
-#include "lnav_util.hh"
+#include "base/time_util.hh"
 
 class curl_request {
 public:

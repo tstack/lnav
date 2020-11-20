@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "lnav_util.hh"
+#include "base/math_util.hh"
 #include "hist_source.hh"
 
 using namespace std;

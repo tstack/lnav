@@ -238,12 +238,14 @@ add_library(diag STATIC
         column_namer.cc
         command_executor.cc
         curl_looper.cc
+        base/date_time_scanner.cc
         db_sub_source.cc
         elem_to_json.cc
         environ_vtab.cc
         extension-functions.cc
         field_overlay_source.cc
         file_collection.cc
+        file_format.cc
         file_vtab.cc
         files_sub_source.cc
         filter_observer.cc
@@ -253,6 +255,7 @@ add_library(diag STATIC
         fstat_vtab.cc
         fts_fuzzy_match.cc
         grep_proc.cc
+        help_text.cc
         help_text_formatter.cc
         highlighter.cc
         hist_source.cc
@@ -301,17 +304,21 @@ add_library(diag STATIC
         sysclip.cc
         pcrepp/pcrepp.cc
         piper_proc.cc
+        spectro_source.cc
         sql_util.cc
         state-extension-functions.cc
         styling.cc
         base/string_util.cc
+        string_attr_type.cc
         strnatcmp.c
         text_format.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
+        base/time_util.cc
         time-extension-functions.cc
         timer.cc
+        unique_path.cc
         unique_path.hh
         view_curses.cc
         view_helpers.cc
@@ -350,6 +357,7 @@ add_library(diag STATIC
         command_executor.hh
         column_namer.hh
         curl_looper.hh
+        base/date_time_scanner.hh
         doc_status_source.hh
         elem_to_json.hh
         base/enum_util.hh
@@ -357,6 +365,7 @@ add_library(diag STATIC
         base/future_util.hh
         field_overlay_source.hh
         file_collection.hh
+        file_format.hh
         file_vtab.hh
         files_sub_source.hh
         filter_observer.hh
@@ -378,6 +387,7 @@ add_library(diag STATIC
         log_data_helper.hh
         log_data_table.hh
         log_format.hh
+        log_format_ext.hh
         log_format_fwd.hh
         log_format_impls.cc
         log_gutter_source.hh
@@ -386,6 +396,7 @@ add_library(diag STATIC
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
+        base/math_util.hh
         optional.hpp
         papertrail_proc.hh
         plain_text_source.hh
@@ -409,12 +420,15 @@ add_library(diag STATIC
         simdutf8check.h
         spectro_source.hh
         strong_int.hh
+        string_attr_type.hh
         sysclip.hh
         term_extra.hh
         termios_guard.hh
         text_format.hh
         textfile_highlighters.hh
         textfile_sub_source.hh
+        textview_curses.hh
+        textview_curses_fwd.hh
         time_T.hh
         timer.hh
         top_status_source.hh

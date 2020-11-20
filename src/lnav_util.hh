@@ -56,66 +56,9 @@
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 
-#undef rounddown
-
-/**
- * Round down a number based on a given granularity.
- *
- * @param
- * @param step The granularity.
- */
-template<typename Size, typename Step>
-inline int rounddown(Size size, Step step)
-{
-    return size - (size % step);
-}
-
-inline int rounddown_offset(size_t size, int step, int offset)
-{
-    return size - ((size - offset) % step);
-}
-
-inline size_t roundup_size(size_t size, int step)
-{
-    size_t retval = size + step;
-
-    retval -= (retval % step);
-
-    return retval;
-}
-
-inline int32_t read_le32(const unsigned char *data)
-{
-    return (
-        (data[0] <<  0) |
-        (data[1] <<  8) |
-        (data[2] << 16) |
-        (data[3] << 24));
-}
-
-inline time_t day_num(time_t ti)
-{
-    return ti / (24 * 60 * 60);
-}
-
-inline time_t hour_num(time_t ti)
-{
-    return ti / (60 * 60);
-}
-
 std::string time_ago(time_t last_time, bool convert_local = false);
 
 std::string precise_time_ago(const struct timeval &tv, bool convert_local = false);
-
-typedef int64_t mstime_t;
-
-inline mstime_t getmstime() {
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-
-    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
-}
 
 #if SIZEOF_OFF_T == 8
 #define FORMAT_OFF_T    "%qd"
@@ -185,38 +128,6 @@ object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func,
 
 bool change_to_parent_dir();
 
-void split_ws(const std::string &str, std::vector<std::string> &toks_out);
-
-enum class file_format_t {
-    FF_UNKNOWN,
-    FF_SQLITE_DB,
-    FF_ARCHIVE,
-};
-
-file_format_t detect_file_format(const ghc::filesystem::path& filename);
-
-namespace fmt {
-template<>
-struct formatter<file_format_t> : formatter<string_view> {
-    template<typename FormatContext>
-    auto format(file_format_t ff, FormatContext &ctx)
-    {
-        string_view name = "unknown";
-        switch (ff) {
-            case file_format_t::FF_SQLITE_DB:
-                name = "SQLite Database";
-                break;
-            case file_format_t::FF_ARCHIVE:
-                name = "Archive";
-                break;
-            default:
-                break;
-        }
-        return formatter<string_view>::format(name, ctx);
-    }
-};
-}
-
 bool next_format(const char * const fmt[], int &index, int &locked_index);
 
 namespace std {
@@ -231,19 +142,9 @@ inline bool is_glob(const char *fn)
             strchr(fn, '[') != nullptr);
 };
 
-bool is_url(const char *fn);
-
 std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 
 bool read_file(const ghc::filesystem::path &path, std::string &out);
-
-/**
- * Convert the time stored in a 'tm' struct into epoch time.
- *
- * @param t The 'tm' structure to convert to epoch time.
- * @return The given time in seconds since the epoch.
- */
-time_t tm2sec(const struct tm *t);
 
 inline
 time_t convert_log_time_to_local(time_t value) {
@@ -256,126 +157,6 @@ time_t convert_log_time_to_local(time_t value) {
     tm.tm_isdst = 0;
     return tm2sec(&tm);
 }
-
-struct tm *secs2tm(time_t *tim_p, struct tm *res);
-
-extern const char *std_time_fmt[];
-
-struct date_time_scanner {
-    date_time_scanner() : dts_keep_base_tz(false),
-                          dts_local_time(false),
-                          dts_local_offset_cache(0),
-                          dts_local_offset_valid(0),
-                          dts_local_offset_expiry(0) {
-        this->clear();
-    };
-
-    void clear() {
-        this->dts_base_time = 0;
-        memset(&this->dts_base_tm, 0, sizeof(this->dts_base_tm));
-        this->dts_fmt_lock = -1;
-        this->dts_fmt_len = -1;
-    };
-
-    void unlock() {
-        this->dts_fmt_lock = -1;
-        this->dts_fmt_len = -1;
-    }
-
-    void set_base_time(time_t base_time) {
-        this->dts_base_time = base_time;
-        localtime_r(&base_time, &this->dts_base_tm.et_tm);
-    };
-
-    /**
-     * Convert a timestamp to local time.
-     *
-     * Calling localtime_r is slow since it wants to lookup the timezone on
-     * every call, so we cache the result and only call it again if the
-     * requested time falls outside of a fifteen minute range.
-     */
-    void to_localtime(time_t t, struct exttm &tm_out) {
-        if (t < (24 * 60 * 60)) {
-            // Don't convert and risk going past the epoch.
-            return;
-        }
-
-        if (t < this->dts_local_offset_valid ||
-                t >= this->dts_local_offset_expiry) {
-            time_t new_gmt;
-
-            localtime_r(&t, &tm_out.et_tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-            tm_out.et_tm.tm_zone = NULL;
-#endif
-            tm_out.et_tm.tm_isdst = 0;
-
-            new_gmt = tm2sec(&tm_out.et_tm);
-            this->dts_local_offset_cache = t - new_gmt;
-            this->dts_local_offset_valid = t;
-            this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);
-            this->dts_local_offset_expiry -=
-                    this->dts_local_offset_expiry % EXPIRE_TIME;
-        }
-        else {
-            time_t adjust_gmt = t - this->dts_local_offset_cache;
-            gmtime_r(&adjust_gmt, &tm_out.et_tm);
-        }
-    };
-
-    bool dts_keep_base_tz;
-    bool dts_local_time;
-    time_t dts_base_time;
-    struct exttm dts_base_tm;
-    int dts_fmt_lock;
-    int dts_fmt_len;
-    time_t dts_local_offset_cache;
-    time_t dts_local_offset_valid;
-    time_t dts_local_offset_expiry;
-
-    static const int EXPIRE_TIME = 15 * 60;
-
-    const char *scan(const char *time_src,
-                     size_t time_len,
-                     const char * const time_fmt[],
-                     struct exttm *tm_out,
-                     struct timeval &tv_out,
-                     bool convert_local = true);
-
-    size_t ftime(char *dst, size_t len, const struct exttm &tm) {
-        off_t off = 0;
-
-        PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
-
-        return (size_t) off;
-    };
-
-    bool convert_to_timeval(const char *time_src,
-                            ssize_t time_len,
-                            const char * const time_fmt[],
-                            struct timeval &tv_out) {
-        struct exttm tm;
-
-        if (time_len == -1) {
-            time_len = strlen(time_src);
-        }
-        if (this->scan(time_src, time_len, time_fmt, &tm, tv_out) != NULL) {
-            return true;
-        }
-        return false;
-    };
-
-    bool convert_to_timeval(const std::string &time_src,
-                            struct timeval &tv_out) {
-        struct exttm tm;
-
-        if (this->scan(time_src.c_str(), time_src.size(),
-                       NULL, &tm, tv_out) != NULL) {
-            return true;
-        }
-        return false;
-    }
-};
 
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);
@@ -426,8 +207,6 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nvcsw = left.ru_nvcsw + right.ru_nvcsw;
     diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
 }
-
-size_t abbreviate_str(char *str, size_t len, size_t max_len);
 
 inline int statp(const ghc::filesystem::path &path, struct stat *buf) {
     return stat(path.c_str(), buf);

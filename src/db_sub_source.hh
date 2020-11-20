@@ -77,9 +77,9 @@ public:
 
     void clear();
 
-    long column_name_to_index(const std::string &name) const;;
+    long column_name_to_index(const std::string &name) const;
 
-    int row_for_time(struct timeval time_bucket);;
+    int row_for_time(struct timeval time_bucket);
 
     struct timeval time_for_row(int row) {
         if ((row < 0) || (((size_t) row) >= this->dls_time_column.size())) {

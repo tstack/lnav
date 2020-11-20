@@ -30,8 +30,8 @@
 #ifndef textfile_highlighters_hh
 #define textfile_highlighters_hh
 
-#include "textview_curses.hh"
+#include "textview_curses_fwd.hh"
 
-void setup_highlights(textview_curses::highlight_map_t &hm);
+void setup_highlights(highlight_map_t &hm);
 
 #endif

@@ -42,8 +42,8 @@
 #include "sql_util.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
+#include "base/time_util.hh"
 #include "pcrepp/pcrepp.hh"
-#include "lnav_util.hh"
 #include "sqlite-extension-func.hh"
 
 using namespace std;

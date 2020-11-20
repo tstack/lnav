@@ -63,15 +63,7 @@ struct exec_context {
         this->ec_output_stack.emplace_back(nonstd::nullopt);
     }
 
-    std::string get_error_prefix() {
-        if (this->ec_source.size() <= 1) {
-            return "error: ";
-        }
-
-        std::pair<std::string, int> source = this->ec_source.top();
-
-        return fmt::format("{}:{}: error: ", source.first, source.second);
-    }
+    std::string get_error_prefix();
 
     template<typename ...Args>
     Result<std::string, std::string> make_error(

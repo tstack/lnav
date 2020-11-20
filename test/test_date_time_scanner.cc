@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <locale.h>
 
-#include "lnav_util.hh"
+#include "base/date_time_scanner.hh"
 #include "../src/lnav_util.hh"
 
 static const char *GOOD_TIMES[] = {

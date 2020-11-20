@@ -34,7 +34,6 @@
 #include <stdint.h>
 
 #include <string>
-#include <exception>
 
 #include "sqlite3.h"
 

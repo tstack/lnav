@@ -37,7 +37,7 @@
 
 #include <string>
 
-#include "lnav_util.hh"
+#include "base/date_time_scanner.hh"
 #include "sql_util.hh"
 #include "relative_time.hh"
 

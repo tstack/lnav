@@ -210,7 +210,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     if (this->lss_token_line->is_continued()) {
         this->lss_token_attrs.emplace_back(
             line_range{0, (int) this->lss_token_value.length()},
-            &textview_curses::SA_BODY);
+            &SA_BODY);
     } else {
         format->annotate(line, sbr, this->lss_token_attrs,
                          this->lss_token_values,
@@ -365,7 +365,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
-    value_out.emplace_back(lr, &textview_curses::SA_ORIGINAL_LINE);
+    value_out.emplace_back(lr, &SA_ORIGINAL_LINE);
 
     lr.lr_start = time_offset_end;
     lr.lr_end   = -1;
@@ -381,7 +381,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         if (line_value.lv_hidden) {
             value_out.emplace_back(
-                line_value.lv_origin, &textview_curses::SA_HIDDEN);
+                line_value.lv_origin, &SA_HIDDEN);
         }
 
         if (!line_value.lv_identifier || !line_value.lv_origin.is_valid()) {
@@ -491,7 +491,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = 0;
     lr.lr_end   = -1;
     value_out.emplace_back(lr, &logline::L_FILE, this->lss_token_file.get());
-    value_out.emplace_back(lr, &textview_curses::SA_FORMAT,
+    value_out.emplace_back(lr, &SA_FORMAT,
                            this->lss_token_file->get_format()->get_name());
 
     {

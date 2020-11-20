@@ -36,8 +36,9 @@
 #include <string>
 #include <vector>
 
-#include "textview_curses.hh"
 #include "logfile_sub_source.hh"
+
+class textview_curses;
 
 enum {
     VT_COL_LINE_NUMBER,

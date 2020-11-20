@@ -42,7 +42,7 @@
 #include "base/future_util.hh"
 #include "logfile_fwd.hh"
 #include "archive_manager.hh"
-#include "lnav_util.hh"
+#include "file_format.hh"
 
 struct scan_progress {
     std::list<archive_manager::extract_progress> sp_extractions;

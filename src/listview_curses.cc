@@ -43,6 +43,11 @@ using namespace std;
 
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
+listview_curses::listview_curses()
+    : lv_scroll(noop_func{})
+{
+}
+
 void listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {

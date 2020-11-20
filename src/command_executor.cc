@@ -37,6 +37,7 @@
 #include "lnav.hh"
 #include "log_format_loader.hh"
 #include "shlex.hh"
+#include "lnav_util.hh"
 #include "sql_util.hh"
 
 #include "command_executor.hh"
@@ -826,4 +827,15 @@ void add_global_vars(exec_context &ec)
 
         ec.ec_global_vars[iter.first] = str;
     }
+}
+
+std::string exec_context::get_error_prefix()
+{
+    if (this->ec_source.size() <= 1) {
+        return "error: ";
+    }
+
+    std::pair<std::string, int> source = this->ec_source.top();
+
+    return fmt::format("{}:{}: error: ", source.first, source.second);
 }

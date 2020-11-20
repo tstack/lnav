@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "spookyhash/SpookyV2.h"
 #include "data_parser.hh"
 
 using namespace std;

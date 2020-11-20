@@ -2706,7 +2706,7 @@ int main(int argc, char *argv[])
                         }
 
                         struct line_range lr = find_string_attr_range(
-                                rows[0].get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                                rows[0].get_attrs(), &SA_ORIGINAL_LINE);
                         if (write(STDOUT_FILENO, lr.substr(rows[0].get_string()),
                                   lr.sublen(rows[0].get_string())) == -1 ||
                             write(STDOUT_FILENO, "\n", 1) == -1) {

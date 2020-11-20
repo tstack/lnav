@@ -47,8 +47,8 @@
 #include "simdutf8check.h"
 #endif
 
+#include "base/math_util.hh"
 #include "base/is_utf8.hh"
-#include "lnav_util.hh"
 #include "line_buffer.hh"
 #include "fmtlib/fmt/format.h"
 
@@ -116,6 +116,14 @@ private:
 };
 /* XXX END */
 
+static int32_t read_le32(const unsigned char *data)
+{
+    return (
+        (data[0] <<  0) |
+        (data[1] <<  8) |
+        (data[2] << 16) |
+        (data[3] << 24));
+}
 
 #define Z_BUFSIZE 65536U
 #define SYNCPOINT_SIZE (1024 * 1024)

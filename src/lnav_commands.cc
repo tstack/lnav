@@ -588,8 +588,7 @@ static void json_write_row(yajl_gen handle, int row)
 static void write_line_to(FILE *outfile, const attr_line_t &al)
 {
     const auto& al_attrs = al.get_attrs();
-    auto lr = find_string_attr_range(
-        al_attrs, &textview_curses::SA_ORIGINAL_LINE);
+    auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
     const auto& line_meta = find_string_attr(al_attrs, &logline::L_META);
 
     if (lr.lr_start > 1) {
@@ -1141,7 +1140,7 @@ static Result<string, string> com_highlight(exec_context &ec, string cmdline, ve
     }
     else if (args.size() > 1) {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
-        textview_curses::highlight_map_t &hm = tc->get_highlights();
+        auto &hm = tc->get_highlights();
         const char *errptr;
         auto_mem<pcre> code;
         int         eoff;
@@ -1203,11 +1202,10 @@ static Result<string, string> com_clear_highlight(exec_context &ec, string cmdli
     }
     else if (args.size() > 1 && args[1][0] != '$') {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
-        textview_curses::highlight_map_t &hm = tc->get_highlights();
-        textview_curses::highlight_map_t::iterator hm_iter;
+        auto &hm = tc->get_highlights();
 
         args[1] = remaining_args(cmdline, args);
-        hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
+        auto hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
         if (hm_iter == hm.end()) {
             return ec.make_error("highlight does not exist -- {}", args[1]);
         }
@@ -1291,7 +1289,7 @@ static Result<string, string> com_filter(exec_context &ec, string cmdline, vecto
                     .set_value("Match preview for :filter-in only works if there are no other filters");
                 retval = "";
             } else {
-                textview_curses::highlight_map_t &hm = tc->get_highlights();
+                auto &hm = tc->get_highlights();
                 highlighter hl(code.release());
                 int color;
 
@@ -1608,7 +1606,7 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
 
         if (ec.ec_dry_run) {
             textview_curses *tc = &lnav_data.ld_views[LNV_LOG];
-            textview_curses::highlight_map_t &hm = tc->get_highlights();
+            auto &hm = tc->get_highlights();
             view_colors &vc = view_colors::singleton();
             highlighter hl(code.release());
 

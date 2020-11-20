@@ -25,39 +25,14 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file view_helpers.hh
  */
 
-#ifndef lnav_view_helpers_hh
-#define lnav_view_helpers_hh
+#include "config.h"
 
-#include "help_text.hh"
-#include "attr_line.hh"
+#include "string_attr_type.hh"
 
-class textview_curses;
-
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
-
-    LNV__MAX
-} lnav_view_t;
-
-extern const char *lnav_view_strings[LNV__MAX + 1];
-
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
-
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
-
-#endif
+string_attr_type SA_ORIGINAL_LINE("original_line");
+string_attr_type SA_BODY("body");
+string_attr_type SA_HIDDEN("hidden");
+string_attr_type SA_FORMAT("format");
+string_attr_type SA_REMOVED("removed");

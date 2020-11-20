@@ -53,7 +53,7 @@ public:
                            logfile::const_iterator ll_end,
                            shared_buffer_ref &sbr);
 
-    void logline_eof(const logfile &lf);;
+    void logline_eof(const logfile &lf);
 
     bool excluded(uint32_t filter_in_mask, uint32_t filter_out_mask,
             size_t offset) const {

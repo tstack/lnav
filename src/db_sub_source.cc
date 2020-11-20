@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "lnav_util.hh"
+#include "base/date_time_scanner.hh"
 #include "base/time_util.hh"
 
 #include "yajlpp/json_ptr.hh"

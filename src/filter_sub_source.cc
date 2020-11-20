@@ -385,7 +385,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
         lnav_data.ld_filter_help_status_source.fss_error
             .set_value("error: %s", errptr);
     } else {
-        textview_curses::highlight_map_t &hm = top_view->get_highlights();
+        auto &hm = top_view->get_highlights();
         highlighter hl(code.release());
         int color;
 
