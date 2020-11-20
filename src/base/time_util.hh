@@ -32,6 +32,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <string.h>
 
 struct tm *secs2tm(time_t *tim_p, struct tm *res);

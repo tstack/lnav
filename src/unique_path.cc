@@ -117,8 +117,7 @@ void unique_path_generator::generate()
             if (parent.empty() || parent == prefix) {
                 src->set_unique_path("[" + src->get_unique_path());
             } else {
-                this->upg_unique_paths[src->get_unique_path()].push_back(
-                    src);
+                this->upg_unique_paths[src->get_unique_path()].push_back(src);
             }
         }
 
