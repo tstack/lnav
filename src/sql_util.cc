@@ -36,6 +36,7 @@
 #include <string.h>
 #include <pcrecpp.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "auto_mem.hh"
