@@ -315,6 +315,7 @@ add_library(diag STATIC
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
+        top_status_source.cc
         base/time_util.cc
         time-extension-functions.cc
         timer.cc

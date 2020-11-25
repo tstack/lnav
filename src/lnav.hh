@@ -42,6 +42,7 @@
 #include <list>
 #include <stack>
 #include <memory>
+#include <unordered_map>
 
 #include "base/future_util.hh"
 #include "safe/safe.h"

@@ -44,25 +44,7 @@
 #include "styling.hh"
 #include "ghc/filesystem.hpp"
 
-class lnav_config_listener {
-public:
-    using error_reporter = const std::function<void(const void *, const std::string msg)>;
-
-    lnav_config_listener() {
-        this->lcl_next = LISTENER_LIST;
-        LISTENER_LIST = this;
-    }
-
-    virtual ~lnav_config_listener() = default;
-
-    virtual void reload_config(error_reporter &reporter) {
-
-    };
-
-    static lnav_config_listener *LISTENER_LIST;
-
-    lnav_config_listener *lcl_next;
-};
+#include "lnav_config_fwd.hh"
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.

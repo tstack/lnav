@@ -51,7 +51,6 @@
 
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
-#include "yajlpp/yajlpp.hh"
 #include "base/lnav_log.hh"
 #include "base/date_time_scanner.hh"
 #include "byte_array.hh"

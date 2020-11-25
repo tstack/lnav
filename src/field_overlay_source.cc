@@ -35,6 +35,7 @@
 #include "relative_time.hh"
 #include "field_overlay_source.hh"
 #include "readline_highlighters.hh"
+#include "vtab_module_json.hh"
 
 using namespace std;
 

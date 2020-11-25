@@ -46,6 +46,7 @@
 #include "base/opt_util.hh"
 #include "shlex.hh"
 #include "lnav_util.hh"
+#include "lnav_config.hh"
 
 using namespace std;
 

@@ -34,6 +34,7 @@
 
 #include "lnav_config.hh"
 #include "top_status_source.hh"
+#include "command_executor.hh"
 
 using namespace std;
 
@@ -47,9 +48,9 @@ int gettimeofday(struct timeval * tp, void * tzp)
     return 0;
 }
 
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
+Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_mode)
 {
-    return "";
+    return Ok(string());
 }
 
 void add_global_vars(exec_context &ec)

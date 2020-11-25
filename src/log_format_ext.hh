@@ -32,7 +32,10 @@
 #ifndef lnav_log_format_ext_hh
 #define lnav_log_format_ext_hh
 
+#include <unordered_map>
+
 #include "log_format.hh"
+#include "yajlpp/yajlpp.hh"
 
 class module_format;
 

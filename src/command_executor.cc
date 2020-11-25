@@ -39,6 +39,7 @@
 #include "shlex.hh"
 #include "lnav_util.hh"
 #include "sql_util.hh"
+#include "lnav_config.hh"
 
 #include "command_executor.hh"
 #include "db_sub_source.hh"

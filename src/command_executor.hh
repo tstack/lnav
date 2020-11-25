@@ -40,6 +40,8 @@
 #include "auto_fd.hh"
 #include "attr_line.hh"
 #include "shlex.hh"
+#include "log_format.hh"
+#include "bookmarks.hh"
 
 struct exec_context;
 

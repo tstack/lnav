@@ -41,7 +41,6 @@
 #include "logfile_sub_source.hh"
 #include "command_executor.hh"
 #include "ansi_scrubber.hh"
-#include "lnav_config.hh"
 
 using namespace std;
 

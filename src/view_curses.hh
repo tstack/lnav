@@ -64,7 +64,7 @@
 #include "optional.hpp"
 #include "styling.hh"
 #include "log_level.hh"
-#include "lnav_config.hh"
+#include "lnav_config_fwd.hh"
 
 #define KEY_CTRL_G    7
 #define KEY_CTRL_L    12

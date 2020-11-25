@@ -65,6 +65,7 @@
 #include "db_sub_source.hh"
 #include "papertrail_proc.hh"
 #include "yajlpp/json_op.hh"
+#include "yajlpp/yajlpp.hh"
 
 using namespace std;
 

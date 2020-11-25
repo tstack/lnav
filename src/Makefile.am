@@ -293,6 +293,7 @@ noinst_HEADERS = \
 	lnav.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
+	lnav_config_fwd.hh \
 	lnav_util.hh \
 	log_accel.hh \
 	log_actions.hh \
@@ -472,6 +473,7 @@ libdiag_a_SOURCES = \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
+	top_status_source.cc \
 	unique_path.cc \
 	view_curses.cc \
 	view_helpers.cc \

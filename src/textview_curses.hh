@@ -44,6 +44,7 @@
 #include "text_format.hh"
 #include "logfile.hh"
 #include "highlighter.hh"
+#include "lnav_config_fwd.hh"
 #include "textview_curses_fwd.hh"
 
 class logline;
@@ -687,62 +688,7 @@ public:
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
-                     std::pair<int, int> &range_out)
-    {
-        highlighter &hl = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
-        int          prev_hit = -1, next_hit = INT_MAX;
-
-        for (; start < end; ++start) {
-            std::vector<attr_line_t> rows(1);
-            int off;
-
-            this->listview_value_for_rows(*this, start, rows);
-
-            const std::string &str = rows[0].get_string();
-            for (off = 0; off < (int)str.size(); ) {
-                int rc, matches[128];
-
-                rc = pcre_exec(hl.h_code,
-                               hl.h_code_extra,
-                               str.c_str(),
-                               str.size(),
-                               off,
-                               0,
-                               matches,
-                               128);
-                if (rc > 0) {
-                    struct line_range lr;
-
-                    if (rc == 2) {
-                        lr.lr_start = matches[2];
-                        lr.lr_end   = matches[3];
-                    }
-                    else {
-                        lr.lr_start = matches[0];
-                        lr.lr_end   = matches[1];
-                    }
-
-                    if (lr.lr_start < off_start) {
-                        prev_hit = std::max(prev_hit, lr.lr_start);
-                    }
-                    else if (lr.lr_start > off_start) {
-                        next_hit = std::min(next_hit, lr.lr_start);
-                    }
-                    if (lr.lr_end > lr.lr_start) {
-                        off = matches[1];
-                    }
-                    else {
-                        off += 1;
-                    }
-                }
-                else {
-                    off = str.size();
-                }
-            }
-        }
-
-        range_out = std::make_pair(prev_hit, next_hit);
-    };
+                     std::pair<int, int> &range_out);
 
     void set_search_action(action sa) { this->tc_search_action = sa; };
 

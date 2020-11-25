@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,50 +25,35 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file lnav_config_fwd.hh
  */
 
-#ifndef lnav_top_status_source_hh
-#define lnav_top_status_source_hh
+#ifndef lnav_config_fwd_hh
+#define lnav_config_fwd_hh
 
 #include <string>
+#include <functional>
 
-#include "listview_curses.hh"
-#include "statusview_curses.hh"
-
-class top_status_source
-    : public status_data_source {
+class lnav_config_listener {
 public:
-    typedef enum {
-        TSF_TIME,
-        TSF_PARTITION_NAME,
-        TSF_VIEW_NAME,
-        TSF_STITCH_VIEW_FORMAT,
-        TSF_FORMAT,
-        TSF_STITCH_FORMAT_FILENAME,
-        TSF_FILENAME,
+    using error_reporter = const std::function<void(const void *, const std::string msg)>;
 
-        TSF__MAX
-    } field_t;
+    lnav_config_listener() {
+        this->lcl_next = LISTENER_LIST;
+        LISTENER_LIST = this;
+    }
 
-    top_status_source();
+    virtual ~lnav_config_listener() = default;
 
-    size_t statusview_fields() override { return TSF__MAX; };
+    virtual void reload_config(error_reporter &reporter) {
 
-    status_field &statusview_value_for_field(int field) override
-    {
-        return this->tss_fields[field];
     };
 
-    void update_time(const struct timeval &current_time);
+    static lnav_config_listener *LISTENER_LIST;
 
-    void update_time();
-
-    void update_filename(listview_curses *lc);
-
-    void update_view_name(listview_curses *lc);
-
-private:
-    status_field tss_fields[TSF__MAX];
+    lnav_config_listener *lcl_next;
 };
+
 
 #endif

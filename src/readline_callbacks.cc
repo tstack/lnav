@@ -31,6 +31,7 @@
 
 #include "lnav.hh"
 #include "lnav_util.hh"
+#include "lnav_config.hh"
 #include "sysclip.hh"
 #include "vtab_module.hh"
 #include "plain_text_source.hh"
@@ -41,6 +42,7 @@
 #include "log_format_loader.hh"
 #include "help_text_formatter.hh"
 #include "sqlite-extension-func.hh"
+#include "yajlpp/yajlpp.hh"
 
 using namespace std;
 
