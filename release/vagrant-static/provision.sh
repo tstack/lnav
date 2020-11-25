@@ -39,6 +39,8 @@ rxvt-256color,\
 screen,\
 screen-16color,\
 screen-256color,\
+tmux,\
+tmux-256color,\
 vt100,\
 vt220,\
 xterm,\
