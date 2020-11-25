@@ -495,7 +495,10 @@ public:
             if (iter != session_data.sd_file_states.end()) {
                 log_debug("found state for log file %d",
                           iter->second.fs_is_visible);
-                lf->set_visibility(iter->second.fs_is_visible);
+
+                lnav_data.ld_log_source.find_data(lf) | [&iter](auto ld) {
+                    ld->set_visibility(iter->second.fs_is_visible);
+                };
             }
         }
         else {
@@ -593,10 +596,6 @@ void rebuild_indexes()
             bool reload = false;
 
             for (const auto &lf : lnav_data.ld_active_files.fc_files) {
-                if (!lf->is_visible()) {
-                    continue;
-                }
-
                 id_to_files[lf->get_content_id()].push_back(lf);
             }
 

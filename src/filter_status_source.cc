@@ -280,12 +280,16 @@ size_t filter_help_status_source::statusview_fields()
             }
             sel -= fc.fc_other_files.size();
 
+            auto& lss = lnav_data.ld_log_source;
             auto &lf = lnav_data.ld_active_files.fc_files[sel];
+            auto vis_help = "Hide";
+            auto ld_opt = lss.find_data(lf);
+            if (ld_opt && !ld_opt.value()->ld_visible) {
+                vis_help = "Show";
+            }
 
             this->fss_help.set_value("  %s%s  %s",
-                                     ENABLE_HELP,
-                                     lf->is_visible() ? "Hide" : "Show",
-                                     JUMP_HELP);
+                                     ENABLE_HELP, vis_help, JUMP_HELP);
         }
     };
 

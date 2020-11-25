@@ -62,12 +62,10 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             auto& lss = lnav_data.ld_log_source;
             auto &lf = fc.fc_files[sel];
 
-            if (!lf->is_visible()) {
-                lf->show();
-                if (lf->get_format() != nullptr) {
-                    lss.text_filters_changed();
-                }
-            }
+            lss.find_data(lf) | [](auto ld) {
+                ld->set_visibility(true);
+                lss.text_filters_changed();
+            };
 
             if (lf->get_format() != nullptr) {
                 auto& log_view = lnav_data.ld_views[LNV_LOG];
@@ -102,8 +100,13 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 return true;
             }
 
+            auto& lss = lnav_data.ld_log_source;
             auto &lf = fc.fc_files[sel];
-            lf->set_visibility(!lf->is_visible());
+
+            lss.find_data(lf) | [](auto ld) {
+                ld->set_visibility(!ld->ld_visible);
+            };
+
             auto top_view = *lnav_data.ld_view_stack.top();
             auto tss = top_view->get_sub_source();
 
@@ -222,11 +225,16 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
 
     line -= fc.fc_other_files.size();
 
+    auto& lss = lnav_data.ld_log_source;
     auto &lf = fc.fc_files[line];
+    auto ld_opt = lss.find_data(lf);
 
-    chtype visible = lf->is_visible() ? ACS_DIAMOND : ' ';
+    chtype visible = ACS_DIAMOND;
+    if (ld_opt && !ld_opt.value()->ld_visible) {
+        visible = ' ';
+    }
     value_out.emplace_back(line_range{2, 3}, &view_curses::VC_GRAPHIC, visible);
-    if (lf->is_visible()) {
+    if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3}, &view_curses::VC_FOREGROUND,
                                vcolors.ansi_to_theme_color(COLOR_GREEN));
     }

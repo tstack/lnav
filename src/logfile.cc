@@ -103,7 +103,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
     this->lf_line_buffer.set_fd(this->lf_options.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
-    this->lf_is_visible = loo.loo_is_visible;
+    this->lf_indexing = loo.loo_is_visible;
 
     ensure(this->invariant());
 }
@@ -133,7 +133,7 @@ bool logfile::exists() const
 void logfile::reset_state()
 {
     this->clear_time_offset();
-    this->lf_is_visible = this->lf_options.loo_is_visible;
+    this->lf_indexing = this->lf_options.loo_is_visible;
 }
 
 void logfile::set_format_base_time(log_format *lf)
@@ -285,7 +285,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 
 logfile::rebuild_result_t logfile::rebuild_index()
 {
-    if (!this->lf_is_visible) {
+    if (!this->lf_indexing) {
         return logfile::rebuild_result_t::RR_NO_NEW_LINES;
     }
 
@@ -397,7 +397,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (!this->lf_options.loo_non_utf_is_visible && !li.li_valid_utf) {
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
-                this->lf_is_visible = false;
+                this->lf_indexing = false;
                 this->lf_options.loo_non_utf_is_visible = true;
                 break;
             }
@@ -459,7 +459,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             st.st_size >= this->lf_options.loo_visible_size_limit) {
             log_info("file has unknown format and is too large: %s",
                      this->lf_filename.c_str());
-            this->lf_is_visible = false;
+            this->lf_indexing = false;
             this->lf_options.loo_visible_size_limit = -1;
         }
 

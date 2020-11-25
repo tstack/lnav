@@ -40,14 +40,13 @@ EOF
     fi
 
     run_test env TMPDIR=tmp ${lnav_test} -n \
-        -c ';SELECT basename(filepath), visible FROM lnav_file' \
+        -c ';SELECT view_name, basename(filepath), visible FROM lnav_view_files' \
         test-logs.tgz
 
     check_output "archive files not loaded correctly" <<EOF
- basename(filepath)  visible
-logfile_access_log.0       1
-logfile_access_log.1       1
-logfile_empty.0            0
+view_name  basename(filepath)  visible
+log       logfile_access_log.0       1
+log       logfile_access_log.1       1
 EOF
 
     run_test env TMPDIR=tmp ${lnav_test} -n \

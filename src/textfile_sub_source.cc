@@ -103,7 +103,6 @@ void textfile_sub_source::to_front(const std::shared_ptr<logfile>& lf)
 
         if (iter != this->tss_hidden_files.end()) {
             this->tss_hidden_files.erase(iter);
-            lf->show();
         }
     }
     this->tss_files.push_front(lf);
@@ -152,32 +151,18 @@ void textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 {
     auto *lfo = new line_filter_observer(this->get_filters(), lf);
     lf->set_logline_observer(lfo);
-    if (lf->is_visible()) {
-        this->tss_files.push_back(lf);
-    } else {
-        this->tss_hidden_files.push_back(lf);
-    }
+    this->tss_files.push_back(lf);
 }
 
 void textfile_sub_source::text_filters_changed()
 {
     for (auto iter = this->tss_files.begin();
          iter != this->tss_files.end();) {
-        if ((*iter)->is_visible()) {
-            ++iter;
-        } else {
-            this->tss_hidden_files.push_back(*iter);
-            iter = this->tss_files.erase(iter);
-        }
+        ++iter;
     }
     for (auto iter = this->tss_hidden_files.begin();
          iter != this->tss_hidden_files.end();) {
-        if (!(*iter)->is_visible()) {
-            ++iter;
-        } else {
-            this->tss_files.push_back(*iter);
-            iter = this->tss_hidden_files.erase(iter);
-        }
+        ++iter;
     }
 
     std::shared_ptr<logfile> lf = this->current_file();

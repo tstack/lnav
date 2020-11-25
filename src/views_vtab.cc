@@ -576,6 +576,67 @@ CREATE TABLE lnav_view_filter_stats (
     }
 };
 
+struct lnav_view_files : public tvt_iterator_cursor<lnav_view_files> {
+    static constexpr const char *CREATE_STMT = R"(
+--
+CREATE TABLE lnav_view_files (
+    view_name TEXT,     -- The name of the view.
+    filepath  TEXT,     -- The path to the file.
+    visible   INTEGER   -- Indicates whether or not the file is shown.
+);
+)";
+
+    using iterator = logfile_sub_source::iterator;
+
+    iterator begin() {
+        return lnav_data.ld_log_source.begin();
+    }
+
+    iterator end() {
+        return lnav_data.ld_log_source.end();
+    }
+
+    int get_column(cursor &vc, sqlite3_context *ctx, int col) {
+        auto ld = *vc.iter;
+
+        switch (col) {
+            case 0:
+                sqlite3_result_text(ctx,
+                                    lnav_view_strings[LNV_LOG], -1,
+                                    SQLITE_STATIC);
+                break;
+            case 1:
+                to_sqlite(ctx, ld->ld_filter_state.lfo_filter_state
+                    .tfs_logfile->get_filename());
+                break;
+            case 2:
+                to_sqlite(ctx, ld->ld_visible);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    int update_row(sqlite3_vtab *tab,
+                   sqlite3_int64 &rowid,
+                   const char *view_name,
+                   const char *file_path,
+                   bool visible) {
+        auto &lss = lnav_data.ld_log_source;
+        auto iter = this->begin();
+
+        std::advance(iter, rowid);
+
+        auto ld = *iter;
+        if (ld->ld_visible != visible) {
+            ld->set_visibility(visible);
+            lss.text_filters_changed();
+        }
+
+        return SQLITE_OK;
+    }
+};
+
 static const char *CREATE_FILTER_VIEW = R"(
 CREATE VIEW lnav_view_filters_and_stats AS
   SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
@@ -587,6 +648,7 @@ int register_views_vtab(sqlite3 *db)
     static vtab_module<lnav_view_stack> LNAV_VIEW_STACK_MODULE;
     static vtab_module<lnav_view_filters> LNAV_VIEW_FILTERS_MODULE;
     static vtab_module<tvt_no_update<lnav_view_filter_stats>> LNAV_VIEW_FILTER_STATS_MODULE;
+    static vtab_module<lnav_view_files> LNAV_VIEW_FILES_MODULE;
 
     int rc;
 
@@ -600,6 +662,9 @@ int register_views_vtab(sqlite3 *db)
     assert(rc == SQLITE_OK);
 
     rc = LNAV_VIEW_FILTER_STATS_MODULE.create(db, "lnav_view_filter_stats");
+    assert(rc == SQLITE_OK);
+
+    rc = LNAV_VIEW_FILES_MODULE.create(db, "lnav_view_files");
     assert(rc == SQLITE_OK);
 
     char *errmsg;

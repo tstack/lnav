@@ -901,7 +901,9 @@ void load_session()
             log_debug("found state for file: %s %d",
                       lf->get_content_id().c_str(),
                       iter->second.fs_is_visible);
-            lf->set_visibility(iter->second.fs_is_visible);
+            lnav_data.ld_log_source.find_data(lf) | [iter](auto ld) {
+                ld->set_visibility(iter->second.fs_is_visible);
+            };
             if (!iter->second.fs_is_visible) {
                 if (lf->get_format() != nullptr) {
                     log_changes = true;
@@ -1323,13 +1325,15 @@ static void save_session_with_id(const std::string session_id)
                 yajlpp_map file_states(handle);
 
                 for (auto &lf : lnav_data.ld_active_files.fc_files) {
+                    auto ld_opt = lnav_data.ld_log_source.find_data(lf);
+
                     file_states.gen(lf->get_filename());
 
                     {
                         yajlpp_map file_state(handle);
 
                         file_state.gen("visible");
-                        file_state.gen(lf->is_visible());
+                        file_state.gen(!ld_opt || ld_opt.value()->ld_visible);
                     }
                 }
             }

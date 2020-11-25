@@ -2098,7 +2098,9 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
         }
 
         if (!ec.ec_dry_run) {
-            lf->set_visibility(make_visible);
+            lnav_data.ld_log_source.find_data(lf) | [make_visible](auto ld) {
+                ld->set_visibility(make_visible);
+            };
             tc->get_sub_source()->text_filters_changed();
         }
         retval = fmt::format("{} file -- {}",
@@ -2116,7 +2118,9 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
                 continue;
             }
 
-            if (lf->is_visible() == make_visible) {
+            auto ld_opt = lnav_data.ld_log_source.find_data(lf);
+
+            if (!ld_opt || ld_opt.value()->ld_visible == make_visible) {
                 continue;
             }
 
@@ -2132,7 +2136,9 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
             }
 
             if (!ec.ec_dry_run) {
-                lf->set_visibility(make_visible);
+                ld_opt | [make_visible](auto ld) {
+                    ld->set_visibility(make_visible);
+                };
             }
             if (lf->get_format() != nullptr) {
                 log_file_count += 1;

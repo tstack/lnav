@@ -23,14 +23,6 @@ EOF
 
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
-    -c ":hide-file" \
-    ${test_dir}/textfile_json_indented.0
-
-check_output "hide-file with text file does not work" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":goto 0" \
     -c ":next-mark error" \
     -c ":prev-location" \

@@ -36,6 +36,7 @@
 
 #include <list>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/func_util.hh"
@@ -166,7 +167,7 @@ public:
      * @param va The action to invoke when the view is scrolled.
      * @todo Allow multiple observers.
      */
-    void set_scroll_action(action va) { this->lv_scroll = va; };
+    void set_scroll_action(action va) { this->lv_scroll = std::move(va); };
 
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };

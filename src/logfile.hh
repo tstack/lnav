@@ -212,7 +212,7 @@ public:
     };
 
     void mark_as_duplicate() {
-        this->hide();
+        this->lf_indexing = false;
         this->lf_options.loo_is_visible = false;
     }
 
@@ -246,22 +246,6 @@ public:
 
     /** @return True if this log file still exists. */
     bool exists() const;
-
-    void hide() {
-        this->lf_is_visible = false;
-    }
-
-    void show() {
-        this->lf_is_visible = true;
-    }
-
-    void set_visibility(bool value) {
-        this->lf_is_visible = value;
-    }
-
-    bool is_visible() const {
-        return this->lf_is_visible;
-    }
 
     void close() {
         this->lf_is_closed = true;
@@ -360,6 +344,10 @@ public:
         return retval;
     };
 
+    bool is_indexing() const {
+        return this->lf_indexing;
+    }
+
     /** Check the invariants for this object. */
     bool invariant()
     {
@@ -399,7 +387,7 @@ protected:
     int lf_time_offset_line{0};
     struct timeval lf_time_offset{0, 0};
     bool lf_is_closed{false};
-    bool lf_is_visible{true};
+    bool lf_indexing{true};
     bool lf_partial_line{false};
     logline_observer *lf_logline_observer{nullptr};
     logfile_observer *lf_logfile_observer{nullptr};

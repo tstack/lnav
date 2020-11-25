@@ -738,7 +738,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
 
-            if (!ld->get_file()->is_visible()) {
+            if (!ld->is_visible()) {
                 continue;
             }
 
@@ -884,7 +884,7 @@ void logfile_sub_source::text_filters_changed()
         uint64_t line_number;
         logfile_data *ld = this->find_data(cl, line_number);
 
-        if (!ld->get_file()->is_visible()) {
+        if (!ld->is_visible()) {
             continue;
         }
 

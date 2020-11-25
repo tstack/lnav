@@ -129,18 +129,18 @@ public:
         LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
     } type_t;
 
-    text_filter(type_t type, const std::string id, size_t index)
+    text_filter(type_t type, const std::string& id, size_t index)
             : lf_type(type),
               lf_id(id),
               lf_index(index) { };
-    virtual ~text_filter() { };
+    virtual ~text_filter() = default;
 
     type_t get_type() const { return this->lf_type; };
     void set_type(type_t t) { this->lf_type = t; };
     std::string get_id() const { return this->lf_id; };
     size_t get_index() const { return this->lf_index; };
 
-    bool is_enabled() { return this->lf_enabled; };
+    bool is_enabled() const { return this->lf_enabled; };
     void enable() { this->lf_enabled = true; };
     void disable() { this->lf_enabled = false; };
     void set_enabled(bool value) {
@@ -690,7 +690,7 @@ public:
                      int off_start,
                      std::pair<int, int> &range_out);
 
-    void set_search_action(action sa) { this->tc_search_action = sa; };
+    void set_search_action(action sa) { this->tc_search_action = std::move(sa); };
 
     void grep_end_batch(grep_proc<vis_line_t> &gp);
     void grep_end(grep_proc<vis_line_t> &gp);

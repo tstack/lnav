@@ -76,7 +76,7 @@ public:
 class pcre_filter
     : public text_filter {
 public:
-    pcre_filter(type_t type, const std::string id, size_t index, pcre *code)
+    pcre_filter(type_t type, const std::string& id, size_t index, pcre *code)
         : text_filter(type, id, index),
           pf_pcre(code) { };
 
@@ -556,8 +556,7 @@ public:
         logfile_data(size_t index, filter_stack &fs, const std::shared_ptr<logfile> &lf)
             : ld_file_index(index),
               ld_filter_state(fs, lf),
-              ld_lines_indexed(0),
-              ld_enabled(true) {
+              ld_visible(lf->is_indexing()) {
             lf->set_logline_observer(&this->ld_filter_state);
         };
 
@@ -565,11 +564,7 @@ public:
         {
             this->ld_filter_state.lfo_filter_state.clear();
         };
-
-        void set_enabled(bool enabled) {
-            this->ld_enabled = enabled;
-        }
-
+\
         void set_file(const std::shared_ptr<logfile> &lf) {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             lf->set_logline_observer(&this->ld_filter_state);
@@ -579,10 +574,18 @@ public:
             return this->ld_filter_state.lfo_filter_state.tfs_logfile;
         };
 
+        bool is_visible() const {
+            return this->ld_visible;
+        }
+
+        void set_visibility(bool vis) {
+            this->ld_visible = vis;
+        }
+
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
-        size_t ld_lines_indexed;
-        bool ld_enabled;
+        size_t ld_lines_indexed{0};
+        bool ld_visible;
     };
 
     typedef std::vector<logfile_data *>::iterator iterator;
@@ -617,6 +620,15 @@ public:
 
         return retval;
     };
+
+    nonstd::optional<logfile_data *> find_data(const std::shared_ptr<logfile>& lf) {
+        for (auto ld : *this) {
+            if (ld->ld_filter_state.lfo_filter_state.tfs_logfile == lf) {
+                return ld;
+            }
+        }
+        return nonstd::nullopt;
+    }
 
     content_line_t get_file_base_content_line(iterator iter) {
         ssize_t index = std::distance(this->begin(), iter);

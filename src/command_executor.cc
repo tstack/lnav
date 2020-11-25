@@ -385,8 +385,6 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }
             }
-        } else {
-            lnav_data.ld_log_source.text_filters_changed();
         }
 #endif
     }

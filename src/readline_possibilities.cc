@@ -279,12 +279,14 @@ void add_file_possibilities()
             continue;
         }
 
-        auto escaped_fn = lf->get_filename();
-        sh_escape.GlobalReplace(R"(\\\1)", &escaped_fn);
+        lnav_data.ld_log_source.find_data(lf) | [&lf, rc](auto ld) {
+            auto escaped_fn = lf->get_filename();
+            sh_escape.GlobalReplace(R"(\\\1)", &escaped_fn);
 
-        rc->add_possibility(LNM_COMMAND,
-                            lf->is_visible() ? "visible-files" : "hidden-files",
-                            escaped_fn);
+            rc->add_possibility(LNM_COMMAND,
+                                ld->is_visible() ? "visible-files" : "hidden-files",
+                                escaped_fn);
+        };
     }
 }
 
