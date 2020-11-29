@@ -54,7 +54,7 @@ static cache_entry *find_re(const char *re)
         c.re2 = make_shared<pcrepp>(re_str);
         c.re = make_shared<pcrecpp::RE>(re);
         if (!c.re->error().empty()) {
-            auto_mem<char> e2(sqlite3_free);
+            auto_mem<char, sqlite3_free> e2;
 
             e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
             throw pcrepp::error(e2.in(), 0);

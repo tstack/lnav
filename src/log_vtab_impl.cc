@@ -968,8 +968,8 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
     string retval;
 
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
-        auto_mem<char> errmsg(sqlite3_free);
-        auto_mem<char> sql(sqlite3_free);
+        auto_mem<char, sqlite3_free> errmsg;
+        auto_mem<char, sqlite3_free> sql;
         int            rc;
 
         this->vm_impls[vi->get_name()] = vi;
@@ -1002,7 +1002,7 @@ string log_vtab_manager::unregister_vtab(intern_string_t name)
         retval = "unknown log line table -- " + name.to_string();
     }
     else {
-        auto_mem<char> sql(sqlite3_free);
+        auto_mem<char, sqlite3_free> sql;
         __attribute((unused))
         int   rc;
 
