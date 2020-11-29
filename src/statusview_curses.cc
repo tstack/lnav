@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <vector>
+#include <algorithm>
 
 #include "statusview_curses.hh"
 
@@ -173,7 +174,7 @@ void statusview_curses::window_change()
         remaining = 0;
     }
 
-    stable_sort(begin(resizable), end(resizable), [](auto l, auto r) {
+    std::stable_sort(begin(resizable), end(resizable), [](auto l, auto r) {
         return r->get_share() < l->get_share();
     });
     for (auto sf : resizable) {
