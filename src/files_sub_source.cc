@@ -62,7 +62,7 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             auto& lss = lnav_data.ld_log_source;
             auto &lf = fc.fc_files[sel];
 
-            lss.find_data(lf) | [](auto ld) {
+            lss.find_data(lf) | [&lss](auto ld) {
                 ld->set_visibility(true);
                 lss.text_filters_changed();
             };
