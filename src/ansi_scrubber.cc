@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <vector>
+#include <algorithm>
 
 #include "base/opt_util.hh"
 #include "view_curses.hh"
