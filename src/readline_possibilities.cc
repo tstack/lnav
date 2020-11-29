@@ -272,7 +272,7 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
                         std::to_string(lv.lv_value.i));
                     break;
                 default: {
-                    auto_mem<char> str;
+                    auto_mem<char, sqlite3_free> str;
 
                     str = sqlite3_mprintf("%.*Q", lv.text_length(), lv.text_value());
                     rlc->add_possibility(context, type, string(str.in()));
