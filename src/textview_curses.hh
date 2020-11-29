@@ -77,15 +77,19 @@ public:
         this->tfs_index.clear();
     };
 
+    void clear_filter_state(size_t index) {
+        this->tfs_filter_count[index] = 0;
+        this->tfs_filter_hits[index] = 0;
+        this->tfs_message_matched[index] = false;
+        this->tfs_lines_for_message[index] = 0;
+        this->tfs_last_message_matched[index] = false;
+        this->tfs_last_lines_for_message[index] = 0;
+    };
+
     void clear_deleted_filter_state(uint32_t used_mask) {
         for (int lpc = 0; lpc < MAX_FILTERS; lpc++) {
             if (!(used_mask & (1L << lpc))) {
-                this->tfs_filter_count[lpc] = 0;
-                this->tfs_filter_hits[lpc] = 0;
-                this->tfs_message_matched[lpc] = false;
-                this->tfs_lines_for_message[lpc] = 0;
-                this->tfs_last_message_matched[lpc] = false;
-                this->tfs_last_lines_for_message[lpc] = 0;
+                this->clear_filter_state(lpc);
             }
         }
         for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
@@ -117,6 +121,12 @@ public:
     std::vector<uint32_t> tfs_index;
 };
 
+enum class filter_lang_t : int {
+    NONE,
+    REGEX,
+    SQL,
+};
+
 class text_filter {
 public:
     typedef enum {
@@ -129,15 +139,20 @@ public:
         LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
     } type_t;
 
-    text_filter(type_t type, const std::string& id, size_t index)
+    text_filter(type_t type, filter_lang_t lang, std::string id, size_t index)
             : lf_type(type),
-              lf_id(id),
+              lf_lang(lang),
+              lf_id(std::move(id)),
               lf_index(index) { };
     virtual ~text_filter() = default;
 
-    type_t get_type() const { return this->lf_type; };
+    type_t get_type() const { return this->lf_type; }
+    filter_lang_t get_lang() const { return this->lf_lang; }
     void set_type(type_t t) { this->lf_type = t; };
     std::string get_id() const { return this->lf_id; };
+    void set_id(std::string id) {
+        this->lf_id = std::move(id);
+    }
     size_t get_index() const { return this->lf_index; };
 
     bool is_enabled() const { return this->lf_enabled; };
@@ -153,7 +168,7 @@ public:
 
     void end_of_message(logfile_filter_state &lfs);
 
-    virtual bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) = 0;
+    virtual bool matches(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &line) = 0;
 
     virtual std::string to_command() = 0;
 
@@ -166,6 +181,7 @@ public:
 protected:
     bool        lf_enabled{true};
     type_t      lf_type;
+    filter_lang_t lf_lang;
     std::string lf_id;
     size_t lf_index;
 };
@@ -173,10 +189,10 @@ protected:
 class empty_filter : public text_filter {
 public:
     empty_filter(type_t type, size_t index)
-        : text_filter(type, "", index) {
+        : text_filter(type, filter_lang_t::NONE, "", index) {
     }
 
-    bool matches(const logfile &lf, const logline &ll,
+    bool matches(const logfile &lf, logfile::const_iterator ll,
                  shared_buffer_ref &line) override;
 
     std::string to_command() override;
@@ -185,6 +201,9 @@ public:
 class filter_stack {
 public:
     typedef std::vector<std::shared_ptr<text_filter>>::iterator iterator;
+
+    explicit filter_stack(size_t reserved = 0) : fs_reserved(reserved) {
+    }
 
     iterator begin() {
         return this->fs_filters.begin();
@@ -203,7 +222,8 @@ public:
     };
 
     bool full() const {
-        return this->fs_filters.size() == logfile_filter_state::MAX_FILTERS;
+        return (this->fs_reserved + this->fs_filters.size()) ==
+               logfile_filter_state::MAX_FILTERS;
     }
 
     nonstd::optional<size_t> next_index() {
@@ -221,7 +241,9 @@ public:
 
             used[index] = true;
         }
-        for (size_t lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
+        for (size_t lpc = this->fs_reserved;
+             lpc < logfile_filter_state::MAX_FILTERS;
+             lpc++) {
             if (!used[lpc]) {
                 return lpc;
             }
@@ -330,12 +352,13 @@ public:
     };
 
 private:
+    const size_t fs_reserved;
     std::vector<std::shared_ptr<text_filter>> fs_filters;
 };
 
 class text_time_translator {
 public:
-    virtual ~text_time_translator() { };
+    virtual ~text_time_translator() = default;
 
     virtual int row_for_time(struct timeval time_bucket) = 0;
 
@@ -385,6 +408,10 @@ public:
     };
 
     typedef long line_flags_t;
+
+    text_sub_source(size_t reserved_filters = 0)
+        : tss_filters(reserved_filters) {
+    }
 
     void register_view(textview_curses *tc) {
         this->tss_view = tc;

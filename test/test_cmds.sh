@@ -2,6 +2,35 @@
 
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :log_text LIKE '%How are%'" \
+    "${test_dir}/logfile_multiline.0"
+
+check_output "filter-expr for multiline not working" <<EOF
+2009-07-20 22:59:27,672:DEBUG:Hello, World!
+  How are you today?
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :sc_bytes > 2000" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "filter-expr not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :sc_bytes # ff" \
+    "${test_dir}/logfile_access_log.*"
+
+check_error_output "filter-expr error not working" <<EOF
+command-option:1: error: unrecognized token: "#"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":goto 0" \
     -c ":close" \
     -c ":goto 0" \
@@ -453,14 +482,14 @@ EOF
 
 
 TOO_MANY_FILTERS=""
-for i in `seq 1 33`; do
+for i in `seq 1 32`; do
     TOO_MANY_FILTERS="$TOO_MANY_FILTERS -c ':filter-out $i'"
 done
 run_test eval ${lnav_test} -d /tmp/lnav.err -n \
     $TOO_MANY_FILTERS \
     ${test_dir}/logfile_filter.0
 check_error_output "able to create too many filters?" <<EOF
-command-option:33: error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
+command-option:32: error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
 EOF
 
 

@@ -231,15 +231,19 @@ size_t filter_help_status_source::statusview_fields()
 
             if (editor.fss_editing) {
                 auto tf = *(fs.begin() + lv.get_selection());
+                auto lang = tf->get_lang() == filter_lang_t::SQL ?
+                            "an SQL": "a regular";
 
                 if (tf->get_type() == text_filter::type_t::INCLUDE) {
                     this->fss_help.set_value(
                         "                     "
-                        "Enter a regular expression to match lines to filter in:");
+                        "Enter %s expression to match lines to filter in:",
+                        lang);
                 } else {
                     this->fss_help.set_value(
                         "                     "
-                        "Enter a regular expression to match lines to filter out:");
+                        "Enter %s expression to match lines to filter out:",
+                        lang);
                 }
             } else if (fs.empty()) {
                 this->fss_help.set_value("  %s", CREATE_HELP);

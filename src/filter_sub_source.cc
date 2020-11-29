@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "base/enum_util.hh"
 #include "base/func_util.hh"
 
 #include "lnav.hh"
@@ -41,9 +42,14 @@ using namespace std;
 
 filter_sub_source::filter_sub_source()
 {
-    this->filter_context.set_highlighter(readline_regex_highlighter)
+    this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(LNM_FILTER, this->filter_context);
+    this->fss_editor.add_context(to_underlying(filter_lang_t::REGEX),
+                                 this->fss_regex_context);
+    this->fss_sql_context.set_highlighter(readline_sqlite_highlighter)
+        .set_append_character(0);
+    this->fss_editor.add_context(to_underlying(filter_lang_t::SQL),
+                                 this->fss_sql_context);
     this->fss_editor.set_change_action(bind_mem(
         &filter_sub_source::rl_change, this));
     this->fss_editor.set_perform_action(bind_mem(
@@ -130,8 +136,8 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
 
             fs.delete_filter(tf->get_id());
-            tss->text_filters_changed();
             lv.reload_data();
+            tss->text_filters_changed();
             return true;
         }
         case 'i': {
@@ -154,7 +160,9 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+            add_view_text_possibilities(&this->fss_editor,
+                                        to_underlying(filter_lang_t::REGEX),
+                                        "*",
                                         top_view);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
@@ -162,7 +170,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(LNM_FILTER, "", "");
+            this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -187,7 +195,9 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+            add_view_text_possibilities(&this->fss_editor,
+                                        to_underlying(filter_lang_t::REGEX),
+                                        "*",
                                         top_view);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
@@ -195,7 +205,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(LNM_FILTER, "", "");
+            this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -214,15 +224,20 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*",
+            add_view_text_possibilities(&this->fss_editor,
+                                        to_underlying(filter_lang_t::REGEX),
+                                        "*",
                                         top_view);
+            add_filter_expr_possibilities(&this->fss_editor,
+                                          to_underlying(filter_lang_t::SQL),
+                                          "*");
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(LNM_FILTER, "");
+            this->fss_editor.focus(to_underlying(tf->get_lang()), "");
             this->fss_editor.rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
             tf->disable();
@@ -373,33 +388,60 @@ void filter_sub_source::rl_change(readline_curses *rc)
     auto iter = fs.begin() + this->tss_view->get_selection();
     shared_ptr<text_filter> tf = *iter;
     string new_value = rc->get_line_buffer();
-    auto_mem<pcre> code;
-    const char *errptr;
-    int eoff;
 
-    if ((code = pcre_compile(new_value.c_str(),
-                             PCRE_CASELESS,
-                             &errptr,
-                             &eoff,
-                             nullptr)) == nullptr) {
-        lnav_data.ld_filter_help_status_source.fss_error
-            .set_value("error: %s", errptr);
-    } else {
-        auto &hm = top_view->get_highlights();
-        highlighter hl(code.release());
-        int color;
+    switch (tf->get_lang()) {
+        case filter_lang_t::NONE:
+            break;
+        case filter_lang_t::REGEX: {
+            auto_mem<pcre> code;
+            const char *errptr;
+            int eoff;
 
-        if (tf->get_type() == text_filter::EXCLUDE) {
-            color = COLOR_RED;
-        } else {
-            color = COLOR_GREEN;
+            if ((code = pcre_compile(new_value.c_str(),
+                                     PCRE_CASELESS,
+                                     &errptr,
+                                     &eoff,
+                                     nullptr)) == nullptr) {
+                lnav_data.ld_filter_help_status_source.fss_error
+                    .set_value("error: %s", errptr);
+            } else {
+                auto &hm = top_view->get_highlights();
+                highlighter hl(code.release());
+                int color;
+
+                if (tf->get_type() == text_filter::EXCLUDE) {
+                    color = COLOR_RED;
+                } else {
+                    color = COLOR_GREEN;
+                }
+                hl.with_attrs(
+                    view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
+
+                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
+                top_view->set_needs_update();
+                lnav_data.ld_filter_help_status_source.fss_error.clear();
+            }
+            break;
         }
-        hl.with_attrs(
-            view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
-
-        hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
-        top_view->set_needs_update();
-        lnav_data.ld_filter_help_status_source.fss_error.clear();
+        case filter_lang_t::SQL: {
+            auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
+            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+            auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                              full_sql.c_str(),
+                                              full_sql.size(),
+                                              SQLITE_PREPARE_PERSISTENT,
+                                              stmt.out(),
+                                              nullptr);
+            if (retcode != SQLITE_OK) {
+                lnav_data.ld_filter_help_status_source.fss_error
+                    .set_value("error2: %s", sqlite3_errmsg(lnav_data.ld_db));
+            } else {
+                lnav_data.ld_log_source.set_preview_sql_filter(stmt.release());
+                top_view->set_needs_update();
+                lnav_data.ld_filter_help_status_source.fss_error.clear();
+            }
+            break;
+        }
     }
 }
 
@@ -411,30 +453,58 @@ void filter_sub_source::rl_perform(readline_curses *rc)
     auto iter = fs.begin() + this->tss_view->get_selection();
     shared_ptr<text_filter> tf = *iter;
     string new_value = rc->get_value();
-    auto_mem<pcre> code;
-    const char *errptr;
-    int eoff;
 
     if (new_value.empty()) {
         this->rl_abort(rc);
-    } else if ((code = pcre_compile(new_value.c_str(),
-                                    PCRE_CASELESS,
-                                    &errptr,
-                                    &eoff,
-                                    nullptr)) == nullptr) {
-        this->rl_abort(rc);
     } else {
-        tf->lf_deleted = true;
-        tss->text_filters_changed();
+        switch (tf->get_lang()) {
+            case filter_lang_t::NONE:
+            case filter_lang_t::REGEX: {
+                auto_mem<pcre> code;
+                const char *errptr;
+                int eoff;
 
-        auto pf = make_shared<pcre_filter>(tf->get_type(),
-                                           new_value, tf->get_index(),
-                                           code.release());
+                if ((code = pcre_compile(new_value.c_str(),
+                                         PCRE_CASELESS,
+                                         &errptr,
+                                         &eoff,
+                                         nullptr)) == nullptr) {
+                    this->rl_abort(rc);
+                } else {
+                    tf->lf_deleted = true;
+                    tss->text_filters_changed();
 
-        *iter = pf;
-        tss->text_filters_changed();
+                    auto pf = make_shared<pcre_filter>(tf->get_type(),
+                                                       new_value, tf->get_index(),
+                                                       code.release());
+
+                    *iter = pf;
+                    tss->text_filters_changed();
+                }
+                break;
+            }
+            case filter_lang_t::SQL: {
+                auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
+                auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+                auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                                  full_sql.c_str(),
+                                                  full_sql.size(),
+                                                  SQLITE_PREPARE_PERSISTENT,
+                                                  stmt.out(),
+                                                  nullptr);
+                if (retcode != SQLITE_OK) {
+                    this->rl_abort(rc);
+                } else {
+                    lnav_data.ld_log_source.set_sql_filter(
+                        new_value, stmt.release());
+                    tss->text_filters_changed();
+                }
+                break;
+            }
+        }
     }
 
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
     this->fss_editor.set_visible(false);
@@ -449,6 +519,7 @@ void filter_sub_source::rl_abort(readline_curses *rc)
     auto iter = fs.begin() + this->tss_view->get_selection();
     shared_ptr<text_filter> tf = *iter;
 
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     lnav_data.ld_filter_help_status_source.fss_error.clear();
     top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});

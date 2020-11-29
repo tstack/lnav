@@ -253,7 +253,7 @@ const char *sql_function_names[] = {
     "julianday(",
     "strftime(",
 
-    NULL
+    nullptr
 };
 
 multimap<std::string, help_text *> sqlite_function_help;
@@ -268,6 +268,9 @@ static int handle_db_list(void *ptr,
     smc = (struct sqlite_metadata_callbacks *)ptr;
 
     smc->smc_db_list[colvalues[1]] = std::vector<std::string>();
+    if (!smc->smc_database_list) {
+        return 0;
+    }
 
     return smc->smc_database_list(ptr, ncols, colvalues, colnames);
 }
@@ -285,6 +288,9 @@ static int handle_table_list(void *ptr,
     struct table_list_data *tld = (struct table_list_data *)ptr;
 
     (*tld->tld_iter)->second.push_back(colvalues[0]);
+    if (!tld->tld_callbacks->smc_table_list) {
+        return 0;
+    }
 
     return tld->tld_callbacks->smc_table_list(tld->tld_callbacks,
                                               ncols,
@@ -297,14 +303,16 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
     auto_mem<char, sqlite3_free> errmsg;
     int retval;
 
-    retval = sqlite3_exec(db,
-                          "pragma collation_list",
-                          smc.smc_collation_list,
-                          &smc,
-                          errmsg.out());
-    if (retval != SQLITE_OK) {
-        log_error("could not get collation list -- %s", errmsg.in());
-        return retval;
+    if (smc.smc_collation_list) {
+        retval = sqlite3_exec(db,
+                              "pragma collation_list",
+                              smc.smc_collation_list,
+                              &smc,
+                              errmsg.out());
+        if (retval != SQLITE_OK) {
+            log_error("could not get collation list -- %s", errmsg.in());
+            return retval;
+        }
     }
 
     retval = sqlite3_exec(db,
@@ -351,14 +359,16 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                 return SQLITE_NOMEM;
             }
 
-            retval = sqlite3_exec(db,
-                                  table_query,
-                                  smc.smc_table_info,
-                                  &smc,
-                                  errmsg.out());
-            if (retval != SQLITE_OK) {
-                log_error("could not get table info -- %s", errmsg.in());
-                return retval;
+            if (smc.smc_table_info) {
+                retval = sqlite3_exec(db,
+                                      table_query,
+                                      smc.smc_table_info,
+                                      &smc,
+                                      errmsg.out());
+                if (retval != SQLITE_OK) {
+                    log_error("could not get table info -- %s", errmsg.in());
+                    return retval;
+                }
             }
 
             table_query = sqlite3_mprintf(
@@ -369,14 +379,17 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                 return SQLITE_NOMEM;
             }
 
-            retval = sqlite3_exec(db,
-                                  table_query,
-                                  smc.smc_foreign_key_list,
-                                  &smc,
-                                  errmsg.out());
-            if (retval != SQLITE_OK) {
-                log_error("could not get foreign key list -- %s", errmsg.in());
-                return retval;
+            if (smc.smc_foreign_key_list) {
+                retval = sqlite3_exec(db,
+                                      table_query,
+                                      smc.smc_foreign_key_list,
+                                      &smc,
+                                      errmsg.out());
+                if (retval != SQLITE_OK) {
+                    log_error("could not get foreign key list -- %s",
+                              errmsg.in());
+                    return retval;
+                }
             }
         }
     }

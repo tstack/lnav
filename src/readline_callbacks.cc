@@ -148,6 +148,7 @@ void rl_change(readline_curses *rc)
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
 
@@ -279,6 +280,7 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     tc->reload_data();
 
     switch (mode) {
@@ -461,6 +463,7 @@ void lnav_rl_abort(readline_curses *rc)
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
 
     vector<string> errors;
     lnav_config = rollback_lnav_config;
@@ -495,6 +498,7 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
 
     auto new_mode = LNM_PAGING;
 

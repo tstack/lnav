@@ -119,6 +119,10 @@ struct string_fragment {
                strncmp(this->data(), str, this->length()) == 0;
     };
 
+    bool operator!=(const char *str) const {
+        return !(*this == str);
+    }
+
     bool startswith(const char *prefix) const {
         auto iter = this->begin();
 
@@ -277,6 +281,10 @@ public:
 
     bool operator==(const char *rhs) const {
         return strcmp(this->get(), rhs) == 0;
+    }
+
+    bool operator!=(const char *rhs) const {
+        return strcmp(this->get(), rhs) != 0;
     }
 
     intern_string_t &operator=(const intern_string_t &rhs) {

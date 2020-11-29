@@ -512,7 +512,13 @@ CREATE TABLE lnav_view_filters (
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();
         filter_stack &fs = tss->get_filters();
-        auto iter = fs.begin() + filter_index;
+        auto iter = fs.begin();
+        for (; iter != fs.end(); ++iter) {
+            if ((*iter)->get_index() == filter_index) {
+                break;
+            }
+        }
+
         shared_ptr<text_filter> tf = *iter;
 
         if (new_view_index != view_index) {

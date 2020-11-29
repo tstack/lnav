@@ -77,7 +77,7 @@ text_filter::revert_to_last(logfile_filter_state &lfs, size_t rollback_size)
 
 void text_filter::add_line(
         logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line) {
-    bool match_state = this->matches(*lfs.tfs_logfile, *ll, line);
+    bool match_state = this->matches(*lfs.tfs_logfile, ll, line);
 
     if (!ll->is_continued()) {
         this->end_of_message(lfs);
@@ -91,7 +91,7 @@ void text_filter::end_of_message(logfile_filter_state &lfs)
 {
     uint32_t mask = 0;
 
-    mask = ((uint32_t) lfs.tfs_message_matched[this->lf_index] ? 1U : 0) << this->lf_index;
+    mask = ((uint32_t) 1U << this->lf_index);
 
     for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++) {
         require(lfs.tfs_filter_count[this->lf_index] <=
@@ -99,7 +99,11 @@ void text_filter::end_of_message(logfile_filter_state &lfs)
 
         size_t line_number = lfs.tfs_filter_count[this->lf_index];
 
-        lfs.tfs_mask[line_number] |= mask;
+        if (lfs.tfs_message_matched[this->lf_index]) {
+            lfs.tfs_mask[line_number] |= mask;
+        } else {
+            lfs.tfs_mask[line_number] &= ~mask;
+        }
         lfs.tfs_filter_count[this->lf_index] += 1;
         if (lfs.tfs_message_matched[this->lf_index]) {
             lfs.tfs_filter_hits[this->lf_index] += 1;
@@ -679,7 +683,7 @@ void text_time_translator::data_reloaded(textview_curses *tc)
 
 template class bookmark_vector<vis_line_t>;
 
-bool empty_filter::matches(const logfile &lf, const logline &ll,
+bool empty_filter::matches(const logfile &lf, logfile::const_iterator ll,
                            shared_buffer_ref &line)
 {
     return false;

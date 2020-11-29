@@ -40,6 +40,8 @@
 
 using namespace std;
 
+static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip);
+
 static bool check_re_prev(const string &line, int x)
 {
     bool retval = false;
@@ -358,6 +360,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
     static const pcrepp RE_PREFIXES(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
+    static const pcrepp SQL_PREFIXES("^:(filter-expr)");
     static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
     static const pcrepp COLOR_PREFIXES("^:(config)");
     static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}))");
@@ -386,6 +389,10 @@ void readline_command_highlighter(attr_line_t &al, int x)
     pi.reset(line);
     if (SH_PREFIXES.match(pc, pi)) {
         readline_shlex_highlighter(al, x);
+    }
+    pi.reset(line);
+    if (SQL_PREFIXES.match(pc, pi)) {
+        readline_sqlite_highlighter_int(al, x, 1 + pc[0]->length());
     }
     pi.reset(line);
     if (COLOR_PREFIXES.match(pc, pi)) {
@@ -437,12 +444,12 @@ void readline_command_highlighter(attr_line_t &al, int x)
     }
 }
 
-void readline_sqlite_highlighter(attr_line_t &al, int x)
+static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip)
 {
     static string keyword_re_str = sql_keyword_re() + "|\\.schema|\\.msgformats";
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
-    static pcrepp ident_pcre("(\\$?\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
+    static pcrepp ident_pcre("(?:\\$|:)?(\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
 
     static const char *brackets[] = {
         "[]",
@@ -459,7 +466,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     int error_attrs = vc.attrs_for_role(view_colors::VCR_ERROR) | A_REVERSE;
 
     pcre_context_static<30> pc;
-    pcre_input pi(al.get_string());
+    pcre_input pi(al.get_string(), skip);
     string &line = al.get_string();
 
     while (ident_pcre.match(pc, pi)) {
@@ -476,7 +483,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         }
     }
 
-    pi.reset(line);
+    pi.reset(line, skip);
 
     while (keyword_pcre.match(pc, pi)) {
         pcre_context::capture_t *cap = pc.all();
@@ -487,7 +494,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
             keyword_attrs);
     }
 
-    for (size_t lpc = 0; lpc < line.length(); lpc++) {
+    for (size_t lpc = skip; lpc < line.length(); lpc++) {
         switch (line[lpc]) {
         case '*':
         case '<':
@@ -504,7 +511,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         }
     }
 
-    pi.reset(line);
+    pi.reset(line, skip);
 
     while (string_literal_pcre.match(pc, pi)) {
         pcre_context::capture_t *cap = pc.all();
@@ -526,6 +533,11 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     for (int lpc = 0; brackets[lpc]; lpc++) {
         find_matching_bracket(al, x, brackets[lpc][0], brackets[lpc][1]);
     }
+}
+
+void readline_sqlite_highlighter(attr_line_t &al, int x)
+{
+    readline_sqlite_highlighter_int(al, x, 1);
 }
 
 void readline_shlex_highlighter(attr_line_t &al, int x)

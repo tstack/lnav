@@ -695,6 +695,13 @@ void readline_curses::start()
                         strcpy(rl_line_buffer, initial);
                         rl_end = strlen(initial);
                         rl_redisplay();
+                        if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                    'l',
+                                    rl_line_buffer,
+                                    rl_end) != 0) {
+                            perror("line: write failed");
+                            _exit(1);
+                        }
                     }
                     else if (sscanf(msg, "f:%d:%n", &context, &prompt_start) == 1 &&
                              prompt_start != 0 &&
@@ -980,9 +987,13 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
 
                 case 'l':
                     this->rc_line_buffer = &msg[2];
-                    this->rc_change(this);
+                    if (this->rc_active_context != -1) {
+                        this->rc_change(this);
+                    }
                     this->rc_matches.clear();
-                    this->rc_display_match(this);
+                    if (this->rc_active_context != -1) {
+                        this->rc_display_match(this);
+                    }
                     break;
 
                 case 'c':

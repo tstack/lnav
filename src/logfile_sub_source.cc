@@ -41,6 +41,8 @@
 #include "logfile_sub_source.hh"
 #include "command_executor.hh"
 #include "ansi_scrubber.hh"
+#include "sql_util.hh"
+#include "yajlpp/yajlpp.hh"
 
 using namespace std;
 
@@ -98,13 +100,7 @@ static future<string> pretty_pipe_callback(exec_context &ec,
 }
 
 logfile_sub_source::logfile_sub_source()
-    : lss_flags(0),
-      lss_force_rebuild(false),
-      lss_token_file(NULL),
-      lss_min_log_level(LEVEL_UNKNOWN),
-      lss_marked_only(false),
-      lss_index_delegate(NULL),
-      lss_longest_line(0),
+    : text_sub_source(1),
       lss_meta_grepper(*this),
       lss_location_history(*this)
 {
@@ -117,14 +113,14 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
                                   content_line_t &line_base)
 {
     iterator iter;
-    shared_ptr<logfile> retval = NULL;
+    shared_ptr<logfile> retval = nullptr;
 
     line_base = content_line_t(0);
     for (iter = this->lss_files.begin();
-         iter != this->lss_files.end() && retval == NULL;
+         iter != this->lss_files.end() && retval == nullptr;
          iter++) {
         logfile_data &ld = *(*iter);
-        if (ld.get_file() == NULL) {
+        if (ld.get_file() == nullptr) {
             continue;
         }
         if (strcmp(ld.get_file()->get_filename().c_str(), fn) == 0) {
@@ -175,8 +171,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     this->lss_token_flags = flags;
-    this->lss_token_file   = this->find(line);
-    this->lss_token_line   = this->lss_token_file->begin() + line;
+    this->lss_token_file_data = this->find_data(line);
+    this->lss_token_file = (*this->lss_token_file_data)->get_file();
+    this->lss_token_line = this->lss_token_file->begin() + line;
 
     this->lss_token_attrs.clear();
     this->lss_token_values.clear();
@@ -550,6 +547,20 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
         }
     }
+
+    if (!this->lss_token_line->is_continued() &&
+        this->lss_preview_filter_stmt != nullptr) {
+        int color;
+        if (this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
+                                  this->lss_token_file_data,
+                                  this->lss_token_line)) {
+            color = COLOR_GREEN;
+        } else {
+            color = COLOR_RED;
+            value_out.emplace_back(line_range{0, 1}, &view_curses::VC_STYLE, A_BLINK);
+        }
+        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+    }
 }
 
 logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
@@ -736,21 +747,21 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
              index_index++) {
             content_line_t cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
-            logfile_data *ld = this->find_data(cl, line_number);
+            auto ld = this->find_data(cl, line_number);
 
-            if (!ld->is_visible()) {
+            if (!(*ld)->is_visible()) {
                 continue;
             }
 
-            auto line_iter = ld->get_file()->begin() + line_number;
+            auto line_iter = (*ld)->get_file()->begin() + line_number;
 
             if (!this->tss_apply_filters ||
-                (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
-                                               line_number) &&
-                 this->check_extra_filters(*line_iter))) {
+                (!(*ld)->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
+                                                  line_number) &&
+                 this->check_extra_filters(ld, line_iter))) {
                 this->lss_filtered_index.push_back(index_index);
-                if (this->lss_index_delegate != NULL) {
-                    shared_ptr<logfile> lf = ld->get_file();
+                if (this->lss_index_delegate != nullptr) {
+                    shared_ptr<logfile> lf = (*ld)->get_file();
                     this->lss_index_delegate->index_line(
                             *this, lf.get(), lf->begin() + line_number);
                 }
@@ -882,21 +893,21 @@ void logfile_sub_source::text_filters_changed()
     for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
         content_line_t cl = (content_line_t) this->lss_index[index_index];
         uint64_t line_number;
-        logfile_data *ld = this->find_data(cl, line_number);
+        auto ld = this->find_data(cl, line_number);
 
-        if (!ld->is_visible()) {
+        if (!(*ld)->is_visible()) {
             continue;
         }
 
-        auto line_iter = ld->get_file()->begin() + line_number;
+        auto line_iter = (*ld)->get_file()->begin() + line_number;
 
         if (!this->tss_apply_filters ||
-            (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
+            (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
                                            line_number) &&
-             this->check_extra_filters(*line_iter))) {
+             this->check_extra_filters(ld, line_iter))) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
-                shared_ptr<logfile> lf = ld->get_file();
+                shared_ptr<logfile> lf = (*ld)->get_file();
                 this->lss_index_delegate->index_line(
                         *this, lf.get(), lf->begin() + line_number);
             }
@@ -972,6 +983,212 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
     return true;
 }
 
+void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt)
+{
+    for (auto ld : *this) {
+        ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
+    }
+
+    auto old_filter = this->get_sql_filter();
+    if (stmt != nullptr) {
+        auto new_filter = std::make_shared<sql_filter>(*this, stmt_str, stmt);
+
+        if (old_filter) {
+            auto existing_iter = std::find(this->tss_filters.begin(),
+                                           this->tss_filters.end(),
+                                           old_filter.value());
+            *existing_iter = new_filter;
+        } else {
+            this->tss_filters.add_filter(new_filter);
+        }
+    } else if (old_filter) {
+        this->tss_filters.delete_filter(old_filter.value()->get_id());
+    }
+}
+
+bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
+{
+    auto lf = (*ld)->get_file();
+    char timestamp_buffer[64];
+    shared_buffer_ref sbr;
+    lf->read_full_message(ll, sbr);
+    auto format = lf->get_format();
+    string_attrs_t sa;
+    vector<logline_value> values;
+    format->annotate(std::distance(lf->cbegin(), ll), sbr, sa, values);
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    auto count = sqlite3_bind_parameter_count(stmt);
+    for (int lpc = 0; lpc < count; lpc++) {
+        auto *name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+
+        if (name[0] == '$') {
+            const char *env_value;
+
+            if ((env_value = getenv(&name[1])) != nullptr) {
+                sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
+            }
+            continue;
+        }
+        if (strcmp(name, ":log_level") == 0) {
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              ll->get_level_name(), -1,
+                              SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_time") == 0) {
+            auto len = sql_strftime(timestamp_buffer, sizeof(timestamp_buffer),
+                                    ll->get_timeval(),
+                                    'T');
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              timestamp_buffer, len,
+                              SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_mark") == 0) {
+            sqlite3_bind_int(stmt, lpc + 1, ll->is_marked());
+            continue;
+        }
+        if (strcmp(name, ":log_mark") == 0) {
+            sqlite3_bind_int(stmt, lpc + 1, ll->is_marked());
+            continue;
+        }
+        if (strcmp(name, ":log_comment") == 0) {
+            const auto &bm = this->get_user_bookmark_metadata();
+            auto cl = this->get_file_base_content_line(ld);
+            cl += content_line_t(std::distance(lf->cbegin(), ll));
+            auto bm_iter = bm.find(cl);
+            if (bm_iter != bm.end() && !bm_iter->second.bm_comment.empty()) {
+                const auto &meta = bm_iter->second;
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  meta.bm_comment.c_str(),
+                                  meta.bm_comment.length(),
+                                  SQLITE_STATIC);
+            }
+            continue;
+        }
+        if (strcmp(name, ":log_tags") == 0) {
+            const auto &bm = this->get_user_bookmark_metadata();
+            auto cl = this->get_file_base_content_line(ld);
+            cl += content_line_t(std::distance(lf->cbegin(), ll));
+            auto bm_iter = bm.find(cl);
+            if (bm_iter != bm.end() && !bm_iter->second.bm_tags.empty()) {
+                const auto &meta = bm_iter->second;
+                yajlpp_gen gen;
+
+                yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                {
+                    yajlpp_array arr(gen);
+
+                    for (const auto &str : meta.bm_tags) {
+                        arr.gen(str);
+                    }
+                }
+
+                string_fragment sf = gen.to_string_fragment();
+
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  sf.data(),
+                                  sf.length(),
+                                  SQLITE_TRANSIENT);
+            }
+            continue;
+        }
+        if (strcmp(name, ":log_path") == 0) {
+            const auto& filename = lf->get_filename();
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              filename.c_str(), filename.length(),
+                              SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_text") == 0) {
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              sbr.get_data(), sbr.length(),
+                              SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_body") == 0) {
+            auto iter = find_string_attr(sa, &SA_BODY);
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              &(sbr.get_data()[iter->sa_range.lr_start]),
+                              iter->sa_range.length(),
+                              SQLITE_STATIC);
+            continue;
+        }
+        for (auto& lv : values) {
+            if (lv.lv_name != &name[1]) {
+                continue;
+            }
+
+            switch (lv.lv_kind) {
+                case logline_value::VALUE_BOOLEAN:
+                    sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
+                    break;
+                case logline_value::VALUE_FLOAT:
+                    sqlite3_bind_double(stmt, lpc + 1, lv.lv_value.d);
+                    break;
+                case logline_value::VALUE_INTEGER:
+                    sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
+                    break;
+                case logline_value::VALUE_NULL:
+                    sqlite3_bind_null(stmt, lpc + 1);
+                    break;
+                default:
+                    sqlite3_bind_text(stmt,
+                                      lpc + 1,
+                                      lv.text_value(),
+                                      lv.text_length(),
+                                      SQLITE_TRANSIENT);
+                    break;
+            }
+            break;
+        }
+    }
+
+    auto step_res = sqlite3_step(stmt);
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+    switch (step_res) {
+        case SQLITE_OK:
+        case SQLITE_DONE:
+            return false;
+    }
+
+    return true;
+}
+
+bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
+{
+    if (this->lss_marked_only && !ll->is_marked()) {
+        return false;
+    }
+
+    if (ll->get_msg_level() < this->lss_min_log_level) {
+        return false;
+    }
+
+    if (*ll < this->lss_min_log_time) {
+        return false;
+    }
+
+    if (!(*ll <= this->lss_max_log_time)) {
+        return false;
+    }
+
+    return true;
+}
+
 void log_location_history::loc_history_append(vis_line_t top)
 {
     if (top >= vis_line_t(this->llh_log_source.text_line_count())) {
@@ -1034,4 +1251,32 @@ log_location_history::loc_history_forward(vis_line_t current_top)
     }
 
     return nonstd::nullopt;
+}
+
+bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
+                         shared_buffer_ref &line)
+{
+    if (ll->is_continued()) {
+        return false;
+    }
+    if (this->sf_filter_stmt == nullptr) {
+        return false;
+    }
+
+    auto lfp = lf.shared_from_this();
+    auto ld = this->sf_log_source.find_data_i(lfp);
+    if (ld == this->sf_log_source.end()) {
+        return false;
+    }
+
+    if (this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll)) {
+        return false;
+    }
+
+    return true;
+}
+
+std::string sql_filter::to_command()
+{
+    return fmt::format("filter-expr {}", this->lf_id);
 }

@@ -227,9 +227,13 @@ public:
 
     const_iterator begin() const { return this->lf_index.begin(); }
 
+    const_iterator cbegin() const { return this->lf_index.begin(); }
+
     iterator end() { return this->lf_index.end(); }
 
     const_iterator end() const { return this->lf_index.end(); }
+
+    const_iterator cend() const { return this->lf_index.end(); }
 
     /** @return The number of lines in the index. */
     size_t size() const { return this->lf_index.size(); }
@@ -290,14 +294,14 @@ public:
         return retval;
     }
 
-    size_t line_length(iterator ll, bool include_continues = true);
+    size_t line_length(const_iterator ll, bool include_continues = true);
 
     file_range get_file_range(iterator ll, bool include_continues = true) {
         return {ll->get_offset(),
                 (ssize_t) this->line_length(ll, include_continues)};
     }
 
-    void read_full_message(iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
+    void read_full_message(const_iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
 
     enum rebuild_result_t {
         RR_INVALID,

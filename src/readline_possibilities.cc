@@ -219,6 +219,96 @@ void add_view_text_possibilities(readline_curses *rlc, int context, const string
     rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);
 }
 
+void add_filter_expr_possibilities(readline_curses *rlc, int context, const std::string &type)
+{
+    static const char *BUILTIN_VARS[] = {
+        ":log_level",
+        ":log_time",
+        ":log_mark",
+        ":log_comment",
+        ":log_tags",
+        ":log_path",
+        ":log_text",
+        ":log_body",
+    };
+
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    auto& lss = lnav_data.ld_log_source;
+    auto bottom = tc->get_bottom();
+
+    rlc->clear_possibilities(context, type);
+    rlc->add_possibility(context, type,
+                         std::begin(BUILTIN_VARS),
+                         std::end(BUILTIN_VARS));
+    for (auto curr_line = tc->get_top(); curr_line < bottom; ++curr_line) {
+        auto cl = lss.at(curr_line);
+        auto lf = lss.find(cl);
+        auto ll = lf->begin() + cl;
+        auto format = lf->get_format();
+        shared_buffer_ref sbr;
+        string_attrs_t sa;
+        vector<logline_value> values;
+
+        lf->read_full_message(ll, sbr);
+        format->annotate(cl, sbr, sa, values);
+        for (auto& lv : values) {
+            if (!lv.lv_identifier) {
+                continue;
+            }
+
+            auto_mem<char> ident(sqlite3_free);
+
+            ident = sql_quote_ident(lv.lv_name.get());
+            auto bound_name = fmt::format(":{}", ident);
+            rlc->add_possibility(context, type, bound_name);
+            switch (lv.lv_kind) {
+                case logline_value::VALUE_BOOLEAN:
+                case logline_value::VALUE_FLOAT:
+                case logline_value::VALUE_NULL:
+                    break;
+                case logline_value::VALUE_INTEGER:
+                    rlc->add_possibility(
+                        context, type,
+                        std::to_string(lv.lv_value.i));
+                    break;
+                default: {
+                    auto_mem<char> str;
+
+                    str = sqlite3_mprintf("%.*Q", lv.text_length(), lv.text_value());
+                    rlc->add_possibility(context, type, string(str.in()));
+                    break;
+                }
+            }
+        }
+    }
+    rlc->add_possibility(context, type,
+                         std::begin(sql_keywords),
+                         std::end(sql_keywords));
+    rlc->add_possibility(context, type, sql_function_names);
+    for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
+        struct FuncDef *basic_funcs;
+        struct FuncDefAgg *agg_funcs;
+
+        sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
+        for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
+            const FuncDef &func_def = basic_funcs[lpc2];
+
+            rlc->add_possibility(
+                context,
+                type,
+                string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+        for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
+            const FuncDefAgg &func_def = agg_funcs[lpc2];
+
+            rlc->add_possibility(
+                context,
+                type,
+                string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+    }
+}
+
 void add_env_possibilities(int context)
 {
     extern char **environ;

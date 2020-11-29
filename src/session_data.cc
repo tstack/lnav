@@ -1503,6 +1503,7 @@ void reset_session()
     lnav_data.ld_log_source.set_marked_only(false);
     lnav_data.ld_log_source.clear_min_max_log_times();
     lnav_data.ld_log_source.set_min_log_level(LEVEL_UNKNOWN);
+    lnav_data.ld_log_source.set_sql_filter("", nullptr);
 
     lnav_data.ld_log_source.get_user_bookmark_metadata().clear();
 

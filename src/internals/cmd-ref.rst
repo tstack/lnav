@@ -94,6 +94,20 @@
 ----
 
 
+.. _clear_filter_expr:
+
+:clear-filter-expr
+^^^^^^^^^^^^^^^^^^
+
+  Clear the filter expression
+
+  **See Also:**
+
+    :ref:`filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+
+----
+
+
 .. _clear_highlight:
 
 :clear-highlight *pattern*
@@ -503,6 +517,32 @@
   **See Also:**
 
     :ref:`alt_msg`, :ref:`echo`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _filter_expr:
+
+:filter-expr *expr*
+^^^^^^^^^^^^^^^^^^^
+
+  Set the filter expression
+
+  **Parameters:**
+
+    * **expr\*** --- The SQL expression to evaluate for each log message.  The message values can be accessed using column names prefixed with a colon
+
+  **Examples:**
+
+    To set a filter expression that matched syslog messages from 'syslogd':
+
+    .. code-block::  lnav
+
+      :filter-expr :log_procname = 'syslogd'
+
+  **See Also:**
+
+    :ref:`clear_filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 

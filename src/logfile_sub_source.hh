@@ -54,6 +54,11 @@
 
 STRONG_INT_TYPE(uint64_t, content_line);
 
+struct sqlite3_stmt;
+extern "C" {
+int sqlite3_finalize(sqlite3_stmt *pStmt);
+}
+
 class logfile_sub_source;
 
 class index_delegate {
@@ -77,12 +82,12 @@ class pcre_filter
     : public text_filter {
 public:
     pcre_filter(type_t type, const std::string& id, size_t index, pcre *code)
-        : text_filter(type, id, index),
+        : text_filter(type, filter_lang_t::REGEX, id, index),
           pf_pcre(code) { };
 
     ~pcre_filter() override = default;
 
-    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) override {
+    bool matches(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &line) override {
         pcre_context_static<30> pc;
         pcre_input pi(line.get_data(), 0, line.length());
 
@@ -99,9 +104,26 @@ protected:
     pcrepp pf_pcre;
 };
 
+class sql_filter : public text_filter {
+public:
+    sql_filter(logfile_sub_source& lss, std::string stmt_str, sqlite3_stmt *stmt)
+        : text_filter(EXCLUDE, filter_lang_t::SQL, std::move(stmt_str), 0),
+          sf_filter_stmt(stmt),
+          sf_log_source(lss) {
+
+    }
+
+    bool matches(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &line) override;
+
+    std::string to_command() override;
+
+    auto_mem<sqlite3_stmt> sf_filter_stmt{sqlite3_finalize};
+    logfile_sub_source& sf_log_source;
+};
+
 class log_location_history : public location_history {
 public:
-    log_location_history(logfile_sub_source &lss)
+    explicit log_location_history(logfile_sub_source &lss)
         : llh_history(std::begin(this->llh_backing),
                       std::end(this->llh_backing)),
           llh_log_source(lss) {
@@ -140,7 +162,6 @@ public:
     virtual void text_filters_changed();
 
     logfile_sub_source();
-    virtual ~logfile_sub_source() = default;
 
     void toggle_time_offset() {
         this->lss_flags ^= F_TIME_OFFSET;
@@ -454,6 +475,21 @@ public:
         return retval;
     }
 
+    void set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt);
+
+    void set_preview_sql_filter(sqlite3_stmt *stmt) {
+        this->lss_preview_filter_stmt = stmt;
+    }
+
+    std::string get_sql_filter_text() {
+        auto filt = this->get_sql_filter();
+
+        if (filt) {
+            return filt.value()->get_id();
+        }
+        return "";
+    }
+
     std::shared_ptr<logfile> find(const char *fn, content_line_t &line_base);
 
     std::shared_ptr<logfile> find(content_line_t &line)
@@ -611,11 +647,19 @@ public:
         return this->lss_files.end();
     };
 
-    logfile_data *find_data(content_line_t line, uint64_t &offset_out)
+    iterator find_data(content_line_t &line)
     {
-        logfile_data *retval;
+        auto retval = this->lss_files.begin();
+        std::advance(retval, line / MAX_LINES_PER_FILE);
+        line = content_line_t(line % MAX_LINES_PER_FILE);
 
-        retval = this->lss_files[line / MAX_LINES_PER_FILE];
+        return retval;
+    };
+
+    iterator find_data(content_line_t line, uint64_t &offset_out)
+    {
+        auto retval = this->lss_files.begin();
+        std::advance(retval, line / MAX_LINES_PER_FILE);
         offset_out = line % MAX_LINES_PER_FILE;
 
         return retval;
@@ -628,6 +672,16 @@ public:
             }
         }
         return nonstd::nullopt;
+    }
+
+    iterator find_data_i(const std::shared_ptr<const logfile>& lf) {
+        for (auto iter = this->begin(); iter != this->end(); ++iter) {
+            if ((*iter)->ld_filter_state.lfo_filter_state.tfs_logfile == lf) {
+                return iter;
+            }
+        }
+
+        return this->end();
     }
 
     content_line_t get_file_base_content_line(iterator iter) {
@@ -656,8 +710,8 @@ public:
         for (unsigned int index : this->lss_filtered_index) {
             content_line_t cl = (content_line_t) this->lss_index[index];
             uint64_t line_number;
-            logfile_data *ld = this->find_data(cl, line_number);
-            std::shared_ptr<logfile> lf = ld->get_file();
+            auto ld = this->find_data(cl, line_number);
+            std::shared_ptr<logfile> lf = (*ld)->get_file();
 
             this->lss_index_delegate->index_line(*this, lf.get(), lf->begin() + line_number);
         }
@@ -737,6 +791,8 @@ public:
     nonstd::optional<location_history *> get_location_history() {
         return &this->lss_location_history;
     };
+
+    bool eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll);
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
@@ -871,45 +927,51 @@ private:
         this->lss_line_size_cache[0].first = -1;
     };
 
-    bool check_extra_filters(const logline &ll) {
-        if (this->lss_marked_only && !ll.is_marked()) {
-            return false;
-        }
+    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter() {
+        auto iter = std::find_if(this->tss_filters.begin(),
+                                 this->tss_filters.end(),
+                                 [](const auto& filt) {
+                                     return filt->get_index() == 0;
+                                 });
 
-        return (
-            ll.get_msg_level() >= this->lss_min_log_level &&
-            !(ll < this->lss_min_log_time) &&
-            ll <= this->lss_max_log_time);
-    };
+        if (iter != this->tss_filters.end()) {
+            return *iter;
+        }
+        return nonstd::nullopt;
+    }
+
+    bool check_extra_filters(iterator ld, logfile::iterator ll);
 
     size_t                    lss_basename_width = 0;
     size_t                    lss_filename_width = 0;
-    unsigned long             lss_flags;
-    bool lss_force_rebuild;
+    unsigned long             lss_flags{0};
+    bool lss_force_rebuild{false};
     std::vector<logfile_data *> lss_files;
 
     big_array<indexed_content> lss_index;
     std::vector<uint32_t> lss_filtered_index;
+    auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
 
-    line_flags_t lss_token_flags;
+    line_flags_t lss_token_flags{0};
+    iterator lss_token_file_data;
     std::shared_ptr<logfile> lss_token_file;
     std::string       lss_token_value;
     string_attrs_t    lss_token_attrs;
     std::vector<logline_value> lss_token_values;
-    int lss_token_shift_start;
-    int lss_token_shift_size;
+    int lss_token_shift_start{0};
+    int lss_token_shift_size{0};
     shared_buffer     lss_share_manager;
     logfile::iterator lss_token_line;
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE> lss_line_size_cache;
-    log_level_t  lss_min_log_level;
-    struct timeval    lss_min_log_time;
-    struct timeval    lss_max_log_time;
-    bool lss_marked_only;
-    index_delegate    *lss_index_delegate;
-    size_t            lss_longest_line;
+    log_level_t  lss_min_log_level{LEVEL_UNKNOWN};
+    struct timeval    lss_min_log_time{0, 0};
+    struct timeval    lss_max_log_time{std::numeric_limits<time_t>::max(), 0};
+    bool lss_marked_only{false};
+    index_delegate    *lss_index_delegate{nullptr};
+    size_t            lss_longest_line{0};
     meta_grepper lss_meta_grepper;
     log_location_history lss_location_history;
 };

@@ -127,7 +127,7 @@ run_test ${lnav_test} -n \
 
 check_output "view filter stats is not working?" <<EOF
 view_name,filter_id,hits
-log,0,2
+log,1,2
 EOF
 
 run_test ${lnav_test} -n \
@@ -456,7 +456,7 @@ run_test ${lnav_test} -n \
 
 check_output "logline table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2013-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[0],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+0,<NULL>,2013-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 

@@ -66,6 +66,7 @@
 #include "papertrail_proc.hh"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
+#include "sqlite-extension-func.hh"
 
 using namespace std;
 
@@ -1434,6 +1435,81 @@ static Result<string, string> com_disable_filter(exec_context &ec, string cmdlin
         }
     } else {
         return ec.make_error("expecting enabled filter to disable");
+    }
+
+    return Ok(retval);
+}
+
+static Result<string, string> com_filter_expr(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        args.emplace_back("filter-expr-syms");
+    }
+    else if (args.size() > 1) {
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return ec.make_error("The :filter-expr command only works in the log view");
+        }
+
+        auto expr = remaining_args(cmdline, args);
+        args[1] = fmt::format("SELECT 1 WHERE {}", expr);
+
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                          args[1].c_str(), args[1].size(),
+                                          SQLITE_PREPARE_PERSISTENT,
+                                          stmt.out(),
+                                          nullptr);
+        if (retcode != SQLITE_OK) {
+            const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+            return ec.make_error("{}", errmsg);
+        }
+
+        if (ec.ec_dry_run) {
+            lnav_data.ld_log_source.set_preview_sql_filter(stmt.release());
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("Matches are highlighted in the text view");
+        } else {
+            lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+            lnav_data.ld_log_source.set_sql_filter(expr, stmt.release());
+        }
+        lnav_data.ld_log_source.text_filters_changed();
+        tc->reload_data();
+    } else {
+        return ec.make_error("expecting an SQL expression");
+    }
+
+    return Ok(retval);
+}
+
+static string com_filter_expr_prompt(exec_context &ec, const string &cmdline)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+    if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        return "";
+    }
+
+    return fmt::format("{} {}",
+                       trim(cmdline),
+                       trim(lnav_data.ld_log_source.get_sql_filter_text()));
+}
+
+static Result<string, string> com_clear_filter_expr(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+
+    } else {
+        if (!ec.ec_dry_run) {
+            lnav_data.ld_log_source.set_sql_filter("", nullptr);
+            lnav_data.ld_log_source.text_filters_changed();
+        }
     }
 
     return Ok(retval);
@@ -4075,6 +4151,12 @@ static void command_prompt(vector<string> &args)
     add_env_possibilities(LNM_COMMAND);
     add_tag_possibilities();
     add_file_possibilities();
+
+    if (tc == &lnav_data.ld_views[LNV_LOG]) {
+        add_filter_expr_possibilities(lnav_data.ld_rl_view,
+                                      LNM_COMMAND,
+                                      "filter-expr-syms");
+    }
     lnav_data.ld_mode = LNM_COMMAND;
     lnav_data.ld_rl_view->focus(LNM_COMMAND,
                                 cget(args, 2).value_or(":"),
@@ -4576,6 +4658,35 @@ readline_context::command_t STD_COMMANDS[] = {
                 "To delete the filter with the pattern 'last message repeated'",
                 "last message repeated"
             })
+    },
+    {
+        "filter-expr",
+        com_filter_expr,
+
+        help_text(":filter-expr")
+            .with_summary("Set the filter expression")
+            .with_parameter(help_text(
+                "expr",
+                "The SQL expression to evaluate for each log message.  "
+                "The message values can be accessed using column names "
+                "prefixed with a colon"))
+            .with_opposites({"clear-filter-expr"})
+            .with_tags({"filtering"})
+            .with_example({
+                "To set a filter expression that matched syslog messages from 'syslogd'",
+                ":log_procname = 'syslogd'"
+            }),
+
+        com_filter_expr_prompt,
+    },
+    {
+        "clear-filter-expr",
+        com_clear_filter_expr,
+
+        help_text(":clear-filter-expr")
+            .with_summary("Clear the filter expression")
+            .with_opposites({"filter-expr"})
+            .with_tags({"filtering"})
     },
     {
         "append-to",

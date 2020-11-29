@@ -306,7 +306,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     content_line_t    cl(vt->lss->at(vc->log_cursor.lc_curr_line));
     uint64_t line_number;
     auto ld = vt->lss->find_data(cl, line_number);
-    shared_ptr<logfile> lf = ld->get_file();
+    shared_ptr<logfile> lf = (*ld)->get_file();
     auto ll = lf->begin() + line_number;
 
     require(col >= 0);
@@ -435,7 +435,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     break;
 
         case VT_COL_LOG_COMMENT: {
-            const map<content_line_t, bookmark_metadata> &bm = vt->lss->get_user_bookmark_metadata();
+            const auto &bm = vt->lss->get_user_bookmark_metadata();
 
             auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
             if (bm_iter == bm.end() || bm_iter->second.bm_comment.empty()) {
@@ -483,7 +483,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         }
 
         case VT_COL_FILTERS: {
-            auto &filter_mask = ld->ld_filter_state.lfo_filter_state.tfs_mask;
+            auto &filter_mask = (*ld)->ld_filter_state.lfo_filter_state.tfs_mask;
 
             if (!filter_mask[line_number]) {
                 sqlite3_result_null(ctx);
@@ -980,8 +980,8 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
                               vi->get_name().get());
         rc = sqlite3_exec(this->vm_db,
                           sql,
-                          NULL,
-                          NULL,
+                          nullptr,
+                          nullptr,
                           errmsg.out());
         if (rc != SQLITE_OK) {
             retval = errmsg;

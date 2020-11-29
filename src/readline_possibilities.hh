@@ -36,6 +36,7 @@
 #include "readline_curses.hh"
 
 void add_view_text_possibilities(readline_curses *rlc, int context, const std::string &type, textview_curses *tc);
+void add_filter_expr_possibilities(readline_curses *rlc, int context, const std::string &type);
 void add_env_possibilities(int context);
 void add_filter_possibilities(textview_curses *tc);
 void add_mark_possibilities();

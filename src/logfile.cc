@@ -531,7 +531,7 @@ Result<shared_buffer_ref, std::string> logfile::read_line(logfile::iterator ll)
     }
 }
 
-void logfile::read_full_message(logfile::iterator ll,
+void logfile::read_full_message(logfile::const_iterator ll,
                                 shared_buffer_ref &msg_out,
                                 int max_lines)
 {
@@ -602,7 +602,7 @@ ghc::filesystem::path logfile::get_path() const
     return this->lf_filename;
 }
 
-size_t logfile::line_length(logfile::iterator ll, bool include_continues)
+size_t logfile::line_length(logfile::const_iterator ll, bool include_continues)
 {
     auto next_line = ll;
     size_t retval;
