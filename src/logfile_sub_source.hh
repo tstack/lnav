@@ -108,9 +108,8 @@ class sql_filter : public text_filter {
 public:
     sql_filter(logfile_sub_source& lss, std::string stmt_str, sqlite3_stmt *stmt)
         : text_filter(EXCLUDE, filter_lang_t::SQL, std::move(stmt_str), 0),
-          sf_filter_stmt(stmt),
           sf_log_source(lss) {
-
+        this->sf_filter_stmt = stmt;
     }
 
     bool matches(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &line) override;
