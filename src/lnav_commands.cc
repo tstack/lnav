@@ -1458,11 +1458,20 @@ static Result<string, string> com_filter_expr(exec_context &ec, string cmdline, 
         args[1] = fmt::format("SELECT 1 WHERE {}", expr);
 
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
         auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
-                                          args[1].c_str(), args[1].size(),
+                                          args[1].c_str(),
+                                          args[1].size(),
                                           SQLITE_PREPARE_PERSISTENT,
                                           stmt.out(),
                                           nullptr);
+#else
+        auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                                  args[1].c_str(),
+                                                  args[1].size(),
+                                                  stmt.out(),
+                                                  nullptr);
+#endif
         if (retcode != SQLITE_OK) {
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 

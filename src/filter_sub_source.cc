@@ -426,12 +426,20 @@ void filter_sub_source::rl_change(readline_curses *rc)
         case filter_lang_t::SQL: {
             auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
             auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
             auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
                                               full_sql.c_str(),
                                               full_sql.size(),
                                               SQLITE_PREPARE_PERSISTENT,
                                               stmt.out(),
                                               nullptr);
+#else
+            auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                                  full_sql.c_str(),
+                                                  full_sql.size(),
+                                                  stmt.out(),
+                                                  nullptr);
+#endif
             if (retcode != SQLITE_OK) {
                 lnav_data.ld_filter_help_status_source.fss_error
                     .set_value("error2: %s", sqlite3_errmsg(lnav_data.ld_db));
@@ -486,12 +494,20 @@ void filter_sub_source::rl_perform(readline_curses *rc)
             case filter_lang_t::SQL: {
                 auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
                 auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
                                                   full_sql.c_str(),
                                                   full_sql.size(),
                                                   SQLITE_PREPARE_PERSISTENT,
                                                   stmt.out(),
                                                   nullptr);
+#else
+                auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                                  full_sql.c_str(),
+                                                  full_sql.size(),
+                                                  stmt.out(),
+                                                  nullptr);
+#endif
                 if (retcode != SQLITE_OK) {
                     this->rl_abort(rc);
                 } else {
