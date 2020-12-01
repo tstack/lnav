@@ -2831,7 +2831,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                          nullptr);
         }
 
+#if 0
         sqlite3_drop_modules(lnav_data.ld_db.in(), nullptr);
+#endif
     }
 
     lnav_data.ld_curl_looper.stop();
