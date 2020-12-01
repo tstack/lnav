@@ -41,6 +41,10 @@
 
 class db_label_source : public text_sub_source, public text_time_translator {
 public:
+    ~db_label_source() {
+        this->clear();
+    }
+
     bool has_log_time_column() const {
         return !this->dls_time_column.empty();
     };
