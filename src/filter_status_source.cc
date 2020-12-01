@@ -211,7 +211,7 @@ filter_help_status_source::filter_help_status_source()
     this->fss_prompt.set_left_pad(1);
     this->fss_prompt.set_min_width(35);
     this->fss_prompt.set_share(1);
-    this->fss_error.set_left_pad(22);
+    this->fss_error.set_left_pad(25);
     this->fss_error.set_min_width(35);
     this->fss_error.set_share(1);
 }
@@ -236,12 +236,12 @@ size_t filter_help_status_source::statusview_fields()
 
                 if (tf->get_type() == text_filter::type_t::INCLUDE) {
                     this->fss_help.set_value(
-                        "                     "
+                        "                        "
                         "Enter %s expression to match lines to filter in:",
                         lang);
                 } else {
                     this->fss_help.set_value(
-                        "                     "
+                        "                        "
                         "Enter %s expression to match lines to filter out:",
                         lang);
                 }

@@ -2594,8 +2594,7 @@ int main(int argc, char *argv[])
             log_info("lnav_data:");
             log_info("  flags=%x", lnav_data.ld_flags);
             log_info("  commands:");
-            for (auto cmd_iter =
-                 lnav_data.ld_commands.begin();
+            for (auto cmd_iter = lnav_data.ld_commands.begin();
                  cmd_iter != lnav_data.ld_commands.end();
                  ++cmd_iter) {
                 log_info("    %s", cmd_iter->c_str());
@@ -2747,6 +2746,11 @@ int main(int argc, char *argv[])
 
                 save_session();
             }
+
+            for (auto& lf : lnav_data.ld_active_files.fc_files) {
+                lf->close();
+            }
+            rebuild_indexes();
         }
         catch (line_buffer::error & e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));
@@ -2788,6 +2792,46 @@ int main(int argc, char *argv[])
                         path_str.c_str());
             }
         }
+    }
+
+    {
+        static const char *VIRT_TABLES = R"(
+SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
+)";
+
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        std::vector<std::string> tables_to_drop;
+        bool done = false;
+
+        sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                           VIRT_TABLES,
+                           -1,
+                           stmt.out(),
+                           nullptr);
+        do {
+            auto ret = sqlite3_step(stmt.in());
+
+            switch (ret) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+                case SQLITE_ROW:
+                    tables_to_drop.emplace_back(fmt::format(
+                        "DROP TABLE {}", sqlite3_column_text(stmt.in(), 0)));
+                    break;
+            }
+        } while (!done);
+
+        for (auto& drop_stmt : tables_to_drop) {
+            sqlite3_exec(lnav_data.ld_db.in(),
+                         drop_stmt.c_str(),
+                         nullptr,
+                         nullptr,
+                         nullptr);
+        }
+
+        sqlite3_drop_modules(lnav_data.ld_db.in(), nullptr);
     }
 
     lnav_data.ld_curl_looper.stop();

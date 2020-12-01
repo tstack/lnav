@@ -168,7 +168,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(22);
+            this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
@@ -203,7 +203,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(22);
+            this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
@@ -235,7 +235,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(22);
+            this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(to_underlying(tf->get_lang()), "");
             this->fss_editor.rewrite_line(0, tf->get_id().c_str());
@@ -313,9 +313,9 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
     }
 
     if (this->fss_editing && line == tc.get_selection()) {
-        snprintf(hits, sizeof(hits), "%6s hits | ", "-");
+        snprintf(hits, sizeof(hits), "%9s hits | ", "-");
     } else {
-        snprintf(hits, sizeof(hits), "%6d hits | ",
+        snprintf(hits, sizeof(hits), "%'9d hits | ",
                  tss->get_filtered_count_for(tf->get_index()));
     }
     value_out.append(hits);
@@ -354,8 +354,8 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
                            vcolors.ansi_to_theme_color(fg));
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_STYLE, A_BOLD);
 
-    value_out.emplace_back(line_range{8, 14}, &view_curses::VC_STYLE, A_BOLD);
-    value_out.emplace_back(line_range{20, 21}, &view_curses::VC_GRAPHIC,
+    value_out.emplace_back(line_range{8, 17}, &view_curses::VC_STYLE, A_BOLD);
+    value_out.emplace_back(line_range{23, 24}, &view_curses::VC_GRAPHIC,
                            ACS_VLINE);
 
     fg = selected ? COLOR_BLACK : COLOR_WHITE;
