@@ -94,9 +94,9 @@ public:
             this->ldh_line_attrs.clear();
         }
         else {
-            log_format *format = this->ldh_file->get_format();
+            auto format = this->ldh_file->get_format();
             struct line_range body;
-            string_attrs_t    &sa = this->ldh_line_attrs;
+            auto& sa = this->ldh_line_attrs;
 
             this->ldh_line_attrs.clear();
             this->ldh_line_values.clear();

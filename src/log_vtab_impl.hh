@@ -139,7 +139,7 @@ public:
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
 
         this->vi_attrs.clear();
         format->annotate(line_number, line, this->vi_attrs, values, false);
@@ -178,7 +178,7 @@ public:
             return false;
         }
 
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
         if (format->get_name() == this->lfvi_format.get_name()) {
             return true;
         } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {

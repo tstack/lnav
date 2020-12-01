@@ -82,7 +82,7 @@ public:
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
         auto ll = lf->begin() + cl;
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
         lf->read_full_message(ll, this->lh_msg_buffer);
         format->annotate(cl,
                          this->lh_msg_buffer,

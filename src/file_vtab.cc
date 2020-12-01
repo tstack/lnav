@@ -71,7 +71,7 @@ CREATE TABLE lnav_file (
         auto lf = *vc.iter;
         const struct stat &st = lf->get_stat();
         const string &name = lf->get_filename();
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
         const char *format_name =
             format != nullptr ? format->get_name().get() : nullptr;
 

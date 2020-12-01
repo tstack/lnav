@@ -61,7 +61,7 @@ using namespace std;
 
 static void extract_metadata(const char *contents, size_t len, struct script_metadata &meta_out);
 
-typedef map<intern_string_t, external_log_format *> log_formats_map_t;
+typedef map<intern_string_t, std::shared_ptr<external_log_format>> log_formats_map_t;
 
 static log_formats_map_t LOG_FORMATS;
 
@@ -77,9 +77,10 @@ static external_log_format *ensure_format(const yajlpp_provider_context &ypc, us
     vector<intern_string_t> *formats = ud->ud_format_names;
     external_log_format *retval;
 
-    retval = LOG_FORMATS[name];
+    retval = LOG_FORMATS[name].get();
     if (retval == nullptr) {
-        LOG_FORMATS[name] = retval = new external_log_format(name);
+        LOG_FORMATS[name] = std::make_shared<external_log_format>(name);
+        retval = LOG_FORMATS[name].get();
         log_debug("Loading format -- %s", name.get());
     }
     retval->elf_source_path.insert(ud->ud_format_path.filename().string());
@@ -946,9 +947,9 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
 
     uint8_t mod_counter = 0;
 
-    vector<external_log_format *> alpha_ordered_formats;
+    vector<std::shared_ptr<external_log_format>> alpha_ordered_formats;
     for (auto iter = LOG_FORMATS.begin(); iter != LOG_FORMATS.end(); ++iter) {
-        external_log_format *elf = iter->second;
+        auto& elf = iter->second;
         elf->build(errors);
 
         if (elf->elf_has_module_format) {
@@ -961,7 +962,7 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
                 continue;
             }
 
-            external_log_format *check_elf = check_iter.second;
+            auto& check_elf = check_iter.second;
             if (elf->match_samples(check_elf->elf_samples)) {
                 log_warning("Format collision, format '%s' matches sample from '%s'",
                         elf->get_name().get(),
@@ -975,15 +976,14 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
         }
     }
 
-    vector<external_log_format *> &graph_ordered_formats =
-            external_log_format::GRAPH_ORDERED_FORMATS;
+    auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;
 
     while (!alpha_ordered_formats.empty()) {
         vector<intern_string_t> popped_formats;
 
         for (auto iter = alpha_ordered_formats.begin();
              iter != alpha_ordered_formats.end();) {
-            external_log_format *elf = *iter;
+            auto elf = *iter;
             if (elf->elf_collision.empty()) {
                 iter = alpha_ordered_formats.erase(iter);
                 popped_formats.push_back(elf->get_name());
@@ -998,7 +998,7 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
             bool broke_cycle = false;
 
             log_warning("Detected a cycle...");
-            for (auto elf : alpha_ordered_formats) {
+            for (const auto& elf : alpha_ordered_formats) {
                 if (elf->elf_builtin_format) {
                     log_warning("  Skipping builtin format -- %s",
                                 elf->get_name().get());
@@ -1027,7 +1027,7 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
         log_info("  %s", graph_ordered_format->get_name().get());
     }
 
-    vector<log_format *> &roots = log_format::get_root_formats();
+    auto &roots = log_format::get_root_formats();
     roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
 }
 
@@ -1145,7 +1145,7 @@ void find_format_scripts(const vector<ghc::filesystem::path> &extra_paths,
 void load_format_vtabs(log_vtab_manager *vtab_manager,
                        std::vector<std::string> &errors)
 {
-    map<intern_string_t, external_log_format *> &root_formats = LOG_FORMATS;
+    auto &root_formats = LOG_FORMATS;
 
     for (auto & root_format : root_formats) {
         root_format.second->register_vtabs(vtab_manager, errors);

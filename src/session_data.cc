@@ -1406,7 +1406,7 @@ static void save_session_with_id(const std::string session_id)
 
                     if (lpc == LNV_LOG) {
                         for (auto format : log_format::get_root_formats()) {
-                            auto *elf = dynamic_cast<external_log_format *>(format);
+                            auto *elf = dynamic_cast<external_log_format *>(format.get());
 
                             if (elf == nullptr) {
                                 continue;
@@ -1526,7 +1526,7 @@ void reset_session()
     lnav_data.ld_filter_view.reload_data();
     lnav_data.ld_files_view.reload_data();
     for (auto format : log_format::get_root_formats()) {
-        auto *elf = dynamic_cast<external_log_format *>(format);
+        auto *elf = dynamic_cast<external_log_format *>(format.get());
 
         if (elf == nullptr) {
             continue;

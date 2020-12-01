@@ -138,7 +138,7 @@ log_search_table::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
 {
     int next_column = 0;
 
-    values.emplace_back(instance_name, this->lst_instance, lf->get_format());
+    values.emplace_back(instance_name, this->lst_instance, lf->get_format().get());
     values.back().lv_column = next_column++;
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
         auto cap = this->lst_match_context[lpc];

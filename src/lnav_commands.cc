@@ -993,7 +993,7 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
                 char tmp_str[64];
 
                 ldh.parse_line(ec.ec_top_line, true);
-                log_format *format = ldh.ldh_file->get_format();
+                auto format = ldh.ldh_file->get_format();
                 set<string> source_path = format->get_source_path();
                 path_v.insert(path_v.end(),
                               source_path.begin(),
@@ -3106,7 +3106,7 @@ static Result<string, string> com_toggle_field(exec_context &ec, string cmdline,
 
             for (int lpc = 1; lpc < (int)args.size(); lpc++) {
                 intern_string_t name;
-                log_format *format = nullptr;
+                std::shared_ptr<log_format> format;
                 size_t dot;
 
                 if ((dot = args[lpc].find('.')) != string::npos) {
@@ -3705,7 +3705,7 @@ public:
                 continue;
             }
 
-            log_format *format = lf->get_format();
+            auto format = lf->get_format();
             const logline_value_stats *stats = format->stats_for_value(this->lsvs_colname);
 
             if (stats == NULL) {
@@ -3773,7 +3773,7 @@ public:
             content_line_t cl = lss.at(curr_line);
             std::shared_ptr<logfile> lf = lss.find(cl);
             auto ll = lf->begin() + cl;
-            log_format *format = lf->get_format();
+            auto format = lf->get_format();
             shared_buffer_ref sbr;
 
             if (ll->is_continued()) {
@@ -3825,8 +3825,8 @@ public:
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
             std::shared_ptr<logfile> lf = lss.find(cl);
-            logfile::iterator ll = lf->begin() + cl;
-            log_format *format = lf->get_format();
+            auto ll = lf->begin() + cl;
+            auto format = lf->get_format();
             shared_buffer_ref sbr;
 
             if (ll->is_continued()) {

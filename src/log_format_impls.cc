@@ -210,9 +210,9 @@ class generic_log_format : public log_format {
         sa.emplace_back(lr, &SA_BODY);
     };
 
-    unique_ptr<log_format> specialized(int fmt_lock)
+    shared_ptr<log_format> specialized(int fmt_lock)
     {
-        return unique_ptr<log_format>(new generic_log_format(*this));
+        return std::make_shared<generic_log_format>(*this);
     };
 };
 
@@ -680,10 +680,8 @@ public:
         return retval;
     };
 
-    std::unique_ptr<log_format> specialized(int fmt_lock = -1) {
-        std::unique_ptr<bro_log_format> retval = make_unique<bro_log_format>(*this);
-
-        return unique_ptr<log_format>(retval.release());
+    std::shared_ptr<log_format> specialized(int fmt_lock = -1) {
+        return make_shared<bro_log_format>(*this);
     };
 
     class bro_log_table : public log_format_vtab_impl {

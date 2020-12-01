@@ -41,9 +41,9 @@
 
 using namespace std;
 
-std::vector<log_format *>& log_format::get_root_formats()
+std::vector<std::shared_ptr<log_format>>& log_format::get_root_formats()
 {
-    static std::vector<log_format *> retval;
+    static std::vector<std::shared_ptr<log_format>> retval;
 
     return retval;
 }

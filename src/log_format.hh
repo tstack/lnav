@@ -269,7 +269,7 @@ public:
     /**
      * @return The collection of builtin log formats.
      */
-    static std::vector<log_format *> &get_root_formats();
+    static std::vector<std::shared_ptr<log_format>> &get_root_formats();
 
     /**
      * Template used to register log formats during initialization.
@@ -279,15 +279,13 @@ public:
 public:
         register_root_format()
         {
-            static T format;
-
-            log_format::lf_root_formats.push_back(&format);
+            log_format::lf_root_formats.push_back(std::make_shared<T>());
         };
     };
 
-    static log_format *find_root_format(const char *name) {
-        std::vector<log_format *> &fmts = get_root_formats();
-        for (auto lf : fmts) {
+    static std::shared_ptr<log_format> find_root_format(const char *name) {
+        auto& fmts = get_root_formats();
+        for (auto& lf : fmts) {
             if (lf->get_name() == name) {
                 return lf;
             }
@@ -375,7 +373,7 @@ public:
         return nullptr;
     };
 
-    virtual std::unique_ptr<log_format> specialized(int fmt_lock = -1) = 0;
+    virtual std::shared_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
     virtual std::shared_ptr<log_vtab_impl> get_vtab_impl() const {
         return nullptr;
@@ -447,7 +445,7 @@ public:
     bool lf_time_ordered{true};
     bool lf_specialized{false};
 protected:
-    static std::vector<log_format *> lf_root_formats;
+    static std::vector<std::shared_ptr<log_format>> lf_root_formats;
 
     struct pcre_format {
         pcre_format(const char *regex) : name(regex), pcre(regex) {

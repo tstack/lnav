@@ -42,7 +42,7 @@ static string execute_action(log_data_helper &ldh,
     std::map<string, log_format::action_def>::const_iterator iter;
     logline_value &lv = ldh.ldh_line_values[value_index];
     shared_ptr<logfile> lf = ldh.ldh_file;
-    const log_format *format = lf->get_format();
+    const auto format = lf->get_format();
     pid_t child_pid;
     string retval;
 

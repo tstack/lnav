@@ -192,7 +192,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     this->lss_token_shift_start = 0;
     this->lss_token_shift_size = 0;
 
-    log_format *format = this->lss_token_file->get_format();
+    auto format = this->lss_token_file->get_format();
 
     value_out = this->lss_token_value;
     if (this->lss_flags & F_SCRUB) {

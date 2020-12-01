@@ -162,7 +162,7 @@ public:
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.
      */
-    log_format *get_format() const { return this->lf_format.get(); };
+    std::shared_ptr<log_format> get_format() const { return this->lf_format; };
 
     text_format_t get_text_format() const {
         return this->lf_text_format;
@@ -382,7 +382,7 @@ protected:
     std::string lf_basename;
     std::string lf_content_id;
     struct stat lf_stat;
-    std::unique_ptr<log_format> lf_format;
+    std::shared_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
     time_t      lf_index_time{0};
     off_t       lf_index_size{0};

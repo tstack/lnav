@@ -212,7 +212,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     content_line_t cl = lss.at(lv.get_top());
     std::shared_ptr<logfile> file = lss.find(cl);
     auto ll = file->begin() + cl;
-    log_format *format = file->get_format();
+    auto format = file->get_format();
     bool display = false;
 
     if (ll->is_time_skewed()) {
@@ -357,7 +357,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
                 this->fos_unknown_key_size, (int)colname.length());
     }
 
-    log_format *lf = this->fos_log_helper.ldh_file->get_format();
+    auto lf = this->fos_log_helper.ldh_file->get_format();
     if (!lf->get_pattern_regex(cl).empty()) {
         attr_line_t pattern_al;
         std::string &pattern_str = pattern_al.get_string();

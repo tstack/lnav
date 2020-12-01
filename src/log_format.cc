@@ -56,7 +56,7 @@ string_attr_type logline::L_OPID("opid");
 string_attr_type logline::L_META("meta");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
-std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;
+std::vector<std::shared_ptr<external_log_format>> external_log_format::GRAPH_ORDERED_FORMATS;
 
 struct line_range logline_value::origin_in_full_msg(const char *msg, ssize_t len) const
 {
@@ -224,9 +224,9 @@ std::string logline_value::to_string() const
     return std::string(buffer);
 }
 
-vector<log_format *> log_format::lf_root_formats;
+vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
 
-vector<log_format *> &log_format::get_root_formats()
+vector<std::shared_ptr<log_format>> &log_format::get_root_formats()
 {
     return lf_root_formats;
 }
@@ -706,7 +706,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto fpat = this->elf_pattern_order[curr_fmt];
-        pcrepp *pat = fpat->p_pcre;
+        auto& pat = fpat->p_pcre;
 
         if (fpat->p_module_format) {
             continue;
@@ -735,13 +735,13 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
                                             ts->length(),
                                             this->get_timestamp_formats(),
                                             &log_time_tm,
-                                            log_tv)) == NULL) {
+                                            log_tv)) == nullptr) {
             this->lf_date_time.unlock();
             if ((last = this->lf_date_time.scan(ts_str,
                                                 ts->length(),
                                                 this->get_timestamp_formats(),
                                                 &log_time_tm,
-                                                log_tv)) == NULL) {
+                                                log_tv)) == nullptr) {
                 continue;
             }
         }
@@ -837,16 +837,16 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
     uint8_t mod_index;
     body_cap->ltrim(pi.get_string());
     pcre_input body_pi(pi.get_substr_start(body_cap), 0, body_cap->length());
-    vector<external_log_format *> &ext_fmts = GRAPH_ORDERED_FORMATS;
+    auto& ext_fmts = GRAPH_ORDERED_FORMATS;
     pcre_context_static<128> pc;
     module_format mf;
 
-    for (auto elf : ext_fmts) {
+    for (auto& elf : ext_fmts) {
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
             auto fpat = elf->elf_pattern_order[curr_fmt];
-            pcrepp *pat = fpat->p_pcre;
+            auto& pat = fpat->p_pcre;
 
             if (!fpat->p_module_format) {
                 continue;
@@ -862,7 +862,7 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
                       elf->lf_mod_index);
 
             mod_index = elf->lf_mod_index;
-            mf.mf_mod_format = (external_log_format *) elf->specialized(curr_fmt).release();
+            mf.mf_mod_format = elf->specialized(curr_fmt);
             MODULE_FORMATS[mod_name] = mf;
 
             return mod_index;
@@ -1458,10 +1458,11 @@ void external_log_format::build(std::vector<std::string> &errors) {
     }
 
     if (!this->lf_timestamp_format.empty()) {
-        this->lf_timestamp_format.push_back(NULL);
+        this->lf_timestamp_format.push_back(nullptr);
     }
     try {
-        this->elf_filename_pcre = new pcrepp(this->elf_file_pattern);
+        this->elf_filename_pcre =
+            std::make_shared<pcrepp>(this->elf_file_pattern);
     }
     catch (const pcrepp::error &e) {
         errors.push_back("error:" +
@@ -1478,7 +1479,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
 
         try {
-            pat.p_pcre = new pcrepp(pat.p_string);
+            pat.p_pcre = std::make_unique<pcrepp>(pat.p_string);
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
@@ -1606,7 +1607,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     for (auto &elf_level_pattern : this->elf_level_patterns) {
         try {
-            elf_level_pattern.second.lp_pcre = new pcrepp(
+            elf_level_pattern.second.lp_pcre = std::make_shared<pcrepp>(
                 elf_level_pattern.second.lp_regex.c_str());
         }
         catch (const pcrepp::error &e) {
@@ -2041,7 +2042,7 @@ public:
             return false;
         }
 
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
 
         this->elt_module_format.mf_mod_format = nullptr;
         if (format->get_name() == this->lfvi_format.get_name()) {
@@ -2089,7 +2090,7 @@ public:
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
 
         if (this->elt_module_format.mf_mod_format != nullptr) {
             shared_buffer_ref body_ref;
@@ -2120,9 +2121,9 @@ std::shared_ptr<log_vtab_impl> external_log_format::get_vtab_impl() const
     return std::make_shared<external_log_table>(*this);
 }
 
-std::unique_ptr<log_format> external_log_format::specialized(int fmt_lock)
+std::shared_ptr<log_format> external_log_format::specialized(int fmt_lock)
 {
-    auto retval = std::make_unique<external_log_format>(*this);
+    auto retval = std::make_shared<external_log_format>(*this);
 
     retval->lf_specialized = true;
     this->lf_pattern_locks.clear();

@@ -162,9 +162,8 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
     }
     else if (this->lf_options.loo_detect_format &&
              this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
-        vector<log_format *> &root_formats =
-            log_format::get_root_formats();
-        vector<log_format *>::iterator iter;
+        auto &root_formats = log_format::get_root_formats();
+        vector<std::shared_ptr<log_format>>::iterator iter;
 
         /*
          * Try each scanner until we get a match.  Fortunately, all the formats
@@ -178,7 +177,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
             }
 
             (*iter)->clear();
-            this->set_format_base_time(*iter);
+            this->set_format_base_time(iter->get());
             found = (*iter)->scan(*this, this->lf_index, li, sbr);
             if (found == log_format::SCAN_MATCH) {
 #if 0

@@ -88,7 +88,7 @@ public:
     struct pattern {
         std::string p_config_path;
         std::string p_string;
-        pcrepp *p_pcre{nullptr};
+        std::unique_ptr<pcrepp> p_pcre;
         std::vector<indexed_value_def> p_value_by_index;
         std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index{-1};
@@ -102,12 +102,11 @@ public:
 
     struct level_pattern {
         std::string lp_regex;
-        pcrepp *lp_pcre{nullptr};
+        std::shared_ptr<pcrepp> lp_pcre;
     };
 
     external_log_format(const intern_string_t name)
         : elf_file_pattern(".*"),
-          elf_filename_pcre(NULL),
           elf_column_count(0),
           elf_timestamp_divisor(1.0),
           elf_level_field(intern_string::lookup("level", -1)),
@@ -168,7 +167,7 @@ public:
         return true;
     };
 
-    std::unique_ptr<log_format> specialized(int fmt_lock);
+    std::shared_ptr<log_format> specialized(int fmt_lock);
 
     const logline_value_stats *stats_for_value(const intern_string_t &name) const {
         const logline_value_stats *retval = nullptr;
@@ -345,12 +344,12 @@ public:
 
     typedef std::map<intern_string_t, module_format> mod_map_t;
     static mod_map_t MODULE_FORMATS;
-    static std::vector<external_log_format *> GRAPH_ORDERED_FORMATS;
+    static std::vector<std::shared_ptr<external_log_format>> GRAPH_ORDERED_FORMATS;
 
     std::set<std::string> elf_source_path;
     std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
-    pcrepp *elf_filename_pcre;
+    std::shared_ptr<pcrepp> elf_filename_pcre;
     std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
     std::vector<std::shared_ptr<pattern>> elf_pattern_order;
     std::vector<sample> elf_samples;
@@ -437,7 +436,7 @@ private:
 class module_format {
 
 public:
-    external_log_format *mf_mod_format{nullptr};
+    std::shared_ptr<log_format> mf_mod_format;
 };
 
 #endif

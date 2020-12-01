@@ -50,7 +50,7 @@ void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
                             shared_buffer_ref &line,
                             std::vector<logline_value> &values)
 {
-    auto *format = lf->get_format();
+    auto format = lf->get_format();
     values.emplace_back(this->alv_value_name, format->get_name(), 0);
 
     std::vector<logline_value> sub_values;

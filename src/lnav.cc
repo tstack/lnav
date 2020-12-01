@@ -482,7 +482,7 @@ public:
             log_info("promoting text file to log file: %s (%s)",
                      lf->get_filename().c_str(),
                      lf->get_content_id().c_str());
-            auto *format = lf->get_format();
+            auto format = lf->get_format();
             if (format->lf_is_self_describing) {
                 auto vt = format->get_vtab_impl();
 
@@ -2468,8 +2468,8 @@ int main(int argc, char *argv[])
                 rebuild_result = lf->rebuild_index();
             } while (rebuild_result == logfile::RR_NEW_LINES ||
                      rebuild_result == logfile::RR_NEW_ORDER);
-            log_format *fmt = lf->get_format();
-            if (fmt == NULL) {
+            auto fmt = lf->get_format();
+            if (fmt == nullptr) {
                 fprintf(stderr, "error:%s:no format found for file\n",
                         lf->get_filename().c_str());
                 retval = EXIT_FAILURE;

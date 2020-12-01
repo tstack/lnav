@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
                 retval = EXIT_FAILURE;
             }
             else {
-                unique_ptr<log_format> format;
+                shared_ptr<log_format> format;
                 char *log_line;
                 bool found = false;
                 char   cmd[2048];
@@ -146,8 +146,8 @@ int main(int argc, char *argv[])
 
                 sbr.share(share_manager, (char *)sub_line.c_str(), sub_line.size());
 
-                vector<log_format *> &root_formats = log_format::get_root_formats();
-                vector<log_format *>::iterator iter;
+                auto &root_formats = log_format::get_root_formats();
+                vector<std::shared_ptr<log_format>>::iterator iter;
                 vector<logline> index;
 
                 if (is_log) {

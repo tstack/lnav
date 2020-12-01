@@ -54,7 +54,7 @@ public:
           ldt_parent_column_count(0),
           ldt_instance(-1) {
         std::shared_ptr<logfile> lf = lss.find(template_line);
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
 
         this->vi_supports_indexes = false;
         this->ldt_format_impl = lvm.lookup_impl(format->get_name());
@@ -68,10 +68,10 @@ public:
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
-        log_format *format = lf->get_format();
+        auto format = lf->get_format();
         shared_buffer_ref line;
 
-        if (this->ldt_format_impl != NULL) {
+        if (this->ldt_format_impl != nullptr) {
             this->ldt_format_impl->get_columns(cols);
         }
         this->ldt_parent_column_count = cols.size();
@@ -200,7 +200,7 @@ public:
         int next_column = this->ldt_parent_column_count;
 
         this->ldt_format_impl->extract(lf, line_number, line, values);
-        values.emplace_back(instance_name, this->ldt_instance, lf->get_format());
+        values.emplace_back(instance_name, this->ldt_instance, lf->get_format().get());
         logline_value &lv = values.back();
         lv.lv_column = next_column++;
         for (auto &ldt_pair : this->ldt_pairs) {
@@ -218,7 +218,7 @@ public:
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }
-                values.emplace_back(intern_string::lookup("", 0), d, lf->get_format());
+                values.emplace_back(intern_string::lookup("", 0), d, lf->get_format().get());
             }
             break;
 
