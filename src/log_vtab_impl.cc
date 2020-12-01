@@ -164,7 +164,7 @@ struct vtab {
     sqlite3 *           db;
     textview_curses *tc;
     logfile_sub_source *lss;
-    log_vtab_impl *     vi;
+    std::shared_ptr<log_vtab_impl> vi;
 };
 
 struct vtab_cursor {
@@ -193,7 +193,7 @@ static int vt_create(sqlite3 *db,
         return SQLITE_NOMEM;
     }
 
-    memset(&p_vt->base, 0, sizeof(sqlite3_vtab));
+    memset(p_vt, 0, sizeof(*p_vt));
     p_vt->db = db;
 
     /* Declare the vtable's structure */
@@ -963,7 +963,7 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
     sqlite3_progress_handler(memdb, 32, progress_callback, nullptr);
 }
 
-string log_vtab_manager::register_vtab(log_vtab_impl *vi)
+string log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
 {
     string retval;
 

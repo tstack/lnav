@@ -260,10 +260,10 @@ bool setup_logline_table(exec_context &ec)
 
         lnav_data.ld_vtab_manager->unregister_vtab(logline);
         lnav_data.ld_vtab_manager->register_vtab(
-            new log_data_table(lnav_data.ld_log_source,
-                               *lnav_data.ld_vtab_manager,
-                               cl,
-                               logline));
+            std::make_shared<log_data_table>(lnav_data.ld_log_source,
+                                             *lnav_data.ld_vtab_manager,
+                                             cl,
+                                             logline));
 
         if (update_possibilities) {
             log_data_helper ldh(lnav_data.ld_log_source);
@@ -484,9 +484,9 @@ public:
                      lf->get_content_id().c_str());
             auto *format = lf->get_format();
             if (format->lf_is_self_describing) {
-                log_vtab_impl *vt = format->get_vtab_impl();
+                auto vt = format->get_vtab_impl();
 
-                if (vt) {
+                if (vt != nullptr) {
                     lnav_data.ld_vtab_manager->register_vtab(vt);
                 }
             }
@@ -2207,14 +2207,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    lnav_data.ld_vtab_manager->register_vtab(new all_logs_vtab());
-    lnav_data.ld_vtab_manager->register_vtab(new log_format_vtab_impl(
+    lnav_data.ld_vtab_manager->register_vtab(std::make_shared<all_logs_vtab>());
+    lnav_data.ld_vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
             *log_format::find_root_format("generic_log")));
 
     for (auto &iter : log_format::get_root_formats()) {
-        log_vtab_impl *lvi = iter->get_vtab_impl();
+        auto lvi = iter->get_vtab_impl();
 
-        if (lvi != NULL) {
+        if (lvi != nullptr) {
             lnav_data.ld_vtab_manager->register_vtab(lvi);
         }
     }

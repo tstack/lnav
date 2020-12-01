@@ -240,7 +240,7 @@ private:
     data_parser::schema_id_t ldt_schema_id;
     shared_buffer_ref ldt_current_line;
     data_parser::element_list_t ldt_pairs;
-    log_vtab_impl *ldt_format_impl;
+    std::shared_ptr<log_vtab_impl> ldt_format_impl;
     int ldt_parent_column_count;
     int64_t ldt_instance;
     std::vector<vtab_column> ldt_cols;

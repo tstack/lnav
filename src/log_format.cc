@@ -1932,10 +1932,11 @@ void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
     for (search_iter = this->elf_search_tables.begin();
          search_iter != this->elf_search_tables.end();
          ++search_iter) {
-        log_search_table *lst;
+        std::shared_ptr<log_search_table> lst;
 
         try {
-            lst = new log_search_table(search_iter->second.c_str(), search_iter->first);
+            lst = std::make_shared<log_search_table>(
+                search_iter->second.c_str(), search_iter->first);
         } catch (pcrepp::error &e) {
             errors.push_back(
                     "error:" +
@@ -2114,9 +2115,9 @@ public:
     struct line_range elt_container_body;
 };
 
-log_vtab_impl *external_log_format::get_vtab_impl() const
+std::shared_ptr<log_vtab_impl> external_log_format::get_vtab_impl() const
 {
-    return new external_log_table(*this);
+    return std::make_shared<external_log_table>(*this);
 }
 
 std::unique_ptr<log_format> external_log_format::specialized(int fmt_lock)

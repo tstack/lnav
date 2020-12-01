@@ -714,23 +714,23 @@ public:
         const bro_log_format &blt_format;
     };
 
-    static map<intern_string_t, bro_log_table *> &get_tables() {
-        static map<intern_string_t, bro_log_table *> retval;
+    static map<intern_string_t, std::shared_ptr<bro_log_table>> &get_tables() {
+        static map<intern_string_t, std::shared_ptr<bro_log_table>> retval;
 
         return retval;
     };
 
-    log_vtab_impl *get_vtab_impl() const {
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const {
         if (this->blf_format_name.empty()) {
             return nullptr;
         }
 
-        bro_log_table *retval = nullptr;
+        std::shared_ptr<bro_log_table> retval = nullptr;
 
         auto &tables = get_tables();
         auto iter = tables.find(this->blf_format_name);
         if (iter == tables.end()) {
-            retval = new bro_log_table(*this);
+            retval = std::make_shared<bro_log_table>(*this);
             tables[this->blf_format_name] = retval;
         }
 

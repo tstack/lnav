@@ -187,7 +187,7 @@ public:
 
     void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message);
 
-    log_vtab_impl *get_vtab_impl() const;
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const;
 
     const std::vector<std::string> *get_actions(const logline_value &lv) const {
         const std::vector<std::string> *retval = nullptr;

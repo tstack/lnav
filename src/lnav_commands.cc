@@ -1572,7 +1572,7 @@ static Result<string, string> com_create_logline_table(exec_context &ec, string 
         else {
             vis_line_t      vl  = log_view.get_top();
             content_line_t  cl  = lnav_data.ld_log_source.at_base(vl);
-            log_data_table *ldt = new log_data_table(
+            auto ldt = std::make_shared<log_data_table>(
                 lnav_data.ld_log_source,
                 *lnav_data.ld_vtab_manager,
                 cl,
@@ -1585,8 +1585,6 @@ static Result<string, string> com_create_logline_table(exec_context &ec, string 
                     .set_value("The following table will be created:");
                 lnav_data.ld_preview_source.replace_with(al)
                          .set_text_format(text_format_t::TF_SQL);
-
-                delete ldt;
 
                 return Ok(string());
             }
@@ -1603,7 +1601,6 @@ static Result<string, string> com_create_logline_table(exec_context &ec, string 
                     }
                     retval = "info: created new log table -- " + args[1];
                 } else {
-                    delete ldt;
                     return ec.make_error("unable to create table -- {}", errmsg);
                 }
             }
@@ -1662,7 +1659,7 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
 
     }
     else if (args.size() >= 2) {
-        log_search_table *lst;
+        std::shared_ptr<log_search_table> lst;
         auto_mem<pcre> code;
         const char *errptr;
         string regex;
@@ -1684,8 +1681,8 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
         }
 
         try {
-            lst = new log_search_table(regex.c_str(),
-                                       intern_string::lookup(args[1]));
+            lst = std::make_shared<log_search_table>(
+                regex.c_str(), intern_string::lookup(args[1]));
         } catch (pcrepp::error &e) {
             return ec.make_error("unable to compile regex -- {}", regex);
         }
@@ -1726,7 +1723,6 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
             retval = "info: created new search table -- " + args[1];
         }
         else {
-            delete lst;
             return ec.make_error("unable to create table -- {}", errmsg);
         }
     } else {

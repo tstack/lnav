@@ -229,7 +229,7 @@ public:
 
 class log_vtab_manager {
 public:
-    typedef std::map<intern_string_t, log_vtab_impl *>::const_iterator iterator;
+    typedef std::map<intern_string_t, std::shared_ptr<log_vtab_impl>>::const_iterator iterator;
 
     log_vtab_manager(sqlite3 *db,
                      textview_curses &tc,
@@ -239,18 +239,17 @@ public:
 
     logfile_sub_source *get_source() { return &this->vm_source; };
 
-    std::string register_vtab(log_vtab_impl *vi);
+    std::string register_vtab(std::shared_ptr<log_vtab_impl> vi);
     std::string unregister_vtab(intern_string_t name);
 
-    log_vtab_impl *lookup_impl(intern_string_t name) const
+    std::shared_ptr<log_vtab_impl> lookup_impl(intern_string_t name) const
     {
-        log_vtab_impl *retval = nullptr;
         auto iter = this->vm_impls.find(name);
 
         if (iter != this->vm_impls.end()) {
-            retval = iter->second;
+            return iter->second;
         }
-        return retval;
+        return nullptr;
     };
 
     iterator begin() const
@@ -267,6 +266,6 @@ private:
     sqlite3 *           vm_db;
     textview_curses &vm_textview;
     logfile_sub_source &vm_source;
-    std::map<intern_string_t, log_vtab_impl *> vm_impls;
+    std::map<intern_string_t, std::shared_ptr<log_vtab_impl>> vm_impls;
 };
 #endif

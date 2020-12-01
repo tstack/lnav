@@ -377,7 +377,7 @@ public:
 
     virtual std::unique_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
-    virtual log_vtab_impl *get_vtab_impl() const {
+    virtual std::shared_ptr<log_vtab_impl> get_vtab_impl() const {
         return nullptr;
     };
 
