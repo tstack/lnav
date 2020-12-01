@@ -272,7 +272,7 @@ struct lnav_data_t {
 
     vis_line_t                              ld_last_pretty_print_top;
 
-    log_vtab_manager *                      ld_vtab_manager;
+    std::unique_ptr<log_vtab_manager>       ld_vtab_manager;
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
 
     std::unordered_map<std::string, std::string> ld_table_ddl;

@@ -947,7 +947,7 @@ static int progress_callback(void *ptr)
 {
     int retval = 0;
 
-    if (log_vtab_data.lvd_progress != NULL) {
+    if (log_vtab_data.lvd_progress != nullptr) {
         retval = log_vtab_data.lvd_progress(log_cursor_latest);
     }
 
@@ -961,6 +961,15 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
 {
     sqlite3_create_module(this->vm_db, "log_vtab_impl", &generic_vtab_module, this);
     sqlite3_progress_handler(memdb, 32, progress_callback, nullptr);
+}
+
+log_vtab_manager::~log_vtab_manager()
+{
+    while (!this->vm_impls.empty()) {
+        auto first_name = this->vm_impls.begin()->first;
+
+        this->unregister_vtab(first_name);
+    }
 }
 
 string log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)

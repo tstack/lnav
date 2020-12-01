@@ -467,7 +467,7 @@ public:
     int get_filtered_count_for(size_t filter_index) const {
         int retval = 0;
 
-        for (auto ld : this->lss_files) {
+        for (auto& ld : this->lss_files) {
             retval += ld->ld_filter_state.lfo_filter_state.tfs_filter_hits[filter_index];
         }
 
@@ -623,8 +623,8 @@ public:
         bool ld_visible;
     };
 
-    typedef std::vector<logfile_data *>::iterator iterator;
-    typedef std::vector<logfile_data *>::const_iterator const_iterator;
+    typedef std::vector<std::unique_ptr<logfile_data>>::iterator iterator;
+    typedef std::vector<std::unique_ptr<logfile_data>>::const_iterator const_iterator;
 
     iterator begin()
     {
@@ -665,9 +665,9 @@ public:
     };
 
     nonstd::optional<logfile_data *> find_data(const std::shared_ptr<logfile>& lf) {
-        for (auto ld : *this) {
+        for (auto& ld : *this) {
             if (ld->ld_filter_state.lfo_filter_state.tfs_logfile == lf) {
-                return ld;
+                return ld.get();
             }
         }
         return nonstd::nullopt;
@@ -913,7 +913,7 @@ private:
     struct logfile_data_eq {
         explicit logfile_data_eq(std::shared_ptr<logfile> lf) : lde_file(std::move(lf)) { };
 
-        bool operator()(const logfile_data *ld)
+        bool operator()(const std::unique_ptr<logfile_data>& ld) const
         {
             return this->lde_file == ld->get_file();
         }
@@ -945,7 +945,7 @@ private:
     size_t                    lss_filename_width = 0;
     unsigned long             lss_flags{0};
     bool lss_force_rebuild{false};
-    std::vector<logfile_data *> lss_files;
+    std::vector<std::unique_ptr<logfile_data>> lss_files;
 
     big_array<indexed_content> lss_index;
     std::vector<uint32_t> lss_filtered_index;

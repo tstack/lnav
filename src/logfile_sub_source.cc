@@ -651,7 +651,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         size_t index_size = 0, start_size = this->lss_index.size();
         logline_cmp line_cmper(*this);
 
-        for (auto ld : this->lss_files) {
+        for (auto& ld : this->lss_files) {
             std::shared_ptr<logfile> lf = ld->get_file();
 
             if (lf == nullptr) {
@@ -666,7 +666,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         }
 
         if (full_sort) {
-            for (auto ld : this->lss_files) {
+            for (auto& ld : this->lss_files) {
                 shared_ptr<logfile> lf = ld->get_file();
 
                 if (lf == nullptr) {
@@ -691,7 +691,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
             for (iter = this->lss_files.begin();
                  iter != this->lss_files.end();
                  iter++) {
-                logfile_data *ld = *iter;
+                logfile_data *ld = iter->get();
                 shared_ptr<logfile> lf = ld->get_file();
                 if (lf == NULL) {
                     continue;
@@ -872,7 +872,7 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
 
 void logfile_sub_source::text_filters_changed()
 {
-    for (auto ld : *this) {
+    for (auto& ld : *this) {
         shared_ptr<logfile> lf = ld->get_file();
 
         if (lf != nullptr) {
@@ -973,7 +973,8 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
             return false;
         }
 
-        this->lss_files.push_back(new logfile_data(this->lss_files.size(), this->get_filters(), lf));
+        this->lss_files.push_back(std::make_unique<logfile_data>(
+            this->lss_files.size(), this->get_filters(), lf));
     }
     else {
         (*existing)->set_file(lf);
@@ -985,7 +986,7 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
 
 void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt)
 {
-    for (auto ld : *this) {
+    for (auto& ld : *this) {
         ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
     }
 

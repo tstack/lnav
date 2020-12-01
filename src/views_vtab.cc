@@ -603,7 +603,7 @@ CREATE TABLE lnav_view_files (
     }
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
-        auto ld = *vc.iter;
+        auto& ld = *vc.iter;
 
         switch (col) {
             case 0:
@@ -633,7 +633,7 @@ CREATE TABLE lnav_view_files (
 
         std::advance(iter, rowid);
 
-        auto ld = *iter;
+        auto& ld = *iter;
         if (ld->ld_visible != visible) {
             ld->set_visibility(visible);
             lss.text_filters_changed();

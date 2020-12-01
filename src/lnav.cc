@@ -2186,10 +2186,8 @@ int main(int argc, char *argv[])
     register_regexp_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
 
-    lnav_data.ld_vtab_manager =
-        new log_vtab_manager(lnav_data.ld_db,
-                             lnav_data.ld_views[LNV_LOG],
-                             lnav_data.ld_log_source);
+    lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
+        lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
 
     load_formats(lnav_data.ld_config_paths, loader_errors);
 
@@ -2220,7 +2218,7 @@ int main(int argc, char *argv[])
     }
 
     load_format_extra(lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
-    load_format_vtabs(lnav_data.ld_vtab_manager, loader_errors);
+    load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
     if (!loader_errors.empty()) {
         print_errors(loader_errors);
         return EXIT_FAILURE;

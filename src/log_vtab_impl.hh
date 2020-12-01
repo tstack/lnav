@@ -234,6 +234,7 @@ public:
     log_vtab_manager(sqlite3 *db,
                      textview_curses &tc,
                      logfile_sub_source &lss);
+    ~log_vtab_manager();
 
     textview_curses *get_view() const { return &this->vm_textview; };
 
