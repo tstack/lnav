@@ -2792,6 +2792,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    lnav_data.ld_vtab_manager = nullptr;
+
     {
         static const char *VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
