@@ -409,7 +409,9 @@ public:
     };
 
     pcrepp(const pcrepp &other)
-        : p_code(other.p_code), p_pattern(other.p_pattern)
+        : p_code(other.p_code),
+          p_pattern(other.p_pattern),
+          p_code_extra(pcre_free_study)
     {
         pcre_refcount(this->p_code, 1);
         this->study();
