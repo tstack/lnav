@@ -162,8 +162,8 @@ pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(logline_valu
 struct vtab {
     sqlite3_vtab        base;
     sqlite3 *           db;
-    textview_curses *tc;
-    logfile_sub_source *lss;
+    textview_curses *tc{nullptr};
+    logfile_sub_source *lss{nullptr};
     std::shared_ptr<log_vtab_impl> vi;
 };
 
@@ -182,33 +182,27 @@ static int vt_create(sqlite3 *db,
                      sqlite3_vtab **pp_vt,
                      char **pzErr)
 {
-    log_vtab_manager *vm = (log_vtab_manager *)pAux;
+    auto *vm = (log_vtab_manager *)pAux;
     int   rc             = SQLITE_OK;
-    vtab *p_vt;
-
     /* Allocate the sqlite3_vtab/vtab structure itself */
-    p_vt = (vtab *)sqlite3_malloc(sizeof(*p_vt));
+    auto p_vt = std::make_unique<vtab>();
 
-    if (p_vt == NULL) {
-        return SQLITE_NOMEM;
-    }
-
-    memset(p_vt, 0, sizeof(*p_vt));
     p_vt->db = db;
 
     /* Declare the vtable's structure */
     p_vt->vi = vm->lookup_impl(intern_string::lookup(argv[3]));
-    if (p_vt->vi == NULL) {
+    if (p_vt->vi == nullptr) {
         return SQLITE_ERROR;
     }
     p_vt->tc = vm->get_view();
     p_vt->lss = vm->get_source();
-    rc        = sqlite3_declare_vtab(db, p_vt->vi->get_table_statement().c_str());
+    rc = sqlite3_declare_vtab(db, p_vt->vi->get_table_statement().c_str());
 
     /* Success. Set *pp_vt and return */
-    *pp_vt = &p_vt->base;
+    auto loose_p_vt = p_vt.release();
+    *pp_vt = &loose_p_vt->base;
 
-    log_debug("creating log format table: %s = %p", argv[3], p_vt);
+    log_debug("creating log format table: %s = %p", argv[3], p_vt.get());
 
     return rc;
 }
@@ -217,8 +211,7 @@ static int vt_destructor(sqlite3_vtab *p_svt)
 {
     vtab *p_vt = (vtab *)p_svt;
 
-    /* Free the SQLite structure */
-    sqlite3_free(p_vt);
+    delete p_vt;
 
     return SQLITE_OK;
 }
