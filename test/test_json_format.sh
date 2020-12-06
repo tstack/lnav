@@ -502,7 +502,8 @@ check_output "json log format is not working" <<EOF
   @fields: { "lvl": "TRACE", "msg": "trace test"}
 2013-09-06T20:00:49.124 INFO Starting up service
   @fields: { "lvl": "INFO", "msg": "Starting up service"}
-lnav: unable to parse line at offset 186: parse error: premature EOF
+[offset: 186] {"ts": "2013-09-06T22:00:49.124817Z", "@fields": { "lvl": "INFO", "msg": "Shutting down service\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10
+parse error: premature EOF
                                        {"ts": "2013-09-06T22:00:49.124
                      (right here) ------^
 2013-09-06T22:00:59.124 DEBUG5 Details...

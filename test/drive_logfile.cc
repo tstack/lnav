@@ -157,6 +157,10 @@ int main(int argc, char *argv[])
                 case MODE_TIMES:
                     for (logfile::iterator iter = lf.begin();
                          iter != lf.end(); ++iter) {
+                        if (iter->is_ignored()) {
+                            continue;
+                        }
+
                         char buffer[1024];
                         time_t lt;
 

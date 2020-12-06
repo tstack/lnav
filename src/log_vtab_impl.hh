@@ -116,7 +116,7 @@ public:
         std::shared_ptr<logfile> lf = lss.find(cl);
         auto lf_iter = lf->begin() + cl;
 
-        if (lf_iter->is_continued()) {
+        if (!lf_iter->is_message()) {
             return false;
         }
 
@@ -174,7 +174,7 @@ public:
         auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
-        if (lf_iter->is_continued()) {
+        if (!lf_iter->is_message()) {
             return false;
         }
 

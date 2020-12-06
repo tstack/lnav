@@ -457,6 +457,37 @@ readline_context::readline_context(const std::string &name,
     this->rc_append_character = ' ';
 }
 
+void readline_context::load()
+{
+    char buffer[128];
+
+    rl_completer_word_break_characters = (char *)" \t\n|()"; /* XXX */
+    /*
+     * XXX Need to keep the input on a single line since the display screws
+     * up if it wraps around.
+     */
+    snprintf(buffer, sizeof(buffer),
+             "set completion-ignore-case %s",
+             this->rc_case_sensitive ? "off" : "on");
+    rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
+
+    loaded_context = this;
+    rl_attempted_completion_function = attempted_completion;
+    history_set_history_state(&this->rc_history);
+    for (auto &rc_var : this->rc_vars) {
+        *(rc_var.rv_dst.ch) = (char *) rc_var.rv_val.ch;
+    }
+}
+
+void readline_context::save()
+{
+    HISTORY_STATE *hs = history_get_history_state();
+
+    this->rc_history = *hs;
+    free(hs);
+    hs = nullptr;
+}
+
 readline_curses::readline_curses()
     : rc_change(noop_func{}),
       rc_perform(noop_func{}),

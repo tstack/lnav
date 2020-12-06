@@ -86,7 +86,7 @@ public:
             this->ldh_y_offset += 1;
         }
         this->ldh_line = ll;
-        if (ll->is_continued()) {
+        if (!ll->is_message()) {
             this->ldh_parser.reset();
             this->ldh_scanner.reset();
             this->ldh_namer.reset();

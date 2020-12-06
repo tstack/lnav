@@ -215,7 +215,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     auto format = file->get_format();
     bool display = false;
 
-    if (ll->is_time_skewed()) {
+    if (ll->is_time_skewed() ||
+        ll->get_msg_level() == log_level_t::LEVEL_INVALID) {
         display = true;
     }
     if (this->fos_active) {
@@ -230,6 +231,25 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
     if (!this->fos_log_helper.parse_line(lv.get_top())) {
         return;
+    }
+
+    if (ll->get_msg_level() == LEVEL_INVALID) {
+        for (const auto& sattr : this->fos_log_helper.ldh_line_attrs) {
+            if (sattr.sa_type != &SA_INVALID) {
+                continue;
+            }
+
+            auto emsg = fmt::format("   Invalid log message: {}",
+                                    (const char *) sattr.sa_value.sav_ptr);
+            auto al = attr_line_t(emsg)
+                .with_attr(string_attr(line_range{1, 2},
+                                       &view_curses::VC_GRAPHIC,
+                                       ACS_LLCORNER))
+                .with_attr(string_attr(line_range{0, 22},
+                                       &view_curses::VC_ROLE,
+                                       view_colors::VCR_INVALID_MSG));
+            this->fos_lines.emplace_back(al);
+        }
     }
 
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
@@ -251,8 +271,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         time_str.append("   Out-Of-Time-Order Message");
         time_lr.lr_start = 3;
         time_lr.lr_end = time_str.length();
-        time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE,
-                                        vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
+        time_line.with_attr(string_attr(time_lr, &view_curses::VC_ROLE,
+                                        view_colors::VCR_SKEWED_TIME));
         time_str.append(" --");
     }
 
@@ -294,8 +314,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
             time_lr.lr_end = time_str.length();
             time_line.with_attr(string_attr(
                 time_lr,
-                &view_curses::VC_STYLE,
-                vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
+                &view_curses::VC_ROLE,
+                view_colors::VCR_SKEWED_TIME));
 
             timersub(&curr_tv, &actual_tv, &diff_tv);
             time_str.append(";  Diff: ");

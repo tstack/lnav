@@ -287,7 +287,7 @@ static int handle_table_list(void *ptr,
 {
     struct table_list_data *tld = (struct table_list_data *)ptr;
 
-    (*tld->tld_iter)->second.push_back(colvalues[0]);
+    (*tld->tld_iter)->second.emplace_back(colvalues[0]);
     if (!tld->tld_callbacks->smc_table_list) {
         return 0;
     }
@@ -657,7 +657,7 @@ string sql_safe_ident(const string_fragment &ident)
         char ch = retval[lpc];
 
         if (isalnum(ch) || ch == '_') {
-            retval[lpc] = ch;
+            retval[lpc] = tolower(ch);
         } else {
             retval[lpc] = '_';
         }
@@ -703,7 +703,7 @@ void sql_compile_script(sqlite3 *db,
                 log_error("unable to allocate error message");
                 break;
             }
-            errors.push_back(full_msg.in());
+            errors.emplace_back(full_msg.in());
             break;
         } else if (script == tail) {
             break;

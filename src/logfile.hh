@@ -287,7 +287,7 @@ public:
         auto retval = ll;
 
         while (retval != this->begin() &&
-                (retval->get_sub_offset() != 0 || retval->is_continued())) {
+                (retval->get_sub_offset() != 0 || !retval->is_message())) {
             --retval;
         }
 

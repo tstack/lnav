@@ -139,7 +139,7 @@ public:
                        const line_info &offset,
                        shared_buffer_ref &sbr);
 
-    bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out);
+    bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) const;
 
     void annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
                   std::vector<logline_value> &values, bool annotate_module = true) const;

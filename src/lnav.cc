@@ -1339,7 +1339,7 @@ static void looper()
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
             setup_highlights(lnav_data.ld_preview_view.get_highlights());
 
-            for (auto format : log_format::get_root_formats()) {
+            for (const auto& format : log_format::get_root_formats()) {
                 for (auto &hl : format->lf_highlighters) {
                     if (hl.h_fg.empty()) {
                         hl.with_attrs(hl.h_attrs | vc.attrs_for_ident(hl.h_pattern));
@@ -1483,8 +1483,8 @@ static void looper()
 
         timer.start_fade(index_counter, 1);
 
-        log_debug("rescan started");
         file_collection active_copy;
+        log_debug("rescan started %p", &active_copy);
         active_copy.merge(lnav_data.ld_active_files);
         active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
         future<file_collection> rescan_future =
@@ -2476,7 +2476,7 @@ int main(int argc, char *argv[])
                 continue;
             }
             for (auto line_iter = lf->begin(); line_iter != lf->end(); ++line_iter) {
-                if (!line_iter->is_continued()) {
+                if (line_iter->get_msg_level() != log_level_t::LEVEL_INVALID) {
                     continue;
                 }
 

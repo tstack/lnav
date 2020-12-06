@@ -108,13 +108,18 @@
                                             "$ref": "#/definitions/style"
                                         },
                                         "skewed-time": {
-                                            "description": "Styling for timestamps ",
+                                            "description": "Styling for timestamps that are different from the received time",
                                             "title": "/ui/theme-defs/<theme_name>/styles/skewed-time",
                                             "$ref": "#/definitions/style"
                                         },
                                         "offset-time": {
                                             "description": "Styling for hidden fields",
                                             "title": "/ui/theme-defs/<theme_name>/styles/offset-time",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "invalid-msg": {
+                                            "description": "Styling for invalid log messages",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/invalid-msg",
                                             "$ref": "#/definitions/style"
                                         },
                                         "popup": {
@@ -266,7 +271,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/log-level-styles",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal)": {
+                                        "(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid)": {
                                             "title": "/ui/theme-defs/<theme_name>/log-level-styles/<level>",
                                             "$ref": "#/definitions/style"
                                         }

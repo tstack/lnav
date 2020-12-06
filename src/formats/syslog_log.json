@@ -18,7 +18,7 @@
             "warning": "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
         "opid-field": "log_pid",
-        "multiline": false,
+        "multiline": true,
         "module-field": "log_procname",
         "value": {
             "log_pri": {

@@ -3776,7 +3776,7 @@ public:
             auto format = lf->get_format();
             shared_buffer_ref sbr;
 
-            if (ll->is_continued()) {
+            if (!ll->is_message()) {
                 continue;
             }
 
@@ -3829,7 +3829,7 @@ public:
             auto format = lf->get_format();
             shared_buffer_ref sbr;
 
-            if (ll->is_continued()) {
+            if (!ll->is_message()) {
                 continue;
             }
 

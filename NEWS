@@ -8,6 +8,11 @@ lnav v0.9.1:
        following command to open the command prompt with ":filter-in " already
        filled in:
          :prompt command : 'filter-in '
+     * Added support for the W3C Extended Log File Format.  Note: Since the
+       columns in a W3C log are specified in the file, the name of the format
+       and SQLite table will include a hash ID over of the column names
+       (e.g. w3c_7685df_log).
+     * Added support for the S3 Access File Format.
      * To jump to the first search hit above the top line in a view, you can
        press CTRL+J instead of ENTER in the search prompt.  Pressing ENTER
        will jump to the first hit below the current window.
@@ -23,6 +28,8 @@ lnav v0.9.1:
      Interface Changes:
      * When copying log lines, the file name and time offset will be included
        in the copy if they are enabled.
+     * Log messages that cannot be parsed properly will be given an "invalid"
+       log level and the invalid portions colored yellow.
 
      Fixes:
      * Unicode text can now be entered in prompts.

@@ -33,10 +33,13 @@
 
 #include <stdio.h>
 
+#include <utility>
+
 #include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
+#include "lnav_util.hh"
 
 using namespace std;
 
@@ -124,7 +127,7 @@ class generic_log_format : public log_format {
     {
         pcre_context_static<30> context;
         pcre_input pi(line);
-        string     new_line = "";
+        string     new_line;
 
         if (scrub_pattern().match(context, pi)) {
             pcre_context::capture_t *cap;
@@ -252,12 +255,12 @@ lnav_strnstr(const char *s, const char *find, size_t slen)
 		do {
 			do {
 				if (slen < 1 || (sc = *s) == '\0')
-					return (NULL);
+					return (nullptr);
 				--slen;
 				++s;
 			} while (sc != c);
 			if (len > slen)
-				return (NULL);
+				return (nullptr);
 		} while (strncmp(s, find, len) != 0);
 		s--;
 	}
@@ -270,7 +273,7 @@ struct separated_string {
     const char *ss_separator;
     size_t ss_separator_len;
 
-    separated_string(const char *str = nullptr, size_t len = -1)
+    explicit separated_string(const char *str = nullptr, size_t len = -1)
         : ss_str(str), ss_len(len), ss_separator(",") {
         this->ss_separator_len = strlen(this->ss_separator);
     };
@@ -288,7 +291,7 @@ struct separated_string {
         size_t i_index;
 
         iterator(const separated_string &ss, const char *pos)
-            : i_parent(ss), i_pos(pos), i_index(0) {
+            : i_parent(ss), i_pos(pos), i_next_pos(pos), i_index(0) {
             this->update();
         };
 
@@ -340,11 +343,11 @@ struct separated_string {
     };
 
     iterator begin() {
-        return iterator(*this, this->ss_str);
+        return {*this, this->ss_str};
     };
 
     iterator end() {
-        return iterator(*this, this->ss_str + this->ss_len);
+        return {*this, this->ss_str + this->ss_len};
     };
 };
 
@@ -358,7 +361,7 @@ public:
         std::string fd_collator;
         int fd_numeric_index;
 
-        field_def(const intern_string_t name)
+        explicit field_def(const intern_string_t name)
             : fd_name(name),
               fd_kind(logline_value::VALUE_TEXT),
               fd_identifier(false),
@@ -418,6 +421,10 @@ public:
                 return SCAN_MATCH;
             }
 
+            if (iter.index() >= this->blf_field_defs.size()) {
+                break;
+            }
+
             const field_def &fd = this->blf_field_defs[iter.index()];
 
             if (TS == fd.fd_name) {
@@ -425,7 +432,7 @@ public:
 
                 if (this->lf_date_time.scan(sf.data(),
                                             sf.length(),
-                                            NULL,
+                                            nullptr,
                                             &tm,
                                             tv)) {
                     this->lf_timestamp_flags = tm.et_flags;
@@ -603,7 +610,6 @@ public:
         if (!this->blf_format_name.empty() &&
             !this->blf_separator.empty() &&
             !this->blf_field_defs.empty()) {
-            this->blf_header_size = dst.size() - 1;
             dst.clear();
             return this->scan_int(dst, li, sbr);
         }
@@ -740,7 +746,6 @@ public:
                      bool full_message) {
     }
 
-    size_t blf_header_size;
     intern_string_t blf_format_name;
     intern_string_t blf_separator;
     intern_string_t blf_set_separator;
@@ -750,5 +755,583 @@ public:
 
 };
 
+struct ws_separated_string {
+    const char *ss_str;
+    size_t ss_len;
+
+    explicit ws_separated_string(const char *str = nullptr, size_t len = -1)
+        : ss_str(str), ss_len(len) {
+    };
+
+    struct iterator {
+        enum class state_t {
+            NORMAL,
+            QUOTED,
+        };
+
+        const ws_separated_string &i_parent;
+        const char *i_pos;
+        const char *i_next_pos;
+        size_t i_index{0};
+        state_t i_state{state_t::NORMAL};
+
+        iterator(const ws_separated_string &ss, const char *pos)
+            : i_parent(ss), i_pos(pos), i_next_pos(pos) {
+            this->update();
+        };
+
+        void update() {
+            const auto &ss = this->i_parent;
+            bool done = false;
+
+            while (!done && this->i_next_pos < (ss.ss_str + ss.ss_len)) {
+                switch (this->i_state) {
+                    case state_t::NORMAL:
+                        if (*this->i_next_pos == '"') {
+                            this->i_state = state_t::QUOTED;
+                        } else if (isspace(*this->i_next_pos)) {
+                            done = true;
+                        }
+                        break;
+                    case state_t::QUOTED:
+                        if (*this->i_next_pos == '"') {
+                            this->i_state = state_t::NORMAL;
+                        }
+                        break;
+                }
+                if (!done) {
+                    this->i_next_pos += 1;
+                }
+            }
+        };
+
+        iterator &operator++() {
+            const auto &ss = this->i_parent;
+
+            this->i_pos = this->i_next_pos;
+            while (this->i_pos < (ss.ss_str + ss.ss_len) &&
+                   isspace(*this->i_pos)) {
+                this->i_pos += 1;
+                this->i_next_pos += 1;
+            }
+            this->update();
+            this->i_index += 1;
+
+            return *this;
+        };
+
+        string_fragment operator*() {
+            const auto &ss = this->i_parent;
+            int end = this->i_next_pos - ss.ss_str;
+
+            return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
+        };
+
+        bool operator==(const iterator &other) const {
+            return (&this->i_parent == &other.i_parent) &&
+                   (this->i_pos == other.i_pos);
+        };
+
+        bool operator!=(const iterator &other) const {
+            return !(*this == other);
+        };
+
+        size_t index() const {
+            return this->i_index;
+        };
+    };
+
+    iterator begin() {
+        return {*this, this->ss_str};
+    };
+
+    iterator end() {
+        return {*this, this->ss_str + this->ss_len};
+    };
+};
+
+class w3c_log_format : public log_format {
+public:
+
+    struct field_def {
+        const intern_string_t fd_name;
+        const intern_string_t fd_sql_name;
+        logline_value::kind_t fd_kind;
+        bool fd_identifier;
+        std::string fd_collator;
+        int fd_numeric_index;
+
+        explicit field_def(const intern_string_t name)
+            : fd_name(name),
+              fd_sql_name(intern_string::lookup(sql_safe_ident(name.to_string_fragment()))),
+              fd_kind(logline_value::VALUE_TEXT),
+              fd_identifier(false),
+              fd_numeric_index(-1) {
+        };
+
+        field_def(const char *name, logline_value::kind_t kind, bool ident = false, std::string coll = "")
+            : fd_name(intern_string::lookup(name)),
+              fd_sql_name(intern_string::lookup(sql_safe_ident(string_fragment(name)))),
+              fd_kind(kind),
+              fd_identifier(ident),
+              fd_collator(std::move(coll)),
+              fd_numeric_index(-1) {
+
+        }
+
+        field_def &with_kind(logline_value::kind_t kind,
+                             bool identifier = false,
+                             const std::string &collator = "") {
+            this->fd_kind = kind;
+            this->fd_identifier = identifier;
+            this->fd_collator = collator;
+            return *this;
+        };
+
+        field_def &with_numeric_index(int index) {
+            this->fd_numeric_index = index;
+            return *this;
+        }
+    };
+
+    w3c_log_format() {
+        this->lf_is_self_describing = true;
+        this->lf_time_ordered = false;
+    };
+
+    const intern_string_t get_name() const override {
+        static const intern_string_t name(intern_string::lookup("w3c"));
+
+        return this->wlf_format_name.empty() ? name : this->wlf_format_name;
+    };
+
+    void clear() override {
+        this->log_format::clear();
+        this->wlf_time_scanner.clear();
+        this->wlf_format_name.clear();
+        this->wlf_field_defs.clear();
+    };
+
+    scan_result_t scan_int(std::vector<logline> &dst,
+                           const line_info &li,
+                           shared_buffer_ref &sbr) {
+        static const intern_string_t DATE = intern_string::lookup("date");
+        static const intern_string_t DATE_LOCAL = intern_string::lookup("date-local");
+        static const intern_string_t DATE_UTC = intern_string::lookup("date-UTC");
+        static const intern_string_t TIME = intern_string::lookup("time");
+        static const intern_string_t TIME_LOCAL = intern_string::lookup("time-local");
+        static const intern_string_t TIME_UTC = intern_string::lookup("time-UTC");
+        static const intern_string_t STATUS_CODE = intern_string::lookup("sc-status");
+
+        ws_separated_string ss(sbr.get_data(), sbr.length());
+        struct timeval date_tv{0, 0}, time_tv{0, 0};
+        struct exttm date_tm, time_tm;
+        bool found_date = false, found_time = false;
+        log_level_t level = LEVEL_INFO;
+
+        for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+            if (iter.index() >= this->wlf_field_defs.size()) {
+                level = LEVEL_INVALID;
+                break;
+            }
+
+            const field_def &fd = this->wlf_field_defs[iter.index()];
+            string_fragment sf = *iter;
+
+            if (sf.startswith("#")) {
+                if (sf == "#Date:") {
+                    date_time_scanner dts;
+                    struct exttm tm;
+                    struct timeval tv;
+
+                    if (dts.scan(sbr.get_data_at(sf.length() + 1),
+                                 sbr.length() - sf.length() - 1,
+                                 nullptr,
+                                 &tm,
+                                 tv)) {
+                        this->lf_date_time.set_base_time(tv.tv_sec);
+                        this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                    }
+                }
+                dst.emplace_back(li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
+                return SCAN_MATCH;
+            }
+
+            sf.trim("\" \t");
+            if (DATE == fd.fd_name ||
+                DATE_LOCAL == fd.fd_name ||
+                DATE_UTC == fd.fd_name) {
+                if (this->lf_date_time.scan(sf.data(),
+                                            sf.length(),
+                                            nullptr,
+                                            &date_tm,
+                                            date_tv)) {
+                    this->lf_timestamp_flags |= date_tm.et_flags;
+                    found_date = true;
+                }
+            } else if (TIME == fd.fd_name ||
+                       TIME_LOCAL == fd.fd_name ||
+                       TIME_UTC == fd.fd_name) {
+                if (this->wlf_time_scanner.scan(sf.data(),
+                                                sf.length(),
+                                                nullptr,
+                                                &time_tm,
+                                                time_tv)) {
+                    this->lf_timestamp_flags |= time_tm.et_flags;
+                    found_time = true;
+                }
+            } else if (STATUS_CODE == fd.fd_name) {
+                if (!sf.empty() && sf[0] >= '4') {
+                    level = LEVEL_ERROR;
+                }
+            }
+
+            if (fd.fd_numeric_index >= 0) {
+                switch (fd.fd_kind) {
+                    case logline_value::VALUE_INTEGER:
+                    case logline_value::VALUE_FLOAT: {
+                        char field_copy[sf.length() + 1];
+                        double val;
+
+                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1) {
+                            this->lf_value_stats[fd.fd_numeric_index].add_value(val);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
+
+        if (found_time) {
+            struct exttm tm = time_tm;
+            struct timeval tv;
+
+            if (found_date) {
+                tm.et_tm.tm_year = date_tm.et_tm.tm_year;
+                tm.et_tm.tm_mday = date_tm.et_tm.tm_mday;
+                tm.et_tm.tm_mon = date_tm.et_tm.tm_mon;
+                tm.et_tm.tm_wday = date_tm.et_tm.tm_wday;
+                tm.et_tm.tm_yday = date_tm.et_tm.tm_yday;
+            }
+
+            tv.tv_sec = tm2sec(&tm.et_tm);
+            tv.tv_usec = tm.et_nsec / 1000;
+
+            dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0);
+            return SCAN_MATCH;
+        } else {
+            return SCAN_NO_MATCH;
+        }
+    }
+
+    scan_result_t scan(logfile &lf,
+                       std::vector<logline> &dst,
+                       const line_info &li,
+                       shared_buffer_ref &sbr) override {
+        static const field_def KNOWN_FIELDS[] = {
+            {
+                "cs-method",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                "c-ip",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+                "ipaddress",
+            },
+            {
+                "cs-bytes",
+                logline_value::kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                "cs-host",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                "cs-uri-stem",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+                "naturalnocase",
+            },
+            {
+                "cs-uri-query",
+                logline_value::kind_t::VALUE_TEXT,
+                false,
+            },
+            {
+                "cs-username",
+                logline_value::kind_t::VALUE_TEXT,
+                false,
+            },
+            {
+                "cs-version",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                "s-ip",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+                "ipaddress",
+            },
+            {
+                "s-port",
+                logline_value::kind_t::VALUE_INTEGER,
+                true,
+            },
+            {
+                "s-computername",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                "s-sitename",
+                logline_value::kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                "sc-bytes",
+                logline_value::kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                "sc-status",
+                logline_value::kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                "time-taken",
+                logline_value::kind_t::VALUE_FLOAT,
+                false,
+            },
+        };
+
+        if (!this->wlf_format_name.empty()) {
+            return this->scan_int(dst, li, sbr);
+        }
+
+        if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#') {
+            return SCAN_NO_MATCH;
+        }
+
+        this->clear();
+
+        for (auto line_iter = dst.begin(); line_iter != dst.end(); ++line_iter) {
+            auto next_read_result = lf.read_line(line_iter);
+
+            if (next_read_result.isErr()) {
+                return SCAN_NO_MATCH;
+            }
+
+            auto line = next_read_result.unwrap();
+            ws_separated_string ss(line.get_data(), line.length());
+            auto iter = ss.begin();
+
+            string_fragment directive = *iter;
+
+            if (directive.empty() || directive[0] != '#') {
+                continue;
+            }
+
+            ++iter;
+            if (iter == ss.end()) {
+                continue;
+            }
+
+            if (directive == "#Date:") {
+                date_time_scanner dts;
+                struct exttm tm;
+                struct timeval tv;
+
+                if (dts.scan(line.get_data_at(directive.length() + 1),
+                             line.length() - directive.length() - 1,
+                             nullptr,
+                             &tm,
+                             tv)) {
+                    this->lf_date_time.set_base_time(tv.tv_sec);
+                    this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                }
+            } else if (directive == "#Fields:") {
+                hasher id_hash;
+                int numeric_count = 0;
+
+                do {
+                    string_fragment sf = *iter;
+
+                    id_hash.update(sf);
+                    sf.trim(")");
+                    auto field_iter = std::find_if(begin(KNOWN_FIELDS),
+                                                   end(KNOWN_FIELDS),
+                                                   [&sf](auto elem) {
+                                                       return sf == elem.fd_name;
+                                                   });
+                    if (field_iter != end(KNOWN_FIELDS)) {
+                        this->wlf_field_defs.emplace_back(*field_iter);
+                    } else {
+                        this->wlf_field_defs.emplace_back(
+                            intern_string::lookup(sf));
+                    }
+                    auto& fd = this->wlf_field_defs.back();
+                    switch (fd.fd_kind) {
+                        case logline_value::kind_t::VALUE_FLOAT:
+                        case logline_value::kind_t::VALUE_INTEGER:
+                            fd.with_numeric_index(numeric_count);
+                            numeric_count += 1;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    ++iter;
+                } while (iter != ss.end());
+
+                this->wlf_format_name = intern_string::lookup(fmt::format(
+                    "w3c_{}_log", id_hash.to_string().substr(0, 6)));
+                this->lf_value_stats.resize(numeric_count);
+            }
+        }
+
+        if (!this->wlf_format_name.empty() &&
+            !this->wlf_field_defs.empty()) {
+            dst.clear();
+            return this->scan_int(dst, li, sbr);
+        }
+
+        this->wlf_format_name.clear();
+        this->lf_value_stats.clear();
+
+        return SCAN_NO_MATCH;
+    };
+
+    void annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
+                  std::vector<logline_value> &values, bool annotate_module) const override {
+        ws_separated_string ss(sbr.get_data(), sbr.length());
+
+        for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+            string_fragment sf = *iter;
+
+            if (iter.index() >= this->wlf_field_defs.size()) {
+                sa.emplace_back(line_range{sf.sf_begin, -1},
+                                &SA_INVALID,
+                                (void *) "extra fields detected");
+                return;
+            }
+
+            const field_def &fd = this->wlf_field_defs[iter.index()];
+            logline_value::kind_t kind = fd.fd_kind;
+
+            if (sf == "-") {
+                sf.invalidate();
+                kind = logline_value::VALUE_NULL;
+            }
+
+            auto lr = line_range(sf.sf_begin, sf.sf_end);
+
+            if (lr.is_valid()) {
+                values.emplace_back(fd.fd_sql_name,
+                                    sf.startswith("\"") ?
+                                    logline_value::kind_t::VALUE_W3C_QUOTED :
+                                    kind,
+                                    sbr,
+                                    fd.fd_identifier,
+                                    nullptr,
+                                    iter.index(),
+                                    lr.lr_start,
+                                    lr.lr_end,
+                                    false,
+                                    this);
+            } else {
+                values.emplace_back(fd.fd_sql_name, this);
+            }
+        }
+    };
+
+    const logline_value_stats *stats_for_value(const intern_string_t &name) const override {
+        const logline_value_stats *retval = nullptr;
+
+        for (const auto & wlf_field_def : this->wlf_field_defs) {
+            if (wlf_field_def.fd_sql_name == name) {
+                if (wlf_field_def.fd_numeric_index < 0) {
+                    break;
+                }
+                retval = &this->lf_value_stats[wlf_field_def.fd_numeric_index];
+                break;
+            }
+        }
+
+        return retval;
+    };
+
+    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override {
+        return make_shared<w3c_log_format>(*this);
+    };
+
+    class w3c_log_table : public log_format_vtab_impl {
+    public:
+        explicit w3c_log_table(const w3c_log_format &format)
+            : log_format_vtab_impl(format), wlt_format(format) {
+
+        }
+
+        void get_columns(vector<vtab_column> &cols) const override {
+            for (const auto &fd : this->wlt_format.wlf_field_defs) {
+                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_kind);
+
+                cols.emplace_back(fd.fd_sql_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
+            }
+        };
+
+        void get_foreign_keys(std::vector<std::string> &keys_inout) const override {
+            this->log_vtab_impl::get_foreign_keys(keys_inout);
+
+            for (const auto &fd : this->wlt_format.wlf_field_defs) {
+                if (fd.fd_identifier) {
+                    keys_inout.push_back(fd.fd_sql_name.to_string());
+                }
+            }
+        }
+
+        const w3c_log_format &wlt_format;
+    };
+
+    static map<intern_string_t, std::shared_ptr<w3c_log_table>> &get_tables() {
+        static map<intern_string_t, std::shared_ptr<w3c_log_table>> retval;
+
+        return retval;
+    };
+
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override {
+        if (this->wlf_format_name.empty()) {
+            return nullptr;
+        }
+
+        std::shared_ptr<w3c_log_table> retval = nullptr;
+
+        auto &tables = get_tables();
+        auto iter = tables.find(this->wlf_format_name);
+        if (iter == tables.end()) {
+            retval = std::make_shared<w3c_log_table>(*this);
+            tables[this->wlf_format_name] = retval;
+        }
+
+        return retval;
+    };
+
+    void get_subline(const logline &ll,
+                     shared_buffer_ref &sbr,
+                     bool full_message) override {
+    }
+
+    date_time_scanner wlf_time_scanner;
+    intern_string_t wlf_format_name;
+    vector<field_def> wlf_field_defs;
+};
+
 log_format::register_root_format<bro_log_format> bro_log_instance;
+log_format::register_root_format<w3c_log_format> w3c_log_instance;
 log_format::register_root_format<generic_log_format> generic_log_instance;

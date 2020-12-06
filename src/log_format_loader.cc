@@ -1015,7 +1015,7 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
             }
         }
 
-        for (auto elf : alpha_ordered_formats) {
+        for (const auto& elf : alpha_ordered_formats) {
             for (auto & popped_format : popped_formats) {
                 elf->elf_collision.remove(popped_format);
             }
@@ -1028,7 +1028,10 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
     }
 
     auto &roots = log_format::get_root_formats();
-    roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
+    auto iter = std::find_if(roots.begin(), roots.end(), [](const auto& elem) {
+        return elem->get_name() == "generic_log";
+    });
+    roots.insert(iter, graph_ordered_formats.begin(), graph_ordered_formats.end());
 }
 
 static void exec_sql_in_path(sqlite3 *db, const ghc::filesystem::path &path, std::vector<string> &errors)

@@ -403,8 +403,6 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
             size_t old_size = this->lf_index.size();
 
-            // Update this early so that line_length() works
-            this->lf_index_size = li.li_file_range.next_offset();
             if (old_size == 0) {
                 file_range fr = this->lf_line_buffer.get_available();
                 auto avail_data = this->lf_line_buffer.read_range(fr);
@@ -431,6 +429,9 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (old_size > this->lf_index.size()) {
                 old_size = 0;
             }
+
+            // Update this early so that line_length() works
+            this->lf_index_size = li.li_file_range.next_offset();
 
             if (this->lf_logline_observer != nullptr) {
                 this->lf_logline_observer->logline_new_lines(

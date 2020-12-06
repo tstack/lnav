@@ -1,5 +1,20 @@
 #! /bin/bash
 
+
+cp ${srcdir}/logfile_syslog.0 truncfile.0
+chmod u+w truncfile.0
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    -c ";update syslog_log set log_mark = 1 where log_line = 1" \
+    -c ":write-to truncfile.0" \
+    -c ":goto 1" \
+    truncfile.0
+
+check_output "truncated log file not detected" <<EOF
+Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+EOF
+
+
 if locale -a | grep fr_FR; then
     cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr_test.0
     touch -t 200711030923 logfile_syslog_fr_test.0
@@ -120,10 +135,41 @@ run_test ./drive_logfile -f bro_conn_log ${srcdir}/logfile_bro_conn.log.0
 
 on_error_fail_with "Didn't infer bro_conn_log log format?"
 
+run_test ./drive_logfile -f w3c_7685df_log ${srcdir}/logfile_w3c.0
+
+on_error_fail_with "Didn't infer w3c_7685df_log log format?"
+
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
 
 on_error_fail_with "Didn't handle empty log?"
+
+
+run_test ./drive_logfile -t -f w3c_2957b3_log ${srcdir}/logfile_w3c.2
+
+check_output "w3c timestamp interpreted incorrectly?" <<EOF
+Oct 09 16:44:49 2000 -- 000
+Oct 09 16:44:49 2000 -- 000
+Oct 09 16:48:05 2000 -- 000
+Oct 09 16:48:17 2000 -- 000
+Oct 09 16:48:24 2000 -- 000
+Oct 09 16:48:35 2000 -- 000
+Oct 09 16:48:41 2000 -- 000
+Oct 09 16:48:41 2000 -- 000
+Oct 09 16:48:41 2000 -- 000
+Oct 09 16:48:41 2000 -- 000
+Oct 09 16:48:44 2000 -- 000
+Oct 10 16:44:49 2000 -- 000
+Oct 10 16:44:49 2000 -- 000
+Oct 10 16:48:05 2000 -- 000
+EOF
+
+run_test ./drive_logfile -t -f w3c_5bd538_log ${srcdir}/logfile_w3c.4
+
+check_output "quoted w3c timestamp interpreted incorrectly?" <<EOF
+Jun 28 07:26:35 2017 -- 000
+Jun 26 18:21:17 2017 -- 000
+EOF
 
 cp ${srcdir}/logfile_syslog.0 logfile_syslog_test.0
 touch -t 200711030923 logfile_syslog_test.0
@@ -376,35 +422,12 @@ info 0x0
 error 0x0
 EOF
 
-cp ${srcdir}/logfile_syslog.0 truncfile.0
-chmod u+w truncfile.0
-
-run_test ${lnav_test} -n \
-    -c ";update syslog_log set log_mark = 1 where log_line = 1" \
-    -c ":write-to truncfile.0" \
-    -c ":goto 1" \
-    truncfile.0
-
-check_output "truncated log file not detected" <<EOF
-Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
-EOF
-
 
 echo "Hi" | run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.log
 
 check_output "piping to stdin is not working?" <<EOF
 2013-06-06T19:13:20.123  Hi
 2013-06-06T19:13:20.123  ---- END-OF-STDIN ----
-EOF
-
-run_test ${lnav_test} -C ${srcdir}/logfile_bad_syslog.0
-
-sed -i "" -e "s|/.*/logfile_bad_syslog.0|logfile_bad_syslog.0|g" `test_err_filename`
-
-check_error_output "bad syslog line not found?" <<EOF
-error:logfile_bad_syslog.0:2:line did not match format syslog_log/regex/std
-error:logfile_bad_syslog.0:2:         line -- Nov  3 09:23:38 veridian lookup for opt failed
-error:logfile_bad_syslog.0:2:partial match -- Nov  3 09:23:38 veridian lookup for opt failed
 EOF
 
 run_test ${lnav_test} -C ${srcdir}/logfile_bad_access_log.0
@@ -415,6 +438,31 @@ check_error_output "bad access_log line not found?" <<EOF
 error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std
 error:logfile_bad_access_log.0:1:         line -- 192.168.202.254 [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 error:logfile_bad_access_log.0:1:partial match -- 192.168.202.254
+EOF
+
+run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_w3c.2
+
+check_output "metadata lines not ignored?" <<EOF
+16:44:49 1.1.1.1 [2]USER anonymous 331
+16:44:49 1.1.1.1 [2]PASS - 230
+16:48:05 1.1.1.1 [2]QUIT - 226
+16:48:17 1.1.1.1 [3]USER anonymous 331
+16:48:24 1.1.1.1 [3]PASS user@domain.com 230
+16:48:35 1.1.1.1 [3]sent /user/test.c 226
+16:48:41 1.1.1.1 [3]created readme.txt 226
+16:48:41 1.1.1.1 [3]created fileid.diz 226
+16:48:41 1.1.1.1 [3]created names.dll 226
+16:48:41 1.1.1.1 [3]created TEST.EXE 226
+16:48:44 1.1.1.1 [3]QUIT - 226
+16:44:49 1.1.1.1 [2]USER anonymous 331
+16:44:49 1.1.1.1 [2]PASS - 230
+16:48:05 1.1.1.1 [2]QUIT - 226
+EOF
+
+run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_w3c.6
+
+check_output "unicode in w3c not working?" <<EOF
+2015-01-13 00:32:17 100.79.192.81 GET /robots.txt - 80 - 157.55.39.146 ÄÖÜäöü\ßßßMözillä/5.0+(compatible;+bingbot/2.0;++http://www.bing.com/bingbot.htm) - 404 0 2 1405 242 283
 EOF
 
 run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_epoch.0

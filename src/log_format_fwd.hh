@@ -133,6 +133,17 @@ public:
         this->ll_millis = tv.tv_usec / 1000;
     };
 
+    void set_ignore(bool val) {
+        if (val) {
+            this->ll_level |= LEVEL_IGNORE;
+        }
+        else {
+            this->ll_level &= ~LEVEL_IGNORE;
+        }
+    };
+
+    bool is_ignored() const { return this->ll_level & LEVEL_IGNORE; }
+
     void set_mark(bool val) {
         if (val) {
             this->ll_level |= LEVEL_MARK;
@@ -181,6 +192,10 @@ public:
     {
         return level_names[this->ll_level & ~LEVEL__FLAGS];
     };
+
+    bool is_message() const {
+        return (this->ll_level & (LEVEL_IGNORE|LEVEL_CONTINUED)) == 0;
+    }
 
     bool is_continued() const {
         return this->ll_level & LEVEL_CONTINUED;

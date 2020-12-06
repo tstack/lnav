@@ -15,6 +15,9 @@
             "std": {
                 "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
             },
+            "std-vhost": {
+                "pattern": "^(?<cs_host>[\\w\\-\\.]*)(?::\\d+)?\\s+(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
+            },
             "mod-std": {
                 "module-format": true,
                 "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
@@ -26,6 +29,11 @@
         },
         "opid-field": "c_ip",
         "value": {
+            "cs_host": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The value of the Host header"
+            },
             "c_ip": {
                 "kind": "string",
                 "collate": "ipaddress",
@@ -88,6 +96,9 @@
             },
             {
                 "line": "10.1.10.51 -  -  [23/Dec/2014:21:20:35 +0000] \"POST /api/1/rest/foo/bar HTTP/1.1\" 200 - \"-\" \"-\"  293"
+            },
+            {
+                "line": "www.example.com 1.2.3.4 - theuser [10/Feb/2012:16:41:07 -0500] \"GET / HTTP/1.0\" 200 368 \"-\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11\""
             }
         ]
     }

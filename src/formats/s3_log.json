@@ -1,0 +1,158 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "s3_log": {
+        "title": "S3 Access Log",
+        "description": "S3 server access log format",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html",
+        "multiline": false,
+        "regex": {
+            "std": {
+                "pattern": "^(?<owner>\\S+)\\s+(?<bucket>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\]\\s+(?<c_ip>[\\w*.:-]+)\\s+(?<cs_userid>\\S+)\\s+(?<req_id>\\S+)\\s+(?<op>\\S+)\\s+(?<cs_key>\\S+)\\s+\"(?<cs_method>\\S+)\\s+(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\\s+(?<cs_version>\\S+)\"\\s+(?<sc_status>\\d+|-)\\s+(?<sc_error_code>\\S+)\\s+(?<sc_bytes>\\d+|-)\\s+(?<obj_size>\\d+|-)\\s+(?<total_time>\\d+|-)\\s+(?<turn_around_time>\\d+|-)\\s+\"(?<cs_referer>.*?)\"\\s+\"(?<cs_user_agent>.*?)\"$"
+            },
+            "std-v2": {
+                "pattern": "^(?<owner>\\S+)\\s+(?<bucket>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\]\\s+(?<c_ip>[\\w*.:-]+)\\s+(?<cs_userid>\\S+)\\s+(?<req_id>\\S+)\\s+(?<op>\\S+)\\s+(?<cs_key>\\S+)\\s+\"(?<cs_method>\\S+)\\s+(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\\s+(?<cs_version>\\S+)\"\\s+(?<sc_status>\\d+|-)\\s+(?<sc_error_code>\\S+)\\s+(?<sc_bytes>\\d+|-)\\s+(?<obj_size>\\d+|-)\\s+(?<total_time>\\d+|-)\\s+(?<turn_around_time>\\d+|-)\\s+\"(?<cs_referer>.*?)\"\\s+\"(?<cs_user_agent>.*?)\"\\s+(?<version_id>\\S+)\\s+(?<host_id>\\S+)\\s+(?<sig_version>\\S+)\\s+(?<cipher_suite>\\S+)\\s+(?<auth_type>\\S+)\\s+(?<cs_host>\\S+)\\s+(?<tls_version>\\S+)$"
+            }
+        },
+        "level-field": "sc_status",
+        "level": {
+            "error": "^[^123].*"
+        },
+        "opid-field": "c_ip",
+        "value": {
+            "owner": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The bucket owner"
+            },
+            "bucket": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The bucket"
+            },
+            "c_ip": {
+                "kind": "string",
+                "collate": "ipaddress",
+                "identifier": true,
+                "description": "The client IP address"
+            },
+            "cs_userid": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The user ID passed from the client to the server"
+            },
+            "req_id": {
+                "kind": "string",
+                "description": "The request ID"
+            },
+            "op": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The operation"
+            },
+            "cs_key": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The key for the bucket"
+            },
+            "cs_method": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The request method"
+            },
+            "cs_uri_stem": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The path part of the request URI"
+            },
+            "cs_uri_query": {
+                "kind": "string",
+                "description": "The query parameters in the request URI"
+            },
+            "cs_version": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The client's HTTP version"
+            },
+            "sc_status": {
+                "kind": "integer",
+                "foreign-key": true,
+                "rewriter": ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '",
+                "description": "The status code returned by the server"
+            },
+            "sc_error_code": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The Amazon S3 error code"
+            },
+            "sc_bytes": {
+                "kind": "integer",
+                "description": "The number of bytes returned by the server"
+            },
+            "obj_size": {
+                "kind": "integer",
+                "description": "The size of the object"
+            },
+            "total_time": {
+                "kind": "integer",
+                "description": "The total time taken to satisfy the request"
+            },
+            "turn_around_time": {
+                "kind": "integer",
+                "description": "The turn around time"
+            },
+            "cs_referer": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The client's referrer"
+            },
+            "cs_user_agent": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The client's HTTP agent"
+            },
+            "version_id": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The version ID"
+            },
+            "host_id": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The host ID"
+            },
+            "sig_version": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The signature version"
+            },
+            "cipher_suite": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The SSL layer negotiated cipher suite"
+            },
+            "auth_type": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The type of request authentication used"
+            },
+            "cs_host": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The endpoint used to connect to S3"
+            },
+            "tls_version": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The TLS version negotiated by the client"
+            }
+        },
+        "sample": [
+            {
+                "line": "b659b576cff1e15e4c0313ff8930fba9f53e6794567f5c60dab3abf2f8dfb6cc www.example.com [10/Feb/2012:16:42:07 -0500] 1.2.3.4 arn:aws:iam::179580289999:user/phillip.boss EB3502676500C6BE WEBSITE.GET.OBJECT index \"GET /index HTTP/1.1\" 200 - 368 368 10 9 \"-\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11\""
+            },
+            {
+                "line": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be awsexamplebucket1 [06/Feb/2019:00:00:38 +0000] 192.0.2.3 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be 3E57427F3EXAMPLE REST.GET.VERSIONING - \"GET /awsexamplebucket1?versioning HTTP/1.1\" 200 - 113 - 7 - \"-\" \"S3Console/0.4\" - s9lzHYrFp76ZVxRcpX9+5cjAnEH2ROuNkd2BHfIa6UkFVdtjf5mKR3/eTPFvsiP/XV/VLi31234= SigV2 ECDHE-RSA-AES128-GCM-SHA256 AuthHeader awsexamplebucket1.s3.us-west-1.amazonaws.com TLSV1.1"
+            }
+        ]
+    }
+}

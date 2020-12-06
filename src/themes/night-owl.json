@@ -50,6 +50,9 @@
                     "offset-time": {
                         "color": "$cyan"
                     },
+                    "invalid-msg": {
+                        "color": "$yellow"
+                    },
                     "popup": {
                         "color": "$base00",
                         "background-color": "$base3"

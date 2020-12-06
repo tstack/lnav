@@ -45,5 +45,6 @@ extern string_attr_type SA_BODY;
 extern string_attr_type SA_HIDDEN;
 extern string_attr_type SA_FORMAT;
 extern string_attr_type SA_REMOVED;
+extern string_attr_type SA_INVALID;
 
 #endif

@@ -40,6 +40,9 @@
                     "offset-time": {
                         "color": "Teal"
                     },
+                    "invalid-msg": {
+                        "color": "Yellow"
+                    },
                     "popup": {
                         "color": "Silver",
                         "background-color": "Teal"

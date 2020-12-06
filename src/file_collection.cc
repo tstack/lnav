@@ -186,6 +186,19 @@ file_collection::watch_logfile(const std::string &filename,
         return make_ready_future(retval);
     }
 
+    auto stat_iter = find_if(this->fc_new_stats.begin(),
+                             this->fc_new_stats.end(),
+                             [&st](auto& elem) {
+                                 return st.st_ino == elem.st_ino &&
+                                        st.st_dev == elem.st_dev;
+                             });
+    if (stat_iter != this->fc_new_stats.end()) {
+        // this file is probably a link that we have already scanned in this
+        // pass.
+        return make_ready_future(retval);
+    }
+
+    this->fc_new_stats.emplace_back(st);
     auto file_iter = find_if(this->fc_files.begin(),
                              this->fc_files.end(),
                              same_file(st));
@@ -405,6 +418,8 @@ file_collection file_collection::rescan_files(bool required)
     }
 
     fq.pop_to();
+
+    this->fc_new_stats.clear();
 
     return retval;
 }

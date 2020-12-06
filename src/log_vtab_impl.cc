@@ -141,6 +141,7 @@ pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(logline_valu
         case logline_value::VALUE_TEXT:
         case logline_value::VALUE_STRUCT:
         case logline_value::VALUE_QUOTED:
+        case logline_value::VALUE_W3C_QUOTED:
         case logline_value::VALUE_TIMESTAMP:
             type = SQLITE3_TEXT;
             break;
@@ -593,6 +594,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                         SQLITE_TRANSIENT);
                     break;
                 }
+                case logline_value::VALUE_W3C_QUOTED:
                 case logline_value::VALUE_QUOTED:
                     if (lv_iter->lv_sbr.length() == 0) {
                         sqlite3_result_text(ctx, "", 0, SQLITE_STATIC);
@@ -606,11 +608,15 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                         case '"': {
                             char *val = (char *)sqlite3_malloc(text_len);
 
-                            if (val == NULL) {
+                            if (val == nullptr) {
                                 sqlite3_result_error_nomem(ctx);
                             }
                             else {
-                                size_t unquoted_len = unquote(val, text_value, text_len);
+                                auto unquote_func =
+                                    lv_iter->lv_kind == logline_value::VALUE_W3C_QUOTED ?
+                                    unquote_w3c : unquote;
+
+                                size_t unquoted_len = unquote_func(val, text_value, text_len);
                                 sqlite3_result_text(ctx, val, unquoted_len, sqlite3_free);
                             }
                             break;
@@ -899,7 +905,7 @@ static int vt_update(sqlite3_vtab *tab,
             vis_line_t vl(rowid);
             content_line_t cl = vt->lss->at(vl);
             logline *ll = vt->lss->find_line(cl);
-            if (!ll->is_continued()) {
+            if (ll->is_message()) {
                 break;
             }
             vt->tc->set_user_mark(&textview_curses::BM_USER, vl, val);

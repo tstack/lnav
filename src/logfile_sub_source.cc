@@ -368,6 +368,19 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
+    if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
+        for (auto& token_attr : this->lss_token_attrs) {
+            if (token_attr.sa_type != &SA_INVALID) {
+                continue;
+            }
+
+
+            value_out.emplace_back(token_attr.sa_range,
+                                   &view_curses::VC_ROLE,
+                                   view_colors::VCR_INVALID_MSG);
+        }
+    }
+
     for (const auto &line_value : line_values) {
         if ((!(this->lss_token_flags & RF_FULL) &&
             line_value.lv_sub_offset != this->lss_token_line->get_sub_offset()) ||
@@ -523,8 +536,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            attrs = vc.attrs_for_role(view_colors::VCR_ADJUSTED_TIME);
-            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
+            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
+                                   view_colors::VCR_ADJUSTED_TIME);
         }
     }
     else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
@@ -533,8 +546,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
-            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
+            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
+                                   view_colors::VCR_ALT_ROW);
         }
     }
 
@@ -543,8 +556,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            attrs = vc.attrs_for_role(view_colors::VCR_SKEWED_TIME);
-            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
+            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
+                                   view_colors::VCR_SKEWED_TIME);
         }
     }
 
@@ -727,7 +740,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            if ((*iter)->get_file() == NULL)
+            if ((*iter)->get_file() == nullptr)
                 continue;
 
             (*iter)->ld_lines_indexed = (*iter)->get_file()->size();
@@ -738,7 +751,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         uint32_t filter_in_mask, filter_out_mask;
         this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
 
-        if (start_size == 0 && this->lss_index_delegate != NULL) {
+        if (start_size == 0 && this->lss_index_delegate != nullptr) {
             this->lss_index_delegate->index_start(*this);
         }
 
@@ -754,6 +767,10 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
             }
 
             auto line_iter = (*ld)->get_file()->begin() + line_number;
+
+            if (line_iter->is_ignored()) {
+                continue;
+            }
 
             if (!this->tss_apply_filters ||
                 (!(*ld)->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
@@ -826,7 +843,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
         }
 
         auto line_iter = lf->begin() + cl;
-        if (!line_iter->is_continued()) {
+        if (line_iter->is_message()) {
             switch (line_iter->get_msg_level()) {
                 case LEVEL_WARNING:
                     bm[&BM_WARNINGS].insert_once(vl);
@@ -855,7 +872,7 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
     while (vl >= 0) {
         logline *curr_line = this->find_line(this->at(vl));
 
-        if (curr_line->is_continued()) {
+        if (!curr_line->is_message()) {
             --vl;
             continue;
         }
@@ -1257,7 +1274,7 @@ log_location_history::loc_history_forward(vis_line_t current_top)
 bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
                          shared_buffer_ref &line)
 {
-    if (ll->is_continued()) {
+    if (!ll->is_message()) {
         return false;
     }
     if (this->sf_filter_stmt == nullptr) {

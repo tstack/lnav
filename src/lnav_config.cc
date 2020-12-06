@@ -531,7 +531,7 @@ static struct json_path_container theme_styles_handlers = {
         })
         .with_children(style_config_handlers),
     yajlpp::property_handler("skewed-time")
-        .with_description("Styling for timestamps ")
+        .with_description("Styling for timestamps that are different from the received time")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_skewed_time;
         })
@@ -540,6 +540,12 @@ static struct json_path_container theme_styles_handlers = {
         .with_description("Styling for hidden fields")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_offset_time;
+        })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("invalid-msg")
+        .with_description("Styling for invalid log messages")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_invalid_msg;
         })
         .with_children(style_config_handlers),
     yajlpp::property_handler("popup")
@@ -702,7 +708,7 @@ static struct json_path_container theme_status_styles_handlers = {
 };
 
 static struct json_path_container theme_log_level_styles_handlers = {
-    yajlpp::pattern_property_handler("(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal)")
+    yajlpp::pattern_property_handler("(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid)")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             style_config &sc = root->lt_level_styles[
                 string2level(ypc.ypc_extractor.get_substr_i("level").get())];

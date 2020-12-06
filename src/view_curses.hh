@@ -198,6 +198,7 @@ public:
         VCR_ADJUSTED_TIME,
         VCR_SKEWED_TIME,
         VCR_OFFSET_TIME,
+        VCR_INVALID_MSG,
         VCR_STATUS,             /*< Normal status line text. */
         VCR_WARN_STATUS,
         VCR_ALERT_STATUS,       /*< Alert status line text. */

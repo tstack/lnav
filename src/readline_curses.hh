@@ -101,36 +101,9 @@ public:
 
     const std::string &get_name() const { return this->rc_name; };
 
-    void load()
-    {
-        char buffer[128];
+    void load();
 
-        rl_completer_word_break_characters = (char *)" \t\n|()"; /* XXX */
-        /*
-         * XXX Need to keep the input on a single line since the display screws
-         * up if it wraps around.
-         */
-        snprintf(buffer, sizeof(buffer),
-                 "set completion-ignore-case %s",
-                 this->rc_case_sensitive ? "off" : "on");
-        rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
-
-        loaded_context = this;
-        rl_attempted_completion_function = attempted_completion;
-        history_set_history_state(&this->rc_history);
-        for (auto &rc_var : this->rc_vars) {
-            *(rc_var.rv_dst.ch) = (char *) rc_var.rv_val.ch;
-        }
-    };
-
-    void save()
-    {
-        HISTORY_STATE *hs = history_get_history_state();
-
-        this->rc_history = *hs;
-        free(hs);
-        hs = nullptr;
-    };
+    void save();
 
     void add_possibility(const std::string& type, const std::string& value)
     {

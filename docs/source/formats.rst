@@ -20,11 +20,19 @@ The following log formats are built into **lnav**:
    :widths: 8 5 20
    :file: format-table.csv
 
-The
-`Bro Network Security Monitor <https://www.bro.org/sphinx/script-reference/log-files.html>`_
-TSV log format is also supported in versions
-v0.8.3+.  The Bro log format is self-describing, so **lnav** will read the
-header to determine the shape of the file.
+In addition to the above formats, the following self-describing formats are
+supported:
+
+* The
+  `Bro Network Security Monitor <https://www.bro.org/sphinx/script-reference/log-files.html>`_
+  TSV log format is supported in lnav versions v0.8.3+.  The Bro log format is
+  self-describing, so **lnav** will read the header to determine the shape of
+  the file.
+* The
+  `W3C Extend Log File Format <https://www.w3.org/TR/WD-logfile.html>`_
+  is supported in lnav versions v0.9.1+.  The W3C log format is
+  self-describing, so **lnav** will read the header to determine the shape of
+  the file.
 
 
 Defining a New Format

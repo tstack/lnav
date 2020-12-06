@@ -155,6 +155,39 @@ struct string_fragment {
         this->sf_end = -1;
     };
 
+    void trim(const char *tokens) {
+        while (this->sf_begin < this->sf_end) {
+            bool found = false;
+
+            for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+                if (this->sf_string[this->sf_begin] == tokens[lpc]) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                break;
+            }
+
+            this->sf_begin += 1;
+        }
+        while (this->sf_begin < this->sf_end) {
+            bool found = false;
+
+            for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+                if (this->sf_string[this->sf_end - 1] == tokens[lpc]) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                break;
+            }
+
+            this->sf_end -= 1;
+        }
+    }
+
     const char *sf_string;
     int sf_begin;
     int sf_end;
@@ -188,6 +221,10 @@ public:
 
     std::string to_string() const {
         return std::string(this->is_str, this->is_len);
+    }
+
+    string_fragment to_string_fragment() const {
+        return string_fragment{this->is_str, 0, (int) this->is_len};
     }
 
     bool startswith(const char *prefix) const {
@@ -265,6 +302,13 @@ public:
             return "";
         }
         return this->ist_interned_string->to_string();
+    }
+
+    string_fragment to_string_fragment() const {
+        if (this->ist_interned_string == nullptr) {
+            return string_fragment{"", 0, 0};
+        }
+        return this->ist_interned_string->to_string_fragment();
     }
 
     bool operator<(const intern_string_t &rhs) const {

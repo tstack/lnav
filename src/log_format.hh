@@ -105,6 +105,7 @@ public:
         VALUE_JSON,
         VALUE_STRUCT,
         VALUE_QUOTED,
+        VALUE_W3C_QUOTED,
         VALUE_TIMESTAMP,
 
         VALUE__MAX
@@ -343,7 +344,7 @@ public:
                                const line_info &li,
                                shared_buffer_ref &sbr) = 0;
 
-    virtual bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) {
+    virtual bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) const {
         return false;
     };
 

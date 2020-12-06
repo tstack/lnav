@@ -47,6 +47,7 @@ FORMAT_FILES = \
     $(srcdir)/formats/strace_log.json \
     $(srcdir)/formats/sudo_log.json \
     $(srcdir)/formats/syslog_log.json \
+    $(srcdir)/formats/s3_log.json \
     $(srcdir)/formats/tcf_log.json \
     $(srcdir)/formats/tcsh_history.json \
     $(srcdir)/formats/uwsgi_log.json \

@@ -44,6 +44,8 @@ inline bool is_line_ending(char ch) {
 
 size_t unquote(char *dst, const char *str, size_t len);
 
+size_t unquote_w3c(char *dst, const char *str, size_t len);
+
 inline bool startswith(const char *str, const char *prefix)
 {
     return strncmp(str, prefix, strlen(prefix)) == 0;

@@ -63,6 +63,7 @@ struct file_collection {
     std::set<std::string> fc_closed_files;
     std::map<std::string, file_format_t> fc_other_files;
     std::shared_ptr<safe_scan_progress> fc_progress;
+    std::vector<struct stat> fc_new_stats;
     size_t fc_largest_path_length{0};
 
     file_collection()
@@ -76,6 +77,7 @@ struct file_collection {
         this->fc_files.clear();
         this->fc_closed_files.clear();
         this->fc_other_files.clear();
+        this->fc_new_stats.clear();
     }
 
     file_collection rescan_files(bool required = false);

@@ -61,7 +61,7 @@ public:
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
         auto ll = lf->begin() + cl;
-        while (ll->is_continued()) {
+        while (!ll->is_message()) {
             --ll;
             --this->lh_current_line;
         }
@@ -503,7 +503,7 @@ bool handle_paging_key(int ch)
                 }
                 lss->set_time_offset(true);
                 while (next_top < tc->get_inner_height()) {
-                    if (lss->find_line(lss->at(next_top))->is_continued()) {
+                    if (!lss->find_line(lss->at(next_top))->is_message()) {
                     }
                     else if (lss->get_line_accel_direction(next_top) ==
                              log_accel::A_DECEL) {
@@ -527,7 +527,7 @@ bool handle_paging_key(int ch)
                 }
                 lss->set_time_offset(true);
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
-                    if (lss->find_line(lss->at(next_top))->is_continued()) {
+                    if (!lss->find_line(lss->at(next_top))->is_message()) {
                     }
                     else if (lss->get_line_accel_direction(next_top) ==
                              log_accel::A_DECEL) {
@@ -645,7 +645,7 @@ bool handle_paging_key(int ch)
                             }
                         }
                         logline &next_line = next_helper.current_line();
-                        if (next_line.is_continued()) {
+                        if (!next_line.is_message()) {
                             continue;
                         }
                         if (next_line.get_opid() != opid_hash) {

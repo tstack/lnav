@@ -141,6 +141,7 @@ set(FORMAT_FILES
         formats/strace_log.json
         formats/sudo_log.json
         formats/syslog_log.json
+        formats/s3_log.json
         formats/tcf_log.json
         formats/tcsh_history.json
         formats/uwsgi_log.json

@@ -31,6 +31,7 @@
 
 #include <ctype.h>
 
+#include "base/lnav_log.hh"
 #include "log_level.hh"
 
 const char *level_names[LEVEL__MAX + 1] = {
@@ -48,6 +49,7 @@ const char *level_names[LEVEL__MAX + 1] = {
     "error",
     "critical",
     "fatal",
+    "invalid",
 
     nullptr
 };
@@ -77,6 +79,15 @@ log_level_t abbrev2level(const char *levelstr, ssize_t len)
             }
             return LEVEL_DEBUG;
         case 'I':
+            if (len == 7 &&
+                toupper(levelstr[1]) == 'N' &&
+                toupper(levelstr[2]) == 'V' &&
+                toupper(levelstr[3]) == 'A' &&
+                toupper(levelstr[4]) == 'L' &&
+                toupper(levelstr[5]) == 'I' &&
+                toupper(levelstr[6]) == 'D') {
+                return LEVEL_INVALID;
+            }
             return LEVEL_INFO;
         case 'S':
             return LEVEL_STATS;

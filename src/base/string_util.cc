@@ -93,6 +93,23 @@ size_t unquote(char *dst, const char *str, size_t len)
     return index;
 }
 
+size_t unquote_w3c(char *dst, const char *str, size_t len)
+{
+    size_t index = 0;
+
+    require(str[0] == '\'' || str[0] == '"');
+
+    for (size_t lpc = 1; lpc < (len - 1); lpc++, index++) {
+        dst[index] = str[lpc];
+        if (str[lpc] == '"') {
+            lpc += 1;
+        }
+    }
+    dst[index] = '\0';
+
+    return index;
+}
+
 void truncate_to(std::string &str, size_t len)
 {
     static const std::string ELLIPSIS = "\xE2\x8B\xAF";

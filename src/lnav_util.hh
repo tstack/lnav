@@ -53,6 +53,7 @@
 #include "byte_array.hh"
 #include "optional.hpp"
 #include "base/result.h"
+#include "base/intern_string.hh"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 
@@ -75,6 +76,12 @@ public:
     }
 
     hasher &update(const std::string &str) {
+        this->h_context.Update(str.data(), str.length());
+
+        return *this;
+    }
+
+    hasher &update(const string_fragment &str) {
         this->h_context.Update(str.data(), str.length());
 
         return *this;

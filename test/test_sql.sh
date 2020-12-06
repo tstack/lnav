@@ -3,6 +3,17 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";SELECT sc_substatus FROM w3c_e28cf8_log" \
+    ${test_dir}/logfile_w3c.3
+
+check_output "w3c quoted strings are not handled correctly?" <<EOF
+     sc_substatus
+0
+0
+ "garbage" w/ spaces
+EOF
+
+run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET visible=0" \
     ${test_dir}/logfile_access_log.0
 
@@ -382,10 +393,10 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "access_log table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,<NULL>,2009-07-20 22:59:26.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
-1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
-2,<NULL>,2009-07-20 22:59:29.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200,<NULL>
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200,<NULL>
 EOF
 
 
@@ -395,8 +406,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "loglevel collator is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
 EOF
 
 run_test ${lnav_test} -n \
@@ -1033,8 +1044,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog_with_access_log.0
 
 check_output "access_log not found within syslog file" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200,<NULL>
 EOF
 
 

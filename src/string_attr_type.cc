@@ -36,3 +36,4 @@ string_attr_type SA_BODY("body");
 string_attr_type SA_HIDDEN("hidden");
 string_attr_type SA_FORMAT("format");
 string_attr_type SA_REMOVED("removed");
+string_attr_type SA_INVALID("invalid");

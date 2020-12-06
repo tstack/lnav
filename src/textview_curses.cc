@@ -79,7 +79,7 @@ void text_filter::add_line(
         logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line) {
     bool match_state = this->matches(*lfs.tfs_logfile, ll, line);
 
-    if (!ll->is_continued()) {
+    if (ll->is_message()) {
         this->end_of_message(lfs);
     }
 

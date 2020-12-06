@@ -90,7 +90,7 @@ bool all_logs_vtab::is_valid(log_cursor &lc, logfile_sub_source &lss)
     auto lf = lss.find(cl);
     auto lf_iter = lf->begin() + cl;
 
-    if (lf_iter->is_continued()) {
+    if (!lf_iter->is_message()) {
         return false;
     }
 

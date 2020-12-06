@@ -439,12 +439,12 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (attr_range.lr_end > attr_range.lr_start) {
             int awidth = attr_range.length();
-            int color_pair;
+            int color_pair = 0;
 
             if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.sav_int & ~A_COLOR;
                 color_pair = PAIR_NUMBER(iter->sa_value.sav_int);
-            } else {
+            } else if (iter->sa_type == &VC_ROLE) {
                 attrs = vc.attrs_for_role((view_colors::role_t) iter->sa_value.sav_int);
                 color_pair = PAIR_NUMBER(attrs);
                 attrs = attrs & ~A_COLOR;
@@ -808,6 +808,8 @@ void view_colors::init_roles(const lnav_theme &lt,
         color_pair_base, lt, lt.lt_style_skewed_time, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_OFFSET_TIME] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_offset_time, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_INVALID_MSG] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_invalid_msg, lt.lt_style_text, reporter);
 
     this->vc_role_colors[VCR_STATUS] = this->to_attrs(color_pair_base,
         lt, lt.lt_style_status, lt.lt_style_status, reporter);

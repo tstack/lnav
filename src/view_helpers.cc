@@ -90,7 +90,7 @@ static void open_pretty_view()
             auto ll = lf->begin() + cl;
             shared_buffer_ref sbr;
 
-            if (!first_line && ll->is_continued()) {
+            if (!first_line && !ll->is_message()) {
                 continue;
             }
             auto ll_start = lf->message_start(ll);

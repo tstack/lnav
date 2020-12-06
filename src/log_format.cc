@@ -119,6 +119,7 @@ logline_value::logline_value(const intern_string_t name,
         case VALUE_STRUCT:
         case VALUE_TEXT:
         case VALUE_QUOTED:
+        case VALUE_W3C_QUOTED:
         case VALUE_TIMESTAMP:
             this->lv_sbr.subset(sbr, start, end - start);
             break;
@@ -181,23 +182,28 @@ std::string logline_value::to_string() const
             return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
 
         case VALUE_QUOTED:
+        case VALUE_W3C_QUOTED:
             if (this->lv_sbr.length() == 0) {
                 return "";
             } else {
                 switch (this->lv_sbr.get_data()[0]) {
                     case '\'':
                     case '"': {
+                        auto unquote_func = this->lv_kind == VALUE_W3C_QUOTED ?
+                            unquote_w3c : unquote;
                         char unquoted_str[this->lv_sbr.length()];
                         size_t unquoted_len;
 
-                        unquoted_len = unquote(unquoted_str, this->lv_sbr.get_data(),
-                                               this->lv_sbr.length());
+                        unquoted_len = unquote_func(unquoted_str,
+                                                    this->lv_sbr.get_data(),
+                                                    this->lv_sbr.length());
                         return std::string(unquoted_str, unquoted_len);
                     }
                     default:
                         return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
                 }
             }
+            break;
 
         case VALUE_INTEGER:
             snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_value.i);
@@ -596,7 +602,7 @@ static struct json_path_container json_log_rewrite_handlers = {
         .add_cb(rewrite_json_field)
 };
 
-bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_out)
+bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) const
 {
     if (this->elf_type != ELF_TYPE_TEXT) {
         return false;
@@ -672,19 +678,19 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         }
         else {
             unsigned char *msg;
-            int line_count = 1;
+            int line_count = 2;
 
             msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
             if (msg != nullptr) {
                 log_debug("Unable to parse line at offset %d: %s", li.li_file_range.fr_offset, msg);
-                line_count = count(msg, msg + strlen((char *) msg), '\n');
+                line_count = count(msg, msg + strlen((char *) msg), '\n') + 1;
                 yajl_free_error(handle, msg);
             }
             if (!this->lf_specialized) {
                 return log_format::SCAN_NO_MATCH;
             }
             for (int lpc = 0; lpc < line_count; lpc++) {
-                log_level_t level = LEVEL_ERROR;
+                log_level_t level = LEVEL_INVALID;
 
                 ll.set_time(dst.back().get_time());
                 if (lpc > 0) {
@@ -827,6 +833,16 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         return log_format::SCAN_MATCH;
     }
 
+    if (this->lf_specialized && !this->elf_multiline) {
+        auto& last_line = dst.back();
+
+        dst.emplace_back(li.li_file_range.fr_offset,
+                         last_line.get_timeval(),
+                         log_level_t::LEVEL_INVALID);
+
+        return log_format::SCAN_MATCH;
+    }
+
     return log_format::SCAN_NO_MATCH;
 }
 
@@ -880,7 +896,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
     pcre_context_static<128> pc;
     pcre_input pi(line.get_data(), 0, line.length());
     struct line_range lr;
-    pcre_context::capture_t *cap, *body_cap, *module_cap = NULL;
+    pcre_context::capture_t *cap, *body_cap, *module_cap = nullptr;
 
     if (this->elf_type != ELF_TYPE_TEXT) {
         values = this->jlf_line_values;
@@ -896,6 +912,12 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         lr.lr_start = 0;
         lr.lr_end = line.length();
         sa.emplace_back(lr, &SA_BODY);
+        if (!this->elf_multiline) {
+            auto len = pat.p_pcre->match_partial(pi);
+            sa.emplace_back(line_range{(int) len, -1},
+                            &SA_INVALID,
+                            (void *) "Log line does not match any pattern");
+        }
         return;
     }
 
@@ -1171,17 +1193,26 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
             (const unsigned char *)sbr.get_data(), sbr.length());
         if (parse_status != yajl_status_ok ||
             yajl_complete_parse(handle) != yajl_status_ok) {
-            unsigned char *msg;
+            unsigned char* msg;
             string full_msg;
 
             msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
             if (msg != nullptr) {
-                full_msg = fmt::format("lnav: unable to parse line at offset {}: {}", ll.get_offset(), msg);
+                full_msg = fmt::format(
+                    "[offset: {}] {}\n{}",
+                    ll.get_offset(),
+                    fmt::string_view{sbr.get_data(), sbr.length()},
+                    msg);
                 yajl_free_error(handle, msg);
             }
 
             this->jlf_cached_line.resize(full_msg.size());
             memcpy(this->jlf_cached_line.data(), full_msg.data(), full_msg.size());
+            this->jlf_line_values.clear();
+            this->jlf_line_attrs.emplace_back(
+                line_range{0, -1},
+                &SA_INVALID,
+                (void *) "JSON line failed to parse");
         } else {
             std::vector<logline_value>::iterator lv_iter;
             bool used_values[this->jlf_line_values.size()];
