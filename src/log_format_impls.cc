@@ -915,13 +915,13 @@ public:
     scan_result_t scan_int(std::vector<logline> &dst,
                            const line_info &li,
                            shared_buffer_ref &sbr) {
-        static const intern_string_t DATE = intern_string::lookup("date");
-        static const intern_string_t DATE_LOCAL = intern_string::lookup("date-local");
-        static const intern_string_t DATE_UTC = intern_string::lookup("date-UTC");
-        static const intern_string_t TIME = intern_string::lookup("time");
-        static const intern_string_t TIME_LOCAL = intern_string::lookup("time-local");
-        static const intern_string_t TIME_UTC = intern_string::lookup("time-UTC");
-        static const intern_string_t STATUS_CODE = intern_string::lookup("sc-status");
+        static const intern_string_t F_DATE = intern_string::lookup("date");
+        static const intern_string_t F_DATE_LOCAL = intern_string::lookup("date-local");
+        static const intern_string_t F_DATE_UTC = intern_string::lookup("date-UTC");
+        static const intern_string_t F_TIME = intern_string::lookup("time");
+        static const intern_string_t F_TIME_LOCAL = intern_string::lookup("time-local");
+        static const intern_string_t F_TIME_UTC = intern_string::lookup("time-UTC");
+        static const intern_string_t F_STATUS_CODE = intern_string::lookup("sc-status");
 
         ws_separated_string ss(sbr.get_data(), sbr.length());
         struct timeval date_tv{0, 0}, time_tv{0, 0};
@@ -958,9 +958,9 @@ public:
             }
 
             sf.trim("\" \t");
-            if (DATE == fd.fd_name ||
-                DATE_LOCAL == fd.fd_name ||
-                DATE_UTC == fd.fd_name) {
+            if (F_DATE == fd.fd_name ||
+                F_DATE_LOCAL == fd.fd_name ||
+                F_DATE_UTC == fd.fd_name) {
                 if (this->lf_date_time.scan(sf.data(),
                                             sf.length(),
                                             nullptr,
@@ -969,9 +969,9 @@ public:
                     this->lf_timestamp_flags |= date_tm.et_flags;
                     found_date = true;
                 }
-            } else if (TIME == fd.fd_name ||
-                       TIME_LOCAL == fd.fd_name ||
-                       TIME_UTC == fd.fd_name) {
+            } else if (F_TIME == fd.fd_name ||
+                       F_TIME_LOCAL == fd.fd_name ||
+                       F_TIME_UTC == fd.fd_name) {
                 if (this->wlf_time_scanner.scan(sf.data(),
                                                 sf.length(),
                                                 nullptr,
@@ -980,7 +980,7 @@ public:
                     this->lf_timestamp_flags |= time_tm.et_flags;
                     found_time = true;
                 }
-            } else if (STATUS_CODE == fd.fd_name) {
+            } else if (F_STATUS_CODE == fd.fd_name) {
                 if (!sf.empty() && sf[0] >= '4') {
                     level = LEVEL_ERROR;
                 }
