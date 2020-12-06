@@ -264,6 +264,14 @@ dist_noinst_DATA = \
 	logfile_uwsgi.0 \
 	logfile_vami.0 \
 	logfile_vdsm.0 \
+	logfile_w3c.0 \
+	logfile_w3c.1 \
+	logfile_w3c.2 \
+	logfile_w3c.3 \
+	logfile_w3c.4 \
+	logfile_w3c.5 \
+	logfile_w3c.6 \
+	logfile_w3c_big.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	multiline.lnav \
 	nested.lnav \
