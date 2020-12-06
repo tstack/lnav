@@ -904,6 +904,10 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         return;
     }
 
+    if (line.empty()) {
+        return;
+    }
+
     int pat_index = this->pattern_index_for_line(line_number);
     pattern &pat = *this->elf_pattern_order[pat_index];
 

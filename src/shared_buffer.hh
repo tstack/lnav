@@ -73,7 +73,9 @@ public:
         return *this;
     };
 
-    bool empty() const { return this->sb_data == nullptr; };
+    bool empty() const {
+        return this->sb_data == nullptr || this->sb_length == 0;
+    };
 
     const char *get_data() const { return this->sb_data; };
 
