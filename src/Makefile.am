@@ -397,6 +397,7 @@ libdiag_a_SOURCES = \
 	all_logs_vtab.cc \
 	ansi_scrubber.cc \
 	archive_manager.cc \
+	attr_line.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
 	collation-functions.cc \

@@ -101,6 +101,9 @@ static void open_pretty_view()
                                     text_sub_source::RF_FULL|
                                     text_sub_source::RF_REWRITE);
             lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
+            if (log_tc->get_hide_fields()) {
+                al.apply_hide();
+            }
 
             line_range orig_lr = find_string_attr_range(
                 al.get_attrs(), &SA_ORIGINAL_LINE);

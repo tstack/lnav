@@ -820,6 +820,10 @@ public:
         return retval;
     };
 
+    bool get_hide_fields() const {
+        return this->tc_hide_fields;
+    }
+
     void execute_search(const std::string &regex_orig);
 
     void redo_search() {

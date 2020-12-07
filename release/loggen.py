@@ -151,10 +151,6 @@ FILES = [
 ]
 
 while True:
-    for fname, gen in FILES:
-        for i in range(random.randrange(0, 4)):
-            with open(fname, "a+") as fp:
-                fp.write(gen.next())
-            time.sleep(random.uniform(0.00, 0.01))
-            if random.uniform(0.0, 1.0) < 0.001:
-                os.remove(fname)
+    sys.stdout.write(FILES[1][1].next())
+    sys.stdout.flush()
+    time.sleep(random.uniform(1.0, 2.0))

@@ -434,26 +434,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     }
 
     if (this->tc_hide_fields) {
-        for (auto &sattr : sa) {
-            if (sattr.sa_type == &SA_HIDDEN &&
-                sattr.sa_range.length() > 3) {
-                struct line_range &lr = sattr.sa_range;
-
-                str.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
-                shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
-                sattr.sa_type = &VC_STYLE;
-                sattr.sa_value.sav_int =
-                    vc.attrs_for_role(view_colors::VCR_HIDDEN);
-                lr.lr_end = lr.lr_start + 3;
-
-                for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
-                    if (attr.sa_type == &VC_STYLE &&
-                        attr.sa_range.lr_start == lr.lr_start) {
-                        attr.sa_type = &SA_REMOVED;
-                    }
-                });
-            }
-        }
+        value_out.apply_hide();
     }
 
 #if 0

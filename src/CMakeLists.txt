@@ -232,6 +232,7 @@ add_library(diag STATIC
         all_logs_vtab.cc
         ansi_scrubber.cc
         archive_manager.cc
+        attr_line.cc
         bin2c.h
         bookmarks.cc
         bottom_status_source.cc

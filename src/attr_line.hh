@@ -463,22 +463,7 @@ public:
         return *this;
     };
 
-    attr_line_t &right_justify(unsigned long width) {
-        long padding = width - this->length();
-        if (padding > 0) {
-            this->al_string.insert(0, padding, ' ');
-            for (auto &al_attr : this->al_attrs) {
-                if (al_attr.sa_range.lr_start > 0) {
-                    al_attr.sa_range.lr_start += padding;
-                }
-                if (al_attr.sa_range.lr_end != -1) {
-                    al_attr.sa_range.lr_end += padding;
-                }
-            }
-        }
-
-        return *this;
-    }
+    attr_line_t &right_justify(unsigned long width);
 
     ssize_t length() const {
         size_t retval = this->al_string.length();
@@ -527,21 +512,9 @@ public:
 
     void split_lines(std::vector<attr_line_t> &lines) const;
 
-    size_t nearest_text(size_t x) const {
-        if (x > 0 && (int)x >= this->length()) {
-            if (this->empty()) {
-                x = 0;
-            } else {
-                x = this->length() - 1;
-            }
-        }
+    size_t nearest_text(size_t x) const;
 
-        while (x > 0 && isspace(this->al_string[x])) {
-            x -= 1;
-        }
-
-        return x;
-    }
+    void apply_hide();
 
 private:
     const static size_t RESERVE_SIZE = 128;
