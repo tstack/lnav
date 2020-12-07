@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <algorithm>
+
 #include "auto_mem.hh"
 #include "ansi_scrubber.hh"
 #include "view_curses.hh"
