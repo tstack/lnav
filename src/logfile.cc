@@ -91,6 +91,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
     }
     else {
         log_perror(fstat(this->lf_options.loo_fd, &this->lf_stat));
+        this->lf_named_file = false;
         this->lf_valid_filename = false;
     }
 
@@ -298,9 +299,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
     }
 
     // Check the previous stat against the last to see if things are wonky.
-    if (st.st_size < this->lf_stat.st_size ||
-        (this->lf_stat.st_size == st.st_size &&
-         this->lf_stat.st_mtime != st.st_mtime)) {
+    if (this->lf_named_file &&
+        (st.st_size < this->lf_stat.st_size ||
+         (this->lf_stat.st_size == st.st_size &&
+          this->lf_stat.st_mtime != st.st_mtime))) {
         log_info("overwritten file detected, closing -- %s  new: %" PRId64
                      "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
                  this->lf_filename.c_str(),

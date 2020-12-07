@@ -377,6 +377,7 @@ protected:
 
     logfile_open_options lf_options;
     logfile_activity lf_activity;
+    bool        lf_named_file{true};
     bool        lf_valid_filename;
     std::string lf_filename;
     std::string lf_basename;
