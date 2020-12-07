@@ -245,7 +245,7 @@ void attr_line_t::apply_hide()
             sattr.sa_range.length() > 3) {
             struct line_range &lr = sattr.sa_range;
 
-            for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
+            std::for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
                 if (attr.sa_type == &view_curses::VC_STYLE &&
                     lr.contains(attr.sa_range)) {
                     attr.sa_type = &SA_REMOVED;

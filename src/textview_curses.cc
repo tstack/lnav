@@ -378,7 +378,6 @@ bool textview_curses::handle_mouse(mouse_event &me)
 void textview_curses::textview_value_for_row(vis_line_t row,
                                              attr_line_t &value_out)
 {
-    view_colors &vc = view_colors::singleton();
     bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
     string_attrs_t &sa = value_out.get_attrs();
     string &str = value_out.get_string();
