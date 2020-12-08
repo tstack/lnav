@@ -535,13 +535,9 @@ log_state_dumper::log_state_dumper()
 
 log_state_dumper::~log_state_dumper()
 {
-    auto iter = std::find(DUMPER_LIST.begin(),
-                          DUMPER_LIST.end(),
-                          this);
+    auto iter = std::find(DUMPER_LIST.begin(), DUMPER_LIST.end(), this);
     if (iter != DUMPER_LIST.end()) {
-        DUMPER_LIST.erase(std::find(DUMPER_LIST.begin(),
-                                    DUMPER_LIST.end(),
-                                    this));
+        DUMPER_LIST.erase(iter);
     }
 }
 

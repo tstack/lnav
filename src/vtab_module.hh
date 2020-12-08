@@ -537,6 +537,10 @@ struct vtab_module {
 
     static int tvt_destructor(sqlite3_vtab *p_svt)
     {
+        vtab *vt = (vtab *) p_svt;
+
+        delete vt;
+
         return SQLITE_OK;
     }
 
