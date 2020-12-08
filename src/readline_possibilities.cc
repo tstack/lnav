@@ -230,6 +230,7 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
         ":log_path",
         ":log_text",
         ":log_body",
+        ":log_raw_text",
     };
 
     textview_curses *tc = *lnav_data.ld_view_stack.top();
@@ -244,6 +245,11 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
         auto cl = lss.at(curr_line);
         auto lf = lss.find(cl);
         auto ll = lf->begin() + cl;
+
+        if (!ll->is_message()) {
+            continue;
+        }
+
         auto format = lf->get_format();
         shared_buffer_ref sbr;
         string_attrs_t sa;

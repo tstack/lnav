@@ -1,4 +1,36 @@
 
+.. _infix_between_and:
+
+expr *\[NOT\]* BETWEEN *low* AND *hi*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Test if an expression is between two values.
+
+  **Parameters:**
+
+    * **low\*** --- The low point
+    * **hi\*** --- The high point
+
+  **Examples:**
+
+    To check if 3 is between 5 and 10:
+
+    .. code-block::  custsqlite
+
+      ;SELECT 3 BETWEEN 5 AND 10
+      0
+
+    To check if 10 is between 5 and 10:
+
+    .. code-block::  custsqlite
+
+      ;SELECT 10 BETWEEN 5 AND 10
+      1
+
+
+----
+
+
 .. _attach:
 
 ATTACH DATABASE *filename* AS *schema-name*
@@ -113,6 +145,32 @@ CASE *\[base-expr\]* WHEN *cmp-expr* ELSE *\[else-expr\]* END
     .. code-block::  custsqlite
 
       ;SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END
+      one
+
+
+----
+
+
+.. _infix_collate:
+
+expr COLLATE *collation-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Assign a collating sequence to the expression.
+
+  **Parameters:**
+
+    * **collation-name\*** --- The name of the collator.
+
+  **Examples:**
+
+    To change the collation method for string comparisons:
+
+    .. code-block::  custsqlite
+
+      ;SELECT ('a2' < 'a10'), ('a2' < 'a10' COLLATE naturalnocase)
+      ('a2' < 'a10') ('a2' < 'a10' COLLATE naturalnocase) 
+                   0                                    1 
 
 
 ----
@@ -196,6 +254,78 @@ DROP TRIGGER  *\[IF EXISTS\]* *\[schema-name.\]* *trigger-name*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Drop a trigger
+
+
+----
+
+
+.. _infix_glob:
+
+expr *\[NOT\]* GLOB *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Match an expression against a glob pattern.
+
+  **Parameters:**
+
+    * **pattern\*** --- The glob pattern to match against.
+
+  **Examples:**
+
+    To check if a value matches the pattern '*.log':
+
+    .. code-block::  custsqlite
+
+      ;SELECT 'foobar.log' GLOB '*.log'
+      1
+
+
+----
+
+
+.. _infix_like:
+
+expr *\[NOT\]* LIKE *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Match an expression against a text pattern.
+
+  **Parameters:**
+
+    * **pattern\*** --- The pattern to match against.
+
+  **Examples:**
+
+    To check if a value matches the pattern 'Hello, %!':
+
+    .. code-block::  custsqlite
+
+      ;SELECT 'Hello, World!' LIKE 'Hello, %!'
+      1
+
+
+----
+
+
+.. _infix_regexp:
+
+expr *\[NOT\]* REGEXP *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Match an expression against a regular expression.
+
+  **Parameters:**
+
+    * **pattern\*** --- The regular expression to match against.
+
+  **Examples:**
+
+    To check if a value matches the pattern 'file-\d+':
+
+    .. code-block::  custsqlite
+
+      ;SELECT 'file-23' REGEXP 'file-\d+'
+      1
 
 
 ----

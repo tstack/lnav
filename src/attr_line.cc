@@ -222,7 +222,7 @@ attr_line_t &attr_line_t::right_justify(unsigned long width)
 
 size_t attr_line_t::nearest_text(size_t x) const
 {
-    if (x > 0 && (int)x >= this->length()) {
+    if (x > 0 && x >= (size_t) this->length()) {
         if (this->empty()) {
             x = 0;
         } else {

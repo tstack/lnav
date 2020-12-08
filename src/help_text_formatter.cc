@@ -174,16 +174,20 @@ void format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &o
                 .append("\n");
             break;
         }
+        case help_context_t::HC_SQL_INFIX:
         case help_context_t::HC_SQL_KEYWORD: {
             size_t line_start = body_indent;
             bool break_all = false;
+            bool is_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
 
             if (!synopsis_only) {
                 out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
                    .append("\n");
             }
             out.append(body_indent, ' ')
-               .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
+               .append(ht.ht_name,
+                       &view_curses::VC_STYLE,
+                       is_infix ? 0 : A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 if (break_all ||
                     (int)(out.get_string().length() - start_index - line_start + 10) >=
@@ -422,6 +426,7 @@ void format_example_text_for_term(const help_text &ht,
                     ex_line.insert(1, ht.ht_name);
                     readline_command_highlighter(ex_line, 0);
                     break;
+                case help_context_t::HC_SQL_INFIX:
                 case help_context_t::HC_SQL_KEYWORD:
                 case help_context_t::HC_SQL_FUNCTION:
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
@@ -453,9 +458,19 @@ static std::string link_name(const help_text &ht)
 {
     const static std::regex SCRUBBER("[^\\w_]");
 
-    auto scrubbed_name = string(ht.ht_name);
+    bool is_sql_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
+    string scrubbed_name;
+
+    if (is_sql_infix) {
+        scrubbed_name = "infix";
+    } else {
+        scrubbed_name = ht.ht_name;
+    }
     for (auto &param : ht.ht_parameters) {
-        if (param.ht_name[0]) {
+        if (!is_sql_infix && param.ht_name[0]) {
+            continue;
+        }
+        if (!param.ht_flag_name) {
             continue;
         }
 
@@ -478,7 +493,7 @@ void format_help_text_for_rst(const help_text &ht,
         return;
     }
 
-    bool is_sql_func = false, is_sql = false;
+    bool is_sql_func = false, is_sql = false, is_sql_infix = false;
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND:
             prefix = ":";
@@ -488,6 +503,8 @@ void format_help_text_for_rst(const help_text &ht,
             is_sql = is_sql_func = true;
             prefix = "";
             break;
+        case help_context_t::HC_SQL_INFIX:
+            is_sql_infix = true;
         case help_context_t::HC_SQL_KEYWORD:
             is_sql = true;
             prefix = "";

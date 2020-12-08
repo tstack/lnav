@@ -253,9 +253,12 @@ void layout_views()
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
     if (doc_height + 14 > ((int) height - match_height - preview_height - 2)) {
-        doc_height = 0;
         preview_height = 0;
         preview_status_open = false;
+    }
+
+    if (doc_height + 14 > ((int) height - match_height - 2)) {
+        doc_height = 0;
     }
 
     bool doc_open = doc_height > 0;
@@ -357,6 +360,8 @@ void execute_examples()
             }
 
             switch (ht.ht_context) {
+                case help_context_t::HC_SQL_KEYWORD:
+                case help_context_t::HC_SQL_INFIX:
                 case help_context_t::HC_SQL_FUNCTION:
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
                     execute_sql(ec, ex.he_cmd, alt_msg);

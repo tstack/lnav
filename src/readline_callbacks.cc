@@ -142,6 +142,90 @@ void rl_set_help()
     }
 }
 
+static
+bool rl_sql_help(readline_curses *rc)
+{
+    attr_line_t al(rc->get_line_buffer());
+    const string_attrs_t &sa = al.get_attrs();
+    size_t x = rc->get_x();
+    bool has_doc = false;
+
+    if (x > 0) {
+        x -= 1;
+    }
+
+    log_debug("rl_sql_help");
+    annotate_sql_statement(al);
+
+    auto avail_help = find_sql_help_for_line(al, x);
+
+    if (!avail_help.empty()) {
+        size_t help_count = avail_help.size();
+        textview_curses &dtc = lnav_data.ld_doc_view;
+        textview_curses &etc = lnav_data.ld_example_view;
+        unsigned long doc_width, ex_width;
+        vis_line_t doc_height, ex_height;
+        attr_line_t doc_al, ex_al;
+
+        dtc.get_dimensions(doc_height, doc_width);
+        etc.get_dimensions(ex_height, ex_width);
+
+        for (const auto& ht : avail_help) {
+            log_debug("avail %s", ht->ht_name);
+            format_help_text_for_term(*ht, min(70UL, doc_width), doc_al,
+                                      help_count > 1);
+            if (help_count == 1) {
+                format_example_text_for_term(*ht, eval_example, ex_width, ex_al);
+            }
+        }
+
+        if (!doc_al.empty()) {
+            lnav_data.ld_doc_source.replace_with(doc_al);
+            dtc.reload_data();
+
+            if (!ex_al.empty()) {
+                lnav_data.ld_example_source.replace_with(ex_al);
+                etc.reload_data();
+            }
+
+            has_doc = true;
+        }
+    }
+
+    auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, al.nearest_text(x));
+    if (ident_iter != sa.end()) {
+        auto ident = al.get_substring(ident_iter->sa_range);
+        auto intern_ident = intern_string::lookup(ident);
+        auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
+        auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
+        string ddl;
+
+        log_debug("ident %s", ident.c_str());
+        if (vtab != nullptr) {
+            ddl = trim(vtab->get_table_statement());
+        } else if (vtab_module_iter != vtab_module_ddls.end()) {
+            ddl = vtab_module_iter->second;
+        } else {
+            auto table_ddl_iter = lnav_data.ld_table_ddl.find(ident);
+
+            if (table_ddl_iter != lnav_data.ld_table_ddl.end()) {
+                ddl = table_ddl_iter->second;
+            }
+        }
+
+        if (!ddl.empty()) {
+            lnav_data.ld_preview_source.replace_with(ddl)
+                .set_text_format(text_format_t::TF_SQL)
+                .truncate_to(30);
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("Definition for table -- %s",
+                           ident.c_str());
+        }
+    }
+
+    return has_doc;
+}
+
 void rl_change(readline_curses *rc)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
@@ -152,6 +236,7 @@ void rl_change(readline_curses *rc)
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
 
+    log_debug("change");
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
             static string last_command;
@@ -207,7 +292,7 @@ void rl_change(readline_curses *rc)
                             "Unknown configuration option: " + args[1]);
                 }
             }
-            else {
+            else if (args[0] != "filter-expr" || !rl_sql_help(rc)) {
                 readline_context::command_t &cmd = *iter->second;
                 const help_text &ht = cmd.c_help;
 
@@ -283,6 +368,7 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     tc->reload_data();
 
+    log_debug("rl_search_int");
     switch (mode) {
     case LNM_SEARCH:
     case LNM_SEARCH_FILTERS:
@@ -350,79 +436,7 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
             }
         }
 
-        attr_line_t al(rc->get_line_buffer());
-        const string_attrs_t &sa = al.get_attrs();
-        size_t x = rc->get_x() - 1;
-        bool has_doc = false;
-
-        annotate_sql_statement(al);
-
-        auto avail_help = find_sql_help_for_line(al, x);
-
-        if (!avail_help.empty()) {
-            size_t help_count = avail_help.size();
-            textview_curses &dtc = lnav_data.ld_doc_view;
-            textview_curses &etc = lnav_data.ld_example_view;
-            unsigned long doc_width, ex_width;
-            vis_line_t doc_height, ex_height;
-            attr_line_t doc_al, ex_al;
-
-            dtc.get_dimensions(doc_height, doc_width);
-            etc.get_dimensions(ex_height, ex_width);
-
-            for (const auto& ht : avail_help) {
-                format_help_text_for_term(*ht, min(70UL, doc_width), doc_al,
-                                          help_count > 1);
-                if (help_count == 1) {
-                    format_example_text_for_term(*ht, eval_example, ex_width, ex_al);
-                }
-            }
-
-            if (!doc_al.empty()) {
-                lnav_data.ld_doc_source.replace_with(doc_al);
-                dtc.reload_data();
-
-                if (!ex_al.empty()) {
-                    lnav_data.ld_example_source.replace_with(ex_al);
-                    etc.reload_data();
-                }
-
-                has_doc = true;
-            }
-        }
-
-        auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, al.nearest_text(x));
-        if (ident_iter != sa.end()) {
-            string ident = al.get_substring(ident_iter->sa_range);
-            intern_string_t intern_ident = intern_string::lookup(ident);
-
-            auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
-            auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
-            string ddl;
-
-            if (vtab != nullptr) {
-                ddl = trim(vtab->get_table_statement());
-            } else if (vtab_module_iter != vtab_module_ddls.end()) {
-                ddl = vtab_module_iter->second;
-            } else {
-                auto table_ddl_iter = lnav_data.ld_table_ddl.find(ident);
-
-                if (table_ddl_iter != lnav_data.ld_table_ddl.end()) {
-                    ddl = table_ddl_iter->second;
-                }
-            }
-
-            if (!ddl.empty()) {
-                lnav_data.ld_preview_source.replace_with(ddl)
-                    .set_text_format(text_format_t::TF_SQL)
-                    .truncate_to(30);
-                lnav_data.ld_preview_status_source.get_description()
-                         .set_value("Definition for table -- %s",
-                                    ident.c_str());
-            }
-        }
-
-        if (!has_doc) {
+        if (!rl_sql_help(rc)) {
             rl_set_help();
             lnav_data.ld_preview_source.clear();
         }

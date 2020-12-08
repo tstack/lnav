@@ -537,7 +537,7 @@ static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip)
 
 void readline_sqlite_highlighter(attr_line_t &al, int x)
 {
-    readline_sqlite_highlighter_int(al, x, 1);
+    readline_sqlite_highlighter_int(al, x, 0);
 }
 
 void readline_shlex_highlighter(attr_line_t &al, int x)

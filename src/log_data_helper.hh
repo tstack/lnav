@@ -1,5 +1,3 @@
-#include <memory>
-
 /**
  * Copyright (c) 2013, Timothy Stack
  *
@@ -50,16 +48,14 @@
 class log_data_helper
 {
 public:
-    log_data_helper(logfile_sub_source &lss)
-            : ldh_log_source(lss),
-              ldh_file(NULL),
-              ldh_y_offset(0)
+    explicit log_data_helper(logfile_sub_source &lss)
+        : ldh_log_source(lss)
     {
 
     };
 
     void clear() {
-        this->ldh_file = NULL;
+        this->ldh_file = nullptr;
         this->ldh_msg.disown();
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
@@ -155,7 +151,7 @@ public:
                 this->ldh_msg.get_data() + line_index_out + 1,
                 '\n',
                 this->ldh_msg.length() - line_index_out - 1);
-            if (line_end != NULL) {
+            if (line_end != nullptr) {
                 line_end_index_out = line_end - this->ldh_msg.get_data();
             } else {
                 line_end_index_out = std::string::npos;
@@ -192,7 +188,7 @@ public:
     logfile_sub_source &ldh_log_source;
     content_line_t ldh_source_line;
     std::shared_ptr<logfile> ldh_file;
-    int ldh_y_offset;
+    int ldh_y_offset{0};
     logfile::iterator ldh_line;
     shared_buffer_ref ldh_msg;
     content_line_t ldh_line_index;

@@ -539,13 +539,9 @@ void logfile::read_full_message(logfile::const_iterator ll,
 {
     require(ll->get_sub_offset() == 0);
 
-    size_t line_len = this->line_length(ll);
-
     try {
-        off_t off = ll->get_offset();
-
-        auto read_result = this->lf_line_buffer.read_range({
-            off, static_cast<ssize_t>(line_len)});
+        auto read_result = this->lf_line_buffer.read_range(
+            this->get_file_range(ll));
 
         if (read_result.isErr()) {
             return;
@@ -639,4 +635,12 @@ size_t logfile::line_length(logfile::const_iterator ll, bool include_continues)
     }
 
     return retval;
+}
+
+Result<shared_buffer_ref, std::string>
+logfile::read_raw_message(logfile::const_iterator ll)
+{
+    require(ll->get_sub_offset() == 0);
+
+    return this->lf_line_buffer.read_range(this->get_file_range(ll));
 }

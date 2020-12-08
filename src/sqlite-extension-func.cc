@@ -958,6 +958,70 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "SELECT CAST(1.23 AS INTEGER)"
             }),
 
+        help_text("expr",
+                  "Match an expression against a glob pattern.")
+            .sql_infix()
+            .with_parameter(help_text("NOT")
+                                .optional())
+            .with_parameter(help_text("pattern", "The glob pattern to match against.")
+                                .with_flag_name("GLOB"))
+            .with_example({
+                "To check if a value matches the pattern '*.log'",
+                "SELECT 'foobar.log' GLOB '*.log'"
+            }),
+
+        help_text("expr",
+                  "Match an expression against a text pattern.")
+            .sql_infix()
+            .with_parameter(help_text("NOT")
+                                .optional())
+            .with_parameter(help_text("pattern", "The pattern to match against.")
+                                .with_flag_name("LIKE"))
+            .with_example({
+                "To check if a value matches the pattern 'Hello, %!'",
+                "SELECT 'Hello, World!' LIKE 'Hello, %!'"
+            }),
+
+        help_text("expr",
+                  "Match an expression against a regular expression.")
+            .sql_infix()
+            .with_parameter(help_text("NOT")
+                                .optional())
+            .with_parameter(help_text("pattern", "The regular expression to match against.")
+                                .with_flag_name("REGEXP"))
+            .with_example({
+                "To check if a value matches the pattern 'file-\\d+'",
+                "SELECT 'file-23' REGEXP 'file-\\d+'"
+            }),
+
+        help_text("expr",
+                  "Assign a collating sequence to the expression.")
+            .sql_infix()
+            .with_parameter(help_text("collation-name", "The name of the collator.")
+                                .with_flag_name("COLLATE"))
+            .with_example({
+                "To change the collation method for string comparisons",
+                "SELECT ('a2' < 'a10'), ('a2' < 'a10' COLLATE naturalnocase)"
+            }),
+
+        help_text("expr",
+                  "Test if an expression is between two values.")
+            .sql_infix()
+            .with_parameter(help_text("NOT")
+                                .optional())
+            .with_parameter(help_text("low", "The low point")
+                                .with_flag_name("BETWEEN"))
+            .with_parameter(help_text("hi", "The high point")
+                                .with_flag_name("AND"))
+            .with_example({
+                "To check if 3 is between 5 and 10",
+                "SELECT 3 BETWEEN 5 AND 10"
+            })
+            .with_example({
+                "To check if 10 is between 5 and 10",
+                "SELECT 10 BETWEEN 5 AND 10"
+            }),
+
         help_text("OVER", "Executes the preceding function over a window")
             .sql_keyword()
             .with_parameter({"window-name", "The name of the window definition"}),

@@ -1028,7 +1028,7 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
 {
     auto lf = (*ld)->get_file();
     char timestamp_buffer[64];
-    shared_buffer_ref sbr;
+    shared_buffer_ref sbr, raw_sbr;
     lf->read_full_message(ll, sbr);
     auto format = lf->get_format();
     string_attrs_t sa;
@@ -1141,6 +1141,19 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
                               &(sbr.get_data()[iter->sa_range.lr_start]),
                               iter->sa_range.length(),
                               SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_raw_text") == 0) {
+            auto res = lf->read_raw_message(ll);
+
+            if (res.isOk()) {
+                raw_sbr = res.unwrap();
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  raw_sbr.get_data(),
+                                  raw_sbr.length(),
+                                  SQLITE_STATIC);
+            }
             continue;
         }
         for (auto& lv : values) {

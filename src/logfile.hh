@@ -296,12 +296,14 @@ public:
 
     size_t line_length(const_iterator ll, bool include_continues = true);
 
-    file_range get_file_range(iterator ll, bool include_continues = true) {
+    file_range get_file_range(const_iterator ll, bool include_continues = true) {
         return {ll->get_offset(),
                 (ssize_t) this->line_length(ll, include_continues)};
     }
 
     void read_full_message(const_iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
+
+    Result<shared_buffer_ref, std::string> read_raw_message(const_iterator ll);
 
     enum rebuild_result_t {
         RR_INVALID,
