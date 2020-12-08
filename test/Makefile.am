@@ -369,6 +369,7 @@ DISTCLEANFILES = \
 	logfile_rollover.1.live \
 	test.log \
 	logfile_stdin.log \
+	logfile_stdin.0.log \
 	logfile_syslog_test.0 \
 	logfile_syslog_fr_test.0 \
 	logfile_syslog_with_mixed_times_test.0 \
