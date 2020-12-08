@@ -1,12 +1,11 @@
 #! /bin/bash
 
 
-echo "Hi" | run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.0.log \
+echo "2013-06-06T19:13:20.123  Hi" | run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
     -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log'
 
 check_output "piping to stdin is not working?" <<EOF
-2013-06-06T12:13:20.123  Hi
-2013-06-06T12:13:20.123  ---- END-OF-STDIN ----
+2013-06-06T19:13:20.123  Hi
 EOF
 
 
