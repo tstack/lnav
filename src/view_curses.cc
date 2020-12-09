@@ -234,12 +234,15 @@ void view_curses::mvwattrline(WINDOW *window,
             }
         }
 
+        if (attr_range.lr_end == -1) {
+            attr_range.lr_end = line_width_chars;
+        }
+        if (attr_range.lr_end < lr_chars.lr_start) {
+            continue;
+        }
         attr_range.lr_start = max(0, attr_range.lr_start - lr_chars.lr_start);
         if (attr_range.lr_start > line_width_chars) {
             continue;
-        }
-        if (attr_range.lr_end == -1) {
-            attr_range.lr_end = lr_chars.lr_start + line_width_chars;
         }
 
         attr_range.lr_end = min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);

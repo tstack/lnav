@@ -239,7 +239,6 @@ size_t attr_line_t::nearest_text(size_t x) const
 
 void attr_line_t::apply_hide()
 {
-    auto& vc = view_colors::singleton();
     auto& sa = this->al_attrs;
 
     for (auto &sattr : sa) {
@@ -256,8 +255,8 @@ void attr_line_t::apply_hide()
 
             this->al_string.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
             shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
-            sattr.sa_type = &view_curses::VC_STYLE;
-            sattr.sa_value.sav_int = vc.attrs_for_role(view_colors::VCR_HIDDEN);
+            sattr.sa_type = &view_curses::VC_ROLE;
+            sattr.sa_value.sav_int = view_colors::VCR_HIDDEN;
             lr.lr_end = lr.lr_start + 3;
 
         }

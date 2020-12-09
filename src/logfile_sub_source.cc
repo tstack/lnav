@@ -476,25 +476,28 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         shift_string_attrs(value_out, 0, time_offset_end);
 
-        attrs = vc.attrs_for_role(view_colors::VCR_OFFSET_TIME);
-        value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+        value_out.emplace_back(lr,
+                               &view_curses::VC_ROLE,
+                               view_colors::VCR_OFFSET_TIME);
         value_out.emplace_back(line_range(12, 13),
             &view_curses::VC_GRAPHIC, ACS_VLINE);
 
-        int bar_attrs = 0;
+        view_colors::role_t bar_role = view_colors::VCR_NONE;
 
         switch (this->get_line_accel_direction(vis_line_t(row))) {
         case log_accel::A_STEADY:
             break;
         case log_accel::A_DECEL:
-            bar_attrs = vc.attrs_for_role(view_colors::VCR_DIFF_DELETE);
+            bar_role = view_colors::VCR_DIFF_DELETE;
             break;
         case log_accel::A_ACCEL:
-            bar_attrs = vc.attrs_for_role(view_colors::VCR_DIFF_ADD);
+            bar_role = view_colors::VCR_DIFF_ADD;
             break;
         }
-        value_out.push_back(
-            string_attr(line_range(12, 13), &view_curses::VC_STYLE, bar_attrs));
+        if (bar_role != view_colors::VCR_NONE) {
+            value_out.emplace_back(
+                line_range(12, 13), &view_curses::VC_ROLE, bar_role);
+        }
     }
 
     lr.lr_start = 0;

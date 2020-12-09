@@ -149,7 +149,9 @@ void highlighter::annotate(attr_line_t &al, int start) const
                                     vc.match_color(this->h_bg));
                 }
                 if (this->h_role != view_colors::VCR_NONE) {
-                    attrs |= vc.attrs_for_role(this->h_role);
+                    sa.emplace_back(lr,
+                                    &view_curses::VC_ROLE,
+                                    this->h_role);
                 }
                 sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
