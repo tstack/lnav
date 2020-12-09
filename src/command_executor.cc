@@ -411,7 +411,7 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
     }
 
     int    line_number = 0, starting_line_number = 0;
-    char *line = nullptr;
+    auto_mem<char> line;
     size_t line_max_size;
     ssize_t line_size;
     string cmdline;
@@ -419,10 +419,10 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
 
     ec.ec_path_stack.emplace_back(path.parent_path());
     ec.ec_output_stack.emplace_back(nonstd::nullopt);
-    while ((line_size = getline(&line, &line_max_size, file)) != -1) {
+    while ((line_size = getline(line.out(), &line_max_size, file)) != -1) {
         line_number += 1;
 
-        if (trim(line).empty()) {
+        if (trim(line.in()).empty()) {
             continue;
         }
         if (line[0] == '#') {
@@ -447,7 +447,7 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
                     cmdline += line;
                 }
                 else {
-                    retval = TRY(execute_from_file(ec, path, line_number, ':', line));
+                    retval = TRY(execute_from_file(ec, path, line_number, ':', line.in()));
                 }
                 break;
         }

@@ -165,7 +165,7 @@ CREATE TABLE lnav_file (
 
 int register_file_vtab(sqlite3 *db, file_collection &fc)
 {
-    auto mod = new vtab_module<lnav_file>(fc);
+    static auto mod = std::make_shared<vtab_module<lnav_file>>(fc);
     int rc;
 
     rc = mod->create(db, "lnav_file");
