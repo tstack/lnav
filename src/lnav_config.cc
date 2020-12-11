@@ -846,8 +846,11 @@ static set<string> SUPPORTED_CONFIG_SCHEMAS = {
     "https://lnav.org/schemas/config-v1.schema.json",
 };
 
+const char *DEFAULT_FORMAT_SCHEMA =
+    "https://lnav.org/schemas/format-v1.schema.json";
+
 set<string> SUPPORTED_FORMAT_SCHEMAS = {
-    "https://lnav.org/schemas/format-v1.schema.json",
+    DEFAULT_FORMAT_SCHEMA,
 };
 
 static int read_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)

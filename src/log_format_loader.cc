@@ -742,7 +742,7 @@ struct json_path_container root_format_handler = json_path_container {
         .with_obj_provider(ensure_format)
         .with_children(format_handlers)
 }
-    .with_schema_id(*SUPPORTED_FORMAT_SCHEMAS.cbegin());
+    .with_schema_id(DEFAULT_FORMAT_SCHEMA);
 
 static void write_sample_file()
 {

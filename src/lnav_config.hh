@@ -122,6 +122,7 @@ void reload_config(std::vector<std::string> &errors);
 
 std::string save_config();
 
+extern const char *DEFAULT_FORMAT_SCHEMA;
 extern std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
 
 #endif
