@@ -112,7 +112,7 @@ AC_ARG_ENABLE([tinfo],
 AS_IF([test "x${enable_tinfo}" != "xno"],
     [dnl
     AC_MSG_NOTICE([Trying to link with tinfo])
-    AC_SEARCH_LIBS(cur_term, tinfo,
+    AC_SEARCH_LIBS(cur_term, [tinfow tinfo],
         AC_MSG_NOTICE([Linking with tinfo]),
         AC_MSG_WARN([libtinfo not found])
     )
@@ -182,7 +182,7 @@ AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
-           ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
+           ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
