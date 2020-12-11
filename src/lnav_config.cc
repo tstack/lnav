@@ -842,19 +842,25 @@ static struct json_path_container ui_handlers = {
         .with_description("Keymap definitions.")
         .with_children(keymap_defs_handlers)};
 
-static vector<string> SUPPORTED_CONFIG_SCHEMAS = {
+static set<string> SUPPORTED_CONFIG_SCHEMAS = {
     "https://lnav.org/schemas/config-v1.schema.json",
+};
+
+set<string> SUPPORTED_FORMAT_SCHEMAS = {
+    "https://lnav.org/schemas/format-v1.schema.json",
 };
 
 static int read_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     auto file_id = string((const char *) str, len);
 
-    if (find(SUPPORTED_CONFIG_SCHEMAS.begin(),
-             SUPPORTED_CONFIG_SCHEMAS.end(),
-             file_id) == SUPPORTED_CONFIG_SCHEMAS.end()) {
-        fprintf(stderr, "%s:%d: error: unsupported configuration $schema -- %s\n",
-            ypc->ypc_source.c_str(), ypc->get_line_number(), file_id.c_str());
+    if (SUPPORTED_CONFIG_SCHEMAS.count(file_id) == 0) {
+        ypc->report_error(
+            lnav_log_level_t::ERROR,
+            "%s:%d: error: unsupported configuration $schema -- %s\n",
+            ypc->ypc_source.c_str(),
+            ypc->get_line_number(),
+            file_id.c_str());
         return 0;
     }
 
@@ -874,7 +880,7 @@ struct json_path_container lnav_config_handlers = json_path_container {
         .with_description("Global variable definitions")
         .with_children(global_var_handlers)
 }
-    .with_schema_id(SUPPORTED_CONFIG_SCHEMAS.back());
+    .with_schema_id(*SUPPORTED_CONFIG_SCHEMAS.cbegin());
 
 class active_key_map_listener : public lnav_config_listener {
 public:
@@ -914,10 +920,10 @@ detect_config_file_type(const ghc::filesystem::path &path)
 
     auto id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
     if (id_val != nullptr) {
-        if (find(SUPPORTED_CONFIG_SCHEMAS.begin(),
-                 SUPPORTED_CONFIG_SCHEMAS.end(),
-                 id_val->u.string) != SUPPORTED_CONFIG_SCHEMAS.end()) {
+        if (SUPPORTED_CONFIG_SCHEMAS.count(id_val->u.string)) {
             return Ok(config_file_type::CONFIG);
+        } else if (SUPPORTED_FORMAT_SCHEMAS.count(id_val->u.string)) {
+            return Ok(config_file_type::FORMAT);
         } else {
             return Err(fmt::format("unsupported configuration version in file: {} -- {}",
                 path.string(), id_val->u.string));

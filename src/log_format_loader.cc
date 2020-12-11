@@ -717,10 +717,6 @@ struct json_path_container format_handlers = {
         .FOR_FIELD(external_log_format, elf_type)
 };
 
-static vector<string> SUPPORTED_FORMAT_SCHEMAS = {
-    "https://lnav.org/schemas/format-v1.schema.json",
-};
-
 static int read_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     auto file_id = string((const char *) str, len);
@@ -746,7 +742,7 @@ struct json_path_container root_format_handler = json_path_container {
         .with_obj_provider(ensure_format)
         .with_children(format_handlers)
 }
-    .with_schema_id(SUPPORTED_FORMAT_SCHEMAS.back());
+    .with_schema_id(*SUPPORTED_FORMAT_SCHEMAS.cbegin());
 
 static void write_sample_file()
 {

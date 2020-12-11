@@ -33,6 +33,7 @@
 #define lnav_config_hh
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <functional>
@@ -120,5 +121,7 @@ void reset_config(const std::string &path);
 void reload_config(std::vector<std::string> &errors);
 
 std::string save_config();
+
+extern std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
 
 #endif
