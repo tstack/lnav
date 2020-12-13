@@ -33,7 +33,6 @@
 #include <vector>
 
 #include "fmt/format.h"
-
 #include "humanize.hh"
 
 namespace humanize {
@@ -47,6 +46,10 @@ std::string file_size(ssize_t value)
 
     if (value < 0) {
         return "Unknown";
+    }
+
+    if (value == 0) {
+        return "0.0 B";
     }
 
     auto exp = floor(std::min(log(value) / LN1024,
