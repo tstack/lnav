@@ -49,7 +49,8 @@ std::string file_size(ssize_t value)
         return "Unknown";
     }
 
-    auto exp = floor(std::min(log(value) / LN1024, (double) UNITS.size()));
+    auto exp = floor(std::min(log(value) / LN1024,
+                              (double) (UNITS.size() - 1)));
     auto divisor = pow(1024, exp);
 
     return fmt::format(FMT_STRING("{:.1f}{}B"),
