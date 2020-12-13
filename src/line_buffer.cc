@@ -215,8 +215,8 @@ int line_buffer::gz_indexed::stream_data(void * buf, size_t size)
                 // Reached end of stream; re-init for a possible subsequent stream
                 continue_stream();
             } else if (err != Z_OK) {
-                log_error(" inflate-error: %d", (int)err);
-                throw error(err);  // FIXME: exception wrapper
+                log_error(" inflate-error: %d  %s", (int)err, this->strm.msg ? this->strm.msg : "");
+                break;
             }
 
             if (this->strm.total_in >= last + SYNCPOINT_SIZE &&
