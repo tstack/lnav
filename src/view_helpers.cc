@@ -258,7 +258,10 @@ void layout_views()
     }
 
     if (doc_height + 14 > ((int) height - match_height - 2)) {
-        doc_height = 0;
+        doc_height = lnav_data.ld_doc_source.text_line_count();
+        if (doc_height + 14 > ((int) height - match_height - 2)) {
+            doc_height = 0;
+        }
     }
 
     bool doc_open = doc_height > 0;

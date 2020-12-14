@@ -154,7 +154,6 @@ bool rl_sql_help(readline_curses *rc)
         x -= 1;
     }
 
-    log_debug("rl_sql_help");
     annotate_sql_statement(al);
 
     auto avail_help = find_sql_help_for_line(al, x);
@@ -171,11 +170,12 @@ bool rl_sql_help(readline_curses *rc)
         etc.get_dimensions(ex_height, ex_width);
 
         for (const auto& ht : avail_help) {
-            log_debug("avail %s", ht->ht_name);
             format_help_text_for_term(*ht, min(70UL, doc_width), doc_al,
                                       help_count > 1);
             if (help_count == 1) {
-                format_example_text_for_term(*ht, eval_example, ex_width, ex_al);
+                format_example_text_for_term(*ht,
+                                             eval_example,
+                                             min(70UL, ex_width), ex_al);
             }
         }
 

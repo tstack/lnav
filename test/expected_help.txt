@@ -1169,7 +1169,8 @@ Examples
    ;SELECT avg(ex_duration) FROM lnav_example_log
    
 
-#2 To get the average of the column 'ex_duration' from the table 'lnav_example_log' when grouped by 'ex_procname':
+#2 To get the average of the column 'ex_duration' from the table 'lnav_example_log' when 
+   grouped by 'ex_procname':
    ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname
    
 
@@ -1336,7 +1337,8 @@ Examples
    ;SELECT datetime('2017-01-02T03:04:05')
    
 
-#2 To get the date and time portion of the timestamp '2017-01-02T03:04:05' plus one minute:
+#2 To get the date and time portion of the timestamp '2017-01-02T03:04:05' plus one minute
+   :
    ;SELECT datetime('2017-01-02T03:04:05', '+1 minute')
    
 
@@ -1522,7 +1524,8 @@ See Also
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
   strfilter(), substr(), trim(), unicode(), upper()
 Examples
-#1 To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log':
+#1 To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log'
+   :
    ;SELECT group_concat(ex_procname) FROM lnav_example_log
    
 
@@ -1530,7 +1533,8 @@ Examples
    ;SELECT group_concat(ex_procname, ', ') FROM lnav_example_log
    
 
-#3 To concatenate the distinct values of the column 'ex_procname' from the table 'lnav_example_log':
+#3 To concatenate the distinct values of the column 'ex_procname' from the table '
+   lnav_example_log':
    ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
    
 
@@ -2279,11 +2283,13 @@ Examples
    ;SELECT regexp_match('(\d+)', '123')
    
 
-#2 To capture a number and word into a JSON object with the properties 'col_0' and 'col_1':
+#2 To capture a number and word into a JSON object with the properties 'col_0' and 'col_1'
+   :
    ;SELECT regexp_match('(\d+) (\w+)', '123 four')
    
 
-#3 To capture a number and word into a JSON object with the named properties 'num' and 'str':
+#3 To capture a number and word into a JSON object with the named properties 'num' and '
+   str':
    ;SELECT regexp_match('(?<num>\d+) (?<str>\w+)', '123 four')
    
 
@@ -2598,7 +2604,8 @@ Examples
    ;SELECT strftime('%Y', '2017-01-02T03:04:05')
    
 
-#2 To create a string with the time from the timestamp '2017-01-02T03:04:05' plus one minute:
+#2 To create a string with the time from the timestamp '2017-01-02T03:04:05' plus one 
+   minute:
    ;SELECT strftime('The time is: %H:%M:%S', '2017-01-02T03:04:05', '+1 minute')
    
 
@@ -2625,7 +2632,8 @@ See Also
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
   startswith(), strfilter(), trim(), unicode(), upper()
 Examples
-#1 To get the substring starting at the second character until the end of the string 'abc':
+#1 To get the substring starting at the second character until the end of the string 'abc'
+   :
    ;SELECT substr('abc', 2)
    
 
@@ -2637,7 +2645,8 @@ Examples
    ;SELECT substr('abc', -1)
    
 
-#4 To get the substring starting at the last character and going backwards one step of the string 'abc':
+#4 To get the substring starting at the last character and going backwards one step of the
+   string 'abc':
    ;SELECT substr('abc', -1, -1)
    
 
@@ -2724,7 +2733,8 @@ See Also
   avg(), ceil(), degrees(), exp(), floor(), log(), log10(), max(), min(), pi(), 
   power(), radians(), round(), sign(), square(), sum()
 Example
-#1 To total all of the values in the column 'ex_duration' from the table 'lnav_example_log':
+#1 To total all of the values in the column 'ex_duration' from the table 'lnav_example_log
+   ':
    ;SELECT total(ex_duration) FROM lnav_example_log
    
 
@@ -2900,7 +2910,8 @@ Synopsis
 Parameters
 
 Example
-#1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
+#1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' 
+   table:
    ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
    
 

@@ -440,7 +440,7 @@ void format_example_text_for_term(const help_text &ht,
             out.append("#")
                .append(to_string(count))
                .append(" ")
-               .append(ex.he_description)
+               .append(ex.he_description, &tws.with_indent(3))
                .append(":\n   ")
                .append(prompt)
                .append(ex_line, &tws.with_indent(3 + keyword_offset + 1))
