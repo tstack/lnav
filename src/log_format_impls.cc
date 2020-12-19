@@ -639,13 +639,11 @@ public:
 
             const field_def &fd = this->blf_field_defs[iter.index()];
             string_fragment sf = *iter;
-            auto kind = fd.fd_meta.lvm_kind;
 
             if (sf == this->blf_empty_field) {
                 sf.clear();
             } else if (sf == this->blf_unset_field) {
                 sf.invalidate();
-                kind = value_kind_t::VALUE_NULL;
             }
 
             auto lr = line_range(sf.sf_begin, sf.sf_end);

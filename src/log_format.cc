@@ -567,7 +567,7 @@ static int rewrite_json_int(yajlpp_parse_context *ypc, long long val)
     }
     jlu->jlu_format->jlf_line_values.emplace_back(
         jlu->jlu_format->get_value_meta(field_name, value_kind_t::VALUE_INTEGER),
-        val);
+        (int64_t) val);
     return 1;
 }
 
