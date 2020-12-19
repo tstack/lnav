@@ -193,9 +193,25 @@
                                             "title": "/<format_name>/value/<value_name>/unit/scaling-factor",
                                             "type": "object",
                                             "patternProperties": {
-                                                "(.*)": {
+                                                "([^/]+)": {
                                                     "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>",
-                                                    "type": "number"
+                                                    "type": "object",
+                                                    "patternProperties": {
+                                                        "op": {
+                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/<>",
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "identity",
+                                                                "multiply",
+                                                                "divide"
+                                                            ]
+                                                        },
+                                                        "value": {
+                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/<>",
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "additionalProperties": false

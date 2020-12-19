@@ -388,12 +388,12 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             continue;
         }
 
-        if (line_value.lv_hidden) {
+        if (line_value.lv_meta.is_hidden()) {
             value_out.emplace_back(
                 line_value.lv_origin, &SA_HIDDEN);
         }
 
-        if (!line_value.lv_identifier || !line_value.lv_origin.is_valid()) {
+        if (!line_value.lv_meta.lvm_identifier || !line_value.lv_origin.is_valid()) {
             continue;
         }
 
@@ -1160,21 +1160,21 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
             continue;
         }
         for (auto& lv : values) {
-            if (lv.lv_name != &name[1]) {
+            if (lv.lv_meta.lvm_name != &name[1]) {
                 continue;
             }
 
-            switch (lv.lv_kind) {
-                case logline_value::VALUE_BOOLEAN:
+            switch (lv.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_BOOLEAN:
                     sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
                     break;
-                case logline_value::VALUE_FLOAT:
+                case value_kind_t::VALUE_FLOAT:
                     sqlite3_bind_double(stmt, lpc + 1, lv.lv_value.d);
                     break;
-                case logline_value::VALUE_INTEGER:
+                case value_kind_t::VALUE_INTEGER:
                     sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
                     break;
-                case logline_value::VALUE_NULL:
+                case value_kind_t::VALUE_NULL:
                     sqlite3_bind_null(stmt, lpc + 1);
                     break;
                 default:

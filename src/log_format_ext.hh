@@ -50,17 +50,15 @@ public:
     };
 
     struct value_def {
-        intern_string_t vd_name;
-        logline_value::kind_t vd_kind{logline_value::VALUE_UNKNOWN};
+        value_def(intern_string_t name, value_kind_t kind, int col, log_format *format)
+        : vd_meta(name, kind, col, format) {};
+
+        logline_value_meta vd_meta;
         std::string vd_collate;
-        bool vd_identifier{false};
         bool vd_foreign_key{false};
         intern_string_t vd_unit_field;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
-        int vd_column{-1};
         ssize_t vd_values_index{-1};
-        bool vd_hidden{false};
-        bool vd_user_hidden{false};
         bool vd_internal{false};
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
@@ -163,7 +161,7 @@ public:
             return false;
         }
 
-        vd_iter->second->vd_user_hidden = val;
+        vd_iter->second->vd_meta.lvm_user_hidden = val;
         return true;
     };
 
@@ -175,7 +173,7 @@ public:
         for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
             value_def &vd = *this->elf_numeric_value_defs[lpc];
 
-            if (vd.vd_name == name) {
+            if (vd.vd_meta.lvm_name == name) {
                 retval = &this->lf_value_stats[lpc];
                 break;
             }
@@ -191,7 +189,7 @@ public:
     const std::vector<std::string> *get_actions(const logline_value &lv) const {
         const std::vector<std::string> *retval = nullptr;
 
-        const auto iter = this->elf_value_defs.find(lv.lv_name);
+        const auto iter = this->elf_value_defs.find(lv.lv_meta.lvm_name);
         if (iter != this->elf_value_defs.end()) {
             retval = &iter->second->vd_action_list;
         }
@@ -282,7 +280,7 @@ public:
             return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
         }
 
-        if (iter->second->vd_hidden) {
+        if (iter->second->vd_meta.lvm_hidden) {
             return 0;
         }
 
@@ -411,6 +409,23 @@ public:
             }
         }
     };
+
+    logline_value_meta get_value_meta(intern_string_t field_name,
+                                      value_kind_t kind) {
+        auto iter = this->elf_value_defs.find(field_name);
+
+        if (iter == this->elf_value_defs.end()) {
+            auto retval = logline_value_meta(field_name, kind, -1, this);
+
+            retval.lvm_hidden = this->jlf_hide_extra;
+            return retval;
+        }
+
+        auto lvm = iter->second->vd_meta;
+
+        lvm.lvm_kind = kind;
+        return lvm;
+    }
 
     bool jlf_hide_extra;
     std::vector<json_format_element> jlf_line_format;

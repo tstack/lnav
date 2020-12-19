@@ -248,13 +248,12 @@ struct json_path_handler : public json_path_handler_base {
         return 1;
     };
 
-    template<typename T, bool T::*BOOL>
     static int bool_field_cb(yajlpp_parse_context *ypc, int val) {
-        auto obj = (T *) ypc->ypc_obj_stack.top();
+        return ypc->ypc_current_handler->jph_bool_cb(ypc, val);
+    };
 
-        obj->*BOOL = static_cast<bool>(val);
-
-        return 1;
+    static int str_field_cb2(yajlpp_parse_context *ypc, const unsigned char *str, size_t len) {
+        return ypc->ypc_current_handler->jph_str_cb(ypc, str, len);
     };
 
     template<typename T, typename NUM_T, NUM_T T::*NUM>
@@ -421,8 +420,119 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename BOOL_T, bool T::*BOOL>
     json_path_handler &for_field() {
-        this->add_cb(bool_field_cb<T, BOOL>);
+        this->add_cb(bool_field_cb);
+        this->jph_bool_cb = [&](yajlpp_parse_context *ypc, int val) {
+            auto obj = (T *) ypc->ypc_obj_stack.top();
+
+            obj->*BOOL = static_cast<bool>(val);
+
+            return 1;
+        };
         this->jph_gen_callback = field_gen<T, bool, BOOL>;
+
+        return *this;
+    };
+
+    template<typename T, typename U>
+    static inline U& get_field(T& input, U (T::*field)) {
+        return input.*field;
+    }
+
+    template<typename T, typename U, typename... V>
+    static inline auto get_field(T& input, U (T::*field), V... args)
+    -> decltype(get_field(input.*field, args...)) {
+        return get_field(input.*field, args...);
+    }
+
+    template<typename T, typename U, typename... V>
+    static inline auto get_field(void *input, U (T::*field), V... args)
+    -> decltype(get_field(*((T *) input), field, args...)) {
+        return get_field(*((T *) input), field, args...);
+    }
+
+    template<typename R, typename T, typename... Args>
+    struct LastIs {
+        static constexpr bool value = LastIs<R, Args...>::value;
+    };
+
+    template<typename R, typename T>
+    struct LastIs<R, T> {
+        static constexpr bool value = false;
+    };
+
+    template<typename R, typename T>
+    struct LastIs<R, R T::*> {
+        static constexpr bool value = true;
+    };
+
+    template<typename T, typename... Args>
+    struct LastIsEnum {
+        static constexpr bool value = LastIsEnum<Args...>::value;
+    };
+
+    template<typename T, typename U>
+    struct LastIsEnum<U T::*> {
+        static constexpr bool value = std::is_enum<U>::value;
+    };
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<bool, Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(bool_field_cb);
+        this->jph_bool_cb = [args...](yajlpp_parse_context *ypc, int val) {
+            auto obj = ypc->ypc_obj_stack.top();
+
+            json_path_handler::get_field(obj, args...) = static_cast<bool>(val);
+
+            return 1;
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIsEnum<Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context *ypc,
+                               const unsigned char *str, size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto handler = ypc->ypc_current_handler;
+            auto res = handler->to_enum_value(string_fragment(str, 0, len));
+
+            if (res) {
+                json_path_handler::get_field(obj, args...) =
+                    (decltype(json_path_handler::get_field(obj,
+                                                           args...))) res.value();
+            } else {
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "error:%s:line %d\n  "
+                                  "Invalid value, '%.*s', for option:",
+                                  ypc->ypc_source.c_str(),
+                                  ypc->get_line_number(),
+                                  len,
+                                  str);
+
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "    %s %s -- %s\n",
+                                  &ypc->ypc_path[0],
+                                  handler->jph_synopsis,
+                                  handler->jph_description);
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "  Allowed values: ");
+                for (int lpc = 0; handler->jph_enum_values[lpc].first; lpc++) {
+                    const json_path_handler::enum_value_t &ev = handler->jph_enum_values[lpc];
+
+                    ypc->report_error(lnav_log_level_t::ERROR, "    %s\n",
+                                      ev.first);
+                }
+            }
+
+            return 1;
+        };
 
         return *this;
     };

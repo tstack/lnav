@@ -140,12 +140,17 @@ bool listview_curses::handle_key(int ch)
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());
 
-            if (this->get_top() == last_line)
+            if (this->is_selectable()) {
+                this->set_selection(last_line);
+            } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
-            else if (tail_bottom <= this->get_top())
+            }
+            else if (tail_bottom <= this->get_top()) {
                 this->set_top(last_line);
-            else
+            }
+            else {
                 this->set_top(tail_bottom);
+            }
         }
         break;
 

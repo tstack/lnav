@@ -8,10 +8,12 @@ lnav v0.9.1:
        following command to open the command prompt with ":filter-in " already
        filled in:
          :prompt command : 'filter-in '
-     * Added support for the W3C Extended Log File Format.  Note: Since the
-       columns in a W3C log are specified in the file, the name of the format
-       and SQLite table will include a hash ID over of the column names
-       (e.g. w3c_7685df_log).
+     * Added support for the W3C Extended Log File Format with the name
+       "w3c_log".  Similarly to the bro log format, the header is used to
+       determine the columns in a particular file.  However, since the columns
+       can be different between files, the SQL table only has a well-known set
+       of columns and the remainder are accessible through JSON-objects stored
+       in columns like "cs_headers" and "sc_headers".
      * Added support for the S3 Access File Format.
      * To jump to the first search hit above the top line in a view, you can
        press CTRL+J instead of ENTER in the search prompt.  Pressing ENTER

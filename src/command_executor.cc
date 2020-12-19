@@ -226,31 +226,28 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                 }
             }
             else if (name[0] == ':' && ec.ec_line_values != nullptr) {
-                vector<logline_value> &lvalues = *ec.ec_line_values;
-                vector<logline_value>::iterator iter;
-
-                for (iter = lvalues.begin(); iter != lvalues.end(); ++iter) {
-                    if (strcmp(&name[1], iter->lv_name.get()) != 0) {
+                for (auto& lv : *ec.ec_line_values) {
+                    if (lv.lv_meta.lvm_name != &name[1]) {
                         continue;
                     }
-                    switch (iter->lv_kind) {
-                        case logline_value::VALUE_BOOLEAN:
-                            sqlite3_bind_int64(stmt.in(), lpc + 1, iter->lv_value.i);
+                    switch (lv.lv_meta.lvm_kind) {
+                        case value_kind_t::VALUE_BOOLEAN:
+                            sqlite3_bind_int64(stmt.in(), lpc + 1, lv.lv_value.i);
                             break;
-                        case logline_value::VALUE_FLOAT:
-                            sqlite3_bind_double(stmt.in(), lpc + 1, iter->lv_value.d);
+                        case value_kind_t::VALUE_FLOAT:
+                            sqlite3_bind_double(stmt.in(), lpc + 1, lv.lv_value.d);
                             break;
-                        case logline_value::VALUE_INTEGER:
-                            sqlite3_bind_int64(stmt.in(), lpc + 1, iter->lv_value.i);
+                        case value_kind_t::VALUE_INTEGER:
+                            sqlite3_bind_int64(stmt.in(), lpc + 1, lv.lv_value.i);
                             break;
-                        case logline_value::VALUE_NULL:
+                        case value_kind_t::VALUE_NULL:
                             sqlite3_bind_null(stmt.in(), lpc + 1);
                             break;
                         default:
                             sqlite3_bind_text(stmt.in(),
                                               lpc + 1,
-                                              iter->text_value(),
-                                              iter->text_length(),
+                                              lv.text_value(),
+                                              lv.text_length(),
                                               SQLITE_TRANSIENT);
                             break;
                     }

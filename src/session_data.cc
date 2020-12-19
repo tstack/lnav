@@ -1413,7 +1413,7 @@ static void save_session_with_id(const std::string session_id)
                             }
 
                             for (const auto& vd : elf->elf_value_defs) {
-                                if (!vd.second->vd_user_hidden) {
+                                if (!vd.second->vd_meta.lvm_user_hidden) {
                                     continue;
                                 }
 
@@ -1533,7 +1533,7 @@ void reset_session()
         }
 
         for (const auto &vd : elf->elf_value_defs) {
-            vd.second->vd_user_hidden = false;
+            vd.second->vd_meta.lvm_user_hidden = false;
         }
     }
 }

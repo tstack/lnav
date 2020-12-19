@@ -37,6 +37,7 @@
 
 #include <string>
 
+#include "optional.hpp"
 #include "strnatcmp.h"
 
 struct string_fragment {
@@ -132,6 +133,24 @@ struct string_fragment {
         }
 
         return *prefix == '\0';
+    }
+
+    string_fragment substr(int begin) {
+        return string_fragment{
+            this->sf_string,
+            this->sf_begin + begin,
+            this->sf_end
+        };
+    }
+
+    nonstd::optional<size_t> find(char ch) const {
+        for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
+            if (this->sf_string[lpc] == ch) {
+                return lpc;
+            }
+        }
+
+        return nonstd::nullopt;
     }
 
     const char *to_string(char *buf) const {

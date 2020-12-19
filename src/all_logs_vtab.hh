@@ -55,9 +55,9 @@ public:
     bool next(log_cursor &lc, logfile_sub_source &lss) override;
 
 private:
-    const intern_string_t alv_value_name;
-    const intern_string_t alv_msg_name;
-    const intern_string_t alv_schema_name;
+    logline_value_meta alv_value_meta;
+    logline_value_meta alv_msg_meta;
+    logline_value_meta alv_schema_meta;
     shared_buffer alv_schema_manager;
     std::array<char, data_parser::schema_id_t::STRING_SIZE> alv_schema_buffer{};
 };

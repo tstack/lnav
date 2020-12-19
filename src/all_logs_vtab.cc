@@ -34,16 +34,28 @@
 
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
-      alv_value_name(intern_string::lookup("log_format")),
-      alv_msg_name(intern_string::lookup("log_msg_format")),
-      alv_schema_name(intern_string::lookup("log_msg_schema")) {
+      alv_value_meta(intern_string::lookup("log_format"),
+                     value_kind_t::VALUE_TEXT,
+                     0),
+      alv_msg_meta(intern_string::lookup("log_msg_format"),
+                   value_kind_t::VALUE_TEXT,
+                   1),
+      alv_schema_meta(intern_string::lookup("log_msg_schema"),
+                      value_kind_t::VALUE_TEXT,
+                      2) {
+    this->alv_value_meta.lvm_identifier = true;
+    this->alv_msg_meta.lvm_identifier = true;
+    this->alv_schema_meta.lvm_identifier = true;
 }
 
 void all_logs_vtab::get_columns(std::vector<vtab_column> &cols) const
 {
-    cols.emplace_back(this->alv_value_name.get());
-    cols.emplace_back(this->alv_msg_name.get());
-    cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, "", true);
+    cols.emplace_back(vtab_column(this->alv_value_meta.lvm_name.get())
+                          .with_comment("The name of the log file format"));
+    cols.emplace_back(vtab_column(this->alv_msg_meta.lvm_name.get())
+                          .with_comment("The message format with variables replaced by hash marks"));
+    cols.emplace_back(this->alv_schema_meta.lvm_name.get(), SQLITE3_TEXT, "", true,
+                      "The ID for the message schema");
 }
 
 void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
@@ -51,7 +63,7 @@ void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
                             std::vector<logline_value> &values)
 {
     auto format = lf->get_format();
-    values.emplace_back(this->alv_value_name, format->get_name(), 0);
+    values.emplace_back(this->alv_value_meta, format->get_name());
 
     std::vector<logline_value> sub_values;
 
@@ -66,14 +78,14 @@ void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
 
     data_scanner ds(line, body.lr_start, body.lr_end);
     data_parser dp(&ds);
-
     std::string str;
+
     dp.dp_msg_format = &str;
     dp.parse();
 
     tmp_shared_buffer tsb(str.c_str());
 
-    values.emplace_back(this->alv_msg_name, tsb.tsb_ref, 1);
+    values.emplace_back(this->alv_msg_meta, tsb.tsb_ref);
 
     this->alv_schema_manager.invalidate_refs();
     dp.dp_schema_id.to_string(this->alv_schema_buffer.data());
@@ -81,7 +93,7 @@ void all_logs_vtab::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
     schema_ref.share(this->alv_schema_manager,
                      this->alv_schema_buffer.data(),
                      data_parser::schema_id_t::STRING_SIZE - 1);
-    values.emplace_back(this->alv_schema_name, schema_ref, 2);
+    values.emplace_back(this->alv_schema_meta, schema_ref);
 }
 
 bool all_logs_vtab::is_valid(log_cursor &lc, logfile_sub_source &lss)

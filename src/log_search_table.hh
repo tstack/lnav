@@ -62,7 +62,7 @@ public:
     pcrepp lst_regex;
     shared_buffer_ref lst_current_line;
     pcre_context_static<128> lst_match_context;
-    std::vector<logline_value::kind_t> lst_column_types;
+    std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_instance;
     std::vector<vtab_column> lst_cols;
 };

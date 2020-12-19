@@ -277,6 +277,7 @@ add_library(diag STATIC
         lnav_util.cc
         log_accel.cc
         log_actions.cc
+        log_data_table.cc
         log_format.cc
         log_format_loader.cc
         log_level.cc

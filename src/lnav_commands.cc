@@ -35,6 +35,7 @@
 #include <termios.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <fstream>
 #include <unordered_map>
@@ -535,10 +536,16 @@ static void json_write_row(yajl_gen handle, int row)
 
         switch (hm.hm_column_type) {
         case SQLITE_FLOAT:
-        case SQLITE_INTEGER:
-            yajl_gen_number(handle, dls.dls_rows[row][col],
-                strlen(dls.dls_rows[row][col]));
+        case SQLITE_INTEGER: {
+            auto len = strlen(dls.dls_rows[row][col]);
+
+            if (len == 0) {
+                obj_map.gen();
+            } else {
+                yajl_gen_number(handle, dls.dls_rows[row][col], len);
+            }
             break;
+        }
         case SQLITE_TEXT:
             switch (hm.hm_sub_type) {
                 case 74: {
@@ -1005,7 +1012,7 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
                 setenv("log_time", tmp_str, 1);
                 setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
                 for (auto &ldh_line_value : ldh.ldh_line_values) {
-                    setenv(ldh_line_value.lv_name.get(),
+                    setenv(ldh_line_value.lv_meta.lvm_name.get(),
                            ldh_line_value.to_string().c_str(), 1);
                 }
                 auto iter = ldh.ldh_parser->dp_pairs.begin();
@@ -3706,7 +3713,7 @@ public:
             }
 
             auto format = lf->get_format();
-            const logline_value_stats *stats = format->stats_for_value(this->lsvs_colname);
+            const auto *stats = format->stats_for_value(this->lsvs_colname);
 
             if (stats == NULL) {
                 continue;
@@ -3791,11 +3798,11 @@ public:
                               logline_value_cmp(&this->lsvs_colname));
 
             if (lv_iter != values.end()) {
-                switch (lv_iter->lv_kind) {
-                    case logline_value::VALUE_FLOAT:
+                switch (lv_iter->lv_meta.lvm_kind) {
+                    case value_kind_t::VALUE_FLOAT:
                         row_out.add_value(sr, lv_iter->lv_value.d, ll->is_marked());
                         break;
-                    case logline_value::VALUE_INTEGER:
+                    case value_kind_t::VALUE_INTEGER:
                         row_out.add_value(sr, lv_iter->lv_value.i, ll->is_marked());
                         break;
                     default:
@@ -3844,15 +3851,15 @@ public:
                               logline_value_cmp(&this->lsvs_colname));
 
             if (lv_iter != values.end()) {
-                switch (lv_iter->lv_kind) {
-                    case logline_value::VALUE_FLOAT:
+                switch (lv_iter->lv_meta.lvm_kind) {
+                    case value_kind_t::VALUE_FLOAT:
                         if (range_min <= lv_iter->lv_value.d &&
                             lv_iter->lv_value.d <= range_max) {
                             log_tc.toggle_user_mark(&textview_curses::BM_USER,
                                                     curr_line);
                         }
                         break;
-                    case logline_value::VALUE_INTEGER:
+                    case value_kind_t::VALUE_INTEGER:
                         if (range_min <= lv_iter->lv_value.i &&
                             lv_iter->lv_value.i <= range_max) {
                             log_tc.toggle_user_mark(&textview_curses::BM_USER,
@@ -3876,7 +3883,7 @@ public:
 class db_spectro_value_source : public spectrogram_value_source {
 public:
     db_spectro_value_source(string colname)
-        : dsvs_colname(colname),
+        : dsvs_colname(std::move(colname)),
           dsvs_begin_time(0),
           dsvs_end_time(0) {
         this->update_stats();
@@ -4090,16 +4097,23 @@ static void command_prompt(vector<string> &args)
         }
         else {
             for (auto &ldh_line_value : ldh.ldh_line_values) {
-                const logline_value_stats *stats = ldh_line_value.lv_format->stats_for_value(
-                    ldh_line_value.lv_name);
+                auto& meta = ldh_line_value.lv_meta;
+
+                if (!meta.lvm_format) {
+                    continue;
+                }
+
+                const auto *stats = meta.lvm_format.value()->
+                    stats_for_value(meta.lvm_name);
 
                 if (stats == nullptr) {
                     continue;
                 }
 
-                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                                                      "numeric-colname",
-                                                      ldh_line_value.lv_name.to_string());
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND,
+                    "numeric-colname",
+                    meta.lvm_name.to_string());
             }
         }
 

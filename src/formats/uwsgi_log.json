@@ -66,8 +66,14 @@
                 "unit": {
                     "field": "rt_unit",
                     "scaling-factor": {
-                        "/msecs": 1000.0,
-                        "/micros": 1000000.0
+                        "msecs": {
+                            "op": "divide",
+                            "value": 1000.0
+                        },
+                        "micros": {
+                            "op": "divide",
+                            "value": 1000000.0
+                        }
                     }
                 }
             },

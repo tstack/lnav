@@ -25,14 +25,31 @@ warning:    description <string> -- A description of the field
 error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
           ar_log": {         "abc"     } }
                      (right here) ------^
+error:foobar_log: no regexes specified for format
+error:foobar_log:no sample logs provided, all formats must have samples
+error:invalid_key_log: no regexes specified for format
+error:invalid_key_log:no sample logs provided, all formats must have samples
 EOF
 
 run_test ${lnav_test} -C \
     -I ${test_dir}/bad-config
 
-sed -i "" -e "s|/.*/init.sql|init.sql|g" `test_err_filename`
+sed -i "" -e "s|/.*/init.sql|init.sql|g" \
+    -e "s|/.*/format|format|g" \
+    `test_err_filename`
 
 check_error_output "invalid format not detected?" <<EOF
+error:format.json:line 18
+  Invalid value, 'foo', for option:
+    /bad_sample_log/value/pid/kind string|integer|float|boolean|json|quoted -- The type of data in the field
+  Allowed values:
+    string
+    integer
+    float
+    boolean
+    json
+    struct
+    quoted
 error:bad_regex_log.regex[std]:missing )
 error:bad_regex_log.regex[std]:^(?<timestamp>\d+: (?<body>.*)$
 error:bad_regex_log.regex[std]:                               ^
@@ -45,7 +62,7 @@ error:bad_sample_log:invalid sample -- 1428634687123; foo bar
 error:bad_sample_log:partial sample matched -- 1428634687123; foo
 error:  against pattern bad_sample_log/regex/semi -- ^(?<timestamp>\d+); (?<body>\w+)$
 error:bad_sample_log:partial sample matched -- 1428634687123
-error:  against pattern bad_sample_log/regex/std -- ^(?<timestamp>\d+): (?<body>.*)$
+error:  against pattern bad_sample_log/regex/std -- ^(?<timestamp>\d+): (?<pid>\w+) (?<body>.*)$
 error:no_sample_log:no sample logs provided, all formats must have samples
 error:init.sql:2:near "TALE": syntax error
 EOF

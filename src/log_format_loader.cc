@@ -120,8 +120,8 @@ static external_log_format::value_def *value_def_provider(const yajlpp_provider_
     shared_ptr<external_log_format::value_def> retval;
 
     if (iter == elf->elf_value_defs.end()) {
-        retval = make_shared<external_log_format::value_def>();
-        retval->vd_name = value_name;
+        retval = make_shared<external_log_format::value_def>(
+            value_name, value_kind_t::VALUE_TEXT, -1, elf);
         elf->elf_value_defs[value_name] = retval;
         elf->elf_value_def_order.emplace_back(retval);
     } else {
@@ -133,17 +133,8 @@ static external_log_format::value_def *value_def_provider(const yajlpp_provider_
 
 static scaling_factor *scaling_factor_provider(const yajlpp_provider_context &ypc, external_log_format::value_def *value_def)
 {
-    string scale_spec = ypc.get_substr(0);
-
-    const intern_string_t scale_name = intern_string::lookup(scale_spec.substr(1));
+    auto scale_name = ypc.get_substr_i(0);
     scaling_factor &retval = value_def->vd_unit_scaling[scale_name];
-
-    if (scale_spec[0] == '/') {
-        retval.sf_op = scale_op_t::SO_DIVIDE;
-    }
-    else if (scale_spec[0] == '*') {
-        retval.sf_op = scale_op_t::SO_MULTIPLY;
-    }
 
     return &retval;
 }
@@ -366,7 +357,7 @@ static struct json_path_container pattern_handlers = {
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
                 "of container formats, like syslog")
-        .FOR_FIELD(external_log_format::pattern, p_module_format)
+        .for_field(&external_log_format::pattern::p_module_format)
 };
 
 static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
@@ -443,21 +434,38 @@ static struct json_path_container line_format_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
-    {"string", logline_value::VALUE_TEXT},
-    {"integer", logline_value::VALUE_INTEGER},
-    {"float", logline_value::VALUE_FLOAT},
-    {"boolean", logline_value::VALUE_BOOLEAN},
-    {"json", logline_value::VALUE_JSON},
-    {"struct", logline_value::VALUE_STRUCT},
-    {"quoted", logline_value::VALUE_QUOTED},
+    {"string", value_kind_t::VALUE_TEXT},
+    {"integer", value_kind_t::VALUE_INTEGER},
+    {"float", value_kind_t::VALUE_FLOAT},
+    {"boolean", value_kind_t::VALUE_BOOLEAN},
+    {"json", value_kind_t::VALUE_JSON},
+    {"struct", value_kind_t::VALUE_STRUCT},
+    {"quoted", value_kind_t::VALUE_QUOTED},
 
     json_path_handler_base::ENUM_TERMINATOR
 };
 
-static struct json_path_container scale_handlers = {
-    yajlpp::pattern_property_handler("(?<scale>.*)")
-        .with_synopsis("[*,/]<unit>")
+static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[] = {
+    {"identity", scale_op_t::SO_IDENTITY},
+    {"multiply", scale_op_t::SO_MULTIPLY},
+    {"divide", scale_op_t::SO_DIVIDE},
+
+    json_path_handler_base::ENUM_TERMINATOR
+};
+
+static struct json_path_container scaling_factor_handlers = {
+    yajlpp::pattern_property_handler("op")
+        .with_enum_values(SCALE_OP_ENUM)
+        .FOR_FIELD(scaling_factor, sf_op),
+
+    yajlpp::pattern_property_handler("value")
         .FOR_FIELD(scaling_factor, sf_value)
+};
+
+static struct json_path_container scale_handlers = {
+    yajlpp::pattern_property_handler("(?<scale>[^/]+)")
+        .with_obj_provider(scaling_factor_provider)
+        .with_children(scaling_factor_handlers),
 };
 
 static struct json_path_container unit_handlers = {
@@ -468,7 +476,6 @@ static struct json_path_container unit_handlers = {
 
     yajlpp::property_handler("scaling-factor")
         .with_description("Transforms the numeric value by the given factor")
-        .with_obj_provider(scaling_factor_provider)
         .with_children(scale_handlers),
 };
 
@@ -477,7 +484,8 @@ static struct json_path_container value_def_handlers = {
         .with_synopsis("string|integer|float|boolean|json|quoted")
         .with_description("The type of data in the field")
         .with_enum_values(KIND_ENUM)
-        .FOR_FIELD(external_log_format::value_def, vd_kind),
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_kind),
 
     yajlpp::property_handler("collate")
         .with_synopsis("<function>")
@@ -491,7 +499,8 @@ static struct json_path_container value_def_handlers = {
     yajlpp::property_handler("identifier")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field contains an identifier that should be highlighted")
-        .FOR_FIELD(external_log_format::value_def, vd_identifier),
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_identifier),
 
     yajlpp::property_handler("foreign-key")
         .with_synopsis("<bool>")
@@ -501,7 +510,8 @@ static struct json_path_container value_def_handlers = {
     yajlpp::property_handler("hidden")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be hidden")
-        .FOR_FIELD(external_log_format::value_def, vd_hidden),
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_hidden),
 
     yajlpp::property_handler("action-list#")
         .with_synopsis("<string>")
@@ -538,12 +548,12 @@ static struct json_path_container highlighter_def_handlers = {
     yajlpp::property_handler("underline")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern with an underline.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_underline),
+        .for_field(&external_log_format::highlighter_def::hd_underline),
 
     yajlpp::property_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_blink)
+        .for_field(&external_log_format::highlighter_def::hd_blink)
 };
 
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
@@ -681,7 +691,7 @@ struct json_path_container format_handlers = {
     yajlpp::property_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description("Indicates that the order of messages in the file is time-based.")
-        .FOR_FIELD(log_format, lf_time_ordered),
+        .for_field(&log_format::lf_time_ordered),
     yajlpp::property_handler("level")
         .with_description("The map of level names to patterns or integer values")
         .with_children(level_handlers),
@@ -937,10 +947,6 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
         load_from_path(extra_path, errors);
     }
 
-    if (!errors.empty()) {
-        return;
-    }
-
     uint8_t mod_counter = 0;
 
     vector<std::shared_ptr<external_log_format>> alpha_ordered_formats;
@@ -970,6 +976,10 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
         if (errors.empty()) {
             alpha_ordered_formats.push_back(elf);
         }
+    }
+
+    if (!errors.empty()) {
+        return;
     }
 
     auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;

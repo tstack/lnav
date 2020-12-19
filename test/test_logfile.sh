@@ -143,9 +143,9 @@ run_test ./drive_logfile -f bro_conn_log ${srcdir}/logfile_bro_conn.log.0
 
 on_error_fail_with "Didn't infer bro_conn_log log format?"
 
-run_test ./drive_logfile -f w3c_7685df_log ${srcdir}/logfile_w3c.0
+run_test ./drive_logfile -f w3c_log ${srcdir}/logfile_w3c.0
 
-on_error_fail_with "Didn't infer w3c_7685df_log log format?"
+on_error_fail_with "Didn't infer w3c_log log format?"
 
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
@@ -153,7 +153,7 @@ run_test ./drive_logfile ${srcdir}/logfile_empty.0
 on_error_fail_with "Didn't handle empty log?"
 
 
-run_test ./drive_logfile -t -f w3c_2957b3_log ${srcdir}/logfile_w3c.2
+run_test ./drive_logfile -t -f w3c_log ${srcdir}/logfile_w3c.2
 
 check_output "w3c timestamp interpreted incorrectly?" <<EOF
 Oct 09 16:44:49 2000 -- 000
@@ -172,7 +172,7 @@ Oct 10 16:44:49 2000 -- 000
 Oct 10 16:48:05 2000 -- 000
 EOF
 
-run_test ./drive_logfile -t -f w3c_5bd538_log ${srcdir}/logfile_w3c.4
+run_test ./drive_logfile -t -f w3c_log ${srcdir}/logfile_w3c.4
 
 check_output "quoted w3c timestamp interpreted incorrectly?" <<EOF
 Jun 28 07:26:35 2017 -- 000

@@ -93,55 +93,95 @@ struct scaling_factor {
     double sf_value;
 };
 
+enum class value_kind_t : int {
+    VALUE_UNKNOWN = -1,
+    VALUE_NULL,
+    VALUE_TEXT,
+    VALUE_INTEGER,
+    VALUE_FLOAT,
+    VALUE_BOOLEAN,
+    VALUE_JSON,
+    VALUE_STRUCT,
+    VALUE_QUOTED,
+    VALUE_W3C_QUOTED,
+    VALUE_TIMESTAMP,
+
+    VALUE__MAX
+};
+
+struct logline_value_meta {
+    logline_value_meta(
+        intern_string_t name,
+        value_kind_t kind,
+        int col = -1,
+        const nonstd::optional<log_format *>& format = nonstd::nullopt)
+        : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
+    {};
+
+    bool is_hidden() const {
+        return this->lvm_hidden || this->lvm_user_hidden;
+    }
+
+    logline_value_meta& with_struct_name(intern_string_t name) {
+        this->lvm_struct_name = name;
+        return *this;
+    }
+
+    intern_string_t lvm_name;
+    value_kind_t lvm_kind;
+    int lvm_column{-1};
+    bool lvm_identifier{false};
+    bool lvm_hidden{false};
+    bool lvm_user_hidden{false};
+    bool lvm_from_module{false};
+    intern_string_t lvm_struct_name;
+    nonstd::optional<log_format *> lvm_format;
+};
+
 class logline_value {
 public:
-    enum kind_t {
-        VALUE_UNKNOWN = -1,
-        VALUE_NULL,
-        VALUE_TEXT,
-        VALUE_INTEGER,
-        VALUE_FLOAT,
-        VALUE_BOOLEAN,
-        VALUE_JSON,
-        VALUE_STRUCT,
-        VALUE_QUOTED,
-        VALUE_W3C_QUOTED,
-        VALUE_TIMESTAMP,
 
-        VALUE__MAX
+    logline_value(logline_value_meta lvm)
+        : lv_meta(std::move(lvm)) {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_NULL;
     };
-
-    logline_value(const intern_string_t name, const log_format *format)
-        : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
-    logline_value(const intern_string_t name, bool b, const log_format *format)
-        : lv_name(name),
-          lv_kind(VALUE_BOOLEAN),
-          lv_value((int64_t)(b ? 1 : 0)),
-          lv_identifier(),
-          lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0),
-          lv_from_module(false), lv_format(format) { };
-    logline_value(const intern_string_t name, int64_t i, const log_format *format)
-        : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
-    logline_value(const intern_string_t name, double i, const log_format *format)
-        : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
-    logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1, const log_format *format = nullptr)
-        : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
-          lv_identifier(), lv_column(column),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) {
+    logline_value(logline_value_meta lvm, bool b)
+        : lv_meta(std::move(lvm)),
+          lv_value((int64_t)(b ? 1 : 0)) {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_BOOLEAN;
+    }
+    logline_value(logline_value_meta lvm, int64_t i)
+        : lv_meta(std::move(lvm)), lv_value(i) {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_INTEGER;
     };
-    logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
-            : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),
-              lv_column(column), lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) {
+    logline_value(logline_value_meta lvm, double i)
+        : lv_meta(std::move(lvm)), lv_value(i) {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
+    };
+    logline_value(logline_value_meta lvm, shared_buffer_ref &sbr)
+        : lv_meta(std::move(lvm)), lv_sbr(sbr) {
+    };
+    logline_value(logline_value_meta lvm, const intern_string_t val)
+            : lv_meta(std::move(lvm)), lv_intern_string(val) {
 
     };
-    logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
-                  bool ident, const scaling_factor *scaling,
-                  int col, int start, int end, bool from_module=false,
-                  const log_format *format=NULL);
+    logline_value(logline_value_meta lvm, shared_buffer_ref &sbr,
+                  struct line_range origin);
+
+    void apply_scaling(const scaling_factor *sf) {
+        if (sf != nullptr) {
+            switch (this->lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_INTEGER:
+                    sf->scale(this->lv_value.i);
+                    break;
+                case value_kind_t::VALUE_FLOAT:
+                    sf->scale(this->lv_value.d);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 
     std::string to_string() const;
 
@@ -164,8 +204,7 @@ public:
 
     struct line_range origin_in_full_msg(const char *msg, ssize_t len) const;
 
-    intern_string_t lv_name;
-    kind_t      lv_kind;
+    logline_value_meta lv_meta;
     union value_u {
         int64_t i;
         double  d;
@@ -175,15 +214,9 @@ public:
         value_u(double d) : d(d) { };
     } lv_value;
     shared_buffer_ref lv_sbr;
+    int lv_sub_offset{0};
     intern_string_t lv_intern_string;
-    bool lv_identifier;
-    int lv_column;
-    bool lv_hidden;
-    bool lv_user_hidden;
-    int lv_sub_offset;
     struct line_range lv_origin;
-    bool lv_from_module;
-    const log_format *lv_format;
 };
 
 struct logline_value_stats {
@@ -237,19 +270,19 @@ struct logline_value_stats {
 };
 
 struct logline_value_cmp {
-    logline_value_cmp(const intern_string_t *name = NULL, int col = -1)
+    explicit logline_value_cmp(const intern_string_t *name = nullptr, int col = -1)
         : lvc_name(name), lvc_column(col) {
 
     };
 
-    bool operator()(const logline_value &lv) {
+    bool operator()(const logline_value &lv) const {
         bool retval = true;
 
-        if (this->lvc_name != NULL) {
-            retval = retval && ((*this->lvc_name) == lv.lv_name);
+        if (this->lvc_name != nullptr) {
+            retval = retval && ((*this->lvc_name) == lv.lv_meta.lvm_name);
         }
         if (this->lvc_column != -1) {
-            retval = retval && (this->lvc_column == lv.lv_column);
+            retval = retval && (this->lvc_column == lv.lv_meta.lvm_column);
         }
 
         return retval;

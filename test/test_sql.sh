@@ -2,15 +2,69 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
+cp ${srcdir}/logfile_syslog.2 logfile_syslog_test.2
+touch -t 201511030923 logfile_syslog_test.2
 run_test ${lnav_test} -n \
-    -c ";SELECT sc_substatus FROM w3c_e28cf8_log" \
+    -c ";SELECT *, log_msg_schema FROM all_logs" \
+    -c ":write-csv-to -" \
+    logfile_syslog_test.2
+
+check_output "all_logs does not work?" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_format,log_msg_format,log_msg_schema
+0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is up,f7ca05240a1c3f67c85b9db38bf90171
+1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is up,f7ca05240a1c3f67c85b9db38bf90171
+2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is down,a2ea6285505d1a8947504667581daf1b
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";SELECT sc_substatus FROM w3c_log" \
+    -c ":write-json-to -" \
     ${test_dir}/logfile_w3c.3
 
 check_output "w3c quoted strings are not handled correctly?" <<EOF
-     sc_substatus
-0
-0
- "garbage" w/ spaces
+[
+    {
+        "sc_substatus": 0
+    },
+    {
+        "sc_substatus": 0
+    },
+    {
+        "sc_substatus": null
+    }
+]
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT cs_headers FROM w3c_log" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_w3c.3
+
+check_output "w3c headers are not captured?" <<EOF
+[
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Linux; Android 4.4.4; SM-G900V Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.59 Mobile Safari/537.36",
+            "Referer": "http://example.com/Search/SearchResults.pg?informationRecipient.languageCode.c=en",
+            "Host": "xzy.example.com"
+        }
+    },
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36",
+            "Referer": null,
+            "Host": "example.hello.com"
+        }
+    },
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.124 Safari/537.36",
+            "Referer": null,
+            "Host": "hello.example.com"
+        }
+    }
+]
 EOF
 
 run_test ${lnav_test} -n \
@@ -156,7 +210,21 @@ run_test ${lnav_test} -n \
 
 check_output "uwsgi not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_comment log_tags log_filters    c_ip   cs_bytes cs_method cs_uri_query   cs_uri_stem   cs_username cs_vars cs_version s_app s_core s_pid s_req s_runtime s_switches s_worker_reqs sc_bytes sc_header_bytes sc_headers sc_status
-       0   <NULL> 2016-03-13 22:49:12.000              0 info             0      <NULL>   <NULL>      <NULL> 127.0.0.1      696 POST            <NULL> /update_metrics                  38 HTTP/1.1   0     3      88185     1     129.0          1             1       47             378          9       200
+       0   <NULL> 2016-03-13 22:49:12.000              0 info             0      <NULL>   <NULL>      <NULL> 127.0.0.1      696 POST            <NULL> /update_metrics                  38 HTTP/1.1   0     3      88185     1     0.129          1             1       47             378          9       200
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT s_runtime FROM uwsgi_log LIMIT 5" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_uwsgi.0
+
+check_output "uwsgi scaling not working?" <<EOF
+s_runtime
+0.129
+0.035
+6.8e-05
+0.016
+0.01
 EOF
 
 run_test env TZ=UTC ${lnav_test} -n \

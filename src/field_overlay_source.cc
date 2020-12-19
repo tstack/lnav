@@ -357,13 +357,16 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     this->fos_unknown_key_size = 0;
 
     for (auto & ldh_line_value : this->fos_log_helper.ldh_line_values) {
-        int this_key_size = ldh_line_value.lv_name.size();
+        auto& meta = ldh_line_value.lv_meta;
+        int this_key_size = meta.lvm_name.size();
 
-        if (ldh_line_value.lv_kind == logline_value::VALUE_STRUCT) {
+        if (meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             this_key_size += 9;
         }
-        this->fos_known_key_size = max(
-            this->fos_known_key_size, this_key_size);
+        if (!meta.lvm_struct_name.empty()) {
+            this_key_size += meta.lvm_struct_name.size() + 11;
+        }
+        this->fos_known_key_size = max(this->fos_known_key_size, this_key_size);
     }
 
     for (auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
@@ -396,11 +399,16 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     const log_format *last_format = nullptr;
 
     for (auto & lv : this->fos_log_helper.ldh_line_values) {
-        string format_name = lv.lv_format->get_name().to_string();
+        if (!lv.lv_meta.lvm_format) {
+            continue;
+        }
+
+        auto curr_format = lv.lv_meta.lvm_format.value();
+        string format_name = curr_format->get_name().to_string();
         attr_line_t al;
         string str, value_str = lv.to_string();
 
-        if (lv.lv_format != last_format) {
+        if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table " +
                                          format_name +
                                          ":");
@@ -408,32 +416,48 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
                 line_range(32, 32 + format_name.length()),
                 &view_curses::VC_STYLE,
                 vc.attrs_for_ident(format_name) | A_BOLD));
-            last_format = lv.lv_format;
+            last_format = curr_format;
         }
 
-        str = "   " + lv.lv_name.to_string();
-        str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');
+        if (lv.lv_meta.lvm_struct_name.empty()) {
+            str = "   " + lv.lv_meta.lvm_name.to_string();
+        } else {
+            auto_mem<char, sqlite3_free> jgetter;
+
+            jgetter = sqlite3_mprintf("   jget(%s, '/%q')",
+                                      lv.lv_meta.lvm_struct_name.get(),
+                                      lv.lv_meta.lvm_name.get());
+            str = jgetter;
+        }
+        str.append(this->fos_known_key_size - (str.length() - 3), ' ');
         str += " = " + value_str;
 
-        al.with_string(str)
-                .with_attr(string_attr(
-                        line_range(3, 3 + lv.lv_name.size()),
-                        &view_curses::VC_STYLE,
-                        vc.attrs_for_ident(lv.lv_name.to_string())));
+        al.with_string(str);
+        if (lv.lv_meta.lvm_struct_name.empty()) {
+            al.with_attr(string_attr(
+                line_range(3, 3 + lv.lv_meta.lvm_name.size()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(lv.lv_meta.lvm_name)));
+        } else {
+            al.with_attr(string_attr(
+                line_range(8, 8 + lv.lv_meta.lvm_struct_name.size()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(lv.lv_meta.lvm_struct_name)));
+        }
 
         this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(this->fos_known_key_size);
 
-        if (lv.lv_kind == logline_value::VALUE_STRUCT) {
+        if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             json_string js = extract(value_str.c_str());
 
             al.clear()
               .append("   extract(")
-              .append(lv.lv_name.get(),
+              .append(lv.lv_meta.lvm_name.get(),
                       &view_curses::VC_STYLE,
-                      vc.attrs_for_ident(lv.lv_name.get(), lv.lv_name.size()))
+                      vc.attrs_for_ident(lv.lv_meta.lvm_name))
               .append(")")
-              .append(this->fos_known_key_size - lv.lv_name.size() - 9 + 3, ' ')
+              .append(this->fos_known_key_size - lv.lv_meta.lvm_name.size() - 9 + 3, ' ')
               .append(" = ")
               .append((const char *) js.js_content.in(), js.js_len);
             this->fos_lines.emplace_back(al);

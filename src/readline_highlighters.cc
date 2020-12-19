@@ -584,7 +584,7 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
             case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                 int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
                 string ident = str.substr(cap.c_begin + 1 + extra, cap.length() - 1 - extra * 2);
-                int attrs = vc.attrs_for_ident(ident.c_str(), ident.size());
+                int attrs = vc.attrs_for_ident(ident);
 
                 al.with_attr(string_attr(
                         line_range(cap.c_begin, cap.c_begin + 1 + extra),

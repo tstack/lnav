@@ -89,6 +89,11 @@ public:
               vc_subtype(subtype) {
         };
 
+        vtab_column& with_comment(const std::string comment) {
+            this->vc_comment = comment;
+            return *this;
+        }
+
         std::string vc_name;
         int         vc_type;
         std::string vc_collator;
@@ -97,7 +102,7 @@ public:
         int vc_subtype;
     };
 
-    static std::pair<int, unsigned int> logline_value_to_sqlite_type(logline_value::kind_t kind);
+    static std::pair<int, unsigned int> logline_value_to_sqlite_type(value_kind_t kind);
 
     log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
         this->vi_attrs.resize(128);

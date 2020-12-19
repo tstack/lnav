@@ -114,17 +114,17 @@ public:
             this->ldh_json_pairs.clear();
 
             for (const auto& lv : this->ldh_line_values) {
-                this->ldh_namer->cn_builtin_names.emplace_back(lv.lv_name.get());
+                this->ldh_namer->cn_builtin_names.emplace_back(lv.lv_meta.lvm_name.get());
             }
 
             for (auto & ldh_line_value : this->ldh_line_values) {
-                switch (ldh_line_value.lv_kind) {
-                case logline_value::VALUE_JSON: {
+                switch (ldh_line_value.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_JSON: {
                     json_ptr_walk jpw;
 
                     if (jpw.parse(ldh_line_value.lv_sbr.get_data(), ldh_line_value.lv_sbr.length()) == yajl_status_ok &&
                         jpw.complete_parse() == yajl_status_ok) {
-                        this->ldh_json_pairs[ldh_line_value.lv_name] = jpw.jpw_values;
+                        this->ldh_json_pairs[ldh_line_value.lv_meta.lvm_name] = jpw.jpw_values;
                     }
                     break;
                 }

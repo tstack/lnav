@@ -258,21 +258,21 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
         lf->read_full_message(ll, sbr);
         format->annotate(cl, sbr, sa, values);
         for (auto& lv : values) {
-            if (!lv.lv_identifier) {
+            if (!lv.lv_meta.lvm_identifier) {
                 continue;
             }
 
             auto_mem<char> ident(sqlite3_free);
 
-            ident = sql_quote_ident(lv.lv_name.get());
+            ident = sql_quote_ident(lv.lv_meta.lvm_name.get());
             auto bound_name = fmt::format(":{}", ident);
             rlc->add_possibility(context, type, bound_name);
-            switch (lv.lv_kind) {
-                case logline_value::VALUE_BOOLEAN:
-                case logline_value::VALUE_FLOAT:
-                case logline_value::VALUE_NULL:
+            switch (lv.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_BOOLEAN:
+                case value_kind_t::VALUE_FLOAT:
+                case value_kind_t::VALUE_NULL:
                     break;
-                case logline_value::VALUE_INTEGER:
+                case value_kind_t::VALUE_INTEGER:
                     rlc->add_possibility(
                         context, type,
                         std::to_string(lv.lv_value.i));

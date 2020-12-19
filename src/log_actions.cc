@@ -82,7 +82,7 @@ static string execute_action(log_data_helper &ldh,
             setenv("LNAV_ACTION_FILE_LINE", env_buffer, 1);
             snprintf(env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
             setenv("LNAV_ACTION_MSG_LINE", env_buffer, 1);
-            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_name.get(), 1);
+            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_meta.lvm_name.get(), 1);
             value_line = ldh.ldh_y_offset - ldh.get_value_line(lv) + 1;
             snprintf(env_buffer, sizeof(env_buffer), "%d", value_line);
             setenv("LNAV_ACTION_VALUE_LINE", env_buffer, 1);

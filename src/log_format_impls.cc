@@ -34,12 +34,14 @@
 #include <stdio.h>
 
 #include <utility>
+#include <algorithm>
 
 #include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 #include "lnav_util.hh"
+#include "base/opt_util.hh"
 
 using namespace std;
 
@@ -244,7 +246,7 @@ string from_escaped_string(const char *str, size_t len)
     return retval;
 }
 
-const char *
+nonstd::optional<const char *>
 lnav_strnstr(const char *s, const char *find, size_t slen)
 {
 	char c, sc;
@@ -254,13 +256,15 @@ lnav_strnstr(const char *s, const char *find, size_t slen)
 		len = strlen(find);
 		do {
 			do {
-				if (slen < 1 || (sc = *s) == '\0')
-					return (nullptr);
+				if (slen < 1 || (sc = *s) == '\0') {
+                    return nonstd::nullopt;
+                }
 				--slen;
 				++s;
 			} while (sc != c);
-			if (len > slen)
-				return (nullptr);
+			if (len > slen) {
+                return nonstd::nullopt;
+            }
 		} while (strncmp(s, find, len) != 0);
 		s--;
 	}
@@ -273,7 +277,7 @@ struct separated_string {
     const char *ss_separator;
     size_t ss_separator_len;
 
-    explicit separated_string(const char *str = nullptr, size_t len = -1)
+    separated_string(const char *str, size_t len)
         : ss_str(str), ss_len(len), ss_separator(",") {
         this->ss_separator_len = strlen(this->ss_separator);
     };
@@ -297,14 +301,14 @@ struct separated_string {
 
         void update() {
             const separated_string &ss = this->i_parent;
-            const char *next_field;
-
-            next_field = lnav_strnstr(this->i_pos, ss.ss_separator,
-                                      ss.ss_len - (this->i_pos - ss.ss_str));
-            if (next_field == nullptr) {
-                this->i_next_pos = ss.ss_str + ss.ss_len;
+            auto next_field = lnav_strnstr(
+                this->i_pos,
+                ss.ss_separator,
+                ss.ss_len - (this->i_pos - ss.ss_str));
+            if (next_field) {
+                this->i_next_pos = next_field.value() + ss.ss_separator_len;
             } else {
-                this->i_next_pos = next_field + ss.ss_separator_len;
+                this->i_next_pos = ss.ss_str + ss.ss_len;
             }
         };
 
@@ -355,24 +359,20 @@ class bro_log_format : public log_format {
 public:
 
     struct field_def {
-        const intern_string_t fd_name;
-        logline_value::kind_t fd_kind;
-        bool fd_identifier;
+        logline_value_meta fd_meta;
         std::string fd_collator;
         int fd_numeric_index;
 
-        explicit field_def(const intern_string_t name)
-            : fd_name(name),
-              fd_kind(logline_value::VALUE_TEXT),
-              fd_identifier(false),
+        explicit field_def(const intern_string_t name, int col, log_format *format)
+            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
               fd_numeric_index(-1) {
         };
 
-        field_def &with_kind(logline_value::kind_t kind,
+        field_def &with_kind(value_kind_t kind,
                              bool identifier = false,
                              const std::string &collator = "") {
-            this->fd_kind = kind;
-            this->fd_identifier = identifier;
+            this->fd_meta.lvm_kind = kind;
+            this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
         };
@@ -425,9 +425,9 @@ public:
                 break;
             }
 
-            const field_def &fd = this->blf_field_defs[iter.index()];
+            const auto &fd = this->blf_field_defs[iter.index()];
 
-            if (TS == fd.fd_name) {
+            if (TS == fd.fd_meta.lvm_name) {
                 string_fragment sf = *iter;
 
                 if (this->lf_date_time.scan(sf.data(),
@@ -438,22 +438,22 @@ public:
                     this->lf_timestamp_flags = tm.et_flags;
                     found_ts = true;
                 }
-            } else if (STATUS_CODE == fd.fd_name) {
+            } else if (STATUS_CODE == fd.fd_meta.lvm_name) {
                 string_fragment sf = *iter;
 
                 if (!sf.empty() && sf[0] >= '4') {
                     level = LEVEL_ERROR;
                 }
-            } else if (UID == fd.fd_name) {
+            } else if (UID == fd.fd_meta.lvm_name) {
                 string_fragment sf = *iter;
 
                 opid = hash_str(sf.data(), sf.length());
             }
 
             if (fd.fd_numeric_index >= 0) {
-                switch (fd.fd_kind) {
-                    case logline_value::VALUE_INTEGER:
-                    case logline_value::VALUE_FLOAT: {
+                switch (fd.fd_meta.lvm_kind) {
+                    case value_kind_t::VALUE_INTEGER:
+                    case value_kind_t::VALUE_FLOAT: {
                         string_fragment sf = *iter;
                         char field_copy[sf.length() + 1];
                         double val;
@@ -548,7 +548,10 @@ public:
                 this->blf_format_name = intern_string::lookup(full_name);
             } else if (directive == "#fields") {
                 do {
-                    this->blf_field_defs.emplace_back(intern_string::lookup("bro_" + sql_safe_ident(*iter)));
+                    this->blf_field_defs.emplace_back(
+                        intern_string::lookup("bro_" + sql_safe_ident(*iter)),
+                        this->blf_field_defs.size(),
+                        this);
                     ++iter;
                 } while (iter != ss.end());
             } else if (directive == "#types") {
@@ -576,26 +579,26 @@ public:
 
                 do {
                     string_fragment field_type = *iter;
-                    field_def &fd = this->blf_field_defs[iter.index() - 1];
+                    auto &fd = this->blf_field_defs[iter.index() - 1];
 
                     if (field_type == "time") {
-                        fd.with_kind(logline_value::VALUE_TIMESTAMP);
+                        fd.with_kind(value_kind_t::VALUE_TIMESTAMP);
                     } else if (field_type == "string") {
-                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_name);
-                        fd.with_kind(logline_value::VALUE_TEXT, ident);
+                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_meta.lvm_name);
+                        fd.with_kind(value_kind_t::VALUE_TEXT, ident);
                     } else if (field_type == "count") {
-                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_name);
-                        fd.with_kind(logline_value::VALUE_INTEGER, ident)
+                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_meta.lvm_name);
+                        fd.with_kind(value_kind_t::VALUE_INTEGER, ident)
                           .with_numeric_index(numeric_count);
                         numeric_count += 1;
                     } else if (field_type == "bool") {
-                        fd.with_kind(logline_value::VALUE_BOOLEAN);
+                        fd.with_kind(value_kind_t::VALUE_BOOLEAN);
                     } else if (field_type == "addr") {
-                        fd.with_kind(logline_value::VALUE_TEXT, true, "ipaddress");
+                        fd.with_kind(value_kind_t::VALUE_TEXT, true, "ipaddress");
                     } else if (field_type == "port") {
-                        fd.with_kind(logline_value::VALUE_INTEGER, true);
+                        fd.with_kind(value_kind_t::VALUE_INTEGER, true);
                     } else if (field_type == "interval") {
-                        fd.with_kind(logline_value::VALUE_FLOAT)
+                        fd.with_kind(value_kind_t::VALUE_FLOAT)
                           .with_numeric_index(numeric_count);
                         numeric_count += 1;
                     }
@@ -636,36 +639,27 @@ public:
 
             const field_def &fd = this->blf_field_defs[iter.index()];
             string_fragment sf = *iter;
-            logline_value::kind_t kind = fd.fd_kind;
+            auto kind = fd.fd_meta.lvm_kind;
 
             if (sf == this->blf_empty_field) {
                 sf.clear();
             } else if (sf == this->blf_unset_field) {
                 sf.invalidate();
-                kind = logline_value::VALUE_NULL;
+                kind = value_kind_t::VALUE_NULL;
             }
 
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
-            if (fd.fd_name == TS) {
+            if (fd.fd_meta.lvm_name == TS) {
                 sa.emplace_back(lr, &logline::L_TIMESTAMP);
-            } else if (fd.fd_name == UID) {
+            } else if (fd.fd_meta.lvm_name == UID) {
                 sa.emplace_back(lr, &logline::L_OPID);
             }
 
             if (lr.is_valid()) {
-                values.emplace_back(fd.fd_name,
-                                    kind,
-                                    sbr,
-                                    fd.fd_identifier,
-                                    nullptr,
-                                    iter.index(),
-                                    lr.lr_start,
-                                    lr.lr_end,
-                                    false,
-                                    this);
+                values.emplace_back(fd.fd_meta, sbr, lr);
             } else {
-                values.emplace_back(fd.fd_name, this);
+                values.emplace_back(fd.fd_meta);
             }
         }
     };
@@ -674,7 +668,7 @@ public:
         const logline_value_stats *retval = nullptr;
 
         for (size_t lpc = 0; lpc < this->blf_field_defs.size(); lpc++) {
-            if (this->blf_field_defs[lpc].fd_name == name) {
+            if (this->blf_field_defs[lpc].fd_meta.lvm_name == name) {
                 if (this->blf_field_defs[lpc].fd_numeric_index < 0) {
                     break;
                 }
@@ -699,9 +693,9 @@ public:
 
         void get_columns(vector<vtab_column> &cols) const {
             for (const auto &fd : this->blt_format.blf_field_defs) {
-                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_kind);
+                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_meta.lvm_kind);
 
-                cols.emplace_back(fd.fd_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
+                cols.emplace_back(fd.fd_meta.lvm_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
             }
         };
 
@@ -709,8 +703,8 @@ public:
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto &fd : this->blt_format.blf_field_defs) {
-                if (fd.fd_identifier) {
-                    keys_inout.push_back(fd.fd_name.to_string());
+                if (fd.fd_meta.lvm_identifier) {
+                    keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
@@ -855,35 +849,36 @@ public:
 
     struct field_def {
         const intern_string_t fd_name;
-        const intern_string_t fd_sql_name;
-        logline_value::kind_t fd_kind;
-        bool fd_identifier;
+        logline_value_meta fd_meta;
         std::string fd_collator;
         int fd_numeric_index;
 
         explicit field_def(const intern_string_t name)
             : fd_name(name),
-              fd_sql_name(intern_string::lookup(sql_safe_ident(name.to_string_fragment()))),
-              fd_kind(logline_value::VALUE_TEXT),
-              fd_identifier(false),
+              fd_meta(intern_string::lookup(sql_safe_ident(name.to_string_fragment())),
+                      value_kind_t::VALUE_TEXT),
               fd_numeric_index(-1) {
         };
 
-        field_def(const char *name, logline_value::kind_t kind, bool ident = false, std::string coll = "")
-            : fd_name(intern_string::lookup(name)),
-              fd_sql_name(intern_string::lookup(sql_safe_ident(string_fragment(name)))),
-              fd_kind(kind),
-              fd_identifier(ident),
-              fd_collator(std::move(coll)),
-              fd_numeric_index(-1) {
-
+        field_def(const intern_string_t name, logline_value_meta meta)
+            : fd_name(name), fd_meta(meta), fd_numeric_index(-1) {
         }
 
-        field_def &with_kind(logline_value::kind_t kind,
+        field_def(int col, const char *name, value_kind_t kind, bool ident = false, std::string coll = "")
+            : fd_name(intern_string::lookup(name)),
+              fd_meta(intern_string::lookup(sql_safe_ident(string_fragment(name))),
+                      kind,
+                      col),
+              fd_collator(std::move(coll)),
+              fd_numeric_index(-1) {
+            this->fd_meta.lvm_identifier = ident;
+        }
+
+        field_def &with_kind(value_kind_t kind,
                              bool identifier = false,
                              const std::string &collator = "") {
-            this->fd_kind = kind;
-            this->fd_identifier = identifier;
+            this->fd_meta.lvm_kind = kind;
+            this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
         };
@@ -893,6 +888,19 @@ public:
             return *this;
         }
     };
+
+    struct field_to_struct_t {
+        field_to_struct_t(const char *prefix, const char *struct_name)
+            : fs_prefix(prefix),
+              fs_struct_name(intern_string::lookup(struct_name)) {
+        }
+
+        const char *fs_prefix;
+        intern_string_t fs_struct_name;
+    };
+
+    static const std::vector<field_def> KNOWN_FIELDS;
+    const static std::vector<field_to_struct_t> KNOWN_STRUCT_FIELDS;
 
     w3c_log_format() {
         this->lf_is_self_describing = true;
@@ -987,9 +995,9 @@ public:
             }
 
             if (fd.fd_numeric_index >= 0) {
-                switch (fd.fd_kind) {
-                    case logline_value::VALUE_INTEGER:
-                    case logline_value::VALUE_FLOAT: {
+                switch (fd.fd_meta.lvm_kind) {
+                    case value_kind_t::VALUE_INTEGER:
+                    case value_kind_t::VALUE_FLOAT: {
                         char field_copy[sf.length() + 1];
                         double val;
 
@@ -1030,86 +1038,9 @@ public:
                        std::vector<logline> &dst,
                        const line_info &li,
                        shared_buffer_ref &sbr) override {
-        static const field_def KNOWN_FIELDS[] = {
-            {
-                "cs-method",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-            },
-            {
-                "c-ip",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-                "ipaddress",
-            },
-            {
-                "cs-bytes",
-                logline_value::kind_t::VALUE_INTEGER,
-                false,
-            },
-            {
-                "cs-host",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-            },
-            {
-                "cs-uri-stem",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-                "naturalnocase",
-            },
-            {
-                "cs-uri-query",
-                logline_value::kind_t::VALUE_TEXT,
-                false,
-            },
-            {
-                "cs-username",
-                logline_value::kind_t::VALUE_TEXT,
-                false,
-            },
-            {
-                "cs-version",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-            },
-            {
-                "s-ip",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-                "ipaddress",
-            },
-            {
-                "s-port",
-                logline_value::kind_t::VALUE_INTEGER,
-                true,
-            },
-            {
-                "s-computername",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-            },
-            {
-                "s-sitename",
-                logline_value::kind_t::VALUE_TEXT,
-                true,
-            },
-            {
-                "sc-bytes",
-                logline_value::kind_t::VALUE_INTEGER,
-                false,
-            },
-            {
-                "sc-status",
-                logline_value::kind_t::VALUE_INTEGER,
-                false,
-            },
-            {
-                "time-taken",
-                logline_value::kind_t::VALUE_FLOAT,
-                false,
-            },
-        };
+        static auto W3C_LOG_NAME = intern_string::lookup("w3c_log");
+        static auto X_FIELDS_NAME = intern_string::lookup("x_fields");
+        static auto X_FIELDS_IDX = 0;
 
         if (!this->wlf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);
@@ -1157,13 +1088,11 @@ public:
                     this->wlf_time_scanner.set_base_time(tv.tv_sec);
                 }
             } else if (directive == "#Fields:") {
-                hasher id_hash;
                 int numeric_count = 0;
 
                 do {
                     string_fragment sf = *iter;
 
-                    id_hash.update(sf);
                     sf.trim(")");
                     auto field_iter = std::find_if(begin(KNOWN_FIELDS),
                                                    end(KNOWN_FIELDS),
@@ -1172,14 +1101,43 @@ public:
                                                    });
                     if (field_iter != end(KNOWN_FIELDS)) {
                         this->wlf_field_defs.emplace_back(*field_iter);
-                    } else {
+                    } else if (sf == "date" || sf == "time") {
                         this->wlf_field_defs.emplace_back(
                             intern_string::lookup(sf));
+                    } else {
+                        const auto fs_iter = std::find_if(
+                            begin(KNOWN_STRUCT_FIELDS),
+                            end(KNOWN_STRUCT_FIELDS),
+                            [&sf](auto elem) {
+                                return sf.startswith(elem.fs_prefix);
+                            });
+                        if (fs_iter != end(KNOWN_STRUCT_FIELDS)) {
+                            auto field_name = intern_string::lookup(sf.substr(3));
+                            this->wlf_field_defs.emplace_back(
+                                field_name, logline_value_meta(
+                                    field_name,
+                                    value_kind_t::VALUE_TEXT,
+                                    KNOWN_FIELDS.size() + 1 +
+                                    std::distance(begin(KNOWN_STRUCT_FIELDS), fs_iter),
+                                    this)
+                                    .with_struct_name(fs_iter->fs_struct_name));
+                        } else {
+                            auto field_name = intern_string::lookup(sf);
+                            this->wlf_field_defs.emplace_back(
+                                field_name,
+                                logline_value_meta(field_name,
+                                                   value_kind_t::VALUE_TEXT,
+                                                   KNOWN_FIELDS.size() +
+                                                   X_FIELDS_IDX,
+                                                   this)
+                                    .with_struct_name(X_FIELDS_NAME));
+                        }
                     }
                     auto& fd = this->wlf_field_defs.back();
-                    switch (fd.fd_kind) {
-                        case logline_value::kind_t::VALUE_FLOAT:
-                        case logline_value::kind_t::VALUE_INTEGER:
+                    fd.fd_meta.lvm_format = nonstd::make_optional(this);
+                    switch (fd.fd_meta.lvm_kind) {
+                        case value_kind_t::VALUE_FLOAT:
+                        case value_kind_t::VALUE_INTEGER:
                             fd.with_numeric_index(numeric_count);
                             numeric_count += 1;
                             break;
@@ -1190,8 +1148,7 @@ public:
                     ++iter;
                 } while (iter != ss.end());
 
-                this->wlf_format_name = intern_string::lookup(fmt::format(
-                    "w3c_{}_log", id_hash.to_string().substr(0, 6)));
+                this->wlf_format_name = W3C_LOG_NAME;
                 this->lf_value_stats.resize(numeric_count);
             }
         }
@@ -1223,30 +1180,26 @@ public:
             }
 
             const field_def &fd = this->wlf_field_defs[iter.index()];
-            logline_value::kind_t kind = fd.fd_kind;
 
             if (sf == "-") {
                 sf.invalidate();
-                kind = logline_value::VALUE_NULL;
             }
 
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
             if (lr.is_valid()) {
-                values.emplace_back(fd.fd_sql_name,
-                                    sf.startswith("\"") ?
-                                    logline_value::kind_t::VALUE_W3C_QUOTED :
-                                    kind,
-                                    sbr,
-                                    fd.fd_identifier,
-                                    nullptr,
-                                    iter.index(),
-                                    lr.lr_start,
-                                    lr.lr_end,
-                                    false,
-                                    this);
+                values.emplace_back(fd.fd_meta, sbr, lr);
+                if (sf.startswith("\"")) {
+                    auto& meta = values.back().lv_meta;
+
+                    if (meta.lvm_kind == value_kind_t::VALUE_TEXT) {
+                        meta.lvm_kind = value_kind_t::VALUE_W3C_QUOTED;
+                    } else {
+                        meta.lvm_kind = value_kind_t::VALUE_NULL;
+                    }
+                }
             } else {
-                values.emplace_back(fd.fd_sql_name, this);
+                values.emplace_back(fd.fd_meta);
             }
         }
     };
@@ -1255,7 +1208,7 @@ public:
         const logline_value_stats *retval = nullptr;
 
         for (const auto & wlf_field_def : this->wlf_field_defs) {
-            if (wlf_field_def.fd_sql_name == name) {
+            if (wlf_field_def.fd_meta.lvm_name == name) {
                 if (wlf_field_def.fd_numeric_index < 0) {
                     break;
                 }
@@ -1279,19 +1232,31 @@ public:
         }
 
         void get_columns(vector<vtab_column> &cols) const override {
-            for (const auto &fd : this->wlt_format.wlf_field_defs) {
-                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_kind);
+            for (const auto &fd : KNOWN_FIELDS) {
+                auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
+                    fd.fd_meta.lvm_kind);
 
-                cols.emplace_back(fd.fd_sql_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
+                cols.emplace_back(fd.fd_meta.lvm_name.to_string(),
+                                  type_pair.first,
+                                  fd.fd_collator,
+                                  false,
+                                  "",
+                                  type_pair.second);
+            }
+            cols.emplace_back("x_fields");
+            cols.back().with_comment(
+                "A JSON-object that contains fields that are not first-class columns");
+            for (const auto& fs : KNOWN_STRUCT_FIELDS) {
+                cols.emplace_back(fs.fs_struct_name.to_string());
             }
         };
 
         void get_foreign_keys(std::vector<std::string> &keys_inout) const override {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
-            for (const auto &fd : this->wlt_format.wlf_field_defs) {
-                if (fd.fd_identifier) {
-                    keys_inout.push_back(fd.fd_sql_name.to_string());
+            for (const auto &fd : KNOWN_FIELDS) {
+                if (fd.fd_meta.lvm_identifier) {
+                    keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
@@ -1330,6 +1295,116 @@ public:
     date_time_scanner wlf_time_scanner;
     intern_string_t wlf_format_name;
     vector<field_def> wlf_field_defs;
+};
+
+static int KNOWN_FIELD_INDEX = 0;
+const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-method",
+        value_kind_t::VALUE_TEXT,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "c-ip",
+        value_kind_t::VALUE_TEXT,
+        true,
+        "ipaddress",
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-bytes",
+        value_kind_t::VALUE_INTEGER,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-host",
+        value_kind_t::VALUE_TEXT,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-uri-stem",
+        value_kind_t::VALUE_TEXT,
+        true,
+        "naturalnocase",
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-uri-query",
+        value_kind_t::VALUE_TEXT,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-username",
+        value_kind_t::VALUE_TEXT,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "cs-version",
+        value_kind_t::VALUE_TEXT,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "s-ip",
+        value_kind_t::VALUE_TEXT,
+        true,
+        "ipaddress",
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "s-port",
+        value_kind_t::VALUE_INTEGER,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "s-computername",
+        value_kind_t::VALUE_TEXT,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "s-sitename",
+        value_kind_t::VALUE_TEXT,
+        true,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "sc-bytes",
+        value_kind_t::VALUE_INTEGER,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "sc-status",
+        value_kind_t::VALUE_INTEGER,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "sc-substatus",
+        value_kind_t::VALUE_INTEGER,
+        false,
+    },
+    {
+        KNOWN_FIELD_INDEX++,
+        "time-taken",
+        value_kind_t::VALUE_FLOAT,
+        false,
+    },
+};
+
+const std::vector<w3c_log_format::field_to_struct_t> w3c_log_format::KNOWN_STRUCT_FIELDS = {
+    {"cs(", "cs_headers"},
+    {"sc(", "sc_headers"},
+    {"rs(", "rs_headers"},
+    {"sr(", "sr_headers"},
 };
 
 log_format::register_root_format<bro_log_format> bro_log_instance;

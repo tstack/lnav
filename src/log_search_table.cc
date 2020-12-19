@@ -35,6 +35,8 @@
 
 const static std::string LOG_MSG_INSTANCE = "log_msg_instance";
 static auto instance_name = intern_string::lookup("log_msg_instance");
+static auto instance_meta = logline_value_meta(
+    instance_name, value_kind_t::VALUE_INTEGER, 0);
 static auto empty = intern_string::lookup("", 0);
 
 log_search_table::log_search_table(const char *regex,
@@ -58,6 +60,7 @@ void log_search_table::get_columns_int(std::vector<vtab_column> &cols)
         std::string colname;
         int sqlite_type = SQLITE3_TEXT;
 
+        colname = cn.add_column(this->lst_regex.name_for_capture(lpc));
         if (this->lst_regex.captures().size() ==
             (size_t) this->lst_regex.get_capture_count()) {
             auto iter = this->lst_regex.cap_begin() + lpc;
@@ -66,20 +69,25 @@ void log_search_table::get_columns_int(std::vector<vtab_column> &cols)
             sqlite_type = guess_type_from_pcre(cap_re, collator);
             switch (sqlite_type) {
                 case SQLITE_FLOAT:
-                    this->lst_column_types.push_back(
-                        logline_value::VALUE_FLOAT);
+                    this->lst_column_metas.emplace_back(
+                        intern_string::lookup(colname),
+                        value_kind_t::VALUE_FLOAT,
+                        cols.size());
                     break;
                 case SQLITE_INTEGER:
-                    this->lst_column_types.push_back(
-                        logline_value::VALUE_INTEGER);
+                    this->lst_column_metas.emplace_back(
+                        intern_string::lookup(colname),
+                        value_kind_t::VALUE_INTEGER,
+                        cols.size());
                     break;
                 default:
-                    this->lst_column_types.push_back(
-                        logline_value::VALUE_TEXT);
+                    this->lst_column_metas.emplace_back(
+                        intern_string::lookup(colname),
+                        value_kind_t::VALUE_TEXT,
+                        cols.size());
                     break;
             }
         }
-        colname = cn.add_column(this->lst_regex.name_for_capture(lpc));
         cols.emplace_back(colname, sqlite_type, collator);
     }
 }
@@ -136,14 +144,10 @@ log_search_table::extract(std::shared_ptr<logfile> lf, uint64_t line_number,
                           shared_buffer_ref &line,
                           std::vector<logline_value> &values)
 {
-    int next_column = 0;
-
-    values.emplace_back(instance_name, this->lst_instance, lf->get_format().get());
-    values.back().lv_column = next_column++;
+    values.emplace_back(instance_meta, this->lst_instance);
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
         auto cap = this->lst_match_context[lpc];
-        values.emplace_back(empty, this->lst_column_types[lpc], line,
-                            false, nullptr, -1, cap->c_begin, cap->c_end);
-        values.back().lv_column = next_column++;
+        values.emplace_back(this->lst_column_metas[lpc], line,
+                            line_range{cap->c_begin, cap->c_end});
     }
 }

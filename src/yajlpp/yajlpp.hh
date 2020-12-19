@@ -222,6 +222,9 @@ struct json_path_handler_base {
     bool           jph_is_array;
     bool           jph_is_pattern_property{false};
     std::vector<std::string> jph_examples;
+
+    std::function<int(yajlpp_parse_context *, int)> jph_bool_cb;
+    std::function<int(yajlpp_parse_context *, const unsigned char *str, size_t len)> jph_str_cb;
 };
 
 struct json_path_handler;

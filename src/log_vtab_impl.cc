@@ -127,33 +127,33 @@ std::string log_vtab_impl::get_table_statement()
     return oss.str();
 }
 
-pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
+pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
 {
     int type = 0;
     unsigned int subtype = 0;
 
     switch (kind) {
-        case logline_value::VALUE_JSON:
+        case value_kind_t::VALUE_JSON:
             type = SQLITE3_TEXT;
             subtype = 74;
             break;
-        case logline_value::VALUE_NULL:
-        case logline_value::VALUE_TEXT:
-        case logline_value::VALUE_STRUCT:
-        case logline_value::VALUE_QUOTED:
-        case logline_value::VALUE_W3C_QUOTED:
-        case logline_value::VALUE_TIMESTAMP:
+        case value_kind_t::VALUE_NULL:
+        case value_kind_t::VALUE_TEXT:
+        case value_kind_t::VALUE_STRUCT:
+        case value_kind_t::VALUE_QUOTED:
+        case value_kind_t::VALUE_W3C_QUOTED:
+        case value_kind_t::VALUE_TIMESTAMP:
             type = SQLITE3_TEXT;
             break;
-        case logline_value::VALUE_FLOAT:
+        case value_kind_t::VALUE_FLOAT:
             type = SQLITE_FLOAT;
             break;
-        case logline_value::VALUE_BOOLEAN:
-        case logline_value::VALUE_INTEGER:
+        case value_kind_t::VALUE_BOOLEAN:
+        case value_kind_t::VALUE_INTEGER:
             type = SQLITE_INTEGER;
             break;
-        case logline_value::VALUE_UNKNOWN:
-        case logline_value::VALUE__MAX:
+        case value_kind_t::VALUE_UNKNOWN:
+        case value_kind_t::VALUE__MAX:
             ensure(0);
             break;
     }
@@ -573,76 +573,121 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                               logline_value_cmp(NULL, sub_col));
 
             if (lv_iter != vc->line_values.end()) {
-                switch (lv_iter->lv_kind) {
-                case logline_value::VALUE_NULL:
-                    sqlite3_result_null(ctx);
-                    break;
-                case logline_value::VALUE_JSON: {
+                if (!lv_iter->lv_meta.lvm_struct_name.empty()) {
+                    yajlpp_gen gen;
+                    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                    {
+                        yajlpp_map root(gen);
+
+                        for (auto &lv_struct : vc->line_values) {
+                            if (lv_struct.lv_meta.lvm_column != sub_col) {
+                                continue;
+                            }
+
+                            root.gen(lv_struct.lv_meta.lvm_name);
+                            switch (lv_struct.lv_meta.lvm_kind) {
+                                case value_kind_t::VALUE_NULL:
+                                    root.gen();
+                                    break;
+                                case value_kind_t::VALUE_BOOLEAN:
+                                    root.gen((bool) lv_struct.lv_value.i);
+                                    break;
+                                case value_kind_t::VALUE_INTEGER:
+                                    root.gen(lv_struct.lv_value.i);
+                                    break;
+                                case value_kind_t::VALUE_FLOAT:
+                                    root.gen(lv_struct.lv_value.d);
+                                    break;
+                                default:
+                                    root.gen(lv_struct.to_string());
+                                    break;
+                            }
+                        }
+                    }
+
+                    auto sf = gen.to_string_fragment();
                     sqlite3_result_text(ctx,
-                                        lv_iter->text_value(),
-                                        lv_iter->text_length(),
+                                        sf.data(),
+                                        sf.length(),
                                         SQLITE_TRANSIENT);
                     sqlite3_result_subtype(ctx, 74);
-                    break;
-                }
-                case logline_value::VALUE_STRUCT:
-                case logline_value::VALUE_TEXT:
-                case logline_value::VALUE_TIMESTAMP: {
-                    sqlite3_result_text(ctx,
-                                        lv_iter->text_value(),
-                                        lv_iter->text_length(),
-                                        SQLITE_TRANSIENT);
-                    break;
-                }
-                case logline_value::VALUE_W3C_QUOTED:
-                case logline_value::VALUE_QUOTED:
-                    if (lv_iter->lv_sbr.length() == 0) {
-                        sqlite3_result_text(ctx, "", 0, SQLITE_STATIC);
-                    }
-                    else {
-                        const char *text_value = lv_iter->lv_sbr.get_data();
-                        size_t text_len = lv_iter->lv_sbr.length();
-
-                        switch (text_value[0]) {
-                        case '\'':
-                        case '"': {
-                            char *val = (char *)sqlite3_malloc(text_len);
-
-                            if (val == nullptr) {
-                                sqlite3_result_error_nomem(ctx);
-                            }
-                            else {
-                                auto unquote_func =
-                                    lv_iter->lv_kind == logline_value::VALUE_W3C_QUOTED ?
-                                    unquote_w3c : unquote;
-
-                                size_t unquoted_len = unquote_func(val, text_value, text_len);
-                                sqlite3_result_text(ctx, val, unquoted_len, sqlite3_free);
-                            }
+                } else {
+                    switch (lv_iter->lv_meta.lvm_kind) {
+                        case value_kind_t::VALUE_NULL:
+                            sqlite3_result_null(ctx);
+                            break;
+                        case value_kind_t::VALUE_JSON: {
+                            sqlite3_result_text(ctx,
+                                                lv_iter->text_value(),
+                                                lv_iter->text_length(),
+                                                SQLITE_TRANSIENT);
+                            sqlite3_result_subtype(ctx, 74);
                             break;
                         }
-                        default: {
-                            sqlite3_result_text(ctx, text_value,
-                                lv_iter->lv_sbr.length(), SQLITE_TRANSIENT);
+                        case value_kind_t::VALUE_STRUCT:
+                        case value_kind_t::VALUE_TEXT:
+                        case value_kind_t::VALUE_TIMESTAMP: {
+                            sqlite3_result_text(ctx,
+                                                lv_iter->text_value(),
+                                                lv_iter->text_length(),
+                                                SQLITE_TRANSIENT);
                             break;
                         }
-                        }
+                        case value_kind_t::VALUE_W3C_QUOTED:
+                        case value_kind_t::VALUE_QUOTED:
+                            if (lv_iter->lv_sbr.empty()) {
+                                sqlite3_result_text(ctx, "", 0, SQLITE_STATIC);
+                            } else {
+                                const char *text_value = lv_iter->lv_sbr.get_data();
+                                size_t text_len = lv_iter->lv_sbr.length();
+
+                                switch (text_value[0]) {
+                                    case '\'':
+                                    case '"': {
+                                        char *val = (char *) sqlite3_malloc(
+                                            text_len);
+
+                                        if (val == nullptr) {
+                                            sqlite3_result_error_nomem(ctx);
+                                        } else {
+                                            auto unquote_func =
+                                                lv_iter->lv_meta.lvm_kind ==
+                                                value_kind_t::VALUE_W3C_QUOTED ?
+                                                unquote_w3c : unquote;
+
+                                            size_t unquoted_len = unquote_func(
+                                                val, text_value, text_len);
+                                            sqlite3_result_text(ctx, val,
+                                                                unquoted_len,
+                                                                sqlite3_free);
+                                        }
+                                        break;
+                                    }
+                                    default: {
+                                        sqlite3_result_text(ctx, text_value,
+                                                            lv_iter->lv_sbr.length(),
+                                                            SQLITE_TRANSIENT);
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+
+                        case value_kind_t::VALUE_BOOLEAN:
+                        case value_kind_t::VALUE_INTEGER:
+                            sqlite3_result_int64(ctx, lv_iter->lv_value.i);
+                            break;
+
+                        case value_kind_t::VALUE_FLOAT:
+                            sqlite3_result_double(ctx, lv_iter->lv_value.d);
+                            break;
+
+                        case value_kind_t::VALUE_UNKNOWN:
+                        case value_kind_t::VALUE__MAX:
+                            require(0);
+                            break;
                     }
-                    break;
-
-                case logline_value::VALUE_BOOLEAN:
-                case logline_value::VALUE_INTEGER:
-                    sqlite3_result_int64(ctx, lv_iter->lv_value.i);
-                    break;
-
-                case logline_value::VALUE_FLOAT:
-                    sqlite3_result_double(ctx, lv_iter->lv_value.d);
-                    break;
-
-                case logline_value::VALUE_UNKNOWN:
-                case logline_value::VALUE__MAX:
-                    require(0);
-                    break;
                 }
             }
             else {

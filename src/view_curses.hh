@@ -283,6 +283,10 @@ public:
 
     attr_t attrs_for_ident(const char *str, size_t len) const;
 
+    attr_t attrs_for_ident(intern_string_t str) const {
+        return this->attrs_for_ident(str.get(), str.size());
+    }
+
     attr_t attrs_for_ident(const std::string &str) const {
         return this->attrs_for_ident(str.c_str(), str.length());
     };

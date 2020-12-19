@@ -1,9 +1,10 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "bad_sample_log": {
         "title": "invalid sample test",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d+): (?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d+): (?<pid>\\w+) (?<body>.*)$"
             },
             "semi": {
                 "pattern": "^(?<timestamp>\\d+); (?<body>\\w+)$"
@@ -12,6 +13,11 @@
         "timestamp-format" : [
             "%i"
         ],
+        "value": {
+            "pid": {
+                "kind": "foo"
+            }
+        },
         "sample": [
             {
                 "line": "1428634687123; foo bar"
