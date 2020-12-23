@@ -47,12 +47,12 @@ The following software packages are required to build lnav:
 
 Lnav follows the usual GNU style for configuring and installing software:
 
+Run `./autogen.sh` if compiling from a cloned repository.
+
     $ ./configure
     $ make
     $ sudo make install
 
-__Run `./autogen.sh` before running any of the above commands when
-compiling from a cloned repository.__
 
 ## Cygwin users
 
