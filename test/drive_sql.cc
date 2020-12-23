@@ -11,6 +11,7 @@
 #include "auto_mem.hh"
 #include "sqlite-extension-func.hh"
 #include "regexp_vtab.hh"
+#include "xpath_vtab.hh"
 
 struct callback_state {
     int cs_row;
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
         }
 
         register_regexp_vtab(db.in());
+        register_xpath_vtab(db.in());
 
         if (sqlite3_exec(db.in(),
             stmt.c_str(),

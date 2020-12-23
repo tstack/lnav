@@ -1236,7 +1236,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), substr(), trim(), unicode(), upper()
+  startswith(), strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To get a string with the code points 0x48 and 0x49:
    ;SELECT char(0x48, 0x49)
@@ -1256,7 +1256,7 @@ See Also
   leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To search for the string 'abc' within 'abcabc' and starting at position 2:
    ;SELECT charindex('abc', 'abcabc', 2)
@@ -1406,7 +1406,7 @@ See Also
   leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To test if the string 'notbad.jpg' ends with '.jpg':
    ;SELECT endswith('notbad.jpg', '.jpg')
@@ -1440,7 +1440,7 @@ See Also
   leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To extract key/value pairs from a string:
    ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
@@ -1522,7 +1522,7 @@ See Also
   leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log'
    :
@@ -1549,7 +1549,7 @@ See Also
   length(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
   regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
   reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), strfilter(), 
-  substr(), trim(), unicode(), upper()
+  substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To produce a hash of all of the values of 'column1':
    ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
@@ -1593,7 +1593,7 @@ See Also
   leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To test get the position of 'b' in the string 'abc':
    ;SELECT instr('abc', 'b')
@@ -1798,7 +1798,7 @@ See Also
   instr(), length(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
   regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
   reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), strfilter(), 
-  substr(), trim(), unicode(), upper()
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the first character of the string 'abc':
    ;SELECT leftstr('abc', 1)
@@ -1819,7 +1819,7 @@ See Also
   instr(), leftstr(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To get the length of the string 'abc':
    ;SELECT length('abc')
@@ -1914,7 +1914,7 @@ See Also
   instr(), leftstr(), length(), ltrim(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To lowercase the string 'AbC':
    ;SELECT lower('AbC')
@@ -1933,7 +1933,7 @@ See Also
   instr(), leftstr(), length(), lower(), padc(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To trim the leading whitespace from the string '   abc':
    ;SELECT ltrim('   abc')
@@ -2031,7 +2031,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padl(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padc('abc', 6) || 'def'
@@ -2053,7 +2053,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padr(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padl('abc', 6)
@@ -2075,7 +2075,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), printf(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padr('abc', 6) || 'def'
@@ -2131,7 +2131,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   proper(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To substitute 'World' into the string 'Hello, %s!':
    ;SELECT printf('Hello, %s!', 'World')
@@ -2155,7 +2155,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), regexp_capture(), regexp_match(), regexp_replace(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To capitalize the words in the string 'hello, world!':
    ;SELECT proper('hello, world!')
@@ -2259,7 +2259,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_match(), regexp_replace(), replace(), replicate(), 
   reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), strfilter(), 
-  substr(), trim(), unicode(), upper()
+  substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
@@ -2277,7 +2277,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_replace(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), substr(), trim(), unicode(), upper()
+  startswith(), strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To capture the digits from the string '123':
    ;SELECT regexp_match('(\d+)', '123')
@@ -2307,7 +2307,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_match(), replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
    ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
@@ -2331,7 +2331,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To replace the string 'x' with 'z' in 'abc':
    ;SELECT replace('abc', 'x', 'z')
@@ -2352,7 +2352,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To repeat the string 'abc' three times:
    ;SELECT replicate('abc', 3)
@@ -2368,7 +2368,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), rightstr(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To reverse the string 'abc':
    ;SELECT reverse('abc')
@@ -2386,7 +2386,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rtrim(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the last character of the string 'abc':
    ;SELECT rightstr('abc', 1)
@@ -2446,7 +2446,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), spooky_hash(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To trim the whitespace from the end of the string 'abc   ':
    ;SELECT rtrim('abc   ')
@@ -2488,7 +2488,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), startswith(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To produce a hash for the string 'Hello, World!':
    ;SELECT spooky_hash('Hello, World!')
@@ -2560,7 +2560,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  strfilter(), substr(), trim(), unicode(), upper()
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To test if the string 'foobar' starts with 'foo':
    ;SELECT startswith('foobar', 'foo')
@@ -2582,7 +2582,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), substr(), trim(), unicode(), upper()
+  startswith(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To get the 'b', 'c', and 'd' characters from the string 'abcabc':
    ;SELECT strfilter('abcabc', 'bcd')
@@ -2630,7 +2630,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), trim(), unicode(), upper()
+  startswith(), strfilter(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the substring starting at the second character until the end of the string 'abc'
    :
@@ -2756,7 +2756,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), substr(), unicode(), upper()
+  startswith(), strfilter(), substr(), unicode(), upper(), xpath()
 Examples
 #1 To trim whitespace from the start and end of the string '    abc   ':
    ;SELECT trim('    abc   ')
@@ -2793,7 +2793,7 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), substr(), trim(), upper()
+  startswith(), strfilter(), substr(), trim(), upper(), xpath()
 Example
 #1 To get the unicode code point for the first character of 'abc':
    ;SELECT unicode('abc')
@@ -2816,10 +2816,41 @@ See Also
   instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
   printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), strfilter(), substr(), trim(), unicode()
+  startswith(), strfilter(), substr(), trim(), unicode(), xpath()
 Example
 #1 To uppercase the string 'aBc':
    ;SELECT upper('aBc')
+   
+
+
+Synopsis
+  xpath(xpath, xmldoc) -- A table-valued function that executes an xpath 
+    expression over an XML string and returns the selected values.
+Parameters
+  xpath    The XPATH expression to evaluate over the XML document.
+  xmldoc   The XML document as a string.
+Results
+  result      The result of the XPATH expression.
+  node_path   The absolute path to the node containing the result.
+  node_attr   The node's attributes stored in JSON object.
+  node_text   The node's text value.
+See Also
+  char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
+  instr(), leftstr(), length(), lower(), ltrim(), padc(), padl(), padr(), 
+  printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), strfilter(), substr(), trim(), unicode(), upper()
+Examples
+#1 To select the XML nodes on the path '/abc/def':
+   ;SELECT * FROM xpath('/abc/def', '<abc><def a="b">Hello</def><def>Bye</def></abc>')
+   
+
+#2 To select all 'a' attributes on the path '/abc/def':
+   ;SELECT * FROM xpath('/abc/def/@a', '<abc><def a="b">Hello</def><def>Bye</def></abc>')
+   
+
+#3 To select the text nodes on the path '/abc/def':
+   ;SELECT * FROM xpath('/abc/def/text()', '<abc><def a="b">Hello &#x2605;</def></abc>')
    
 
 

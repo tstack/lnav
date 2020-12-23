@@ -376,7 +376,7 @@ void execute_examples()
                         attr_line_t al;
                         dos.list_value_for_overlay(db_tc,
                                                    0, 1,
-                                                   vis_line_t(0),
+                                                   0_vl,
                                                    al);
                         result.append(al);
                         for (int lpc = 0;
@@ -387,6 +387,10 @@ void execute_examples()
                                                     false);
                             dls.text_attrs_for_line(db_tc, lpc,
                                                     al.get_attrs());
+                            std::replace(al.get_string().begin(),
+                                         al.get_string().end(),
+                                         '\n',
+                                         ' ');
                             result.append("\n")
                                 .append(al);
                         }

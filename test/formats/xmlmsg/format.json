@@ -1,0 +1,67 @@
+{
+    "xml_msg_log": {
+        "title": "",
+        "description": "",
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\]\\s+(?<level>\\w+)\\s+\\[(?<module>[^:]*):(?<line>\\d+)\\]\\s*(?<body>[^\\n]*)\\n?(?<msg_data>(?:.|\\n)*)"
+            }
+        },
+        "level": {
+            "critical": "CRITICAL",
+            "error": "ERROR",
+            "warning": "WARNING",
+            "info": "INFO",
+            "debug": "DEBUG"
+        },
+        "value": {
+            "module": {
+                "kind": "string",
+                "identifier": true,
+                "description": "Python source module which emitted log entry"
+            },
+            "line": {
+                "kind": "integer",
+                "description": "Line number – in the module – where log entry was emitted"
+            },
+            "head": {
+                "kind": "string",
+                "description": "<head>",
+                "hidden": true
+            },
+            "source": {
+                "kind": "string",
+                "description": "request <source>",
+                "hidden": true
+            },
+            "msg_data": {
+                "kind": "string"
+            }
+        },
+        "highlights": {
+            "client_id": {
+                "pattern": "(?<=>)\\d+(?=<\/client>)",
+                "color": "Orange1",
+                "underline": true
+            },
+            "reply_error": {
+                "pattern": "(?<=<result>)ERROR(?=</result>)",
+                "color": "Red1"
+            }
+        },
+        "sample": [
+            {
+                "line": "[2020-12-10 06:56:41,477] INFO [m:108] Calling 'x' with params:",
+                "level": "info"
+            },
+            {
+                "line": "[2020-12-10 06:56:41,092] DEBUG [m:69] Full request text:\n<?xml version='1.0' encoding='iso-8859-2'?>\n<a-request>\n  <head>\n    x\n  </head>\n  <source>\n    x\n  </source>\n  <request>\n    <name>\n      x\n    </name>\n  </request>\n</a-request>\n",
+                "level": "debug"
+            },
+            {
+                "line": "[2020-12-10 06:56:41,099] DEBUG [m:85] Full reply text:\n<?xml version='1.0' encoding='iso-8859-2'?>\n<a-reply>\n  <head>\n    x\n  </head>\n  <reply>\n    <status>\n      <result>OK</result>\n    </status>\n    <name>\n      x\n    </name>\n  </reply>\n  <technical-track>\n    x\n  </technical-track>\n</a-reply>\n",
+                "level": "debug"
+            }
+        ]
+    }
+}

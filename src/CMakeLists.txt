@@ -291,6 +291,7 @@ add_library(diag STATIC
         papertrail_proc.cc
         ptimec_rt.cc
         pretty_printer.cc
+        pugixml/pugixml.cpp
         readline_callbacks.cc
         readline_curses.cc
         readline_highlighters.cc
@@ -330,6 +331,7 @@ add_library(diag STATIC
         vt52_curses.cc
         vtab_module.cc
         log_vtab_impl.cc
+        xpath_vtab.cc
         xterm_mouse.cc
         yajlpp/yajlpp.cc
         yajl/yajl.c
@@ -407,6 +409,8 @@ add_library(diag STATIC
         pretty_printer.hh
         preview_status_source.hh
         ptimec.hh
+        pugixml/pugiconfig.hpp
+        pugixml/pugixml.hpp
         readline_callbacks.hh
         readline_possibilities.hh
         regexp_vtab.hh
@@ -444,6 +448,7 @@ add_library(diag STATIC
         vtab_module_json.hh
         yajlpp/yajlpp.hh
         yajlpp/yajlpp_def.hh
+        xpath_vtab.hh
 
         mapbox/recursive_wrapper.hpp
         mapbox/variant.hpp

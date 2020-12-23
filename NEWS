@@ -2,6 +2,8 @@ lnav v0.9.1:
      Features:
      * Added the ':filter-expr' command to filter log messages based on an SQL
        expression.  This command allows much greater control over filtering.
+     * Added an 'xpath()' table-valued function for extracting values from
+       strings containing XML snippets.
      * Added the ':prompt' command to allow for more customization of prompts.
        Combined with a custom keymapping, you can now open a prompt and prefill
        it with a given value.  For example, a key could be bound to the

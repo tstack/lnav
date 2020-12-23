@@ -28,6 +28,7 @@
 #include "elem_to_json.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
+#include "safe/safe.h"
 #include "spookyhash/SpookyV2.h"
 
 #include "optional.hpp"
@@ -43,12 +44,14 @@ typedef struct {
 
 static cache_entry *find_re(const char *re)
 {
-    static unordered_map<string, cache_entry> CACHE;
+    using safe_cache = safe::Safe<unordered_map<string, cache_entry>>;
+    static safe_cache CACHE;
 
+    safe::WriteAccess<safe_cache> wcache(CACHE);
     string re_str = re;
-    auto iter = CACHE.find(re_str);
+    auto iter = wcache->find(re_str);
 
-    if (iter == CACHE.end()) {
+    if (iter == wcache->end()) {
         cache_entry c;
 
         c.re2 = make_shared<pcrepp>(re_str);
@@ -59,9 +62,9 @@ static cache_entry *find_re(const char *re)
             e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
             throw pcrepp::error(e2.in(), 0);
         }
-        CACHE[re_str] = c;
+        auto pair = wcache->insert(std::make_pair(re_str, c));
 
-        iter = CACHE.find(re_str);
+        iter = pair.first;
     }
 
     return &iter->second;

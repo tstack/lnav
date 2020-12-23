@@ -1,5 +1,5 @@
 
-SUBDIRS = base fmtlib pcrepp yajl yajlpp .
+SUBDIRS = base fmtlib pcrepp pugixml yajl yajlpp .
 
 bin_PROGRAMS = lnav
 
@@ -224,6 +224,7 @@ LDADD = \
 	base/libbase.a \
 	fmtlib/libcppfmt.a \
 	pcrepp/libpcrepp.a \
+	pugixml/libpugixml.a \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
 	$(READLINE_LIBS) \
@@ -369,6 +370,7 @@ noinst_HEADERS = \
 	vtab_module_json.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
+	xpath_vtab.hh \
 	xterm_mouse.hh \
 	spookyhash/SpookyV2.h \
 	ghc/filesystem.hpp \
@@ -484,6 +486,7 @@ libdiag_a_SOURCES = \
 	vt52_curses.cc \
 	vtab_module.cc \
 	log_vtab_impl.cc \
+	xpath_vtab.cc \
 	xterm_mouse.cc \
 	spookyhash/SpookyV2.cpp
 

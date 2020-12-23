@@ -118,6 +118,7 @@
 #include "file_vtab.hh"
 #include "regexp_vtab.hh"
 #include "fstat_vtab.hh"
+#include "xpath_vtab.hh"
 #include "textfile_highlighters.hh"
 #include "base/future_util.hh"
 
@@ -2184,6 +2185,7 @@ int main(int argc, char *argv[])
     register_views_vtab(lnav_data.ld_db.in());
     register_file_vtab(lnav_data.ld_db.in(), lnav_data.ld_active_files);
     register_regexp_vtab(lnav_data.ld_db.in());
+    register_xpath_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(

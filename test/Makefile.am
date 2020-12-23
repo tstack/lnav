@@ -77,6 +77,7 @@ LDADD = \
     $(top_builddir)/src/yajl/libyajl.a \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
+    $(top_builddir)/src/pugixml/libpugixml.a \
     $(CURSES_LIB) \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
@@ -169,6 +170,7 @@ dist_noinst_SCRIPTS = \
 	test_sql_json_func.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
+	test_sql_xml_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
@@ -337,6 +339,7 @@ TESTS = \
 	test_sql_fs_func.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
+	test_sql_xml_func.sh \
 	test_data_parser.sh \
 	test_pretty_print.sh \
 	test_vt52_curses.sh

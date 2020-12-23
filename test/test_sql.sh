@@ -819,7 +819,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n18
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n19
 }
 
 run_test schema_dump
@@ -836,6 +836,7 @@ CREATE VIEW lnav_view_filters_and_stats AS
   SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
+CREATE VIRTUAL TABLE xpath USING xpath_impl();
 CREATE VIRTUAL TABLE fstat USING fstat_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
