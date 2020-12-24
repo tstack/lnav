@@ -572,8 +572,8 @@ void rebuild_indexes()
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             lnav_data.ld_active_files.close_file(lf);
-        }
-        else {
+            file_iter = lnav_data.ld_active_files.fc_files.begin();
+        } else {
             ++file_iter;
         }
     }
