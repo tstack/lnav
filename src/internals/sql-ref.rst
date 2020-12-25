@@ -2683,12 +2683,12 @@ regexp_capture(*string*, *pattern*)
 
       ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
       match_index capture_index capture_name capture_count range_start range_stop content 
-                0             0 <NULL>                   3           0          3 a=1     
-                0             1                          3           0          1 a       
-                0             2                          3           2          3 1       
-                1             0 <NULL>                   3           5          8 b=2     
-                1             1                          3           5          6 b       
-                1             2                          3           7          8 2       
+                0             0 <NULL>                   3           1          4 a=1     
+                0             1                          3           1          2 a       
+                0             2                          3           3          4 1       
+                1             0 <NULL>                   3           6          9 b=2     
+                1             1                          3           6          7 b       
+                1             2                          3           8          9 2       
 
   **See Also:**
 

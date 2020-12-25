@@ -34,6 +34,9 @@ lnav v0.9.1:
        in the copy if they are enabled.
      * Log messages that cannot be parsed properly will be given an "invalid"
        log level and the invalid portions colored yellow.
+     * The range_start and range_stop values of the regexp_capture() results
+       now start at 1 instead of zero to match with what the other SQL string
+       functions expect.
 
      Fixes:
      * Unicode text can now be entered in prompts.

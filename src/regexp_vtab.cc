@@ -141,10 +141,10 @@ CREATE TABLE regexp_capture (
                 sqlite3_result_int64(ctx, vc.c_context.get_count());
                 break;
             case RC_COL_RANGE_START:
-                sqlite3_result_int64(ctx, cap.c_begin);
+                sqlite3_result_int64(ctx, cap.c_begin + 1);
                 break;
             case RC_COL_RANGE_STOP:
-                sqlite3_result_int64(ctx, cap.c_end);
+                sqlite3_result_int64(ctx, cap.c_end + 1);
                 break;
             case RC_COL_CONTENT:
                 if (cap.is_valid()) {
