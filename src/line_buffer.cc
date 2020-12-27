@@ -774,7 +774,9 @@ Result<shared_buffer_ref, std::string> line_buffer::read_range(const file_range 
         return Err(string("out-of-bounds"));
     }
 
-    this->fill_range(fr.fr_offset, fr.fr_size);
+    if (!this->fill_range(fr.fr_offset, fr.fr_size)) {
+        return Err(string("unable to read file"));
+    }
     line_start = this->get_range(fr.fr_offset, avail);
 
     if (fr.fr_size > avail) {

@@ -772,10 +772,10 @@ struct Result {
 
     template<typename Func>
     auto map(Func func) const {
-        auto value = this->storage().template get<T>();
-        using return_type = decltype(func(value));
+        using return_type = decltype(func(T{}));
 
         if (this->isOk()) {
+            auto value = this->storage().template get<T>();
             auto res = func(value);
             return Result<return_type, E>(types::Ok<return_type>(std::move(res)));
         }

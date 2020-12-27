@@ -116,21 +116,7 @@ public:
     void disown();
 
 private:
-    void copy_ref(const shared_buffer_ref &other) {
-        if (other.sb_data == nullptr) {
-            this->sb_owner = nullptr;
-            this->sb_data = nullptr;
-            this->sb_length = 0;
-        }
-        else if (other.sb_owner != nullptr) {
-            this->share(*other.sb_owner, other.sb_data, other.sb_length);
-        } else {
-            this->sb_owner = nullptr;
-            this->sb_data = (char *)malloc(other.sb_length);
-            memcpy(this->sb_data, other.sb_data, other.sb_length);
-            this->sb_length = other.sb_length;
-        }
-    }
+    void copy_ref(const shared_buffer_ref &other);
 
     auto_mem<char *> sb_backtrace;
     shared_buffer *sb_owner;
