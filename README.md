@@ -19,7 +19,8 @@ no setup.
 
 ## Contributing
 
-[Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+* [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+* [Make a one-time donation on Ko-fi](https://ko-fi.com/tstack)
 
 ## Features
 
