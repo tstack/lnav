@@ -2,6 +2,18 @@
 
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ";SELECT 1 AS c1, 'Hello ' || char(10) || 'World!' AS c2" \
+    -c ":write-csv-to -" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "writing CSV does not work" <<EOF
+c1,c2
+1,"Hello
+World!"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr :log_text LIKE '%How are%'" \
     "${test_dir}/logfile_multiline.0"
 

@@ -74,7 +74,7 @@ CREATE TABLE regexp_capture (
         string c_content;
         int c_index;
         int c_start_index;
-        bool c_matched;
+        bool c_matched{false};
         int c_match_index;
         sqlite3_int64 c_rowid;
 

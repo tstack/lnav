@@ -516,7 +516,6 @@ size_t duration2str(int64_t millis, std::string &value_out)
         {   60, "%qd%s",   "m" },
         {   24, "%qd%s",   "h" },
         {    0, "%qd%s",   "d" },
-        {    0, nullptr, nullptr }
     };
 
     struct rel_interval *curr_interval = intervals;
@@ -535,7 +534,7 @@ size_t duration2str(int64_t millis, std::string &value_out)
         curr_interval += 1;
     }
 
-    for (; curr_interval->symbol != nullptr; curr_interval++) {
+    for (; curr_interval != end(intervals); curr_interval++) {
         long long amount;
         char      segment[32];
 
@@ -560,4 +559,3 @@ size_t duration2str(int64_t millis, std::string &value_out)
 
     return retval;
 }
-

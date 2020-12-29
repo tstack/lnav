@@ -493,7 +493,7 @@ void format_help_text_for_rst(const help_text &ht,
         return;
     }
 
-    bool is_sql_func = false, is_sql = false, is_sql_infix = false;
+    bool is_sql_func = false, is_sql = false;
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND:
             prefix = ":";
@@ -504,7 +504,6 @@ void format_help_text_for_rst(const help_text &ht,
             prefix = "";
             break;
         case help_context_t::HC_SQL_INFIX:
-            is_sql_infix = true;
         case help_context_t::HC_SQL_KEYWORD:
             is_sql = true;
             prefix = "";

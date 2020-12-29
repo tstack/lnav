@@ -601,7 +601,7 @@ protected:
     vis_line_t lv_selection{0};
 
     struct timeval lv_mouse_time;
-    int lv_scroll_accel;
+    int lv_scroll_accel{1};
     int lv_scroll_velo;
     int lv_mouse_y{-1};
     lv_mode_t lv_mouse_mode{LV_MODE_NONE};

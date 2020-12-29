@@ -484,7 +484,7 @@ static Result<string, string> com_goto_location(exec_context &ec, string cmdline
 
 static bool csv_needs_quoting(const string &str)
 {
-    return (str.find_first_of(",\"") != string::npos);
+    return (str.find_first_of(",\"\r\n") != string::npos);
 }
 
 static string csv_quote_string(const string &str)
