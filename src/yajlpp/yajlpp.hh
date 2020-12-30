@@ -295,6 +295,10 @@ public:
 
     yajl_status parse(const unsigned char *jsonText, size_t jsonTextLen);
 
+    yajl_status parse(const string_fragment& sf) {
+        return this->parse((const unsigned char *) sf.data(), sf.length());
+    }
+
     int get_line_number() const;
 
     yajl_status complete_parse();

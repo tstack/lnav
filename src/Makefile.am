@@ -57,7 +57,7 @@ FORMAT_FILES = \
     $(srcdir)/formats/xmlrpc_log.json \
     $()
 
-default-formats.h default-formats.c: bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
+default-formats.h default-formats.cc: bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
 
 CONFIG_FILES = \
@@ -75,7 +75,7 @@ CONFIG_FILES = \
     $(srcdir)/themes/solarized-light.json \
     $()
 
-default-config.h default-config.c: bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
+default-config.h default-config.cc: bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
 
 BUILTIN_LNAVSCRIPTS = \
@@ -86,29 +86,29 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/search-for.lnav \
     $()
 
-builtin-scripts.h builtin-scripts.c: bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
+builtin-scripts.h builtin-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
 BUILTIN_SHSCRIPTS = \
     $(srcdir)/scripts/dump-pid.sh \
     $()
 
-builtin-sh-scripts.h builtin-sh-scripts.c: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
+builtin-sh-scripts.h builtin-sh-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
 
-%-sh.c: $(srcdir)/%.sh bin2c$(BUILD_EXEEXT)
+%-sh.cc: $(srcdir)/%.sh bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sh $<
 
-%-txt.c %-txt.h: $(srcdir)/%.txt bin2c$(BUILD_EXEEXT)
+%-txt.cc %-txt.h: $(srcdir)/%.txt bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-txt $<
 
-%-sql.c %-sql.h: $(srcdir)/%.sql bin2c$(BUILD_EXEEXT)
+%-sql.cc %-sql.h: $(srcdir)/%.sql bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sql $<
 
-%-lnav.c %-lnav.h: $(srcdir)/%.lnav bin2c$(BUILD_EXEEXT)
+%-lnav.cc %-lnav.h: $(srcdir)/%.lnav bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-lnav $<
 
-%-json.c %-json.h: $(srcdir)/%.json bin2c$(BUILD_EXEEXT)
+%-json.cc %-json.h: $(srcdir)/%.json bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-json $<
 
 TIME_FORMATS = \
@@ -186,22 +186,22 @@ view_helpers.$(OBJEXT): help-txt.h
 
 LNAV_BUILT_FILES = \
     ansi-palette-json.h \
-    ansi-palette-json.c \
+    ansi-palette-json.cc \
     builtin-scripts.h \
-    builtin-scripts.c \
+    builtin-scripts.cc \
     builtin-sh-scripts.h \
-    builtin-sh-scripts.c \
+    builtin-sh-scripts.cc \
     default-config.h \
-    default-config.c \
+    default-config.cc \
     default-formats.h \
-    default-formats.c \
+    default-formats.cc \
     help-txt.h \
-    help-txt.c \
+    help-txt.cc \
     init-sql.h \
-    init-sql.c \
+    init-sql.cc \
     time_fmts.cc \
     xterm-palette-json.h \
-    xterm-palette-json.c
+    xterm-palette-json.cc
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -254,7 +254,7 @@ noinst_HEADERS = \
 	auto_mem.hh \
 	auto_pid.hh \
 	big_array.hh \
-	bin2c.h \
+	bin2c.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
@@ -497,10 +497,10 @@ lnav_SOURCES = lnav.cc
 lnav_test_SOURCES = lnav.cc test_override.c
 
 bin2c$(BUILD_EXEEXT): bin2c.c
-	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
+	$(AM_V_CC) $(CC_FOR_BUILD) -g3 -o $@ $? -lz
 
 ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
+	$(AM_V_CC) $(CC_FOR_BUILD) -g3 -o $@ $?
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc log_level_re.cc

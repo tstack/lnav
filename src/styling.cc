@@ -69,10 +69,19 @@ static struct json_path_container root_color_handler = {
         .with_children(term_color_handler)
 };
 
-term_color_palette xterm_colors(xterm_palette_json.bsf_data);
-term_color_palette ansi_colors(ansi_palette_json.bsf_data);
+term_color_palette *xterm_colors()
+{
+    static term_color_palette retval(xterm_palette_json.to_string_fragment());
 
-term_color_palette *ACTIVE_PALETTE = &ansi_colors;
+    return &retval;
+}
+
+term_color_palette *ansi_colors()
+{
+    static term_color_palette retval(ansi_palette_json.to_string_fragment());
+
+    return &retval;
+}
 
 bool rgb_color::from_str(const string_fragment &color,
                          rgb_color &rgb_out,
@@ -104,7 +113,7 @@ bool rgb_color::from_str(const string_fragment &color,
         return false;
     }
 
-    for (const auto &xc : xterm_colors.tc_palette) {
+    for (const auto &xc : xterm_colors()->tc_palette) {
         if (color.iequal(xc.xc_name)) {
             rgb_out = xc.xc_color;
             return true;
@@ -156,7 +165,7 @@ bool rgb_color::operator!=(const rgb_color &rhs) const
     return !(rhs == *this);
 }
 
-term_color_palette::term_color_palette(const unsigned char *json)
+term_color_palette::term_color_palette(const string_fragment& json)
 {
     yajlpp_parse_context ypc_xterm("palette.json", &root_color_handler);
     yajl_handle handle;
@@ -166,7 +175,7 @@ term_color_palette::term_color_palette(const unsigned char *json)
         .with_ignore_unused(true)
         .with_obj(this->tc_palette)
         .with_handle(handle);
-    yajl_status st = ypc_xterm.parse(json, strlen((const char *) json));
+    yajl_status st = ypc_xterm.parse(json);
     ensure(st == yajl_status_ok);
     st = ypc_xterm.complete_parse();
     ensure(st == yajl_status_ok);

@@ -167,7 +167,7 @@ static void build_all_help_text()
     }
 
     attr_line_t all_help_text;
-    shlex lexer((const char *) help_txt.bsf_data, help_txt.bsf_size);
+    shlex lexer(help_txt.to_string_fragment());
     string sub_help_text;
 
     lexer.with_ignore_quotes(true)

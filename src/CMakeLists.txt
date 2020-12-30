@@ -13,7 +13,8 @@ set(VCS_PACKAGE_STRING "test")
 
 configure_file(config.cmake.h.in config.h)
 
-add_executable(bin2c bin2c.h bin2c.c)
+add_executable(bin2c bin2c.hh bin2c.c)
+target_link_libraries(bin2c ZLIB::zlib)
 
 add_executable(ptimec ptimec.hh ptimec.c)
 
@@ -89,7 +90,7 @@ function(bin2c)
 
     list(TRANSFORM BIN2C_UNPARSED_ARGUMENTS "\\." "-")
     add_custom_command(
-            OUTPUT "${DST_FILE}.h" "${DST_FILE}.c"
+            OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
             COMMAND bin2c "${DST_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/${FILE_TO_LINK}"
             DEPENDS bin2c "${FILE_TO_LINK}"
     )
@@ -102,14 +103,14 @@ foreach(FILE_TO_LINK
         init.sql)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
-            OUTPUT "${DST_FILE}.h" "${DST_FILE}.c"
+            OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
             COMMAND bin2c "${DST_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/${FILE_TO_LINK}"
             DEPENDS bin2c "${FILE_TO_LINK}"
     )
     list(
             APPEND GEN_SRCS
             "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.h"
-            "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.c"
+            "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.cc"
     )
 endforeach(FILE_TO_LINK)
 
@@ -156,11 +157,11 @@ set(FORMAT_FILE_PATHS ${FORMAT_FILES})
 list(TRANSFORM FORMAT_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_custom_command(
-        OUTPUT default-formats.h default-formats.c
+        OUTPUT default-formats.h default-formats.cc
         COMMAND bin2c -n lnav_format_json default-formats ${FORMAT_FILE_PATHS}
         DEPENDS bin2c ${FORMAT_FILES}
 )
-list(APPEND GEN_SRCS default-formats.h default-formats.c)
+list(APPEND GEN_SRCS default-formats.h default-formats.cc)
 
 set(CONFIG_FILES
         root-config.json
@@ -182,11 +183,11 @@ set(CONFIG_FILE_PATHS ${CONFIG_FILES})
 list(TRANSFORM CONFIG_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_custom_command(
-        OUTPUT default-config.h default-config.c
+        OUTPUT default-config.h default-config.cc
         COMMAND bin2c -n lnav_config_json default-config ${CONFIG_FILE_PATHS}
         DEPENDS bin2c ${CONFIG_FILES}
 )
-list(APPEND GEN_SRCS default-config.h default-config.c)
+list(APPEND GEN_SRCS default-config.h default-config.cc)
 
 
 set(BUILTIN_LNAV_SCRIPTS
@@ -201,11 +202,11 @@ set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})
 list(TRANSFORM BUILTIN_LNAV_SCRIPT_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_custom_command(
-        OUTPUT builtin-scripts.h builtin-scripts.c
+        OUTPUT builtin-scripts.h builtin-scripts.cc
         COMMAND bin2c -n lnav_scripts builtin-scripts ${BUILTIN_LNAV_SCRIPT_PATHS}
         DEPENDS bin2c ${BUILTIN_LNAV_SCRIPTS}
 )
-list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.c)
+list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.cc)
 
 set(BUILTIN_SH_SCRIPTS
         scripts/dhclient-summary.lnav
@@ -218,11 +219,11 @@ set(BUILTIN_SH_SCRIPT_PATHS ${BUILTIN_SH_SCRIPTS})
 list(TRANSFORM BUILTIN_SH_SCRIPT_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_custom_command(
-        OUTPUT builtin-sh-scripts.h builtin-sh-scripts.c
+        OUTPUT builtin-sh-scripts.h builtin-sh-scripts.cc
         COMMAND bin2c -n lnav_sh_scripts builtin-sh-scripts ${BUILTIN_SH_SCRIPT_PATHS}
         DEPENDS bin2c ${BUILTIN_SH_SCRIPTS}
 )
-list(APPEND GEN_SRCS builtin-sh-scripts.h builtin-sh-scripts.c)
+list(APPEND GEN_SRCS builtin-sh-scripts.h builtin-sh-scripts.cc)
 
 add_library(diag STATIC
         ${GEN_SRCS}
@@ -233,7 +234,7 @@ add_library(diag STATIC
         ansi_scrubber.cc
         archive_manager.cc
         attr_line.cc
-        bin2c.h
+        bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
         collation-functions.cc

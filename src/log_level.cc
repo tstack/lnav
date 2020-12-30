@@ -31,7 +31,6 @@
 
 #include <ctype.h>
 
-#include "base/lnav_log.hh"
 #include "log_level.hh"
 
 const char *level_names[LEVEL__MAX + 1] = {

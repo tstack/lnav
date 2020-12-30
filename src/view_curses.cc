@@ -369,7 +369,8 @@ view_colors &view_colors::singleton()
     return s_vc;
 }
 
-view_colors::view_colors() : vc_color_pair_end(0)
+view_colors::view_colors()
+    : vc_color_pair_end(0)
 {
 }
 
@@ -389,6 +390,10 @@ static string COLOR_NAMES[] = {
 class color_listener : public lnav_config_listener {
 public:
     void reload_config(error_reporter &reporter) override {
+        if (!view_colors::initialized) {
+            return;
+        }
+
         auto &vc = view_colors::singleton();
 
         for (const auto &pair : lnav_config.lc_ui_theme_defs) {
@@ -412,9 +417,11 @@ public:
 };
 
 static color_listener _COLOR_LISTENER;
+term_color_palette *view_colors::vc_active_palette;
 
 void view_colors::init()
 {
+    vc_active_palette = ansi_colors();
     if (has_colors()) {
         static int ansi_colors_to_curses[] = {
             COLOR_BLACK,
@@ -442,7 +449,7 @@ void view_colors::init()
             }
         }
         if (COLORS >= 256) {
-            ACTIVE_PALETTE = &xterm_colors;
+            vc_active_palette = xterm_colors();
         }
     }
 
@@ -552,7 +559,7 @@ void view_colors::init_roles(const lnav_theme &lt,
             if (!rgb_color::from_str(bg_color, rgb_bg, errmsg)) {
                 reporter(&ident_sc.sc_background_color, errmsg);
             }
-            ident_bg = ACTIVE_PALETTE->match_color(lab_color(rgb_bg));
+            ident_bg = vc_active_palette->match_color(lab_color(rgb_bg));
         }
         for (int z = 0; z < 6; z++) {
             for (int x = 1; x < 6; x += 2) {
@@ -599,8 +606,8 @@ void view_colors::init_roles(const lnav_theme &lt,
                     return;
                 }
 
-                short fg = ACTIVE_PALETTE->match_color(lab_color(rgb_fg));
-                short bg = ACTIVE_PALETTE->match_color(lab_color(rgb_bg));
+                short fg = vc_active_palette->match_color(lab_color(rgb_fg));
+                short bg = vc_active_palette->match_color(lab_color(rgb_bg));
 
                 if (rgb_fg.empty()) {
                     fg = ansi_fg;
@@ -837,7 +844,7 @@ int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
         fg == -1 ? def_fg : fg,
         bg == -1 ? def_bg : bg));
 
-    if (this->initialized) {
+    if (initialized) {
         this->vc_dyn_pairs[index_pair] = retval;
     }
 
@@ -858,7 +865,7 @@ int view_colors::match_color(const rgb_color &color)
         return -1;
     }
 
-    return ACTIVE_PALETTE->match_color(lab_color(color));
+    return vc_active_palette->match_color(lab_color(color));
 }
 
 attr_t view_colors::attrs_for_ident(const char *str, size_t len) const

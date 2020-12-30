@@ -332,6 +332,7 @@ public:
     static bool initialized;
 
 private:
+    static term_color_palette *vc_active_palette;
 
     /** Private constructor that initializes the member fields. */
     view_colors();

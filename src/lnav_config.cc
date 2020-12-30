@@ -57,7 +57,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "styling.hh"
-#include "bin2c.h"
+#include "bin2c.hh"
 #include "default-config.h"
 
 using namespace std;
@@ -990,10 +990,10 @@ static void load_config_from(const ghc::filesystem::path &path, vector<string> &
 
 static void load_default_config(struct _lnav_config &config_obj,
                                 const std::string &path,
-                                struct bin_src_file &bsf,
+                                const bin_src_file &bsf,
                                 vector<string> &errors)
 {
-    yajlpp_parse_context ypc_builtin(bsf.bsf_name, &lnav_config_handlers);
+    yajlpp_parse_context ypc_builtin(bsf.get_name(), &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
     struct userdata ud(errors);
 
@@ -1011,18 +1011,17 @@ static void load_default_config(struct _lnav_config &config_obj,
 
     yajl_config(handle, yajl_allow_comments, 1);
     yajl_config(handle, yajl_allow_multiple_values, 1);
-    if (ypc_builtin.parse(bsf.bsf_data, bsf.bsf_size) == yajl_status_ok) {
+    if (ypc_builtin.parse(bsf.to_string_fragment()) == yajl_status_ok) {
         ypc_builtin.complete_parse();
     }
 }
 
 static void load_default_configs(struct _lnav_config &config_obj,
                                  const std::string &path,
-                                 struct bin_src_file bsf[],
                                  vector<string> &errors)
 {
-    for (int lpc = 0; bsf[lpc].bsf_name; lpc++) {
-        load_default_config(config_obj, path, bsf[lpc], errors);
+    for (auto& bsf : lnav_config_json) {
+        load_default_config(config_obj, path, bsf, errors);
     }
 }
 
@@ -1030,22 +1029,22 @@ void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string
 {
     auto user_config = dotlnav_path() / "config.json";
 
-    for (int lpc = 0; lnav_config_json[lpc].bsf_name; lpc++) {
-        auto &bsf = lnav_config_json[lpc];
+    for (auto& bsf : lnav_config_json) {
         auto sample_path = dotlnav_path() /
                            "configs" /
                            "default" /
-                           fmt::format("{}.sample", bsf.bsf_name);
+                           fmt::format("{}.sample", bsf.get_name());
 
         auto fd = auto_fd(openp(sample_path, O_WRONLY|O_TRUNC|O_CREAT, 0644));
-        if (fd == -1 || write(fd.get(), bsf.bsf_data, bsf.bsf_size) == -1) {
+        auto sf = bsf.to_string_fragment();
+        if (fd == -1 || write(fd.get(), sf.data(), sf.length()) == -1) {
             perror("error: unable to write default config file");
         }
     }
 
     {
-        load_default_configs(lnav_default_config, "*", lnav_config_json, errors);
-        load_default_configs(lnav_config, "*", lnav_config_json, errors);
+        load_default_configs(lnav_default_config, "*", errors);
+        load_default_configs(lnav_config, "*", errors);
 
         for (const auto &extra_path : extra_paths) {
             auto config_path = extra_path / "configs/*/*.json";
@@ -1080,7 +1079,7 @@ void reset_config(const std::string &path)
 {
     vector<string> errors;
 
-    load_default_configs(lnav_config, path, lnav_config_json, errors);
+    load_default_configs(lnav_config, path, errors);
 
     reload_config(errors);
 

@@ -1331,7 +1331,7 @@ static void looper()
         define_key("\033Oc", KEY_END);
 
         view_colors &vc = view_colors::singleton();
-        vc.init();
+        view_colors::init();
 
         {
             setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
@@ -2197,7 +2197,7 @@ int main(int argc, char *argv[])
         auto_mem<char, sqlite3_free> errmsg;
 
         if (sqlite3_exec(lnav_data.ld_db.in(),
-                         (const char *) init_sql.bsf_data,
+                         init_sql.to_string_fragment().data(),
                          nullptr,
                          nullptr,
                          errmsg.out()) != SQLITE_OK) {
@@ -2611,6 +2611,7 @@ int main(int argc, char *argv[])
                 textview_curses *log_tc, *text_tc, *tc;
                 bool found_error = false;
 
+                view_colors::init();
                 rescan_files(true);
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair : lnav_data.ld_active_files.fc_name_to_errors) {

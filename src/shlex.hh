@@ -88,6 +88,10 @@ public:
               s_len(len) {
     };
 
+    explicit shlex(const string_fragment &sf)
+        : s_str(sf.data()), s_len(sf.length()) {
+    }
+
     explicit shlex(const std::string &str)
             : s_str(str.c_str()),
               s_len(str.size()) {

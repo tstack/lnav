@@ -55,7 +55,7 @@
 #include "default-formats.h"
 
 #include "log_format_loader.hh"
-#include "bin2c.h"
+#include "bin2c.hh"
 
 using namespace std;
 
@@ -756,50 +756,47 @@ struct json_path_container root_format_handler = json_path_container {
 
 static void write_sample_file()
 {
-    for (int lpc = 0; lnav_format_json[lpc].bsf_name; lpc++) {
-        auto &bsf = lnav_format_json[lpc];
+    for (const auto& bsf : lnav_format_json) {
         auto sample_path = dotlnav_path() /
-            fmt::format("formats/default/{}.sample", bsf.bsf_name);
+            fmt::format("formats/default/{}.sample", bsf.get_name());
+        auto sf = bsf.to_string_fragment();
         auto_fd sample_fd;
 
         if ((sample_fd = openp(sample_path,
                                O_WRONLY | O_TRUNC | O_CREAT,
                                0644)) == -1 ||
-            (write(sample_fd.get(), bsf.bsf_data, bsf.bsf_size) == -1)) {
+            (write(sample_fd.get(), sf.data(), sf.length()) == -1)) {
             perror("error: unable to write default format file");
         }
     }
 
-    for (int lpc = 0; lnav_sh_scripts[lpc].bsf_name; lpc++) {
-        struct bin_src_file &bsf = lnav_sh_scripts[lpc];
-        auto sh_path = dotlnav_path() / fmt::format("formats/default/{}", bsf.bsf_name);
+    for (const auto& bsf : lnav_sh_scripts) {
+        auto sh_path = dotlnav_path() / fmt::format("formats/default/{}", bsf.get_name());
+        auto sf = bsf.to_string_fragment();
         auto_fd sh_fd;
 
         if ((sh_fd = openp(sh_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
-            write(sh_fd.get(), bsf.bsf_data, strlen((const char *) bsf.bsf_data)) == -1) {
+            write(sh_fd.get(), sf.data(), sf.length()) == -1) {
             perror("error: unable to write default text file");
         }
     }
 
-    for (int lpc = 0; lnav_scripts[lpc].bsf_name; lpc++) {
+    for (const auto& bsf : lnav_scripts) {
         struct script_metadata meta;
-        struct bin_src_file &bsf = lnav_scripts[lpc];
-        const char *script_content = reinterpret_cast<const char *>(bsf.bsf_data);
+        auto sf = bsf.to_string_fragment();
         auto_fd script_fd;
         char path[2048];
-        size_t script_len;
         struct stat st;
 
-        script_len = strlen(script_content);
-        extract_metadata(script_content, script_len, meta);
+        extract_metadata(sf.data(), sf.length(), meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
         auto script_path = dotlnav_path() / path;
-        if (statp(script_path, &st) == 0 && (size_t) st.st_size == script_len) {
+        if (statp(script_path, &st) == 0 && (size_t) st.st_size == sf.length()) {
             // Assume it's the right contents and move on...
             continue;
         }
         if ((script_fd = openp(script_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
-            write(script_fd.get(), script_content, script_len) == -1) {
+            write(script_fd.get(), sf.data(), sf.length()) == -1) {
             perror("error: unable to write default text file");
         }
     }
@@ -922,8 +919,7 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
     write_sample_file();
 
     log_debug("Loading default formats");
-    for (int lpc = 0; lnav_format_json[lpc].bsf_name; lpc++) {
-        auto &bsf = lnav_format_json[lpc];
+    for (const auto& bsf : lnav_format_json) {
         handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
         ud.ud_format_names = &retval;
         ud.ud_errors = &errors;
@@ -933,11 +929,12 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
             .with_error_reporter(format_error_reporter)
             .ypc_userdata = &ud;
         yajl_config(handle, yajl_allow_comments, 1);
-        if (ypc_builtin.parse(bsf.bsf_data, bsf.bsf_size) != yajl_status_ok) {
+        auto sf = bsf.to_string_fragment();
+        if (ypc_builtin.parse(sf) != yajl_status_ok) {
             errors.push_back("builtin: invalid json -- " +
                              string((char *) yajl_get_error(handle, 1,
-                                                            bsf.bsf_data,
-                                                            bsf.bsf_size)));
+                                                            (const unsigned char *) sf.data(),
+                                                            sf.length())));
         }
         ypc_builtin.complete_parse();
         yajl_free(handle);

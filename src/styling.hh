@@ -108,7 +108,7 @@ struct term_color {
 };
 
 struct term_color_palette {
-    explicit term_color_palette(const unsigned char *json);
+    explicit term_color_palette(const string_fragment& json);
 
     short match_color(const lab_color &to_match);
 
@@ -173,9 +173,7 @@ struct lnav_theme {
     std::map<std::string, highlighter_config> lt_highlights;
 };
 
-extern term_color_palette xterm_colors;
-extern term_color_palette ansi_colors;
-
-extern term_color_palette *ACTIVE_PALETTE;
+extern term_color_palette *xterm_colors();
+extern term_color_palette *ansi_colors();
 
 #endif
