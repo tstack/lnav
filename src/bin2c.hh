@@ -36,6 +36,8 @@
 #include <assert.h>
 #include <sys/types.h>
 
+#include <memory>
+
 #include "base/intern_string.hh"
 
 struct bin_src_file {
