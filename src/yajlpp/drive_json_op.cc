@@ -172,9 +172,13 @@ int main(int argc, char *argv[])
         while ((rc = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
             status = yajl_parse(handle, buffer, rc);
             if (status == yajl_status_error) {
-                fprintf(stderr, "error:cannot parse JSON input -- %s\n",
-                    yajl_get_error(handle, 1, buffer, rc));
+                auto msg = yajl_get_error(handle, 1, buffer, rc);
+
+                fprintf(stderr,
+                        "error:cannot parse JSON input -- %s\n",
+                        msg);
                 retval = EXIT_FAILURE;
+                yajl_free_error(handle, msg);
                 break;
             }
             else if (status == yajl_status_client_canceled) {
@@ -184,8 +188,11 @@ int main(int argc, char *argv[])
         }
         status = yajl_complete_parse(handle);
         if (status == yajl_status_error) {
-            fprintf(stderr, "error:cannot parse JSON input -- %s\n",
-                yajl_get_error(handle, 1, buffer, rc));
+            auto msg = yajl_get_error(handle, 1, buffer, rc);
+            fprintf(stderr,
+                    "error:cannot parse JSON input -- %s\n",
+                    msg);
+            yajl_free_error(handle, msg);
             retval = EXIT_FAILURE;
         }
         else if (status == yajl_status_client_canceled) {

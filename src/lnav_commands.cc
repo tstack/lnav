@@ -550,7 +550,7 @@ static void json_write_row(yajl_gen handle, int row)
             switch (hm.hm_sub_type) {
                 case 74: {
                     auto_mem<yajl_handle_t> parse_handle(yajl_free);
-                    const unsigned char *err;
+                    unsigned char *err;
                     json_ptr jp("");
                     json_op jo(jp);
 
@@ -561,22 +561,30 @@ static void json_write_row(yajl_gen handle, int row)
                     const unsigned char *json_in = (const unsigned char *) dls.dls_rows[row][col];
                     switch (yajl_parse(parse_handle.in(), json_in, strlen((const char *) json_in))) {
                         case yajl_status_error:
-                        case yajl_status_client_canceled:
-                            err = yajl_get_error(parse_handle.in(), 0, json_in, strlen((const char *) json_in));
+                        case yajl_status_client_canceled: {
+                            err = yajl_get_error(parse_handle.in(), 0, json_in,
+                                                 strlen(
+                                                     (const char *) json_in));
                             log_error("unable to parse JSON cell: %s", err);
                             obj_map.gen(dls.dls_rows[row][col]);
+                            yajl_free_error(parse_handle.in(), err);
                             return;
+                        }
                         default:
                             break;
                     }
 
                     switch (yajl_complete_parse(parse_handle.in())) {
                         case yajl_status_error:
-                        case yajl_status_client_canceled:
-                            err = yajl_get_error(parse_handle.in(), 0, json_in, strlen((const char *) json_in));
+                        case yajl_status_client_canceled: {
+                            err = yajl_get_error(parse_handle.in(), 0, json_in,
+                                                 strlen(
+                                                     (const char *) json_in));
                             log_error("unable to parse JSON cell: %s", err);
                             obj_map.gen(dls.dls_rows[row][col]);
+                            yajl_free_error(parse_handle.in(), err);
                             return;
+                        }
                         default:
                             break;
                     }

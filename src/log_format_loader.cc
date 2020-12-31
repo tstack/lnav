@@ -931,10 +931,13 @@ void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
         yajl_config(handle, yajl_allow_comments, 1);
         auto sf = bsf.to_string_fragment();
         if (ypc_builtin.parse(sf) != yajl_status_ok) {
-            errors.push_back("builtin: invalid json -- " +
-                             string((char *) yajl_get_error(handle, 1,
-                                                            (const unsigned char *) sf.data(),
-                                                            sf.length())));
+            unsigned char *msg = yajl_get_error(handle, 1,
+                                                (const unsigned char *) sf.data(),
+                                                sf.length());
+
+            errors.push_back(fmt::format(
+                FMT_STRING("builtin: invalid json -- {}"), msg));
+            yajl_free_error(handle, msg);
         }
         ypc_builtin.complete_parse();
         yajl_free(handle);

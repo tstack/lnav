@@ -738,13 +738,15 @@ yajlpp_parse_context::parse(const unsigned char *jsonText, size_t jsonTextLen)
     this->ypc_json_text = nullptr;
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
+        auto msg = yajl_get_error(this->ypc_handle, 1, jsonText, jsonTextLen);
+
         this->ypc_error_reporter(
             *this, lnav_log_level_t::ERROR,
             fmt::format("error:{}:{}:invalid json -- {}",
                         this->ypc_source,
                         this->get_line_number(),
-                        yajl_get_error(this->ypc_handle, 1,
-                                       jsonText, jsonTextLen)).c_str());
+                        msg).c_str());
+        yajl_free_error(this->ypc_handle, msg);
     }
 
     return retval;
@@ -755,12 +757,14 @@ yajl_status yajlpp_parse_context::complete_parse()
     yajl_status retval = yajl_complete_parse(this->ypc_handle);
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
+        auto msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
+
         this->ypc_error_reporter(
             *this, lnav_log_level_t::ERROR,
             fmt::format("error:{}:invalid json -- {}",
                         this->ypc_source,
-                        yajl_get_error(this->ypc_handle, 0,
-                                       nullptr, 0)).c_str());
+                        msg).c_str());
+        yajl_free_error(this->ypc_handle, msg);
     }
 
     return retval;

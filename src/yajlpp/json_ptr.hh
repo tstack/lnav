@@ -75,10 +75,14 @@ public:
         case yajl_status_client_canceled:
             this->jpw_error_msg = "internal error";
             break;
-        case yajl_status_error:
-            this->jpw_error_msg = std::string((const char *)yajl_get_error(
-                this->jpw_handle, 1, (const unsigned char *)buffer, len));
+        case yajl_status_error: {
+            auto msg = yajl_get_error(
+                this->jpw_handle, 1, (const unsigned char *) buffer, len);
+            this->jpw_error_msg = std::string((const char *) msg);
+
+            yajl_free_error(this->jpw_handle, msg);
             break;
+        }
         }
     };
 

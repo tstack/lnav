@@ -196,7 +196,7 @@ static void sql_jget(sqlite3_context *context,
     json_ptr jp(ptr_in);
     sql_json_op jo(jp);
     auto_mem<yajl_handle_t> handle(yajl_free);
-    const unsigned char *err;
+    unsigned char *err;
     yajlpp_gen gen;
 
     yajl_gen_config(gen, yajl_gen_beautify, false);
@@ -209,10 +209,13 @@ static void sql_jget(sqlite3_context *context,
 
     handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
     switch (yajl_parse(handle.in(), (const unsigned char *)json_in, strlen(json_in))) {
-    case yajl_status_error:
-        err = yajl_get_error(handle.in(), 0, (const unsigned char *)json_in, strlen(json_in));
-        sqlite3_result_error(context, (const char *)err, -1);
+    case yajl_status_error: {
+        err = yajl_get_error(handle.in(), 0, (const unsigned char *) json_in,
+                             strlen(json_in));
+        sqlite3_result_error(context, (const char *) err, -1);
+        yajl_free_error(handle.in(), err);
         return;
+    }
     case yajl_status_client_canceled:
         if (jo.jo_ptr.jp_state == json_ptr::MS_ERR_INVALID_ESCAPE) {
             sqlite3_result_error(context, jo.jo_ptr.error_msg().c_str(), -1);
@@ -226,10 +229,13 @@ static void sql_jget(sqlite3_context *context,
     }
 
     switch (yajl_complete_parse(handle.in())) {
-    case yajl_status_error:
-        err = yajl_get_error(handle.in(), 0, (const unsigned char *)json_in, strlen(json_in));
-        sqlite3_result_error(context, (const char *)err, -1);
+    case yajl_status_error: {
+        err = yajl_get_error(handle.in(), 0, (const unsigned char *) json_in,
+                             strlen(json_in));
+        sqlite3_result_error(context, (const char *) err, -1);
+        yajl_free_error(handle.in(), err);
         return;
+    }
     case yajl_status_client_canceled:
         if (jo.jo_ptr.jp_state == json_ptr::MS_ERR_INVALID_ESCAPE) {
             sqlite3_result_error(context, jo.jo_ptr.error_msg().c_str(), -1);
