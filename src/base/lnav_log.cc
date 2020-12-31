@@ -111,7 +111,12 @@ nonstd::optional<const struct termios *> lnav_log_orig_termios;
 // Otherwise, any attempts to log will fail.
 static std::mutex *lnav_log_mutex = new std::mutex();
 
-static std::vector<log_state_dumper*> DUMPER_LIST;
+static std::vector<log_state_dumper*>& DUMPER_LIST()
+{
+    static std::vector<log_state_dumper*> retval;
+
+    return retval;
+}
 static std::vector<log_crash_recoverer*> CRASH_LIST;
 
 struct thid {
@@ -401,7 +406,7 @@ static void sigabrt(int sig)
 
         log_host_info();
 
-        for (auto lsd : DUMPER_LIST) {
+        for (auto lsd : DUMPER_LIST()) {
             lsd->log_state();
         }
 
@@ -530,14 +535,14 @@ void log_pipe_err(int fd)
 
 log_state_dumper::log_state_dumper()
 {
-    DUMPER_LIST.push_back(this);
+    DUMPER_LIST().push_back(this);
 }
 
 log_state_dumper::~log_state_dumper()
 {
-    auto iter = std::find(DUMPER_LIST.begin(), DUMPER_LIST.end(), this);
-    if (iter != DUMPER_LIST.end()) {
-        DUMPER_LIST.erase(iter);
+    auto iter = std::find(DUMPER_LIST().begin(), DUMPER_LIST().end(), this);
+    if (iter != DUMPER_LIST().end()) {
+        DUMPER_LIST().erase(iter);
     }
 }
 
