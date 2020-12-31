@@ -766,9 +766,34 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
 
             if (mod_iter == MODULE_FORMATS.end()) {
                 mod_index = module_scan(pi, body_cap, mod_name);
+                mod_iter = MODULE_FORMATS.find(mod_name);
             }
             else if (mod_iter->second.mf_mod_format) {
                 mod_index = mod_iter->second.mf_mod_format->lf_mod_index;
+            }
+
+            if (mod_index && level_cap && body_cap) {
+                auto mod_elf = dynamic_pointer_cast<external_log_format>(
+                    mod_iter->second.mf_mod_format);
+
+                if (mod_elf) {
+                    pcre_context_static<128> mod_pc;
+                    shared_buffer_ref body_ref;
+
+                    body_cap->ltrim(sbr.get_data());
+
+                    pcre_input mod_pi(pi.get_substr_start(body_cap),
+                                      0,
+                                      body_cap->length());
+                    int mod_pat_index = mod_elf->last_pattern_index();
+                    pattern &mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
+
+                    if (mod_pat.p_pcre->match(mod_pc, mod_pi)) {
+                        auto mod_level_cap = mod_pc[mod_pat.p_level_field_index];
+
+                        level = mod_elf->convert_level(mod_pi, mod_level_cap);
+                    }
+                }
             }
         }
 
@@ -928,7 +953,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
 
         if (pat.p_module_field_index != -1) {
             module_cap = pc[pat.p_module_field_index];
-            if (module_cap != NULL && module_cap->is_valid()) {
+            if (module_cap != nullptr && module_cap->is_valid()) {
                 lr.lr_start = module_cap->c_begin;
                 lr.lr_end = module_cap->c_end;
                 sa.emplace_back(lr, &logline::L_MODULE);
@@ -936,7 +961,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         }
 
         cap = pc[pat.p_opid_field_index];
-        if (cap != NULL && cap->is_valid()) {
+        if (cap != nullptr && cap->is_valid()) {
             lr.lr_start = cap->c_begin;
             lr.lr_end = cap->c_end;
             sa.emplace_back(lr, &logline::L_OPID);
@@ -944,15 +969,6 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
     }
 
     body_cap = pc[pat.p_body_field_index];
-    if (body_cap != NULL && body_cap->c_begin != -1) {
-        lr.lr_start = body_cap->c_begin;
-        lr.lr_end = body_cap->c_end;
-    }
-    else {
-        lr.lr_start = line.length();
-        lr.lr_end = line.length();
-    }
-    sa.emplace_back(lr, &SA_BODY);
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def &ivd = pat.p_value_by_index[lpc];
@@ -983,8 +999,12 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         } else {
             values.emplace_back(vd.vd_meta);
         }
+        if (pat.p_module_format) {
+            values.back().lv_meta.lvm_from_module = true;
+        }
     }
 
+    bool did_mod_annotate_body = false;
     if (annotate_module && module_cap != nullptr && body_cap != nullptr &&
             body_cap->is_valid()) {
         intern_string_t mod_name = intern_string::lookup(
@@ -992,21 +1012,35 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         auto mod_iter = MODULE_FORMATS.find(mod_name);
 
         if (mod_iter != MODULE_FORMATS.end() &&
-                mod_iter->second.mf_mod_format != nullptr) {
+            mod_iter->second.mf_mod_format != nullptr) {
             module_format &mf = mod_iter->second;
             shared_buffer_ref body_ref;
 
             body_cap->ltrim(line.get_data());
             body_ref.subset(line, body_cap->c_begin, body_cap->length());
+
+            auto pre_mod_values_size = values.size();
+            auto pre_mod_sa_size = sa.size();
             mf.mf_mod_format->annotate(line_number, body_ref, sa, values, false);
-            for (auto &value : values) {
-                if (!value.lv_meta.lvm_from_module) {
-                    continue;
-                }
-                value.lv_origin.lr_start += body_cap->c_begin;
-                value.lv_origin.lr_end += body_cap->c_begin;
+            for (size_t lpc = pre_mod_values_size; lpc < values.size(); lpc++) {
+                values[lpc].lv_origin.shift(0, body_cap->c_begin);
             }
+            for (size_t lpc = pre_mod_sa_size; lpc < sa.size(); lpc++) {
+                sa[lpc].sa_range.shift(0, body_cap->c_begin);
+            }
+            did_mod_annotate_body = true;
         }
+    }
+    if (!did_mod_annotate_body) {
+        if (body_cap != nullptr && body_cap->is_valid()) {
+            lr.lr_start = body_cap->c_begin;
+            lr.lr_end = body_cap->c_end;
+        }
+        else {
+            lr.lr_start = line.length();
+            lr.lr_end = line.length();
+        }
+        sa.emplace_back(lr, &SA_BODY);
     }
 }
 

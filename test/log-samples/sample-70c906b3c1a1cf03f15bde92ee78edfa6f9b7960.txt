@@ -1,35 +1,4 @@
              Jun  3 07:02:37 Tim-Stacks-iMac.local sudo[2717]:    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/usr/bin/env VAR1=foo ls
- key  53:53                                                      ^                                                                            
-word  53:58                                                       ^---^                                                                       stack
- val  53:58                                                       ^---^                                                                       stack
-pair  53:58                                                       ^---^                                                                       stack
- key  61:64                                                               ^-^                                                                 TTY
- sym  65:72                                                                   ^-----^                                                         ttys002
- val  65:72                                                                   ^-----^                                                         ttys002
-pair  61:72                                                               ^---------^                                                         TTY=ttys002
- key  75:78                                                                             ^-^                                                   PWD
-path  79:80                                                                                 ^                                                 /
- val  79:80                                                                                 ^                                                 /
-pair  75:80                                                                             ^---^                                                 PWD=/
- key  83:87                                                                                     ^--^                                          USER
-word  88:92                                                                                          ^--^                                     root
- val  88:92                                                                                          ^--^                                     root
-pair  83:92                                                                                     ^-------^                                     USER=root
- key  95:102                                                                                                ^-----^                           COMMAND
-path 103:115                                                                                                        ^----------^              /usr/bin/env
-wspc 115:116                                                                                                                    ^              
- sym 116:120                                                                                                                     ^--^         VAR1
-word 121:124                                                                                                                          ^-^     foo
-wspc 124:125                                                                                                                             ^     
-word 125:127                                                                                                                              ^^  ls
- val 103:127                                                                                                        ^----------------------^  /usr/bin/env VAR1=foo ls
-pair  95:127                                                                                                ^------------------------------^  COMMAND=/usr/bin/env VAR1=foo ls
-msg         :    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/usr/bin/env VAR1=foo ls
-format      :    # : TTY=# ; PWD=# ; USER=# ; COMMAND=#
-{
-    "col_0": "stack",
-    "TTY": "ttys002",
-    "PWD": "/",
-    "USER": "root",
-    "COMMAND": "/usr/bin/env VAR1=foo ls"
-}
+msg         :
+format      :
+null

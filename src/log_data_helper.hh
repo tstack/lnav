@@ -97,7 +97,7 @@ public:
             this->ldh_line_attrs.clear();
             this->ldh_line_values.clear();
             this->ldh_file->read_full_message(ll, this->ldh_msg);
-            format->annotate(this->ldh_line_index, this->ldh_msg, sa, this->ldh_line_values, false);
+            format->annotate(this->ldh_line_index, this->ldh_msg, sa, this->ldh_line_values);
 
             body = find_string_attr_range(sa, &SA_BODY);
             if (body.lr_start == -1) {

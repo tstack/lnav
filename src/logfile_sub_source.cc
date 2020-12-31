@@ -208,9 +208,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             line_range{0, (int) this->lss_token_value.length()},
             &SA_BODY);
     } else {
-        format->annotate(line, sbr, this->lss_token_attrs,
-                         this->lss_token_values,
-                         false);
+        format->annotate(line, sbr, this->lss_token_attrs, this->lss_token_values);
     }
     if (this->lss_token_line->get_sub_offset() != 0) {
         this->lss_token_attrs.clear();

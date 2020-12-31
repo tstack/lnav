@@ -1107,7 +1107,7 @@ unset LNAVSECURE
 
 
 touch -t 201503240923 ${test_dir}/logfile_syslog_with_access_log.0
-run_test ${lnav_test} -n \
+run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ";select * from access_log" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_syslog_with_access_log.0
@@ -1115,6 +1115,7 @@ run_test ${lnav_test} -n \
 check_output "access_log not found within syslog file" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
 1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200,<NULL>
+2,<NULL>,2015-03-24 14:02:50.000,0,error,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/bad.foo,<NULL>,-,HTTP/1.1,65508,404,<NULL>
 EOF
 
 

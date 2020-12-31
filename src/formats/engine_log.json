@@ -5,7 +5,7 @@
         "description": "The log format for the engine.log files from RHEV/oVirt",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>.+) (?<level>.+) \\[(?<logger>.+)\\] \\((?<tid>.+)\\) (?<body>(?:-|\\n)*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}+)\\s+(?<level>\\w+)\\s+\\[(?<logger>[^\\]]+)\\]\\s+\\((?<tid>[^\\)]+)\\)\\s+(?<body>(?:-|\\n)*)"
             }
         },
         "opid-field": "tid",
