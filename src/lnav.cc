@@ -2226,6 +2226,46 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    auto _vtab_cleanup = finally([] {
+        static const char *VIRT_TABLES = R"(
+SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
+)";
+
+        lnav_data.ld_vtab_manager = nullptr;
+
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        std::vector<std::string> tables_to_drop;
+        bool done = false;
+
+        sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                           VIRT_TABLES,
+                           -1,
+                           stmt.out(),
+                           nullptr);
+        do {
+            auto ret = sqlite3_step(stmt.in());
+
+            switch (ret) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+                case SQLITE_ROW:
+                    tables_to_drop.emplace_back(fmt::format(
+                        "DROP TABLE {}", sqlite3_column_text(stmt.in(), 0)));
+                    break;
+            }
+        } while (!done);
+
+        for (auto &drop_stmt : tables_to_drop) {
+            sqlite3_exec(lnav_data.ld_db.in(),
+                         drop_stmt.c_str(),
+                         nullptr,
+                         nullptr,
+                         nullptr);
+        }
+    });
+
     if (!(lnav_data.ld_flags & LNF_CHECK_CONFIG)) {
         DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
         DEFAULT_FILES.insert(
@@ -2793,50 +2833,6 @@ int main(int argc, char *argv[])
                         path_str.c_str());
             }
         }
-    }
-
-    lnav_data.ld_vtab_manager = nullptr;
-
-    {
-        static const char *VIRT_TABLES = R"(
-SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
-)";
-
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-        std::vector<std::string> tables_to_drop;
-        bool done = false;
-
-        sqlite3_prepare_v2(lnav_data.ld_db.in(),
-                           VIRT_TABLES,
-                           -1,
-                           stmt.out(),
-                           nullptr);
-        do {
-            auto ret = sqlite3_step(stmt.in());
-
-            switch (ret) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-                case SQLITE_ROW:
-                    tables_to_drop.emplace_back(fmt::format(
-                        "DROP TABLE {}", sqlite3_column_text(stmt.in(), 0)));
-                    break;
-            }
-        } while (!done);
-
-        for (auto& drop_stmt : tables_to_drop) {
-            sqlite3_exec(lnav_data.ld_db.in(),
-                         drop_stmt.c_str(),
-                         nullptr,
-                         nullptr,
-                         nullptr);
-        }
-
-#if 0
-        sqlite3_drop_modules(lnav_data.ld_db.in(), nullptr);
-#endif
     }
 
     lnav_data.ld_curl_looper.stop();
