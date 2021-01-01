@@ -2231,6 +2231,11 @@ int main(int argc, char *argv[])
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
+        for (auto& lf : lnav_data.ld_active_files.fc_files) {
+            lf->close();
+        }
+        rebuild_indexes();
+
         lnav_data.ld_vtab_manager = nullptr;
 
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -2787,11 +2792,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 save_session();
             }
-
-            for (auto& lf : lnav_data.ld_active_files.fc_files) {
-                lf->close();
-            }
-            rebuild_indexes();
         }
         catch (line_buffer::error & e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));
