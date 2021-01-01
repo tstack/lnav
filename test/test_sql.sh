@@ -1023,11 +1023,11 @@ EOF
 
 
 cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
-    -c ";select log_time from syslog_log where log_procname = 'sudo'"
+    -c ";select log_body from syslog_log where log_procname = 'sudo'"
 
 check_output "single result is not working?" <<EOF
-        log_time
-2020-11-03 09:47:02.000
+                                                      log_body
+ timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
 EOF
 
 # Create a dummy database for the next couple of tests to consume.
