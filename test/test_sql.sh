@@ -1012,13 +1012,13 @@ EOF
 
 
 cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
-    -c ";select log_time from syslog_log where log_procname = 'automount'"
+    -c ";select log_body from syslog_log where log_procname = 'automount'"
 
 check_output "querying against stdin is not working?" <<EOF
-        log_time
-2020-11-03 09:23:38.000
-2020-11-03 09:23:38.000
-2020-11-03 09:23:38.000
+                log_body
+ lookup(file): lookup for foobar failed
+ attempting to mount entry /auto/opt
+ lookup(file): lookup for opt failed
 EOF
 
 
