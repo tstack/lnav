@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     assert(md1.in() == &md1_val);
 
     {
-	auto_mem<struct my_data, my_free> md_cp(md1);
+	auto_mem<struct my_data, my_free> md_cp(std::move(md1));
 
 	assert(md1 == NULL);
 	assert(free_count == 2);

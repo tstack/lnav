@@ -80,11 +80,11 @@ struct from_sqlite<text_filter::type_t> {
 };
 
 template<>
-struct from_sqlite<pair<string, pcre *>> {
-    inline pair<string, pcre *>operator()(int argc, sqlite3_value **val, int argi) {
+struct from_sqlite<pair<string, auto_mem<pcre>>> {
+    inline pair<string, auto_mem<pcre>> operator()(int argc, sqlite3_value **val, int argi) {
         const char *pattern = (const char *) sqlite3_value_text(val[argi]);
         const char *errptr;
-        pcre *code;
+        auto_mem<pcre> code;
         int eoff;
 
         if (pattern == nullptr || pattern[0] == '\0') {
@@ -101,7 +101,7 @@ struct from_sqlite<pair<string, pcre *>> {
             throw from_sqlite_conversion_error(errptr, argi);
         }
 
-        return make_pair(string(pattern), code);
+        return make_pair(string(pattern), std::move(code));
     }
 };
 
@@ -458,7 +458,7 @@ CREATE TABLE lnav_view_filters (
                    nonstd::optional<int64_t> _filter_id,
                    nonstd::optional<bool> enabled,
                    nonstd::optional<text_filter::type_t> type,
-                   pair<string, pcre *> pattern) {
+                   pair<string, auto_mem<pcre>> pattern) {
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();
         filter_stack &fs = tss->get_filters();
@@ -470,7 +470,7 @@ CREATE TABLE lnav_view_filters (
             type.value_or(text_filter::type_t::EXCLUDE),
             pattern.first,
             *filter_index,
-            pattern.second);
+            pattern.second.release());
         fs.add_filter(pf);
         if (!enabled.value_or(true)) {
             pf->disable();
@@ -506,7 +506,7 @@ CREATE TABLE lnav_view_filters (
                    int64_t new_filter_id,
                    bool enabled,
                    text_filter::type_t type,
-                   pair<string, pcre *> pattern) {
+                   pair<string, auto_mem<pcre>> pattern) {
         auto view_index = lnav_view_t(rowid >> 32);
         int filter_index = rowid & 0xffffffffLL;
         textview_curses &tc = lnav_data.ld_views[view_index];
@@ -533,7 +533,7 @@ CREATE TABLE lnav_view_filters (
         auto pf = make_shared<pcre_filter>(type,
                                            pattern.first,
                                            tf->get_index(),
-                                           pattern.second);
+                                           pattern.second.release());
 
         if (!enabled) {
             pf->disable();

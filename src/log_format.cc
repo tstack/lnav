@@ -33,6 +33,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <memory>
+
 #include "base/string_util.hh"
 #include "fmt/format.h"
 #include "yajlpp/yajlpp.hh"
@@ -626,7 +628,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
     if (this->elf_type == ELF_TYPE_JSON) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
-        yajl_handle handle = this->jlf_yajl_handle.in();
+        yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr);
 
         if (!this->lf_specialized && dst.size() >= 3) {
@@ -1198,7 +1200,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
     if (this->jlf_cached_offset != ll.get_offset() ||
         this->jlf_cached_full != full_message) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
-        yajl_handle handle = this->jlf_yajl_handle.in();
+        yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr);
 
         this->jlf_share_manager.invalidate_refs();
@@ -1651,13 +1653,14 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              ": structured logs cannot have regexes");
         }
         if (this->elf_type == ELF_TYPE_JSON) {
-            this->jlf_parse_context.reset(
-                new yajlpp_parse_context(this->elf_name.to_string()));
-            this->jlf_yajl_handle.reset(yajl_alloc(
-                &this->jlf_parse_context->ypc_callbacks,
-                NULL,
-                this->jlf_parse_context.get()));
-            yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings,
+            this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(
+                this->elf_name.to_string());
+            this->jlf_yajl_handle.reset(
+                yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
+                           nullptr,
+                           this->jlf_parse_context.get()),
+                yajl_handle_deleter());
+            yajl_config(this->jlf_yajl_handle.get(), yajl_dont_validate_strings,
                         1);
         }
 
@@ -2198,11 +2201,12 @@ std::shared_ptr<log_format> external_log_format::specialized(int fmt_lock)
 
     if (this->elf_type == ELF_TYPE_JSON) {
         this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(this->elf_name.to_string());
-        this->jlf_yajl_handle.reset(yajl_alloc(
-            &this->jlf_parse_context->ypc_callbacks,
-            nullptr,
-            this->jlf_parse_context.get()));
-        yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
+        this->jlf_yajl_handle.reset(
+            yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
+                       nullptr,
+                       this->jlf_parse_context.get()),
+            yajl_handle_deleter());
+        yajl_config(this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
         this->jlf_cached_line.reserve(16 * 1024);
     }
 

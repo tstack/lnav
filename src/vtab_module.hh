@@ -222,7 +222,7 @@ struct ToSqliteVisitor {
     };
 
     template<typename T>
-    void operator()(T t) const {
+    void operator()(T&& t) const {
         to_sqlite(this->tsv_context, t);
     }
 

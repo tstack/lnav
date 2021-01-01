@@ -103,6 +103,14 @@ public:
         std::shared_ptr<pcrepp> lp_pcre;
     };
 
+    struct yajl_handle_deleter {
+        void operator()(yajl_handle handle) const {
+            if (handle != nullptr) {
+                yajl_free(handle);
+            }
+        }
+    };
+
     external_log_format(const intern_string_t name)
         : elf_file_pattern(".*"),
           elf_column_count(0),
@@ -116,7 +124,7 @@ public:
           elf_type(ELF_TYPE_TEXT),
           jlf_hide_extra(false),
           jlf_cached_offset(-1),
-          jlf_yajl_handle(yajl_free),
+          jlf_yajl_handle(nullptr, yajl_handle_deleter()),
           elf_name(name) {
         this->jlf_line_offsets.reserve(128);
     };
@@ -439,7 +447,7 @@ public:
     std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
-    auto_mem<yajl_handle_t> jlf_yajl_handle;
+    std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
 private:
     const intern_string_t elf_name;
 

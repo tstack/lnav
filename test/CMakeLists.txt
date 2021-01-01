@@ -30,6 +30,10 @@ add_executable(test_reltime test_reltime.cc)
 target_link_libraries(test_reltime diag PkgConfig::libpcre)
 add_test(NAME test_reltime COMMAND test_reltime)
 
+add_executable(test_auto_mem test_auto_mem.cc)
+target_link_libraries(test_auto_mem diag PkgConfig::libpcre)
+add_test(NAME test_auto_mem COMMAND test_auto_mem)
+
 add_executable(test_date_time_scanner test_date_time_scanner.cc)
 target_link_libraries(test_date_time_scanner diag PkgConfig::libpcre)
 add_test(NAME test_date_time_scanner COMMAND test_date_time_scanner)

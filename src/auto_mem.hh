@@ -53,9 +53,7 @@ public:
         : am_ptr(ptr), am_free_func(default_free) {
     };
 
-    auto_mem(auto_mem &am)
-        : am_ptr(am.release()), am_free_func(am.am_free_func)
-    {};
+    auto_mem(const auto_mem &am) = delete;
 
     template<typename F>
     explicit auto_mem(F free_func)

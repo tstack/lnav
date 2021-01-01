@@ -1,6 +1,8 @@
 #ifndef MAPBOX_UTIL_VARIANT_VISITOR_HPP
 #define MAPBOX_UTIL_VARIANT_VISITOR_HPP
 
+#include <utility>
+
 namespace mapbox {
 namespace util {
 
@@ -10,28 +12,31 @@ struct visitor;
 template <typename Fn>
 struct visitor<Fn> : Fn
 {
-    using type = Fn;
     using Fn::operator();
 
-    visitor(Fn fn) : Fn(fn) {}
+    template<typename T>
+    visitor(T&& fn) : Fn(std::forward<T>(fn)) {}    
 };
 
 template <typename Fn, typename... Fns>
 struct visitor<Fn, Fns...> : Fn, visitor<Fns...>
 {
-    using type = visitor;
     using Fn::operator();
     using visitor<Fns...>::operator();
 
-    visitor(Fn fn, Fns... fns) : Fn(fn), visitor<Fns...>(fns...) {}
+    template<typename T, typename... Ts>
+    visitor(T&& fn, Ts&&... fns)
+        : Fn(std::forward<T>(fn))
+        , visitor<Fns...>(std::forward<Ts>(fns)...) {}
 };
 
 template <typename... Fns>
-visitor<Fns...> make_visitor(Fns... fns)
+visitor<typename std::decay<Fns>::type...> make_visitor(Fns&&... fns)
 {
-    return visitor<Fns...>(fns...);
+    return visitor<typename std::decay<Fns>::type...>
+        (std::forward<Fns>(fns)...);
 }
-
+    
 } // namespace util
 } // namespace mapbox
 
