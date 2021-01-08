@@ -163,6 +163,8 @@ void bottom_status_source::update_loading(off_t off, size_t total)
 {
     status_field &sf = this->bss_fields[BSF_LOADING];
 
+    require(off >= 0);
+
     if (total == 0 || (size_t)off == total) {
         sf.set_cylon(false);
         sf.set_role(view_colors::VCR_STATUS);

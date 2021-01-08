@@ -62,6 +62,9 @@ add_executable(test_top_status test_top_status.cc)
 target_link_libraries(test_top_status diag PkgConfig::libpcre)
 add_test(NAME test_top_status COMMAND test_top_status)
 
+add_executable(drive_vt52_curses drive_vt52_curses.cc)
+target_link_libraries(drive_vt52_curses diag PkgConfig::ncursesw)
+
 add_executable(drive_sql_anno drive_sql_anno.cc)
 target_link_libraries(drive_sql_anno diag PkgConfig::libpcre)
 

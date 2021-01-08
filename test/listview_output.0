@@ -1,1 +1,69 @@
-read 1b29301b371b5b3f3437681b5b313b3234721b5b6d1b5b346c1b5b481b5b324a48656c6c6f1b5b3734430e780f1b5b323b31480e0f576f726c64211b5b3733430e780f1b5b333b3830480e780f1b5b343b3830480e780f1b5b353b3830480e780f1b5b363b3830480e780f1b5b373b3830480e780f1b5b383b3830480e780f1b5b393b3830480e780f1b5b31303b3830480e780f1b5b31313b3830480e780f1b5b31323b3830480e780f1b5b31333b3830480e780f1b5b31343b3830480e780f1b5b31353b3830480e780f1b5b31363b3830480e780f1b5b31373b3830480e780f1b5b31383b3830480e780f1b5b31393b3830480e780f1b5b32303b3830480e780f1b5b32313b3830480e780f1b5b32323b3830480e780f1b5b32333b3830480e780f1b5b32343b3830480e0f080e780f080e1b5b34680f201b5b346c0d1b5b32343b31481b5b324a1b5b3f34376c1b380d1b5b3f316c1b3e
+CTRL Use alt charset
+CTRL save cursor
+CSI Use alternate screen buffer
+CSI set scrolling region 1-24
+S  -1 ┋                                                                                ┋
+A      └ normal
+CSI Replace mode
+CSI Erase all
+S   1 ┋Hello                                                                          x┋
+A                                                                                     └┛ alt
+S   2 ┋World!                                                                         x┋
+A                                                                                     └┛ alt
+S   3 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   4 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   5 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   6 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   7 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   8 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S   9 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  10 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  11 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  12 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  13 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  14 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  15 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  16 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  17 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  18 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  19 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  20 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  21 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  22 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  23 ┋                                                                               x┋
+A                                                                                     └┛ alt
+S  24 ┋                                                                                ┋
+A      ···············································································└ backspace
+A                                                                                    └┛ alt
+A      ···············································································└ backspace
+A      ··············································································└ [4h
+CSI Replace mode
+S  24 ┋                                                                                ┋
+A      ···············································································└ carriage-return
+CSI Erase all
+CSI Use normal screen buffer
+CTRL restore cursor
+S  24 ┋                                                                                ┋
+A      └ carriage-return
+CSI Normal cursor keys
+CTRL Normal keypad

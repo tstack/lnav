@@ -56,7 +56,7 @@ public:
     auto_mem(const auto_mem &am) = delete;
 
     template<typename F>
-    explicit auto_mem(F free_func)
+    explicit auto_mem(F free_func) noexcept
         : am_ptr(nullptr), am_free_func((free_func_t)free_func) { };
 
     auto_mem(auto_mem &&other) noexcept

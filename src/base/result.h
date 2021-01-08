@@ -841,6 +841,14 @@ struct Result {
         return defaultValue;
     }
 
+    template<typename Func>
+    auto unwrapOrElse(Func func) const {
+        if (isOk()) {
+            return storage().template get<T>();
+        }
+        return func(this->storage().template get<E>());
+    }
+
     template<typename U = T>
     typename std::enable_if<
         !std::is_same<U, void>::value,

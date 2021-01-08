@@ -1497,6 +1497,8 @@ static void looper()
         int session_stage = 0;
 
         while (lnav_data.ld_looping) {
+            static bool initial_build = false;
+
             vector<struct pollfd> pollfds;
             auto poll_to = initial_rescan_completed ?
                            timeval{ 0, 333000 } :
@@ -1596,6 +1598,9 @@ static void looper()
                     POLLIN,
                     0
                 });
+                if (initial_build) {
+                    view_curses::awaiting_user_input();
+                }
             }
             rlc.update_poll_set(pollfds);
             lnav_data.ld_filter_source.fss_editor.update_poll_set(pollfds);
@@ -1669,7 +1674,6 @@ static void looper()
                 };
             }
 
-            static bool initial_build = false;
             if (initial_rescan_completed &&
                 (!initial_build || timer.fade_diff(index_counter) == 0)) {
                 if (lnav_data.ld_mode == LNM_PAGING) {

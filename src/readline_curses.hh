@@ -238,6 +238,7 @@ public:
     {
         this->rc_value            = value;
         this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
+        this->set_needs_update();
     };
     std::string get_value() const { return this->rc_value; };
 

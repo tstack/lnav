@@ -1923,31 +1923,34 @@ void external_log_format::build(std::vector<std::string> &errors) {
     for (auto &hd_pair : this->elf_highlighter_patterns) {
         external_log_format::highlighter_def &hd = hd_pair.second;
         const std::string &pattern = hd.hd_pattern;
-        std::string errmsg;
         const char *errptr;
         rgb_color fg, bg;
         int eoff, attrs = 0;
 
         if (!hd.hd_color.empty()) {
-            if (!rgb_color::from_str(hd.hd_color, fg, errmsg)) {
-                errors.push_back("error:"
-                                 + this->elf_name.to_string()
-                                 + ":highlighters/"
-                                 + hd_pair.first.to_string()
-                                 + "/color:"
-                                 + errmsg);
-            }
+            fg = rgb_color::from_str(hd.hd_color)
+                .unwrapOrElse([&](const auto& msg) {
+                    errors.push_back("error:"
+                                     + this->elf_name.to_string()
+                                     + ":highlighters/"
+                                     + hd_pair.first.to_string()
+                                     + "/color:"
+                                     + msg);
+                    return rgb_color{};
+                });
         }
 
         if (!hd.hd_background_color.empty()) {
-            if (!rgb_color::from_str(hd.hd_background_color, bg, errmsg)) {
-                errors.push_back("error:"
-                                 + this->elf_name.to_string()
-                                 + ":highlighters/"
-                                 + hd_pair.first.to_string()
-                                 + "/color:"
-                                 + errmsg);
-            }
+            bg = rgb_color::from_str(hd.hd_background_color)
+                .unwrapOrElse([&](const auto& msg) {
+                    errors.push_back("error:"
+                                     + this->elf_name.to_string()
+                                     + ":highlighters/"
+                                     + hd_pair.first.to_string()
+                                     + "/color:"
+                                     + msg);
+                    return rgb_color{};
+                });
         }
 
         if (hd.hd_underline) {

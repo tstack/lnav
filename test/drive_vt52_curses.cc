@@ -98,15 +98,10 @@ int main(int argc, char *argv[])
       tgetstr((char *)"ce", nullptr),
       "de",
       "\n",
-      "1\n",
-      "2\n",
-      "3\n",
-      "4\n",
-      "5\n",
-      "6\n",
-      "7\n",
-      "8\n",
-      "9\n",
+      "1",
+      "2",
+      "3",
+      "\n",
       "abc",
       "\x02",
       "\a",
@@ -124,6 +119,7 @@ int main(int argc, char *argv[])
       vt.map_output(CANNED_INPUT[lpc], strlen(CANNED_INPUT[lpc]));
       vt.do_update();
       refresh();
+      view_curses::awaiting_user_input();
       getch();
     }
 

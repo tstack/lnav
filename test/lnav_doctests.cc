@@ -115,12 +115,7 @@ TEST_CASE("ptime_fmt") {
 
 TEST_CASE("rgb_color from string") {
     string name = "SkyBlue1";
-    rgb_color color;
-    string errmsg;
-    bool rc;
-
-    rc = rgb_color::from_str(name, color, errmsg);
-    CHECK(rc);
+    auto color = rgb_color::from_str(name).unwrap();
     CHECK(color.rc_r == 135);
     CHECK(color.rc_g == 215);
     CHECK(color.rc_b == 255);

@@ -1,38 +1,48 @@
-sleep 0.867286
-write 0d
-sleep 0.141596
-write 0d
-sleep 0.188837
-write 0d
-sleep 0.177586
-write 0d
-sleep 0.159950
-write 0d
-sleep 0.158958
-write 0d
-sleep 0.164105
-write 0d
-sleep 0.176968
-write 0d
-sleep 0.165942
-write 0d
-sleep 0.187011
-write 0d
-sleep 0.167987
-write 0d
-sleep 0.173959
-write 0d
-sleep 0.176091
-write 0d
-sleep 0.180728
-write 0d
-sleep 0.172983
-write 0d
-sleep 0.167819
-write 0d
-sleep 0.165876
-write 0d
-sleep 0.175857
-write 0d
-sleep 0.183068
-write 0d
+CTRL Use alt charset
+CTRL save cursor
+CSI Use alternate screen buffer
+CSI set scrolling region 1-24
+S  -1 ┋                                                                                ┋
+A      └ normal
+CSI Replace mode
+CSI Erase all
+S   1 ┋Gruß                                                                            ┋
+K 0d
+S   1 ┋                                                                                ┋
+A      ····└ carriage-return
+K 0d
+CSI Erase Below
+K 0d
+S   1 ┋de                                                                              ┋
+K 0d
+S   1 ┋                                                                                ┋
+A      ··└ carriage-return
+CSI Erase Below
+K 0d
+S   1 ┋1                                                                               ┋
+K 0d
+S   1 ┋ 2                                                                              ┋
+K 0d
+S   1 ┋  3                                                                             ┋
+K 0d
+S   1 ┋                                                                                ┋
+A      ···└ carriage-return
+CSI Erase Below
+K 0d
+S   1 ┋abc                                                                             ┋
+K 0d
+S   1 ┋                                                                                ┋
+A      ···└ carriage-return
+CSI Erase Below
+K 0d
+CTRL bell
+K 0d
+S   1 ┋acdef                                                                           ┋
+K 0d0d
+CSI Erase all
+CSI Use normal screen buffer
+CTRL restore cursor
+S  24 ┋                                                                                ┋
+A      └ carriage-return
+CSI Normal cursor keys
+CTRL Normal keypad

@@ -322,6 +322,7 @@ TESTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_meta.sh \
+	test_mvwattrline.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_json_format.sh \
@@ -342,11 +343,11 @@ TESTS = \
 	test_sql_xml_func.sh \
 	test_data_parser.sh \
 	test_pretty_print.sh \
+    test_view_colors.sh \
 	test_vt52_curses.sh
 
 DISABLED_TESTS = \
-	test_top_status \
-    test_view_colors.sh
+	test_top_status
 
 if HAVE_LIBCURL
 TESTS += \

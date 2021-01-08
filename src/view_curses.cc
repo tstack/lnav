@@ -98,6 +98,13 @@ struct utf_to_display_adjustment {
     };
 };
 
+void view_curses::awaiting_user_input()
+{
+    static const char OSC_INPUT[] = "\x1b]999;send-input\a";
+
+    write(STDOUT_FILENO, OSC_INPUT, sizeof(OSC_INPUT) - 1);
+}
+
 void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,
@@ -423,7 +430,7 @@ void view_colors::init()
 {
     vc_active_palette = ansi_colors();
     if (has_colors()) {
-        static int ansi_colors_to_curses[] = {
+        static const int ansi_colors_to_curses[] = {
             COLOR_BLACK,
             COLOR_RED,
             COLOR_GREEN,
@@ -443,9 +450,22 @@ void view_colors::init()
             for (int bg = 0; bg < 8; bg++) {
                 if (fg == 0 && bg == 0)
                     continue;
-                init_pair(ansi_color_pair_index(fg, bg),
-                          ansi_colors_to_curses[fg],
-                          ansi_colors_to_curses[bg]);
+
+                if (lnav_config.lc_ui_default_colors &&
+                    ansi_colors_to_curses[fg] == COLOR_WHITE &&
+                    ansi_colors_to_curses[bg] == COLOR_BLACK) {
+                    init_pair(ansi_color_pair_index(fg, bg), -1, -1);
+                } else {
+                    auto curs_bg = ansi_colors_to_curses[bg];
+
+                    if (lnav_config.lc_ui_default_colors &&
+                        curs_bg == COLOR_BLACK) {
+                        curs_bg = -1;
+                    }
+                    init_pair(ansi_color_pair_index(fg, bg),
+                              ansi_colors_to_curses[fg],
+                              curs_bg);
+                }
             }
         }
         if (COLORS >= 256) {
@@ -466,6 +486,12 @@ void view_colors::init()
 
 inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
 {
+    if (fg == -1) {
+        fg = COLOR_WHITE;
+    }
+    if (bg == -1) {
+        bg = COLOR_BLACK;
+    }
     if (COLOR_PAIRS <= 64) {
         return view_colors::ansi_color_pair(fg, bg);
     } else {
@@ -475,13 +501,6 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
             }
             if (bg == COLOR_BLACK) {
                 bg = -1;
-            }
-        } else {
-            if (fg == -1) {
-                fg = COLOR_WHITE;
-            }
-            if (bg == -1) {
-                bg = COLOR_BLACK;
             }
         }
     }
@@ -502,8 +521,7 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     const lnav_theme &lt, const style_config &sc, const style_config &fallback_sc,
     lnav_config_listener::error_reporter &reporter)
 {
-    rgb_color fg, bg;
-    string fg1, bg1, fg_color, bg_color, errmsg;
+    string fg1, bg1, fg_color, bg_color;
 
     fg1 = sc.sc_color;
     if (fg1.empty()) {
@@ -516,12 +534,14 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     shlex(fg1).eval(fg_color, lt.lt_vars);
     shlex(bg1).eval(bg_color, lt.lt_vars);
 
-    if (!rgb_color::from_str(fg_color, fg, errmsg)) {
-        reporter(&sc.sc_color, errmsg);
-    }
-    if (!rgb_color::from_str(bg_color, bg, errmsg)) {
-        reporter(&sc.sc_background_color, errmsg);
-    }
+    auto fg = rgb_color::from_str(fg_color).unwrapOrElse([&](const auto& msg) {
+        reporter(&sc.sc_color, msg);
+        return rgb_color{};
+    });
+    auto bg = rgb_color::from_str(bg_color).unwrapOrElse([&](const auto& msg) {
+        reporter(&sc.sc_background_color, msg);
+        return rgb_color{};
+    });
 
     attr_t retval1 = attr_for_colors(pair_base,
                                      this->match_color(fg),
@@ -552,13 +572,14 @@ void view_colors::init_roles(const lnav_theme &lt,
         int ident_bg = (lnav_config.lc_ui_default_colors ? -1 : COLOR_BLACK);
 
         if (!ident_sc.sc_background_color.empty()) {
-            string bg_color, errmsg;
-            rgb_color rgb_bg;
+            string bg_color;
 
             shlex(ident_sc.sc_background_color).eval(bg_color, lt.lt_vars);
-            if (!rgb_color::from_str(bg_color, rgb_bg, errmsg)) {
-                reporter(&ident_sc.sc_background_color, errmsg);
-            }
+            auto rgb_bg = rgb_color::from_str(bg_color)
+                .unwrapOrElse([&](const auto& msg) {
+                    reporter(&ident_sc.sc_background_color, msg);
+                    return rgb_color{};
+                });
             ident_bg = vc_active_palette->match_color(lab_color(rgb_bg));
         }
         for (int z = 0; z < 6; z++) {
@@ -592,19 +613,17 @@ void view_colors::init_roles(const lnav_theme &lt,
 
                 auto fg_str = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
                 auto bg_str = lt.lt_vars.find(COLOR_NAMES[ansi_bg]);
-                rgb_color rgb_fg, rgb_bg;
-                string errmsg;
 
-                if (fg_str != lt.lt_vars.end() &&
-                    !rgb_color::from_str(fg_str->second, rgb_fg, errmsg)) {
-                    reporter(&fg_str->second, errmsg);
-                    return;
-                }
-                if (bg_str != lt.lt_vars.end() &&
-                    !rgb_color::from_str(bg_str->second, rgb_bg, errmsg)) {
-                    reporter(&bg_str->second, errmsg);
-                    return;
-                }
+                auto rgb_fg = rgb_color::from_str(fg_str->second)
+                    .unwrapOrElse([&](const auto& msg) {
+                        reporter(&fg_str->second, msg);
+                        return rgb_color{};
+                    });
+                auto rgb_bg = rgb_color::from_str(bg_str->second)
+                    .unwrapOrElse([&](const auto& msg) {
+                        reporter(&fg_str->second, msg);
+                        return rgb_color{};
+                    });
 
                 short fg = vc_active_palette->match_color(lab_color(rgb_fg));
                 short bg = vc_active_palette->match_color(lab_color(rgb_bg));
@@ -617,6 +636,12 @@ void view_colors::init_roles(const lnav_theme &lt,
                 }
 
                 this->vc_ansi_to_theme[ansi_fg] = fg;
+                if (lnav_config.lc_ui_default_colors && bg == COLOR_BLACK) {
+                    bg = -1;
+                    if (fg == COLOR_WHITE) {
+                        fg = -1;
+                    }
+                }
                 init_pair(ansi_color_pair_index(ansi_fg, ansi_bg), fg, bg);
             }
         }
@@ -882,7 +907,7 @@ attr_t view_colors::attrs_for_ident(const char *str, size_t len) const
         pair_content(pnum, &fg, &bg);
     }
     else {
-        retval = BASIC_HL_PAIRS[index % BASIC_COLOR_COUNT];
+        retval = A_BOLD;
     }
 
     return retval;

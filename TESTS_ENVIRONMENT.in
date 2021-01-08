@@ -149,6 +149,8 @@ grep_output_for() {
 on_error_fail_with() {
     if test $? -ne 0; then
 	echo $1 > /dev/stderr
+	cat ${test_file_base}_${test_num}.tmp
+	cat ${test_file_base}_${test_num}.err
 	exit 1
     fi
 }

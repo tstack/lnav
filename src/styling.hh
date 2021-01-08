@@ -35,12 +35,11 @@
 #include <vector>
 
 #include "log_level.hh"
+#include "base/result.h"
 #include "base/intern_string.hh"
 
 struct rgb_color {
-    static bool from_str(const string_fragment &color,
-                         rgb_color &rgb_out,
-                         std::string &errmsg);
+    static Result<rgb_color, std::string> from_str(const string_fragment &sf);
 
     explicit rgb_color(short r = -1, short g = -1, short b = -1)
         : rc_r(r), rc_g(g), rc_b(b) {
@@ -103,6 +102,7 @@ struct lab_color {
 struct term_color {
     short xc_id;
     std::string xc_name;
+    std::string xc_hex;
     rgb_color xc_color;
     lab_color xc_lab_color;
 };

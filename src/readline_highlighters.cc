@@ -363,7 +363,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
     static const pcrepp SQL_PREFIXES("^:(filter-expr)");
     static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
     static const pcrepp COLOR_PREFIXES("^:(config)");
-    static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}))");
+    static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{3}))");
 
     view_colors &vc = view_colors::singleton();
     int keyword_attrs = (
@@ -401,19 +401,18 @@ void readline_command_highlighter(attr_line_t &al, int x)
             pcre_context::capture_t *cap = pc[0];
             string hash_color = pi.get_substr(cap);
             string errmsg;
-            rgb_color rgb_fg, rgb_bg;
             attr_t color_hint_attrs = vc.attrs_for_role(view_colors::VCR_COLOR_HINT);
             int pnum = PAIR_NUMBER(color_hint_attrs);
 
-            if (rgb_color::from_str(hash_color, rgb_bg, errmsg)) {
+            rgb_color::from_str(hash_color).then([&](const auto& rgb_fg) {
                 pnum -= 1;
-                vc.ensure_color_pair(pnum, rgb_fg, rgb_bg);
+                vc.ensure_color_pair(pnum, rgb_fg, rgb_color{});
 
                 al.get_attrs().emplace_back(
                     line_range{cap->c_begin, cap->c_begin + 1},
                     &view_curses::VC_ROLE,
                     view_colors::VCR_COLOR_HINT);
-            }
+            });
         }
     }
     pi.reset(line);

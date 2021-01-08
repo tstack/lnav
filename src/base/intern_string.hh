@@ -39,6 +39,7 @@
 
 #include "optional.hpp"
 #include "strnatcmp.h"
+#include "fmt/format.h"
 
 struct string_fragment {
     using iterator = const char *;
@@ -211,6 +212,18 @@ struct string_fragment {
     int sf_begin;
     int sf_end;
 };
+
+namespace fmt {
+template<>
+struct formatter<string_fragment> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const string_fragment& sf, FormatContext &ctx)
+    {
+        return formatter<string_view>::format(
+            string_view{sf.data(), (size_t) sf.length()}, ctx);
+    }
+};
+}
 
 inline bool operator<(const char *left, const string_fragment &right) {
     int rc = strncmp(left, right.data(), right.length());

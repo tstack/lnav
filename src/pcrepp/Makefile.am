@@ -1,7 +1,8 @@
 
 AM_CPPFLAGS = \
 	-Wall \
-	-I$(top_srcdir)/src
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/fmtlib
 
 noinst_LIBRARIES = libpcrepp.a
 

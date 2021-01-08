@@ -31,6 +31,7 @@
 
 #include <string>
 
+#include "fmt/format.h"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "styling.hh"
@@ -53,6 +54,8 @@ static struct json_path_container term_color_handler = {
         .FOR_FIELD(term_color, xc_id),
     yajlpp::property_handler("name")
         .FOR_FIELD(term_color, xc_name),
+    yajlpp::property_handler("hexString")
+        .FOR_FIELD(term_color, xc_hex),
     yajlpp::property_handler("rgb")
         .with_obj_provider<rgb_color, term_color>(
             [](const auto &pc, term_color *xc) { return &xc->xc_color; })
@@ -83,46 +86,46 @@ term_color_palette *ansi_colors()
     return &retval;
 }
 
-bool rgb_color::from_str(const string_fragment &color,
-                         rgb_color &rgb_out,
-                         std::string &errmsg)
+Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
 {
-    if (color.empty()) {
-        return true;
+    if (sf.empty()) {
+        return Ok(rgb_color());
     }
 
-    if (color[0] == '#') {
-        switch (color.length()) {
+    rgb_color rgb_out;
+
+    if (sf[0] == '#') {
+        switch (sf.length()) {
             case 4:
-                if (sscanf(color.data(), "#%1hx%1hx%1hx",
+                if (sscanf(sf.data(), "#%1hx%1hx%1hx",
                            &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
                     rgb_out.rc_r |= rgb_out.rc_r << 4;
                     rgb_out.rc_g |= rgb_out.rc_g << 4;
                     rgb_out.rc_b |= rgb_out.rc_b << 4;
-                    return true;
+                    return Ok(rgb_out);
                 }
                 break;
             case 7:
-                if (sscanf(color.data(), "#%2hx%2hx%2hx",
+                if (sscanf(sf.data(), "#%2hx%2hx%2hx",
                            &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
-                    return true;
+                    return Ok(rgb_out);
                 }
                 break;
         }
-        errmsg = "Could not parse color: " + color.to_string();
-        return false;
+
+        return Err(fmt::format("Could not parse color: {}", sf));
     }
 
     for (const auto &xc : xterm_colors()->tc_palette) {
-        if (color.iequal(xc.xc_name)) {
-            rgb_out = xc.xc_color;
-            return true;
+        if (sf.iequal(xc.xc_name)) {
+            return Ok(xc.xc_color);
         }
     }
 
-    errmsg = "Unknown color: '" + color.to_string() +
-             "'.  See https://jonasjacek.github.io/colors/ for a list of supported color names";
-    return false;
+    return Err(fmt::format(
+        "Unknown color: '{}'.  "
+        "See https://jonasjacek.github.io/colors/ for a list of supported "
+        "color names", sf));
 }
 
 bool rgb_color::operator<(const rgb_color &rhs) const

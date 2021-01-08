@@ -35,7 +35,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "pcrepp/pcrepp.hh"
 #include "textview_curses.hh"
 #include "data_scanner.hh"
 #include "data_parser.hh"

@@ -143,4 +143,6 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len);
 
 void split_ws(const std::string &str, std::vector<std::string> &toks_out);
 
+std::string repeat(const std::string& input, size_t num);
+
 #endif

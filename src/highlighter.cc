@@ -135,8 +135,23 @@ void highlighter::annotate(attr_line_t &al, int start) const
                     attrs = this->h_attrs;
                 }
                 if (this->h_semantic) {
-                    attrs |= vc.attrs_for_ident(&str[lr.lr_start],
-                                                lr.length());
+                    bool found_color = false;
+
+                    if (str[lr.lr_start] == '#' &&
+                        (lr.length() == 4 || lr.length() == 7)) {
+                        auto fg_res = rgb_color::from_str(
+                            string_fragment(str.data(), lr.lr_start, lr.lr_end));
+                        if (fg_res.isOk()) {
+                            sa.emplace_back(lr,
+                                            &view_curses::VC_FOREGROUND,
+                                            vc.match_color(fg_res.unwrap()));
+                            found_color = true;
+                        }
+                    }
+                    if (!found_color) {
+                        attrs |= vc.attrs_for_ident(&str[lr.lr_start],
+                                                    lr.length());
+                    }
                 }
                 if (!this->h_fg.empty()) {
                     sa.emplace_back(lr,

@@ -442,6 +442,8 @@ public:
     static string_attr_type VC_FOREGROUND;
     static string_attr_type VC_BACKGROUND;
 
+    static void awaiting_user_input();
+
     static void mvwattrline(WINDOW *window,
                             int y,
                             int x,

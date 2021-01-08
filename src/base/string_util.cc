@@ -168,3 +168,10 @@ void split_ws(const std::string &str, std::vector<std::string> &toks_out)
         toks_out.push_back(buf);
     }
 }
+
+std::string repeat(const std::string& input, size_t num)
+{
+    std::ostringstream os;
+    std::fill_n(std::ostream_iterator<std::string>(os), num, input);
+    return os.str();
+}

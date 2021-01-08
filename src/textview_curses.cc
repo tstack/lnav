@@ -168,7 +168,7 @@ void textview_curses::reload_config(error_reporter &reporter)
 
             const auto &sc = hl_pair.second.hc_style;
             string fg1, bg1, fg_color, bg_color, errmsg;
-            rgb_color fg, bg;
+            bool invalid = false;
             int attrs = 0;
 
             fg1 = sc.sc_color;
@@ -176,12 +176,19 @@ void textview_curses::reload_config(error_reporter &reporter)
             shlex(fg1).eval(fg_color, theme_iter->second.lt_vars);
             shlex(bg1).eval(bg_color, theme_iter->second.lt_vars);
 
-            if (!rgb_color::from_str(fg_color, fg, errmsg)) {
-                reporter(&sc.sc_color, errmsg);
-                continue;
-            }
-            if (!rgb_color::from_str(bg_color, bg, errmsg)) {
-                reporter(&sc.sc_background_color, errmsg);
+            auto fg = rgb_color::from_str(fg_color)
+                .unwrapOrElse([&](const auto& msg) {
+                    reporter(&sc.sc_color, errmsg);
+                    invalid = true;
+                    return rgb_color{};
+                });
+            auto bg = rgb_color::from_str(bg_color)
+                .unwrapOrElse([&](const auto& msg) {
+                    reporter(&sc.sc_background_color, errmsg);
+                    invalid = true;
+                    return rgb_color{};
+                });
+            if (invalid) {
                 continue;
             }
 
