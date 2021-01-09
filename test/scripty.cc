@@ -236,7 +236,7 @@ static std::vector<char> hex2bits(const char *src)
 {
     std::vector<char> retval;
 
-    for (size_t lpc = 0; src[lpc] && isnumber(src[lpc]); lpc += 2) {
+    for (size_t lpc = 0; src[lpc] && isdigit(src[lpc]); lpc += 2) {
         int val;
 
         sscanf(&src[lpc], "%2x", &val);
