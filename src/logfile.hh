@@ -216,6 +216,10 @@ public:
         this->lf_options.loo_is_visible = false;
     }
 
+    const logfile_open_options& get_open_options() const {
+        return this->lf_options;
+    }
+
     void reset_state();
 
     bool is_time_adjusted() const {

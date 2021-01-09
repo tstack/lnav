@@ -991,8 +991,10 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
             return false;
         }
 
-        this->lss_files.push_back(std::make_unique<logfile_data>(
-            this->lss_files.size(), this->get_filters(), lf));
+        auto ld = std::make_unique<logfile_data>(
+            this->lss_files.size(), this->get_filters(), lf);
+        ld->set_visibility(lf->get_open_options().loo_is_visible);
+        this->lss_files.push_back(std::move(ld));
     }
     else {
         (*existing)->set_file(lf);

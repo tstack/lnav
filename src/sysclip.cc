@@ -82,15 +82,15 @@ static clip_command *get_commands()
         return OSX_CMDS;
     }
     if (getenv("WAYLAND_DISPLAY") != nullptr) {
-	return WAYLAND_CMDS;
+        return WAYLAND_CMDS;
     }
     if (getenv("DISPLAY") != nullptr) {
-	    if (system("command -v xclip > /dev/null 2>&1") == 0) {
-		return XCLIP_CMDS;
-	    }
+        if (system("command -v xclip > /dev/null 2>&1") == 0) {
+            return XCLIP_CMDS;
+        }
 	    if (system("command -v xsel > /dev/null 2>&1") == 0) {
-		return XSEL_CMDS;
-	    }
+            return XSEL_CMDS;
+        }
     }
     if (getenv("TMUX") != nullptr) {
 	    return TMUX_CMDS;

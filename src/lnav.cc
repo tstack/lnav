@@ -617,6 +617,9 @@ void rebuild_indexes()
                     log_info("Hiding duplicate file: %s",
                              lf->get_filename().c_str());
                     lf->mark_as_duplicate();
+                    lnav_data.ld_log_source.find_data(lf) | [](auto ld) {
+                        ld->set_visibility(false);
+                    };
                 });
                 reload = true;
             }
