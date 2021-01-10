@@ -83,6 +83,7 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             }
 
             lv.reload_data();
+            lnav_data.ld_mode = LNM_PAGING;
             return true;
         }
 
