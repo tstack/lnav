@@ -98,14 +98,31 @@ bool is_archive(const ghc::filesystem::path& filename)
 
     archive_read_support_filter_all(arc);
     archive_read_support_format_all(arc);
+    archive_read_support_format_raw(arc);
     auto r = archive_read_open_filename(arc, filename.c_str(), 16384);
     if (r == ARCHIVE_OK) {
         struct archive_entry *entry;
 
         if (archive_read_next_header(arc, &entry) == ARCHIVE_OK) {
+            static const auto RAW_FORMAT_NAME = string_fragment("raw");
+            static const auto GZ_FILTER_NAME = string_fragment("gzip");
+
+            auto format_name = archive_format_name(arc);
+
+            if (RAW_FORMAT_NAME == format_name) {
+                auto filter_count = archive_filter_count(arc);
+
+                if (filter_count == 1) {
+                    return false;
+                }
+
+                auto first_filter_name = archive_filter_name(arc, 0);
+                if (filter_count == 2 && GZ_FILTER_NAME == first_filter_name) {
+                    return false;
+                }
+            }
             log_info("detected archive: %s -- %s",
-                     filename.c_str(),
-                     archive_format_name(arc));
+                     filename.c_str(), format_name);
             return true;
         } else {
             log_info("archive read header failed: %s -- %s",
@@ -221,6 +238,7 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
 
     arc = archive_read_new();
     archive_read_support_format_all(arc);
+    archive_read_support_format_raw(arc);
     archive_read_support_filter_all(arc);
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, FLAGS);
@@ -247,9 +265,16 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
                                    archive_error_string(arc)));
         }
 
+        auto format_name = archive_format_name(arc);
+        auto filter_count = archive_filter_count(arc);
+
         auto_mem<archive_entry> wentry(archive_entry_free);
         wentry = archive_entry_clone(entry);
-        auto entry_path = tmp_path / fs::path(archive_entry_pathname(entry));
+        auto desired_pathname = fs::path(archive_entry_pathname(entry));
+        if (strcmp(format_name, "raw") == 0 && filter_count >= 2) {
+            desired_pathname = fs::path(filename).filename();
+        }
+        auto entry_path = tmp_path / desired_pathname;
         auto prog = cb(entry_path,
                        archive_entry_size_is_set(entry) ?
                        archive_entry_size(entry) : -1);
@@ -264,7 +289,8 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
                                    entry_path.string(),
                                    archive_error_string(ext)));
         }
-        else if (archive_entry_size(entry) > 0) {
+        else if (!archive_entry_size_is_set(entry) ||
+                 archive_entry_size(entry) > 0) {
             TRY(copy_data(filename, arc, entry, ext, entry_path, prog));
         }
         r = archive_write_finish_entry(ext);

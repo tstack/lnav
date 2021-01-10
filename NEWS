@@ -2,6 +2,10 @@ lnav v0.9.1:
      Features:
      * Added the ':filter-expr' command to filter log messages based on an SQL
        expression.  This command allows much greater control over filtering.
+     * Added support for archive files, like zip, and other compression formats,
+       like xz, when compiled with libarchive.  When one of these types of
+       files is detected, they are unpacked into a temporary directory and
+       all of the files are loaded into lnav.
      * Added an 'xpath()' table-valued function for extracting values from
        strings containing XML snippets.
      * Added the ':prompt' command to allow for more customization of prompts.

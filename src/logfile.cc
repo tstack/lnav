@@ -95,8 +95,8 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
         this->lf_valid_filename = false;
     }
 
-    if (!loo.loo_filename.empty()) {
-        this->set_filename(loo.loo_filename);
+    if (!this->lf_options.loo_filename.empty()) {
+        this->set_filename(this->lf_options.loo_filename);
         this->lf_valid_filename = false;
     }
 
@@ -104,7 +104,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
     this->lf_line_buffer.set_fd(this->lf_options.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
-    this->lf_indexing = loo.loo_is_visible;
+    this->lf_indexing = this->lf_options.loo_is_visible;
 
     ensure(this->invariant());
 }
