@@ -364,6 +364,7 @@ DISTCLEANFILES = \
 	*.tmp \
 	*.gz \
 	*.bz2 \
+	*.xz \
 	hw.txt \
 	hw2.txt \
 	reload_test.0 \

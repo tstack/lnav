@@ -38,6 +38,20 @@ EOF
 fi
 
 if test x"${LIBARCHIVE_LIBS}" != x""; then
+    if test x"${XZ_CMD}" != x""; then
+        ${XZ_CMD} -z -c ${srcdir}/logfile_syslog.1 > logfile_syslog.1.xz
+
+        run_test env TMPDIR=tmp ${lnav_test} -n \
+            logfile_syslog.1.xz
+
+        check_output "decompression not working" <<EOF
+Dec  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed
+Dec  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+Dec  3 09:23:38 veridian automount[7999]: lookup(file): lookup for opt failed
+Jan  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
+EOF
+    fi
+
     (cd ${srcdir} && tar cfz ${builddir}/test-logs.tgz logfile_access_log.* logfile_empty.0 -C ${builddir} ../src/lnav)
 
     dd if=test-logs.tgz of=test-logs-trunc.tgz bs=4096 count=20
