@@ -20,7 +20,8 @@ PACKAGE_URLS = \
 	https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.haxx.se/download/curl-7.72.0.tar.gz
+	https://curl.haxx.se/download/curl-7.72.0.tar.gz \
+	https://tukaani.org/xz/xz-5.2.5.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs musl
 

@@ -50,6 +50,7 @@ if test x"${OS}" != x"FreeBSD"; then
             CXXFLAGS='-static -U__unused -no-pie -s -O2' \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
             CPPFLAGS="-I${FAKE_ROOT}/include" \
+            LIBS="-L${FAKE_ROOT}/lib -llzma -lssl -lcrypto" \
             --enable-static
             PATH="${FAKE_ROOT}/bin:${PATH}"
     else
@@ -57,6 +58,7 @@ if test x"${OS}" != x"FreeBSD"; then
             --with-libarchive=${FAKE_ROOT} \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
             CPPFLAGS="-I${FAKE_ROOT}/include -O2" \
+            LIBS="-L${FAKE_ROOT}/lib -llzma -lssl -lcrypto" \
             PATH="${FAKE_ROOT}/bin:${PATH}"
     fi
 else
