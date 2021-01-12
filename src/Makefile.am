@@ -497,10 +497,10 @@ lnav_SOURCES = lnav.cc
 lnav_test_SOURCES = lnav.cc test_override.c
 
 bin2c$(BUILD_EXEEXT): bin2c.c
-	$(AM_V_CC) $(CC_FOR_BUILD) -g3 -o $@ $? -lz
+	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -lz
 
 ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC_FOR_BUILD) -g3 -o $@ $?
+	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $?
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc log_level_re.cc
