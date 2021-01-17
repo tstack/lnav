@@ -1121,7 +1121,7 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
 }
 
 static void find_format_in_path(const ghc::filesystem::path &path,
-                                map<string, vector<script_metadata> > &scripts)
+                                available_scripts& scripts)
 {
     auto format_path = path / "formats/*/*.lnav";
     static_root_mem<glob_t, globfree> gl;
@@ -1136,7 +1136,7 @@ static void find_format_in_path(const ghc::filesystem::path &path,
             meta.sm_path = gl->gl_pathv[lpc];
             meta.sm_name = script_name;
             extract_metadata_from_file(meta);
-            scripts[script_name].push_back(meta);
+            scripts.as_scripts[script_name].push_back(meta);
 
             log_debug("  found script: %s", meta.sm_path.c_str());
         }
@@ -1144,7 +1144,7 @@ static void find_format_in_path(const ghc::filesystem::path &path,
 }
 
 void find_format_scripts(const vector<ghc::filesystem::path> &extra_paths,
-                         map<string, vector<script_metadata> > &scripts)
+                         available_scripts& scripts)
 {
     for (const auto &extra_path : extra_paths) {
         find_format_in_path(extra_path, scripts);

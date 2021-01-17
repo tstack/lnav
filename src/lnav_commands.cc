@@ -43,6 +43,8 @@
 #include <pcrecpp.h>
 #include <yajl/api/yajl_tree.h>
 
+#include "bound_tags.hh"
+#include "base/injector.hh"
 #include "base/string_util.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
@@ -147,8 +149,6 @@ static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdli
         vis_line_t top_line;
         struct exttm tm;
         std::shared_ptr<logfile> lf;
-        relative_time rt;
-        struct relative_time::parse_error pe;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_top();
         top_content = lss.at(top_line);
@@ -161,8 +161,9 @@ static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdli
         dts.set_base_time(top_time.tv_sec);
         args[1] = remaining_args(cmdline, args);
 
-        if (rt.parse(args[1], pe)) {
-            new_time = rt.add(top_time).to_timeval();
+        auto parse_res = relative_time::from_str(args[1]);
+        if (parse_res.isOk()) {
+            new_time = parse_res.unwrap().add(top_time).to_timeval();
         }
         else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
             // nothing to do
@@ -288,21 +289,21 @@ static Result<string, string> com_goto(exec_context &ec, string cmdline, vector<
         auto ttt = dynamic_cast<text_time_translator *>(tc->get_sub_source());
         int   line_number, consumed;
         date_time_scanner dts;
-        struct relative_time::parse_error pe;
-        relative_time rt;
         struct timeval tv;
         struct exttm tm;
         float value;
         nonstd::optional<vis_line_t> dst_vl;
+        auto parse_res = relative_time::from_str(all_args);
 
-        if (rt.parse(all_args, pe)) {
+        if (parse_res.isOk()) {
             if (ttt != nullptr) {
                 struct timeval tv = ttt->time_for_row(tc->get_top());
                 vis_line_t vl = tc->get_top(), new_vl;
                 bool done = false;
+                auto rt = parse_res.unwrap();
 
                 if (rt.is_relative()) {
-                    lnav_data.ld_last_relative_time = rt;
+                    injector::get<relative_time&, last_relative_time_tag>() = rt;
                 }
 
                 do {
@@ -2635,18 +2636,17 @@ static Result<string, string> com_pt_time(exec_context &ec, string cmdline, vect
     else if (args.size() >= 2) {
         string all_args = remaining_args(cmdline, args);
         struct timeval new_time = { 0, 0 };
-        relative_time rt;
-        struct relative_time::parse_error pe;
         date_time_scanner dts;
         struct exttm tm;
         time_t now;
+        auto parse_res = relative_time::from_str(all_args);
 
         time(&now);
         dts.dts_keep_base_tz = true;
         dts.set_base_time(now);
-        if (rt.parse(all_args, pe)) {
+        if (parse_res.isOk()) {
             tm.et_tm = *gmtime(&now);
-            rt.add(tm);
+            parse_res.unwrap().add(tm);
             new_time.tv_sec = timegm(&tm.et_tm);
         }
         else {
@@ -3219,11 +3219,10 @@ static Result<string, string> com_hide_line(exec_context &ec, string cmdline, ve
         logfile_sub_source &lss = lnav_data.ld_log_source;
         date_time_scanner dts;
         struct timeval tv;
-        relative_time rt;
-        struct relative_time::parse_error pe;
         bool tv_set = false;
+        auto parse_res = relative_time::from_str(all_args);
 
-        if (rt.parse(all_args, pe)) {
+        if (parse_res.isOk()) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 if (tc->get_inner_height() > 0) {
                     content_line_t cl;
@@ -3235,7 +3234,7 @@ static Result<string, string> com_hide_line(exec_context &ec, string cmdline, ve
                     cl = lnav_data.ld_log_source.at(vl);
                     ll = lnav_data.ld_log_source.find_line(cl);
                     ll->to_exttm(tm);
-                    rt.add(tm);
+                    parse_res.unwrap().add(tm);
 
                     tv.tv_sec = timegm(&tm.et_tm);
                     tv.tv_usec = tm.et_nsec / 1000;
@@ -4193,14 +4192,14 @@ static void command_prompt(vector<string> &args)
 static void script_prompt(vector<string> &args)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
-    map<string, vector<script_metadata>> &scripts = lnav_data.ld_scripts;
+    auto &scripts = injector::get<available_scripts&>();
 
     lnav_data.ld_mode = LNM_EXEC;
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_top();
     lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
     find_format_scripts(lnav_data.ld_config_paths, scripts);
-    for (const auto &iter : scripts) {
+    for (const auto &iter : scripts.as_scripts) {
         lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter.first);
     }
     add_view_text_possibilities(lnav_data.ld_rl_view, LNM_EXEC, "*", tc);

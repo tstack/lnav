@@ -48,6 +48,8 @@
 #include "pcrecpp.h"
 
 #include "auto_fd.hh"
+#include "base/injector.hh"
+#include "base/injector.bind.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
@@ -72,6 +74,10 @@ static struct _lnav_config lnav_default_config;
 std::map<intern_string_t, source_location> lnav_config_locations;
 
 lnav_config_listener *lnav_config_listener::LISTENER_LIST;
+
+static auto a = injector::bind<archive_manager::config>::to_instance(+[]() {
+    return &lnav_config.lc_archive_manager;
+});
 
 ghc::filesystem::path dotlnav_path()
 {
@@ -111,7 +117,7 @@ bool check_experimental(const char *feature_name)
 {
     const char *env_value = getenv("LNAV_EXP");
 
-    require(feature_name != NULL);
+    require(feature_name != nullptr);
 
     if (env_value && strcasestr(env_value, feature_name)) {
         return true;
@@ -847,7 +853,21 @@ static struct json_path_container ui_handlers = {
         .with_children(theme_defs_handlers),
     yajlpp::property_handler("keymap-defs")
         .with_description("Keymap definitions.")
-        .with_children(keymap_defs_handlers)};
+        .with_children(keymap_defs_handlers),
+};
+
+static struct json_path_container archive_handlers = {
+    yajlpp::property_handler("cache-ttl")
+        .with_description("The time-to-live for unpacked archives")
+        .for_field(&_lnav_config::lc_archive_manager,
+                   &archive_manager::config::amc_cache_ttl),
+};
+
+static struct json_path_container tuning_handlers = {
+    yajlpp::property_handler("archive-manager")
+        .with_description("Settings related to opening archive files")
+        .with_children(archive_handlers),
+};
 
 static set<string> SUPPORTED_CONFIG_SCHEMAS = {
     "https://lnav.org/schemas/config-v1.schema.json",
@@ -881,6 +901,10 @@ struct json_path_container lnav_config_handlers = json_path_container {
     json_path_handler("$schema", read_id)
         .with_synopsis("The URI of the schema for this file")
         .with_description("Specifies the type of this file"),
+
+    yajlpp::property_handler("tuning")
+        .with_description("Internal settings")
+        .with_children(tuning_handlers),
 
     yajlpp::property_handler("ui")
         .with_description("User-interface settings")

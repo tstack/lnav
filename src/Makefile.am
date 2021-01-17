@@ -249,6 +249,7 @@ noinst_HEADERS = \
 	all_logs_vtab.hh \
 	ansi_scrubber.hh \
 	archive_manager.hh \
+	archive_manager.cfg.hh \
 	attr_line.hh \
 	auto_fd.hh \
 	auto_mem.hh \
@@ -257,6 +258,7 @@ noinst_HEADERS = \
 	bin2c.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
+	bound_tags.hh \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
@@ -272,7 +274,6 @@ noinst_HEADERS = \
 	field_overlay_source.hh \
 	file_collection.hh \
 	file_format.hh \
-	file_vtab.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
 	filter_status_source.hh \
@@ -413,7 +414,6 @@ libdiag_a_SOURCES = \
 	field_overlay_source.cc \
 	file_collection.cc \
 	file_format.cc \
-	file_vtab.cc \
 	files_sub_source.cc \
 	filter_observer.cc \
 	filter_status_source.cc \
@@ -490,11 +490,14 @@ libdiag_a_SOURCES = \
 	xterm_mouse.cc \
 	spookyhash/SpookyV2.cpp
 
+PLUGIN_SRCS = \
+	file_vtab.cc
+
 lnav.$(OBJEXT): help-txt.h init-sql.h
 
-lnav_SOURCES = lnav.cc
+lnav_SOURCES = lnav.cc $(PLUGIN_SRCS)
 
-lnav_test_SOURCES = lnav.cc test_override.c
+lnav_test_SOURCES = lnav.cc test_override.c $(PLUGIN_SRCS)
 
 bin2c$(BUILD_EXEEXT): bin2c.c
 	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -lz

@@ -474,8 +474,7 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
 
 Result<string, string> execute_file(exec_context &ec, const string &path_and_args, bool multiline)
 {
-    map<string, vector<script_metadata> > scripts;
-    map<string, vector<script_metadata> >::iterator iter;
+    available_scripts scripts;
     vector<string> split_args;
     string retval, msg;
     shlex lexer(path_and_args);
@@ -518,11 +517,12 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     map<string, const char *>::iterator internal_iter;
 
     find_format_scripts(lnav_data.ld_config_paths, scripts);
-    if ((iter = scripts.find(script_name)) != scripts.end()) {
+    auto iter = scripts.as_scripts.find(script_name);
+    if (iter != scripts.as_scripts.end()) {
         paths_to_exec = iter->second;
     }
     if (script_name == "-" || script_name == "/dev/stdin") {
-        paths_to_exec.push_back({script_name});
+        paths_to_exec.push_back({script_name, "", "", ""});
     } else if (access(script_name.c_str(), R_OK) == 0) {
         struct script_metadata meta;
 

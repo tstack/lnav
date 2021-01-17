@@ -128,6 +128,7 @@ std::string get_actual_path(const pugi::xml_node& node)
 }
 
 struct xpath_vtab {
+    static constexpr const char *NAME = "xpath";
     static constexpr const char *CREATE_STMT = R"(
 -- The xpath() table-valued function allows you to execute an xpath expression
 CREATE TABLE xpath (
@@ -172,7 +173,7 @@ CREATE TABLE xpath (
         };
 
         int eof() {
-            return this->c_rowid >= this->c_results.size();
+            return this->c_rowid >= (int64_t) this->c_results.size();
         };
 
         int get_rowid(sqlite3_int64 &rowid_out) {

@@ -42,10 +42,12 @@
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "fmt/format.h"
+#include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
 
 #include "archive_manager.hh"
+#include "archive_manager.cfg.hh"
 
 namespace fs = ghc::filesystem;
 
@@ -78,7 +80,7 @@ public:
         lockf(this->lh_fd, F_ULOCK, 0);
     };
 
-    explicit archive_lock(const ghc::filesystem::path& archive_path) {
+    explicit archive_lock(const fs::path& archive_path) {
         auto lock_path = archive_path;
 
         lock_path += ".lck";
@@ -89,7 +91,7 @@ public:
     auto_fd lh_fd;
 };
 
-bool is_archive(const ghc::filesystem::path& filename)
+bool is_archive(const fs::path& filename)
 {
 #if HAVE_ARCHIVE_H
     auto_mem<archive> arc(archive_read_free);
@@ -139,13 +141,20 @@ bool is_archive(const ghc::filesystem::path& filename)
     return false;
 }
 
+static
+fs::path archive_cache_path()
+{
+    auto subdir_name = fmt::format("lnav-{}-archives", getuid());
+    auto tmp_path = fs::temp_directory_path();
+
+    return tmp_path / fs::path(subdir_name);
+}
+
 fs::path
 filename_to_tmp_path(const std::string &filename)
 {
     auto fn_path = fs::path(filename);
     auto basename = fn_path.filename().string();
-    auto subdir_name = fmt::format("lnav-{}-archives", getuid());
-    auto tmp_path = fs::temp_directory_path();
     hasher h;
 
     h.update(basename);
@@ -161,7 +170,7 @@ filename_to_tmp_path(const std::string &filename)
     }
     basename = fmt::format("arc-{}-{}", h.to_string(), basename);
 
-    return tmp_path / fs::path(subdir_name) / basename;
+    return archive_cache_path() / basename;
 }
 
 #if HAVE_ARCHIVE_H
@@ -170,7 +179,7 @@ copy_data(const std::string& filename,
           struct archive *ar,
           struct archive_entry *entry,
           struct archive *aw,
-          const ghc::filesystem::path &entry_path,
+          const fs::path &entry_path,
           struct extract_progress *ep)
 {
     int r;
@@ -200,7 +209,7 @@ copy_data(const std::string& filename,
         ep->ep_out_size.fetch_add(size);
 
         if ((total - last_space_check) > (1024 * 1024)) {
-            auto tmp_space = ghc::filesystem::space(entry_path);
+            auto tmp_space = fs::space(entry_path);
 
             if (tmp_space.available < MIN_FREE_SPACE) {
                 return Err(fmt::format(
@@ -226,8 +235,8 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
 
     done_path += ".done";
 
-    if (ghc::filesystem::exists(done_path)) {
-        ghc::filesystem::last_write_time(
+    if (fs::exists(done_path)) {
+        fs::last_write_time(
             done_path, std::chrono::system_clock::now());
         log_debug("already extracted! %s", done_path.c_str());
         return Ok();
@@ -319,7 +328,11 @@ walk_result_t walk_archive_files(
 #if HAVE_ARCHIVE_H
     auto tmp_path = filename_to_tmp_path(filename);
 
-    TRY(extract(filename, cb));
+    auto result = extract(filename, cb);
+    if (result.isErr()) {
+        fs::remove_all(tmp_path);
+        return result;
+    }
 
     for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
         if (!entry.is_regular_file()) {
@@ -333,6 +346,42 @@ walk_result_t walk_archive_files(
 #else
     return Err(std::string("not compiled with libarchive"));
 #endif
+}
+
+void cleanup_cache()
+{
+    (void) std::async(std::launch::async, []() {
+        auto now = std::chrono::system_clock::now();
+        auto cache_path = archive_cache_path();
+        auto cfg = injector::get<const config&>();
+        std::vector<fs::path> to_remove;
+
+        log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());
+        for (const auto& entry : fs::directory_iterator(cache_path)) {
+            if (entry.path().extension() != ".done") {
+                continue;
+            }
+
+            auto mtime = fs::last_write_time(entry.path());
+            auto exp_time = mtime + cfg.amc_cache_ttl;
+            if (now < exp_time) {
+                continue;
+            }
+
+            to_remove.emplace_back(entry.path());
+        }
+
+        for (auto& entry : to_remove) {
+            log_debug("removing cached archive: %s", entry.c_str());
+            fs::remove(entry);
+
+            entry.replace_extension(".lck");
+            fs::remove(entry);
+
+            entry.replace_extension();
+            fs::remove_all(entry);
+        }
+    });
 }
 
 }

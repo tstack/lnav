@@ -68,6 +68,9 @@ walk_result_t walk_archive_files(
     const std::function<void(
         const ghc::filesystem::path &,
         const ghc::filesystem::directory_entry &)> &);
+
+void cleanup_cache();
+
 }
 
 #endif

@@ -471,8 +471,14 @@ private:
     int viu_max_column;
 };
 
+struct vtab_module_base {
+    virtual int create(sqlite3 *db) = 0;
+
+    virtual ~vtab_module_base() = default;
+};
+
 template<typename T>
-struct vtab_module {
+struct vtab_module : public vtab_module_base {
     struct vtab {
         explicit vtab(T& impl) : v_impl(impl) {};
 
@@ -664,6 +670,8 @@ struct vtab_module {
         this->addUpdate<T>(this->vm_impl);
     };
 
+    ~vtab_module() override = default;
+
     int create(sqlite3 *db, const char *name)
     {
         auto impl_name = std::string(name);
@@ -679,6 +687,10 @@ struct vtab_module {
                                        name, impl_name);
         return sqlite3_exec(db, create_stmt.c_str(), nullptr, nullptr, nullptr);
     };
+
+    int create(sqlite3 *db) override {
+        return this->create(db, T::NAME);
+    }
 
     sqlite3_module vm_module;
     T vm_impl;

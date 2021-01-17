@@ -39,6 +39,7 @@
 #include <string>
 
 #include "ptimec.hh"
+#include "base/result.h"
 
 class relative_time {
 public:
@@ -91,6 +92,19 @@ public:
 
         RTF__MAX
     };
+
+    struct parse_error {
+        int pe_column;
+        std::string pe_msg;
+    };
+
+    static Result<relative_time, parse_error>
+    from_str(const char *str, size_t len);
+
+    static Result<relative_time, parse_error>
+    from_str(const std::string &str) {
+        return from_str(str.c_str(), str.length());
+    }
 
     relative_time() {
         this->clear();
@@ -153,17 +167,6 @@ public:
         }
         return true;
     };
-
-    struct parse_error {
-        int pe_column;
-        std::string pe_msg;
-    };
-
-    bool parse(const char *str, size_t len, struct parse_error &pe_out);
-
-    bool parse(const std::string &str, struct parse_error &pe_out) {
-        return this->parse(str.c_str(), str.length(), pe_out);
-    }
 
     struct exttm add_now() {
         struct exttm tm;
@@ -284,11 +287,22 @@ public:
         return retval;
     };
 
+    void from_timeval(const struct timeval& tv);
+
     void to_timeval(struct timeval &tv_out) {
         int64_t us = this->to_microseconds();
 
         tv_out.tv_sec = us / (1000 * 1000);
         tv_out.tv_usec = us % (1000 * 1000);
+    };
+
+    struct timeval to_timeval() {
+        int64_t us = this->to_microseconds();
+        struct timeval retval;
+
+        retval.tv_sec = us / (1000 * 1000);
+        retval.tv_usec = us % (1000 * 1000);
+        return retval;
     };
 
     std::string to_string();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Timothy Stack
+ * Copyright (c) 2021, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,15 +25,13 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file bound_tags.hh
  */
 
-#ifndef file_vtab_hh
-#define file_vtab_hh
+#ifndef lnav_bound_tags_hh
+#define lnav_bound_tags_hh
 
-#include <sqlite3.h>
-
-#include "file_collection.hh"
-
-int register_file_vtab(sqlite3 *db, file_collection &fc);
+struct last_relative_time_tag {};
 
 #endif

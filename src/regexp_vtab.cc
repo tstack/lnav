@@ -49,6 +49,7 @@ enum {
 };
 
 struct regexp_capture {
+    static constexpr const char *NAME = "regexp_capture";
     static constexpr const char *CREATE_STMT = R"(
 -- The regexp_capture() table-valued function allows you to execute a regular-
 -- expression over a given string and get the captured data as rows in a table.

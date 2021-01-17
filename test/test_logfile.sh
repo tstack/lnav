@@ -42,6 +42,7 @@ if test x"${LIBARCHIVE_LIBS}" != x""; then
         ${XZ_CMD} -z -c ${srcdir}/logfile_syslog.1 > logfile_syslog.1.xz
 
         run_test env TMPDIR=tmp ${lnav_test} -n \
+            -c ':config /tuning/archive-manager/cache-ttl 1d' \
             logfile_syslog.1.xz
 
         check_output "decompression not working" <<EOF
@@ -57,7 +58,9 @@ EOF
     dd if=test-logs.tgz of=test-logs-trunc.tgz bs=4096 count=20
 
     mkdir -p tmp
-    run_test env TMPDIR=tmp ${lnav_test} -n test-logs.tgz
+    run_test env TMPDIR=tmp ${lnav_test} \
+        -c ':config /tuning/archive-manager/cache-ttl 1d' \
+        -n test-logs.tgz
 
     check_output "archive not unpacked" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
@@ -66,17 +69,26 @@ EOF
 10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
 EOF
 
-    if ! test tmp/*/test-logs.tgz/logfile_access_log.0; then
+    if ! test -f tmp/*/*-test-logs.tgz/logfile_access_log.0; then
         echo "archived file not unpacked"
         exit 1
     fi
 
-    if test -w tmp/*/test-logs.tgz/logfile_access_log.0; then
+    if test -w tmp/*/*-test-logs.tgz/logfile_access_log.0; then
         echo "archived file is writable"
         exit 1
     fi
 
-    run_test env TMPDIR=tmp ${lnav_test} -n \
+    env TMPDIR=tmp ${lnav_test} -d /tmp/lnav.err \
+        -c ':config /tuning/archive-manager/cache-ttl 0d' \
+        -n -q ${srcdir}/logfile_syslog.0
+
+    if test -f tmp/lnav*/*-test-logs.tgz/logfile_access_log.0; then
+        echo "archive cache not deleted?"
+        exit 1
+    fi
+
+    run_test env TMPDIR=tmp ${lnav_test} -n\
         -c ';SELECT view_name, basename(filepath), visible FROM lnav_view_files' \
         test-logs.tgz
 

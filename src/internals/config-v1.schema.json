@@ -7,6 +7,27 @@
             "description": "Specifies the type of this file",
             "type": "string"
         },
+        "tuning": {
+            "description": "Internal settings",
+            "title": "/tuning",
+            "type": "object",
+            "properties": {
+                "archive-manager": {
+                    "description": "Settings related to opening archive files",
+                    "title": "/tuning/archive-manager",
+                    "type": "object",
+                    "properties": {
+                        "cache-ttl": {
+                            "title": "/tuning/archive-manager/cache-ttl",
+                            "description": "The time-to-live for unpacked archives",
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
         "ui": {
             "description": "User-interface settings",
             "title": "/ui",

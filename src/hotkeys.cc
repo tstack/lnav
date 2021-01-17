@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "base/injector.hh"
 #include "base/math_util.hh"
 #include "lnav.hh"
 #include "bookmarks.hh"
@@ -47,6 +48,8 @@
 #include "shlex.hh"
 #include "lnav_util.hh"
 #include "lnav_config.hh"
+#include "bound_tags.hh"
+#include "xterm_mouse.hh"
 
 using namespace std;
 
@@ -235,10 +238,11 @@ bool handle_paging_key(int ch)
 
         case KEY_F(2):
             if (xterm_mouse::is_available()) {
-                lnav_data.ld_mouse.set_enabled(!lnav_data.ld_mouse.is_enabled());
+                auto mouse_i = injector::get<xterm_mouse&>();
+                mouse_i.set_enabled(!mouse_i.is_enabled());
                 lnav_data.ld_rl_view->set_value(
                     ok_prefix("info: mouse mode -- ") +
-                    (lnav_data.ld_mouse.is_enabled() ?
+                    (mouse_i.is_enabled() ?
                      ANSI_BOLD("enabled") : ANSI_BOLD("disabled")));
             }
             else {
@@ -893,13 +897,16 @@ bool handle_paging_key(int ch)
         case 'r':
         case 'R':
             if (lss) {
-                if (lnav_data.ld_last_relative_time.empty()) {
+                auto &last_time =
+                    injector::get<const relative_time&, last_relative_time_tag>();
+
+                if (last_time.empty()) {
                     lnav_data.ld_rl_view->set_value(
                             "Use the 'goto' command to set the relative time to move by");
                 }
                 else {
                     vis_line_t vl = tc->get_top(), new_vl;
-                    relative_time rt = lnav_data.ld_last_relative_time;
+                    relative_time rt = last_time;
                     content_line_t cl;
                     struct exttm tm;
                     bool done = false;

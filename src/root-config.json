@@ -6,5 +6,10 @@
         "default-colors": true,
         "keymap": "default",
         "theme": "default"
+    },
+    "tuning": {
+        "archive-manager": {
+            "cache-ttl": "2d"
+        }
     }
 }

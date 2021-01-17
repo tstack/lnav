@@ -462,7 +462,8 @@ void dump_sqlite_schema(sqlite3 *db, std::string &schema_out)
         schema_table_list,
         schema_table_info,
         schema_foreign_key_list,
-        &schema_out
+        &schema_out,
+        {}
     };
 
     walk_sqlite_metadata(db, schema_sql_meta_callbacks);
@@ -778,7 +779,7 @@ void sql_execute_script(sqlite3 *db,
                     const char *errmsg;
 
                     errmsg = sqlite3_errmsg(db);
-                    errors.push_back(errmsg);
+                    errors.emplace_back(errmsg);
                     break;
                 }
             }
@@ -814,8 +815,6 @@ static struct {
         { SQLITE_INTEGER, "", "123" },
         { SQLITE_FLOAT, "", "123.0" },
         { SQLITE_TEXT, "ipaddress", "127.0.0.1" },
-
-        { SQLITE_NULL }
 };
 
 int guess_type_from_pcre(const string &pattern, std::string &collator)
@@ -824,16 +823,19 @@ int guess_type_from_pcre(const string &pattern, std::string &collator)
         pcrepp re(pattern.c_str());
         vector<int> matches;
         int retval = SQLITE3_TEXT;
+        int index = 0;
 
         collator.clear();
-        for (int lpc = 0; TYPE_TEST_VALUE[lpc].sqlite_type != SQLITE_NULL; lpc++) {
+        for (const auto& test_value : TYPE_TEST_VALUE) {
             pcre_context_static<30> pc;
-            pcre_input pi(TYPE_TEST_VALUE[lpc].sample);
+            pcre_input pi(test_value.sample);
 
             if (re.match(pc, pi, PCRE_ANCHORED) &&
                 pc[0]->c_begin == 0 && pc[0]->length() == (int) pi.pi_length) {
-                matches.push_back(lpc);
+                matches.push_back(index);
             }
+
+            index += 1;
         }
 
         if (matches.size() == 1) {

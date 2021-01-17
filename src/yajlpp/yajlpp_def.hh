@@ -32,7 +32,10 @@
 #ifndef yajlpp_def_hh
 #define yajlpp_def_hh
 
+#include <chrono>
+
 #include "yajlpp.hh"
+#include "relative_time.hh"
 
 #define FOR_FIELD(T, FIELD) \
     for_field<T, decltype(T :: FIELD), & T :: FIELD>()
@@ -487,6 +490,70 @@ struct json_path_handler : public json_path_handler_base {
             json_path_handler::get_field(obj, args...) = static_cast<bool>(val);
 
             return 1;
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<std::chrono::seconds, Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context *ypc,
+                                     const unsigned char *str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto handler = ypc->ypc_current_handler;
+            auto parse_res = relative_time::from_str((const char *) str, len);
+
+            if (parse_res.isErr()) {
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "error:%s:line %d\n"
+                                  "  Invalid duration: '%.*s' -- %s",
+                                  ypc->ypc_source.c_str(),
+                                  ypc->get_line_number(),
+                                  len,
+                                  str,
+                                  parse_res.unwrapErr().pe_msg.c_str());
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "    for option: %s %s -- %s\n",
+                                  &ypc->ypc_path[0],
+                                  handler->jph_synopsis,
+                                  handler->jph_description);
+                return 1;
+            }
+
+            json_path_handler::get_field(obj, args...) = std::chrono::seconds(
+                parse_res.template unwrap().to_timeval().tv_sec);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context &ygc,
+                                           const json_path_handler_base &jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+            relative_time rt;
+
+            rt.from_timeval({ field.count() });
+            return gen(rt.to_string());
+        };
+        this->jph_field_getter = [args...](void *root, nonstd::optional<std::string> name) {
+            return (void *) &json_path_handler::get_field(root, args...);
         };
         return *this;
     }

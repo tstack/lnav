@@ -354,12 +354,14 @@ add_library(diag STATIC
 
         all_logs_vtab.hh
         archive_manager.hh
+        archive_manager.cfg.hh
         attr_line.hh
         auto_fd.hh
         auto_mem.hh
         auto_pid.hh
         big_array.hh
         bottom_status_source.hh
+        bound_tags.hh
         byte_array.hh
         command_executor.hh
         column_namer.hh
@@ -373,7 +375,6 @@ add_library(diag STATIC
         field_overlay_source.hh
         file_collection.hh
         file_format.hh
-        file_vtab.hh
         files_sub_source.hh
         filter_observer.hh
         filter_status_source.hh
@@ -387,6 +388,8 @@ add_library(diag STATIC
         hotkeys.hh
         base/humanize.hh
         input_dispatcher.hh
+        base/injector.hh
+        base/injector.bind.hh
         base/intern_string.hh
         base/is_utf8.hh
         k_merge_tree.h

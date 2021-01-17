@@ -57,7 +57,7 @@ struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_table_list;
     sqlite_exec_callback smc_table_info;
     sqlite_exec_callback smc_foreign_key_list;
-    void *smc_userdata;
+    void *smc_userdata{nullptr};
     db_table_map_t       smc_db_list;
 };
 

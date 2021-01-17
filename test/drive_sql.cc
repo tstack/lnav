@@ -59,6 +59,11 @@ void rebuild_indexes()
 {
 }
 
+textview_curses *get_textview_for_mode(ln_mode_t mode)
+{
+    return nullptr;
+}
+
 readline_context::command_map_t lnav_commands;
 
 int main(int argc, char *argv[])

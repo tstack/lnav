@@ -34,6 +34,8 @@
 
 #include "help_text.hh"
 #include "attr_line.hh"
+#include "vis_line.hh"
+#include "bookmarks.hh"
 
 class textview_curses;
 
@@ -59,5 +61,15 @@ void layout_views();
 
 void execute_examples();
 attr_line_t eval_example(const help_text &ht, const help_example &ex);
+
+vis_line_t next_cluster(
+    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
+    bookmark_type_t *bt,
+    vis_line_t top);
+bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
+                    bookmark_type_t *bt,
+                    vis_line_t top);
+void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
+vis_line_t search_forward_from(textview_curses *tc);
 
 #endif

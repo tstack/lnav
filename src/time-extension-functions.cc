@@ -48,18 +48,19 @@ using namespace std;
 static string timeslice(const char *time_in, nonstd::optional<const char *> slice_in_opt)
 {
     const char *slice_in = slice_in_opt.value_or("15m");
-    relative_time::parse_error pe;
+    auto parse_res = relative_time::from_str(slice_in, strlen(slice_in));
     date_time_scanner dts;
-    relative_time rt;
     time_t now;
 
     time(&now);
     dts.set_base_time(now);
 
-    if (!rt.parse(slice_in, strlen(slice_in), pe)) {
-        throw sqlite_func_error("unable to parse time slice value -- {}", slice_in);
+    if (parse_res.isErr()) {
+        throw sqlite_func_error("unable to parse time slice value: {} -- {}",
+                                slice_in, parse_res.unwrapErr().pe_msg);
     }
 
+    auto rt = parse_res.unwrap();
     if (rt.empty()) {
         throw sqlite_func_error("no time slice value given");
     }
@@ -94,17 +95,17 @@ nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
 {
     struct timeval tv1, tv2, retval;
     date_time_scanner dts1, dts2;
-    relative_time rt1, rt2;
-    struct relative_time::parse_error pe;
+    auto parse_res1 = relative_time::from_str(time1, -1);
 
-    if (rt1.parse(time1, -1, pe)) {
-        tv1 = rt1.add_now().to_timeval();
+    if (parse_res1.isOk()) {
+        tv1 = parse_res1.unwrap().add_now().to_timeval();
     } else if (!dts1.convert_to_timeval(time1, -1, nullptr, tv1)) {
         return nonstd::nullopt;
     }
 
-    if (rt2.parse(time2, -1, pe)) {
-        tv2 = rt2.add_now().to_timeval();
+    auto parse_res2 = relative_time::from_str(time2, -1);
+    if (parse_res2.isOk()) {
+        tv2 = parse_res2.unwrap().add_now().to_timeval();
     } else if (!dts2.convert_to_timeval(time2, -1, nullptr, tv2)) {
         return nonstd::nullopt;
     }

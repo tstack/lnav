@@ -58,9 +58,7 @@
 #include "textfile_sub_source.hh"
 #include "log_vtab_impl.hh"
 #include "readline_curses.hh"
-#include "xterm_mouse.hh"
 #include "piper_proc.hh"
-#include "term_extra.hh"
 #include "curl_looper.hh"
 #include "relative_time.hh"
 #include "log_format_loader.hh"
@@ -279,17 +277,11 @@ struct lnav_data_t {
 
     std::list<pid_t>                        ld_children;
     std::list<std::shared_ptr<piper_proc>>  ld_pipers;
-    xterm_mouse ld_mouse;
-    term_extra ld_term_extra;
 
     input_state_tracker ld_input_state;
     input_dispatcher ld_input_dispatcher;
 
     curl_looper ld_curl_looper;
-
-    relative_time ld_last_relative_time;
-
-    std::map<std::string, std::vector<script_metadata> > ld_scripts;
 
     exec_context ld_exec_context;
 
@@ -320,15 +312,6 @@ bool update_active_files(const file_collection& new_files);
 
 void wait_for_children();
 
-vis_line_t next_cluster(
-        vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-        bookmark_type_t *bt,
-        vis_line_t top);
-bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-                    bookmark_type_t *bt,
-                    vis_line_t top);
-void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
-vis_line_t search_forward_from(textview_curses *tc);
 textview_curses *get_textview_for_mode(ln_mode_t mode);
 
 #endif

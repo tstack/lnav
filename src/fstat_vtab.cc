@@ -35,6 +35,7 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -65,6 +66,7 @@ enum {
 };
 
 struct fstat_table {
+    static constexpr const char *NAME = "fstat";
     static constexpr const char *CREATE_STMT = R"(
 CREATE TABLE fstat (
     st_parent TEXT,

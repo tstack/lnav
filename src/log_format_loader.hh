@@ -64,8 +64,13 @@ struct script_metadata {
 
 void extract_metadata_from_file(struct script_metadata &meta_inout);
 
-void find_format_scripts(const std::vector<ghc::filesystem::path> &extra_paths,
-                         std::map<std::string, std::vector<script_metadata> > &scripts);
+struct available_scripts {
+    std::map<std::string, std::vector<script_metadata>> as_scripts;
+};
+
+void find_format_scripts(
+    const std::vector<ghc::filesystem::path> &extra_paths,
+    available_scripts& scripts);
 
 extern struct json_path_container format_handlers;
 extern struct json_path_container root_format_handler;

@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "base/injector.hh"
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "lnav_config.hh"
@@ -332,11 +333,11 @@ void rl_change(readline_curses *rc)
             string line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
             string script_name = line.substr(0, name_end);
-            map<string, vector<script_metadata> > &scripts = lnav_data.ld_scripts;
-            map<string, vector<script_metadata> >::iterator iter;
+            auto scripts = injector::get<available_scripts&>();
+            auto iter = scripts.as_scripts.find(script_name);
 
-            if ((iter = scripts.find(script_name)) == scripts.end() ||
-                    iter->second[0].sm_description.empty()) {
+            if (iter == scripts.as_scripts.end() ||
+                iter->second[0].sm_description.empty()) {
                 lnav_data.ld_bottom_source.set_prompt(
                         "Enter a script to execute: " ABORT_MSG);
             }

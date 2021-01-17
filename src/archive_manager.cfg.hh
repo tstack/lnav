@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016, Timothy Stack
+ * Copyright (c) 2021, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,36 +25,21 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file archive_manager.cfg.hh
  */
 
-#include "config.h"
+#ifndef lnav_archive_manager_cfg_hh
+#define lnav_archive_manager_cfg_hh
 
-#include <assert.h>
+#include <chrono>
 
-#include "base/string_util.hh"
+namespace archive_manager {
 
-static struct test_data {
-    const char *str{nullptr};
-    const char *abbrev_str{nullptr};
-    size_t max_len{0};
-} TEST_DATA[] = {
-    { "abc", "abc", 5 },
-    { "com.example.foo.bar", "c.e.f.bar", 5 },
-    { "com.example.foo.bar", "c.e.foo.bar", 15 },
-    { "no dots in here", "no dots in here", 5 },
+struct config {
+    std::chrono::seconds amc_cache_ttl;
 };
 
-int main(int argc, char *argv[])
-{
-    for (const auto& td : TEST_DATA) {
-        char buffer[1024];
-
-        strcpy(buffer, td.str);
-        size_t actual = abbreviate_str(buffer, strlen(td.str), td.max_len);
-        buffer[actual] = '\0';
-
-        printf("orig: %s\n", td.str);
-        printf(" act: %s\n", buffer);
-        assert(strcmp(buffer, td.abbrev_str) == 0);
-    }
 }
+
+#endif

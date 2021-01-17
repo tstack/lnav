@@ -80,8 +80,10 @@
 #include "init-sql.h"
 #include "logfile.hh"
 #include "base/func_util.hh"
+#include "base/injector.bind.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
+#include "bound_tags.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "listview_curses.hh"
@@ -115,7 +117,6 @@
 #include "environ_vtab.hh"
 #include "views_vtab.hh"
 #include "all_logs_vtab.hh"
-#include "file_vtab.hh"
 #include "regexp_vtab.hh"
 #include "fstat_vtab.hh"
 #include "xpath_vtab.hh"
@@ -139,6 +140,7 @@
 #include "url_loader.hh"
 #include "shlex.hh"
 #include "log_actions.hh"
+#include "archive_manager.hh"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/usr/etc"
@@ -224,6 +226,23 @@ static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
 };
 
 const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
+
+static auto bound_active_files =
+    injector::bind<file_collection>::to_instance(+[]() {
+        return &lnav_data.ld_active_files;
+    });
+
+static auto bound_last_rel_time =
+    injector::bind<relative_time, last_relative_time_tag>::to_singleton();
+
+static auto bound_term_extra =
+    injector::bind<term_extra>::to_singleton();
+
+static auto bound_xterm_mouse =
+    injector::bind<xterm_mouse>::to_singleton();
+
+static auto bound_scripts =
+    injector::bind<available_scripts>::to_singleton();
 
 bool setup_logline_table(exec_context &ec)
 {
@@ -696,140 +715,6 @@ static void sigwinch(int sig)
 static void sigchld(int sig)
 {
     lnav_data.ld_child_terminated = true;
-}
-
-vis_line_t next_cluster(
-    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-    bookmark_type_t *bt,
-    const vis_line_t top)
-{
-    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
-    vis_bookmarks &bm = tc->get_bookmarks();
-    bookmark_vector<vis_line_t> &bv = bm[bt];
-    bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
-    vis_line_t last_top(top), new_top(top), tc_height;
-    unsigned long tc_width;
-    int hit_count = 0;
-
-    tc->get_dimensions(tc_height, tc_width);
-
-    while ((new_top = (bv.*f)(new_top)) != -1) {
-        int diff = new_top - last_top;
-
-        hit_count += 1;
-        if (!top_is_marked || diff > 1) {
-            return new_top;
-        }
-        else if (hit_count > 1 && std::abs(new_top - top) >= tc_height) {
-            return vis_line_t(new_top - diff);
-        }
-        else if (diff < -1) {
-            last_top = new_top;
-            while ((new_top = (bv.*f)(new_top)) != -1) {
-                if ((std::abs(last_top - new_top) > 1) ||
-                    (hit_count > 1 && (std::abs(top - new_top) >= tc_height))) {
-                    break;
-                }
-                last_top = new_top;
-            }
-            return last_top;
-        }
-        last_top = new_top;
-    }
-
-    if (last_top != top) {
-        return last_top;
-    }
-
-    return -1_vl;
-}
-
-bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-                    bookmark_type_t *bt,
-                    vis_line_t top)
-{
-    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
-    vis_line_t new_top;
-
-    new_top = next_cluster(f, bt, top);
-    if (new_top == -1) {
-        new_top = next_cluster(f, bt,
-                               tc->is_selectable() ?
-                               tc->get_selection() :
-                               tc->get_top());
-    }
-    if (new_top != -1) {
-        tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
-            lh->loc_history_append(new_top);
-        };
-
-        if (tc->is_selectable()) {
-            tc->set_selection(new_top);
-        } else {
-            tc->set_top(new_top);
-        }
-        return true;
-    }
-
-    alerter::singleton().chime();
-
-    return false;
-}
-
-void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
-{
-    key_repeat_history &krh = lnav_data.ld_key_repeat_history;
-    vis_line_t height, new_top, initial_top;
-    unsigned long width;
-
-    if (tc->is_selectable()) {
-        initial_top = tc->get_selection();
-    } else {
-        initial_top = tc->get_top();
-    }
-    new_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                           bt,
-                           initial_top);
-
-    tc->get_dimensions(height, width);
-    if (krh.krh_count > 1 &&
-        initial_top < (krh.krh_start_line - (1.5 * height)) &&
-        (initial_top - new_top) < height) {
-        bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[bt];
-        new_top = bv.next(std::max(0_vl, initial_top - height));
-    }
-
-    if (new_top != -1) {
-        tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
-            lh->loc_history_append(new_top);
-        };
-
-        if (tc->is_selectable()) {
-            tc->set_selection(new_top);
-        } else {
-            tc->set_top(new_top);
-        }
-    }
-    else {
-        alerter::singleton().chime();
-    }
-}
-
-vis_line_t search_forward_from(textview_curses *tc)
-{
-    vis_line_t height, retval =
-        tc->is_selectable() ? tc->get_selection() : tc->get_top();
-    key_repeat_history &krh = lnav_data.ld_key_repeat_history;
-    unsigned long width;
-
-    tc->get_dimensions(height, width);
-
-    if (krh.krh_count > 1 &&
-        retval > (krh.krh_start_line + (1.5 * height))) {
-        retval += vis_line_t(0.90 * height);
-    }
-
-    return retval;
 }
 
 static void handle_rl_key(int ch)
@@ -1310,8 +1195,10 @@ static void looper()
 
         ui_periodic_timer::singleton();
 
-        lnav_data.ld_mouse.set_behavior(&lb);
-        lnav_data.ld_mouse.set_enabled(check_experimental("mouse"));
+        auto mouse_i = injector::get<xterm_mouse&>();
+
+        mouse_i.set_behavior(&lb);
+        mouse_i.set_enabled(check_experimental("mouse"));
 
         lnav_data.ld_window = sc.get_window();
         keypad(stdscr, TRUE);
@@ -1434,7 +1321,7 @@ static void looper()
         sb.push_back(bind_mem(&bottom_status_source::update_line_number, &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&bottom_status_source::update_percent, &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&bottom_status_source::update_marks, &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&term_extra::update_title, &lnav_data.ld_term_extra));
+        sb.push_back(bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
 
@@ -1454,7 +1341,7 @@ static void looper()
             id.id_escape_matcher = match_escape_seq;
             id.id_escape_handler = handle_keyseq;
             id.id_key_handler = handle_key;
-            id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &lnav_data.ld_mouse);
+            id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &mouse_i);
             id.id_unhandled_handler = [](const char *keyseq) {
                 auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
                 auto encoded_name = (char *) alloca(enc_len);
@@ -1720,6 +1607,7 @@ static void looper()
                 }
 
                 if (initial_build) {
+                    static bool ran_cleanup = false;
                     vector<pair<Result<string, string>, string>> cmd_results;
 
                     execute_init_commands(ec, cmd_results);
@@ -1731,6 +1619,11 @@ static void looper()
                             last_cmd_result.first.orElse(err_to_ok).unwrap());
                         lnav_data.ld_rl_view->set_alt_value(
                             last_cmd_result.second);
+                    }
+
+                    if (!ran_cleanup) {
+                        archive_manager::cleanup_cache();
+                        ran_cleanup = true;
                     }
                 }
 
@@ -2189,8 +2082,16 @@ int main(int argc, char *argv[])
     }
 
     register_environ_vtab(lnav_data.ld_db.in());
+    {
+        static auto vtab_modules =
+            injector::get<std::vector<std::shared_ptr<vtab_module_base>>>();
+
+        for (const auto& mod : vtab_modules) {
+            mod->create(lnav_data.ld_db.in());
+        }
+    }
+
     register_views_vtab(lnav_data.ld_db.in());
-    register_file_vtab(lnav_data.ld_db.in(), lnav_data.ld_active_files);
     register_regexp_vtab(lnav_data.ld_db.in());
     register_xpath_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
@@ -2697,6 +2598,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
+                archive_manager::cleanup_cache();
                 wait_for_pipers();
                 lnav_data.ld_curl_looper.process_all();
                 rebuild_indexes();

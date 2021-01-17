@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "lnav.hh"
+#include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "views_vtab.hh"
@@ -106,6 +107,7 @@ struct from_sqlite<pair<string, auto_mem<pcre>>> {
 };
 
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
+    static constexpr const char *NAME = "lnav_views";
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's views through this table.
 CREATE TABLE lnav_views (
@@ -257,6 +259,7 @@ CREATE TABLE lnav_views (
 struct lnav_view_stack : public tvt_iterator_cursor<lnav_view_stack> {
     using iterator = vector<textview_curses *>::iterator;
 
+    static constexpr const char *NAME = "lnav_view_stack";
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's view stack through this table.
 CREATE TABLE lnav_view_stack (
@@ -400,6 +403,7 @@ struct lnav_view_filter_base {
 
 struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters>,
     public lnav_view_filter_base {
+    static constexpr const char *NAME = "lnav_view_filters";
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's filters through this table.
 CREATE TABLE lnav_view_filters (
@@ -549,6 +553,7 @@ CREATE TABLE lnav_view_filters (
 
 struct lnav_view_filter_stats : public tvt_iterator_cursor<lnav_view_filter_stats>,
     public lnav_view_filter_base {
+    static constexpr const char *NAME = "lnav_view_filter_stats";
     static constexpr const char *CREATE_STMT = R"(
 -- Access statistics for filters through this table.
 CREATE TABLE lnav_view_filter_stats (
@@ -583,6 +588,7 @@ CREATE TABLE lnav_view_filter_stats (
 };
 
 struct lnav_view_files : public tvt_iterator_cursor<lnav_view_files> {
+    static constexpr const char *NAME = "lnav_view_files";
     static constexpr const char *CREATE_STMT = R"(
 --
 CREATE TABLE lnav_view_files (
@@ -648,35 +654,19 @@ CREATE VIEW lnav_view_filters_and_stats AS
   SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
 )";
 
+static auto a = injector::bind_multiple<vtab_module_base>()
+    .add<vtab_module<lnav_views>>()
+    .add<vtab_module<lnav_view_stack>>()
+    .add<vtab_module<lnav_view_filters>>()
+    .add<vtab_module<tvt_no_update<lnav_view_filter_stats>>>()
+    .add<vtab_module<lnav_view_files>>();
+
 int register_views_vtab(sqlite3 *db)
 {
-    static vtab_module<lnav_views> LNAV_VIEWS_MODULE;
-    static vtab_module<lnav_view_stack> LNAV_VIEW_STACK_MODULE;
-    static vtab_module<lnav_view_filters> LNAV_VIEW_FILTERS_MODULE;
-    static vtab_module<tvt_no_update<lnav_view_filter_stats>> LNAV_VIEW_FILTER_STATS_MODULE;
-    static vtab_module<lnav_view_files> LNAV_VIEW_FILES_MODULE;
-
-    int rc;
-
-    rc = LNAV_VIEWS_MODULE.create(db, "lnav_views");
-    assert(rc == SQLITE_OK);
-
-    rc = LNAV_VIEW_STACK_MODULE.create(db, "lnav_view_stack");
-    assert(rc == SQLITE_OK);
-
-    rc = LNAV_VIEW_FILTERS_MODULE.create(db, "lnav_view_filters");
-    assert(rc == SQLITE_OK);
-
-    rc = LNAV_VIEW_FILTER_STATS_MODULE.create(db, "lnav_view_filter_stats");
-    assert(rc == SQLITE_OK);
-
-    rc = LNAV_VIEW_FILES_MODULE.create(db, "lnav_view_files");
-    assert(rc == SQLITE_OK);
-
     char *errmsg;
     if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, &errmsg) != SQLITE_OK) {
         log_error("Unable to create filter view: %s", errmsg);
     }
 
-    return rc;
+    return 0;
 }

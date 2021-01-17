@@ -1,0 +1,146 @@
+/**
+ * Copyright (c) 2021, Timothy Stack
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * * Neither the name of Timothy Stack nor the names of its contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file injector.hh
+ */
+
+#ifndef lnav_injector_hh
+#define lnav_injector_hh
+
+#include <assert.h>
+
+#include <map>
+#include <memory>
+#include <vector>
+#include <type_traits>
+
+#include "base/lnav_log.hh"
+
+namespace injector {
+
+template<class ...>
+using void_t = void;
+
+template <class, class = void>
+struct has_injectable : std::false_type {};
+
+template <class T>
+struct has_injectable<T, void_t<typename T::injectable>> : std::true_type
+{};
+
+template<typename T, typename...Annotations>
+struct singleton_storage {
+    static T *get() {
+        assert(ss_data != nullptr);
+        return ss_data;
+    }
+
+    static std::shared_ptr<T> create() {
+        return ss_factory();
+    }
+protected:
+    static T *ss_data;
+    static std::function<std::shared_ptr<T>()> ss_factory;
+};
+
+template<typename T, typename...Annotations>
+T *singleton_storage<T, Annotations...>::ss_data = nullptr;
+
+template<typename T, typename...Annotations>
+std::function<std::shared_ptr<T>()> singleton_storage<T, Annotations...>::ss_factory;
+
+template<typename T>
+struct Impl {
+    using type = T;
+};
+
+template<typename T>
+struct multiple_storage {
+    static std::vector<std::shared_ptr<T>> create() {
+        std::vector<std::shared_ptr<T>> retval;
+
+        for (const auto& pair : ms_factories) {
+            retval.template emplace_back(pair.second());
+        }
+        return retval;
+    }
+protected:
+    static std::map<std::string, std::function<std::shared_ptr<T>()>> ms_factories;
+};
+
+template<typename T>
+std::map<std::string, std::function<std::shared_ptr<T>()>>
+    multiple_storage<T>::ms_factories;
+
+template<typename T, typename...Annotations,
+    std::enable_if_t<std::is_reference<T>::value, bool> = true>
+T get()
+{
+    using plain_t = std::remove_const_t<std::remove_reference_t<T>>;
+
+    return *singleton_storage<plain_t, Annotations...>::get();
+}
+
+template<typename T, typename...Annotations,
+    std::enable_if_t<std::is_pointer<T>::value, bool> = true>
+T get()
+{
+    using plain_t = std::remove_const_t<std::remove_pointer_t<T>>;
+
+    return singleton_storage<plain_t, Annotations...>::get();
+}
+
+template<class T>
+struct is_shared_ptr : std::false_type {};
+
+template<class T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template<class T>
+struct is_vector : std::false_type {};
+
+template<class T>
+struct is_vector<std::vector<T>> : std::true_type {};
+
+template<typename T,
+    std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
+T get()
+{
+    return singleton_storage<typename T::element_type>::create();
+}
+
+template<typename T,
+    std::enable_if_t<is_vector<T>::value, bool> = true>
+T get()
+{
+    return multiple_storage<typename T::value_type::element_type>::create();
+}
+
+}
+
+#endif

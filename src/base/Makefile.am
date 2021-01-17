@@ -13,6 +13,8 @@ noinst_HEADERS = \
     func_util.hh \
     future_util.hh \
 	humanize.hh \
+	injector.hh \
+	injector.bind.hh \
 	intern_string.hh \
     is_utf8.hh \
     lnav_log.hh \

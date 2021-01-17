@@ -32,9 +32,10 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
+#include "file_collection.hh"
 #include "logfile.hh"
-#include "file_vtab.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"
 #include "log_format.hh"
@@ -44,6 +45,7 @@ using namespace std;
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     using iterator = vector<shared_ptr<logfile>>::iterator;
 
+    static constexpr const char *NAME = "lnav_file";
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
 CREATE TABLE lnav_file (
@@ -56,7 +58,7 @@ CREATE TABLE lnav_file (
 );
 )";
 
-    lnav_file(file_collection& fc) : lf_collection(fc) {
+    explicit lnav_file(file_collection& fc) : lf_collection(fc) {
     }
 
     iterator begin() {
@@ -162,15 +164,10 @@ CREATE TABLE lnav_file (
     file_collection &lf_collection;
 };
 
+struct injectable_lnav_file : vtab_module<lnav_file> {
+    using vtab_module<lnav_file>::vtab_module;
+    using injectable = injectable_lnav_file(file_collection&);
+};
 
-int register_file_vtab(sqlite3 *db, file_collection &fc)
-{
-    static auto mod = std::make_shared<vtab_module<lnav_file>>(fc);
-    int rc;
-
-    rc = mod->create(db, "lnav_file");
-
-    ensure(rc == SQLITE_OK);
-
-    return rc;
-}
+static auto file_binder = injector::bind_multiple<vtab_module_base>()
+     .add<injectable_lnav_file>();

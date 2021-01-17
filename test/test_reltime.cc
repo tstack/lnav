@@ -44,6 +44,7 @@ static struct {
     const char *expected;
 } TEST_DATA[] = {
     // { "10 minutes after the next hour", "next 0:10" },
+    { "0s", "0s" },
     { "next day", "next day 0:00" },
     { "next month", "next month day 0 0:00" },
     { "next year", "next year month 0 day 0 0:00" },
@@ -65,7 +66,7 @@ static struct {
     { "12pm", "12:00" },
     { "00:27:18.567", "0:27:18.567" },
 
-    { NULL, NULL }
+    { nullptr, nullptr }
 };
 
 static struct {
@@ -84,66 +85,52 @@ TEST_CASE("reltime")
     time_t base_time = 1317913200;
     struct exttm base_tm;
     base_tm.et_tm = *gmtime(&base_time);
-    struct relative_time::parse_error pe;
     struct timeval tv;
     struct exttm tm, tm2;
     time_t new_time;
 
     relative_time rt;
     for (int lpc = 0; TEST_DATA[lpc].reltime; lpc++) {
-        bool rc;
-
-        rt.clear();
-        rc = rt.parse(TEST_DATA[lpc].reltime, pe);
-        CHECK_MESSAGE(rc, TEST_DATA[lpc].reltime);
-        CHECK(std::string(TEST_DATA[lpc].expected) == rt.to_string());
+        auto res = relative_time::from_str(TEST_DATA[lpc].reltime);
+        CHECK_MESSAGE(res.isOk(), TEST_DATA[lpc].reltime);
+        CHECK(std::string(TEST_DATA[lpc].expected) == res.unwrap().to_string());
     }
 
     for (int lpc = 0; BAD_TEST_DATA[lpc].reltime; lpc++) {
-        bool rc;
-        rt.clear();
-        rc = rt.parse(BAD_TEST_DATA[lpc].reltime, pe);
-        CHECK(!rc);
-        CHECK(pe.pe_msg == string(BAD_TEST_DATA[lpc].expected_error));
+        auto res = relative_time::from_str(BAD_TEST_DATA[lpc].reltime);
+        CHECK(res.isErr());
+        CHECK(res.unwrapErr().pe_msg == string(BAD_TEST_DATA[lpc].expected_error));
     }
 
-    rt.clear();
-    rt.parse("", pe);
+    rt = relative_time::from_str("").unwrap();
     CHECK(rt.empty());
 
-    rt.clear();
-    rt.parse("a minute ago", pe);
+    rt = relative_time::from_str("a minute ago").unwrap();
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == -1);
 
-    rt.clear();
-    rt.parse("5 milliseconds", pe);
+    rt = relative_time::from_str("5 milliseconds").unwrap();
     CHECK(rt.rt_field[relative_time::RTF_MICROSECONDS].value == 5 * 1000);
 
-    rt.clear();
-    rt.parse("5000 ms ago", pe);
+    rt = relative_time::from_str("5000 ms ago").unwrap();
     CHECK(rt.rt_field[relative_time::RTF_SECONDS].value == -5);
 
-    rt.clear();
-    rt.parse("5 hours 20 minutes ago", pe);
+    rt = relative_time::from_str("5 hours 20 minutes ago").unwrap();
 
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == -5);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == -20);
 
-    rt.clear();
-    rt.parse("5 hours and 20 minutes ago", pe);
+    rt = relative_time::from_str("5 hours and 20 minutes ago").unwrap();
 
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == -5);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == -20);
 
-    rt.clear();
-    rt.parse("1:23", pe);
+    rt = relative_time::from_str("1:23").unwrap();
 
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == 1);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == 23);
     CHECK(rt.is_absolute());
 
-    rt.clear();
-    rt.parse("1:23:45", pe);
+    rt = relative_time::from_str("1:23:45").unwrap();
 
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == 1);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == 23);
@@ -158,8 +145,7 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_hour == 1);
     CHECK(tm.et_tm.tm_min == 23);
 
-    rt.clear();
-    rt.parse("5 minutes ago", pe);
+    rt = relative_time::from_str("5 minutes ago").unwrap();
 
     tm = base_tm;
     rt.add(tm);
@@ -168,8 +154,7 @@ TEST_CASE("reltime")
 
     CHECK(new_time == (base_time - (5 * 60)));
 
-    rt.clear();
-    rt.parse("today at 4pm", pe);
+    rt = relative_time::from_str("today at 4pm").unwrap();
     memset(&tm, 0, sizeof(tm));
     memset(&tm2, 0, sizeof(tm2));
     gettimeofday(&tv, NULL);
@@ -194,8 +179,7 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_min == tm2.et_tm.tm_min);
     CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 
-    rt.clear();
-    rt.parse("yesterday at 4pm", pe);
+    rt = relative_time::from_str("yesterday at 4pm").unwrap();
     gettimeofday(&tv, NULL);
     localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
@@ -219,8 +203,7 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_min == tm2.et_tm.tm_min);
     CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 
-    rt.clear();
-    rt.parse("2 days ago", pe);
+    rt = relative_time::from_str("2 days ago").unwrap();
     gettimeofday(&tv, NULL);
     localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);

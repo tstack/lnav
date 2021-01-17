@@ -46,6 +46,7 @@
 #include "ghc/filesystem.hpp"
 
 #include "lnav_config_fwd.hh"
+#include "archive_manager.cfg.hh"
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.
@@ -98,6 +99,8 @@ struct _lnav_config {
     std::map<std::string, lnav_theme> lc_ui_theme_defs;
 
     key_map lc_active_keymap;
+
+    archive_manager::config lc_archive_manager;
 };
 
 extern struct _lnav_config lnav_config;
