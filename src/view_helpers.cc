@@ -367,6 +367,8 @@ void execute_examples()
                 case help_context_t::HC_SQL_INFIX:
                 case help_context_t::HC_SQL_FUNCTION:
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
+                    exec_context ec;
+
                     execute_sql(ec, ex.he_cmd, alt_msg);
 
                     if (dls.dls_rows.size() == 1 &&

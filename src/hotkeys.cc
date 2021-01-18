@@ -162,7 +162,7 @@ bool handle_keyseq(const char *keyseq)
         string expanded_msg;
 
         if (lexer.eval(expanded_msg, {
-            &ec.ec_local_vars.top(),
+            &vars,
             &ec.ec_global_vars,
         })) {
             lnav_data.ld_rl_view->set_alt_value(expanded_msg);

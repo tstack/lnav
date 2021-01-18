@@ -192,9 +192,9 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                                   SQLITE_TRANSIENT);
             }
             else if (name[0] == '$') {
-                map<string, string> &lvars = ec.ec_local_vars.top();
-                map<string, string> &gvars = ec.ec_global_vars;
-                map<string, string>::iterator local_var, global_var;
+                const auto &lvars = ec.ec_local_vars.top();
+                const auto &gvars = ec.ec_global_vars;
+                map<string, string>::const_iterator local_var, global_var;
                 const char *env_value;
 
                 if (lnav_data.ld_window) {
@@ -297,13 +297,18 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
             auto &vars = ec.ec_local_vars.top();
 
             for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                const string &column_name = dls.dls_headers[lpc].hm_name;
+                const auto &column_name = dls.dls_headers[lpc].hm_name;
 
                 if (sql_ident_needs_quote(column_name.c_str())) {
                     continue;
                 }
 
-                vars[column_name] = dls.dls_rows[0][lpc];
+                const auto* value = dls.dls_rows[0][lpc];
+                if (value == nullptr) {
+                    continue;
+                }
+
+                vars[column_name] = value;
             }
         }
 
@@ -491,7 +496,7 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     ec.ec_local_vars.push({});
 
     auto script_name = split_args[0];
-    map<string, string> &vars = ec.ec_local_vars.top();
+    auto& vars = ec.ec_local_vars.top();
     char env_arg_name[32];
     string star, open_error = "file not found";
 
@@ -514,7 +519,6 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     vars["__all__"] = star;
 
     vector<script_metadata> paths_to_exec;
-    map<string, const char *>::iterator internal_iter;
 
     find_format_scripts(lnav_data.ld_config_paths, scripts);
     auto iter = scripts.as_scripts.find(script_name);

@@ -46,13 +46,14 @@
 struct exec_context;
 
 typedef int (*sql_callback_t)(exec_context &ec, sqlite3_stmt *stmt);
+int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
 
 typedef std::future<std::string> (*pipe_callback_t)(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
 struct exec_context {
     exec_context(std::vector<logline_value> *line_values = nullptr,
-                 sql_callback_t sql_callback = nullptr,
+                 sql_callback_t sql_callback = ::sql_callback,
                  pipe_callback_t pipe_callback = nullptr)
         : ec_top_line(vis_line_t(0)),
           ec_dry_run(false),
@@ -134,7 +135,6 @@ Result<std::string, std::string> execute_file(exec_context &ec, const std::strin
 Result<std::string, std::string> execute_any(exec_context &ec, const std::string &cmdline);
 void execute_init_commands(exec_context &ec, std::vector<std::pair<Result<std::string, std::string>, std::string> > &msgs);
 
-int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
 std::future<std::string> pipe_callback(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
