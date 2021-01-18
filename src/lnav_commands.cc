@@ -112,13 +112,13 @@ static string refresh_pt_search()
     if (lnav_data.ld_pt_search.empty()) {
         return "info: no papertrail query is active";
     }
-    unique_ptr<papertrail_proc> pt(new papertrail_proc(
-            lnav_data.ld_pt_search.substr(3),
-            lnav_data.ld_pt_min_time,
-            lnav_data.ld_pt_max_time));
+    auto pt = std::make_shared<papertrail_proc>(
+        lnav_data.ld_pt_search.substr(3),
+        lnav_data.ld_pt_min_time,
+        lnav_data.ld_pt_max_time);
     lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
         .with_fd(pt->copy_fd());
-    lnav_data.ld_curl_looper.add_request(pt.release());
+    lnav_data.ld_curl_looper.add_request(pt);
 
     ensure_view(&lnav_data.ld_views[LNV_LOG]);
 
@@ -1933,11 +1933,11 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 retval = "error: lnav was not compiled with libcurl";
 #else
                 if (!ec.ec_dry_run) {
-                    auto ul = make_unique<url_loader>(fn);
+                    auto ul = make_shared<url_loader>(fn);
 
                     lnav_data.ld_active_files.fc_file_names[fn]
                         .with_fd(ul->copy_fd());
-                    lnav_data.ld_curl_looper.add_request(ul.release());
+                    lnav_data.ld_curl_looper.add_request(ul);
                     lnav_data.ld_files_to_front.emplace_back(fn, top);
                     retval = "info: opened URL";
                 } else {

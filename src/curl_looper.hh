@@ -52,7 +52,7 @@ class curl_looper {
 public:
     void start() { };
     void stop() { };
-    void add_request(curl_request *cr) { };
+    void add_request(std::shared_ptr<curl_request> cr) { };
     void close_request(const std::string &name) { };
     void process_all() { };
 };
@@ -186,7 +186,7 @@ public:
         }
     };
 
-    void add_request(curl_request *cr) {
+    void add_request(std::shared_ptr<curl_request> cr) {
         std::unique_lock<std::mutex> mg(this->cl_mutex);
 
         require(cr != nullptr);
@@ -232,11 +232,11 @@ private:
     auto_mem<CURLM> cl_curl_multi;
     std::mutex cl_mutex;
     std::condition_variable cl_cond;
-    std::vector<curl_request *> cl_all_requests;
-    std::vector<curl_request *> cl_new_requests;
+    std::vector<std::shared_ptr<curl_request>> cl_all_requests;
+    std::vector<std::shared_ptr<curl_request>> cl_new_requests;
     std::vector<std::string> cl_close_requests;
-    std::map<CURL *, curl_request *> cl_handle_to_request;
-    std::vector<std::pair<mstime_t, curl_request *> > cl_poll_queue;
+    std::map<CURL *, std::shared_ptr<curl_request>> cl_handle_to_request;
+    std::vector<std::pair<mstime_t, std::shared_ptr<curl_request>>> cl_poll_queue;
 
 };
 #endif

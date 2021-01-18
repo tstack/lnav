@@ -679,13 +679,13 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
 
     if (!lnav_data.ld_pt_search.empty()) {
 #ifdef HAVE_LIBCURL
-        unique_ptr<papertrail_proc> pt(new papertrail_proc(
-                lnav_data.ld_pt_search.substr(3),
-                lnav_data.ld_pt_min_time,
-                lnav_data.ld_pt_max_time));
+        auto pt = make_shared<papertrail_proc>(
+            lnav_data.ld_pt_search.substr(3),
+            lnav_data.ld_pt_min_time,
+            lnav_data.ld_pt_max_time);
         lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
             .with_fd(pt->copy_fd());
-        lnav_data.ld_curl_looper.add_request(pt.release());
+        lnav_data.ld_curl_looper.add_request(pt);
 #endif
     }
 

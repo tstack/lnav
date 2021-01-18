@@ -41,14 +41,14 @@
 using namespace std;
 
 struct curl_request_eq {
-    curl_request_eq(const std::string &name) : cre_name(name) {
+    explicit curl_request_eq(const std::string &name) : cre_name(name) {
     };
 
-    bool operator()(const curl_request *cr) const {
+    bool operator()(const std::shared_ptr<curl_request>& cr) const {
         return this->cre_name == cr->get_name();
     };
 
-    bool operator()(const pair<mstime_t, curl_request *> &pair) const {
+    bool operator()(const pair<mstime_t, std::shared_ptr<curl_request>> &pair) const {
         return this->cre_name == pair.second->get_name();
     };
 
@@ -147,10 +147,10 @@ void curl_looper::requeue_requests(mstime_t up_to_time)
 {
     while (!this->cl_poll_queue.empty() &&
            this->cl_poll_queue.front().first <= up_to_time) {
-        curl_request *cr = this->cl_poll_queue.front().second;
+        auto cr = this->cl_poll_queue.front().second;
 
         log_debug("%s:polling request is ready again -- %p",
-                  cr->get_name().c_str(), cr);
+                  cr->get_name().c_str(), cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
         curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
         this->cl_poll_queue.erase(this->cl_poll_queue.begin());
@@ -161,11 +161,11 @@ void curl_looper::check_for_new_requests() {
     std::unique_lock<std::mutex> mg(this->cl_mutex);
 
     while (!this->cl_new_requests.empty()) {
-        curl_request *cr = this->cl_new_requests.back();
+        auto cr = this->cl_new_requests.back();
 
         log_info("%s:new curl request %p",
                  cr->get_name().c_str(),
-                 cr);
+                 cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
         curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
         this->cl_new_requests.pop_back();
@@ -179,23 +179,20 @@ void curl_looper::check_for_new_requests() {
 
         log_info("attempting to close request -- %s", name.c_str());
         if (all_iter != this->cl_all_requests.end()) {
-            map<CURL *, curl_request *>::iterator act_iter;
-            vector<pair<mstime_t, curl_request *> >::iterator poll_iter;
-            curl_request *cr = *all_iter;
+            auto cr = *all_iter;
 
             log_info("%s:closing request -- %p",
-                     cr->get_name().c_str(), cr);
+                     cr->get_name().c_str(), cr.get());
             (*all_iter)->close();
-            act_iter = this->cl_handle_to_request.find(cr);
+            auto act_iter = this->cl_handle_to_request.find(cr->get_handle());
             if (act_iter != this->cl_handle_to_request.end()) {
-                this->cl_handle_to_request.erase(act_iter);
                 curl_multi_remove_handle(this->cl_curl_multi,
                                          cr->get_handle());
-                delete cr;
+                this->cl_handle_to_request.erase(act_iter);
             }
-            poll_iter = find_if(this->cl_poll_queue.begin(),
-                                this->cl_poll_queue.end(),
-                                curl_request_eq(name));
+            auto poll_iter = find_if(this->cl_poll_queue.begin(),
+                                     this->cl_poll_queue.end(),
+                                     curl_request_eq(name));
             if (poll_iter != this->cl_poll_queue.end()) {
                 this->cl_poll_queue.erase(poll_iter);
             }
@@ -228,33 +225,30 @@ void curl_looper::check_for_finished_requests()
 
         curl_multi_remove_handle(this->cl_curl_multi, easy);
         if (iter != this->cl_handle_to_request.end()) {
-            curl_request *cr = iter->second;
+            auto cr = iter->second;
             long delay_ms;
 
             this->cl_handle_to_request.erase(iter);
             delay_ms = cr->complete(msg->data.result);
             if (delay_ms < 0) {
-                vector<curl_request *>::iterator all_iter;
-
                 log_info("%s:curl_request %p finished, deleting...",
-                         cr->get_name().c_str(), cr);
+                         cr->get_name().c_str(), cr.get());
                 {
                     std::unique_lock<std::mutex> mg(this->cl_mutex);
 
-                    all_iter = find(this->cl_all_requests.begin(),
-                                    this->cl_all_requests.end(),
-                                    cr);
+                    auto all_iter = find(this->cl_all_requests.begin(),
+                                         this->cl_all_requests.end(),
+                                         cr);
                     if (all_iter != this->cl_all_requests.end()) {
                         this->cl_all_requests.erase(all_iter);
                     }
                     this->cl_cond.notify_all();
                 }
-                delete cr;
             }
             else {
                 log_debug("%s:curl_request %p is polling, requeueing in %d",
                           cr->get_name().c_str(),
-                          cr,
+                          cr.get(),
                           delay_ms);
                 this->cl_poll_queue.emplace_back(getmstime() + delay_ms, cr);
                 sort(this->cl_poll_queue.begin(), this->cl_poll_queue.end());

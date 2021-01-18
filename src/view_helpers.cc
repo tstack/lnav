@@ -346,7 +346,6 @@ static unordered_map<string, attr_line_t> EXAMPLE_RESULTS;
 
 void execute_examples()
 {
-    exec_context &ec = lnav_data.ld_exec_context;
     db_label_source &dls = lnav_data.ld_db_row_source;
     db_overlay_source &dos = lnav_data.ld_db_overlay;
     textview_curses &db_tc = lnav_data.ld_views[LNV_DB];

@@ -2339,11 +2339,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
 #ifdef HAVE_LIBCURL
         else if (is_url(argv[lpc])) {
-            unique_ptr<url_loader> ul(new url_loader(argv[lpc]));
+            auto ul = std::make_shared<url_loader>(argv[lpc]);
 
             lnav_data.ld_active_files.fc_file_names[argv[lpc]]
                 .with_fd(ul->copy_fd());
-            lnav_data.ld_curl_looper.add_request(ul.release());
+            lnav_data.ld_curl_looper.add_request(ul);
         }
 #endif
         else if (is_glob(argv[lpc])) {
