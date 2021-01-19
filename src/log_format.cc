@@ -2219,6 +2219,18 @@ std::shared_ptr<log_format> external_log_format::specialized(int fmt_lock)
     return retval;
 }
 
+bool external_log_format::match_name(const string &filename)
+{
+    if (this->elf_file_pattern.empty()) {
+        return true;
+    }
+
+    pcre_context_static<10> pc;
+    pcre_input pi(filename);
+
+    return this->elf_filename_pcre->match(pc, pi);
+}
+
 int log_format::pattern_index_for_line(uint64_t line_number) const
 {
     auto iter = lower_bound(this->lf_pattern_locks.cbegin(),

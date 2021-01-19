@@ -492,9 +492,11 @@ class textfile_callback {
 public:
     textfile_callback() : front_file(nullptr), front_top(-1) { };
 
-    void closed_file(const shared_ptr<logfile> &lf) {
-        log_info("closed text file: %s", lf->get_filename().c_str());
-        lnav_data.ld_active_files.close_file(lf);
+    void closed_files(const std::vector<shared_ptr<logfile>> &files) {
+        for (const auto& lf : files) {
+            log_info("closed text files: %s", lf->get_filename().c_str());
+        }
+        lnav_data.ld_active_files.close_files(files);
     };
 
     void promote_file(const shared_ptr<logfile> &lf) {
@@ -522,7 +524,7 @@ public:
             }
         }
         else {
-            this->closed_file(lf);
+            this->closed_files({lf});
         }
     };
 
@@ -582,19 +584,17 @@ void rebuild_indexes()
         }
     }
 
-    for (auto file_iter = lnav_data.ld_active_files.fc_files.begin();
-         file_iter != lnav_data.ld_active_files.fc_files.end(); ) {
-        auto lf = *file_iter;
-
+    std::vector<std::shared_ptr<logfile>> closed_files;
+    for (auto& lf : lnav_data.ld_active_files.fc_files) {
         if ((!lf->exists() || lf->is_closed())) {
             log_info("closed log file: %s", lf->get_filename().c_str());
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
-            lnav_data.ld_active_files.close_file(lf);
-            file_iter = lnav_data.ld_active_files.fc_files.begin();
-        } else {
-            ++file_iter;
+            closed_files.emplace_back(lf);
         }
+    }
+    if (!closed_files.empty()) {
+        lnav_data.ld_active_files.close_files(closed_files);
     }
 
     auto result = lss.rebuild_index();

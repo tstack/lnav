@@ -92,7 +92,7 @@ struct file_collection {
 
     void merge(const file_collection &other);
 
-    void close_file(const std::shared_ptr<logfile> &lf);
+    void close_files(const std::vector<std::shared_ptr<logfile>> &files);
 
     void regenerate_unique_file_names();
 };

@@ -42,22 +42,24 @@
 static std::mutex REALPATH_CACHE_MUTEX;
 static std::unordered_map<std::string, std::string> REALPATH_CACHE;
 
-void file_collection::close_file(const std::shared_ptr<logfile> &lf)
+void file_collection::close_files(const std::vector<std::shared_ptr<logfile>> &files)
 {
-    if (lf->is_valid_filename()) {
-        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+    for (const auto& lf : files) {
+        if (lf->is_valid_filename()) {
+            std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
 
-        REALPATH_CACHE.erase(lf->get_filename());
-    } else {
-        this->fc_file_names.erase(lf->get_filename());
+            REALPATH_CACHE.erase(lf->get_filename());
+        } else {
+            this->fc_file_names.erase(lf->get_filename());
+        }
+        auto file_iter = find(this->fc_files.begin(),
+                              this->fc_files.end(),
+                              lf);
+        if (file_iter != this->fc_files.end()) {
+            this->fc_files.erase(file_iter);
+        }
     }
-    auto file_iter = find(this->fc_files.begin(),
-                          this->fc_files.end(),
-                          lf);
-    if (file_iter != this->fc_files.end()) {
-        this->fc_files.erase(file_iter);
-        this->fc_files_generation += 1;
-    }
+    this->fc_files_generation += 1;
 
     this->regenerate_unique_file_names();
 }

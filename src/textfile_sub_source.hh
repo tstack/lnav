@@ -106,13 +106,14 @@ public:
             return retval;
         }
 
+        std::vector<std::shared_ptr<logfile>> closed_files;
         for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
             std::shared_ptr<logfile> lf = (*iter);
 
             if (!lf->exists() || lf->is_closed()) {
                 iter = this->tss_files.erase(iter);
                 this->detach_observer(lf);
-                callback.closed_file(lf);
+                closed_files.template emplace_back(lf);
                 continue;
             }
 
@@ -153,11 +154,14 @@ public:
                 iter = this->tss_files.erase(iter);
                 lf->close();
                 this->detach_observer(lf);
-                callback.closed_file(lf);
+                closed_files.template emplace_back(lf);
                 continue;
             }
 
             ++iter;
+        }
+        if (!closed_files.empty()) {
+            callback.closed_files(closed_files);
         }
 
         if (retval) {
