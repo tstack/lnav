@@ -43,6 +43,7 @@
 
 #include <cstdlib>
 
+#include "base/lnav_log.hh"
 #include "base/time_util.hh"
 
 #define PTIME_CONSUME(amount, block) \
@@ -290,9 +291,14 @@ inline void ftime_S(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 
 inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     time_t epoch = 0;
 
     while (off_inout < len && isdigit(str[off_inout])) {
+        if ((off_inout - off_start) > 11) {
+            return false;
+        }
+
         epoch *= 10;
         epoch += str[off_inout] - '0';
         off_inout += 1;

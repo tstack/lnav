@@ -62,8 +62,9 @@ int main(int argc, char *argv[])
     for (int lpc = 1; lpc < argc; lpc++) {
         const char *arg = argv[lpc];
 
-        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, ssize_t len) {\n",
-            lpc);
+        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, ssize_t len) {\n"
+               "    // log_debug(\"ptime_f%d\");\n",
+            lpc, lpc);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
                 switch (arg[index + 1]) {
