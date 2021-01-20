@@ -144,6 +144,9 @@ private:
         this->vem_input_map[tgetstr((char *)"ce", &area)] = "ce";
         this->vem_input_map[tgetstr((char *)"kl", &area)] = "kl";
         this->vem_input_map[tgetstr((char *)"kr", &area)] = "kr";
+        // bracketed paste mode
+        this->vem_input_map["\x1b[?2004h"] = "BE";
+        this->vem_input_map["\x1b[?2004l"] = "BD";
         tgetent(nullptr, getenv("TERM"));
     };
 
@@ -210,17 +213,19 @@ void vt52_curses::map_output(const char *output, int len)
                 }
             } else if ((cap = vt52_escape_map::singleton()[this->vc_escape]) !=
                        nullptr) {
+                this->vc_escape_len = 0;
                 if (strcmp(cap, "ce") == 0) {
                     this->vc_line.erase_utf8_chars(this->vc_x);
-                    this->vc_escape_len = 0;
                 }
                 else if (strcmp(cap, "kl") == 0) {
                     this->vc_x -= 1;
-                    this->vc_escape_len = 0;
                 }
                 else if (strcmp(cap, "kr") == 0) {
                     this->vc_x += 1;
-                    this->vc_escape_len = 0;
+                }
+                else if (strcmp(cap, "BE") == 0 ||
+                         strcmp(cap, "BD") == 0) {
+                    // TODO pass bracketed paste mode through
                 }
                 else {
                     ensure(0);
