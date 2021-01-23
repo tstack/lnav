@@ -84,18 +84,20 @@ struct multiple_storage {
     static std::vector<std::shared_ptr<T>> create() {
         std::vector<std::shared_ptr<T>> retval;
 
-        for (const auto& pair : ms_factories) {
+        for (const auto& pair : get_factories()) {
             retval.template emplace_back(pair.second());
         }
         return retval;
     }
 protected:
-    static std::map<std::string, std::function<std::shared_ptr<T>()>> ms_factories;
-};
+    using factory_map_t = std::map<std::string, std::function<std::shared_ptr<T>()>>;
 
-template<typename T>
-std::map<std::string, std::function<std::shared_ptr<T>()>>
-    multiple_storage<T>::ms_factories;
+    static factory_map_t& get_factories() {
+        static factory_map_t retval;
+
+        return retval;
+    }
+};
 
 template<typename T, typename...Annotations,
     std::enable_if_t<std::is_reference<T>::value, bool> = true>

@@ -97,7 +97,7 @@ struct bind_multiple : multiple_storage<T> {
 
     template<typename I>
     bind_multiple& add() noexcept {
-        multiple_storage<T>::ms_factories[typeid(I).name()] =
+        multiple_storage<T>::get_factories()[typeid(I).name()] =
             details::create_factory<I>();
 
         return *this;
@@ -109,10 +109,10 @@ struct bind_multiple : multiple_storage<T> {
         auto single = factory();
 
         if (sizeof...(Annotations) > 0) {
-            bind<T, Annotations...>::to_instance(single.get());
+            bind<T, Annotations...>::to_instance((T *) single.get());
         }
         bind<I, Annotations...>::to_instance(single.get());
-        multiple_storage<T>::ms_factories[typeid(I).name()] = [single]() {
+        multiple_storage<T>::get_factories()[typeid(I).name()] = [single]() {
             return single;
         };
 
