@@ -38,11 +38,41 @@ EOF
 fi
 
 if test x"${LIBARCHIVE_LIBS}" != x""; then
+    run_test env TMPDIR=tmp ${lnav_test} -n \
+      -c ':config /tuning/archive-manager/min-free-space -1' \
+      ${srcdir}/logfile_syslog.0
+
+    check_error_output "invalid min-free-space allowed?" <<EOF
+command-option:1: error: value must be greater than or equal to 0, found -1
+EOF
+
+    rm -rf tmp/lnav-*
     if test x"${XZ_CMD}" != x""; then
         ${XZ_CMD} -z -c ${srcdir}/logfile_syslog.1 > logfile_syslog.1.xz
 
         run_test env TMPDIR=tmp ${lnav_test} -n \
+            -c ':config /tuning/archive-manager/min-free-space 1125899906842624' \
             -c ':config /tuning/archive-manager/cache-ttl 1d' \
+            ${srcdir}/logfile_syslog.0
+
+        run_test env TMPDIR=tmp ${lnav_test} -d /tmp/lnav.err -n \
+            logfile_syslog.1.xz
+
+        sed -e "s|lnav-[0-9]*-archives|lnav-NNN-archives|g" \
+            -e "s|arc-[0-9a-z]*-logfile|arc-NNN-logfile|g" \
+            -e "s|space on disk \(.*\) is|space on disk (NNN) is|g" \
+            -e "s|${builddir}||g" \
+            `test_err_filename` > test_logfile.big.out
+        mv test_logfile.big.out `test_err_filename`
+        check_error_output "decompression worked?" <<EOF
+error: unable to open file: /logfile_syslog.1.xz -- available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-NNN-archives/arc-NNN-logfile_syslog.1.xz'
+EOF
+
+        run_test env TMPDIR=tmp ${lnav_test} -n \
+            -c ':config /tuning/archive-manager/min-free-space 33554432' \
+            ${srcdir}/logfile_syslog.0
+
+        run_test env TMPDIR=tmp ${lnav_test} -n \
             logfile_syslog.1.xz
 
         check_output "decompression not working" <<EOF

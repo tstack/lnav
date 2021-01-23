@@ -380,17 +380,6 @@ noinst_HEADERS = \
 	ghc/fs_std.hpp \
 	ghc/fs_std_fwd.hpp \
 	ghc/fs_std_impl.hpp \
-    fmtlib/fmt/time.h \
-    fmtlib/fmt/ostream.h \
-    fmtlib/fmt/format-inl.h \
-    fmtlib/fmt/ranges.h \
-    fmtlib/fmt/core.h \
-    fmtlib/fmt/locale.h \
-    fmtlib/fmt/chrono.h \
-    fmtlib/fmt/color.h \
-    fmtlib/fmt/printf.h \
-    fmtlib/fmt/posix.h \
-    fmtlib/fmt/format.h \
     ww898/cp_utf8.hpp
 
 nodist_libdiag_a_SOURCES = \

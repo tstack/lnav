@@ -237,7 +237,6 @@ void rl_change(readline_curses *rc)
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
 
-    log_debug("change");
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
             static string last_command;
@@ -333,7 +332,7 @@ void rl_change(readline_curses *rc)
             string line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
             string script_name = line.substr(0, name_end);
-            auto scripts = injector::get<available_scripts&>();
+            auto& scripts = injector::get<available_scripts&>();
             auto iter = scripts.as_scripts.find(script_name);
 
             if (iter == scripts.as_scripts.end() ||
@@ -488,7 +487,7 @@ void lnav_rl_abort(readline_curses *rc)
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
         tc->set_top(lnav_data.ld_search_start_line);
-        tc->execute_search(lnav_data.ld_previous_search);
+        tc->revert_search();
         break;
     case LNM_SQL:
         tc->reload_data();

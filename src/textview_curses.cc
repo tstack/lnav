@@ -430,6 +430,10 @@ void textview_curses::textview_value_for_row(vis_line_t row,
             continue;
         }
 
+        if (this->tc_disabled_highlights.count(tc_highlight.first.first)) {
+            continue;
+        }
+
         // Internal highlights should only apply to the log message body so
         // that we don't start highlighting other fields.  User-provided
         // highlights should apply only to the line itself and not any of the
@@ -506,10 +510,12 @@ void textview_curses::execute_search(const std::string &regex_orig)
     std::string regex = regex_orig;
     pcre *code = nullptr;
 
-    if ((this->tc_search_child == nullptr) || (regex != this->tc_last_search)) {
+    if ((this->tc_search_child == nullptr) ||
+        (regex != this->tc_current_search)) {
         const char *errptr;
         int         eoff;
 
+        this->tc_previous_search = this->tc_current_search;
         this->match_reset();
 
         this->tc_search_child.reset();
@@ -578,7 +584,7 @@ void textview_curses::execute_search(const std::string &regex_orig)
         }
     }
 
-    this->tc_last_search = regex;
+    this->tc_current_search = regex;
     if (this->tc_state_event_handler) {
         this->tc_state_event_handler(*this);
     }

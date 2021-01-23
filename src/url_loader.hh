@@ -34,6 +34,8 @@
 #include <paths.h>
 #include <curl/curl.h>
 
+#include "curl_looper.hh"
+
 class url_loader : public curl_request {
 public:
     url_loader(const std::string &url) : curl_request(url), ul_resume_offset(0) {

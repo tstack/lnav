@@ -165,7 +165,8 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
                 return true;
 
             default:
-                log_error("pcre err %d", rc);
+                log_error("pcre_exec error(%d) with pattern -- %s",
+                          rc, this->p_pattern.c_str());
                 break;
         }
     }

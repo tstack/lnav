@@ -36,6 +36,33 @@
 
 namespace injector {
 
+namespace details {
+
+template<typename I, typename R, typename ...Args>
+std::function<std::shared_ptr<I>()> create_factory(R (*)(Args...)) {
+    return []() {
+        return std::make_shared<I>(::injector::get<Args>()...);
+    };
+}
+
+template<typename I,
+    std::enable_if_t<has_injectable<I>::value, bool> = true>
+std::function<std::shared_ptr<I>()> create_factory() {
+    typename I::injectable *i = nullptr;
+
+    return create_factory<I>(i);
+}
+
+template<typename I,
+    std::enable_if_t<!has_injectable<I>::value, bool> = true>
+std::function<std::shared_ptr<I>()> create_factory() noexcept {
+    return []() {
+        return std::make_shared<I>();
+    };
+}
+
+}
+
 template<typename T, typename...Annotations>
 struct bind : singleton_storage<T, Annotations...> {
     static bool to_singleton() noexcept {
@@ -51,11 +78,15 @@ struct bind : singleton_storage<T, Annotations...> {
         return true;
     }
 
+    static bool to_instance(T* data) noexcept {
+        singleton_storage<T, Annotations...>::ss_data = data;
+        return true;
+    }
+
     template<typename I>
-    static bool to(Impl<I> i) {
-        singleton_storage<T, Annotations...>::ss_factory = []() {
-            return std::make_shared<I>();
-        };
+    static bool to() noexcept {
+        singleton_storage<T, Annotations...>::ss_factory =
+            details::create_factory<I>();
         return true;
     }
 };
@@ -64,32 +95,32 @@ template<typename T>
 struct bind_multiple : multiple_storage<T> {
     bind_multiple() noexcept = default;
 
-    template<typename I, typename R, typename ...Args>
-    bind_multiple& add(R (*)(Args...)) {
-        multiple_storage<T>::ms_factories[typeid(I).name()] = []() {
-            return std::make_shared<I>(::injector::get<Args>()...);
-        };
-
-        return *this;
-    }
-
-    template<typename I,
-        std::enable_if_t<has_injectable<I>::value, bool> = true>
-    bind_multiple& add() {
-        typename I::injectable *i = nullptr;
-
-        return this->add<I>(i);
-    }
-
-    template<typename I,
-        std::enable_if_t<!has_injectable<I>::value, bool> = true>
+    template<typename I>
     bind_multiple& add() noexcept {
-        multiple_storage<T>::ms_factories[typeid(I).name()] = []() {
-            return std::make_shared<I>();
+        multiple_storage<T>::ms_factories[typeid(I).name()] =
+            details::create_factory<I>();
+
+        return *this;
+    }
+
+    template<typename I, typename...Annotations>
+    bind_multiple& add_singleton() noexcept {
+        auto factory = details::create_factory<I>();
+        auto single = factory();
+
+        if (sizeof...(Annotations) > 0) {
+            bind<T, Annotations...>::to_instance(single.get());
+        }
+        bind<I, Annotations...>::to_instance(single.get());
+        multiple_storage<T>::ms_factories[typeid(I).name()] = [single]() {
+            return single;
         };
 
         return *this;
     }
+
+private:
+
 };
 
 }

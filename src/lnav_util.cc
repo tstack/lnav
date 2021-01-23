@@ -177,6 +177,7 @@ size_t strtonum(T &num_out, const char *string, size_t len)
         num_out *= 10;
         num_out += string[retval] - '0';
     }
+    num_out *= sign;
 
     return retval;
 }

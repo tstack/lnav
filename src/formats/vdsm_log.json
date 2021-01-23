@@ -9,7 +9,7 @@
                 "pattern": "(?s)^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}(?:\\+\\d{4})?) (?<level>\\w+)\\s+\\((?<thread>.+?)\\) \\[(?<logger>.+?)\\]\\s+?(?<body>(?:.|[\\r\\n])*?)\\s+?\\((?<src_file>\\w+?):(?<src_line>\\d+)\\)(\\n(?<traceback>Traceback.*?)(?=\\n(?P=timestamp)|$))?"
             },
             "v4": {
-                "pattern": "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
+                "pattern": "^(?<tid>[^:]+)::(?<level>[^:]+)::(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(?:,\\d{3})?)::(?<module>[^:]+)::(?<src_line>[^:]+)::(?<logger>[^:]+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
             }
         },
         "level-field": "level",

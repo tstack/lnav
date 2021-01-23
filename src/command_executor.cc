@@ -40,6 +40,7 @@
 #include "lnav_util.hh"
 #include "sql_util.hh"
 #include "lnav_config.hh"
+#include "service_tags.hh"
 
 #include "command_executor.hh"
 #include "db_sub_source.hh"
@@ -685,7 +686,10 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
             lnav_data.ld_pt_max_time);
         lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
             .with_fd(pt->copy_fd());
-        lnav_data.ld_curl_looper.add_request(pt);
+        isc::to<curl_looper&, services::curl_streamer_t>()
+            .send([pt](auto& clooper) {
+                clooper.add_request(pt);
+            });
 #endif
     }
 

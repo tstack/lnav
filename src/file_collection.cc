@@ -75,6 +75,13 @@ void file_collection::regenerate_unique_file_names()
     upg.generate();
 
     this->fc_largest_path_length = 0;
+    for (const auto &pair : this->fc_name_to_errors) {
+        auto path = ghc::filesystem::path(pair.first).filename().string();
+
+        if (path.length() > this->fc_largest_path_length) {
+            this->fc_largest_path_length = path.length();
+        }
+    }
     for (const auto &lf : this->fc_files) {
         const auto &path = lf->get_unique_path();
 

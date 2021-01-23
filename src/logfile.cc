@@ -399,7 +399,6 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
-                this->lf_options.loo_non_utf_is_visible = true;
                 break;
             }
 
@@ -462,7 +461,6 @@ logfile::rebuild_result_t logfile::rebuild_index()
             log_info("file has unknown format and is too large: %s",
                      this->lf_filename.c_str());
             this->lf_indexing = false;
-            this->lf_options.loo_visible_size_limit = -1;
         }
 
         if (this->lf_logline_observer != nullptr) {

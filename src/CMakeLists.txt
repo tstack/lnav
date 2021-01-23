@@ -234,6 +234,7 @@ add_library(diag STATIC
         ansi_scrubber.cc
         archive_manager.cc
         attr_line.cc
+        base/isc.cc
         bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
@@ -392,6 +393,7 @@ add_library(diag STATIC
         base/injector.bind.hh
         base/intern_string.hh
         base/is_utf8.hh
+        base/isc.hh
         k_merge_tree.h
         log_actions.hh
         log_data_helper.hh
@@ -471,19 +473,21 @@ add_library(diag STATIC
         ghc/fs_std_fwd.hpp
         ghc/fs_std_impl.hpp
 
-        fmtlib/posix.cc
-        fmtlib/fmt/time.h
-        fmtlib/fmt/ostream.h
-        fmtlib/fmt/format-inl.h
-        fmtlib/fmt/ranges.h
-        fmtlib/fmt/core.h
-        fmtlib/fmt/locale.h
+        fmtlib/format.cc
+        fmtlib/os.cc
         fmtlib/fmt/chrono.h
         fmtlib/fmt/color.h
-        fmtlib/fmt/printf.h
-        fmtlib/fmt/posix.h
+        fmtlib/fmt/compile.h
+        fmtlib/fmt/core.h
+        fmtlib/fmt/format-inl.h
         fmtlib/fmt/format.h
-        fmtlib/format.cc
+        fmtlib/fmt/locale.h
+        fmtlib/fmt/os.h
+        fmtlib/fmt/ostream.h
+        fmtlib/fmt/posix.h
+        fmtlib/fmt/printf.h
+        fmtlib/fmt/ranges.h
+        fmtlib/fmt/time.h
 
         ww898/cp_utf8.hpp
 

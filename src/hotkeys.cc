@@ -238,7 +238,7 @@ bool handle_paging_key(int ch)
 
         case KEY_F(2):
             if (xterm_mouse::is_available()) {
-                auto mouse_i = injector::get<xterm_mouse&>();
+                auto& mouse_i = injector::get<xterm_mouse&>();
                 mouse_i.set_enabled(!mouse_i.is_enabled());
                 lnav_data.ld_rl_view->set_value(
                     ok_prefix("info: mouse mode -- ") +
@@ -897,7 +897,7 @@ bool handle_paging_key(int ch)
         case 'r':
         case 'R':
             if (lss) {
-                auto &last_time =
+                auto& last_time =
                     injector::get<const relative_time&, last_relative_time_tag>();
 
                 if (last_time.empty()) {

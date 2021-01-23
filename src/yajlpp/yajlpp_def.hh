@@ -259,6 +259,10 @@ struct json_path_handler : public json_path_handler_base {
         return ypc->ypc_current_handler->jph_str_cb(ypc, str, len);
     };
 
+    static int int_field_cb(yajlpp_parse_context *ypc, long long val) {
+        return ypc->ypc_current_handler->jph_integer_cb(ypc, val);
+    };
+
     template<typename T, typename NUM_T, NUM_T T::*NUM>
     static int num_field_cb(yajlpp_parse_context *ypc, long long num)
     {
@@ -478,6 +482,17 @@ struct json_path_handler : public json_path_handler_base {
         static constexpr bool value = std::is_enum<U>::value;
     };
 
+    template<typename T, typename... Args>
+    struct LastIsNumber {
+        static constexpr bool value = LastIsNumber<Args...>::value;
+    };
+
+    template<typename T, typename U>
+    struct LastIsNumber<U T::*> {
+        static constexpr bool value = std::is_integral<U>::value &&
+                                      !std::is_same<U, bool>::value;
+    };
+
     template<
         typename... Args,
         std::enable_if_t<LastIs<bool, Args...>::value, bool> = true
@@ -491,6 +506,73 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        this->jph_gen_callback = [args...](yajlpp_gen_context &ygc,
+                                           const json_path_handler_base &jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field);
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIsNumber<Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(int_field_cb);
+        this->jph_integer_cb = [args...](yajlpp_parse_context *ypc, long long val) {
+            auto obj = ypc->ypc_obj_stack.top();
+
+            if (val < ypc->ypc_current_handler->jph_min_value) {
+                ypc->report_error(lnav_log_level_t::ERROR,
+                                  "value must be greater than or equal to %lld, found %lld",
+                                  ypc->ypc_current_handler->jph_min_value,
+                                  val);
+                return 1;
+            }
+
+            json_path_handler::get_field(obj, args...) = val;
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context &ygc,
+                                           const json_path_handler_base &jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field);
+        };
+
         return *this;
     }
 
@@ -639,12 +721,12 @@ struct json_path_container {
         : jpc_children(children) {
     }
 
-    json_path_container &with_definition_id(const std::string id) {
+    json_path_container &with_definition_id(const std::string& id) {
         this->jpc_definition_id = id;
         return *this;
     }
 
-    json_path_container &with_schema_id(const std::string id) {
+    json_path_container &with_schema_id(const std::string& id) {
         this->jpc_schema_id = id;
         return *this;
     }

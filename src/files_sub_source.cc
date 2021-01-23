@@ -146,7 +146,9 @@ size_t files_sub_source::text_line_count()
 {
     const auto &fc = lnav_data.ld_active_files;
 
-    return fc.fc_other_files.size() + fc.fc_files.size();
+    return fc.fc_name_to_errors.size() +
+           fc.fc_other_files.size() +
+           fc.fc_files.size();
 }
 
 size_t files_sub_source::text_line_width(textview_curses &curses)
@@ -163,6 +165,21 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
     auto filename_width =
         std::min(fc.fc_largest_path_length,
                  std::max((size_t) 40, dim.second - 30));
+
+    if (line < fc.fc_name_to_errors.size()) {
+        auto iter = fc.fc_name_to_errors.begin();
+        std::advance(iter, line);
+        auto path = ghc::filesystem::path(iter->first);
+        auto fn = path.filename().string();
+
+        truncate_to(fn, filename_width);
+        value_out = fmt::format(
+            FMT_STRING("    {:<{}}   {}"),
+            fn, filename_width, iter->second);
+        return;
+    }
+
+    line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
         auto iter = fc.fc_other_files.begin();
@@ -201,7 +218,6 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
                                            string_attrs_t &value_out)
 {
     bool selected = lnav_data.ld_mode == LNM_FILES && line == tc.get_selection();
-    int bg = selected ? COLOR_WHITE : COLOR_BLACK;
     const auto &fc = lnav_data.ld_active_files;
     auto &vcolors = view_colors::singleton();
     const auto dim = tc.get_dimensions();
@@ -209,13 +225,30 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
         std::min(fc.fc_largest_path_length,
                  std::max((size_t) 40, dim.second - 30));
 
-    int fg = selected ? COLOR_BLACK : COLOR_WHITE;
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND,
-                           vcolors.ansi_to_theme_color(fg));
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_BACKGROUND,
-                           vcolors.ansi_to_theme_color(bg));
+    if (selected) {
+        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
+    }
+
+    if (line < fc.fc_name_to_errors.size()) {
+        if (selected) {
+            value_out.emplace_back(line_range{0, -1},
+                                   &view_curses::VC_ROLE,
+                                   view_colors::VCR_DISABLED_FOCUSED);
+        }
+
+        value_out.emplace_back(line_range{4 + (int) filename_width, -1},
+                               &view_curses::VC_ROLE_FG,
+                               view_colors::VCR_ERROR);
+        return;
+    }
+    line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
+        if (selected) {
+            value_out.emplace_back(line_range{0, -1},
+                                   &view_curses::VC_ROLE,
+                                   view_colors::VCR_DISABLED_FOCUSED);
+        }
         if (line == fc.fc_other_files.size() - 1) {
             value_out.emplace_back(line_range{0, -1},
                                    &view_curses::VC_STYLE,
@@ -225,6 +258,12 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     }
 
     line -= fc.fc_other_files.size();
+
+    if (selected) {
+        value_out.emplace_back(line_range{0, -1},
+                               &view_curses::VC_ROLE,
+                               view_colors::VCR_FOCUSED);
+    }
 
     auto& lss = lnav_data.ld_log_source;
     auto &lf = fc.fc_files[line];
@@ -238,10 +277,6 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3}, &view_curses::VC_FOREGROUND,
                                vcolors.ansi_to_theme_color(COLOR_GREEN));
-    }
-
-    if (selected) {
-        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
     }
 
     auto lr = line_range{

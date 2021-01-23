@@ -66,6 +66,14 @@
                     "popup": {
                         "color": "$base00",
                         "background-color": "$base3"
+                    },
+                    "focused": {
+                        "color": "$base03",
+                        "background-color": "$base01"
+                    },
+                    "disabled-focused": {
+                        "color": "$base0",
+                        "background-color": "$base02"
                     }
                 },
                 "syntax-styles": {

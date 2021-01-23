@@ -81,6 +81,7 @@
 #include "logfile.hh"
 #include "base/func_util.hh"
 #include "base/injector.bind.hh"
+#include "base/isc.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "bound_tags.hh"
@@ -122,10 +123,13 @@
 #include "xpath_vtab.hh"
 #include "textfile_highlighters.hh"
 #include "base/future_util.hh"
+#include "service_tags.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
 #endif
+
+#include "curl_looper.hh"
 
 #if HAVE_ARCHIVE_H
 #include <archive.h>
@@ -243,6 +247,10 @@ static auto bound_xterm_mouse =
 
 static auto bound_scripts =
     injector::bind<available_scripts>::to_singleton();
+
+static auto bound_curl =
+    injector::bind_multiple<isc::service>()
+        .add_singleton<curl_looper, services::curl_streamer_t>();
 
 bool setup_logline_table(exec_context &ec)
 {
@@ -412,7 +420,7 @@ private:
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        if (lnav_data.ld_mode == LNM_FILES) {
+        if (lnav_data.ld_mode == LNM_FILES && !lnav_data.ld_session_loaded) {
             auto &fc = lnav_data.ld_active_files;
             auto iter = std::find(fc.fc_files.begin(),
                                   fc.fc_files.end(), lf);
@@ -830,7 +838,9 @@ bool update_active_files(const file_collection& new_files)
         }
     }
     lnav_data.ld_active_files.merge(new_files);
-    if (!new_files.fc_files.empty()) {
+    if (!new_files.fc_files.empty() ||
+        !new_files.fc_other_files.empty() ||
+        !new_files.fc_name_to_errors.empty()) {
         lnav_data.ld_active_files.regenerate_unique_file_names();
     }
 
@@ -1293,6 +1303,8 @@ static void looper()
         lnav_data.ld_files_view.set_selectable(true);
         lnav_data.ld_files_view.set_window(lnav_data.ld_window);
         lnav_data.ld_files_view.set_show_scrollbar(true);
+        lnav_data.ld_files_view.get_disabled_highlights()
+            .insert(highlight_source_t::THEME);
         lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
@@ -1385,6 +1397,8 @@ static void looper()
                        false);
         bool initial_rescan_completed = false;
         int session_stage = 0;
+
+        rlc.do_update();
 
         while (lnav_data.ld_looping) {
             static bool initial_build = false;
@@ -1638,7 +1652,11 @@ static void looper()
                                 .set_top(vis_line_t(vs.vs_top));
                         }
                     }
-                    lnav_data.ld_mode = LNM_PAGING;
+                    if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+                        lnav_data.ld_mode = LNM_PAGING;
+                    } else {
+                        lnav_data.ld_files_view.set_selection(0_vl);
+                    }
                     session_stage += 1;
                     load_time_bookmarks();
                 }
@@ -2343,7 +2361,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             lnav_data.ld_active_files.fc_file_names[argv[lpc]]
                 .with_fd(ul->copy_fd());
-            lnav_data.ld_curl_looper.add_request(ul);
+            isc::to<curl_looper&, services::curl_streamer_t>()
+                .send([ul](auto& clooper) {
+                    clooper.add_request(ul);
+                });
         }
 #endif
         else if (is_glob(argv[lpc])) {
@@ -2526,6 +2547,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         usage();
     }
     else {
+        isc::service_guard serv_guard(injector::get<isc::service_list>());
+
         try {
             log_info("startup: %s", VCS_PACKAGE_STRING);
             log_host_info();
@@ -2600,7 +2623,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
                 archive_manager::cleanup_cache();
                 wait_for_pipers();
-                lnav_data.ld_curl_looper.process_all();
+                isc::to<curl_looper&, services::curl_streamer_t>()
+                    .send_and_wait([](auto& clooper) {
+                        clooper.process_all();
+                    });
                 rebuild_indexes();
 
                 for (auto &pair : cmd_results) {
@@ -2685,9 +2711,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
             }
             else {
-
-                lnav_data.ld_curl_looper.start();
-
                 init_session();
 
                 guard_termios gt(STDIN_FILENO);
@@ -2743,8 +2766,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
         }
     }
-
-    lnav_data.ld_curl_looper.stop();
 
     return retval;
 }

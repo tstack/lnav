@@ -45,6 +45,7 @@
 using namespace std;
 
 string_attr_type view_curses::VC_ROLE("role");
+string_attr_type view_curses::VC_ROLE_FG("role-fg");
 string_attr_type view_curses::VC_STYLE("style");
 string_attr_type view_curses::VC_GRAPHIC("graphic");
 string_attr_type view_curses::VC_SELECTED("selected");
@@ -218,6 +219,7 @@ void view_curses::mvwattrline(WINDOW *window,
         require(attr_range.lr_end >= -1);
 
         if (!(iter->sa_type == &VC_ROLE ||
+              iter->sa_type == &VC_ROLE_FG ||
               iter->sa_type == &VC_STYLE ||
               iter->sa_type == &VC_GRAPHIC ||
               iter->sa_type == &VC_FOREGROUND ||
@@ -254,15 +256,6 @@ void view_curses::mvwattrline(WINDOW *window,
 
         attr_range.lr_end = min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
 
-        if (iter->sa_type == &VC_GRAPHIC) {
-            for (int index = attr_range.lr_start;
-                index < attr_range.lr_end;
-                index++) {
-                mvwaddch(window, y, x + index, iter->sa_value.sav_int | text_attrs);
-            }
-            continue;
-        }
-
         if (iter->sa_type == &VC_FOREGROUND) {
             if (!has_fg) {
                 memset(fg_color, -1, line_width_chars * sizeof(short));
@@ -283,18 +276,33 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (attr_range.lr_end > attr_range.lr_start) {
             int awidth = attr_range.length();
-            int color_pair = 0;
+            nonstd::optional<char> graphic;
+            short color_pair = 0;
 
-            if (iter->sa_type == &VC_STYLE) {
+            if (iter->sa_type == &VC_GRAPHIC) {
+                graphic = iter->sa_value.sav_int;
+            } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.sav_int & ~A_COLOR;
                 color_pair = PAIR_NUMBER(iter->sa_value.sav_int);
             } else if (iter->sa_type == &VC_ROLE) {
                 attrs = vc.attrs_for_role((view_colors::role_t) iter->sa_value.sav_int);
                 color_pair = PAIR_NUMBER(attrs);
                 attrs = attrs & ~A_COLOR;
+            } else if (iter->sa_type == &VC_ROLE_FG) {
+                short role_fg, role_bg;
+                attrs = vc.attrs_for_role((view_colors::role_t) iter->sa_value.sav_int);
+                color_pair = PAIR_NUMBER(attrs);
+                pair_content(color_pair, &role_fg, &role_bg);
+                attrs = attrs & ~A_COLOR;
+                if (!has_fg) {
+                    memset(fg_color, -1, line_width_chars * sizeof(short));
+                }
+                fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], (short) role_fg);
+                has_fg = true;
+                color_pair = 0;
             }
 
-            if (attrs || color_pair > 0) {
+            if (graphic || attrs || color_pair > 0) {
                 int x_pos = x + attr_range.lr_start;
                 int ch_width = min(awidth, (line_width_chars - attr_range.lr_start));
                 cchar_t row_ch[ch_width + 1];
@@ -303,6 +311,10 @@ void view_curses::mvwattrline(WINDOW *window,
                 for (int lpc = 0; lpc < ch_width; lpc++) {
                     bool clear_rev = false;
 
+                    if (graphic) {
+                        row_ch[lpc].chars[0] = graphic.value();
+                        row_ch[lpc].attr |= A_ALTCHARSET;
+                    }
                     if (row_ch[lpc].attr & A_REVERSE && attrs & A_REVERSE) {
                         clear_rev = true;
                     }
@@ -342,6 +354,16 @@ void view_curses::mvwattrline(WINDOW *window,
         for (int lpc = 0; lpc < ch_width; lpc++) {
             if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
                 continue;
+            }
+
+            auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
+            short cur_fg, cur_bg;
+            pair_content(cur_pair, &cur_fg, &cur_bg);
+            if (fg_color[lpc] == -1) {
+                fg_color[lpc] = cur_fg;
+            }
+            if (bg_color[lpc] == -1) {
+                bg_color[lpc] = cur_bg;
             }
 
             int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
@@ -768,6 +790,10 @@ void view_colors::init_roles(const lnav_theme &lt,
 
     this->vc_role_colors[VCR_POPUP] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_popup, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_FOCUSED] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_focused, lt.lt_style_focused, reporter);
+    this->vc_role_colors[VCR_DISABLED_FOCUSED] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_disabled_focused, lt.lt_style_disabled_focused, reporter);
     this->vc_role_colors[VCR_COLOR_HINT] = make_pair(
         COLOR_PAIR(color_pair_base), COLOR_PAIR(color_pair_base + 1));
     color_pair_base += 2;

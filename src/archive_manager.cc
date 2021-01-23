@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <glob.h>
 #include <unistd.h>
 
 #if HAVE_ARCHIVE_H
@@ -44,6 +43,7 @@
 #include "fmt/format.h"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "base/humanize.hh"
 #include "lnav_util.hh"
 
 #include "archive_manager.hh"
@@ -52,8 +52,6 @@
 namespace fs = ghc::filesystem;
 
 namespace archive_manager {
-
-const static size_t MIN_FREE_SPACE = 32 * 1024 * 1024;
 
 class archive_lock {
 public:
@@ -184,10 +182,25 @@ copy_data(const std::string& filename,
 {
     int r;
     const void *buff;
-    size_t size, last_space_check = 0, total = 0;
+    size_t size, total = 0, next_space_check = 0;
     la_int64_t offset;
 
     for (;;) {
+        if (total >= next_space_check) {
+            auto& cfg = injector::get<const config&>();
+            auto tmp_space = fs::space(entry_path);
+
+            if (tmp_space.available < cfg.amc_min_free_space) {
+                return Err(fmt::format(
+                    FMT_STRING("available space on disk ({}) is below the minimum-free threshold ({}).  Unable to unpack '{}' to '{}'"),
+                    humanize::file_size(tmp_space.available),
+                    humanize::file_size(cfg.amc_min_free_space),
+                    entry_path.filename().string(),
+                    entry_path.parent_path().string()));
+            }
+            next_space_check += 1024 * 1024;
+        }
+
         r = archive_read_data_block(ar, &buff, &size, &offset);
         if (r == ARCHIVE_EOF) {
             return Ok();
@@ -207,17 +220,6 @@ copy_data(const std::string& filename,
 
         total += size;
         ep->ep_out_size.fetch_add(size);
-
-        if ((total - last_space_check) > (1024 * 1024)) {
-            auto tmp_space = fs::space(entry_path);
-
-            if (tmp_space.available < MIN_FREE_SPACE) {
-                return Err(fmt::format(
-                    "{} -- available space too low: %lld",
-                    entry_path.string(),
-                    tmp_space.available));
-            }
-        }
     }
 }
 
@@ -353,7 +355,7 @@ void cleanup_cache()
     (void) std::async(std::launch::async, []() {
         auto now = std::chrono::system_clock::now();
         auto cache_path = archive_cache_path();
-        auto cfg = injector::get<const config&>();
+        auto& cfg = injector::get<const config&>();
         std::vector<fs::path> to_remove;
 
         log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());

@@ -17,6 +17,7 @@ noinst_HEADERS = \
 	injector.bind.hh \
 	intern_string.hh \
     is_utf8.hh \
+    isc.hh \
     lnav_log.hh \
     math_util.hh \
     opt_util.hh \
@@ -29,6 +30,7 @@ libbase_a_SOURCES = \
 	humanize.cc \
 	intern_string.cc \
     is_utf8.cc \
+    isc.cc \
     lnav_log.cc \
     string_util.cc \
     time_util.cc

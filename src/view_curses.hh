@@ -219,6 +219,8 @@ public:
         VCR_SCROLLBAR,
         VCR_SCROLLBAR_ERROR,
         VCR_SCROLLBAR_WARNING,
+        VCR_FOCUSED,
+        VCR_DISABLED_FOCUSED,
         VCR_POPUP,
         VCR_COLOR_HINT,
 
@@ -436,6 +438,7 @@ public:
     }
 
     static string_attr_type VC_ROLE;
+    static string_attr_type VC_ROLE_FG;
     static string_attr_type VC_STYLE;
     static string_attr_type VC_GRAPHIC;
     static string_attr_type VC_SELECTED;

@@ -17,6 +17,12 @@
                     "title": "/tuning/archive-manager",
                     "type": "object",
                     "properties": {
+                        "min-free-space": {
+                            "title": "/tuning/archive-manager/min-free-space",
+                            "description": "The minimum free space to maintain when unpacking",
+                            "type": "integer",
+                            "minimum": 0
+                        },
                         "cache-ttl": {
                             "title": "/tuning/archive-manager/cache-ttl",
                             "description": "The time-to-live for unpacked archives",
@@ -146,6 +152,16 @@
                                         "popup": {
                                             "description": "Styling for popup windows",
                                             "title": "/ui/theme-defs/<theme_name>/styles/popup",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "focused": {
+                                            "description": "Styling for a focused row in a list view",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/focused",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "disabled-focused": {
+                                            "description": "Styling for a disabled focused row in a list view",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/disabled-focused",
                                             "$ref": "#/definitions/style"
                                         },
                                         "scrollbar": {

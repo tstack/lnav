@@ -26,21 +26,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file archive_manager.cfg.hh
+ * @file isc.cc
  */
 
-#ifndef lnav_archive_manager_cfg_hh
-#define lnav_archive_manager_cfg_hh
+#include "config.h"
 
-#include <chrono>
+#include "isc.hh"
 
-namespace archive_manager {
+namespace isc {
 
-struct config {
-    int64_t amc_min_free_space{32 * 1024 * 1024};
-    std::chrono::seconds amc_cache_ttl{std::chrono::hours(48)};
-};
+void *service::run()
+{
+    log_info("isc thread started");
+    while (this->s_looping) {
+        mstime_t current_time = getmstime();
+        auto timeout = this->compute_timeout(current_time);
 
+        this->s_port.process_for(timeout);
+
+        this->loop_body();
+    }
+    log_info("isc thread exiting");
+
+    return nullptr;
 }
 
-#endif
+}

@@ -10,7 +10,8 @@
                     "yellow": "#cdcd00",
                     "blue": "#5394ec",
                     "magenta": "#ff70ff",
-                    "cyan": "#33cccc"
+                    "cyan": "#33cccc",
+                    "white": "#d6deeb"
                 },
                 "styles": {
                     "identifier": {
@@ -52,6 +53,14 @@
                     },
                     "invalid-msg": {
                         "color": "$yellow"
+                    },
+                    "focused": {
+                        "color": "$black",
+                        "background-color": "#666"
+                    },
+                    "disabled-focused": {
+                        "color": "$white",
+                        "background-color": "#333"
                     },
                     "popup": {
                         "color": "$base00",

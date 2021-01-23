@@ -792,7 +792,7 @@ public:
     void match_reset()
     {
         this->tc_bookmarks[&BM_SEARCH].clear();
-        if (this->tc_sub_source != NULL) {
+        if (this->tc_sub_source != nullptr) {
             this->tc_sub_source->text_clear_marks(&BM_SEARCH);
         }
     };
@@ -801,13 +801,17 @@ public:
 
     const highlight_map_t &get_highlights() const { return this->tc_highlights; };
 
+    std::set<highlight_source_t> &get_disabled_highlights() {
+        return this->tc_disabled_highlights;
+    }
+
     bool handle_mouse(mouse_event &me);
 
     void reload_data();
 
     void do_update() {
         this->listview_curses::do_update();
-        if (this->tc_delegate != NULL) {
+        if (this->tc_delegate != nullptr) {
             this->tc_delegate->text_overlay(*this);
         }
     };
@@ -880,8 +884,12 @@ public:
         }
     }
 
-    std::string get_last_search() const {
-        return this->tc_last_search;
+    std::string get_current_search() const {
+        return this->tc_current_search;
+    }
+
+    void revert_search() {
+        this->execute_search(this->tc_previous_search);
     }
 
     void invoke_scroll() {
@@ -938,6 +946,7 @@ protected:
     action tc_search_action;
 
     highlight_map_t tc_highlights;
+    std::set<highlight_source_t> tc_disabled_highlights;
 
     vis_line_t tc_selection_start{-1_vl};
     vis_line_t tc_selection_last{-1_vl};
@@ -945,7 +954,8 @@ protected:
     bool tc_hide_fields{true};
     bool tc_paused{false};
 
-    std::string tc_last_search;
+    std::string tc_current_search;
+    std::string tc_previous_search;
     std::unique_ptr<grep_highlighter> tc_search_child;
     std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
 };

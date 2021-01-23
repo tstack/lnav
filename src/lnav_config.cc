@@ -567,6 +567,18 @@ static struct json_path_container theme_styles_handlers = {
             return &root->lt_style_popup;
         })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("focused")
+        .with_description("Styling for a focused row in a list view")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_focused;
+        })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("disabled-focused")
+        .with_description("Styling for a disabled focused row in a list view")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_disabled_focused;
+        })
+        .with_children(style_config_handlers),
     yajlpp::property_handler("scrollbar")
         .with_description("Styling for scrollbars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
@@ -857,6 +869,11 @@ static struct json_path_container ui_handlers = {
 };
 
 static struct json_path_container archive_handlers = {
+    yajlpp::property_handler("min-free-space")
+        .with_description("The minimum free space to maintain when unpacking")
+        .with_min_value(0)
+        .for_field(&_lnav_config::lc_archive_manager,
+                   &archive_manager::config::amc_min_free_space),
     yajlpp::property_handler("cache-ttl")
         .with_description("The time-to-live for unpacked archives")
         .for_field(&_lnav_config::lc_archive_manager,

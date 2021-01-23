@@ -69,6 +69,7 @@
 #include "papertrail_proc.hh"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
+#include "service_tags.hh"
 #include "sqlite-extension-func.hh"
 
 using namespace std;
@@ -107,7 +108,10 @@ static string refresh_pt_search()
         }
     }
 
-    lnav_data.ld_curl_looper.close_request("papertrailapp.com");
+    isc::to<curl_looper&, services::curl_streamer_t>()
+        .send([](auto& clooper) {
+            clooper.close_request("papertrailapp.com");
+        });
 
     if (lnav_data.ld_pt_search.empty()) {
         return "info: no papertrail query is active";
@@ -118,7 +122,10 @@ static string refresh_pt_search()
         lnav_data.ld_pt_max_time);
     lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
         .with_fd(pt->copy_fd());
-    lnav_data.ld_curl_looper.add_request(pt);
+    isc::to<curl_looper&, services::curl_streamer_t>()
+        .send([pt](auto& clooper) {
+            clooper.add_request(pt);
+        });
 
     ensure_view(&lnav_data.ld_views[LNV_LOG]);
 
@@ -1685,7 +1692,7 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
             regex = remaining_args(cmdline, args, 2);
         }
         else {
-            regex = lnav_data.ld_views[LNV_LOG].get_last_search();
+            regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
 
         if ((code = pcre_compile(regex.c_str(),
@@ -1937,7 +1944,10 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
 
                     lnav_data.ld_active_files.fc_file_names[fn]
                         .with_fd(ul->copy_fd());
-                    lnav_data.ld_curl_looper.add_request(ul);
+                    isc::to<curl_looper&, services::curl_streamer_t>()
+                        .send([ul](auto& clooper) {
+                            clooper.add_request(ul);
+                        });
                     lnav_data.ld_files_to_front.emplace_back(fn, top);
                     retval = "info: opened URL";
                 } else {
@@ -2151,7 +2161,10 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
             }
             else {
                 if (is_url(fn.c_str())) {
-                    lnav_data.ld_curl_looper.close_request(fn);
+                    isc::to<curl_looper&, services::curl_streamer_t>()
+                        .send([fn](auto& clooper) {
+                            clooper.close_request(fn);
+                        });
                 }
                 lnav_data.ld_active_files.fc_file_names.erase(fn);
                 lnav_data.ld_active_files.fc_closed_files.insert(fn);
@@ -2249,7 +2262,7 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
         if (!ec.ec_dry_run && text_file_count > 0) {
             lnav_data.ld_views[LNV_TEXT].get_sub_source()->text_filters_changed();
         }
-        retval = fmt::format("{} {} log files and {} text files",
+        retval = fmt::format(FMT_STRING("{} {:L} log files and {:L} text files"),
                              make_visible ? "showing" : "hiding",
                              log_file_count,
                              text_file_count);
@@ -3361,7 +3374,10 @@ static Result<string, string> com_poll_now(exec_context &ec, string cmdline, vec
 
     }
     else if (!ec.ec_dry_run) {
-        lnav_data.ld_curl_looper.process_all();
+        isc::to<curl_looper&, services::curl_streamer_t>()
+            .send_and_wait([](auto& clooper) {
+                clooper.process_all();
+            });
     }
 
     return Ok(string());
@@ -3529,11 +3545,15 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
     }
     else if (args.size() > 1) {
         yajlpp_parse_context ypc("input", &lnav_config_handlers);
+        vector<string> errors;
         string option = args[1];
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option)
-           .with_obj(lnav_config);
+           .with_obj(lnav_config)
+           .with_error_reporter([&errors](const auto& ypc, auto level, auto* msg) {
+               errors.push_back(msg);
+           });
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
@@ -3558,8 +3578,6 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
             string old_value = gen.to_string_fragment().to_string();
 
             if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
-                vector<string> errors;
-
                 lnav_config = rollback_lnav_config;
                 reload_config(errors);
 
@@ -3588,7 +3606,6 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
             }
             else {
                 string value = remaining_args(cmdline, args, 2);
-                vector<string> errors;
                 bool changed = false;
 
                 if (ec.ec_dry_run) {
@@ -3610,6 +3627,17 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
                         value.size());
                     changed = true;
                 }
+                else if (ypc.ypc_current_handler->jph_callbacks.yajl_integer) {
+                    long long val = 0;
+
+                    auto consumed = strtonum(val, value.c_str(), value.length());
+                    log_debug("got val %d", (int) val);
+                    if (consumed != value.length()) {
+                        return ec.make_error("expecting an integer, found: {}", value);
+                    }
+                    ypc.ypc_callbacks.yajl_integer(&ypc, val);
+                    changed = true;
+                }
                 else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean) {
                     bool bvalue = false;
 
@@ -3621,6 +3649,10 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
                 }
                 else {
                     return ec.make_error("unhandled type");
+                }
+
+                if (!errors.empty()) {
+                    return ec.make_error(errors[0]);
                 }
 
                 if (changed) {
@@ -3635,7 +3667,7 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
                     if (!errors.empty()) {
                         lnav_config = rollback_lnav_config;
                         reload_config(errors);
-                        return Err("error: " +errors[0]);
+                        return Err("error: " + errors[0]);
                     } else if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
@@ -4170,7 +4202,7 @@ static void command_prompt(vector<string> &args)
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
     add_view_text_possibilities(lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
-    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_last_search());
+    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_current_search());
     add_filter_possibilities(tc);
     add_mark_possibilities();
     add_config_possibilities();
@@ -4217,7 +4249,6 @@ static void search_prompt(vector<string> &args)
     textview_curses *tc = *lnav_data.ld_view_stack.top();
 
     lnav_data.ld_mode = LNM_SEARCH;
-    lnav_data.ld_previous_search = tc->get_last_search();
     lnav_data.ld_search_start_line = tc->get_top();
     add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SEARCH, "*", tc);
     lnav_data.ld_rl_view->focus(LNM_SEARCH,

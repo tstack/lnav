@@ -176,7 +176,7 @@ CREATE TABLE lnav_views (
                 sqlite3_result_int(ctx, tc.is_paused());
                 break;
             case 7: {
-                const string &str = tc.get_last_search();
+                const string &str = tc.get_current_search();
 
                 sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
                 break;

@@ -9,6 +9,7 @@
     },
     "tuning": {
         "archive-manager": {
+            "min-free-space": 33554432,
             "cache-ttl": "2d"
         }
     }

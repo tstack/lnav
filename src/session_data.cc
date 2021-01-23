@@ -718,7 +718,7 @@ static int read_files(yajlpp_parse_context *ypc, const unsigned char *str, size_
     return 1;
 }
 
-static int read_last_search(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static int read_current_search(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     string       regex        = std::string((const char *)str, len);
     const char **view_name;
@@ -818,7 +818,7 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
 
 static struct json_path_container view_def_handlers = {
     json_path_handler("top_line",  read_top_line),
-    json_path_handler("search",    read_last_search),
+    json_path_handler("search",    read_current_search),
     json_path_handler("word_wrap", read_word_wrap),
     json_path_handler("filtering", read_filtering),
     json_path_handler("commands#", read_commands)
@@ -1363,7 +1363,7 @@ static void save_session_with_id(const std::string session_id)
                     }
 
                     view_map.gen("search");
-                    view_map.gen(lnav_data.ld_views[lpc].get_last_search());
+                    view_map.gen(lnav_data.ld_views[lpc].get_current_search());
 
                     view_map.gen("word_wrap");
                     view_map.gen(tc.get_word_wrap());
@@ -1525,7 +1525,7 @@ void reset_session()
 
     lnav_data.ld_filter_view.reload_data();
     lnav_data.ld_files_view.reload_data();
-    for (auto format : log_format::get_root_formats()) {
+    for (const auto& format : log_format::get_root_formats()) {
         auto *elf = dynamic_cast<external_log_format *>(format.get());
 
         if (elf == nullptr) {

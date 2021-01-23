@@ -38,6 +38,8 @@
 #include <utility>
 #include <vector>
 
+#include "base/isc.hh"
+
 #if !defined(HAVE_LIBCURL)
 
 typedef int CURLcode;
@@ -141,37 +143,11 @@ protected:
     int cr_completions;
 };
 
-class curl_looper {
+class curl_looper : public isc::service {
 public:
     curl_looper()
-            : cl_started(false),
-              cl_looping(true),
-              cl_curl_multi(curl_multi_cleanup) {
+            : cl_curl_multi(curl_multi_cleanup) {
         this->cl_curl_multi.reset(curl_multi_init());
-    };
-
-    ~curl_looper() {
-        this->stop();
-    }
-
-    void start() {
-        this->cl_thread = std::thread(&curl_looper::run, this);
-        this->cl_started = true;
-    };
-
-    void stop() {
-        if (this->cl_started) {
-            this->cl_looping = false;
-            {
-                std::unique_lock<std::mutex> mg(this->cl_mutex);
-
-                this->cl_cond.notify_all();
-            }
-            log_debug("waiting for curl_looper thread");
-            this->cl_thread.join();
-            log_debug("curl_looper thread joined");
-            this->cl_started = false;
-        }
     };
 
     void process_all() {
@@ -186,58 +162,33 @@ public:
         }
     };
 
-    void add_request(std::shared_ptr<curl_request> cr) {
-        std::unique_lock<std::mutex> mg(this->cl_mutex);
-
+    void add_request(const std::shared_ptr<curl_request>& cr) {
         require(cr != nullptr);
 
-        this->cl_all_requests.push_back(cr);
-        this->cl_new_requests.push_back(cr);
-        this->cl_cond.notify_all();
+        this->cl_all_requests.emplace_back(cr);
+        this->cl_new_requests.emplace_back(cr);
     };
 
     void close_request(const std::string &name) {
-        std::unique_lock<std::mutex> mg(this->cl_mutex);
-
-        this->cl_close_requests.push_back(name);
-        this->cl_cond.notify_all();
+        this->cl_close_requests.emplace_back(name);
     };
 
-private:
+protected:
+    void loop_body() override;
 
-    void *run();
-    void loop_body();
+private:
     void perform_io();
     void check_for_new_requests();
     void check_for_finished_requests();
     void requeue_requests(mstime_t up_to_time);
+    std::chrono::milliseconds compute_timeout(mstime_t current_time) const override;
 
-    int compute_timeout(mstime_t current_time) const {
-        int retval = 1000;
-
-        if (!this->cl_poll_queue.empty()) {
-            retval = std::max(
-                    (mstime_t) 1,
-                    this->cl_poll_queue.front().first - current_time);
-        }
-
-        ensure(retval > 0);
-
-        return retval;
-    };
-
-    bool cl_started;
-    std::thread cl_thread;
-    std::atomic<bool> cl_looping;
     auto_mem<CURLM> cl_curl_multi;
-    std::mutex cl_mutex;
-    std::condition_variable cl_cond;
     std::vector<std::shared_ptr<curl_request>> cl_all_requests;
     std::vector<std::shared_ptr<curl_request>> cl_new_requests;
     std::vector<std::string> cl_close_requests;
     std::map<CURL *, std::shared_ptr<curl_request>> cl_handle_to_request;
     std::vector<std::pair<mstime_t, std::shared_ptr<curl_request>>> cl_poll_queue;
-
 };
 #endif
 

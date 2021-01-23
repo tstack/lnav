@@ -46,6 +46,14 @@
                     "popup": {
                         "color": "Silver",
                         "background-color": "Teal"
+                    },
+                    "focused": {
+                        "color": "Black",
+                        "background-color": "Silver"
+                    },
+                    "disabled-focused": {
+                        "color": "Black",
+                        "background-color": "#888"
                     }
                 },
                 "syntax-styles": {

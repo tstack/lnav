@@ -224,6 +224,7 @@ struct json_path_handler_base {
     std::vector<std::string> jph_examples;
 
     std::function<int(yajlpp_parse_context *, int)> jph_bool_cb;
+    std::function<int(yajlpp_parse_context *, long long)> jph_integer_cb;
     std::function<int(yajlpp_parse_context *, const unsigned char *str, size_t len)> jph_str_cb;
 };
 
@@ -231,16 +232,17 @@ struct json_path_handler;
 
 class yajlpp_parse_context {
 public:
-    typedef void (*error_reporter_t)(const yajlpp_parse_context &ypc,
-                                     lnav_log_level_t level,
-                                     const char *msg);
+    using error_reporter_t = std::function<
+        void(const yajlpp_parse_context &ypc,
+             lnav_log_level_t level,
+             const char *msg)>;
 
     yajlpp_parse_context(std::string source,
                          const struct json_path_container *handlers = nullptr);
 
     const char *get_path_fragment(int offset, char *frag_in, size_t &len_out) const;
 
-    const intern_string_t get_path_fragment_i(int offset) const {
+    intern_string_t get_path_fragment_i(int offset) const {
         char fragbuf[this->ypc_path.size()];
         const char *frag;
         size_t len;

@@ -366,7 +366,7 @@ public:
             vis_line_t last_line(this->get_inner_height() - 1);
 
             retval = last_line - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
-            if ((retval + 1) < this->get_inner_height()) {
+            if ((retval + this->lv_tail_space) < this->get_inner_height()) {
                 retval += this->lv_tail_space;
             }
         }

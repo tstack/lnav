@@ -71,7 +71,7 @@ void bottom_status_source::update_line_number(listview_curses *lc)
 void bottom_status_source::update_search_term(textview_curses &tc)
 {
     auto &sf = this->bss_fields[BSF_SEARCH_TERM];
-    auto search_term = tc.get_last_search();
+    auto search_term = tc.get_current_search();
 
     if (search_term.empty()) {
         sf.clear();
@@ -115,7 +115,7 @@ void bottom_status_source::update_marks(listview_curses *lc)
     if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
         bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_SEARCH];
 
-        if (!bv.empty() || !tc->get_last_search().empty()) {
+        if (!bv.empty() || !tc->get_current_search().empty()) {
             bookmark_vector<vis_line_t>::iterator lb;
 
             lb = std::lower_bound(bv.begin(), bv.end(), tc->get_top());

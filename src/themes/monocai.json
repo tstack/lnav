@@ -54,6 +54,14 @@
                     "invalid-msg": {
                         "color": "$yellow"
                     },
+                    "focused": {
+                        "color": "$black",
+                        "background-color": "$white"
+                    },
+                    "disabled-focused": {
+                        "color": "$white",
+                        "background-color": "#333"
+                    },
                     "popup": {
                         "color": "$white",
                         "background-color": "$cyan"

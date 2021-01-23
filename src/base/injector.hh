@@ -127,11 +127,11 @@ struct is_vector : std::false_type {};
 template<class T>
 struct is_vector<std::vector<T>> : std::true_type {};
 
-template<typename T,
+template<typename T, typename...Annotations,
     std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
 T get()
 {
-    return singleton_storage<typename T::element_type>::create();
+    return singleton_storage<typename T::element_type, Annotations...>::create();
 }
 
 template<typename T,

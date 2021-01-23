@@ -59,7 +59,6 @@
 #include "log_vtab_impl.hh"
 #include "readline_curses.hh"
 #include "piper_proc.hh"
-#include "curl_looper.hh"
 #include "relative_time.hh"
 #include "log_format_loader.hh"
 #include "spectro_source.hh"
@@ -266,8 +265,6 @@ struct lnav_data_t {
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
 
-    std::string                             ld_previous_search;
-
     vis_line_t                              ld_last_pretty_print_top;
 
     std::unique_ptr<log_vtab_manager>       ld_vtab_manager;
@@ -280,8 +277,6 @@ struct lnav_data_t {
 
     input_state_tracker ld_input_state;
     input_dispatcher ld_input_dispatcher;
-
-    curl_looper ld_curl_looper;
 
     exec_context ld_exec_context;
 

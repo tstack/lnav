@@ -278,6 +278,13 @@ size_t filter_help_status_source::statusview_fields()
             auto &lv = lnav_data.ld_files_view;
             auto sel = (int) lv.get_selection();
 
+            if (sel < fc.fc_name_to_errors.size()) {
+                this->fss_help.clear();
+                return;
+            }
+
+            sel -= fc.fc_name_to_errors.size();
+
             if (sel < fc.fc_other_files.size()) {
                 this->fss_help.clear();
                 return;

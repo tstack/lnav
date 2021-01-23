@@ -333,7 +333,6 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     shared_ptr<text_filter> tf = *(fs.begin() + line);
     bool selected =
         lnav_data.ld_mode == LNM_FILTER && line == tc.get_selection();
-    int bg = selected ? COLOR_WHITE : COLOR_BLACK;
 
     if (selected) {
         value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC,
@@ -349,20 +348,22 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
                                vcolors.ansi_to_theme_color(COLOR_GREEN));
     }
 
-    int fg = tf->get_type() == text_filter::INCLUDE ? COLOR_GREEN : COLOR_RED;
-    value_out.emplace_back(line_range{4, 7}, &view_curses::VC_FOREGROUND,
-                           vcolors.ansi_to_theme_color(fg));
+    int fg_role = tf->get_type() == text_filter::INCLUDE ?
+        view_colors::VCR_OK : view_colors::VCR_ERROR;
+    value_out.emplace_back(line_range{4, 7},
+                           &view_curses::VC_ROLE_FG,
+                           fg_role);
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_STYLE, A_BOLD);
 
     value_out.emplace_back(line_range{8, 17}, &view_curses::VC_STYLE, A_BOLD);
     value_out.emplace_back(line_range{23, 24}, &view_curses::VC_GRAPHIC,
                            ACS_VLINE);
 
-    fg = selected ? COLOR_BLACK : COLOR_WHITE;
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND,
-                           vcolors.ansi_to_theme_color(fg));
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_BACKGROUND,
-                           vcolors.ansi_to_theme_color(bg));
+    if (selected) {
+        value_out.emplace_back(line_range{0, -1},
+                               &view_curses::VC_ROLE,
+                               view_colors::VCR_FOCUSED);
+    }
 }
 
 size_t filter_sub_source::text_size_for_line(textview_curses &tc, int line,

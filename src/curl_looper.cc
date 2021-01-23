@@ -91,30 +91,9 @@ int curl_request::debug_cb(CURL *handle,
     return 0;
 }
 
-void *curl_looper::run()
-{
-    log_info("curl looper thread started");
-    while (this->cl_looping) {
-        this->loop_body();
-    }
-    log_info("curl looper thread exiting");
-
-    return nullptr;
-}
-
 void curl_looper::loop_body()
 {
     mstime_t current_time = getmstime();
-    int timeout = this->compute_timeout(current_time);
-
-    if (this->cl_handle_to_request.empty()) {
-        std::unique_lock<std::mutex> mg(this->cl_mutex);
-
-        if (this->cl_new_requests.empty() && this->cl_close_requests.empty()) {
-            mstime_t deadline = current_time + timeout;
-            this->cl_cond.wait_for(mg, std::chrono::milliseconds(deadline));
-        }
-    }
 
     this->perform_io();
 
@@ -132,13 +111,13 @@ void curl_looper::perform_io()
     }
 
     mstime_t current_time = getmstime();
-    int timeout = this->compute_timeout(current_time);
+    auto timeout = this->compute_timeout(current_time);
     int running_handles;
 
     curl_multi_wait(this->cl_curl_multi,
                     nullptr,
                     0,
-                    timeout,
+                    timeout.count(),
                     nullptr);
     curl_multi_perform(this->cl_curl_multi, &running_handles);
 }
@@ -158,8 +137,6 @@ void curl_looper::requeue_requests(mstime_t up_to_time)
 }
 
 void curl_looper::check_for_new_requests() {
-    std::unique_lock<std::mutex> mg(this->cl_mutex);
-
     while (!this->cl_new_requests.empty()) {
         auto cr = this->cl_new_requests.back();
 
@@ -204,8 +181,6 @@ void curl_looper::check_for_new_requests() {
         }
 
         this->cl_close_requests.pop_back();
-
-        this->cl_cond.notify_all();
     }
 }
 
@@ -233,16 +208,11 @@ void curl_looper::check_for_finished_requests()
             if (delay_ms < 0) {
                 log_info("%s:curl_request %p finished, deleting...",
                          cr->get_name().c_str(), cr.get());
-                {
-                    std::unique_lock<std::mutex> mg(this->cl_mutex);
-
-                    auto all_iter = find(this->cl_all_requests.begin(),
-                                         this->cl_all_requests.end(),
-                                         cr);
-                    if (all_iter != this->cl_all_requests.end()) {
-                        this->cl_all_requests.erase(all_iter);
-                    }
-                    this->cl_cond.notify_all();
+                auto all_iter = find(this->cl_all_requests.begin(),
+                                     this->cl_all_requests.end(),
+                                     cr);
+                if (all_iter != this->cl_all_requests.end()) {
+                    this->cl_all_requests.erase(all_iter);
                 }
             }
             else {
@@ -255,6 +225,23 @@ void curl_looper::check_for_finished_requests()
             }
         }
     }
+}
+
+std::chrono::milliseconds curl_looper::compute_timeout(mstime_t current_time) const
+{
+    std::chrono::milliseconds retval = 1s;
+
+    if (!this->cl_handle_to_request.empty()) {
+        retval = 1ms;
+    } else if (!this->cl_poll_queue.empty()) {
+        retval = std::max(
+            1ms,
+            std::chrono::milliseconds(this->cl_poll_queue.front().first - current_time));
+    }
+
+    ensure(retval.count() > 0);
+
+    return retval;
 }
 
 #endif
