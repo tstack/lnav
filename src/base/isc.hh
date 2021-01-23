@@ -29,6 +29,7 @@
  * @file isc.hh
  */
 
+#include <atomic>
 #include <deque>
 #include <chrono>
 #include <mutex>
