@@ -47,6 +47,7 @@
 #include "base/injector.hh"
 #include "base/isc.hh"
 #include "base/string_util.hh"
+#include "curl_looper.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
