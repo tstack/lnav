@@ -337,6 +337,7 @@ noinst_HEADERS = \
 	safe/safe.h \
 	sequence_matcher.hh \
 	sequence_sink.hh \
+	service_tags.hh \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
