@@ -45,6 +45,7 @@
 
 #include "bound_tags.hh"
 #include "base/injector.hh"
+#include "base/isc.hh"
 #include "base/string_util.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
