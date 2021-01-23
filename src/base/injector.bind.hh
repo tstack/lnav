@@ -113,7 +113,7 @@ struct bind_multiple : multiple_storage<T> {
         }
         bind<I, Annotations...>::to_instance(single.get());
         multiple_storage<T>::get_factories()[typeid(I).name()] = [single]() {
-            return single;
+            return std::static_pointer_cast<T>(single);
         };
 
         return *this;
