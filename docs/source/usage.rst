@@ -31,15 +31,38 @@ log file, you can enter the :ref:`SQL prompt<sql-ext>` by pressing |ks| ; |ke|.
 Viewing Files
 -------------
 
-The files to view in **lnav** can be given on the command-line or passed to
-the :ref:`:open<open>` command.  If the path is a directory, all of the files
-in the directory will be opened and the directory will be monitored for files
-to be added or removed from the view.  A
-`glob pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`_ can be
-given to watch for files with a common name.  The files that are found will be
-scanned to identify their file format.  Files that match a log format will be
-collated by time and displayed in the LOG view.  Plain text files can be viewed
-in the TEXT view, which can be accessed by pressing |ks| t |ke|.
+The files to view in **lnav** can be given on the command-line or passed to the
+:ref:`:open<open>` command.  A
+`glob pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`_ can be given
+to watch for files with a common name.  If the path is a directory, all of the
+files in the directory will be opened and the directory will be monitored for
+files to be added or removed from the view.  If the path is an archive or
+compressed file (and lnav was built with libarchive), the archive will be
+extracted to a temporary location and the files within will be loaded.  The
+files that are found will be scanned to identify their file format.  Files
+that match a log format will be collated by time and displayed in the LOG
+view.  Plain text files can be viewed in the TEXT view, which can be accessed
+by pressing |ks| t |ke|.
+
+
+Archive Support
+^^^^^^^^^^^^^^^
+
+If **lnav** is compiled with "libarchive", any files to be opened will be
+examined to see if they are a supported archive type.  If so, the contents
+of the archive will be extracted to the :code:`$TMPDIR/lnav-${UID}-archives/`
+directory.  Once extracted, the files within will be loaded into lnav.  To
+speed up opening large amounts of files, any file that meets the following
+conditions will be automatically hidden and not indexed:
+
+* Binary files
+* Plain text files that are larger than 128KB
+* Duplicate log files
+
+The unpacked files will be left in the temporary directory after exiting
+**lnav** so that opening the same archive again will be faster.  Unpacked
+archives that have not been accessed in the past two days will be automatically
+deleted the next time **lnav** is started.
 
 
 Searching
@@ -78,6 +101,15 @@ or by doing an :code:`INSERT` into the
 :ref:`lnav_view_filters<table_lnav_view_filters>` table.
 
 
+SQLite Expression
+^^^^^^^^^^^^^^^^^
+
+Complex filtering can be done by passing a SQLite expression to the
+:ref:`:filter-expr<filter_expr>` command.  The expression will be executed for
+every log message and if it returns true, the line will be shown in the log
+view.
+
+
 Time
 ^^^^
 
@@ -92,7 +124,6 @@ Log level
 
 To hide messages below a certain log level, you can use the
 :ref:`:set-min-log-level<set_min_log_level>`.
-
 
 Search Tables
 -------------

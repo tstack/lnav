@@ -196,3 +196,13 @@ Reference
 ^^^^^^^^^
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
+
+
+Tuning
+------
+
+The following configuration options can be used to tune the internals of
+**lnav** to your liking.  The options can be changed using the :code:`:config`
+command.
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning

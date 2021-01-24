@@ -9,6 +9,7 @@ The information currently stored is:
 * Position within the files being viewed.
 * Active searches for each view.
 * Any active log filters or highlights.
+* Hidden files.
 
 Bookmarks and log-time adjustments are stored separately on a per-file basis.
 Note that the bookmarks are associated with files based on the content of the
