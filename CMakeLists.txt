@@ -18,7 +18,7 @@ HunterGate(
 
 set(CMAKE_CXX_STANDARD 14)
 project(lnav
-        VERSION 0.9.0)
+        VERSION 0.9.1)
 
 include(CTest)
 include(GNUInstallDirs)
