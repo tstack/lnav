@@ -16,6 +16,7 @@ Contents:
 
    intro
    usage
+   cookbook
    howitworks
    cli
    ui

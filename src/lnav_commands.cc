@@ -4734,6 +4734,11 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_example({
                 "To set a filter expression that matched syslog messages from 'syslogd'",
                 ":log_procname = 'syslogd'"
+            })
+            .with_example({
+                "To set a filter expression that matches log messages where "
+                "'id' is followed by a number and contains the string 'foo'",
+                ":log_body REGEXP 'id\\d+' AND :log_body REGEXP 'foo'"
             }),
 
         com_filter_expr_prompt,

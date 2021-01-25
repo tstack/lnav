@@ -540,6 +540,12 @@
 
       :filter-expr :log_procname = 'syslogd'
 
+    To set a filter expression that matches log messages where 'id' is followed by a number and contains the string 'foo':
+
+    .. code-block::  lnav
+
+      :filter-expr :log_body REGEXP 'id\d+' AND :log_body REGEXP 'foo'
+
   **See Also:**
 
     :ref:`clear_filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
