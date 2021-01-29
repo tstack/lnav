@@ -1,4 +1,6 @@
 
+include $(top_srcdir)/aminclude_static.am
+
 SUBDIRS = base fmtlib pcrepp pugixml yajl yajlpp .
 
 bin_PROGRAMS = lnav
@@ -203,6 +205,10 @@ LNAV_BUILT_FILES = \
     xterm-palette-json.h \
     xterm-palette-json.cc
 
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(LIBARCHIVE_LDFLAGS) \
@@ -214,6 +220,7 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-I$(srcdir)/fmtlib \
 	-Wall \
+	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
@@ -231,8 +238,7 @@ LDADD = \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(LIBARCHIVE_LIBS) \
-	$(LIBCURL) \
-	-lpcrecpp
+	$(LIBCURL)
 
 dist_noinst_DATA = \
 	alpha-release.sh \
@@ -397,6 +403,8 @@ libdiag_a_SOURCES = \
 	column_namer.cc \
 	command_executor.cc \
 	curl_looper.cc \
+	data_scanner.cc \
+	data_scanner_re.cc \
 	db_sub_source.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
@@ -435,8 +443,6 @@ libdiag_a_SOURCES = \
 	logfile.cc \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \
-	data_scanner.cc \
-	data_scanner_re.cc \
 	data_parser.cc \
 	papertrail_proc.cc \
 	pretty_printer.cc \

@@ -77,6 +77,41 @@ Row 0:
   Column regexp_replace('test 1 2 3', '\d+', 'N'): test N N N
 EOF
 
+run_test ./drive_sql "select regexp_replace('test 1 2 3', '\\s+', '{\\0}') as repl"
+
+check_output "" <<EOF
+Row 0:
+  Column       repl: test{ }1{ }2{ }3
+EOF
+
+run_test ./drive_sql "select regexp_replace('test 1 2 3', '\\w*', '{\\0}') as repl"
+
+check_output "" <<EOF
+Row 0:
+  Column       repl: {test}{} {1}{} {2}{} {3}{}
+EOF
+
+run_test ./drive_sql "select regexp_replace('123 abc', '(\w*)', '<\3>') as repl"
+
+check_output "" <<EOF
+Row 0:
+  Column       repl: <\3><\3> <\3><\3>
+EOF
+
+run_test ./drive_sql "select regexp_replace('123 abc', '(\w*)', '<\\\\>') as repl"
+
+check_output "" <<EOF
+Row 0:
+  Column       repl: <\><\> <\><\>
+EOF
+
+run_test ./drive_sql "select regexp_replace('abc: def', '(\w*):\s*(.*)', '\1=\2') as repl"
+
+check_output "" <<EOF
+Row 0:
+  Column       repl: abc=def
+EOF
+
 
 run_test ./drive_sql "select regexp_match('abc', 'abc')"
 

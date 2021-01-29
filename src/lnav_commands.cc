@@ -34,13 +34,13 @@
 #include <fnmatch.h>
 #include <termios.h>
 
+#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
 #include <fstream>
 #include <unordered_map>
 
-#include <pcrecpp.h>
 #include <yajl/api/yajl_tree.h>
 
 #include "bound_tags.hh"
@@ -499,11 +499,10 @@ static bool csv_needs_quoting(const string &str)
 
 static string csv_quote_string(const string &str)
 {
-    static pcrecpp::RE csv_column_quoter("\"");
+    static std::regex csv_column_quoter("\"");
 
-    string retval = str;
+    string retval = std::regex_replace(str, csv_column_quoter, "\"\"");
 
-    csv_column_quoter.GlobalReplace("\"\"", &retval);
     retval.insert(0, 1, '\"');
     retval.append(1, '\"');
 
@@ -1684,11 +1683,7 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
 
     }
     else if (args.size() >= 2) {
-        std::shared_ptr<log_search_table> lst;
-        auto_mem<pcre> code;
-        const char *errptr;
         string regex;
-        int eoff;
 
         if (args.size() >= 3) {
             regex = remaining_args(cmdline, args, 2);
@@ -1697,29 +1692,21 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
             regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
 
-        if ((code = pcre_compile(regex.c_str(),
-                                 PCRE_CASELESS,
-                                 &errptr,
-                                 &eoff,
-                                 NULL)) == NULL) {
-            return ec.make_error("{}", errptr);
+        auto re_res = pcrepp::from_str(regex, log_search_table::pattern_options());
+
+        if (re_res.isErr()) {
+            return ec.make_error("{}", re_res.unwrapErr().ce_msg);
         }
 
-        try {
-            lst = std::make_shared<log_search_table>(
-                regex.c_str(), intern_string::lookup(args[1]));
-        } catch (pcrepp::error &e) {
-            return ec.make_error("unable to compile regex -- {}", regex);
-        }
-
+        auto re = re_res.unwrap();
+        auto lst = std::make_shared<log_search_table>(
+            re, intern_string::lookup(args[1]));
         if (ec.ec_dry_run) {
             textview_curses *tc = &lnav_data.ld_views[LNV_LOG];
             auto &hm = tc->get_highlights();
-            view_colors &vc = view_colors::singleton();
-            highlighter hl(code.release());
+            highlighter hl(re.p_code);
 
-            hl.with_attrs(
-                vc.ansi_color_pair(COLOR_BLACK, COLOR_CYAN) | A_BLINK);
+            hl.with_attrs(view_colors::ansi_color_pair(COLOR_BLACK, COLOR_CYAN) | A_BLINK);
 
             hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
             tc->reload_data();
@@ -4283,12 +4270,11 @@ static void search_filters_prompt(vector<string> &args)
 
 static void search_files_prompt(vector<string> &args)
 {
-    static pcrecpp::RE re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+    static std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
 
     lnav_data.ld_mode = LNM_SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        auto path = lf->get_unique_path();
-        re_escape.GlobalReplace(R"(\\\1)", &path);
+        auto path = pcrepp::quote(lf->get_unique_path());
         lnav_data.ld_rl_view->add_possibility(LNM_SEARCH_FILES,
                                               "*",
                                               path);

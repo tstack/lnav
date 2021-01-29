@@ -253,7 +253,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     }
 
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
-    struct timeval curr_tv, offset_tv, orig_tv, diff_tv = { 0 };
+    struct timeval curr_tv, offset_tv, orig_tv, diff_tv = { 0, 0 };
     attr_line_t time_line;
     string &time_str = time_line.get_string();
     struct line_range time_lr;

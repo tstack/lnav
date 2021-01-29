@@ -76,7 +76,9 @@ public:
         return *this;
     };
 
-    auto_mem &operator =(auto_mem & am)
+    auto_mem &operator=(auto_mem &) = delete;
+
+    auto_mem &operator =(auto_mem && am) noexcept
     {
         this->reset(am.release());
         this->am_free_func = am.am_free_func;

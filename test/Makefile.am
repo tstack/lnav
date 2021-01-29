@@ -1,4 +1,6 @@
 
+include $(top_srcdir)/aminclude_static.am
+
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
@@ -6,10 +8,15 @@ RM_V = $(RM_V_@AM_V@)
 RM_V_ = $(RM_V_@AM_DEFAULT_V@)
 RM_V_0 = @echo "  RM      " $@;
 
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+
 AM_CPPFLAGS = \
 	-Wall \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/fmtlib \
+	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
@@ -83,8 +90,7 @@ LDADD = \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
     $(READLINE_LIBS) \
-    $(LIBCURL) \
-	-lpcrecpp
+    $(LIBCURL)
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 

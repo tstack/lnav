@@ -140,6 +140,7 @@ static struct {
     0,
     BUFFER_SIZE,
     0,
+    {}
 };
 
 static const char *LEVEL_NAMES[] = {

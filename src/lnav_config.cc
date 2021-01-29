@@ -40,12 +40,11 @@
 #include <unistd.h>
 #include <libgen.h>
 
+#include <regex>
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <fmt/format.h>
-
-#include "pcrecpp.h"
 
 #include "auto_fd.hh"
 #include "base/injector.hh"
@@ -192,14 +191,12 @@ void ensure_dotlnav()
 
 bool install_from_git(const char *repo)
 {
-    static pcrecpp::RE repo_name_converter("[^\\w]");
+    static std::regex repo_name_converter("[^\\w]");
 
     auto formats_path = dotlnav_path() / "formats";
     auto configs_path = dotlnav_path() / "configs";
     auto staging_path = dotlnav_path() / "staging";
-    string local_name = repo;
-
-    repo_name_converter.GlobalReplace("_", &local_name);
+    string local_name = std::regex_replace(repo, repo_name_converter, "_");
 
     auto local_formats_path = formats_path / local_name;
     auto local_configs_path = configs_path / local_name;

@@ -31,8 +31,6 @@
 
 #include "config.h"
 
-#include <pcrecpp.h>
-
 #include "pcrepp.hh"
 
 using namespace std;
@@ -42,7 +40,7 @@ const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
 pcre_context::capture_t *pcre_context::operator[](const char *name) const
 {
-    capture_t *retval = NULL;
+    capture_t *retval = nullptr;
     int index;
 
     index = this->pc_pcre->name_index(name);
@@ -53,21 +51,59 @@ pcre_context::capture_t *pcre_context::operator[](const char *name) const
     return retval;
 }
 
+std::string pcrepp::quote(const char *unquoted)
+{
+    std::string retval;
+
+    for (int lpc = 0; unquoted[lpc]; lpc++) {
+        if (isalnum(unquoted[lpc]) ||
+            unquoted[lpc] == '_' ||
+            unquoted[lpc] & 0x80) {
+            retval.push_back(unquoted[lpc]);
+        } else {
+            retval.push_back('\\');
+            retval.push_back(unquoted[lpc]);
+        }
+    }
+
+    return retval;
+}
+
+Result<pcrepp, pcrepp::compile_error> pcrepp::from_str(std::string pattern, int options)
+{
+    const char *errptr;
+    int eoff;
+    auto code = pcre_compile(pattern.c_str(),
+                             options | PCRE_UTF8,
+                             &errptr,
+                             &eoff,
+                             nullptr);
+
+    if (!code) {
+        return Err(compile_error{errptr, eoff});
+    }
+
+    return Ok(pcrepp(std::move(pattern), code));
+}
+
 void pcrepp::find_captures(const char *pattern)
 {
     bool in_class = false, in_escape = false, in_literal = false;
     vector<pcre_context::capture> cap_in_progress;
 
     for (int lpc = 0; pattern[lpc]; lpc++) {
-        if (in_class) {
-            if (pattern[lpc] == ']') {
-                in_class = false;
-            }
-        }
-        else if (in_escape) {
+        if (in_escape) {
             in_escape = false;
             if (pattern[lpc] == 'Q') {
                 in_literal = true;
+            }
+        }
+        else if (in_class) {
+            if (pattern[lpc] == ']') {
+                in_class = false;
+            }
+            if (pattern[lpc] == '\\') {
+                in_escape = true;
             }
         }
         else if (in_literal) {
@@ -104,7 +140,11 @@ void pcrepp::find_captures(const char *pattern)
                             third = pattern[cap.c_begin + 3];
                         }
                         if (first == '?') {
-                            if (second == '<' || second == '\'') {
+                            if (second == '\'') {
+                                is_cap = true;
+                            }
+                            if (second == '<' &&
+                                (isalpha(third) || third == '_')) {
                                 is_cap = true;
                             }
                             if (second == 'P' && third == '<') {
@@ -124,6 +164,8 @@ void pcrepp::find_captures(const char *pattern)
             }
         }
     }
+
+    ensure(this->p_capture_count == this->p_captures.size());
 }
 
 bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
@@ -175,6 +217,9 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
     }
     else if (pc.all()->c_begin == pc.all()->c_end) {
         rc = 0;
+        if (pi.pi_next_offset + 1 < pi.pi_length) {
+            pi.pi_next_offset += 1;
+        }
     }
     else {
         if (options & PCRE_ANCHORED) {
@@ -194,6 +239,62 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
     return rc > 0;
 }
 
+std::string pcrepp::replace(const char *str, const char *repl) const
+{
+    pcre_context_static<30> pc;
+    pcre_input pi(str);
+    std::string retval;
+    std::string::size_type start = 0;
+
+    while (pi.pi_offset < pi.pi_length) {
+        this->match(pc, pi);
+        auto all = pc.all();
+        bool in_escape = false;
+
+        if (pc.get_count() < 0) {
+            break;
+        }
+
+        retval.append(str, start, (all->c_begin - start));
+        start = all->c_end;
+        for (int lpc = 0; repl[lpc]; lpc++) {
+            auto ch = repl[lpc];
+
+            if (in_escape) {
+                if (isdigit(ch)) {
+                    auto capture_index = (ch - '0');
+
+                    if (capture_index < pc.get_count()) {
+                        retval.append(pi.get_substr_start(&all[capture_index]),
+                                      pi.get_substr_len(&all[capture_index]));
+                    } else if (capture_index > this->p_capture_count) {
+                        retval.push_back('\\');
+                        retval.push_back(ch);
+                    }
+                } else {
+                    if (ch != '\\') {
+                        retval.push_back('\\');
+                    }
+                    retval.push_back(ch);
+                }
+                in_escape = false;
+            } else {
+                switch (ch) {
+                    case '\\':
+                        in_escape = true;
+                        break;
+                    default:
+                        retval.push_back(ch);
+                        break;
+                }
+            }
+        }
+    }
+    retval.append(str, start, std::string::npos);
+
+    return retval;
+}
+
 void pcrepp::study()
 {
     const char *errptr;
@@ -208,7 +309,7 @@ void pcrepp::study()
     if (!this->p_code_extra && errptr) {
         log_error("pcre_study error: %s", errptr);
     }
-    if (this->p_code_extra != NULL) {
+    if (this->p_code_extra != nullptr) {
         pcre_extra *extra = this->p_code_extra;
 
         extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
@@ -216,9 +317,13 @@ void pcrepp::study()
         extra->match_limit           = 10000;
         extra->match_limit_recursion = 500;
 #ifdef PCRE_STUDY_JIT_COMPILE
-        // pcre_assign_jit_stack(extra, NULL, jit_stack());
+        // pcre_assign_jit_stack(extra, nullptr, jit_stack());
 #endif
     }
+    pcre_fullinfo(this->p_code,
+                  this->p_code_extra,
+                  PCRE_INFO_OPTIONS,
+                  &this->p_options);
     pcre_fullinfo(this->p_code,
                   this->p_code_extra,
                   PCRE_INFO_CAPTURECOUNT,
@@ -240,9 +345,9 @@ void pcrepp::study()
 #ifdef PCRE_STUDY_JIT_COMPILE
 pcre_jit_stack *pcrepp::jit_stack()
 {
-    static pcre_jit_stack *retval = NULL;
+    static pcre_jit_stack *retval = nullptr;
 
-    if (retval == NULL) {
+    if (retval == nullptr) {
         retval = pcre_jit_stack_alloc(JIT_STACK_MIN_SIZE, JIT_STACK_MAX_SIZE);
     }
 

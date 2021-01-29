@@ -39,7 +39,6 @@
 #include "command_executor.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
-#include "log_search_table.hh"
 #include "log_format_loader.hh"
 #include "help_text_formatter.hh"
 #include "sqlite-extension-func.hh"

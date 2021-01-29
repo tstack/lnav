@@ -29,8 +29,7 @@
 
 #include "config.h"
 
-#include <pcrecpp.h>
-
+#include <regex>
 #include <string>
 
 #include "lnav.hh"
@@ -125,8 +124,8 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 
 static void add_text_possibilities(readline_curses *rlc, int context, const string &type, const std::string &str)
 {
-    static pcrecpp::RE re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
-    static pcrecpp::RE re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
+    static std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+    static std::regex re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
 
     pcre_context_static<30> pc;
     data_scanner ds(str);
@@ -160,8 +159,8 @@ static void add_text_possibilities(readline_curses *rlc, int context, const stri
 
                 token_value_no_dot = token_value =
                     ds.get_input().get_substr(pc.all());
-                re_escape.GlobalReplace(R"(\\\1)", &token_value);
-                re_escape_no_dot.GlobalReplace(R"(\\\1)", &token_value_no_dot);
+                token_value = std::regex_replace(token_value, re_escape, R"(\\\1)");
+                token_value_no_dot = std::regex_replace(token_value_no_dot, re_escape_no_dot, R"(\\\1)");
                 rlc->add_possibility(context, type, token_value);
                 if (token_value != token_value_no_dot) {
                     rlc->add_possibility(context, type, token_value_no_dot);
@@ -364,7 +363,7 @@ void add_filter_possibilities(textview_curses *tc)
 
 void add_file_possibilities()
 {
-    static pcrecpp::RE sh_escape(R"(([\s\'\"]+))");
+    static std::regex sh_escape(R"(([\s\'\"]+))");
 
     readline_curses *rc = lnav_data.ld_rl_view;
 
@@ -376,8 +375,7 @@ void add_file_possibilities()
         }
 
         lnav_data.ld_log_source.find_data(lf) | [&lf, rc](auto ld) {
-            auto escaped_fn = lf->get_filename();
-            sh_escape.GlobalReplace(R"(\\\1)", &escaped_fn);
+            auto escaped_fn = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
 
             rc->add_possibility(LNM_COMMAND,
                                 ld->is_visible() ? "visible-files" : "hidden-files",

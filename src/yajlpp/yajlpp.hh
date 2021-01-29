@@ -136,7 +136,7 @@ struct json_path_handler_base {
 
     explicit json_path_handler_base(const pcrepp& property);
 
-    json_path_handler_base(const std::string &property,
+    json_path_handler_base(std::string property,
                            const pcrepp& property_re);
 
     bool is_array() const {

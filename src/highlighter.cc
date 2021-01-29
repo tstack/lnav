@@ -49,6 +49,10 @@ highlighter::highlighter(const highlighter &other)
 
 highlighter &highlighter::operator=(const highlighter &other)
 {
+    if (this == &other) {
+        return *this;
+    }
+
     if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
         free(this->h_code);
         this->h_code = nullptr;

@@ -44,6 +44,7 @@ static struct test_data {
     { "no dots in here", "no dots in here", 5 },
 };
 
+
 int main(int argc, char *argv[])
 {
     for (const auto& td : TEST_DATA) {

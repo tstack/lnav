@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
-#include <pcrecpp.h>
 
 #include <unordered_map>
 
@@ -38,7 +37,6 @@ using namespace std;
 using namespace mapbox;
 
 typedef struct {
-    shared_ptr<pcrecpp::RE> re;
     shared_ptr<pcrepp> re2;
 } cache_entry;
 
@@ -55,13 +53,6 @@ static cache_entry *find_re(const char *re)
         cache_entry c;
 
         c.re2 = make_shared<pcrepp>(re_str);
-        c.re = make_shared<pcrecpp::RE>(re);
-        if (!c.re->error().empty()) {
-            auto_mem<char, sqlite3_free> e2;
-
-            e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
-            throw pcrepp::error(e2.in(), 0);
-        }
         auto pair = wcache->insert(std::make_pair(re_str, c));
 
         iter = pair.first;
@@ -73,8 +64,10 @@ static cache_entry *find_re(const char *re)
 static bool regexp(const char *re, const char *str)
 {
     cache_entry *reobj = find_re(re);
+    pcre_context_static<30> pc;
+    pcre_input pi(str);
 
-    return reobj->re->PartialMatch(str);
+    return reobj->re2->match(pc, pi);
 }
 
 static
@@ -193,10 +186,8 @@ static
 string regexp_replace(const char *str, const char *re, const char *repl)
 {
     cache_entry *reobj = find_re(re);
-    string dest(str);
 
-    reobj->re->GlobalReplace(repl, &dest);
-    return dest;
+    return reobj->re2->replace(str, repl);
 }
 
 static

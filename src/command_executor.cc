@@ -33,7 +33,6 @@
 
 #include "base/string_util.hh"
 #include "yajlpp/json_ptr.hh"
-#include "pcrecpp.h"
 #include "lnav.hh"
 #include "log_format_loader.hh"
 #include "shlex.hh"

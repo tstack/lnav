@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 {
     pcre_context_static<30> context;
     int retval = EXIT_SUCCESS;
-    
+
     {
         pcrepp nomatch("nothing-to-match");
         pcre_input pi("dummy");

@@ -856,7 +856,7 @@ struct Result {
     >::type
     unwrap() const {
         if (isOk()) {
-            return storage().template get<U>();
+            return std::move(storage().template get<U>());
         }
 
         ::fprintf(stderr, "Attempting to unwrap an error Result\n");

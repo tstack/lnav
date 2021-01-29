@@ -68,10 +68,9 @@ CREATE TABLE regexp_capture (
 
     struct cursor {
         sqlite3_vtab_cursor base;
-        unique_ptr<pcrepp> c_pattern;
+        pcrepp c_pattern;
         pcre_context_static<30> c_context;
         unique_ptr<pcre_input> c_input;
-        string c_pattern_string;
         string c_content;
         int c_index;
         int c_start_index;
@@ -95,12 +94,12 @@ CREATE TABLE regexp_capture (
         int next() {
             if (this->c_index >= (this->c_context.get_count() - 1)) {
                 this->c_input->pi_offset = this->c_input->pi_next_offset;
-                this->c_matched = this->c_pattern->match(this->c_context, *(this->c_input));
+                this->c_matched = this->c_pattern.match(this->c_context, *(this->c_input));
                 this->c_index = -1;
                 this->c_match_index += 1;
             }
 
-            if (!this->c_pattern || !this->c_matched) {
+            if (this->c_pattern.empty() || !this->c_matched) {
                 return SQLITE_OK;
             }
 
@@ -110,7 +109,7 @@ CREATE TABLE regexp_capture (
         };
 
         int eof() {
-            return !this->c_pattern || !this->c_matched;
+            return this->c_pattern.empty() || !this->c_matched;
         };
 
         int get_rowid(sqlite3_int64 &rowid_out) {
@@ -134,7 +133,7 @@ CREATE TABLE regexp_capture (
                 if (vc.c_index == 0) {
                     sqlite3_result_null(ctx);
                 } else {
-                    sqlite3_result_text(ctx, vc.c_pattern->name_for_capture(
+                    sqlite3_result_text(ctx, vc.c_pattern.name_for_capture(
                         vc.c_index - 1), -1, SQLITE_TRANSIENT);
                 }
                 break;
@@ -163,12 +162,13 @@ CREATE TABLE regexp_capture (
                                     vc.c_content.length(),
                                     SQLITE_TRANSIENT);
                 break;
-            case RC_COL_PATTERN:
-                sqlite3_result_text(ctx,
-                                    vc.c_pattern_string.c_str(),
-                                    vc.c_pattern_string.length(),
+            case RC_COL_PATTERN: {
+                auto str = vc.c_pattern.get_pattern();
+
+                sqlite3_result_text(ctx, str.c_str(), str.length(),
                                     SQLITE_TRANSIENT);
                 break;
+            }
         }
 
         return SQLITE_OK;
@@ -205,7 +205,7 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     if (argc != 2) {
         pCur->c_content.clear();
-        pCur->c_pattern.reset();
+        pCur->c_pattern.clear();
         return SQLITE_OK;
     }
 
@@ -214,20 +214,20 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     pCur->c_content = value;
 
-    try {
-        pCur->c_pattern = make_unique<pcrepp>(pattern);
-        pCur->c_pattern_string = pattern;
-    } catch (const pcrepp::error &e) {
+    auto re_res = pcrepp::from_str(pattern);
+    if (re_res.isErr()) {
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-            "Invalid regular expression: %s", e.e_msg.c_str());
+            "Invalid regular expression: %s", re_res.unwrapErr().ce_msg);
         return SQLITE_ERROR;
     }
+
+    pCur->c_pattern = re_res.unwrap();
 
     pCur->c_index = 0;
     pCur->c_context.set_count(0);
 
     pCur->c_input = make_unique<pcre_input>(pCur->c_content);
-    pCur->c_matched = pCur->c_pattern->match(pCur->c_context, *(pCur->c_input));
+    pCur->c_matched = pCur->c_pattern.match(pCur->c_context, *(pCur->c_input));
 
     return SQLITE_OK;
 }

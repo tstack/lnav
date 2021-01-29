@@ -168,6 +168,8 @@ AX_PATH_LIB_ARCHIVE
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
 
+AX_CODE_COVERAGE
+
 LNAV_WITH_SQLITE3("3.9.0")
 
 dnl case "$host_os" in
@@ -185,7 +187,7 @@ AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 AS_VAR_SET(static_lib_list,
            ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
 AS_VAR_SET(static_lib_list,
-           ["$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"])
+           ["$static_lib_list libpcre.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 AS_VAR_SET(static_lib_list,

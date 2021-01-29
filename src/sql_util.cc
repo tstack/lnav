@@ -34,8 +34,8 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <pcrecpp.h>
 
+#include <regex>
 #include <algorithm>
 #include <vector>
 
@@ -471,7 +471,7 @@ void dump_sqlite_schema(sqlite3 *db, std::string &schema_out)
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename)
 {
-    static pcrecpp::RE db_name_converter("[^\\w]");
+    static std::regex db_name_converter("[^\\w]");
 
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
@@ -503,7 +503,7 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
         db_name = filename.substr(base_start + 1);
     }
 
-    db_name_converter.GlobalReplace("_", &db_name);
+    db_name = std::regex_replace(db_name, db_name_converter, "_");
 
     if (sqlite3_bind_text(stmt.in(), 2,
                           db_name.c_str(), db_name.length(),
@@ -820,7 +820,7 @@ static struct {
 int guess_type_from_pcre(const string &pattern, std::string &collator)
 {
     try {
-        pcrepp re(pattern.c_str());
+        pcrepp re(pattern);
         vector<int> matches;
         int retval = SQLITE3_TEXT;
         int index = 0;

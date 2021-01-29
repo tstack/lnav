@@ -64,7 +64,7 @@ Alternatively, you can get the generated binary from [AppVeyor](https://ci.appve
 
 Remember that you still need the lnav dependencies under Cygwin, here is a quick way to do it:
 
-    setup-x86_64.exe -q -P libpcre1 -P libpcrecpp0 -P libsqlite3_0 -P libstdc++6
+    setup-x86_64.exe -q -P libpcre1 -P libsqlite3_0 -P libstdc++6
 
 Currently, the x64 version seems to be working better than the x86 one.
 

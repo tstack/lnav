@@ -29,11 +29,8 @@
 
 #include "config.h"
 
-#include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <unistd.h>
 
 #include "auto_mem.hh"
 
@@ -59,7 +56,7 @@ int main(int argc, char *argv[])
     
     md1 = &md1_val;
     assert(free_count == 0);
-    md1 = md2;
+    md1 = std::move(md2);
     assert(free_count == 1);
     assert(last_free == &md1_val);
     assert(md1 == NULL);

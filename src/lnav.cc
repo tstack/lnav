@@ -100,7 +100,6 @@
 #include "bottom_status_source.hh"
 #include "piper_proc.hh"
 #include "log_vtab_impl.hh"
-#include "pcrecpp.h"
 #include "termios_guard.hh"
 #include "xterm_mouse.hh"
 #include "lnav_commands.hh"
@@ -153,6 +152,7 @@
 using namespace std;
 using namespace std::literals::chrono_literals;
 
+static bool initial_build = false;
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 struct lnav_data_t lnav_data;
@@ -420,7 +420,7 @@ private:
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        if (lnav_data.ld_mode == LNM_FILES && !lnav_data.ld_session_loaded) {
+        if (lnav_data.ld_mode == LNM_FILES && !initial_build) {
             auto &fc = lnav_data.ld_active_files;
             auto iter = std::find(fc.fc_files.begin(),
                                   fc.fc_files.end(), lf);
@@ -1401,8 +1401,6 @@ static void looper()
         rlc.do_update();
 
         while (lnav_data.ld_looping) {
-            static bool initial_build = false;
-
             vector<struct pollfd> pollfds;
             auto poll_to = initial_rescan_completed ?
                            timeval{ 0, 333000 } :

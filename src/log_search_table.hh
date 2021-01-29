@@ -35,13 +35,17 @@
 #include <string>
 #include <vector>
 
+#include "pcrepp/pcrepp.hh"
 #include "shared_buffer.hh"
 #include "log_vtab_impl.hh"
 
 class log_search_table : public log_vtab_impl {
 public:
+    static int pattern_options() {
+        return PCRE_CASELESS;
+    }
 
-    log_search_table(const char *regex, intern_string_t table_name);
+    log_search_table(pcrepp pattern, intern_string_t table_name);
 
     void get_columns_int(std::vector<vtab_column> &cols);
 
@@ -58,7 +62,6 @@ public:
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values) override;
 
-    std::string lst_regex_string;
     pcrepp lst_regex;
     shared_buffer_ref lst_current_line;
     pcre_context_static<128> lst_match_context;

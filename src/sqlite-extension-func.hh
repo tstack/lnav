@@ -41,12 +41,12 @@
 #include "help_text_formatter.hh"
 
 struct FuncDef {
-    const char *zName;
-    signed char nArg;
-    int eTextRep;          /* 1: UTF-16.  0: UTF-8 */
-    uint8_t needCollSeq;
-    void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
-    help_text fd_help;
+    const char *zName{nullptr};
+    signed char nArg{0};
+    int eTextRep{0};          /* 1: UTF-16.  0: UTF-8 */
+    uint8_t needCollSeq{0};
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value **){nullptr};
+    help_text fd_help{};
 
     FuncDef &with_flags(int flags) {
         this->eTextRep = flags;
@@ -55,12 +55,12 @@ struct FuncDef {
 };
 
 struct FuncDefAgg {
-    const char *zName;
-    signed char nArg;
-    uint8_t needCollSeq;
-    void (*xStep)(sqlite3_context*,int,sqlite3_value**);
-    void (*xFinalize)(sqlite3_context*);
-    help_text fda_help;
+    const char *zName{nullptr};
+    signed char nArg{0};
+    uint8_t needCollSeq{0};
+    void (*xStep)(sqlite3_context*,int,sqlite3_value**){nullptr};
+    void (*xFinalize)(sqlite3_context*){nullptr};
+    help_text fda_help{};
 };
 
 typedef int (*sqlite_registration_func_t)(struct FuncDef **basic_funcs,

@@ -58,7 +58,7 @@ struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_table_info;
     sqlite_exec_callback smc_foreign_key_list;
     void *smc_userdata{nullptr};
-    db_table_map_t       smc_db_list;
+    db_table_map_t smc_db_list{};
 };
 
 int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);

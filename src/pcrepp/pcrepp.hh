@@ -58,6 +58,7 @@
 #include "base/lnav_log.hh"
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
+#include "base/result.h"
 
 #include <stdio.h>
 
@@ -96,6 +97,8 @@ public:
         bool is_valid() const { return this->c_begin != -1; };
 
         int length() const { return this->c_end - this->c_begin; };
+
+        bool empty() const { return this->c_begin == this->c_end; };
     } capture_t;
     typedef capture_t       *iterator;
     typedef const capture_t *const_iterator;
@@ -252,7 +255,7 @@ public:
                            iter->length());
     };
 
-    const intern_string_t get_substr_i(pcre_context::const_iterator iter) const {
+    intern_string_t get_substr_i(pcre_context::const_iterator iter) const {
         return intern_string::lookup(&this->pi_string[iter->c_begin], iter->length());
     };
 
@@ -364,10 +367,33 @@ public:
         int e_offset;
     };
 
+    static std::string quote(const char *unquoted);
+
+    static std::string quote(const std::string& unquoted) {
+        return quote(unquoted.c_str());
+    }
+
+    struct compile_error {
+        const char *ce_msg;
+        int ce_offset;
+    };
+
+    static Result<pcrepp, compile_error> from_str(std::string pattern, int options = 0);
+
     pcrepp(pcre *code) : p_code(code), p_code_extra(pcre_free_study)
     {
         pcre_refcount(this->p_code, 1);
         this->study();
+    };
+
+    pcrepp(std::string pattern, pcre *code)
+        : p_code(code),
+          p_pattern(std::move(pattern)),
+          p_code_extra(pcre_free_study)
+    {
+        pcre_refcount(this->p_code, 1);
+        this->study();
+        this->find_captures(this->p_pattern.c_str());
     };
 
     explicit pcrepp(const char *pattern, int options = 0)
@@ -408,22 +434,79 @@ public:
         this->find_captures(pattern.c_str());
     };
 
+    pcrepp() {
+    }
+
     pcrepp(const pcrepp &other)
         : p_code(other.p_code),
           p_pattern(other.p_pattern),
-          p_code_extra(pcre_free_study)
+          p_code_extra(pcre_free_study),
+          p_captures(other.p_captures)
     {
         pcre_refcount(this->p_code, 1);
         this->study();
     };
 
+    pcrepp(pcrepp &&other)
+        : p_code(other.p_code),
+          p_pattern(std::move(other.p_pattern)),
+          p_code_extra(pcre_free_study),
+          p_capture_count(other.p_capture_count),
+          p_named_count(other.p_named_count),
+          p_name_len(other.p_name_len),
+          p_options(other.p_options),
+          p_named_entries(other.p_named_entries),
+          p_captures(std::move(other.p_captures)) {
+        pcre_refcount(this->p_code, 1);
+        this->p_code_extra = std::move(other.p_code_extra);
+    }
+
     virtual ~pcrepp()
     {
-        if (pcre_refcount(this->p_code, -1) == 0) {
-            free(this->p_code);
-            this->p_code = 0;
-        }
+        this->clear();
     };
+
+    pcrepp& operator=(pcrepp&& other) noexcept {
+        if (this == &other) {
+            return *this;
+        }
+
+        this->p_code = other.p_code;
+        pcre_refcount(this->p_code, 1);
+        this->p_pattern = std::move(other.p_pattern);
+        this->p_code_extra = std::move(other.p_code_extra);
+        this->p_capture_count = other.p_capture_count;
+        this->p_named_count = other.p_named_count;
+        this->p_name_len = other.p_name_len;
+        this->p_options = other.p_options;
+        this->p_named_entries = other.p_named_entries;
+        this->p_captures = std::move(other.p_captures);
+
+        return *this;
+    }
+
+    const std::string& get_pattern() const {
+        return this->p_pattern;
+    }
+
+    bool empty() const {
+        return this->p_pattern.empty();
+    }
+
+    void clear() {
+        if (this->p_code && pcre_refcount(this->p_code, -1) == 0) {
+            free(this->p_code);
+            this->p_code = nullptr;
+        }
+        this->p_pattern.clear();
+        this->p_code_extra.reset();
+        this->p_capture_count = 0;
+        this->p_named_count = 0;
+        this->p_name_len = 0;
+        this->p_options = 0;
+        this->p_named_entries = nullptr;
+        this->p_captures.clear();
+    }
 
     pcre_named_capture::iterator named_begin() const {
         return {this->p_named_entries, static_cast<size_t>(this->p_name_len)};
@@ -480,6 +563,8 @@ public:
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const;
 
+    std::string replace(const char *str, const char *repl) const;
+
     size_t match_partial(pcre_input &pi) const {
         size_t length = pi.pi_length;
         int rc;
@@ -516,13 +601,14 @@ public:
 
     void find_captures(const char *pattern);
 
-    pcre *p_code;
-    const std::string p_pattern;
+    pcre *p_code{nullptr};
+    std::string p_pattern;
     auto_mem<pcre_extra> p_code_extra;
-    int p_capture_count;
-    int p_named_count;
-    int p_name_len;
-    pcre_named_capture *p_named_entries;
+    int p_capture_count{0};
+    int p_named_count{0};
+    int p_name_len{0};
+    unsigned long p_options{0};
+    pcre_named_capture *p_named_entries{nullptr};
     std::vector<pcre_context::capture> p_captures;
 };
 

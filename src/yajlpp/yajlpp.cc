@@ -31,7 +31,8 @@
 
 #include "config.h"
 
-#include <pcrecpp.h>
+#include <regex>
+#include <utility>
 
 #include "fmt/format.h"
 
@@ -47,7 +48,7 @@ json_path_handler_base::json_path_handler_base(const string &property)
     : jph_property(property.back() == '#' ?
                    property.substr(0, property.size() - 1) :
                    property),
-      jph_regex(pcrecpp::RE::QuoteMeta(property), PCRE_ANCHORED),
+      jph_regex(pcrepp::quote(property), PCRE_ANCHORED),
       jph_is_array(property.back() == '#')
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
@@ -55,12 +56,9 @@ json_path_handler_base::json_path_handler_base(const string &property)
 
 static std::string scrub_pattern(const std::string &pattern)
 {
-    static pcrecpp::RE CAPTURE(R"(\(\?\<\w+\>)");
-    std::string retval = pattern;
+    static std::regex CAPTURE(R"(\(\?\<\w+\>)");
 
-    CAPTURE.GlobalReplace("(", &retval);
-
-    return retval;
+    return std::regex_replace(pattern, CAPTURE, "(");
 }
 
 json_path_handler_base::json_path_handler_base(const pcrepp &property)
@@ -72,9 +70,9 @@ json_path_handler_base::json_path_handler_base(const pcrepp &property)
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
 
-json_path_handler_base::json_path_handler_base(const string &property,
+json_path_handler_base::json_path_handler_base(string property,
                                                const pcrepp &property_re)
-    : jph_property(property),
+    : jph_property(std::move(property)),
       jph_regex(property_re),
       jph_is_array(property_re.p_pattern.find('#') != string::npos)
 {

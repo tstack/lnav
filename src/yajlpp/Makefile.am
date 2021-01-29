@@ -1,8 +1,11 @@
 
+include $(top_srcdir)/aminclude_static.am
+
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
 AM_CPPFLAGS = \
+	$(CODE_COVERAGE_CPPFLAGS) \
     -Wall \
 	$(LIBARCHIVE_CFLAGS) \
     -I$(top_srcdir)/src/ \
@@ -11,6 +14,10 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
     $(LIBARCHIVE_LDFLAGS) \
 	$(STATIC_LDFLAGS)
+
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 noinst_LIBRARIES = libyajlpp.a
 

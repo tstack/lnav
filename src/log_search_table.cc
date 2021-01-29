@@ -39,11 +39,10 @@ static auto instance_meta = logline_value_meta(
     instance_name, value_kind_t::VALUE_INTEGER, 0);
 static auto empty = intern_string::lookup("", 0);
 
-log_search_table::log_search_table(const char *regex,
+log_search_table::log_search_table(pcrepp pattern,
                                    intern_string_t table_name)
     : log_vtab_impl(table_name),
-      lst_regex_string(regex),
-      lst_regex(regex, PCRE_CASELESS),
+      lst_regex(std::move(pattern)),
       lst_instance(-1)
 {
     this->vi_supports_indexes = false;
@@ -64,8 +63,8 @@ void log_search_table::get_columns_int(std::vector<vtab_column> &cols)
         if (this->lst_regex.captures().size() ==
             (size_t) this->lst_regex.get_capture_count()) {
             auto iter = this->lst_regex.cap_begin() + lpc;
-            auto cap_re = this->lst_regex_string.substr(iter->c_begin,
-                                                        iter->length());
+            auto cap_re = this->lst_regex.get_pattern()
+                .substr(iter->c_begin, iter->length());
             sqlite_type = guess_type_from_pcre(cap_re, collator);
             switch (sqlite_type) {
                 case SQLITE_FLOAT:

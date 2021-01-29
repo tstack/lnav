@@ -32,8 +32,6 @@
 #include <vector>
 #include <algorithm>
 
-#include <pcrecpp.h>
-
 #include "base/time_util.hh"
 #include "shlex.hh"
 #include "fmt/format.h"
@@ -257,10 +255,10 @@ void textview_curses::grep_end_batch(grep_proc<vis_line_t> &gp)
         } else {
             if (this->tc_follow_func) {
                 if (this->tc_follow_func()) {
-                    this->tc_follow_deadline = {0};
+                    this->tc_follow_deadline = {0, 0};
                 }
             } else {
-                this->tc_follow_deadline = {0};
+                this->tc_follow_deadline = {0, 0};
             }
         }
     }
@@ -532,7 +530,7 @@ void textview_curses::execute_search(const std::string &regex_orig)
                                       nullptr)) == nullptr) {
             string errmsg = string(errptr);
 
-            regex = pcrecpp::RE::QuoteMeta(regex);
+            regex = pcrepp::quote(regex);
 
             log_info("invalid search regex, using quoted: %s", regex.c_str());
             if ((code = pcre_compile(regex.c_str(),

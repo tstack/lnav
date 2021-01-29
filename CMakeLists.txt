@@ -11,8 +11,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.269.tar.gz"
-        SHA1 "64024b7b95b4c86d50ae05b926814448c93a70a0"
+        URL "https://github.com/cpp-pm/hunter/archive/v0.23.291.tar.gz"
+        SHA1 "4f57243b24a02b9c7ec5ea02c09d5c77c6a97cba"
         LOCAL
 )
 
@@ -20,12 +20,14 @@ set(CMAKE_CXX_STANDARD 14)
 project(lnav
         VERSION 0.9.1)
 
+# include(cmake/CodeCoverage.cmake)
+# append_coverage_compiler_flags()
+
 include(CTest)
 include(GNUInstallDirs)
 
 hunter_add_package(libpcre)
 find_package(libpcre CONFIG REQUIRED)
-find_package(libpcrecpp CONFIG REQUIRED)
 
 hunter_add_package(BZip2)
 find_package(BZip2 CONFIG REQUIRED)
@@ -45,16 +47,19 @@ find_package(ncursesw CONFIG REQUIRED)
 hunter_add_package(readline)
 find_package(readline REQUIRED)
 
+hunter_add_package(libarchive)
+find_package(libarchive CONFIG REQUIRED)
+
 set(lnav_LIBS
         ZLIB::zlib
         BZip2::bz2
         sqlite3::sqlite3
-        PkgConfig::libpcrecpp
         PkgConfig::libpcre
         CURL::libcurl
         readline::readline
         readline::history
-        PkgConfig::ncursesw)
+        PkgConfig::ncursesw
+        PkgConfig::libarchive)
 
 add_subdirectory(src)
 add_subdirectory(test)

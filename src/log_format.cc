@@ -2000,26 +2000,25 @@ void external_log_format::build(std::vector<std::string> &errors) {
 void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
                                          std::vector<std::string> &errors)
 {
-    vector<pair<intern_string_t, string> >::iterator search_iter;
+    vector<pair<intern_string_t, string>>::iterator search_iter;
     for (search_iter = this->elf_search_tables.begin();
          search_iter != this->elf_search_tables.end();
          ++search_iter) {
-        std::shared_ptr<log_search_table> lst;
+        auto re_res = pcrepp::from_str(search_iter->second,
+                                       log_search_table::pattern_options());
 
-        try {
-            lst = std::make_shared<log_search_table>(
-                search_iter->second.c_str(), search_iter->first);
-        } catch (pcrepp::error &e) {
-            errors.push_back(
-                    "error:" +
-                    this->elf_name.to_string() +
-                    ":" +
-                    search_iter->first.to_string() +
-                    ":unable to compile regex -- " +
-                    search_iter->second);
+        if (re_res.isErr()) {
+            errors.push_back(fmt::format(
+                "error:{}:{}:unable to compile regex '{}': {}",
+                this->elf_name.get(),
+                search_iter->first.get(),
+                search_iter->second,
+                re_res.unwrapErr().ce_msg));
             continue;
         }
 
+        auto lst = std::make_shared<log_search_table>(
+            re_res.unwrap(), search_iter->first);
         string errmsg;
 
         errmsg = vtab_manager->register_vtab(lst);
