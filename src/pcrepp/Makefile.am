@@ -1,8 +1,13 @@
 
 AM_CPPFLAGS = \
+	$(CODE_COVERAGE_CPPFLAGS) \
 	-Wall \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/fmtlib
+
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 noinst_LIBRARIES = libpcrepp.a
 
