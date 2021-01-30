@@ -22,9 +22,9 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-static --enable-code-coverage
+      run: ./configure --enable-code-coverage
     - name: make
-      run: make -j2
+      run: make
     - name: make check
       run: make check
     - name: upload cover
