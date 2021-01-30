@@ -324,8 +324,6 @@ TESTS = \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \
-	test_line_buffer2 \
-	test_line_buffer.sh \
 	test_listview.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
@@ -353,7 +351,9 @@ TESTS = \
 	test_vt52_curses.sh
 
 DISABLED_TESTS = \
-	test_top_status
+	test_top_status \
+	test_line_buffer2 \
+    test_line_buffer.sh
 
 if HAVE_LIBCURL
 TESTS += \
