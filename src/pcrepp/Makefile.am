@@ -1,4 +1,6 @@
 
+include $(top_srcdir)/aminclude_static.am
+
 AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	-Wall \
