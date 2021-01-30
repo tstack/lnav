@@ -28,6 +28,8 @@ jobs:
     - name: make check
       run: make check
     - name: upload cover
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: coveralls --gcov-options '\-lp'
     - name: make distcheck
       run: make distcheck -j4 || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log)
