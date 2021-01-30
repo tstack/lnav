@@ -9,7 +9,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
       run: ./autogen.sh
     - name: configure
       run: ./configure --enable-code-coverage
-    - name: make
+    - name: make -j2
       run: make
     - name: make check
       run: make check
