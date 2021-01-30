@@ -17,12 +17,18 @@ jobs:
       run: sudo apt-get update
     - name: Install packages
       run: sudo apt-get install libncursesw5-dev libpcre++-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev
+    - name: install cpp-coveralls
+      run: pip install --user cpp-coveralls
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-static
+      run: ./configure --enable-static --enable-code-coverage
     - name: make
       run: make -j4
+    - name: make check
+      run: make check
+    - name: upload cover
+      run: coveralls --gcov-options '\-lp'
     - name: make distcheck
       run: make distcheck -j4 || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log)
     - name: Upload a Build Artifact
