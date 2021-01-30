@@ -11,3 +11,15 @@ noinst_HEADERS = \
 
 libpcrepp_a_SOURCES = \
 	pcrepp.cc
+
+test_pcrepp_SOURCES = test_pcrepp.cc
+test_pcrepp_LDADD = \
+    libpcrepp.a \
+    $(top_builddir)/src/base/libbase.a \
+    $(PCRE_LIBS)
+
+check_PROGRAMS = \
+	test_pcrepp
+
+TESTS = \
+	test_pcrepp

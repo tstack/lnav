@@ -51,7 +51,6 @@ check_PROGRAMS = \
 	test_line_buffer2 \
 	test_log_accel \
 	test_ncurses_unicode \
-	test_pcrepp \
 	test_reltime \
 	test_top_status
 
@@ -107,8 +106,6 @@ test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 
 test_log_accel_SOURCES = test_log_accel.cc
-
-test_pcrepp_SOURCES = test_pcrepp.cc
 
 test_top_status_SOURCES = test_top_status.cc
 
@@ -332,7 +329,6 @@ TESTS = \
 	test_json_format.sh \
 	test_log_accel \
 	test_logfile.sh \
-	test_pcrepp \
 	test_reltime \
 	test_scripts.sh \
 	test_sessions.sh \

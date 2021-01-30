@@ -50,7 +50,7 @@ add_executable(lnav_doctests lnav_doctests.cc)
 target_link_libraries(lnav_doctests diag ${lnav_LIBS})
 add_test(NAME lnav_doctests COMMAND lnav_doctests)
 
-add_executable(test_pcrepp test_pcrepp.cc)
+add_executable(test_pcrepp ../src/pcrepp/test_pcrepp.cc)
 target_link_libraries(test_pcrepp diag PkgConfig::libpcre)
 add_test(NAME test_pcrepp COMMAND test_pcrepp)
 

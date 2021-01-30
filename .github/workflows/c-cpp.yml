@@ -23,8 +23,8 @@ jobs:
       run: ./autogen.sh
     - name: configure
       run: ./configure --enable-code-coverage --enable-debug
-    - name: make -j2
-      run: make
+    - name: make
+      run: make -j2
     - name: make check
       run: make check
     - name: upload cover
