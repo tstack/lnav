@@ -15,6 +15,12 @@ Row 0:
   Column readlink('sql_fs_readlink_test.lnk'): sql_fs_readlink_test
 EOF
 
+run_test ./drive_sql "select realpath('non-existent-path')"
+
+check_error_output "realpath() with invalid path works?" <<EOF
+error: sqlite3_exec failed -- Could not get real path for non-existent-path -- No such file or directory
+EOF
+
 ln -sf drive_sql sql_fs_realpath_test.lnk
 run_test ./drive_sql "select realpath('sql_fs_realpath_test.lnk')"
 rm sql_fs_realpath_test.lnk
