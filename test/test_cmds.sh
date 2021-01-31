@@ -1,6 +1,24 @@
 #! /bin/bash
 
 
+run_test ${lnav_test} -n \
+    -c ":unix-time" \
+    "${test_dir}/logfile_access_log.*"
+
+check_error_output ":unix-time works without arg?" <<EOF
+command-option:1: error: expecting a unix time value
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":unix-time 1612072409" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output ":unix-time does not convert time correctly?" <<EOF
+Sat Jan 30 21:53:29 2021  -0800 PST -- 1612072409
+EOF
+
+
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ";SELECT 1 AS c1, 'Hello ' || char(10) || 'World!' AS c2" \
     -c ":write-csv-to -" \

@@ -205,18 +205,17 @@ static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdli
 
 static Result<string, string> com_unix_time(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: ";
+    string retval;
 
     if (args.empty()) { }
     else if (args.size() >= 2) {
-        char      ftime[128] = "";
         bool      parsed     = false;
         struct tm log_time;
         time_t    u_time;
         size_t    millis;
         char *    rest;
 
-        u_time   = time(NULL);
+        u_time   = time(nullptr);
         log_time = *localtime(&u_time);
 
         log_time.tm_isdst = -1;
@@ -228,11 +227,11 @@ static Result<string, string> com_unix_time(exec_context &ec, string cmdline, ve
         }
         if (((rest = strptime(args[1].c_str(),
                               "%b %d %H:%M:%S %Y",
-                              &log_time)) != NULL &&
+                              &log_time)) != nullptr &&
              (rest - args[1].c_str()) >= 20) ||
             ((rest = strptime(args[1].c_str(),
                               "%Y-%m-%d %H:%M:%S",
-                              &log_time)) != NULL &&
+                              &log_time)) != nullptr &&
              (rest - args[1].c_str()) >= 19)) {
             u_time = mktime(&log_time);
             parsed = true;
@@ -243,6 +242,7 @@ static Result<string, string> com_unix_time(exec_context &ec, string cmdline, ve
             parsed = true;
         }
         if (parsed) {
+            char ftime[128];
             int len;
 
             strftime(ftime, sizeof(ftime),
@@ -250,7 +250,7 @@ static Result<string, string> com_unix_time(exec_context &ec, string cmdline, ve
                      localtime(&u_time));
             len = strlen(ftime);
             snprintf(ftime + len, sizeof(ftime) - len,
-                     " -- %ld\n",
+                     " -- %ld",
                      u_time);
             retval = string(ftime);
         } else {
@@ -949,7 +949,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         lnav_data.ld_preview_status_source.get_description()
                  .set_value("First lines of file: %s", fn.c_str());
     } else {
-        retval = "Wrote " + to_string(line_count) + " rows to " + split_args[0];
+        retval = "info: Wrote " + to_string(line_count) + " rows to " + split_args[0];
     }
     if (toclose != nullptr) {
         closer(toclose);
@@ -2202,7 +2202,7 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
             };
             tc->get_sub_source()->text_filters_changed();
         }
-        retval = fmt::format("{} file -- {}",
+        retval = fmt::format("info: {} file -- {}",
                              make_visible ? "showing" : "hiding",
                              lf->get_filename());
     } else {
@@ -2251,7 +2251,7 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
         if (!ec.ec_dry_run && text_file_count > 0) {
             lnav_data.ld_views[LNV_TEXT].get_sub_source()->text_filters_changed();
         }
-        retval = fmt::format(FMT_STRING("{} {:L} log files and {:L} text files"),
+        retval = fmt::format(FMT_STRING("info: {} {:L} log files and {:L} text files"),
                              make_visible ? "showing" : "hiding",
                              log_file_count,
                              text_file_count);

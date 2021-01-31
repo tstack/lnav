@@ -2583,7 +2583,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 std::vector<pair<Result<string, string>, string>> cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
-                bool found_error = false;
+                bool output_view = true;
 
                 view_colors::init();
                 rescan_files(true);
@@ -2630,15 +2630,23 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 for (auto &pair : cmd_results) {
                     if (pair.first.isErr()) {
                         fprintf(stderr, "%s\n", pair.first.unwrapErr().c_str());
-                        found_error = true;
+                        output_view = false;
                     }
-                    else if (startswith(pair.first.unwrap(), "info:") &&
-                             lnav_data.ld_flags & LNF_VERBOSE) {
-                        printf("%s\n", pair.first.unwrap().c_str());
+                    else {
+                        auto msg = pair.first.unwrap();
+
+                        if (startswith(msg, "info:")) {
+                            if (lnav_data.ld_flags & LNF_VERBOSE) {
+                                printf("%s\n", msg.c_str());
+                            }
+                        } else if (!msg.empty()) {
+                            printf("%s\n", msg.c_str());
+                            output_view = false;
+                        }
                     }
                 }
 
-                if (!found_error &&
+                if (output_view &&
                     !(lnav_data.ld_flags & LNF_QUIET) &&
                     !lnav_data.ld_view_stack.vs_views.empty() &&
                     !lnav_data.ld_stdout_used) {

@@ -383,7 +383,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         }
 #ifdef HAVE_SQLITE3_STMT_READONLY
         else if (sqlite3_stmt_readonly(stmt.in())) {
-            retval = "No rows matched";
+            retval = "info: No rows matched";
             alt_msg = "";
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
