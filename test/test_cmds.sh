@@ -11,11 +11,20 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":unix-time abc" \
+    "${test_dir}/logfile_access_log.*"
+
+check_error_output ":unix-time works without arg?" <<EOF
+command-option:1: error: invalid unix time -- abc
+EOF
+
+
+run_test env TZ=UTC ${lnav_test} -n \
     -c ":unix-time 1612072409" \
     "${test_dir}/logfile_access_log.*"
 
 check_output ":unix-time does not convert time correctly?" <<EOF
-Sat Jan 30 21:53:29 2021  -0800 PST -- 1612072409
+Sun Jan 31 05:53:29 2021  +0000 UTC -- 1612072409
 EOF
 
 
