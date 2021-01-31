@@ -28,19 +28,19 @@ jobs:
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: >
+      run: >-
         coveralls
-          --exclude doctest.hh
-          --exclude fmtlib
-          --exclude ghc
-          --exclude k_merge_tree.h
-          --exclude mapbox
-          --exclude pugixml
-          --exclude result.h
-          --exclude safe
-          --exclude spookyhash
-          --exclude ww898
-          --gcov-options '\-lp'
+        --exclude doctest.hh
+        --exclude fmtlib
+        --exclude ghc
+        --exclude k_merge_tree.h
+        --exclude mapbox
+        --exclude pugixml
+        --exclude result.h
+        --exclude safe
+        --exclude spookyhash
+        --exclude ww898
+        --gcov-options '\-lp'
 
   build:
     runs-on: ubuntu-latest
