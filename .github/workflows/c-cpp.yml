@@ -7,10 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
+  coverage:
     runs-on: self-hosted
-
     steps:
     - uses: actions/checkout@v2
     - name: Update apt
@@ -22,7 +20,7 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-code-coverage --enable-debug
+      run: ./configure --enable-code-coverage --enable-debug CFLAGS=-g3 CXXFLAGS=-g3
     - name: make
       run: make -j2
     - name: make check
@@ -43,12 +41,27 @@ jobs:
           --exclude spookyhash
           --exclude ww898
           --gcov-options '\-lp'
-    - name: make distcheck
-      run: make distcheck -j4 || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log)
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        # Artifact name
-        name: Linux 64-bit
-        # A file, directory or wildcard pattern that describes what to upload
-        path: src/lnav
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update apt
+        run: sudo apt-get update
+      - name: Install packages
+        run: sudo apt-get install libncursesw5-dev libpcre++-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev
+      - name: autogen
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure
+      - name: make
+        run: make -j4
+      - name: make distcheck
+        run: make distcheck -j4 || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log)
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          # Artifact name
+          name: Linux 64-bit
+          # A file, directory or wildcard pattern that describes what to upload
+          path: src/lnav
