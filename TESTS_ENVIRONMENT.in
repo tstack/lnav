@@ -111,6 +111,10 @@ check_output_ws() {
     test_num=`expr ${test_num} \+ 1`
 }
 
+test_filename() {
+    echo ${test_file_base}_${test_num}.tmp
+}
+
 test_err_filename() {
     echo ${test_file_base}_${test_num}.err
 }

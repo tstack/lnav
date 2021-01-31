@@ -15,6 +15,17 @@ Row 0:
   Column readlink('sql_fs_readlink_test.lnk'): sql_fs_readlink_test
 EOF
 
+ln -sf drive_sql sql_fs_realpath_test.lnk
+run_test ./drive_sql "select realpath('sql_fs_realpath_test.lnk')"
+rm sql_fs_realpath_test.lnk
+
+sed -e "s|${builddir}|<build_dir>|g" `test_filename` > test_realpath.out
+mv test_realpath.out `test_filename`
+check_output "realpath() does not work?" <<EOF
+Row 0:
+  Column realpath('sql_fs_realpath_test.lnk'): <build_dir>/drive_sql
+EOF
+
 run_test ./drive_sql "select basename('')"
 
 check_output "basename('') is not '.'" <<EOF
