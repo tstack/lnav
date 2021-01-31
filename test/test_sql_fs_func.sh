@@ -1,5 +1,20 @@
 #! /bin/bash
 
+run_test ./drive_sql "select readlink('non-existent-link')"
+
+check_error_output "readlink() with invalid path works?" <<EOF
+error: sqlite3_exec failed -- unable to stat path: non-existent-link -- No such file or directory
+EOF
+
+ln -sf sql_fs_readlink_test sql_fs_readlink_test.lnk
+run_test ./drive_sql "select readlink('sql_fs_readlink_test.lnk')"
+rm sql_fs_readlink_test.lnk
+
+check_output "readlink() does not work?" <<EOF
+Row 0:
+  Column readlink('sql_fs_readlink_test.lnk'): sql_fs_readlink_test
+EOF
+
 run_test ./drive_sql "select basename('')"
 
 check_output "basename('') is not '.'" <<EOF
