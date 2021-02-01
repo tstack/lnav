@@ -149,6 +149,17 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":tag foo" \
+    -c ":delete-tags #foo" \
+    ${test_dir}/logfile_access_log.0
+
+check_output ":delete-tags does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":tag foo" \
     -c ";UPDATE access_log SET log_tags = null" \
     ${test_dir}/logfile_access_log.0
 

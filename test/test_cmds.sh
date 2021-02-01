@@ -28,6 +28,24 @@ Sun Jan 31 05:53:29 2021  +0000 UTC -- 1612072409
 EOF
 
 
+run_test env TZ=UTC ${lnav_test} -n \
+    -c ":current-time" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output ":current-time does not work?" <<EOF
+Thu Jun 06 19:13:20 2013  +0000 UTC -- 1370546000
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":write-to" \
+    "${test_dir}/logfile_access_log.*"
+
+check_error_output "able to write without a file name" <<EOF
+command-option:1: error: expecting file name or '-' to write to the terminal
+EOF
+
+
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ";SELECT 1 AS c1, 'Hello ' || char(10) || 'World!' AS c2" \
     -c ":write-csv-to -" \
@@ -37,6 +55,38 @@ check_output "writing CSV does not work" <<EOF
 c1,c2
 1,"Hello
 World!"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ";SELECT 1 AS c1, 'Hello, World!' AS c2" \
+    -c ":write-cols-to -" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "writing columns does not work?" <<EOF
+c1       c2
+ 1 Hello, World!
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ";SELECT 1 AS c1, 'Hello, World!' AS c2" \
+    -c ":write-raw-to -" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "writing raw DB does not work?" <<EOF
+ 1 Hello, World!
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":write-raw-to -" \
+    "${test_dir}/logfile_access_log.0"
+
+check_output "writing raw log does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 
@@ -110,6 +160,16 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_access_log.0
 
 check_output "next-location is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-in vmk" \
+    -c ":disable-filter vmk" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "disable after :filter-in is not working" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
@@ -552,6 +612,13 @@ EOF
 check_output "double close is working" <<EOF
 EOF
 
+run_test ${lnav_test} -n \
+    -c ":open" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "open does not require arg?" <<EOF
+command-option:1: error: expecting file name to open
+EOF
 
 run_test ${lnav_test} -n \
     -c ":close" \

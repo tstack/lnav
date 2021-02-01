@@ -272,13 +272,13 @@ static Result<string, string> com_current_time(exec_context &ec, string cmdline,
     size_t    len;
 
     memset(&localtm, 0, sizeof(localtm));
-    u_time = time(NULL);
+    u_time = time(nullptr);
     strftime(ftime, sizeof(ftime),
              "%a %b %d %H:%M:%S %Y  %z %Z",
              localtime_r(&u_time, &localtm));
     len = strlen(ftime);
     snprintf(ftime + len, sizeof(ftime) - len,
-             " -- %ld\n",
+             " -- %ld",
              u_time);
     retval = string(ftime);
 
