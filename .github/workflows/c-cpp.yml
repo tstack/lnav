@@ -28,7 +28,7 @@ jobs:
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        TRAVIS_JOB_ID: ${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}
+        TRAVIS_JOB_ID: ${{ github.run_id }}-${{ github.run_number }}
       run: >-
         coveralls
         --exclude src/doctest.hh
