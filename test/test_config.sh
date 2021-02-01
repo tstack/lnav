@@ -12,6 +12,14 @@ check_error_output "config bad color" <<EOF
 error:command-option:1:Could not parse color: #f
 EOF
 
+run_test env TMPDIR=tmp ${lnav_test} -n \
+    -c ':config /tuning/archive-manager/min-free-space abc' \
+    ${srcdir}/logfile_syslog.0
+
+check_error_output "invalid min-free-space allowed?" <<EOF
+command-option:1: error: expecting an integer, found: abc
+EOF
+
 run_test ${lnav_test} -n \
     -c ":config /ui/theme baddy" \
     ${test_dir}/logfile_access_log.0

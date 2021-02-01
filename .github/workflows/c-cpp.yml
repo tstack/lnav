@@ -28,18 +28,19 @@ jobs:
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        TRAVIS_JOB_ID: ${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}
       run: >-
         coveralls
-        --exclude doctest.hh
-        --exclude fmtlib
-        --exclude ghc
-        --exclude k_merge_tree.h
-        --exclude mapbox
-        --exclude pugixml
-        --exclude result.h
-        --exclude safe
-        --exclude spookyhash
-        --exclude ww898
+        --exclude src/doctest.hh
+        --exclude src/fmtlib
+        --exclude src/ghc
+        --exclude src/k_merge_tree.h
+        --exclude src/mapbox
+        --exclude src/pugixml
+        --exclude src/base/result.h
+        --exclude src/safe
+        --exclude src/spookyhash
+        --exclude src/ww898
         --gcov-options '\-lp'
 
   build:
