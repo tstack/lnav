@@ -31,7 +31,7 @@
 
 #include <sys/time.h>
 
-#include "base/intern_string.hh"
+#include "fmt/format.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"
@@ -40,33 +40,35 @@
 using namespace std;
 
 static struct {
-    const char *reltime;
-    const char *expected;
+    const char *reltime{nullptr};
+    const char *expected{nullptr};
+    const char *expected_negate{nullptr};
 } TEST_DATA[] = {
     // { "10 minutes after the next hour", "next 0:10" },
-    { "0s", "0s" },
-    { "next day", "next day 0:00" },
-    { "next month", "next month day 0 0:00" },
-    { "next year", "next year month 0 day 0 0:00" },
-    { "previous hour", "last 0:00" },
-    { "next 10 minutes after the hour", "next 0:10" },
-    { "1h50m", "1h50m" },
-    { "next hour", "next 0:00" },
-    { "a minute ago", "0:-1" },
-    { "1m ago", "0:-1" },
-    { "a min ago", "0:-1" },
-    { "a m ago", "0:-1" },
-    { "+1 minute ago", "0:-1" },
-    { "-1 minute ago", "0:-1" },
-    { "-1 minute", "-1m" },
-    { "10 minutes after the hour", "0:10" },
-    { "1:40", "1:40" },
-    { "01:30", "1:30" },
-    { "1pm", "13:00" },
-    { "12pm", "12:00" },
-    { "00:27:18.567", "0:27:18.567" },
+    { "0s", "0s", "0s" },
+    { "next day", "next day 0:00", "last day 0:00" },
+    { "next month", "next month day 0 0:00", "last month day 0 0:00" },
+    { "next year", "next year month 0 day 0 0:00",
+      "last year month 0 day 0 0:00" },
+    { "previous hour", "last 0:00", "next 0:00" },
+    { "next 10 minutes after the hour", "next 0:10", "last 0:10" },
+    { "1h50m", "1h50m", "-1h-50m" },
+    { "next hour", "next 0:00", "last 0:00" },
+    { "a minute ago", "0:-1", "0:-1" },
+    { "1m ago", "0:-1", "0:-1" },
+    { "a min ago", "0:-1", "0:-1" },
+    { "a m ago", "0:-1", "0:-1" },
+    { "+1 minute ago", "0:-1", "0:-1" },
+    { "-1 minute ago", "0:-1", "0:-1" },
+    { "-1 minute", "-1m", "1m" },
+    { "10 minutes after the hour", "0:10", "0:10" },
+    { "1:40", "1:40", "1:40" },
+    { "01:30", "1:30", "1:30" },
+    { "1pm", "13:00", "13:00" },
+    { "12pm", "12:00", "12:00" },
+    { "00:27:18.567", "0:27:18.567", "0:27:18.567" },
 
-    { nullptr, nullptr }
+    {}
 };
 
 static struct {
@@ -77,7 +79,7 @@ static struct {
         { "minute", "Expecting a number before time unit" },
         { "1 2", "No time unit given for the previous number" },
 
-        { NULL, NULL }
+        { nullptr, nullptr }
 };
 
 TEST_CASE("reltime")
@@ -93,7 +95,10 @@ TEST_CASE("reltime")
     for (int lpc = 0; TEST_DATA[lpc].reltime; lpc++) {
         auto res = relative_time::from_str(TEST_DATA[lpc].reltime);
         CHECK_MESSAGE(res.isOk(), TEST_DATA[lpc].reltime);
-        CHECK(std::string(TEST_DATA[lpc].expected) == res.unwrap().to_string());
+        rt = res.unwrap();
+        CHECK(std::string(TEST_DATA[lpc].expected) == rt.to_string());
+        rt.negate();
+        CHECK(std::string(TEST_DATA[lpc].expected_negate) == rt.to_string());
     }
 
     for (int lpc = 0; BAD_TEST_DATA[lpc].reltime; lpc++) {
@@ -107,6 +112,7 @@ TEST_CASE("reltime")
 
     rt = relative_time::from_str("a minute ago").unwrap();
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == -1);
+    CHECK(rt.is_negative() == true);
 
     rt = relative_time::from_str("5 milliseconds").unwrap();
     CHECK(rt.rt_field[relative_time::RTF_MICROSECONDS].value == 5 * 1000);
