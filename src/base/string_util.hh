@@ -77,7 +77,7 @@ inline bool endswith(const std::string& str, const char (&suffix) [N])
     return strcmp(&str[str.size() - N], suffix) == 0;
 }
 
-void truncate_to(std::string &str, size_t len);
+void truncate_to(std::string &str, size_t max_char_len);
 
 inline std::string trim(const std::string &str)
 {
@@ -135,6 +135,21 @@ inline ssize_t utf8_char_to_byte_index(const std::string &str, ssize_t ch_index)
     }
 
     return retval;
+}
+
+inline Result<size_t, const char *> utf8_string_length(const std::string &str)
+{
+    size_t retval = 0;
+
+    for (size_t byte_index = 0; byte_index < str.length();) {
+        auto ch_size = TRY(ww898::utf::utf8::char_size([&str, byte_index]() {
+            return std::make_pair(str[byte_index], str.length() - byte_index);
+        }));
+        byte_index += ch_size;
+        retval += 1;
+    }
+
+    return Ok(retval);
 }
 
 bool is_url(const char *fn);

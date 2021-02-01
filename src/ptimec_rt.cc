@@ -31,10 +31,7 @@
 
 #include "config.h"
 #include <string.h>
-#include <langinfo.h>
-#include <set>
 #include <algorithm>
-#include <iomanip>
 
 #include "ptimec.hh"
 
@@ -93,6 +90,7 @@ bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, 
                 FMT_CASE('m', m);
                 FMT_CASE('N', N);
                 FMT_CASE('p', p);
+                FMT_CASE('q', q);
                 FMT_CASE('Y', Y);
                 FMT_CASE('y', y);
                 FMT_CASE('z', z);
@@ -141,6 +139,7 @@ size_t ftime_fmt(char *dst, size_t len, const char *fmt, const struct exttm &tm)
                 FTIME_FMT_CASE('m', m);
                 FTIME_FMT_CASE('N', N);
                 FTIME_FMT_CASE('p', p);
+                FTIME_FMT_CASE('q', q);
                 FTIME_FMT_CASE('Y', Y);
                 FTIME_FMT_CASE('y', y);
                 FTIME_FMT_CASE('z', z);

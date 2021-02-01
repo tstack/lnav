@@ -471,7 +471,7 @@ void dump_sqlite_schema(sqlite3 *db, std::string &schema_out)
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename)
 {
-    static std::regex db_name_converter("[^\\w]");
+    static const std::regex db_name_converter("[^\\w]");
 
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 

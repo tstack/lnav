@@ -34,13 +34,14 @@
 #include <sys/types.h>
 
 #include <string>
+#include <ostream>
 
 #include "base/lnav_log.hh"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
-    static const size_t BYTE_COUNT = COUNT * sizeof(T);
-    static const size_t STRING_SIZE = BYTE_COUNT * 2 + 1;
+    static constexpr size_t BYTE_COUNT = COUNT * sizeof(T);
+    static constexpr size_t STRING_SIZE = BYTE_COUNT * 2 + 1;
 
     byte_array() { };
 
@@ -59,21 +60,26 @@ struct byte_array {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
     };
 
+    bool operator==(const byte_array &other) const
+    {
+        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) == 0;
+    };
+
     void clear()
     {
         memset(this->ba_data, 0, BYTE_COUNT);
     };
 
-    void                 to_string(char *buffer) const
+    void to_string(char *buffer) const
     {
-        require(buffer != NULL);
+        require(buffer != nullptr);
 
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
             snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
         }
     };
 
-    std::string          to_string() const
+    std::string to_string() const
     {
         char buffer[STRING_SIZE];
 
@@ -89,6 +95,14 @@ struct byte_array {
         return &ptr[offset];
     };
 
-    unsigned char        ba_data[BYTE_COUNT];
+    unsigned char ba_data[BYTE_COUNT];
 };
+
+template<size_t COUNT, typename T = unsigned char>
+std::ostream& operator<<(std::ostream& os, const byte_array<COUNT, T>& ba)
+{
+    os << ba.to_string();
+    return os;
+}
+
 #endif

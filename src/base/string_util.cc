@@ -110,22 +110,37 @@ size_t unquote_w3c(char *dst, const char *str, size_t len)
     return index;
 }
 
-void truncate_to(std::string &str, size_t len)
+void truncate_to(std::string &str, size_t max_char_len)
 {
-    static const std::string ELLIPSIS = "\xE2\x8B\xAF";
+    static const std::string ELLIPSIS = "\u22ef";
+    auto str_char_len_res = utf8_string_length(str);
 
-    if (str.length() <= len) {
+    if (str_char_len_res.isErr()) {
+        // XXX
         return;
     }
 
-    size_t half_width = str.size() / 2 - 1;
-    str.erase(half_width, str.length() - (half_width * 2));
-    str.insert(half_width, ELLIPSIS);
+    auto str_char_len = str_char_len_res.unwrap();
+    if (str_char_len <= max_char_len) {
+        return;
+    }
+
+    if (max_char_len < 3) {
+        str = ELLIPSIS;
+        return;
+    }
+
+    auto to_remove = (str_char_len - max_char_len) + 1;
+    auto midpoint = str_char_len / 2;
+    auto to_keep_at_front = midpoint - (to_remove / 2);
+
+    str.erase(to_keep_at_front, to_remove);
+    str.insert(to_keep_at_front, ELLIPSIS);
 }
 
 bool is_url(const char *fn)
 {
-    static auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
+    static const auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
 
     return std::regex_match(fn, url_re);
 }

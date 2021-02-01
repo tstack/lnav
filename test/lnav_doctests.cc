@@ -32,6 +32,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"
 
+#include "byte_array.hh"
 #include "lnav_config.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
@@ -101,6 +102,58 @@ TEST_CASE("humanize::file_size") {
         CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL) == "42.1GB");
         CHECK(humanize::file_size(-1LL) == "Unknown");
         CHECK(humanize::file_size(std::numeric_limits<int64_t>::max()) == "8.0EB");
+}
+
+TEST_CASE("byte_array") {
+    using my_array_t = byte_array<8>;
+
+    my_array_t ba1;
+
+    memcpy(ba1.out(), "abcd1234", my_array_t::BYTE_COUNT);
+    CHECK(ba1.to_string() == "6162636431323334");
+    auto ba2 = ba1;
+    CHECK(ba1 == ba2);
+    CHECK_FALSE(ba1 != ba2);
+    CHECK_FALSE(ba1 < ba2);
+
+    my_array_t ba3;
+
+    memcpy(ba3.out(), "abcd1235", my_array_t::BYTE_COUNT);
+    CHECK(ba1 < ba3);
+    CHECK_FALSE(ba3 < ba1);
+
+    ba1.clear();
+    CHECK(ba1.to_string() == "0000000000000000");
+    CHECK(ba2.to_string() == "6162636431323334");
+}
+
+TEST_CASE("truncate_to") {
+    const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";
+    std::string str;
+
+    truncate_to(str, 10);
+    CHECK(str == "");
+    str = "abc";
+    truncate_to(str, 10);
+    CHECK(str == "abc");
+    str = orig;
+    truncate_to(str, 10);
+    CHECK(str == "01234\u22efwxyz");
+    str = orig;
+    truncate_to(str, 1);
+    CHECK(str == "\u22ef");
+    str = orig;
+    truncate_to(str, 2);
+    CHECK(str == "\u22ef");
+    str = orig;
+    truncate_to(str, 3);
+    CHECK(str == "0\u22efz");
+    str = orig;
+    truncate_to(str, 4);
+    CHECK(str == "01\u22efz");
+    str = orig;
+    truncate_to(str, 5);
+    CHECK(str == "01\u22efyz");
 }
 
 TEST_CASE("ptime_fmt") {

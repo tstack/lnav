@@ -124,8 +124,8 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 
 static void add_text_possibilities(readline_curses *rlc, int context, const string &type, const std::string &str)
 {
-    static std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
-    static std::regex re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
+    static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+    static const std::regex re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
 
     pcre_context_static<30> pc;
     data_scanner ds(str);
@@ -363,7 +363,7 @@ void add_filter_possibilities(textview_curses *tc)
 
 void add_file_possibilities()
 {
-    static std::regex sh_escape(R"(([\s\'\"]+))");
+    static const std::regex sh_escape(R"(([\s\'\"]+))");
 
     readline_curses *rc = lnav_data.ld_rl_view;
 

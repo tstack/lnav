@@ -56,7 +56,7 @@ json_path_handler_base::json_path_handler_base(const string &property)
 
 static std::string scrub_pattern(const std::string &pattern)
 {
-    static std::regex CAPTURE(R"(\(\?\<\w+\>)");
+    static const std::regex CAPTURE(R"(\(\?\<\w+\>)");
 
     return std::regex_replace(pattern, CAPTURE, "(");
 }

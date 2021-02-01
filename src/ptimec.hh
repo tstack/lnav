@@ -322,6 +322,60 @@ inline void ftime_s(char *dst, off_t &off_inout, ssize_t len, const struct exttm
     off_inout = strlen(dst);
 }
 
+inline bool ptime_q(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    off_t off_start = off_inout;
+    time_t epoch = 0;
+
+    while (off_inout < len && isxdigit(str[off_inout])) {
+        if ((off_inout - off_start) > 11) {
+            return false;
+        }
+
+        epoch *= 16;
+        switch (tolower(str[off_inout])) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                epoch += str[off_inout] - '0';
+                break;
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+                epoch += str[off_inout] - 'a' + 10;
+                break;
+        }
+        off_inout += 1;
+    }
+
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
+    secs2tm(&epoch, &dst->et_tm);
+    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
+
+    return (epoch > 0);
+}
+
+inline void ftime_q(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    time_t t = tm2sec(&tm.et_tm);
+
+    snprintf(&dst[off_inout], len - off_inout, "%lx", t);
+    off_inout = strlen(dst);
+}
+
 inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     int ms = 0;
@@ -423,8 +477,6 @@ inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm
     snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
     off_inout = strlen(dst);
 }
-
-#include "base/lnav_log.hh"
 
 inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {

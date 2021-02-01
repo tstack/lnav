@@ -41,6 +41,8 @@ jobs:
         --exclude src/safe
         --exclude src/spookyhash
         --exclude src/ww898
+        --exclude src/yajl
+        --exclude test
         --gcov-options '\-lp'
 
   build:

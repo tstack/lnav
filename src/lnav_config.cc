@@ -191,7 +191,7 @@ void ensure_dotlnav()
 
 bool install_from_git(const char *repo)
 {
-    static std::regex repo_name_converter("[^\\w]");
+    static const std::regex repo_name_converter("[^\\w]");
 
     auto formats_path = dotlnav_path() / "formats";
     auto configs_path = dotlnav_path() / "configs";

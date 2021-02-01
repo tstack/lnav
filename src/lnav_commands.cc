@@ -499,7 +499,7 @@ static bool csv_needs_quoting(const string &str)
 
 static string csv_quote_string(const string &str)
 {
-    static std::regex csv_column_quoter("\"");
+    static const std::regex csv_column_quoter("\"");
 
     string retval = std::regex_replace(str, csv_column_quoter, "\"\"");
 
@@ -4270,7 +4270,7 @@ static void search_filters_prompt(vector<string> &args)
 
 static void search_files_prompt(vector<string> &args)
 {
-    static std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+    static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
 
     lnav_data.ld_mode = LNM_SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
