@@ -599,8 +599,12 @@ struct term_machine {
                         switch (ch) {
                             case 'C': {
                                 auto amount = this->get_m_params();
+                                int count = 1;
 
-                                this->tm_cursor_x += amount[0];
+                                if (!amount.empty()) {
+                                    count = amount[0];
+                                }
+                                this->tm_cursor_x += count;
                                 break;
                             }
                             case 'J': {
