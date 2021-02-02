@@ -77,6 +77,19 @@ int main(int argc, char *argv[])
     }
 
     {
+        static const char *OLD_TIME = "05/18/1960 12:00:53 AM";
+        date_time_scanner dts;
+        struct timeval tv;
+        struct exttm tm;
+
+        auto rc = dts.scan(OLD_TIME, strlen(OLD_TIME), nullptr, &tm, tv);
+        assert(rc != nullptr);
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), tm);
+        assert(strcmp(ts, "05/18/1980 12:00:53 AM") == 0);
+    }
+
+    {
         date_time_scanner dts;
         struct timeval tv;
 
