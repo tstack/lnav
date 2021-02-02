@@ -204,6 +204,26 @@ check_output "output generated for empty result set?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ";SELECT log_top_line()" \
+    ${test_dir}/logfile_uwsgi.0
+
+check_output "log_top_line() not working?" <<EOF
+log_top_line()
+             2
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ";SELECT log_top_datetime()" \
+    ${test_dir}/logfile_uwsgi.0
+
+check_output "log_top_datetime() not working?" <<EOF
+   log_top_datetime()
+2016-03-13 22:49:15.000
+EOF
+
+run_test ${lnav_test} -n \
     -c ";SELECT * FROM uwsgi_log LIMIT 1" \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_uwsgi.0
