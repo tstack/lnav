@@ -246,6 +246,19 @@ static std::vector<char> hex2bits(const char *src)
     return retval;
 }
 
+static const char *tstamp()
+{
+    static char buf[64];
+
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S.", localtime(&tv.tv_sec));
+    auto dlen = strlen(buf);
+    snprintf(&buf[dlen], sizeof(buf) - dlen, "%.06d", tv.tv_usec);
+
+    return buf;
+}
+
 typedef enum {
     CT_WRITE,
 } command_type_t;
@@ -379,17 +392,17 @@ struct term_machine {
     void flush_line() {
         if (std::exchange(this->tm_waiting_on_input, false) &&
             !this->tm_user_input.empty()) {
-            fprintf(stderr, "flush keys\n");
+            fprintf(stderr, "%s:flush keys\n", tstamp());
             fprintf(scripty_data.sd_from_child, "K ");
             dump_memory(scripty_data.sd_from_child,
                         this->tm_user_input.data(),
-                        this->tm_user_input.size());
+                        1);
             fprintf(scripty_data.sd_from_child, "\n");
-            this->tm_user_input.clear();
+            this->tm_user_input.erase(this->tm_user_input.begin());
         }
         if (this->tm_new_data || !this->tm_line_attrs.empty()) {
             // fprintf(scripty_data.sd_from_child, "flush %d\n", this->tm_flush_count);
-            fprintf(stderr, "flush %d\n", this->tm_flush_count++);
+            fprintf(stderr, "%s:flush %d\n", tstamp(), this->tm_flush_count++);
             fprintf(scripty_data.sd_from_child,
                     "S % 3d \u250B",
                     this->tm_cursor_y);
@@ -607,6 +620,17 @@ struct term_machine {
                                 this->tm_cursor_x += count;
                                 break;
                             }
+                            case 'B': {
+                                auto amount = this->get_m_params();
+                                int count = 1;
+
+                                if (!amount.empty()) {
+                                    count = amount[0];
+                                }
+                                this->flush_line();
+                                this->tm_cursor_y += count;
+                                break;
+                            }
                             case 'J': {
                                 auto param = this->get_m_params();
 
@@ -706,7 +730,7 @@ struct term_machine {
                                 break;
                             }
                             default:
-                                fprintf(stderr, "missed %c\n", ch);
+                                fprintf(stderr, "%s:missed %c\n", tstamp(), ch);
                                 this->add_line_attr(this->tm_escape_buffer.data());
                                 break;
                         }
@@ -840,7 +864,7 @@ int main(int argc, char *argv[])
             case 'e':
                 scripty_data.sd_expected_name = optarg;
                 if ((file = fopen(optarg, "r")) == nullptr) {
-                    fprintf(stderr, "error: cannot open %s\n", optarg);
+                    fprintf(stderr, "%s:error: cannot open %s\n", tstamp(), optarg);
                     retval = EXIT_FAILURE;
                 } else {
                     char line[32 * 1024];
@@ -866,7 +890,7 @@ int main(int argc, char *argv[])
                 prompt = true;
                 break;
             default:
-                fprintf(stderr, "error: unknown flag -- %c\n", c);
+                fprintf(stderr, "%s:error: unknown flag -- %c\n", tstamp(), c);
                 retval = EXIT_FAILURE;
                 break;
         }
@@ -902,7 +926,7 @@ int main(int argc, char *argv[])
         fd = open("/tmp/scripty.err", O_WRONLY | O_CREAT | O_APPEND, 0666);
         dup2(fd, STDERR_FILENO);
         close(fd);
-        fprintf(stderr, "startup\n");
+        fprintf(stderr, "%s:startup\n", tstamp());
 
         child_term ct(passin);
 
@@ -929,7 +953,7 @@ int main(int argc, char *argv[])
             FD_SET(STDIN_FILENO, &read_fds);
             FD_SET(ct.get_fd(), &read_fds);
 
-            fprintf(stderr, "goin in the loop\n");
+            fprintf(stderr, "%s:goin in the loop\n", tstamp());
 
             tty_raw(STDIN_FILENO);
 
@@ -948,14 +972,14 @@ int main(int argc, char *argv[])
                         case EINTR:
                             break;
                         default:
-                            fprintf(stderr, "select %s\n", strerror(errno));
+                            fprintf(stderr, "%s:select %s\n", tstamp(), strerror(errno));
                             scripty_data.sd_looping = false;
                             break;
                     }
                 } else {
                     char buffer[1024];
 
-                    fprintf(stderr, "fds ready %d\n", rc);
+                    fprintf(stderr, "%s:fds ready %d\n", tstamp(), rc);
                     gettimeofday(&now, nullptr);
                     timersub(&now, &last, &diff);
                     if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
@@ -968,13 +992,14 @@ int main(int argc, char *argv[])
                             log_perror(write(ct.get_fd(), buffer, rc));
 
                             for (ssize_t lpc = 0; lpc < rc; lpc++) {
+                                fprintf(stderr, "%s:to-child %02x\n", tstamp(), buffer[lpc] & 0xff);
                                 tm.new_user_input(buffer[lpc]);
                             }
                         }
                     }
                     if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
                         rc = read(ct.get_fd(), buffer, sizeof(buffer));
-                        fprintf(stderr, "read rc %d\n", rc);
+                        fprintf(stderr, "%s:read rc %d\n", tstamp(), rc);
                         if (rc <= 0) {
                             scripty_data.sd_looping = false;
                         } else {
@@ -982,8 +1007,11 @@ int main(int argc, char *argv[])
                                 log_perror(write(STDOUT_FILENO, buffer, rc));
                             if (scripty_data.sd_from_child != nullptr) {
                                 for (size_t lpc = 0; lpc < rc; lpc++) {
-                                    fprintf(stderr, "ch %02x\n",
+#if 0
+                                    fprintf(stderr, "%s:from-child %02x\n",
+                                            tstamp(),
                                             buffer[lpc] & 0xff);
+#endif
                                     tm.new_input(buffer[lpc]);
                                 }
                             }
@@ -1026,7 +1054,7 @@ int main(int argc, char *argv[])
                 }
             }
             else {
-                fprintf(stderr, "error: mismatch\n");
+                fprintf(stderr, "%s:error: mismatch\n", tstamp());
                 retval = EXIT_FAILURE;
             }
         }

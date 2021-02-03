@@ -52,6 +52,7 @@
 #endif
 
 #include <string>
+#include <utility>
 
 #include "base/string_util.hh"
 #include "fmt/format.h"
@@ -89,8 +90,6 @@ static const char *RL_INIT[] = {
     "set menu-complete-display-prefix on",
     "TAB: menu-complete",
     "\"\\e[Z\": menu-complete-backward",
-
-    NULL
 };
 
 readline_context *readline_context::loaded_context;
@@ -390,7 +389,7 @@ char **readline_context::attempted_completion(const char *text,
     }
 
     retval = rl_completion_matches(text, completion_generator);
-    if (retval == NULL) {
+    if (retval == nullptr) {
         rl_attempted_completion_over = 1;
     }
 
@@ -427,10 +426,10 @@ int readline_context::command_complete(int count, int key)
     return rl_insert(count, key);
 }
 
-readline_context::readline_context(const std::string &name,
+readline_context::readline_context(std::string name,
                                    readline_context::command_map_t *commands,
                                    bool case_sensitive)
-    : rc_name(name),
+    : rc_name(std::move(name)),
       rc_case_sensitive(case_sensitive),
       rc_quote_chars("\"'"),
       rc_highlighter(nullptr)
@@ -581,8 +580,8 @@ void readline_curses::start()
 
     if (openpty(this->rc_pty[RCF_MASTER].out(),
                 this->rc_pty[RCF_SLAVE].out(),
-                NULL,
-                NULL,
+                nullptr,
+                nullptr,
                 &ws) < 0) {
         perror("error: failed to open terminal(openpty)");
         throw error(errno);
@@ -622,8 +621,8 @@ void readline_curses::start()
         rl_add_defun("alt-done", alt_done_func, '\x0a');
         // rl_add_defun("command-complete", readline_context::command_complete, ' ');
 
-        for (int lpc = 0; RL_INIT[lpc]; lpc++) {
-            snprintf(buffer, sizeof(buffer), "%s", RL_INIT[lpc]);
+        for (const auto* init_cmd : RL_INIT) {
+            snprintf(buffer, sizeof(buffer), "%s", init_cmd);
             rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
         }
 
@@ -668,7 +667,7 @@ void readline_curses::start()
                 itv.it_value.tv_usec    = KEY_TIMEOUT;
                 itv.it_interval.tv_sec  = 0;
                 itv.it_interval.tv_usec = 0;
-                setitimer(ITIMER_REAL, &itv, NULL);
+                setitimer(ITIMER_REAL, &itv, nullptr);
 
                 rl_callback_read_char();
                 if (RL_ISSTATE(RL_STATE_DONE) && !got_line) {
@@ -704,6 +703,13 @@ void readline_curses::start()
                     }
                     last_h1 = h1;
                     last_h2 = h2;
+                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                'w',
+                                "",
+                                0) != 0) {
+                        perror("line: write failed");
+                        _exit(1);
+                    }
                 }
             }
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
@@ -749,6 +755,13 @@ void readline_curses::start()
                             perror("line: write failed");
                             _exit(1);
                         }
+                        if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                    'w',
+                                    "",
+                                    0) != 0) {
+                            perror("line: write failed");
+                            _exit(1);
+                        }
                     }
                     else if (strcmp(msg, "a") == 0) {
                         char reply[4];
@@ -772,7 +785,7 @@ void readline_curses::start()
                                     &context,
                                     type,
                                     &prompt_start) == 2) {
-                        require(this->rc_contexts[context] != NULL);
+                        require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->rc_prefixes[string(type)] =
                             string(&msg[prompt_start]);
@@ -782,7 +795,7 @@ void readline_curses::start()
                                     &context,
                                     type,
                                     &prompt_start) == 2) {
-                        require(this->rc_contexts[context] != NULL);
+                        require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->
                                                       add_possibility(string(type),
@@ -793,7 +806,7 @@ void readline_curses::start()
                                     &context,
                                     type,
                                     &prompt_start) == 2) {
-                        require(this->rc_contexts[context] != NULL);
+                        require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->
                                                       rem_possibility(string(type),
@@ -829,33 +842,30 @@ void readline_curses::start()
             itv.it_value.tv_usec    = 0;
             itv.it_interval.tv_sec  = 0;
             itv.it_interval.tv_usec = 0;
-            if (setitimer(ITIMER_REAL, &itv, NULL) < 0) {
+            if (setitimer(ITIMER_REAL, &itv, nullptr) < 0) {
                 log_error("setitimer: %s", strerror(errno));
             }
             current_context->second->save();
             current_context = this->rc_contexts.end();
         }
         if (got_winch) {
-            struct winsize ws;
+            struct winsize new_ws;
 
-            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &new_ws) == -1) {
                 throw error(errno);
             }
             got_winch = 0;
-            rl_set_screen_size(ws.ws_row, ws.ws_col);
+            rl_set_screen_size(new_ws.ws_row, new_ws.ws_col);
         }
     }
 
     auto config_dir = dotlnav_path();
-    std::map<int, readline_context *>::iterator citer;
-    for (citer = this->rc_contexts.begin();
-         citer != this->rc_contexts.end();
-         ++citer) {
-        citer->second->load();
+    for (auto& pair : this->rc_contexts) {
+        pair.second->load();
 
-        auto hpath = (config_dir / citer->second->get_name()).string() + ".history";
+        auto hpath = (config_dir / pair.second->get_name()).string() + ".history";
         write_history(hpath.c_str());
-        citer->second->save();
+        pair.second->save();
     }
 
     _exit(0);
@@ -1031,6 +1041,9 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_line_buffer = &msg[2];
                     this->rc_change(this);
                     this->rc_display_match(this);
+                    break;
+                case 'w':
+                    this->rc_ready_for_input = true;
                     break;
                 }
             }

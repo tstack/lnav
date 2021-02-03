@@ -38,7 +38,8 @@ K 0d
 CTRL bell
 K 0d
 S   1 ┋acdef                                                                           ┋
-K 0d0d
+K 0d
+K 0d
 CSI Erase all
 CSI Use normal screen buffer
 CTRL restore cursor

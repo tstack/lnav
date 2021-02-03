@@ -1398,7 +1398,7 @@ static void looper()
         bool initial_rescan_completed = false;
         int session_stage = 0;
 
-        rlc.do_update();
+        // rlc.do_update();
 
         while (lnav_data.ld_looping) {
             vector<struct pollfd> pollfds;
@@ -1501,7 +1501,24 @@ static void looper()
                     0
                 });
                 if (initial_build) {
-                    view_curses::awaiting_user_input();
+                    switch (lnav_data.ld_mode) {
+                        case LNM_COMMAND:
+                        case LNM_SEARCH:
+                        case LNM_SEARCH_FILTERS:
+                        case LNM_SEARCH_FILES:
+                        case LNM_SQL:
+                        case LNM_EXEC:
+                        case LNM_USER:
+                            if (rlc.consume_ready_for_input()) {
+                                log_debug("waiting for readline input")
+                                view_curses::awaiting_user_input();
+                            }
+                            break;
+                        default:
+                            log_debug("waiting for paging input");
+                            view_curses::awaiting_user_input();
+                            break;
+                    }
                 }
             }
             rlc.update_poll_set(pollfds);

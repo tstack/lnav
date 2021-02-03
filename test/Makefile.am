@@ -175,6 +175,7 @@ dist_noinst_SCRIPTS = \
 	test_sql_time_func.sh \
 	test_sql_xml_func.sh \
 	test_sql_fs_func.sh \
+	test_tui.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
 	test_pretty_print.sh
@@ -306,7 +307,8 @@ dist_noinst_DATA = \
 	formats/timestamp/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
-	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
+	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt \
+	tui-captures/tui_help.0
 
 TESTS = \
     lnav_doctests \
@@ -341,6 +343,7 @@ TESTS = \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
 	test_sql_xml_func.sh \
+	test_tui.sh \
 	test_data_parser.sh \
 	test_pretty_print.sh \
     test_view_colors.sh \

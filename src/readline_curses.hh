@@ -95,7 +95,7 @@ public:
     } command_t;
     typedef std::map<std::string, command_t *> command_map_t;
 
-    readline_context(const std::string &name,
+    readline_context(std::string name,
                      command_map_t *commands = nullptr,
                      bool case_sensitive = true);
 
@@ -364,6 +364,13 @@ public:
         return this->rc_max_match_length;
     };
 
+    bool consume_ready_for_input() {
+        auto retval = this->rc_ready_for_input;
+
+        this->rc_ready_for_input = false;
+        return retval;
+    }
+
 private:
     enum {
         RCF_MASTER,
@@ -391,6 +398,7 @@ private:
     int rc_match_index{0};
     std::vector<std::string> rc_matches;
     bool rc_is_alt_focus{false};
+    bool rc_ready_for_input{false};
 
     action rc_change;
     action rc_perform;
