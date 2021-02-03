@@ -49,15 +49,15 @@ public:
     term_extra() {
         const char *term_name = getenv("TERM");
 
-        this->te_enabled = (term_name != NULL && strstr(term_name, "xterm") != NULL);
+        this->te_enabled = (term_name != nullptr && strstr(term_name, "xterm") != nullptr);
 
-        if (getenv("SSH_CONNECTION") != NULL) {
+        if (getenv("SSH_CONNECTION") != nullptr) {
             char hostname[MAXHOSTNAMELEN] = "UNKNOWN";
             struct passwd *userent;
 
             gethostname(hostname, sizeof(hostname));
             this->te_prefix = hostname;
-            if ((userent = getpwuid(getuid())) != NULL) {
+            if ((userent = getpwuid(getuid())) != nullptr) {
                 this->te_prefix = std::string(userent->pw_name) + "@" + this->te_prefix;
             }
             this->te_prefix += ":";
