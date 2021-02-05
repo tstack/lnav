@@ -68,6 +68,14 @@ check_output "w3c headers are not captured?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";SELECT raise_error('oops!')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "raise_error() does not work?" <<EOF
+command-option:1: error: oops!
+EOF
+
+run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET visible=0" \
     ${test_dir}/logfile_access_log.0
 
@@ -215,12 +223,32 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":goto 2" \
+    -c ";SELECT log_top_line()" \
+    ${test_dir}/logfile_empty.0
+
+check_output "log_top_line() for an empty log file is not working?" <<EOF
+log_top_line()
+        <NULL>
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 2" \
     -c ";SELECT log_top_datetime()" \
     ${test_dir}/logfile_uwsgi.0
 
 check_output "log_top_datetime() not working?" <<EOF
    log_top_datetime()
 2016-03-13 22:49:15.000
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ";SELECT log_top_datetime()" \
+    ${test_dir}/logfile_empty.0
+
+check_output "log_top_datetime() for an empty log file is not working?" <<EOF
+    log_top_datetime()
+            <NULL>
 EOF
 
 run_test ${lnav_test} -n \
@@ -512,7 +540,7 @@ EOF
 
 
 # XXX The timestamp on the file is used to determine the year for syslog files.
-touch -t 201311030923 ${test_dir}/logfile_syslog.0
+touch -t 200711030923 ${test_dir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ";select * from syslog_log" \
     -c ':write-csv-to -' \
@@ -520,10 +548,10 @@ run_test ${lnav_test} -n \
 
 check_output "syslog_log table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
-0,<NULL>,2013-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,<NULL>
-1,<NULL>,2013-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,<NULL>
-2,<NULL>,2013-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,<NULL>
-3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
+0,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,<NULL>
+1,<NULL>,2007-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,<NULL>
+2,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,<NULL>
+3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
 EOF
 
 
@@ -537,13 +565,13 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ";select * from syslog_log where log_time >= datetime('2013-11-03T09:47:02.000')" \
+    -c ";select * from syslog_log where log_time >= datetime('2007-11-03T09:47:02.000')" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_syslog.0
 
 check_output "log_time collation is wrong" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
-3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
+3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
 EOF
 
 
@@ -555,7 +583,7 @@ run_test ${lnav_test} -n \
 
 check_output "logline table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2013-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+0,<NULL>,2007-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 

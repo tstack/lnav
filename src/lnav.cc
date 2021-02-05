@@ -1510,12 +1510,12 @@ static void looper()
                         case LNM_EXEC:
                         case LNM_USER:
                             if (rlc.consume_ready_for_input()) {
-                                log_debug("waiting for readline input")
+                                // log_debug("waiting for readline input")
                                 view_curses::awaiting_user_input();
                             }
                             break;
                         default:
-                            log_debug("waiting for paging input");
+                            // log_debug("waiting for paging input");
                             view_curses::awaiting_user_input();
                             break;
                     }

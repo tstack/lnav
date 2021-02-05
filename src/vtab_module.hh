@@ -71,8 +71,10 @@ struct sqlite_func_error : std::exception {
 
 template<typename T>
 struct from_sqlite {
-    inline T operator()(int argc, sqlite3_value **val, int argi) {
-        return T();
+    using U = typename std::remove_reference<T>::type;
+
+    inline U operator()(int argc, sqlite3_value **val, int argi) {
+        return U();
     };
 };
 

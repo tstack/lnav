@@ -41,20 +41,31 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
-static int64_t sql_log_top_line()
+static nonstd::optional<int64_t> sql_log_top_line()
 {
-    return (int64_t) lnav_data.ld_views[LNV_LOG].get_top();
+    const auto& tc = lnav_data.ld_views[LNV_LOG];
+
+    if (tc.get_inner_height() == 0_vl) {
+        return nonstd::nullopt;
+    }
+    return (int64_t) tc.get_top();
 }
 
-static std::string sql_log_top_datetime()
+static nonstd::optional<std::string> sql_log_top_datetime()
 {
+    const auto& tc = lnav_data.ld_views[LNV_LOG];
+
+    if (tc.get_inner_height() == 0_vl) {
+        return nonstd::nullopt;
+    }
+
     char buffer[64];
 
     sql_strftime(buffer, sizeof(buffer), lnav_data.ld_log_source.time_for_row(lnav_data.ld_views[LNV_LOG].get_top()));
     return buffer;
 }
 
-static int64_t sql_error(const std::string str)
+static int64_t sql_error(const char *str)
 {
     throw sqlite_func_error("{}", str);
 }
