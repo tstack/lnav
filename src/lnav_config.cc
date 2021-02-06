@@ -476,7 +476,7 @@ static struct json_path_container style_config_handlers =
         yajlpp::property_handler("background-color")
             .with_synopsis("#hex|color_name")
             .with_description(
-                "The foreground color value for this style. The value can be "
+                "The background color value for this style. The value can be "
                 "the name of an xterm color, the hexadecimal value, or a theme "
                 "variable reference.")
             .with_example("#2d2a2e")

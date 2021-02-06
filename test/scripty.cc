@@ -291,7 +291,14 @@ static const std::map<std::string, std::string> CSI_TO_DESC = {
     {"[?1l", "Normal cursor keys"},
     {"[?47h", "Use alternate screen buffer"},
     {"[?47l", "Use normal screen buffer"},
-    {"[4l", "Replace mode"},
+    {"[2h", "Set Keyboard Action mode"},
+    {"[4h", "Set Replace mode"},
+    {"[12h", "Set Send/Receive mode"},
+    {"[20h", "Set Normal Linefeed mode"},
+    {"[2l", "Reset Keyboard Action mode"},
+    {"[4l", "Reset Replace mode"},
+    {"[12l", "Reset Send/Receive mode"},
+    {"[20l", "Reset Normal Linefeed mode"},
     {"[2J", "Erase all"},
 };
 
@@ -610,14 +617,18 @@ struct term_machine {
                     if (iter == CSI_TO_DESC.end()) {
                         this->tm_escape_buffer.push_back('\0');
                         switch (ch) {
-                            case 'C': {
+                            case 'A': {
                                 auto amount = this->get_m_params();
                                 int count = 1;
 
                                 if (!amount.empty()) {
                                     count = amount[0];
                                 }
-                                this->tm_cursor_x += count;
+                                this->flush_line();
+                                this->tm_cursor_y -= count;
+                                if (this->tm_cursor_y < 0) {
+                                    this->tm_cursor_y = 0;
+                                }
                                 break;
                             }
                             case 'B': {
@@ -629,6 +640,16 @@ struct term_machine {
                                 }
                                 this->flush_line();
                                 this->tm_cursor_y += count;
+                                break;
+                            }
+                            case 'C': {
+                                auto amount = this->get_m_params();
+                                int count = 1;
+
+                                if (!amount.empty()) {
+                                    count = amount[0];
+                                }
+                                this->tm_cursor_x += count;
                                 break;
                             }
                             case 'J': {
@@ -653,6 +674,28 @@ struct term_machine {
                                     case 3:
                                         fprintf(scripty_data.sd_from_child,
                                                 "CSI Erase Saved Lines\n");
+                                        break;
+                                }
+                                break;
+                            }
+                            case 'K': {
+                                auto param = this->get_m_params();
+
+                                this->flush_line();
+
+                                auto region = param.empty() ? 0 : param[0];
+                                switch (region) {
+                                    case 0:
+                                        fprintf(scripty_data.sd_from_child,
+                                                "CSI Erase to Right\n");
+                                        break;
+                                    case 1:
+                                        fprintf(scripty_data.sd_from_child,
+                                                "CSI Erase to Left\n");
+                                        break;
+                                    case 2:
+                                        fprintf(scripty_data.sd_from_child,
+                                                "CSI Erase All\n");
                                         break;
                                 }
                                 break;

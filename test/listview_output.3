@@ -4,7 +4,7 @@ CSI Use alternate screen buffer
 CSI set scrolling region 1-24
 S  -1 ┋                                                                                ┋
 A      └ normal
-CSI Replace mode
+CSI Reset Replace mode
 CSI Erase all
 S   1 ┋orld!                                                                          x┋
 A                                                                                     └┛ alt
@@ -52,12 +52,13 @@ S  22 ┋                                                                       
 A                                                                                     └┛ alt
 S  23 ┋                                                                               x┋
 A                                                                                     └┛ alt
-S  24 ┋                                                                                ┋
+S  24 ┋                                                                              x ┋
 A      ···············································································└ backspace
 A                                                                                    └┛ alt
 A      ···············································································└ backspace
-A      ··············································································└ [4h
-CSI Replace mode
+CSI Set Replace mode
+S  24 ┋                                                                                ┋
+CSI Reset Replace mode
 S  24 ┋                                                                                ┋
 A      ···············································································└ carriage-return
 CSI Erase all

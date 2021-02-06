@@ -99,7 +99,9 @@ struct from_sqlite<pair<string, auto_mem<pcre>>> {
                             nullptr);
 
         if (code == nullptr) {
-            throw from_sqlite_conversion_error(errptr, argi);
+            throw sqlite_func_error(
+                "Invalid regular expression in column {}: {} at offset {}",
+                argi, errptr, eoff);
         }
 
         return make_pair(string(pattern), std::move(code));
@@ -628,6 +630,18 @@ CREATE TABLE lnav_view_files (
 
         return SQLITE_OK;
     }
+
+    int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be deleted from the lnav_view_files table");
+        return SQLITE_ERROR;
+    }
+
+    int insert_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be inserted into the lnav_view_files table");
+        return SQLITE_ERROR;
+    };
 
     int update_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid,

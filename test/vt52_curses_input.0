@@ -4,7 +4,7 @@ CSI Use alternate screen buffer
 CSI set scrolling region 1-24
 S  -1 ┋                                                                                ┋
 A      └ normal
-CSI Replace mode
+CSI Reset Replace mode
 CSI Erase all
 S   1 ┋Gruß                                                                            ┋
 K 0d

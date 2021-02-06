@@ -422,7 +422,7 @@
                 },
                 "background-color": {
                     "title": "/background-color",
-                    "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
+                    "description": "The background color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
                     "type": "string",
                     "examples": [
                         "#2d2a2e",

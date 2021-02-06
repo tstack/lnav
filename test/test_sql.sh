@@ -140,6 +140,49 @@ check_output "time_offset in lnav_file table is not working?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.*
+
+check_output "lnav_view_files does not work?" <<EOF
+view_name,basename(filepath),visible
+log,logfile_access_log.0,1
+log,logfile_access_log.1,1
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_view_files SET visible=0 WHERE endswith(filepath, 'log.0')" \
+    ${test_dir}/logfile_access_log.*
+
+check_output "updating lnav_view_files does not work?" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";DELETE FROM lnav_view_stack" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "deleting the view stack does not work?" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_view_stack SET name = 'foo'" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "able to update lnav_view_stack?" <<EOF
+command-option:1: error: The lnav_view_stack table cannot be updated
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_stack VALUES ('help')" \
+    -c ";DELETE FROM lnav_view_stack WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "able to delete a view in the middle of lnav_view_stack?" <<EOF
+command-option:2: error: Only the top view in the stack can be deleted
+EOF
+
+run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', '')" \
     ${test_dir}/logfile_access_log.0
 
@@ -148,10 +191,26 @@ command-option:1: error: Expecting an non-empty pattern for column number 4
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'abc(')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "inserted filter with an invalid pattern?" <<EOF
+command-option:1: error: Invalid regular expression in column 4: missing ) at offset 4
+EOF
+
+run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an empty pattern?" <<EOF
+check_error_output "inserted filter with an invalid view name?" <<EOF
+command-option:1: error: Expecting an lnav view name for column number 0
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'abc')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "inserted filter with a null view name?" <<EOF
 command-option:1: error: Expecting an lnav view name for column number 0
 EOF
 
@@ -167,8 +226,17 @@ run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters (view_name, pattern) VALUES ('log', 'vmk')" \
     ${test_dir}/logfile_access_log.0
 
-check_output "inserted filter did not work?" <<EOF
+check_output "inserted filter-out did not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters (view_name, pattern, type) VALUES ('log', 'vmk', 'in')" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "inserted filter-in did not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 run_test ${lnav_test} -n \
