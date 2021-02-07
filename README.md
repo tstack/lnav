@@ -1,7 +1,6 @@
-![Build](https://github.com/tstack/lnav/workflows/build/badge.svg)
+![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?branch=master)](https://coveralls.io/github/tstack/lnav?branch=master)
 [![lnav](https://snapcraft.io//lnav/badge.svg)](https://snapcraft.io/lnav)
-[![LoC](https://tokei.rs/b1/github/tstack/lnav)](https://github.com/tstack/lnav).
 
 _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
 
