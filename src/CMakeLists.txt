@@ -279,6 +279,7 @@ add_library(diag STATIC
         lnav_util.cc
         log_accel.cc
         log_actions.cc
+        log_data_helper.cc
         log_data_table.cc
         log_format.cc
         log_format_loader.cc
@@ -333,6 +334,7 @@ add_library(diag STATIC
         vt52_curses.cc
         vtab_module.cc
         log_vtab_impl.cc
+        xml_util.cc
         xpath_vtab.cc
         xterm_mouse.cc
         yajlpp/yajlpp.cc
@@ -454,6 +456,7 @@ add_library(diag STATIC
         vtab_module_json.hh
         yajlpp/yajlpp.hh
         yajlpp/yajlpp_def.hh
+        xml_util.hh
         xpath_vtab.hh
 
         mapbox/recursive_wrapper.hpp

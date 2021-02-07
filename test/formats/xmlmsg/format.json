@@ -35,7 +35,7 @@
                 "hidden": true
             },
             "msg_data": {
-                "kind": "string"
+                "kind": "xml"
             }
         },
         "highlights": {

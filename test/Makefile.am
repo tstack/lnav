@@ -292,6 +292,7 @@ dist_noinst_DATA = \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
+	xpath_tui.0 \
 	formats/collision/format.json \
 	formats/customlevel/format.json \
 	formats/jsontest/format.json \

@@ -18,3 +18,10 @@ for fn in ${srcdir}/tui-captures/*; do
       ;;
     esac
 done
+
+run_test ./scripty -e ${srcdir}/xpath_tui.0 -- \
+    ${lnav_test} -I ${test_dir} \
+        -c ':goto 2' \
+        ${srcdir}/logfile_xml_msg.0
+
+on_error_fail_with "xpath() fields are not working?"

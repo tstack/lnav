@@ -9,7 +9,7 @@
   <source>
     x
   </source>
-  <request>
+  <request id="1">
     <name>
       x
     </name>
@@ -22,7 +22,7 @@
   <head>
     x
   </head>
-  <reply>
+  <reply id="2">
     <status>
       <result>OK</result>
     </status>

@@ -378,6 +378,7 @@ noinst_HEADERS = \
 	vtab_module_json.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
+	xml_util.hh \
 	xpath_vtab.hh \
 	xterm_mouse.hh \
 	spookyhash/SpookyV2.h \
@@ -434,6 +435,7 @@ libdiag_a_SOURCES = \
 	lnav_util.cc \
 	log_accel.cc \
 	log_actions.cc \
+	log_data_helper.cc \
 	log_data_table.cc \
 	log_format.cc \
 	log_format_loader.cc \
@@ -482,6 +484,7 @@ libdiag_a_SOURCES = \
 	vt52_curses.cc \
 	vtab_module.cc \
 	log_vtab_impl.cc \
+	xml_util.cc \
 	xpath_vtab.cc \
 	xterm_mouse.cc \
 	spookyhash/SpookyV2.cpp

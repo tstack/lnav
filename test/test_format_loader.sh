@@ -50,6 +50,7 @@ error:format.json:line 18
     json
     struct
     quoted
+    xml
 error:bad_regex_log.regex[std]:missing )
 error:bad_regex_log.regex[std]:^(?<timestamp>\d+: (?<body>.*)$
 error:bad_regex_log.regex[std]:                               ^

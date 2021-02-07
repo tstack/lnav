@@ -486,6 +486,23 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         }
     }
 
+    if (!this->fos_log_helper.ldh_xml_pairs.empty()) {
+        this->fos_lines.emplace_back(" XML fields:");
+    }
+
+    for (const auto& xml_pair : this->fos_log_helper.ldh_xml_pairs) {
+        auto_mem<char, sqlite3_free> qname;
+        auto_mem<char, sqlite3_free> xp_call;
+
+        qname = sql_quote_ident(xml_pair.first.first.get());
+        xp_call = sqlite3_mprintf("xpath(%Q, %s)",
+                                  xml_pair.first.second.c_str(),
+                                  qname.in());
+        this->fos_lines.emplace_back(fmt::format(
+            "   {} = {}", xp_call, xml_pair.second));
+        this->add_key_line_attrs(0);
+    }
+
     if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
         this->fos_lines.emplace_back(" No discovered message fields");
     }

@@ -111,6 +111,7 @@ logline_value::logline_value(logline_value_meta lvm, shared_buffer_ref &sbr,
 
     switch (this->lv_meta.lvm_kind) {
         case value_kind_t::VALUE_JSON:
+        case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_STRUCT:
         case value_kind_t::VALUE_TEXT:
         case value_kind_t::VALUE_QUOTED:
@@ -163,6 +164,7 @@ std::string logline_value::to_string() const
             return "null";
 
         case value_kind_t::VALUE_JSON:
+        case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_STRUCT:
         case value_kind_t::VALUE_TEXT:
         case value_kind_t::VALUE_TIMESTAMP:

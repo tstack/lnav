@@ -441,6 +441,7 @@ static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
     {"json", value_kind_t::VALUE_JSON},
     {"struct", value_kind_t::VALUE_STRUCT},
     {"quoted", value_kind_t::VALUE_QUOTED},
+    {"xml", value_kind_t::VALUE_XML},
 
     json_path_handler_base::ENUM_TERMINATOR
 };

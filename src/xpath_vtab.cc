@@ -35,6 +35,7 @@
 #include "base/lnav_log.hh"
 #include "pugixml/pugixml.hpp"
 #include "sql_util.hh"
+#include "xml_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
@@ -83,48 +84,6 @@ void checkin_query(const std::string& query_str, pugi::xpath_query query)
     }
 
     QUERY_CACHE[query_str] = std::move(query);
-}
-
-static
-std::string get_actual_path(const pugi::xml_node& node)
-{
-    std::string retval;
-    auto curr = node;
-
-    while (curr) {
-        switch (curr.type()) {
-            case pugi::node_null:
-                break;
-            case pugi::node_pcdata:
-                retval += "text()";
-                break;
-            default: {
-                auto name = std::string(curr.name());
-
-                if (curr.previous_sibling(curr.name()) ||
-                    curr.next_sibling(curr.name())) {
-                    auto sibling = curr;
-                    int index = 0;
-
-                    while (sibling) {
-                        index += 1;
-                        sibling = sibling.previous_sibling(curr.name());
-                    }
-
-                    name += "[" + std::to_string(index) + "]";
-                }
-                if (retval.empty()) {
-                    retval = name;
-                } else {
-                    retval = name + std::string("/") + retval;
-                }
-                break;
-            }
-        }
-        curr = curr.parent();
-    }
-
-    return retval;
 }
 
 struct xpath_vtab {
@@ -218,7 +177,7 @@ CREATE TABLE xpath (
                         x_node = xpath_node.parent();
                     }
 
-                    auto node_path = get_actual_path(x_node);
+                    auto node_path = lnav::pugixml::get_actual_path(x_node);
                     if (x_attr) {
                         node_path += "/@" + std::string(x_attr.name());
                     }

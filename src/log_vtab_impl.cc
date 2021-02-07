@@ -143,6 +143,7 @@ pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(value_kind_t
         case value_kind_t::VALUE_QUOTED:
         case value_kind_t::VALUE_W3C_QUOTED:
         case value_kind_t::VALUE_TIMESTAMP:
+        case value_kind_t::VALUE_XML:
             type = SQLITE3_TEXT;
             break;
         case value_kind_t::VALUE_FLOAT:
@@ -627,6 +628,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                         }
                         case value_kind_t::VALUE_STRUCT:
                         case value_kind_t::VALUE_TEXT:
+                        case value_kind_t::VALUE_XML:
                         case value_kind_t::VALUE_TIMESTAMP: {
                             sqlite3_result_text(ctx,
                                                 lv_iter->text_value(),
