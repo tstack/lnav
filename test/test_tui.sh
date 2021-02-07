@@ -19,7 +19,7 @@ for fn in ${srcdir}/tui-captures/*; do
     esac
 done
 
-run_test ./scripty -e ${srcdir}/xpath_tui.0 -- \
+run_test ./scripty -n -e ${srcdir}/xpath_tui.0 -- \
     ${lnav_test} -I ${test_dir} \
         -c ':goto 2' \
         ${srcdir}/logfile_xml_msg.0

@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/tstack/lnav.png)](https://travis-ci.org/tstack/lnav)
-[![Build status](https://ci.appveyor.com/api/projects/status/24wskehb7j7a65ro?svg=true)](https://ci.appveyor.com/project/tstack/lnav)
+![Build](https://github.com/tstack/lnav/workflows/build/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?branch=master)](https://coveralls.io/github/tstack/lnav?branch=master)
 [![lnav](https://snapcraft.io//lnav/badge.svg)](https://snapcraft.io/lnav)
 [![LoC](https://tokei.rs/b1/github/tstack/lnav)](https://github.com/tstack/lnav).
 
