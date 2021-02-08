@@ -84,7 +84,7 @@ struct date_time_scanner {
 
             localtime_r(&t, &tm_out.et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-            tm_out.et_tm.tm_zone = NULL;
+            tm_out.et_tm.tm_zone = nullptr;
 #endif
             tm_out.et_tm.tm_isdst = 0;
 
@@ -131,7 +131,7 @@ struct date_time_scanner {
         if (time_len == -1) {
             time_len = strlen(time_src);
         }
-        if (this->scan(time_src, time_len, time_fmt, &tm, tv_out) != NULL) {
+        if (this->scan(time_src, time_len, time_fmt, &tm, tv_out) != nullptr) {
             return true;
         }
         return false;
@@ -142,7 +142,7 @@ struct date_time_scanner {
         struct exttm tm;
 
         if (this->scan(time_src.c_str(), time_src.size(),
-                       NULL, &tm, tv_out) != NULL) {
+                       nullptr, &tm, tv_out) != nullptr) {
             return true;
         }
         return false;

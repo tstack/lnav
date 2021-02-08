@@ -44,11 +44,11 @@ filter_sub_source::filter_sub_source()
 {
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(to_underlying(filter_lang_t::REGEX),
+    this->fss_editor.add_context(lnav::enums::to_underlying(filter_lang_t::REGEX),
                                  this->fss_regex_context);
     this->fss_sql_context.set_highlighter(readline_sqlite_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(to_underlying(filter_lang_t::SQL),
+    this->fss_editor.add_context(lnav::enums::to_underlying(filter_lang_t::SQL),
                                  this->fss_sql_context);
     this->fss_editor.set_change_action(bind_mem(
         &filter_sub_source::rl_change, this));
@@ -161,7 +161,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editing = true;
 
             add_view_text_possibilities(&this->fss_editor,
-                                        to_underlying(filter_lang_t::REGEX),
+                                        lnav::enums::to_underlying(filter_lang_t::REGEX),
                                         "*",
                                         top_view);
             this->fss_editor.set_window(lv.get_window());
@@ -170,7 +170,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
+            this->fss_editor.focus(lnav::enums::to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -196,7 +196,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editing = true;
 
             add_view_text_possibilities(&this->fss_editor,
-                                        to_underlying(filter_lang_t::REGEX),
+                                        lnav::enums::to_underlying(filter_lang_t::REGEX),
                                         "*",
                                         top_view);
             this->fss_editor.set_window(lv.get_window());
@@ -205,7 +205,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(to_underlying(filter_lang_t::REGEX), "", "");
+            this->fss_editor.focus(lnav::enums::to_underlying(filter_lang_t::REGEX), "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -225,11 +225,11 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editing = true;
 
             add_view_text_possibilities(&this->fss_editor,
-                                        to_underlying(filter_lang_t::REGEX),
+                                        lnav::enums::to_underlying(filter_lang_t::REGEX),
                                         "*",
                                         top_view);
             add_filter_expr_possibilities(&this->fss_editor,
-                                          to_underlying(filter_lang_t::SQL),
+                                          lnav::enums::to_underlying(filter_lang_t::SQL),
                                           "*");
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
@@ -237,7 +237,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(to_underlying(tf->get_lang()), "");
+            this->fss_editor.focus(lnav::enums::to_underlying(tf->get_lang()), "");
             this->fss_editor.rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
             tf->disable();

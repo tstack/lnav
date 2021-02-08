@@ -1,4 +1,3 @@
-
 # Themes
 
 This directory contains the built-in theme definitions.  The files are

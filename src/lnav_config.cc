@@ -867,12 +867,16 @@ static struct json_path_container ui_handlers = {
 
 static struct json_path_container archive_handlers = {
     yajlpp::property_handler("min-free-space")
-        .with_description("The minimum free space to maintain when unpacking")
+        .with_description(
+            "The minimum free space, in bytes, to maintain when unpacking "
+            "archives")
         .with_min_value(0)
         .for_field(&_lnav_config::lc_archive_manager,
                    &archive_manager::config::amc_min_free_space),
     yajlpp::property_handler("cache-ttl")
-        .with_description("The time-to-live for unpacked archives")
+        .with_description(
+            "The time-to-live for unpacked archives, expressed as a duration "
+            "(e.g. '3d' for three days)")
         .for_field(&_lnav_config::lc_archive_manager,
                    &archive_manager::config::amc_cache_ttl),
 };

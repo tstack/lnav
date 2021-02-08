@@ -19,13 +19,13 @@
                     "properties": {
                         "min-free-space": {
                             "title": "/tuning/archive-manager/min-free-space",
-                            "description": "The minimum free space to maintain when unpacking",
+                            "description": "The minimum free space, in bytes, to maintain when unpacking archives",
                             "type": "integer",
                             "minimum": 0
                         },
                         "cache-ttl": {
                             "title": "/tuning/archive-manager/cache-ttl",
-                            "description": "The time-to-live for unpacked archives",
+                            "description": "The time-to-live for unpacked archives, expressed as a duration (e.g. '3d' for three days)",
                             "type": "string"
                         }
                     },

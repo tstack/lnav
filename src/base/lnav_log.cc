@@ -309,7 +309,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         localtm.tm_min,
         localtm.tm_sec,
         (int)(curr_time.tv_usec / 1000),
-        LEVEL_NAMES[to_underlying(level)],
+        LEVEL_NAMES[lnav::enums::to_underlying(level)],
         current_thid.t_id,
         src_file,
         line_number);
