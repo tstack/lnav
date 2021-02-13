@@ -1926,11 +1926,12 @@ void external_log_format::build(std::vector<std::string> &errors) {
         external_log_format::highlighter_def &hd = hd_pair.second;
         const std::string &pattern = hd.hd_pattern;
         const char *errptr;
-        rgb_color fg, bg;
+        auto fg = styling::color_unit::make_empty();
+        auto bg = styling::color_unit::make_empty();
         int eoff, attrs = 0;
 
         if (!hd.hd_color.empty()) {
-            fg = rgb_color::from_str(hd.hd_color)
+            fg = styling::color_unit::from_str(hd.hd_color)
                 .unwrapOrElse([&](const auto& msg) {
                     errors.push_back("error:"
                                      + this->elf_name.to_string()
@@ -1938,12 +1939,12 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                      + hd_pair.first.to_string()
                                      + "/color:"
                                      + msg);
-                    return rgb_color{};
+                    return styling::color_unit::make_empty();
                 });
         }
 
         if (!hd.hd_background_color.empty()) {
-            bg = rgb_color::from_str(hd.hd_background_color)
+            bg = styling::color_unit::from_str(hd.hd_background_color)
                 .unwrapOrElse([&](const auto& msg) {
                     errors.push_back("error:"
                                      + this->elf_name.to_string()
@@ -1951,7 +1952,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                      + hd_pair.first.to_string()
                                      + "/color:"
                                      + msg);
-                    return rgb_color{};
+                    return styling::color_unit::make_empty();
                 });
         }
 

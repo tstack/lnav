@@ -14,7 +14,7 @@ The configuration for **lnav** is stored in the following JSON files in
   Removing the :file:`.sample` extension and editing the file will allow you to
   do basic customizations.
 * :file:`configs/installed/*.json` -- Contains configuration files installed
-  using the :code:`-i` flag (e.g. :code:`$ lnav -i /path/to/config.json`).
+  using the :option:`-i` flag (e.g. :code:`$ lnav -i /path/to/config.json`).
 * :file:`configs/*/*.json` -- Other directories that contain :file:`*.json`
   files will be loaded on startup.  This structure is convenient for installing
   **lnav** configurations, like from a git repository.

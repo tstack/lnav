@@ -68,8 +68,8 @@ public:
      * @param total The total size of the file.
      */
     virtual void logfile_indexing(const std::shared_ptr<logfile>& lf,
-                                  off_t off,
-                                  size_t total) = 0;
+                                  file_off_t off,
+                                  file_size_t total) = 0;
 };
 
 struct logfile_activity {
@@ -154,7 +154,7 @@ public:
         return this->lf_valid_filename;
     };
 
-    off_t get_index_size() const {
+    file_off_t get_index_size() const {
         return this->lf_index_size;
     }
 
@@ -302,7 +302,7 @@ public:
 
     file_range get_file_range(const_iterator ll, bool include_continues = true) {
         return {ll->get_offset(),
-                (ssize_t) this->line_length(ll, include_continues)};
+                (file_ssize_t) this->line_length(ll, include_continues)};
     }
 
     void read_full_message(const_iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
@@ -392,7 +392,7 @@ protected:
     std::shared_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
     time_t      lf_index_time{0};
-    off_t       lf_index_size{0};
+    file_off_t  lf_index_size{0};
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};
@@ -406,14 +406,14 @@ protected:
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
 
-    nonstd::optional<std::pair<off_t, size_t>> lf_next_line_cache;
+    nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };
 
 class logline_observer {
 public:
     virtual ~logline_observer() = default;
 
-    virtual void logline_restart(const logfile &lf, size_t rollback_size) = 0;
+    virtual void logline_restart(const logfile &lf, file_size_t rollback_size) = 0;
 
     virtual void logline_new_lines(
         const logfile &lf,

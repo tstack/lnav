@@ -21,79 +21,27 @@ RE2C_V = $(RE2C_V_@AM_V@)
 RE2C_V_ = $(RE2C_V_@AM_DEFAULT_V@)
 RE2C_V_0 = @echo "  RE2C   " $@;
 
-FORMAT_FILES = \
-    $(srcdir)/formats/access_log.json \
-    $(srcdir)/formats/alb_log.json \
-    $(srcdir)/formats/autodeploy_log.json \
-    $(srcdir)/formats/block_log.json \
-    $(srcdir)/formats/candlepin_log.json \
-    $(srcdir)/formats/choose_repo_log.json \
-    $(srcdir)/formats/cups_log.json \
-    $(srcdir)/formats/dpkg_log.json \
-    $(srcdir)/formats/elb_log.json \
-    $(srcdir)/formats/engine_log.json \
-    $(srcdir)/formats/error_log.json \
-    $(srcdir)/formats/fsck_hfs_log.json \
-    $(srcdir)/formats/glog_log.json \
-    $(srcdir)/formats/haproxy_log.json \
-    $(srcdir)/formats/java_log.json \
-    $(srcdir)/formats/journald_json_log.json \
-    $(srcdir)/formats/katello_log.json \
-    $(srcdir)/formats/openam_log.json \
-    $(srcdir)/formats/openamdb_log.json \
-    $(srcdir)/formats/openstack_log.json \
-    $(srcdir)/formats/page_log.json \
-    $(srcdir)/formats/papertrail_log.json \
-    $(srcdir)/formats/snaplogic_log.json \
-    $(srcdir)/formats/sssd_log.json \
-    $(srcdir)/formats/strace_log.json \
-    $(srcdir)/formats/sudo_log.json \
-    $(srcdir)/formats/syslog_log.json \
-    $(srcdir)/formats/s3_log.json \
-    $(srcdir)/formats/tcf_log.json \
-    $(srcdir)/formats/tcsh_history.json \
-    $(srcdir)/formats/uwsgi_log.json \
-    $(srcdir)/formats/vdsm_log.json \
-    $(srcdir)/formats/vmk_log.json \
-    $(srcdir)/formats/vmw_log.json \
-    $(srcdir)/formats/xmlrpc_log.json \
-    $()
+include formats/formats.am
 
 default-formats.h default-formats.cc: bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
 
+include keymaps/keymaps.am
+include themes/themes.am
+
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
-    $(srcdir)/keymaps/de-keymap.json \
-    $(srcdir)/keymaps/default-keymap.json \
-    $(srcdir)/keymaps/fr-keymap.json \
-    $(srcdir)/keymaps/uk-keymap.json \
-    $(srcdir)/keymaps/us-keymap.json \
-    $(srcdir)/themes/default-theme.json \
-    $(srcdir)/themes/eldar.json \
-    $(srcdir)/themes/monocai.json \
-    $(srcdir)/themes/night-owl.json \
-    $(srcdir)/themes/solarized-dark.json \
-    $(srcdir)/themes/solarized-light.json \
+    $(KEYMAP_FILES) \
+    $(THEME_FILES) \
     $()
 
 default-config.h default-config.cc: bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
 
-BUILTIN_LNAVSCRIPTS = \
-    $(srcdir)/scripts/dhclient-summary.lnav \
-    $(srcdir)/scripts/lnav-pop-view.lnav \
-    $(srcdir)/scripts/partition-by-boot.lnav \
-    $(srcdir)/scripts/rename-stdin.lnav \
-    $(srcdir)/scripts/search-for.lnav \
-    $()
+include scripts/scripts.am
 
 builtin-scripts.h builtin-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
-
-BUILTIN_SHSCRIPTS = \
-    $(srcdir)/scripts/dump-pid.sh \
-    $()
 
 builtin-sh-scripts.h builtin-sh-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)

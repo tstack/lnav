@@ -1,0 +1,12 @@
+
+BUILTIN_LNAVSCRIPTS = \
+    $(srcdir)/scripts/dhclient-summary.lnav \
+    $(srcdir)/scripts/lnav-pop-view.lnav \
+    $(srcdir)/scripts/partition-by-boot.lnav \
+    $(srcdir)/scripts/rename-stdin.lnav \
+    $(srcdir)/scripts/search-for.lnav \
+    $()
+
+BUILTIN_SHSCRIPTS = \
+    $(srcdir)/scripts/dump-pid.sh \
+    $()

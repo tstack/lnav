@@ -1,6 +1,4 @@
 
-.. include:: kbd.rst
-
 Introduction
 ============
 
@@ -27,13 +25,14 @@ When compiling from source, the following dependencies are required:
 * `Bzip2 <http://www.bzip.org>`_
 * `Readline <http://www.gnu.org/s/readline>`_
 * `libcurl <https://curl.haxx.se>`_
+* `libarchive <https://libarchive.org>`_
 
 Installation
 ------------
 
 Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
-packages for your operating system.  Compiling from source is just a matter of
-doing:
+packages for your operating system.  To compile from source, use the following
+commands:
 
 .. prompt:: bash
 
@@ -70,7 +69,7 @@ Setup
 After starting **lnav**, you might want to set the
 :ref:`configuration options<Configuration>` mentioned below.  Configuration in
 **lnav** is done using the :code:`:config` command.  To change a configuration
-option, start by pressing |ks|:|ke| to enter the command prompt.  Then,
+option, start by pressing :kbd:`:` to enter the command prompt.  Then,
 type "config" followed by the option name and value.
 
 .. note::
@@ -113,6 +112,7 @@ command can be used to the change the theme:
 The builtin themes are:
 `default <https://github.com/tstack/lnav/blob/master/src/themes/default-theme.json>`_,
 `eldar <https://github.com/tstack/lnav/blob/master/src/themes/eldar.json>`_,
+`grayscale <https://github.com/tstack/lnav/blob/master/src/themes/grayscale.json>`_,
 `monocai <https://github.com/tstack/lnav/blob/master/src/themes/monocai.json>`_,
 `night-owl <https://github.com/tstack/lnav/blob/master/src/themes/night-owl.json>`_,
 `solarized-dark <https://github.com/tstack/lnav/blob/master/src/themes/solarized-dark.json>`_,

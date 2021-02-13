@@ -305,7 +305,11 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
             value_out.append(" IN ");
             break;
         case text_filter::EXCLUDE:
-            value_out.append("OUT ");
+            if (tf->get_lang() == filter_lang_t::REGEX) {
+                value_out.append("OUT ");
+            } else {
+                value_out.append("    ");
+            }
             break;
         default:
             ensure(0);

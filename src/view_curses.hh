@@ -189,6 +189,7 @@ public:
         VCR_NONE = -1,
 
         VCR_TEXT,               /*< Raw text. */
+        VCR_IDENTIFIER,
         VCR_SEARCH,             /*< A search hit. */
         VCR_OK,
         VCR_ERROR,              /*< An error message. */
@@ -283,13 +284,15 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    attr_t attrs_for_ident(const char *str, size_t len) const;
+    int color_for_ident(const char *str, size_t len) const;
 
-    attr_t attrs_for_ident(intern_string_t str) const {
+    attr_t attrs_for_ident(const char *str, size_t len);
+
+    attr_t attrs_for_ident(intern_string_t str) {
         return this->attrs_for_ident(str.get(), str.size());
     }
 
-    attr_t attrs_for_ident(const std::string &str) const {
+    attr_t attrs_for_ident(const std::string &str) {
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
@@ -299,13 +302,19 @@ public:
         return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
     }
 
-    int ensure_color_pair(int &pair_base, const rgb_color &fg, const rgb_color &bg);
+    int ensure_color_pair(int &pair_base,
+                          const styling::color_unit &fg,
+                          const styling::color_unit &bg);
 
-    int ensure_color_pair(const rgb_color &fg, const rgb_color &bg) {
+    int ensure_color_pair(const styling::color_unit &fg,
+                          const styling::color_unit &bg) {
         return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
     }
 
-    int match_color(const rgb_color &color);
+    static constexpr short MATCH_COLOR_DEFAULT = -1;
+    static constexpr short MATCH_COLOR_SEMANTIC = -10;
+
+    short match_color(const styling::color_unit &color) const;
 
     static inline int ansi_color_pair_index(int fg, int bg)
     {

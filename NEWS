@@ -32,6 +32,7 @@ lnav v0.9.1:
        "lnav_views" SQLite table.
      * Themes can now include definitions for text highlights under:
          /ui/theme-defs/<theme_name>/highlights
+     * Added a "grayscale" theme that isn't so colorful.
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included

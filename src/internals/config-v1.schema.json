@@ -405,11 +405,6 @@
             "type": "object",
             "$$target": "#/definitions/style",
             "properties": {
-                "semantic": {
-                    "title": "/semantic",
-                    "description": "Pick a color based on the text being highlighted",
-                    "type": "boolean"
-                },
                 "color": {
                     "title": "/color",
                     "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",

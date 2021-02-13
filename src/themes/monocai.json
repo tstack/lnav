@@ -11,11 +11,13 @@
                     "blue": "#5394ec",
                     "magenta": "#ae81ff",
                     "cyan": "#66d9ee",
-                    "white": "#808080"
+                    "white": "#808080",
+                    "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$black"
+                        "background-color": "$black",
+                        "color": "semantic()"
                     },
                     "text": {
                         "color": "#f6f6f6",

@@ -1,6 +1,4 @@
 
-.. include:: kbd.rst
-
 .. _sql-ext:
 
 SQLite Interface
@@ -27,9 +25,9 @@ These columns would be available for its row in the :code:`access_log` table:
    results, but they can still be accessed when explicitly used.  The hidden
    columns are: :code:`log_path`, :code:`log_text`, and :code:`log_body`.
 
-You can activate the SQL prompt by pressing the |ks| ; |ke| key.  At the
+You can activate the SQL prompt by pressing the :kbd:`;` key.  At the
 prompt, you can start typing in the desired SQL statement and/or double-tap
-|ks| TAB |ke| to activate auto-completion.  A help window will appear above
+:kbd:`TAB` to activate auto-completion.  A help window will appear above
 the prompt to guide you in the usage of SQL keywords and functions.
 
 .. figure:: sql-help.png
@@ -49,12 +47,12 @@ and maximum number of bytes returned by the server, grouped by IP address:
 
     ;SELECT c_ip, avg(sc_bytes), max(sc_bytes) FROM access_log GROUP BY c_ip
 
-After pressing |ks| Enter |ke|, SQLite will execute the query using **lnav**'s
+After pressing :kbd:`Enter`, SQLite will execute the query using **lnav**'s
 virtual table implementation to extract the data directly from the log files.
 Once the query has finished, the main window will switch to the DB view to
-show the results.  Press |ks| q |ke| to return to the log view and press |ks|
-v |ke| to return to the log view.  If the SQL results contain a
-:code:`log_line` column, you can press to |ks| Shift |ke| + |ks| V |ke| to
+show the results.  Press :kbd:`q` to return to the log view and press :kbd:`v`
+to return to the log view.  If the SQL results contain a
+:code:`log_line` column, you can press to :kbd:`Shift` + :kbd:`V` to
 switch between the DB view and the log
 
 .. figure:: query-results.png
@@ -66,9 +64,9 @@ The DB view has the following display features:
 
 * Column headers stick to the top of the view when scrolling.
 * A stacked bar chart of the numeric column values is displayed underneath the
-  rows.  Pressing |ks| TAB |ke| will cycle through displaying no columns, each
+  rows.  Pressing :kbd:`TAB` will cycle through displaying no columns, each
   individual column, or all columns.
-* JSON columns in the top row can be pretty-printed by pressing |ks| p |ke|.
+* JSON columns in the top row can be pretty-printed by pressing :kbd:`p`.
   The display will show the value and JSON-Pointer path that can be passed to
   the `jget`_ function.
 
@@ -144,7 +142,7 @@ the current IP is different from the previous IP:
 
 Since the above can be a lot to type out interactively, you can put these
 commands into a :ref:`script<scripts>` and execute that script with the
-|ks| \| |ke| hotkey.
+:kbd:`\|` hotkey.
 
 .. [#] The expression :code:`regexp_match('bound to ([^ ]+)', log_body) as ip`
    can be used to extract the IP address from the log message body.

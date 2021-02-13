@@ -1,4 +1,3 @@
-.. include:: kbd.rst
 
 .. _usage:
 
@@ -13,8 +12,8 @@ Basic Controls
 
 Like most file viewers, scrolling through files can be done with the usual
 :ref:`hotkeys<hotkeys>`.  For non-trivial operations, you can enter the
-:ref:`command<commands>` prompt by pressing |ks| : |ke|.  To analyze data in a
-log file, you can enter the :ref:`SQL prompt<sql-ext>` by pressing |ks| ; |ke|.
+:ref:`command<commands>` prompt by pressing :kbd:`:`.  To analyze data in a
+log file, you can enter the :ref:`SQL prompt<sql-ext>` by pressing :kbd:`;`.
 
 .. tip::
 
@@ -24,8 +23,8 @@ log file, you can enter the :ref:`SQL prompt<sql-ext>` by pressing |ks| ; |ke|.
   .. figure:: hotkey-tips.png
      :align: center
 
-     When **lnav** is first open, it suggests using |ks| e |ke| and
-     |ks| Shift |ke| + |ks| e |ke| to jump to error messages.
+     When **lnav** is first open, it suggests using :kbd:`e` and
+     :kbd:`Shift` + :kbd:`e` to jump to error messages.
 
 
 Viewing Files
@@ -42,7 +41,7 @@ extracted to a temporary location and the files within will be loaded.  The
 files that are found will be scanned to identify their file format.  Files
 that match a log format will be collated by time and displayed in the LOG
 view.  Plain text files can be viewed in the TEXT view, which can be accessed
-by pressing |ks| t |ke|.
+by pressing :kbd:`t`.
 
 
 Archive Support
@@ -71,12 +70,14 @@ Searching
 
 Any log messages that are loaded into **lnav** are indexed by time and log
 level (e.g. error, warning) to make searching quick and easy with
-:ref:`hotkeys<hotkeys>`.  For example, pressing |ks| e |ke| will jump to the
-next error in the file and pressing |ks| Shift |ke| + |ks| e |ke| will jump to
-the previous error.  Plain text searches can be done by pressing |ks| / |ke|
+:ref:`hotkeys<hotkeys>`.  For example, pressing :kbd:`e` will jump to the
+next error in the file and pressing :kbd:`Shift` + :kbd:`e` will jump to
+the previous error.  Plain text searches can be done by pressing :kbd:`/`
 to enter the search prompt.  A regular expression can be entered into the
 prompt to start a search through the current view.
 
+
+.. _filtering:
 
 Filtering
 ---------
@@ -125,6 +126,8 @@ Log level
 
 To hide messages below a certain log level, you can use the
 :ref:`:set-min-log-level<set_min_log_level>`.
+
+.. _search_tables:
 
 Search Tables
 -------------

@@ -257,7 +257,7 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
         lf->read_full_message(ll, sbr);
         format->annotate(cl, sbr, sa, values);
         for (auto& lv : values) {
-            if (!lv.lv_meta.lvm_identifier) {
+            if (!lv.lv_meta.lvm_struct_name.empty()) {
                 continue;
             }
 

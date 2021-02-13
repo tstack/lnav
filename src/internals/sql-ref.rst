@@ -6,13 +6,11 @@ expr *\[NOT\]* BETWEEN *low* AND *hi*
 
   Test if an expression is between two values.
 
-  **Parameters:**
-
+  **Parameters**
     * **low\*** --- The low point
     * **hi\*** --- The high point
 
-  **Examples:**
-
+  **Examples**
     To check if 3 is between 5 and 10:
 
     .. code-block::  custsqlite
@@ -38,13 +36,11 @@ ATTACH DATABASE *filename* AS *schema-name*
 
   Attach a database file to the current connection.
 
-  **Parameters:**
-
+  **Parameters**
     * **filename\*** --- The path to the database file.
     * **schema-name\*** --- The prefix for tables in this database.
 
-  **Examples:**
-
+  **Examples**
     To attach the database file '/tmp/customers.db' with the name customers:
 
     .. code-block::  custsqlite
@@ -62,8 +58,7 @@ CREATE *\[TEMP\]* VIEW  *\[IF NOT EXISTS\]* *\[schema-name.\]* *view-name* AS *s
 
   Assign a name to a SELECT statement
 
-  **Parameters:**
-
+  **Parameters**
     * **IF NOT EXISTS** --- Do not create the view if it already exists
     * **schema-name.** --- The database to create the view in
     * **view-name\*** --- The name of the view
@@ -91,8 +86,7 @@ WITH RECURSIVE  *cte-table-name* AS *select-stmt*
 
   Create a temporary view that exists only for the duration of a SQL statement.
 
-  **Parameters:**
-
+  **Parameters**
     * **cte-table-name\*** --- The name for the temporary table.
     * **select-stmt\*** --- The SELECT statement used to populate the temporary table.
 
@@ -107,13 +101,11 @@ CAST(*expr* AS *type-name*)
 
   Convert the value of the given expression to a different storage class specified by type-name.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The value to convert.
     * **type-name\*** --- The name of the type to convert to.
 
-  **Examples:**
-
+  **Examples**
     To cast the value 1.23 as an integer:
 
     .. code-block::  custsqlite
@@ -132,14 +124,12 @@ CASE *\[base-expr\]* WHEN *cmp-expr* ELSE *\[else-expr\]* END
 
   Evaluate a series of expressions in order until one evaluates to true and then return it's result.  Similar to an IF-THEN-ELSE construct in other languages.
 
-  **Parameters:**
-
+  **Parameters**
     * **base-expr** --- The base expression that is used for comparison in the branches
     * **cmp-expr** --- The expression to test if this branch should be taken
     * **else-expr** --- The result of this CASE if no branches matched.
 
-  **Examples:**
-
+  **Examples**
     To evaluate the number one and return the string 'one':
 
     .. code-block::  custsqlite
@@ -158,12 +148,10 @@ expr COLLATE *collation-name*
 
   Assign a collating sequence to the expression.
 
-  **Parameters:**
-
+  **Parameters**
     * **collation-name\*** --- The name of the collator.
 
-  **Examples:**
-
+  **Examples**
     To change the collation method for string comparisons:
 
     .. code-block::  custsqlite
@@ -183,12 +171,10 @@ DETACH DATABASE *schema-name*
 
   Detach a database from the current connection.
 
-  **Parameters:**
-
+  **Parameters**
     * **schema-name\*** --- The prefix for tables in this database.
 
-  **Examples:**
-
+  **Examples**
     To detach the database named 'customers':
 
     .. code-block::  custsqlite
@@ -206,8 +192,7 @@ DELETE FROM *table-name* WHERE *\[cond\]*
 
   Delete rows from a table
 
-  **Parameters:**
-
+  **Parameters**
     * **table-name\*** --- The name of the table
     * **cond** --- The conditions used to delete the rows.
 
@@ -266,12 +251,10 @@ expr *\[NOT\]* GLOB *pattern*
 
   Match an expression against a glob pattern.
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The glob pattern to match against.
 
-  **Examples:**
-
+  **Examples**
     To check if a value matches the pattern '*.log':
 
     .. code-block::  custsqlite
@@ -290,12 +273,10 @@ expr *\[NOT\]* LIKE *pattern*
 
   Match an expression against a text pattern.
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The pattern to match against.
 
-  **Examples:**
-
+  **Examples**
     To check if a value matches the pattern 'Hello, %!':
 
     .. code-block::  custsqlite
@@ -314,12 +295,10 @@ expr *\[NOT\]* REGEXP *pattern*
 
   Match an expression against a regular expression.
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression to match against.
 
-  **Examples:**
-
+  **Examples**
     To check if a value matches the pattern 'file-\d+':
 
     .. code-block::  custsqlite
@@ -338,16 +317,14 @@ SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* OR
 
   Query the database and return zero or more rows of data.
 
-  **Parameters:**
-
+  **Parameters**
     * **table** --- The table(s) to query for data
     * **cond** --- The conditions used to select the rows to return.
     * **grouping-expr** --- The expression to use when grouping rows.
     * **ordering-term** --- The values to use when ordering the result set.
     * **limit-expr** --- The maximum number of rows to return
 
-  **Examples:**
-
+  **Examples**
     To select all of the columns from the table 'syslog_log':
 
     .. code-block::  custsqlite
@@ -365,8 +342,7 @@ INSERT INTO  *\[schema-name.\]* *table-name* *column-name* VALUES *expr*
 
   Insert rows into a table
 
-  **Examples:**
-
+  **Examples**
     To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
 
     .. code-block::  custsqlite
@@ -384,8 +360,7 @@ OVER(*\[base-window-name\]* PARTITION BY *expr* ORDER BY *expr*, *\[frame-spec\]
 
   Executes the preceding function over a window
 
-  **Parameters:**
-
+  **Parameters**
     * **base-window-name** --- The name of the window definition
     * **expr** --- The values to use for partitioning
     * **expr** --- The values used to order the rows in the window
@@ -402,8 +377,7 @@ OVER *window-name*
 
   Executes the preceding function over a window
 
-  **Parameters:**
-
+  **Parameters**
     * **window-name\*** --- The name of the window definition
 
 
@@ -417,14 +391,12 @@ UPDATE *table* SET  *column-name* WHERE *\[cond\]*
 
   Modify a subset of values in zero or more rows of the given table
 
-  **Parameters:**
-
+  **Parameters**
     * **table\*** --- The table to update
     * **column-name** --- The columns in the table to update.
     * **cond** --- The condition used to determine whether a row should be updated.
 
-  **Examples:**
-
+  **Examples**
     To mark the syslog message at line 40:
 
     .. code-block::  custsqlite
@@ -442,12 +414,10 @@ abs(*x*)
 
   Return the absolute value of the argument
 
-  **Parameters:**
-
+  **Parameters**
     * **x\*** --- The number to convert
 
-  **Examples:**
-
+  **Examples**
     To get the absolute value of -1:
 
     .. code-block::  custsqlite
@@ -455,8 +425,7 @@ abs(*x*)
       ;SELECT abs(-1)
       1
 
-  **See Also:**
-
+  **See Also**
     :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -469,12 +438,10 @@ acos(*num*)
 
   Returns the arccosine of a number, in radians
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- A cosine value that is between -1 and 1
 
-  **Examples:**
-
+  **Examples**
     To get the arccosine of 0.2:
 
     .. code-block::  custsqlite
@@ -482,8 +449,7 @@ acos(*num*)
       ;SELECT acos(0.2)
       1.36943840600457
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -496,12 +462,10 @@ acosh(*num*)
 
   Returns the hyperbolic arccosine of a number
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- A number that is one or more
 
-  **Examples:**
-
+  **Examples**
     To get the hyperbolic arccosine of 1.2:
 
     .. code-block::  custsqlite
@@ -509,8 +473,7 @@ acosh(*num*)
       ;SELECT acosh(1.2)
       0.622362503714779
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -523,12 +486,10 @@ asin(*num*)
 
   Returns the arcsine of a number, in radians
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- A sine value that is between -1 and 1
 
-  **Examples:**
-
+  **Examples**
     To get the arcsine of 0.2:
 
     .. code-block::  custsqlite
@@ -536,8 +497,7 @@ asin(*num*)
       ;SELECT asin(0.2)
       0.201357920790331
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -550,12 +510,10 @@ asinh(*num*)
 
   Returns the hyperbolic arcsine of a number
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the hyperbolic arcsine of 0.2:
 
     .. code-block::  custsqlite
@@ -563,8 +521,7 @@ asinh(*num*)
       ;SELECT asinh(0.2)
       0.198690110349241
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -577,12 +534,10 @@ atan(*num*)
 
   Returns the arctangent of a number, in radians
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the arctangent of 0.2:
 
     .. code-block::  custsqlite
@@ -590,8 +545,7 @@ atan(*num*)
       ;SELECT atan(0.2)
       0.197395559849881
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -604,13 +558,11 @@ atan2(*y*, *x*)
 
   Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)
 
-  **Parameters:**
-
+  **Parameters**
     * **y\*** --- The y coordinate of the point
     * **x\*** --- The x coordinate of the point
 
-  **Examples:**
-
+  **Examples**
     To get the angle, in degrees, for the point at (5, 5):
 
     .. code-block::  custsqlite
@@ -618,8 +570,7 @@ atan2(*y*, *x*)
       ;SELECT degrees(atan2(5, 5))
       45.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -632,12 +583,10 @@ atanh(*num*)
 
   Returns the hyperbolic arctangent of a number
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the hyperbolic arctangent of 0.2:
 
     .. code-block::  custsqlite
@@ -645,8 +594,7 @@ atanh(*num*)
       ;SELECT atanh(0.2)
       0.202732554054082
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -659,13 +607,11 @@ atn2(*y*, *x*)
 
   Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)
 
-  **Parameters:**
-
+  **Parameters**
     * **y\*** --- The y coordinate of the point
     * **x\*** --- The x coordinate of the point
 
-  **Examples:**
-
+  **Examples**
     To get the angle, in degrees, for the point at (5, 5):
 
     .. code-block::  custsqlite
@@ -673,8 +619,7 @@ atn2(*y*, *x*)
       ;SELECT degrees(atn2(5, 5))
       45.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -687,12 +632,10 @@ avg(*X*)
 
   Returns the average value of all non-NULL numbers within a group.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The value to compute the average of.
 
-  **Examples:**
-
+  **Examples**
     To get the average of the column 'ex_duration' from the table 'lnav_example_log':
 
     .. code-block::  custsqlite
@@ -709,8 +652,7 @@ avg(*X*)
       gw                       5.0 
       hw                       2.0 
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -723,12 +665,10 @@ basename(*path*)
 
   Extract the base portion of a pathname.
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path
 
-  **Examples:**
-
+  **Examples**
     To get the base of a plain file name:
 
     .. code-block::  custsqlite
@@ -771,8 +711,7 @@ basename(*path*)
       ;SELECT basename('/')
       /
 
-  **See Also:**
-
+  **See Also**
     :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
 
 ----
@@ -785,12 +724,10 @@ ceil(*num*)
 
   Returns the smallest integer that is not less than the argument
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number to raise to the ceiling
 
-  **Examples:**
-
+  **Examples**
     To get the ceiling of 1.23:
 
     .. code-block::  custsqlite
@@ -798,8 +735,7 @@ ceil(*num*)
       ;SELECT ceil(1.23)
       2
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -823,12 +759,10 @@ char(*X*)
 
   Returns a string composed of characters having the given unicode code point values
 
-  **Parameters:**
-
+  **Parameters**
     * **X** --- The unicode code point values
 
-  **Examples:**
-
+  **Examples**
     To get a string with the code points 0x48 and 0x49:
 
     .. code-block::  custsqlite
@@ -836,8 +770,7 @@ char(*X*)
       ;SELECT char(0x48, 0x49)
       HI
 
-  **See Also:**
-
+  **See Also**
     :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -850,14 +783,12 @@ charindex(*needle*, *haystack*, *\[start\]*)
 
   Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X
 
-  **Parameters:**
-
+  **Parameters**
     * **needle\*** --- The string to look for in the haystack
     * **haystack\*** --- The string to search within
     * **start** --- The one-based index within the haystack to start the search
 
-  **Examples:**
-
+  **Examples**
     To search for the string 'abc' within 'abcabc' and starting at position 2:
 
     .. code-block::  custsqlite
@@ -872,8 +803,7 @@ charindex(*needle*, *haystack*, *\[start\]*)
       ;SELECT charindex('abc', 'abcdef', 2)
       0
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -886,13 +816,11 @@ coalesce(*X*, *Y*)
 
   Returns a copy of its first non-NULL argument, or NULL if all arguments are NULL
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- A value to check for NULL-ness
     * **Y** --- A value to check for NULL-ness
 
-  **Examples:**
-
+  **Examples**
     To get the first non-null value from three parameters:
 
     .. code-block::  custsqlite
@@ -911,12 +839,10 @@ count(*X*)
 
   If the argument is '*', the total number of rows in the group is returned.  Otherwise, the number of times the argument is non-NULL.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The value to count.
 
-  **Examples:**
-
+  **Examples**
     To get the count of the non-NULL rows of 'lnav_example_log':
 
     .. code-block::  custsqlite
@@ -942,8 +868,7 @@ cume_dist()
 
   Returns the cumulative distribution
 
-  **See Also:**
-
+  **See Also**
     :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -956,13 +881,11 @@ date(*timestring*, *modifier*)
 
   Returns the date in this format: YYYY-MM-DD.
 
-  **Parameters:**
-
+  **Parameters**
     * **timestring\*** --- The string to convert to a date.
     * **modifier** --- A transformation that is applied to the value to the left.
 
-  **Examples:**
-
+  **Examples**
     To get the date portion of the timestamp '2017-01-02T03:04:05':
 
     .. code-block::  custsqlite
@@ -984,8 +907,7 @@ date(*timestring*, *modifier*)
       ;SELECT date(1491341842, 'unixepoch')
       2017-04-04
 
-  **See Also:**
-
+  **See Also**
     :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`
 
 ----
@@ -998,13 +920,11 @@ datetime(*timestring*, *modifier*)
 
   Returns the date and time in this format: YYYY-MM-DD HH:MM:SS.
 
-  **Parameters:**
-
+  **Parameters**
     * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
-  **Examples:**
-
+  **Examples**
     To get the date and time portion of the timestamp '2017-01-02T03:04:05':
 
     .. code-block::  custsqlite
@@ -1026,8 +946,7 @@ datetime(*timestring*, *modifier*)
       ;SELECT datetime(1491341842, 'unixepoch')
       2017-04-04 21:37:22
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`
 
 ----
@@ -1040,12 +959,10 @@ degrees(*radians*)
 
   Converts radians to degrees
 
-  **Parameters:**
-
+  **Parameters**
     * **radians\*** --- The radians value to convert to degrees
 
-  **Examples:**
-
+  **Examples**
     To convert PI to degrees:
 
     .. code-block::  custsqlite
@@ -1053,8 +970,7 @@ degrees(*radians*)
       ;SELECT degrees(pi())
       180.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -1067,8 +983,7 @@ dense_rank()
 
   Returns the row_number() of the first peer in each group without gaps
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -1081,12 +996,10 @@ dirname(*path*)
 
   Extract the directory portion of a pathname.
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path
 
-  **Examples:**
-
+  **Examples**
     To get the directory of a relative file path:
 
     .. code-block::  custsqlite
@@ -1122,8 +1035,7 @@ dirname(*path*)
       ;SELECT dirname('')
       .
 
-  **See Also:**
-
+  **See Also**
     :ref:`basename`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
 
 ----
@@ -1136,13 +1048,11 @@ endswith(*str*, *suffix*)
 
   Test if a string ends with the given suffix
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to test
     * **suffix\*** --- The suffix to check in the string
 
-  **Examples:**
-
+  **Examples**
     To test if the string 'notbad.jpg' ends with '.jpg':
 
     .. code-block::  custsqlite
@@ -1157,8 +1067,7 @@ endswith(*str*, *suffix*)
       ;SELECT endswith('notbad.png', '.jpg')
       0
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1171,12 +1080,10 @@ exp(*x*)
 
   Returns the value of e raised to the power of x
 
-  **Parameters:**
-
+  **Parameters**
     * **x\*** --- The exponent
 
-  **Examples:**
-
+  **Examples**
     To raise e to 2:
 
     .. code-block::  custsqlite
@@ -1184,8 +1091,7 @@ exp(*x*)
       ;SELECT exp(2)
       7.38905609893065
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -1198,12 +1104,10 @@ extract(*str*)
 
   Automatically Parse and extract data from a string
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to parse
 
-  **Examples:**
-
+  **Examples**
     To extract key/value pairs from a string:
 
     .. code-block::  custsqlite
@@ -1218,8 +1122,7 @@ extract(*str*)
       ;SELECT extract('1.0 abc 2.0')
       {"col_0":1.0,"col_1":2.0}
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1232,12 +1135,10 @@ first_value(*expr*)
 
   Returns the result of evaluating the expression against the first row in the window frame.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The expression to execute over the first row
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -1250,12 +1151,10 @@ floor(*num*)
 
   Returns the largest integer that is not greater than the argument
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number to lower to the floor
 
-  **Examples:**
-
+  **Examples**
     To get the floor of 1.23:
 
     .. code-block::  custsqlite
@@ -1263,8 +1162,7 @@ floor(*num*)
       ;SELECT floor(1.23)
       1
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -1277,12 +1175,10 @@ gethostbyaddr(*hostname*)
 
   Get the hostname for the given IP address
 
-  **Parameters:**
-
+  **Parameters**
     * **hostname\*** --- The IP address to lookup.
 
-  **Examples:**
-
+  **Examples**
     To get the hostname for the IP '127.0.0.1':
 
     .. code-block::  custsqlite
@@ -1290,8 +1186,7 @@ gethostbyaddr(*hostname*)
       ;SELECT gethostbyaddr('127.0.0.1')
       localhost
 
-  **See Also:**
-
+  **See Also**
     :ref:`gethostbyname`
 
 ----
@@ -1304,12 +1199,10 @@ gethostbyname(*hostname*)
 
   Get the IP address for the given hostname
 
-  **Parameters:**
-
+  **Parameters**
     * **hostname\*** --- The DNS hostname to lookup.
 
-  **Examples:**
-
+  **Examples**
     To get the IP address for 'localhost':
 
     .. code-block::  custsqlite
@@ -1317,8 +1210,7 @@ gethostbyname(*hostname*)
       ;SELECT gethostbyname('localhost')
       127.0.0.1
 
-  **See Also:**
-
+  **See Also**
     :ref:`gethostbyaddr`
 
 ----
@@ -1331,13 +1223,11 @@ glob(*pattern*, *str*)
 
   Match a string against Unix glob pattern
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The glob pattern
     * **str\*** --- The string to match
 
-  **Examples:**
-
+  **Examples**
     To test if the string 'abc' matches the glob 'a*':
 
     .. code-block::  custsqlite
@@ -1356,13 +1246,11 @@ group_concat(*X*, *\[sep\]*)
 
   Returns a string which is the concatenation of all non-NULL values of X separated by a comma or the given separator.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The value to concatenate.
     * **sep** --- The separator to place between the values.
 
-  **Examples:**
-
+  **Examples**
     To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log':
 
     .. code-block::  custsqlite
@@ -1384,8 +1272,7 @@ group_concat(*X*, *\[sep\]*)
       ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
       hw,gw
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1398,12 +1285,10 @@ group_spooky_hash(*str*)
 
   Compute the hash value for the given arguments
 
-  **Parameters:**
-
+  **Parameters**
     * **str** --- The string to hash
 
-  **Examples:**
-
+  **Examples**
     To produce a hash of all of the values of 'column1':
 
     .. code-block::  custsqlite
@@ -1411,8 +1296,7 @@ group_spooky_hash(*str*)
       ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
       4e7a190aead058cb123c94290f29c34a
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1425,12 +1309,10 @@ hex(*X*)
 
   Returns a string which is the upper-case hexadecimal rendering of the content of its argument.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The blob to convert to hexadecimal
 
-  **Examples:**
-
+  **Examples**
     To get the hexadecimal rendering of the string 'abc':
 
     .. code-block::  custsqlite
@@ -1449,13 +1331,11 @@ ifnull(*X*, *Y*)
 
   Returns a copy of its first non-NULL argument, or NULL if both arguments are NULL
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- A value to check for NULL-ness
     * **Y\*** --- A value to check for NULL-ness
 
-  **Examples:**
-
+  **Examples**
     To get the first non-null value between null and zero:
 
     .. code-block::  custsqlite
@@ -1474,13 +1354,11 @@ instr(*haystack*, *needle*)
 
   Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if the needle was not found
 
-  **Parameters:**
-
+  **Parameters**
     * **haystack\*** --- The string to search within
     * **needle\*** --- The string to look for in the haystack
 
-  **Examples:**
-
+  **Examples**
     To test get the position of 'b' in the string 'abc':
 
     .. code-block::  custsqlite
@@ -1488,8 +1366,7 @@ instr(*haystack*, *needle*)
       ;SELECT instr('abc', 'b')
       2
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1502,14 +1379,12 @@ jget(*json*, *ptr*, *\[default\]*)
 
   Get the value from a JSON object using a JSON-Pointer.
 
-  **Parameters:**
-
+  **Parameters**
     * **json\*** --- The JSON object to query.
     * **ptr\*** --- The JSON-Pointer to lookup in the object.
     * **default** --- The default value if the value was not found
 
-  **Examples:**
-
+  **Examples**
     To get the root of a JSON value:
 
     .. code-block::  custsqlite
@@ -1531,8 +1406,7 @@ jget(*json*, *ptr*, *\[default\]*)
       ;SELECT jget(null, '/msg', 'Hello')
       Hello
 
-  **See Also:**
-
+  **See Also**
     :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
 
 ----
@@ -1545,12 +1419,10 @@ joinpath(*path*)
 
   Join components of a path together.
 
-  **Parameters:**
-
+  **Parameters**
     * **path** --- One or more path components to join together.  If an argument starts with a forward or backward slash, it will be considered an absolute path and any preceding elements will be ignored.
 
-  **Examples:**
-
+  **Examples**
     To join a directory and file name into a relative path:
 
     .. code-block::  custsqlite
@@ -1579,8 +1451,7 @@ joinpath(*path*)
       ;SELECT joinpath('/', 'foo', '/bar')
       /bar
 
-  **See Also:**
-
+  **See Also**
     :ref:`basename`, :ref:`dirname`, :ref:`readlink`, :ref:`realpath`
 
 ----
@@ -1593,13 +1464,11 @@ json_concat(*json*, *value*)
 
   Returns an array with the given values concatenated onto the end.  If the initial value is null, the result will be an array with the given elements.  If the initial value is an array, the result will be an array with the given values at the end.  If the initial value is not null or an array, the result will be an array with two elements: the initial value and the given value.
 
-  **Parameters:**
-
+  **Parameters**
     * **json\*** --- The initial JSON value.
     * **value** --- The value(s) to add to the end of the array.
 
-  **Examples:**
-
+  **Examples**
     To append the number 4 to null:
 
     .. code-block::  custsqlite
@@ -1621,8 +1490,7 @@ json_concat(*json*, *value*)
       ;SELECT json_concat('[1, 2, 3]', json('[4, 5]'))
       [1,2,3,4,5]
 
-  **See Also:**
-
+  **See Also**
     :ref:`jget`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
 
 ----
@@ -1635,13 +1503,11 @@ json_contains(*json*, *value*)
 
   Check if a JSON value contains the given element.
 
-  **Parameters:**
-
+  **Parameters**
     * **json\*** --- The JSON value to query.
     * **value\*** --- The value to look for in the first argument
 
-  **Examples:**
-
+  **Examples**
     To test if a JSON array contains the number 4:
 
     .. code-block::  custsqlite
@@ -1656,8 +1522,7 @@ json_contains(*json*, *value*)
       ;SELECT json_contains('["abc", "def"]', 'def')
       1
 
-  **See Also:**
-
+  **See Also**
     :ref:`jget`, :ref:`json_concat`, :ref:`json_group_array`, :ref:`json_group_object`
 
 ----
@@ -1670,12 +1535,10 @@ json_group_array(*value*)
 
   Collect the given values from a query into a JSON array
 
-  **Parameters:**
-
+  **Parameters**
     * **value** --- The values to append to the array
 
-  **Examples:**
-
+  **Examples**
     To create an array from arguments:
 
     .. code-block::  custsqlite
@@ -1690,8 +1553,7 @@ json_group_array(*value*)
       ;SELECT json_group_array(column1) FROM (VALUES (1), (2), (3))
       [1,2,3]
 
-  **See Also:**
-
+  **See Also**
     :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_object`
 
 ----
@@ -1704,13 +1566,11 @@ json_group_object(*name*, *value*)
 
   Collect the given values from a query into a JSON object
 
-  **Parameters:**
-
+  **Parameters**
     * **name\*** --- The property name for the value
     * **value** --- The value to add to the object
 
-  **Examples:**
-
+  **Examples**
     To create an object from arguments:
 
     .. code-block::  custsqlite
@@ -1725,8 +1585,7 @@ json_group_object(*name*, *value*)
       ;SELECT json_group_object(column1, column2) FROM (VALUES ('a', 1), ('b', 2))
       {"a":1,"b":2}
 
-  **See Also:**
-
+  **See Also**
     :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`
 
 ----
@@ -1739,13 +1598,11 @@ julianday(*timestring*, *modifier*)
 
   Returns the number of days since noon in Greenwich on November 24, 4714 B.C.
 
-  **Parameters:**
-
+  **Parameters**
     * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
-  **Examples:**
-
+  **Examples**
     To get the julian day from the timestamp '2017-01-02T03:04:05':
 
     .. code-block::  custsqlite
@@ -1767,8 +1624,7 @@ julianday(*timestring*, *modifier*)
       ;SELECT julianday(1491341842, 'unixepoch')
       2457848.40094907
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`
 
 ----
@@ -1781,14 +1637,12 @@ lag(*expr*, *\[offset\]*, *\[default\]*)
 
   Returns the result of evaluating the expression against the previous row in the partition.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The expression to execute over the previous row
     * **offset** --- The offset from the current row in the partition
     * **default** --- The default value if the previous row does not exist instead of NULL
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -1812,12 +1666,10 @@ last_value(*expr*)
 
   Returns the result of evaluating the expression against the last row in the window frame.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The expression to execute over the last row
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -1830,14 +1682,12 @@ lead(*expr*, *\[offset\]*, *\[default\]*)
 
   Returns the result of evaluating the expression against the next row in the partition.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The expression to execute over the next row
     * **offset** --- The offset from the current row in the partition
     * **default** --- The default value if the next row does not exist instead of NULL
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -1850,13 +1700,11 @@ leftstr(*str*, *N*)
 
   Returns the N leftmost (UTF-8) characters in the given string.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to return subset.
     * **N\*** --- The number of characters from the left side of the string to return.
 
-  **Examples:**
-
+  **Examples**
     To get the first character of the string 'abc':
 
     .. code-block::  custsqlite
@@ -1871,8 +1719,7 @@ leftstr(*str*, *N*)
       ;SELECT leftstr('abc', 10)
       abc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1885,12 +1732,10 @@ length(*str*)
 
   Returns the number of characters (not bytes) in the given string prior to the first NUL character
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to determine the length of
 
-  **Examples:**
-
+  **Examples**
     To get the length of the string 'abc':
 
     .. code-block::  custsqlite
@@ -1898,8 +1743,7 @@ length(*str*)
       ;SELECT length('abc')
       3
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -1912,14 +1756,12 @@ like(*pattern*, *str*, *\[escape\]*)
 
   Match a string against a pattern
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The pattern to match.  A percent symbol (%) will match zero or more characters and an underscore (_) will match a single character.
     * **str\*** --- The string to match
     * **escape** --- The escape character that can be used to prefix a literal percent or underscore in the pattern.
 
-  **Examples:**
-
+  **Examples**
     To test if the string 'aabcc' contains the letter 'b':
 
     .. code-block::  custsqlite
@@ -1945,8 +1787,7 @@ likelihood(*value*, *probability*)
 
   Provides a hint to the query planner that the first argument is a boolean that is true with the given probability
 
-  **Parameters:**
-
+  **Parameters**
     * **value\*** --- The boolean value to return
     * **probability\*** --- A floating point constant between 0.0 and 1.0
 
@@ -1961,8 +1802,7 @@ likely(*value*)
 
   Short-hand for likelihood(X,0.9375)
 
-  **Parameters:**
-
+  **Parameters**
     * **value\*** --- The boolean value to return
 
 
@@ -1976,8 +1816,7 @@ load_extension(*path*, *\[entry-point\]*)
 
   Loads SQLite extensions out of the given shared library file using the given entry point.
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the shared library containing the extension.
 
 
@@ -1991,12 +1830,10 @@ log(*x*)
 
   Returns the natural logarithm of x
 
-  **Parameters:**
-
+  **Parameters**
     * **x\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the natual logarithm of 8:
 
     .. code-block::  custsqlite
@@ -2004,8 +1841,7 @@ log(*x*)
       ;SELECT log(8)
       2.07944154167984
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2018,12 +1854,10 @@ log10(*x*)
 
   Returns the base-10 logarithm of X
 
-  **Parameters:**
-
+  **Parameters**
     * **x\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the logarithm of 100:
 
     .. code-block::  custsqlite
@@ -2031,8 +1865,7 @@ log10(*x*)
       ;SELECT log10(100)
       2.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2067,12 +1900,10 @@ lower(*str*)
 
   Returns a copy of the given string with all ASCII characters converted to lower case.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to convert.
 
-  **Examples:**
-
+  **Examples**
     To lowercase the string 'AbC':
 
     .. code-block::  custsqlite
@@ -2080,8 +1911,7 @@ lower(*str*)
       ;SELECT lower('AbC')
       abc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2094,13 +1924,11 @@ ltrim(*str*, *\[chars\]*)
 
   Returns a string formed by removing any and all characters that appear in the second argument from the left side of the first.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to trim characters from the left side
     * **chars** --- The characters to trim.  Defaults to spaces.
 
-  **Examples:**
-
+  **Examples**
     To trim the leading whitespace from the string '   abc':
 
     .. code-block::  custsqlite
@@ -2115,8 +1943,7 @@ ltrim(*str*, *\[chars\]*)
       ;SELECT ltrim('aaaabbbc', 'ab')
       c
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2129,12 +1956,10 @@ max(*X*)
 
   Returns the argument with the maximum value, or return NULL if any argument is NULL.
 
-  **Parameters:**
-
+  **Parameters**
     * **X** --- The numbers to find the maximum of.  If only one argument is given, this function operates as an aggregate.
 
-  **Examples:**
-
+  **Examples**
     To get the largest value from the parameters:
 
     .. code-block::  custsqlite
@@ -2149,8 +1974,7 @@ max(*X*)
       ;SELECT max(status) FROM http_status_codes
       511
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2163,12 +1987,10 @@ min(*X*)
 
   Returns the argument with the minimum value, or return NULL if any argument is NULL.
 
-  **Parameters:**
-
+  **Parameters**
     * **X** --- The numbers to find the minimum of.  If only one argument is given, this function operates as an aggregate.
 
-  **Examples:**
-
+  **Examples**
     To get the smallest value from the parameters:
 
     .. code-block::  custsqlite
@@ -2183,8 +2005,7 @@ min(*X*)
       ;SELECT min(status) FROM http_status_codes
       100
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2197,13 +2018,11 @@ nth_value(*expr*, *N*)
 
   Returns the result of evaluating the expression against the nth row in the window frame.
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The expression to execute over the nth row
     * **N\*** --- The row number
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -2216,12 +2035,10 @@ ntile(*groups*)
 
   Returns the number of the group that the current row is a part of
 
-  **Parameters:**
-
+  **Parameters**
     * **groups\*** --- The number of groups
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`percent_rank`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -2234,13 +2051,11 @@ nullif(*X*, *Y*)
 
   Returns its first argument if the arguments are different and NULL if the arguments are the same.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The first argument to compare.
     * **Y\*** --- The argument to compare against the first.
 
-  **Examples:**
-
+  **Examples**
     To test if 1 is different from 1:
 
     .. code-block::  custsqlite
@@ -2266,13 +2081,11 @@ padc(*str*, *len*)
 
   Pad the given string with enough spaces to make it centered within the given length
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to pad
     * **len\*** --- The minimum desired length of the output string
 
-  **Examples:**
-
+  **Examples**
     To pad the string 'abc' to a length of six characters:
 
     .. code-block::  custsqlite
@@ -2287,8 +2100,7 @@ padc(*str*, *len*)
       ;SELECT padc('abcdef', 8) || 'ghi'
        abcdef ghi
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2301,13 +2113,11 @@ padl(*str*, *len*)
 
   Pad the given string with leading spaces until it reaches the desired length
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to pad
     * **len\*** --- The minimum desired length of the output string
 
-  **Examples:**
-
+  **Examples**
     To pad the string 'abc' to a length of six characters:
 
     .. code-block::  custsqlite
@@ -2322,8 +2132,7 @@ padl(*str*, *len*)
       ;SELECT padl('abcdef', 4)
       abcdef
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2336,13 +2145,11 @@ padr(*str*, *len*)
 
   Pad the given string with trailing spaces until it reaches the desired length
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to pad
     * **len\*** --- The minimum desired length of the output string
 
-  **Examples:**
-
+  **Examples**
     To pad the string 'abc' to a length of six characters:
 
     .. code-block::  custsqlite
@@ -2357,8 +2164,7 @@ padr(*str*, *len*)
       ;SELECT padr('abcdef', 4) || 'ghi'
       abcdefghi
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2371,8 +2177,7 @@ percent_rank()
 
   Returns (rank - 1) / (partition-rows - 1)
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`rank`, :ref:`row_number`
 
 ----
@@ -2385,8 +2190,7 @@ pi()
 
   Returns the value of PI
 
-  **Examples:**
-
+  **Examples**
     To get the value of PI:
 
     .. code-block::  custsqlite
@@ -2394,8 +2198,7 @@ pi()
       ;SELECT pi()
       3.14159265358979
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2408,13 +2211,11 @@ power(*base*, *exp*)
 
   Returns the base to the given exponent
 
-  **Parameters:**
-
+  **Parameters**
     * **base\*** --- The base number
     * **exp\*** --- The exponent
 
-  **Examples:**
-
+  **Examples**
     To raise two to the power of three:
 
     .. code-block::  custsqlite
@@ -2422,8 +2223,7 @@ power(*base*, *exp*)
       ;SELECT power(2, 3)
       8.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2436,13 +2236,11 @@ printf(*format*, *X*)
 
   Returns a string with this functions arguments substituted into the given format.  Substitution points are specified using percent (%) options, much like the standard C printf() function.
 
-  **Parameters:**
-
+  **Parameters**
     * **format\*** --- The format of the string to return.
     * **X\*** --- The argument to substitute at a given position in the format.
 
-  **Examples:**
-
+  **Examples**
     To substitute 'World' into the string 'Hello, %s!':
 
     .. code-block::  custsqlite
@@ -2464,8 +2262,7 @@ printf(*format*, *X*)
       ;SELECT printf('value: %05d', 11)
       value: 00011
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2478,12 +2275,10 @@ proper(*str*)
 
   Capitalize the first character of words in the given string
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to capitalize.
 
-  **Examples:**
-
+  **Examples**
     To capitalize the words in the string 'hello, world!':
 
     .. code-block::  custsqlite
@@ -2491,8 +2286,7 @@ proper(*str*)
       ;SELECT proper('hello, world!')
       Hello, World!
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2505,12 +2299,10 @@ quote(*X*)
 
   Returns the text of an SQL literal which is the value of its argument suitable for inclusion into an SQL statement.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The string to quote.
 
-  **Examples:**
-
+  **Examples**
     To quote the string 'abc':
 
     .. code-block::  custsqlite
@@ -2536,12 +2328,10 @@ radians(*degrees*)
 
   Converts degrees to radians
 
-  **Parameters:**
-
+  **Parameters**
     * **degrees\*** --- The degrees value to convert to radians
 
-  **Examples:**
-
+  **Examples**
     To convert 180 degrees to radians:
 
     .. code-block::  custsqlite
@@ -2549,8 +2339,7 @@ radians(*degrees*)
       ;SELECT radians(180)
       3.14159265358979
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2563,8 +2352,7 @@ raise_error(*msg*)
 
   Raises an error with the given message when executed
 
-  **Parameters:**
-
+  **Parameters**
     * **msg\*** --- The error message
 
 
@@ -2589,8 +2377,7 @@ randomblob(*N*)
 
   Return an N-byte blob containing pseudo-random bytes.
 
-  **Parameters:**
-
+  **Parameters**
     * **N\*** --- The size of the blob in bytes.
 
 
@@ -2604,8 +2391,7 @@ rank()
 
   Returns the row_number() of the first peer in each group with gaps
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`row_number`
 
 ----
@@ -2618,12 +2404,10 @@ readlink(*path*)
 
   Read the target of a symbolic link.
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the symbolic link.
 
-  **See Also:**
-
+  **See Also**
     :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`realpath`
 
 ----
@@ -2636,12 +2420,10 @@ realpath(*path*)
 
   Returns the resolved version of the given path, expanding symbolic links and resolving '.' and '..' references.
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to resolve.
 
-  **See Also:**
-
+  **See Also**
     :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`
 
 ----
@@ -2654,8 +2436,7 @@ regexp(*re*, *str*)
 
   Test if a string matches a regular expression
 
-  **Parameters:**
-
+  **Parameters**
     * **re\*** --- The regular expression to use
     * **str\*** --- The string to test against the regular expression
 
@@ -2670,13 +2451,11 @@ regexp_capture(*string*, *pattern*)
 
   A table-valued function that executes a regular-expression over a string and returns the captured values.  If the regex only matches a subset of the input string, it will be rerun on the remaining parts of the string until no more matches are found.
 
-  **Parameters:**
-
+  **Parameters**
     * **string\*** --- The string to match against the given pattern.
     * **pattern\*** --- The regular expression to match.
 
-  **Examples:**
-
+  **Examples**
     To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
 
     .. code-block::  custsqlite
@@ -2690,8 +2469,7 @@ regexp_capture(*string*, *pattern*)
                 1             1                          3           6          7 b       
                 1             2                          3           8          9 2       
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2704,13 +2482,11 @@ regexp_match(*re*, *str*)
 
   Match a string against a regular expression and return the capture groups as JSON.
 
-  **Parameters:**
-
+  **Parameters**
     * **re\*** --- The regular expression to use
     * **str\*** --- The string to test against the regular expression
 
-  **Examples:**
-
+  **Examples**
     To capture the digits from the string '123':
 
     .. code-block::  custsqlite
@@ -2732,8 +2508,7 @@ regexp_match(*re*, *str*)
       ;SELECT regexp_match('(?<num>\d+) (?<str>\w+)', '123 four')
       {"num":123,"str":"four"}
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_replace`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2746,14 +2521,12 @@ regexp_replace(*str*, *re*, *repl*)
 
   Replace the parts of a string that match a regular expression.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to perform replacements on
     * **re\*** --- The regular expression to match
     * **repl\*** --- The replacement string.  You can reference capture groups with a backslash followed by the number of the group, starting with 1.
 
-  **Examples:**
-
+  **Examples**
     To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
 
     .. code-block::  custsqlite
@@ -2768,8 +2541,7 @@ regexp_replace(*str*, *re*, *repl*)
       ;SELECT regexp_replace('123 abc', '(\w+)', '<\1>')
       <123> <abc>
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_match`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2782,14 +2554,12 @@ replace(*str*, *old*, *replacement*)
 
   Returns a string formed by substituting the replacement string for every occurrence of the old string in the given string.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to perform substitutions on.
     * **old\*** --- The string to be replaced.
     * **replacement\*** --- The string to replace any occurrences of the old string with.
 
-  **Examples:**
-
+  **Examples**
     To replace the string 'x' with 'z' in 'abc':
 
     .. code-block::  custsqlite
@@ -2804,8 +2574,7 @@ replace(*str*, *old*, *replacement*)
       ;SELECT replace('abc', 'a', 'z')
       zbc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2818,13 +2587,11 @@ replicate(*str*, *N*)
 
   Returns the given string concatenated N times.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to replicate.
     * **N\*** --- The number of times to replicate the string.
 
-  **Examples:**
-
+  **Examples**
     To repeat the string 'abc' three times:
 
     .. code-block::  custsqlite
@@ -2832,8 +2599,7 @@ replicate(*str*, *N*)
       ;SELECT replicate('abc', 3)
       abcabcabc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2846,12 +2612,10 @@ reverse(*str*)
 
   Returns the reverse of the given string.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to reverse.
 
-  **Examples:**
-
+  **Examples**
     To reverse the string 'abc':
 
     .. code-block::  custsqlite
@@ -2859,8 +2623,7 @@ reverse(*str*)
       ;SELECT reverse('abc')
       cba
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2873,13 +2636,11 @@ rightstr(*str*, *N*)
 
   Returns the N rightmost (UTF-8) characters in the given string.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to return subset.
     * **N\*** --- The number of characters from the right side of the string to return.
 
-  **Examples:**
-
+  **Examples**
     To get the last character of the string 'abc':
 
     .. code-block::  custsqlite
@@ -2894,8 +2655,7 @@ rightstr(*str*, *N*)
       ;SELECT rightstr('abc', 10)
       abc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -2908,13 +2668,11 @@ round(*num*, *\[digits\]*)
 
   Returns a floating-point value rounded to the given number of digits to the right of the decimal point.
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The value to round.
     * **digits** --- The number of digits to the right of the decimal to round to.
 
-  **Examples:**
-
+  **Examples**
     To round the number 123.456 to an integer:
 
     .. code-block::  custsqlite
@@ -2936,8 +2694,7 @@ round(*num*, *\[digits\]*)
       ;SELECT round(123.456, 5)
       123.456
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -2950,8 +2707,7 @@ row_number()
 
   Returns the number of the row within the current partition, starting from 1.
 
-  **Examples:**
-
+  **Examples**
     To number messages from a process:
 
     .. code-block::  custsqlite
@@ -2963,8 +2719,7 @@ row_number()
             3 gw          Goodbye, World! 
             1 hw          Hello, World!   
 
-  **See Also:**
-
+  **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`
 
 ----
@@ -2977,13 +2732,11 @@ rtrim(*str*, *\[chars\]*)
 
   Returns a string formed by removing any and all characters that appear in the second argument from the right side of the first.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to trim characters from the right side
     * **chars** --- The characters to trim.  Defaults to spaces.
 
-  **Examples:**
-
+  **Examples**
     To trim the whitespace from the end of the string 'abc   ':
 
     .. code-block::  custsqlite
@@ -2998,8 +2751,7 @@ rtrim(*str*, *\[chars\]*)
       ;SELECT rtrim('abbbbcccc', 'bc')
       a
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3012,12 +2764,10 @@ sign(*num*)
 
   Returns the sign of the given number as -1, 0, or 1
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number
 
-  **Examples:**
-
+  **Examples**
     To get the sign of 10:
 
     .. code-block::  custsqlite
@@ -3039,8 +2789,7 @@ sign(*num*)
       ;SELECT sign(-10)
       -1
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`square`, :ref:`sum`, :ref:`total`
 
 ----
@@ -3053,12 +2802,10 @@ spooky_hash(*str*)
 
   Compute the hash value for the given arguments.
 
-  **Parameters:**
-
+  **Parameters**
     * **str** --- The string to hash
 
-  **Examples:**
-
+  **Examples**
     To produce a hash for the string 'Hello, World!':
 
     .. code-block::  custsqlite
@@ -3087,8 +2834,7 @@ spooky_hash(*str*)
       ;SELECT spooky_hash('Hello, World!', 123)
       f96b3d9c1a19f4394c97a1b79b1880df
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3101,8 +2847,7 @@ sqlite_compileoption_get(*N*)
 
   Returns the N-th compile-time option used to build SQLite or NULL if N is out of range.
 
-  **Parameters:**
-
+  **Parameters**
     * **N\*** --- The option number to get
 
 
@@ -3116,12 +2861,10 @@ sqlite_compileoption_used(*option*)
 
   Returns true (1) or false (0) depending on whether or not that compile-time option was used during the build.
 
-  **Parameters:**
-
+  **Parameters**
     * **option\*** --- The name of the compile-time option.
 
-  **Examples:**
-
+  **Examples**
     To check if the SQLite library was compiled with ENABLE_FTS3:
 
     .. code-block::  custsqlite
@@ -3162,12 +2905,10 @@ square(*num*)
 
   Returns the square of the argument
 
-  **Parameters:**
-
+  **Parameters**
     * **num\*** --- The number to square
 
-  **Examples:**
-
+  **Examples**
     To get the square of two:
 
     .. code-block::  custsqlite
@@ -3175,8 +2916,7 @@ square(*num*)
       ;SELECT square(2)
       4
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`sum`, :ref:`total`
 
 ----
@@ -3189,13 +2929,11 @@ startswith(*str*, *prefix*)
 
   Test if a string begins with the given prefix
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to test
     * **prefix\*** --- The prefix to check in the string
 
-  **Examples:**
-
+  **Examples**
     To test if the string 'foobar' starts with 'foo':
 
     .. code-block::  custsqlite
@@ -3210,8 +2948,7 @@ startswith(*str*, *prefix*)
       ;SELECT startswith('foobar', 'bar')
       0
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3224,13 +2961,11 @@ strfilter(*source*, *include*)
 
   Returns the source string with only the characters given in the second parameter
 
-  **Parameters:**
-
+  **Parameters**
     * **source\*** --- The string to filter
     * **include\*** --- The characters to include in the result
 
-  **Examples:**
-
+  **Examples**
     To get the 'b', 'c', and 'd' characters from the string 'abcabc':
 
     .. code-block::  custsqlite
@@ -3238,8 +2973,7 @@ strfilter(*source*, *include*)
       ;SELECT strfilter('abcabc', 'bcd')
       bcbc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3252,14 +2986,12 @@ strftime(*format*, *timestring*, *modifier*)
 
   Returns the date formatted according to the format string specified as the first argument.
 
-  **Parameters:**
-
+  **Parameters**
     * **format\*** --- A format string with substitutions similar to those found in the strftime() standard C library.
     * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
-  **Examples:**
-
+  **Examples**
     To get the year from the timestamp '2017-01-02T03:04:05':
 
     .. code-block::  custsqlite
@@ -3281,8 +3013,7 @@ strftime(*format*, *timestring*, *modifier*)
       ;SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')
       Julian day: 2457848.400949074
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`
 
 ----
@@ -3295,14 +3026,12 @@ substr(*str*, *start*, *\[size\]*)
 
   Returns a substring of input string X that begins with the Y-th character and which is Z characters long.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to extract a substring from.
     * **start\*** --- The index within 'str' that is the start of the substring.  Indexes begin at 1.  A negative value means that the substring is found by counting from the right rather than the left.  
     * **size** --- The size of the substring.  If not given, then all characters through the end of the string are returned.  If the value is negative, then the characters before the start are returned.
 
-  **Examples:**
-
+  **Examples**
     To get the substring starting at the second character until the end of the string 'abc':
 
     .. code-block::  custsqlite
@@ -3331,8 +3060,7 @@ substr(*str*, *start*, *\[size\]*)
       ;SELECT substr('abc', -1, -1)
       b
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3345,12 +3073,10 @@ sum(*X*)
 
   Returns the sum of the values in the group as an integer.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The values to add.
 
-  **Examples:**
-
+  **Examples**
     To sum all of the values in the column 'ex_duration' from the table 'lnav_example_log':
 
     .. code-block::  custsqlite
@@ -3358,8 +3084,7 @@ sum(*X*)
       ;SELECT sum(ex_duration) FROM lnav_example_log
       17
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`total`
 
 ----
@@ -3372,13 +3097,11 @@ time(*timestring*, *modifier*)
 
   Returns the time in this format: HH:MM:SS.
 
-  **Parameters:**
-
+  **Parameters**
     * **timestring\*** --- The string to convert to a time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
-  **Examples:**
-
+  **Examples**
     To get the time portion of the timestamp '2017-01-02T03:04:05':
 
     .. code-block::  custsqlite
@@ -3400,8 +3123,7 @@ time(*timestring*, *modifier*)
       ;SELECT time(1491341842, 'unixepoch')
       21:37:22
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`timediff`, :ref:`timeslice`
 
 ----
@@ -3414,13 +3136,11 @@ timediff(*time1*, *time2*)
 
   Compute the difference between two timestamps in seconds
 
-  **Parameters:**
-
+  **Parameters**
     * **time1\*** --- The first timestamp
     * **time2\*** --- The timestamp to subtract from the first
 
-  **Examples:**
-
+  **Examples**
     To get the difference between two timestamps:
 
     .. code-block::  custsqlite
@@ -3435,8 +3155,7 @@ timediff(*time1*, *time2*)
       ;SELECT timediff('today', 'yesterday')
       86400.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timeslice`
 
 ----
@@ -3449,13 +3168,11 @@ timeslice(*time*, *slice*)
 
   Return the start of the slice of time that the given timestamp falls in.
 
-  **Parameters:**
-
+  **Parameters**
     * **time\*** --- The timestamp to get the time slice for.
     * **slice\*** --- The size of the time slices
 
-  **Examples:**
-
+  **Examples**
     To get the timestamp rounded down to the start of the ten minute slice:
 
     .. code-block::  custsqlite
@@ -3473,8 +3190,7 @@ timeslice(*time*, *slice*)
       2017-02-03 04:25:00.000        1 
       2017-02-03 04:55:00.000        1 
 
-  **See Also:**
-
+  **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`
 
 ----
@@ -3487,12 +3203,10 @@ total(*X*)
 
   Returns the sum of the values in the group as a floating-point.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The values to add.
 
-  **Examples:**
-
+  **Examples**
     To total all of the values in the column 'ex_duration' from the table 'lnav_example_log':
 
     .. code-block::  custsqlite
@@ -3500,8 +3214,7 @@ total(*X*)
       ;SELECT total(ex_duration) FROM lnav_example_log
       17.0
 
-  **See Also:**
-
+  **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`
 
 ----
@@ -3525,13 +3238,11 @@ trim(*str*, *\[chars\]*)
 
   Returns a string formed by removing any and all characters that appear in the second argument from the left and right sides of the first.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to trim characters from the left and right sides.
     * **chars** --- The characters to trim.  Defaults to spaces.
 
-  **Examples:**
-
+  **Examples**
     To trim whitespace from the start and end of the string '    abc   ':
 
     .. code-block::  custsqlite
@@ -3546,8 +3257,7 @@ trim(*str*, *\[chars\]*)
       ;SELECT trim('-+abc+-', '-+')
       abc
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3560,12 +3270,10 @@ typeof(*X*)
 
   Returns a string that indicates the datatype of the expression X: "null", "integer", "real", "text", or "blob".
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The expression to check.
 
-  **Examples:**
-
+  **Examples**
     To get the type of the number 1:
 
     .. code-block::  custsqlite
@@ -3591,12 +3299,10 @@ unicode(*X*)
 
   Returns the numeric unicode code point corresponding to the first character of the string X.
 
-  **Parameters:**
-
+  **Parameters**
     * **X\*** --- The string to examine.
 
-  **Examples:**
-
+  **Examples**
     To get the unicode code point for the first character of 'abc':
 
     .. code-block::  custsqlite
@@ -3604,8 +3310,7 @@ unicode(*X*)
       ;SELECT unicode('abc')
       97
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`upper`, :ref:`xpath`
 
 ----
@@ -3618,8 +3323,7 @@ unlikely(*value*)
 
   Short-hand for likelihood(X, 0.0625)
 
-  **Parameters:**
-
+  **Parameters**
     * **value\*** --- The boolean value to return
 
 
@@ -3633,12 +3337,10 @@ upper(*str*)
 
   Returns a copy of the given string with all ASCII characters converted to upper case.
 
-  **Parameters:**
-
+  **Parameters**
     * **str\*** --- The string to convert.
 
-  **Examples:**
-
+  **Examples**
     To uppercase the string 'aBc':
 
     .. code-block::  custsqlite
@@ -3646,8 +3348,7 @@ upper(*str*)
       ;SELECT upper('aBc')
       ABC
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`xpath`
 
 ----
@@ -3660,13 +3361,11 @@ xpath(*xpath*, *xmldoc*)
 
   A table-valued function that executes an xpath expression over an XML string and returns the selected values.
 
-  **Parameters:**
-
+  **Parameters**
     * **xpath\*** --- The XPATH expression to evaluate over the XML document.
     * **xmldoc\*** --- The XML document as a string.
 
-  **Examples:**
-
+  **Examples**
     To select the XML nodes on the path '/abc/def':
 
     .. code-block::  custsqlite
@@ -3692,8 +3391,7 @@ xpath(*xpath*, *xmldoc*)
         result     node_path    node_attr node_text 
       Hello ★ /abc/def/text() {}        Hello ★ 
 
-  **See Also:**
-
+  **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`
 
 ----
@@ -3706,8 +3404,7 @@ zeroblob(*N*)
 
   Returns a BLOB consisting of N bytes of 0x00.
 
-  **Parameters:**
-
+  **Parameters**
     * **N\*** --- The size of the BLOB.
 
 

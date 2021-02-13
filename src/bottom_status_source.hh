@@ -103,7 +103,7 @@ public:
 
     void update_hits(textview_curses *tc);
 
-    void update_loading(off_t off, size_t total);
+    void update_loading(file_off_t off, file_size_t total);
 
 private:
     status_field bss_prompt{1024, view_colors::VCR_STATUS};

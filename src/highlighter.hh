@@ -93,7 +93,7 @@ struct highlighter {
         return *this;
     };
 
-    highlighter &with_color(const rgb_color &fg, const rgb_color &bg) {
+    highlighter &with_color(const styling::color_unit &fg, const styling::color_unit &bg) {
         this->h_fg = fg;
         this->h_bg = bg;
 
@@ -102,11 +102,6 @@ struct highlighter {
 
     highlighter &with_nestable(bool val) {
         this->h_nestable = val;
-        return *this;
-    }
-
-    highlighter &with_semantic(bool val) {
-        this->h_semantic = val;
         return *this;
     }
 
@@ -121,15 +116,14 @@ struct highlighter {
 
     std::string h_pattern;
     view_colors::role_t h_role{view_colors::VCR_NONE};
-    rgb_color h_fg;
-    rgb_color h_bg;
+    styling::color_unit h_fg{styling::color_unit::make_empty()};
+    styling::color_unit h_bg{styling::color_unit::make_empty()};
     pcre *h_code;
     pcre_extra *h_code_extra;
     int h_attrs{-1};
     text_format_t h_text_format{text_format_t::TF_UNKNOWN};
     intern_string_t h_format_name;
     bool h_nestable{true};
-    bool h_semantic{false};
 };
 
 #endif

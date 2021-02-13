@@ -62,7 +62,7 @@ public:
      * @param millis The millisecond timestamp for the line.
      * @param l The logging level.
      */
-    logline(off_t off,
+    logline(file_off_t off,
             time_t t,
             uint16_t millis,
             log_level_t l,
@@ -80,7 +80,7 @@ public:
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
 
-    logline(off_t off,
+    logline(file_off_t off,
             const struct timeval &tv,
             log_level_t l,
             uint8_t mod = 0,
@@ -97,7 +97,7 @@ public:
     };
 
     /** @return The offset of the line in the file. */
-    off_t get_offset() const { return this->ll_offset; };
+    file_off_t get_offset() const { return this->ll_offset; };
 
     uint16_t get_sub_offset() const { return this->ll_sub_offset; };
 
@@ -283,8 +283,8 @@ public:
                  (this->ll_millis <= (rhs.tv_usec / 1000))));
     };
 private:
-    off_t    ll_offset;
-    time_t   ll_time;
+    file_off_t ll_offset;
+    time_t ll_time;
     unsigned int ll_millis : 10;
     unsigned int ll_opid : 6;
     unsigned int ll_sub_offset : 15;

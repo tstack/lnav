@@ -123,6 +123,9 @@ bool logfile::exists() const
     }
 
     if (::stat(this->lf_filename.c_str(), &st) == -1) {
+        log_error("%s: stat failed -- %s",
+                  this->lf_filename.c_str(),
+                  strerror(errno));
         return false;
     }
 
@@ -318,7 +321,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
         // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != nullptr;
         struct rusage begin_rusage;
-        off_t off;
+        file_off_t off;
         size_t begin_size = this->lf_index.size();
         bool record_rusage = this->lf_index.size() == 1;
         off_t begin_index_size = this->lf_index_size;
@@ -350,7 +353,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (!this->lf_index.empty()) {
                 auto last_line = this->lf_index.end();
                 --last_line;
-                off_t check_line_off = last_line->get_offset();
+                auto check_line_off = last_line->get_offset();
                 auto last_length = ssize_t(this->line_length(last_line, false));
 
                 auto read_result = this->lf_line_buffer.read_range({
@@ -384,6 +387,9 @@ logfile::rebuild_result_t logfile::rebuild_index()
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
 
             if (load_result.isErr()) {
+                log_error("%s: load next line failure -- %s",
+                          this->lf_filename.c_str(),
+                          load_result.unwrapErr().c_str());
                 this->close();
                 return RR_INVALID;
             }
@@ -418,6 +424,9 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
             auto read_result = this->lf_line_buffer.read_range(li.li_file_range);
             if (read_result.isErr()) {
+                log_error("%s:read failure -- %s",
+                          this->lf_filename.c_str(),
+                          read_result.unwrapErr().c_str());
                 this->close();
                 return RR_INVALID;
             }

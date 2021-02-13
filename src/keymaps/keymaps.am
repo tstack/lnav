@@ -1,0 +1,8 @@
+
+KEYMAP_FILES = \
+    $(srcdir)/%reldir%/de-keymap.json \
+    $(srcdir)/%reldir%/default-keymap.json \
+    $(srcdir)/%reldir%/fr-keymap.json \
+    $(srcdir)/%reldir%/uk-keymap.json \
+    $(srcdir)/%reldir%/us-keymap.json \
+    $()

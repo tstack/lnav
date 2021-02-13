@@ -99,15 +99,21 @@ bool is_archive(const fs::path& filename)
     archive_read_support_filter_all(arc);
     archive_read_support_format_all(arc);
     archive_read_support_format_raw(arc);
-    auto r = archive_read_open_filename(arc, filename.c_str(), 16384);
+    log_debug("read open %s", filename.c_str());
+    auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
     if (r == ARCHIVE_OK) {
         struct archive_entry *entry;
 
+        auto format_name = archive_format_name(arc);
+
+        log_debug("read next header %s %s", format_name, filename.c_str());
         if (archive_read_next_header(arc, &entry) == ARCHIVE_OK) {
+            log_debug("read next done %s", filename.c_str());
+
             static const auto RAW_FORMAT_NAME = string_fragment("raw");
             static const auto GZ_FILTER_NAME = string_fragment("gzip");
 
-            auto format_name = archive_format_name(arc);
+            format_name = archive_format_name(arc);
 
             if (RAW_FORMAT_NAME == format_name) {
                 auto filter_count = archive_filter_count(arc);

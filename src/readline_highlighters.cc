@@ -404,9 +404,9 @@ void readline_command_highlighter(attr_line_t &al, int x)
             attr_t color_hint_attrs = vc.attrs_for_role(view_colors::VCR_COLOR_HINT);
             int pnum = PAIR_NUMBER(color_hint_attrs);
 
-            rgb_color::from_str(hash_color).then([&](const auto& rgb_fg) {
+            styling::color_unit::from_str(hash_color).then([&](const auto& rgb_fg) {
                 pnum -= 1;
-                vc.ensure_color_pair(pnum, rgb_fg, rgb_color{});
+                vc.ensure_color_pair(pnum, rgb_fg, styling::color_unit::make_empty());
 
                 al.get_attrs().emplace_back(
                     line_range{cap->c_begin, cap->c_begin + 1},

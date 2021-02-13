@@ -1,0 +1,2 @@
+[restructuredtext parser]
+syntax_highlight = short

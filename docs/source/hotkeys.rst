@@ -1,6 +1,4 @@
 
-.. include:: kbd.rst
-
 .. _hotkeys:
 
 Hotkey Reference
@@ -21,86 +19,86 @@ Spatial Navigation
      -
      -
      - Command
-   * - |ks| Space |ke|
-     - |ks| PgDn |ke|
+   * - :kbd:`Space`
+     - :kbd:`PgDn`
      -
      - Down a page
-   * - |ks| b |ke|
-     - |ks| Backspace |ke|
-     - |ks| PgUp |ke|
+   * - :kbd:`b`
+     - :kbd:`Backspace`
+     - :kbd:`PgUp`
      - Up a page
-   * - |ks| j |ke|
-     - |ks| Return |ke|
-     - |ks| ↓ |ke|
+   * - :kbd:`j`
+     - :kbd:`Return`
+     - :kbd:`↓`
      - Down a line
-   * - |ks| k |ke|
-     - |ks| ↑ |ke|
+   * - :kbd:`k`
+     - :kbd:`↑`
      -
      - Up a line
-   * - |ks| h |ke|
-     - |ks| ← |ke|
+   * - :kbd:`h`
+     - :kbd:`←`
      -
      - Left half a page.  In the log view, pressing left while at the start of
        the message text will reveal the source file name for each line.
        Pressing again will reveal the full path.
-   * - |ks| Shift |ke| + |ks| h |ke|
-     - |ks| Shift |ke| + |ks| ← |ke|
+   * - :kbd:`Shift` + :kbd:`h`
+     - :kbd:`Shift` + :kbd:`←`
      -
      - Left ten columns
-   * - |ks| l |ke|
-     - |ks| → |ke|
+   * - :kbd:`l`
+     - :kbd:`→`
      -
      - Right half a page
-   * - |ks| Shift |ke| + |ks| l |ke|
-     - |ks| Shift |ke| + |ks| → |ke|
+   * - :kbd:`Shift` + :kbd:`l`
+     - :kbd:`Shift` + :kbd:`→`
      -
      - Right ten columns
-   * - |ks| Home |ke|
-     - |ks| g |ke|
+   * - :kbd:`Home`
+     - :kbd:`g`
      -
      - Top of the view
-   * - |ks| End |ke|
-     - |ks| G |ke|
+   * - :kbd:`End`
+     - :kbd:`G`
      -
      - Bottom of the view
-   * - |ks| e |ke|
-     - |ks| Shift |ke| + |ks| e |ke|
+   * - :kbd:`e`
+     - :kbd:`Shift` + :kbd:`e`
      -
      - Next/previous error
-   * - |ks| w |ke|
-     - |ks| Shift |ke| + |ks| w |ke|
+   * - :kbd:`w`
+     - :kbd:`Shift` + :kbd:`w`
      -
      - Next/previous warning
-   * - |ks| n |ke|
-     - |ks| Shift |ke| + |ks| n |ke|
+   * - :kbd:`n`
+     - :kbd:`Shift` + :kbd:`n`
      -
      - Next/previous search hit
-   * - |ks| > |ke|
-     - |ks| < |ke|
+   * - :kbd:`>`
+     - :kbd:`<`
      -
      - Next/previous search hit (horizontal)
-   * - |ks| f |ke|
-     - |ks| Shift |ke| + |ks| f |ke|
+   * - :kbd:`f`
+     - :kbd:`Shift` + :kbd:`f`
      -
      - Next/previous file
-   * - |ks| u |ke|
-     - |ks| Shift |ke| + |ks| u |ke|
+   * - :kbd:`u`
+     - :kbd:`Shift` + :kbd:`u`
      - 
      - Next/previous bookmark
-   * - |ks| o |ke|
-     - |ks| Shift |ke| + |ks| o |ke|
+   * - :kbd:`o`
+     - :kbd:`Shift` + :kbd:`o`
      -
      - Forward/backward through log messages with a matching "opid" field
-   * - |ks| y |ke|
-     - |ks| Shift |ke| + |ks| y |ke|
+   * - :kbd:`y`
+     - :kbd:`Shift` + :kbd:`y`
      -
-     - Next/prevous SQL result
-   * - |ks| s |ke|
-     - |ks| Shift |ke| + |ks| s |ke|
+     - Next/previous SQL result
+   * - :kbd:`s`
+     - :kbd:`Shift` + :kbd:`s`
      -
-     - Next/prevous slow down in the log message rate
-   * - |ks| { |ke|
-     - |ks| } |ke|
+     - Next/previous slow down in the log message rate
+   * - :kbd:`{`
+     - :kbd:`}`
      -
      - Previous/next location in history
 
@@ -114,21 +112,24 @@ Chronological Navigation
    * - Keypress
      -
      - Command
-   * - |ks| d |ke|
-     - |ks| Shift |ke| + |ks| d |ke|
+   * - :kbd:`d`
+     - :kbd:`Shift` + :kbd:`d`
      - Forward/backward 24 hours
-   * - |ks| 1 |ke| - |ks| 6 |ke|
-     - |ks| Shift |ke| + |ks| 1 |ke| - |ks| 6 |ke|
+   * - :kbd:`1` - :kbd:`6`
+     - :kbd:`Shift` + :kbd:`1` - :kbd:`6`
      - Next/previous n'th ten minute of the hour
-   * - |ks| 7 |ke|
-     - |ks| 8 |ke|
+   * - :kbd:`7`
+     - :kbd:`8`
      - Previous/next minute
-   * - |ks| 0 |ke|
-     - |ks| Shift |ke| + |ks| 0 |ke|
+   * - :kbd:`0`
+     - :kbd:`Shift` + :kbd:`0`
      - Next/previous day
-   * - |ks| r |ke|
-     - |ks| Shift |ke| + |ks| r |ke|
+   * - :kbd:`r`
+     - :kbd:`Shift` + :kbd:`r`
      - Forward/backward by the relative time that was last used with the goto command.
+
+
+.. _hotkeys_bookmarks:
 
 Bookmarks
 ---------
@@ -139,17 +140,17 @@ Bookmarks
 
    * - Keypress
      - Command
-   * - |ks| m |ke|
+   * - :kbd:`m`
      - Mark/unmark the top line
-   * - |ks| Shift |ke| + |ks| m |ke|
+   * - :kbd:`Shift` + :kbd:`m`
      - Mark/unmark the range of lines from the last marked to the top
-   * - |ks| Shift |ke| + |ks| j |ke|
+   * - :kbd:`Shift` + :kbd:`j`
      - Mark/unmark the next line after the previously marked
-   * - |ks| Shift |ke| + |ks| k |ke|
+   * - :kbd:`Shift` + :kbd:`k`
      - Mark/unmark the previous line
-   * - |ks| c |ke|
+   * - :kbd:`c`
      - Copy marked lines to the clipboard
-   * - |ks| Shift |ke| + |ks| c |ke|
+   * - :kbd:`Shift` + :kbd:`c`
      - Clear marked lines
 
 Display
@@ -161,51 +162,51 @@ Display
 
    * - Keypress
      - Command
-   * - |ks| ? |ke|
+   * - :kbd:`?`
      - View/leave builtin help
-   * - |ks| q |ke|
+   * - :kbd:`q`
      - Return to the previous view/quit
-   * - |ks| Shift |ke| + |ks| q |ke|
+   * - :kbd:`Shift` + :kbd:`q`
      - Return to the previous view/quit while matching the top times of the two views
-   * - |ks| a |ke|
+   * - :kbd:`a`
      - Restore the view that was previously popped with 'q/Q'
-   * - |ks| Shift |ke| + |ks| a |ke|
+   * - :kbd:`Shift` + :kbd:`a`
      - Restore the view that was previously popped with 'q/Q' and match the top times of the views
-   * - |ks| Shift |ke| + |ks| p |ke|
+   * - :kbd:`Shift` + :kbd:`p`
      - Switch to/from the pretty-printed view of the displayed log or text files
-   * - |ks| Shift |ke| + |ks| t |ke|
+   * - :kbd:`Shift` + :kbd:`t`
      - Display elapsed time between lines
-   * - |ks| t |ke|
+   * - :kbd:`t`
      - Switch to/from the text file view
-   * - |ks| i |ke|
+   * - :kbd:`i`
      - Switch to/from the histogram view
-   * - |ks| Shift |ke| + |ks| i |ke|
+   * - :kbd:`Shift` + :kbd:`i`
      - Switch to/from the histogram view 
-   * - |ks| v |ke|
+   * - :kbd:`v`
      - Switch to/from the SQL result view
-   * - |ks| Shift |ke| + |ks| v |ke|
+   * - :kbd:`Shift` + :kbd:`v`
      - Switch to/from the SQL result view and move to the corresponding in the
        log_line column
-   * - |ks| p |ke|
+   * - :kbd:`p`
      - Toggle the display of the log parser results
-   * - |ks| Tab |ke|
+   * - :kbd:`Tab`
      - In the log/text views, focus on the configuration panel for editing
        filters and examining the list of loaded files.  In the SQL result view,
        cycle through columns to display as bar graphs
-   * - |ks| Ctrl |ke| + |ks| l |ke|
+   * - :kbd:`Ctrl` + :kbd:`l`
      - Switch to lo-fi mode.  The displayed log lines will be dumped to the
        terminal without any decorations so they can be copied easily.
-   * - |ks| Ctrl |ke| + |ks| w |ke|
+   * - :kbd:`Ctrl` + :kbd:`w`
      - Toggle word-wrap.
-   * - |ks| Ctrl |ke| + |ks| p |ke|
+   * - :kbd:`Ctrl` + :kbd:`p`
      - Show/hide the data preview panel that may be opened when entering
        commands or SQL queries.
-   * - |ks| Ctrl |ke| + |ks| f |ke|
+   * - :kbd:`Ctrl` + :kbd:`f`
      - Toggle the enabled/disabled state of all filters in the current view.
-   * - |ks| x |ke|
+   * - :kbd:`x`
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.
-   * - |ks| = |ke|
+   * - :kbd:`=`
      - Pause/unpause loading of new file data.
 
 Session
@@ -217,11 +218,11 @@ Session
 
    * - Keypress
      - Command
-   * - |ks| Ctrl |ke| + |ks| R |ke|
+   * - :kbd:`Ctrl` + :kbd:`R`
      - Reset current session.
 
-Query
------
+Query Prompts
+-------------
 
 .. list-table::
    :header-rows: 1
@@ -229,15 +230,15 @@ Query
 
    * - Keypress
      - Command
-   * - |ks| / |ke|
+   * - :kbd:`/`
      - Search for lines matching a regular expression
-   * - |ks| ; |ke|
-     - Execute an SQL query
-   * - |ks| : |ke|
+   * - :kbd:`;`
+     - Open the :ref:`sql-ext` to execute SQL statements/queries
+   * - :kbd:`:`
      - Execute an internal command, see :ref:`commands` for more information
-   * - |ks| \| |ke|
-     - Execute an lnav script located in a format directory.
-   * - |ks| Ctrl |ke| + |ks| ] |ke|
+   * - :kbd:`\|`
+     - Execute an lnav script located in a format directory
+   * - :kbd:`Ctrl` + :kbd:`]`
      - Abort the prompt
 
 Customizing

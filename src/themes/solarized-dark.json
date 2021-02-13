@@ -20,11 +20,13 @@
                     "violet":    "#6c71c4",
                     "blue":      "#268bd2",
                     "cyan":      "#2aa198",
-                    "green":     "#859900"
+                    "green":     "#859900",
+                    "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$base03"
+                        "background-color": "$base03",
+                        "color": "semantic()"
                     },
                     "text": {
                         "color": "$base0",

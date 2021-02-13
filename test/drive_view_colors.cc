@@ -39,11 +39,10 @@ class test_colors : public view_curses {
 
 public:
 	test_colors() 
-		: tc_window(NULL) {
-
+		: tc_window(nullptr) {
 	}
 
-	void do_update(void) {
+	void do_update() override {
 		view_colors &vc = view_colors::singleton();
 		int lpc;
 
@@ -54,21 +53,16 @@ public:
 			line_range lr;
 
 			snprintf(label, sizeof(label), "This is line: %d", lpc);
-            attrs = view_colors::singleton().attrs_for_ident(label);
+            attrs = vc.attrs_for_ident(label);
 			al = label;
-			al.get_attrs().push_back(string_attr(
+			al.get_attrs().emplace_back(
 				line_range(0, -1),
 				&view_curses::VC_STYLE,
 				attrs
-			));
+			);
 			lr.lr_start = 0;
 			lr.lr_end = 40;
-			this->mvwattrline(this->tc_window,
-                              lpc,
-                              0,
-                              al,
-                              lr,
-                              view_colors::VCR_TEXT);
+			test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
 		}
 
 		attr_line_t al;
@@ -76,14 +70,9 @@ public:
 
 		al = "before <123> after";
 		al.with_attr({line_range{8, 11}, &VC_STYLE,
-					  (int64_t) vc.ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
+					  (int64_t) view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
 		al.with_attr({line_range{8, 11}, &VC_STYLE, A_REVERSE});
-		this->mvwattrline(this->tc_window,
-						  lpc,
-						  0,
-						  al,
-						  lr,
-						  view_colors::VCR_TEXT);
+		test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
 	};
 
 	WINDOW *tc_window;
@@ -107,7 +96,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	view_colors::singleton().init();
+	view_colors::init();
 	curs_set(0);
 	tc.tc_window = win;
 	tc.do_update();

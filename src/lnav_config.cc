@@ -459,10 +459,6 @@ static struct json_path_container global_var_handlers = {
 
 static struct json_path_container style_config_handlers =
     json_path_container{
-        yajlpp::property_handler("semantic")
-            .with_description(
-                "Pick a color based on the text being highlighted")
-            .FOR_FIELD(style_config, sc_semantic),
         yajlpp::property_handler("color")
             .with_synopsis("#hex|color_name")
             .with_description(

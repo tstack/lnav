@@ -120,7 +120,7 @@ struct date_time_scanner {
                      struct timeval &tv_out,
                      bool convert_local = true);
 
-    size_t ftime(char *dst, size_t len, const struct exttm &tm);;
+    size_t ftime(char *dst, size_t len, const struct exttm &tm) const;
 
     bool convert_to_timeval(const char *time_src,
                             ssize_t time_len,

@@ -211,3 +211,18 @@ short term_color_palette::match_color(const lab_color &to_match)
 
     return lowest_id;
 }
+
+namespace styling {
+
+Result<color_unit, std::string> color_unit::from_str(const string_fragment &sf)
+{
+    if (sf == "semantic()") {
+        return Ok(color_unit{ semantic{} });
+    }
+
+    auto retval = TRY(rgb_color::from_str(sf));
+
+    return Ok(color_unit{ retval });
+}
+
+}

@@ -631,7 +631,7 @@ struct json_path_handler : public json_path_handler_base {
             yajlpp_generator gen(handle);
             relative_time rt;
 
-            rt.from_timeval({ field.count() });
+            rt.from_timeval({ field.count(), 0 });
             return gen(rt.to_string());
         };
         this->jph_field_getter = [args...](void *root, nonstd::optional<std::string> name) {

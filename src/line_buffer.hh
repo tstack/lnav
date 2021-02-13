@@ -178,7 +178,7 @@ public:
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */
-    ssize_t get_file_size() const { return this->lb_file_size; };
+    file_ssize_t get_file_size() const { return this->lb_file_size; };
 
     bool is_pipe() const {
         return !this->lb_seekable;
@@ -192,7 +192,7 @@ public:
         return this->lb_gz_file || this->lb_bz_file;
     };
 
-    off_t get_read_offset(off_t off) const
+    file_off_t get_read_offset(file_off_t off) const
     {
         if (this->is_compressed()) {
             return this->lb_compressed_offset;
@@ -202,7 +202,7 @@ public:
         }
     };
 
-    bool is_data_available(off_t off, off_t stat_size) const {
+    bool is_data_available(file_off_t off, file_off_t stat_size) const {
         if (this->is_compressed()) {
             return (this->lb_file_size == -1 || off < this->lb_file_size);
         }
@@ -253,10 +253,10 @@ private:
      * @param off The file offset to check for in the buffer.
      * @return True if the given offset is cached in the buffer.
      */
-    bool in_range(off_t off) const
+    bool in_range(file_off_t off) const
     {
         return this->lb_file_offset <= off &&
-               off < (int)(this->lb_file_offset + this->lb_buffer_size);
+               off < (this->lb_file_offset + this->lb_buffer_size);
     };
 
     void resize_buffer(size_t new_max);
@@ -273,7 +273,7 @@ private:
      * @param start The file offset of the start of the line.
      * @param max_length The amount of data to be cached in the buffer.
      */
-    void ensure_available(off_t start, ssize_t max_length);
+    void ensure_available(file_off_t start, ssize_t max_length);
 
     /**
      * Fill the buffer with the given range of data from the file.
@@ -283,7 +283,7 @@ private:
      * @param max_length The maximum amount of data to read from the file.
      * @return True if any data was read from the file.
      */
-    bool fill_range(off_t start, ssize_t max_length);
+    bool fill_range(file_off_t start, ssize_t max_length);
 
     /**
      * After a successful fill, the cached data can be retrieved with this
@@ -295,9 +295,9 @@ private:
      * @return A pointer to the start of the cached data in the internal
      * buffer.
      */
-    char *get_range(off_t start, ssize_t &avail_out) const
+    char *get_range(file_off_t start, file_ssize_t &avail_out) const
     {
-        off_t buffer_offset = start - this->lb_file_offset;
+        auto buffer_offset = start - this->lb_file_offset;
         char *retval;
 
         require(buffer_offset >= 0);
@@ -314,16 +314,16 @@ private:
     auto_fd lb_fd;              /*< The file to read data from. */
     gz_indexed  lb_gz_file;     /*< File reader for gzipped files. */
     bool    lb_bz_file;         /*< Flag set for bzip2 compressed files. */
-    off_t   lb_compressed_offset; /*< The offset into the compressed file. */
+    file_off_t   lb_compressed_offset; /*< The offset into the compressed file. */
 
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
 
-    ssize_t lb_file_size;       /*<
+    file_ssize_t lb_file_size;  /*<
                                  * The size of the file.  When lb_fd refers to
                                  * a pipe, this is set to the amount of data
                                  * read from the pipe when EOF is reached.
                                  */
-    off_t lb_file_offset;       /*<
+    file_off_t lb_file_offset;  /*<
                                  * Data cached in the buffer comes from this
                                  * offset in the file.
                                  */
@@ -332,6 +332,6 @@ private:
     ssize_t lb_buffer_max;      /*< The amount of allocated memory for the
                                  *  buffer. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
-    off_t  lb_last_line_offset; /*< */
+    file_off_t  lb_last_line_offset; /*< */
 };
 #endif

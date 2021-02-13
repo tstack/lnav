@@ -319,7 +319,7 @@ line_buffer::~line_buffer()
 
 void line_buffer::set_fd(auto_fd &fd)
 {
-    off_t newoff = 0;
+    file_off_t newoff = 0;
 
     if (this->lb_gz_file) {
         this->lb_gz_file.close();
@@ -411,14 +411,14 @@ void line_buffer::resize_buffer(size_t new_max)
     }
 }
 
-void line_buffer::ensure_available(off_t start, ssize_t max_length)
+void line_buffer::ensure_available(file_off_t start, ssize_t max_length)
 {
     ssize_t prefill, available;
 
     require(max_length <= MAX_LINE_BUFFER_SIZE);
 
     if (this->lb_file_size != -1) {
-        if (start + (off_t)max_length > this->lb_file_size) {
+        if (start + (file_off_t)max_length > this->lb_file_size) {
             max_length = (this->lb_file_size - start);
         }
     }
@@ -428,7 +428,7 @@ void line_buffer::ensure_available(off_t start, ssize_t max_length)
      * after.
      */
     if (start < this->lb_file_offset ||
-        start > (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
+        start > (file_off_t)(this->lb_file_offset + this->lb_buffer_size)) {
         /*
          * The request is outside the cached range, need to reload the
          * whole thing.
@@ -444,7 +444,7 @@ void line_buffer::ensure_available(off_t start, ssize_t max_length)
              */
             this->lb_file_offset = this->lb_file_size -
                                    std::min(this->lb_file_size,
-                                            this->lb_buffer_max);
+                                            (file_ssize_t) this->lb_buffer_max);
         }
         else {
             this->lb_file_offset = start;
@@ -483,7 +483,7 @@ void line_buffer::ensure_available(off_t start, ssize_t max_length)
     }
 }
 
-bool line_buffer::fill_range(off_t start, ssize_t max_length)
+bool line_buffer::fill_range(file_off_t start, ssize_t max_length)
 {
     bool retval = false;
 
@@ -530,7 +530,7 @@ bool line_buffer::fill_range(off_t start, ssize_t max_length)
                 lock_hack::guard guard;
                 char             scratch[32 * 1024];
                 BZFILE *         bz_file;
-                off_t            seek_to;
+                file_off_t       seek_to;
                 int              bzfd;
 
                 /*
@@ -602,7 +602,7 @@ bool line_buffer::fill_range(off_t start, ssize_t max_length)
             if (!this->lb_seekable) {
                 this->lb_file_size = this->lb_file_offset + this->lb_buffer_size;
             }
-            if (start < (off_t) this->lb_file_size) {
+            if (start < (file_off_t) this->lb_file_size) {
                 retval = true;
             }
 
@@ -763,7 +763,7 @@ Result<shared_buffer_ref, std::string> line_buffer::read_range(const file_range 
 {
     shared_buffer_ref retval;
     char *line_start;
-    ssize_t avail;
+    file_ssize_t avail;
 
     if (this->lb_last_line_offset != -1 &&
         fr.fr_offset > this->lb_last_line_offset) {

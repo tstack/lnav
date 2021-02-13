@@ -44,7 +44,6 @@ highlighter::highlighter(const highlighter &other)
     this->h_text_format = other.h_text_format;
     this->h_format_name = other.h_format_name;
     this->h_nestable = other.h_nestable;
-    this->h_semantic = other.h_semantic;
 }
 
 highlighter &highlighter::operator=(const highlighter &other)
@@ -70,7 +69,6 @@ highlighter &highlighter::operator=(const highlighter &other)
     this->h_attrs = other.h_attrs;
     this->h_text_format = other.h_text_format;
     this->h_nestable = other.h_nestable;
-    this->h_semantic = other.h_semantic;
 
     return *this;
 }
@@ -138,25 +136,6 @@ void highlighter::annotate(attr_line_t &al, int start) const
                 if (this->h_attrs != -1) {
                     attrs = this->h_attrs;
                 }
-                if (this->h_semantic) {
-                    bool found_color = false;
-
-                    if (str[lr.lr_start] == '#' &&
-                        (lr.length() == 4 || lr.length() == 7)) {
-                        auto fg_res = rgb_color::from_str(
-                            string_fragment(str.data(), lr.lr_start, lr.lr_end));
-                        if (fg_res.isOk()) {
-                            sa.emplace_back(lr,
-                                            &view_curses::VC_FOREGROUND,
-                                            vc.match_color(fg_res.unwrap()));
-                            found_color = true;
-                        }
-                    }
-                    if (!found_color) {
-                        attrs |= vc.attrs_for_ident(&str[lr.lr_start],
-                                                    lr.length());
-                    }
-                }
                 if (!this->h_fg.empty()) {
                     sa.emplace_back(lr,
                                     &view_curses::VC_FOREGROUND,
@@ -172,7 +151,9 @@ void highlighter::annotate(attr_line_t &al, int start) const
                                     &view_curses::VC_ROLE,
                                     this->h_role);
                 }
-                sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+                if (attrs) {
+                    sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+                }
 
                 off = matches[1];
             }

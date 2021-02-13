@@ -18,16 +18,17 @@ Contents:
    usage
    cookbook
    howitworks
+   config
    cli
    ui
    hotkeys
-   config
    formats
    sessions
    commands
    sqlext
    sqltab
    data
+   faq
 
 
 Indices and tables

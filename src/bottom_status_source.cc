@@ -159,9 +159,9 @@ void bottom_status_source::update_hits(textview_curses *tc)
     this->update_marks(tc);
 }
 
-void bottom_status_source::update_loading(off_t off, size_t total)
+void bottom_status_source::update_loading(file_off_t off, file_size_t total)
 {
-    status_field &sf = this->bss_fields[BSF_LOADING];
+    auto &sf = this->bss_fields[BSF_LOADING];
 
     require(off >= 0);
 

@@ -32,21 +32,27 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "log_level.hh"
 #include "base/result.h"
 #include "base/intern_string.hh"
+#include "mapbox/variant.hpp"
 
 struct rgb_color {
     static Result<rgb_color, std::string> from_str(const string_fragment &sf);
 
     explicit rgb_color(short r = -1, short g = -1, short b = -1)
-        : rc_r(r), rc_g(g), rc_b(b) {
+        : rc_r(r), rc_g(g), rc_b(b)
+    {
     }
 
-    bool empty() const {
-        return this->rc_r == -1 && this->rc_g == -1 && this->rc_b == -1;
+    bool empty() const
+    {
+        return this->rc_r == -1 &&
+               this->rc_g == -1 &&
+               this->rc_b == -1;
     }
 
     bool operator==(const rgb_color &rhs) const;
@@ -115,8 +121,36 @@ struct term_color_palette {
     std::vector<term_color> tc_palette;
 };
 
+namespace styling {
+
+struct semantic {};
+
+class color_unit {
+public:
+    static Result<color_unit, std::string> from_str(const string_fragment& sf);
+
+    static color_unit make_empty() {
+        return { rgb_color{} };
+    }
+
+    bool empty() const {
+        return this->cu_value.match(
+            [](semantic) { return false; },
+            [](const rgb_color& rc) { return rc.empty(); }
+        );
+    }
+
+    using variants_t = mapbox::util::variant<semantic, rgb_color>;
+
+    variants_t cu_value;
+
+private:
+    color_unit(variants_t value) : cu_value(std::move(value)) {}
+};
+
+}
+
 struct style_config {
-    bool sc_semantic{false};
     std::string sc_color;
     std::string sc_background_color;
     bool sc_underline{false};

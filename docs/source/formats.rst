@@ -62,6 +62,8 @@ fields:
     can be used to limit which files a format is applied to in case there is
     a potential for conflicts.
 
+  .. _format_regex:
+
   :regex: This object contains sub-objects that describe the message formats
     to match in a plain log file.  Log files that contain JSON messages should
     not specify this field.
@@ -217,6 +219,8 @@ fields:
           ;SELECT :sc_status || ' (' || (
               SELECT message FROM http_status_codes
                   WHERE status = :sc_status) || ') '
+
+  .. _format_sample:
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the
@@ -377,6 +381,7 @@ Executing the format file should then install it automatically:
     $ ./myformat.json
     info: installed: /home/example/.lnav/formats/installed/myformat_log.json
 
+.. _format_order:
 
 Format Order When Scanning a File
 ---------------------------------

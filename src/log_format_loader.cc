@@ -506,7 +506,7 @@ static struct json_path_container value_def_handlers = {
     yajlpp::property_handler("foreign-key")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be treated as a foreign key for row in another table")
-        .FOR_FIELD(external_log_format::value_def, vd_foreign_key),
+        .for_field(&external_log_format::value_def::vd_foreign_key),
 
     yajlpp::property_handler("hidden")
         .with_synopsis("<bool>")

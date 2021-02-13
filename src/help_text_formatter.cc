@@ -569,7 +569,7 @@ void format_help_text_for_rst(const help_text &ht,
     }
 
     if (param_count > 0) {
-        fprintf(rst_file, "  **Parameters:**\n\n");
+        fprintf(rst_file, "  **Parameters**\n");
         for (auto &param: ht.ht_parameters) {
             if (param.ht_summary && param.ht_summary[0]) {
                 fprintf(rst_file, "    * **%s%s** --- %s\n",
@@ -584,7 +584,7 @@ void format_help_text_for_rst(const help_text &ht,
         prefix = ";";
     }
     if (!ht.ht_example.empty()) {
-        fprintf(rst_file, "  **Examples:**\n\n");
+        fprintf(rst_file, "  **Examples**\n");
         for (auto &example: ht.ht_example) {
             fprintf(rst_file, "    %s:\n\n", example.he_description);
             fprintf(rst_file, "    .. code-block::  %s\n\n",
@@ -616,7 +616,7 @@ void format_help_text_for_rst(const help_text &ht,
         }
         stable_sort(related_refs.begin(), related_refs.end());
 
-        fmt::print(rst_file, "  **See Also:**\n\n    {}\n",
+        fmt::print(rst_file, "  **See Also**\n    {}\n",
                    fmt::join(related_refs, ", "));
     }
 

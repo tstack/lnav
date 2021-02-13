@@ -9,40 +9,38 @@ S  -1 ┋                                                                       
 A      └ normal, normal, normal
 CSI Erase all
 S   1 ┋This is line: 0                                                                 ┋
-A      └ bold                                  │
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   2 ┋This is line: 1                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   3 ┋This is line: 2                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   4 ┋This is line: 3                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   5 ┋This is line: 4                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   6 ┋This is line: 5                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   7 ┋This is line: 6                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   8 ┋This is line: 7                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S   9 ┋This is line: 8                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S  10 ┋This is line: 9                                                                 ┋
-A      ········································└ carriage-return
+A      ···············└ carriage-return
 S  11 ┋This is line: 10                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  12 ┋This is line: 11                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  13 ┋This is line: 12                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  14 ┋This is line: 13                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  15 ┋This is line: 14                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  16 ┋This is line: 15                                                                ┋
-A      ········································└ carriage-return
+A      ················└ carriage-return
 S  17 ┋before <123> after                                                              ┋
-A      └ normal│  │
 A      ········└ fg(#008080), inverse
 A      ···········└ normal
 S  17 ┋                                                                                ┋

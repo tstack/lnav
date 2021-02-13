@@ -1,0 +1,141 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "ui": {
+        "theme-defs": {
+            "grayscale": {
+                "vars": {
+                    "black": "#2d2a2e",
+                    "red": "#f92772",
+                    "green": "#a7e22e",
+                    "yellow": "#fe9720",
+                    "blue": "#5394ec",
+                    "magenta": "#ae81ff",
+                    "cyan": "#66d9ee",
+                    "white": "#f6f6f6",
+                    "plaintext": "#ccc"
+                },
+                "styles": {
+                    "identifier": {
+                        "background-color": "",
+                        "color": "",
+                        "bold": true
+                    },
+                    "text": {
+                        "color": "",
+                        "background-color": ""
+                    },
+                    "alt-text": {
+                        "color": "",
+                        "background-color": "",
+                        "bold": true
+                    },
+                    "ok": {
+                        "color": "$green",
+                        "bold": true
+                    },
+                    "error": {
+                        "color": "$red",
+                        "bold": true
+                    },
+                    "warning": {
+                        "color": "$yellow",
+                        "bold": true
+                    },
+                    "hidden": {
+                        "color": "$yellow",
+                        "bold": true
+                    },
+                    "adjusted-time": {
+                        "color": "$magenta"
+                    },
+                    "skewed-time": {
+                        "color": "$yellow"
+                    },
+                    "offset-time": {
+                        "color": "$cyan"
+                    },
+                    "invalid-msg": {
+                        "color": "$yellow"
+                    },
+                    "focused": {
+                        "color": "$black",
+                        "background-color": "$plaintext"
+                    },
+                    "disabled-focused": {
+                        "color": "$plaintext",
+                        "background-color": "#333"
+                    },
+                    "popup": {
+                        "color": "$plaintext",
+                        "background-color": "#626262"
+                    },
+                    "scrollbar": {
+                        "color": "$black",
+                        "background-color": "#888"
+                    }
+                },
+                "status-styles": {
+                    "disabled-title": {
+                        "color": "#5394ec",
+                        "background-color": "#353535",
+                        "bold": true
+                    },
+                    "title": {
+                        "color": "#f6f6f6",
+                        "background-color": "#8a8a8a",
+                        "bold": true
+                    },
+                    "subtitle": {
+                        "color": "#e4e4e4",
+                        "background-color": "#626262",
+                        "bold": true
+                    },
+                    "title-hotkey": {
+                        "color": "$black",
+                        "background-color": "#5394ec",
+                        "underline": true
+                    },
+                    "hotkey": {
+                        "color": "#fff",
+                        "background-color": "#353535",
+                        "underline": true
+                    },
+                    "text": {
+                        "color": "#f6f6f6",
+                        "background-color": "#353535"
+                    },
+                    "warn": {
+                        "color": "$yellow",
+                        "background-color": "#353535"
+                    },
+                    "alert": {
+                        "color": "$red",
+                        "background-color": "#353535"
+                    },
+                    "active": {
+                        "color": "$green",
+                        "background-color": "#353535"
+                    },
+                    "inactive": {
+                        "color": "#555",
+                        "background-color": "#2f2f2f"
+                    }
+                },
+                "log-level-styles": {
+                    "warning": {
+                        "color": "$yellow"
+                    },
+                    "error": {
+                        "color": "$red"
+                    },
+                    "critical": {
+                        "color": "$red"
+                    },
+                    "fatal": {
+                        "color": "$red"
+                    }
+                }
+            }
+        }
+    }
+}

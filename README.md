@@ -1,4 +1,4 @@
-![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)
+[![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)](https://github.com/tstack/lnav/actions?query=workflow%3Aci-build)
 [![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?branch=master)](https://coveralls.io/github/tstack/lnav?branch=master)
 [![lnav](https://snapcraft.io//lnav/badge.svg)](https://snapcraft.io/lnav)
 
@@ -15,6 +15,7 @@ no setup.
 
 - [Main Site](https://lnav.org)
 - [**Documentation**](https://lnav.readthedocs.io) on Read the Docs
+- [Architecture](ARCHITECTURE.md)
 
 ## Contributing
 

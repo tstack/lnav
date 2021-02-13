@@ -388,7 +388,9 @@ public:
 
     };
 
-    void logfile_indexing(const shared_ptr<logfile>& lf, off_t off, size_t total)
+    void logfile_indexing(const shared_ptr<logfile>& lf,
+                          file_off_t off,
+                          file_size_t total)
     {
         static sig_atomic_t index_counter = 0;
 

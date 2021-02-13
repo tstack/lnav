@@ -42,7 +42,7 @@ public:
 
     };
 
-    void logline_restart(const logfile &lf, size_t rollback_size) {
+    void logline_restart(const logfile &lf, file_size_t rollback_size) {
         for (auto &filter : this->lfo_filter_stack) {
             filter->revert_to_last(this->lfo_filter_state, rollback_size);
         }

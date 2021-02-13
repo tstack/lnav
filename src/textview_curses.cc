@@ -137,6 +137,12 @@ void textview_curses::reload_config(error_reporter &reporter)
         iter = this->tc_highlights.erase(iter);
     }
 
+    std::map<std::string, std::string> vars;
+    auto curr_theme_iter = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
+    if (curr_theme_iter != lnav_config.lc_ui_theme_defs.end()) {
+        vars = curr_theme_iter->second.lt_vars;
+    }
+
     for (const auto& theme_name : {DEFAULT_THEME_NAME, lnav_config.lc_ui_theme}) {
         auto theme_iter = lnav_config.lc_ui_theme_defs.find(theme_name);
 
@@ -171,20 +177,20 @@ void textview_curses::reload_config(error_reporter &reporter)
 
             fg1 = sc.sc_color;
             bg1 = sc.sc_background_color;
-            shlex(fg1).eval(fg_color, theme_iter->second.lt_vars);
-            shlex(bg1).eval(bg_color, theme_iter->second.lt_vars);
+            shlex(fg1).eval(fg_color, vars);
+            shlex(bg1).eval(bg_color, vars);
 
-            auto fg = rgb_color::from_str(fg_color)
+            auto fg = styling::color_unit::from_str(fg_color)
                 .unwrapOrElse([&](const auto& msg) {
                     reporter(&sc.sc_color, errmsg);
                     invalid = true;
-                    return rgb_color{};
+                    return styling::color_unit::make_empty();
                 });
-            auto bg = rgb_color::from_str(bg_color)
+            auto bg = styling::color_unit::from_str(bg_color)
                 .unwrapOrElse([&](const auto& msg) {
                     reporter(&sc.sc_background_color, errmsg);
                     invalid = true;
-                    return rgb_color{};
+                    return styling::color_unit::make_empty();
                 });
             if (invalid) {
                 continue;
@@ -200,8 +206,7 @@ void textview_curses::reload_config(error_reporter &reporter)
                 highlighter(code)
                     .with_pattern(hl_pair.second.hc_regex)
                     .with_attrs(attrs != 0 ? attrs : -1)
-                    .with_color(fg, bg)
-                    .with_semantic(sc.sc_semantic);
+                    .with_color(fg, bg);
         }
     }
 }

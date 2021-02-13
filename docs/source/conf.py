@@ -18,6 +18,7 @@ import sys, os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 this_dir = os.path.abspath('.')
 src_dir = os.path.join(this_dir, "..", "..", "src")
+sys.path.insert(0, this_dir)
 sys.path.insert(0, src_dir)
 
 import format2csv
@@ -216,21 +217,6 @@ class CustSqliteLexer(RegexLexer):
 
 lexers['custsqlite'] = CustSqliteLexer(startinline=True)
 
-class LnavCommandLexer(RegexLexer):
-    name = 'lnav'
-
-    flags = re.IGNORECASE
-    tokens = {
-        'root': [
-            (r'\s+', Whitespace),
-            (r':[\w\-]+', Keyword),
-            (r'\<[\w\-]+\>', Literal.String.Doc),
-            (r'.', Text),
-        ]
-    }
-
-lexers['lnav'] = LnavCommandLexer()
-
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -243,7 +229,9 @@ extensions = [
     "sphinx_rtd_theme",
     'sphinx-jsonschema',
     'sphinx-prompt',
+    '_ext.lnavlexer',
 ]
+import sphinx_rtd_theme
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -259,7 +247,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'lnav'
-copyright = u'2020, Tim Stack'
+copyright = u'2021, Tim Stack'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

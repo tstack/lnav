@@ -260,7 +260,13 @@ void view_curses::mvwattrline(WINDOW *window,
             if (!has_fg) {
                 memset(fg_color, -1, line_width_chars * sizeof(short));
             }
-            fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], (short) iter->sa_value.sav_int);
+            short attr_fg = iter->sa_value.sav_int;
+            if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
+                attr_fg = vc.color_for_ident(
+                    &line[iter->sa_range.lr_start],
+                    iter->sa_range.length());
+            }
+            fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], attr_fg);
             has_fg = true;
             continue;
         }
@@ -269,7 +275,13 @@ void view_curses::mvwattrline(WINDOW *window,
             if (!has_bg) {
                 memset(bg_color, -1, line_width_chars * sizeof(short));
             }
-            fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, (short) iter->sa_value.sav_int);
+            short attr_bg = iter->sa_value.sav_int;
+            if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
+                attr_bg = vc.color_for_ident(
+                    &line[iter->sa_range.lr_start],
+                    iter->sa_range.length());
+            }
+            fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, attr_bg);
             has_bg = true;
             continue;
         }
@@ -306,6 +318,24 @@ void view_curses::mvwattrline(WINDOW *window,
                 int x_pos = x + attr_range.lr_start;
                 int ch_width = min(awidth, (line_width_chars - attr_range.lr_start));
                 cchar_t row_ch[ch_width + 1];
+
+                if (attrs & (A_LEFT|A_RIGHT)) {
+                    short pair_fg, pair_bg;
+
+                    pair_content(color_pair, &pair_fg, &pair_bg);
+                    if (attrs & A_LEFT) {
+                        pair_fg = vc.color_for_ident(
+                            &line[iter->sa_range.lr_start],
+                            iter->sa_range.length());
+                    }
+                    if (attrs & A_RIGHT) {
+                        pair_bg = vc.color_for_ident(
+                            &line[iter->sa_range.lr_start],
+                            iter->sa_range.length());
+                    }
+                    color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
+                    attrs &= ~(A_LEFT|A_RIGHT);
+                }
 
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
                 for (int lpc = 0; lpc < ch_width; lpc++) {
@@ -535,7 +565,16 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
         init_pair(pair, fg, bg);
     }
 
-    return COLOR_PAIR(pair);
+    auto retval = COLOR_PAIR(pair);
+
+    if (fg == view_colors::MATCH_COLOR_SEMANTIC) {
+        retval |= A_LEFT;
+    }
+    if (bg == view_colors::MATCH_COLOR_SEMANTIC) {
+        retval |= A_RIGHT;
+    }
+
+    return retval;
 }
 
 pair<attr_t, attr_t> view_colors::to_attrs(
@@ -556,13 +595,13 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     shlex(fg1).eval(fg_color, lt.lt_vars);
     shlex(bg1).eval(bg_color, lt.lt_vars);
 
-    auto fg = rgb_color::from_str(fg_color).unwrapOrElse([&](const auto& msg) {
+    auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse([&](const auto& msg) {
         reporter(&sc.sc_color, msg);
-        return rgb_color{};
+        return styling::color_unit::make_empty();
     });
-    auto bg = rgb_color::from_str(bg_color).unwrapOrElse([&](const auto& msg) {
+    auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse([&](const auto& msg) {
         reporter(&sc.sc_background_color, msg);
-        return rgb_color{};
+        return styling::color_unit::make_empty();
     });
 
     attr_t retval1 = attr_for_colors(pair_base,
@@ -590,7 +629,7 @@ void view_colors::init_roles(const lnav_theme &lt,
     string err;
 
     if (COLORS == 256) {
-        const style_config &ident_sc = lt.lt_style_identifier;
+        const auto &ident_sc = lt.lt_style_identifier;
         int ident_bg = (lnav_config.lc_ui_default_colors ? -1 : COLOR_BLACK);
 
         if (!ident_sc.sc_background_color.empty()) {
@@ -673,6 +712,8 @@ void view_colors::init_roles(const lnav_theme &lt,
         this->vc_role_colors[VCR_TEXT].second |= A_DIM;
     }
     this->vc_role_colors[VCR_SEARCH] = make_pair(A_REVERSE, A_REVERSE);
+    this->vc_role_colors[VCR_IDENTIFIER] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_identifier, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_OK] = this->to_attrs(color_pair_base,
                                                   lt, lt.lt_style_ok,
                                                   lt.lt_style_text,
@@ -853,7 +894,7 @@ void view_colors::init_roles(const lnav_theme &lt,
     this->vc_role_colors[VCR_HIGH_THRESHOLD] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_high_threshold, lt.lt_style_text, reporter);
 
-    for (log_level_t level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
+    for (auto level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
          level < LEVEL__MAX;
          level = static_cast<log_level_t>(level + 1)) {
         auto level_iter = lt.lt_level_styles.find(level);
@@ -875,8 +916,8 @@ void view_colors::init_roles(const lnav_theme &lt,
 
 int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
 {
-    require(fg >= -1);
-    require(bg >= -1);
+    require(fg >= -100);
+    require(bg >= -100);
 
     auto index_pair = make_pair(fg, bg);
     auto existing = this->vc_dyn_pairs.find(index_pair);
@@ -902,38 +943,78 @@ int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
     return retval;
 }
 
-int view_colors::ensure_color_pair(int &pair_base, const rgb_color &rgb_fg, const rgb_color &rgb_bg)
+int view_colors::ensure_color_pair(int &pair_base,
+                                   const styling::color_unit &rgb_fg,
+                                   const styling::color_unit &rgb_bg)
 {
-    int fg = this->match_color(rgb_fg);
-    int bg = this->match_color(rgb_bg);
+    auto fg = this->match_color(rgb_fg);
+    auto bg = this->match_color(rgb_bg);
 
     return this->ensure_color_pair(pair_base, fg, bg);
 }
 
-int view_colors::match_color(const rgb_color &color)
+short view_colors::match_color(const styling::color_unit &color) const
 {
-    if (color.empty()) {
-        return -1;
-    }
+    return color.cu_value.match(
+        [](styling::semantic) {
+            return MATCH_COLOR_SEMANTIC;
+        },
+        [](const rgb_color& color) {
+            if (color.empty()) {
+                return MATCH_COLOR_DEFAULT;
+            }
 
-    return vc_active_palette->match_color(lab_color(color));
+            return vc_active_palette->match_color(lab_color(color));
+        }
+    );
 }
 
-attr_t view_colors::attrs_for_ident(const char *str, size_t len) const
+int view_colors::color_for_ident(const char *str, size_t len) const
 {
     unsigned long index = crc32(1, (const Bytef*)str, len);
-    attr_t retval;
+    int retval;
 
     if (COLORS >= 256) {
+        if (str[0] == '#' && (len == 4 || len == 7)) {
+            auto fg_res = styling::color_unit::from_str(string_fragment(str, 0, len));
+            if (fg_res.isOk()) {
+                return this->match_color(fg_res.unwrap());
+            }
+        }
+
         unsigned long offset = index % HI_COLOR_COUNT;
-        retval = COLOR_PAIR(VC_ANSI_END + offset);
+        auto cpair = COLOR_PAIR(VC_ANSI_END + offset);
 
         short fg, bg;
-        int pnum = PAIR_NUMBER(retval);
+        auto pnum = PAIR_NUMBER(cpair);
         pair_content(pnum, &fg, &bg);
+        retval = fg;
     }
     else {
-        retval = A_BOLD;
+        retval = -1;
+    }
+
+    return retval;
+}
+
+attr_t view_colors::attrs_for_ident(const char *str, size_t len)
+{
+    auto retval = this->attrs_for_role(VCR_IDENTIFIER);
+
+    if (retval & (A_LEFT|A_RIGHT)) {
+        auto color_pair = PAIR_NUMBER(retval);
+        short pair_fg, pair_bg;
+
+        pair_content(color_pair, &pair_fg, &pair_bg);
+        if (retval & A_LEFT) {
+            pair_fg = this->color_for_ident(str, len);
+        }
+        if (retval & A_RIGHT) {
+            pair_bg = this->color_for_ident(str, len);
+        }
+        color_pair = this->ensure_color_pair(pair_fg, pair_bg);
+        retval &= ~(A_COLOR|A_LEFT|A_RIGHT);
+        retval |= COLOR_PAIR(color_pair);
     }
 
     return retval;

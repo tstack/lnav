@@ -34,10 +34,14 @@
 
 #include "intern_string.hh"
 
+using file_off_t = int64_t;
+using file_size_t = uint64_t;
+using file_ssize_t = int64_t;
+
 class file_range {
 public:
-    off_t fr_offset{0};
-    ssize_t fr_size{0};
+    file_off_t fr_offset{0};
+    file_ssize_t fr_size{0};
 
     void clear() {
         this->fr_offset = 0;

@@ -3,13 +3,17 @@
     "ui": {
         "theme-defs": {
             "default": {
+                "vars": {
+                    "semantic_highlight_color": "semantic()"
+                },
                 "styles": {
                     "text": {
                         "color": "Silver",
                         "background-color": "Black"
                     },
                     "identifier": {
-                        "background-color": ""
+                        "background-color": "",
+                        "color": "semantic()"
                     },
                     "alt-text": {
                         "color": "Silver",
@@ -158,21 +162,21 @@
                 },
                 "highlights": {
                     "colors": {
-                        "pattern": "(?:#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3})",
+                        "pattern": "(?:#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}\\b)",
                         "style": {
-                            "semantic": true
+                            "color": "${semantic_highlight_color}"
                         }
                     },
                     "ipv4": {
                         "pattern": "\\b(?<!\\d\\.)\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b(?!\\.\\d)",
                         "style": {
-                            "semantic": true
+                            "color": "${semantic_highlight_color}"
                         }
                     },
                     "xml": {
                         "pattern": "</?([^ >=]+)[^>]*>",
                         "style": {
-                            "semantic": true
+                            "color": "${semantic_highlight_color}"
                         }
                     }
                 }

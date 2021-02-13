@@ -1,5 +1,7 @@
 
-.. include:: kbd.rst
+.. role:: lnavcmd(code)
+   :language: lnav
+   :class: highlight
 
 .. _commands:
 
@@ -7,13 +9,14 @@ Commands
 ========
 
 Commands provide access to some of the more advanced features in **lnav**, like
-filtering and "search tables".  You can activate the command prompt by
-pressing the |ks| : |ke| key.  At the prompt, you can start typing in the
-desired command and/or double-tap |ks| TAB |ke| to activate auto-completion
-and show the available commands.  To guide you in the usage of the commands,
-a help window will appear above the command prompt with an explanation of the
-command and its parameters (if it has any).  For example, the screenshot below
-shows the help for the :code:`:open` command:
+:ref:`filtering<filtering>` and
+:ref:`"search tables"<search_tables>`.  You can activate the command
+prompt by pressing the :kbd:`:` key.  At the prompt, you can start typing
+in the desired command and/or double-tap :kbd:`TAB` to activate
+auto-completion and show the available commands.  To guide you in the usage of
+the commands, a help window will appear above the command prompt with an
+explanation of the command and its parameters (if it has any).  For example,
+the screenshot below shows the help for the :code:`:open` command:
 
 .. figure:: open-help.png
    :align: center
@@ -22,7 +25,7 @@ shows the help for the :code:`:open` command:
 
 In addition to online help, many commands provide a preview of the effects that
 the command will have.  This preview will activate shortly after you have
-finished typing, but before you have pressed |ks| Enter |ke| to execute the
+finished typing, but before you have pressed :kbd:`Enter` to execute the
 command.  For example, the :code:`:open` command will show a preview of the
 first few lines of the file given as its argument:
 
@@ -31,7 +34,7 @@ first few lines of the file given as its argument:
 
    Screenshot of the preview shown for the :code:`:open` command.
 
-The :code:`:filter-out` command is another instance where the preview behavior
+The :lnavcmd:`:filter-out pattern` command is another instance where the preview behavior
 can help you craft the correct command-line.  This command takes a PCRE regular
 expression that specifies the log messages that should be filtered out of the
 view.  The preview for this command will highlight the portion of the log
@@ -58,7 +61,7 @@ an error message in the status bar, like so:
 
   Note that almost all commands support TAB-completion for their arguments.
   So, if you are in doubt as to what to type for an argument, you can double-
-  tap the |ks| TAB |ke| key to get suggestions.  For example, the
+  tap the :kbd:`TAB` key to get suggestions.  For example, the
   TAB-completion for the :code:`filter-in` command will suggest words that are
   currently displayed in the view.
 

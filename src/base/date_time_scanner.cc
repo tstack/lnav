@@ -34,7 +34,7 @@
 #include "date_time_scanner.hh"
 #include "ptimec.hh"
 
-size_t date_time_scanner::ftime(char *dst, size_t len, const exttm &tm)
+size_t date_time_scanner::ftime(char *dst, size_t len, const exttm &tm) const
 {
     off_t off = 0;
 

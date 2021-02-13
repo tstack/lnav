@@ -395,17 +395,15 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             continue;
         }
 
-        auto start = this->lss_token_value.c_str();
-        int id_attrs = vc.attrs_for_ident(&start[line_value.lv_origin.lr_start],
-                                          line_value.lv_origin.sublen(this->lss_token_value));
-
         line_range ident_range = line_value.lv_origin;
         if (this->lss_token_flags & RF_FULL) {
             ident_range = line_value.origin_in_full_msg(
                 this->lss_token_value.c_str(), this->lss_token_value.length());
         }
 
-        value_out.emplace_back(ident_range, &view_curses::VC_STYLE, id_attrs);
+        value_out.emplace_back(ident_range,
+                               &view_curses::VC_ROLE,
+                               view_colors::VCR_IDENTIFIER);
     }
 
     if (this->lss_token_shift_size) {

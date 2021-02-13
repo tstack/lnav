@@ -283,9 +283,6 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
         (int) filename_width + 3 + 4,
         (int) filename_width + 3 + 10,
     };
-    value_out.emplace_back(lr, &view_curses::VC_FOREGROUND, COLOR_WHITE);
-    lr.lr_start = lr.lr_end;
-    lr.lr_end += 2;
     value_out.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
 }
 

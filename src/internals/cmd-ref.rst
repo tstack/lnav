@@ -6,12 +6,10 @@
 
   Change the timestamps of the top file to be relative to the given date
 
-  **Parameters:**
-
+  **Parameters**
     * **timestamp\*** --- The new timestamp for the top line in the view
 
-  **Examples:**
-
+  **Examples**
     To set the top timestamp to a given date:
 
     .. code-block::  lnav
@@ -35,20 +33,17 @@
 
   Display a message in the alternate command position
 
-  **Parameters:**
-
+  **Parameters**
     * **msg\*** --- The message to display
 
-  **Examples:**
-
+  **Examples**
     To display 'Press t to switch to the text view' on the bottom right:
 
     .. code-block::  lnav
 
       :alt-msg Press t to switch to the text view
 
-  **See Also:**
-
+  **See Also**
     :ref:`echo`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -61,20 +56,17 @@
 
   Append marked lines in the current view to the given file
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to append to
 
-  **Examples:**
-
+  **Examples**
     To append marked lines to the file /tmp/interesting-lines.txt:
 
     .. code-block::  lnav
 
       :append-to /tmp/interesting-lines.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -87,8 +79,7 @@
 
   Clear the comment attached to the top log line
 
-  **See Also:**
-
+  **See Also**
     :ref:`comment`, :ref:`tag`
 
 ----
@@ -101,8 +92,7 @@
 
   Clear the filter expression
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -115,20 +105,17 @@
 
   Remove a previously set highlight regular expression
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression previously used with :highlight
 
-  **Examples:**
-
+  **Examples**
     To clear the highlight with the pattern 'foobar':
 
     .. code-block::  lnav
 
       :clear-highlight foobar
 
-  **See Also:**
-
+  **See Also**
     :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
 
 ----
@@ -163,20 +150,17 @@
 
   Attach a comment to the top log line
 
-  **Parameters:**
-
+  **Parameters**
     * **text\*** --- The comment text
 
-  **Examples:**
-
+  **Examples**
     To add the comment 'This is where it all went wrong' to the top line:
 
     .. code-block::  lnav
 
       :comment This is where it all went wrong
 
-  **See Also:**
-
+  **See Also**
     :ref:`clear_comment`, :ref:`tag`
 
 ----
@@ -189,13 +173,11 @@
 
   Read or write a configuration option
 
-  **Parameters:**
-
+  **Parameters**
     * **option\*** --- The path to the option to read or write
     * **value** --- The value to write.  If not given, the current value is returned
 
-  **Examples:**
-
+  **Examples**
     To read the configuration of the '/ui/clock-format' option:
 
     .. code-block::  lnav
@@ -208,8 +190,7 @@
 
       :config /ui/dim-text false
 
-  **See Also:**
-
+  **See Also**
     :ref:`reset_config`
 
 ----
@@ -222,20 +203,17 @@
 
   Create an SQL table using the top line of the log view as a template
 
-  **Parameters:**
-
+  **Parameters**
     * **table-name\*** --- The name for the new table
 
-  **Examples:**
-
+  **Examples**
     To create a logline-style table named 'task_durations':
 
     .. code-block::  lnav
 
       :create-logline-table task_durations
 
-  **See Also:**
-
+  **See Also**
     :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
 
 ----
@@ -248,21 +226,18 @@
 
   Create an SQL table based on a regex search
 
-  **Parameters:**
-
+  **Parameters**
     * **table-name\*** --- The name of the table to create
     * **pattern** --- The regular expression used to capture the table columns.  If not given, the current search pattern is used.
 
-  **Examples:**
-
+  **Examples**
     To create a table named 'task_durations' that matches log messages with the pattern 'duration=(?<duration>\d+)':
 
     .. code-block::  lnav
 
       :create-search-table task_durations duration=(?<duration>\d+)
 
-  **See Also:**
-
+  **See Also**
     :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`delete_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
 
 ----
@@ -286,20 +261,17 @@
 
   Delete the filter created with [1m:filter-in[0m or [1m:filter-out[0m
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression to match
 
-  **Examples:**
-
+  **Examples**
     To delete the filter with the pattern 'last message repeated':
 
     .. code-block::  lnav
 
       :delete-filter last message repeated
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -312,20 +284,17 @@
 
   Delete a table created with create-logline-table
 
-  **Parameters:**
-
+  **Parameters**
     * **table-name\*** --- The name of the table to delete
 
-  **Examples:**
-
+  **Examples**
     To delete the logline-style table named 'task_durations':
 
     .. code-block::  lnav
 
       :delete-logline-table task_durations
 
-  **See Also:**
-
+  **See Also**
     :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
 
 ----
@@ -338,20 +307,17 @@
 
   Create an SQL table based on a regex search
 
-  **Parameters:**
-
+  **Parameters**
     * **table-name\*** --- The name of the table to create
 
-  **Examples:**
-
+  **Examples**
     To delete the search table named 'task_durations':
 
     .. code-block::  lnav
 
       :delete-search-table task_durations
 
-  **See Also:**
-
+  **See Also**
     :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
 
 ----
@@ -364,20 +330,17 @@
 
   Remove the given tags from all log lines
 
-  **Parameters:**
-
+  **Parameters**
     * **tag** --- The tags to delete
 
-  **Examples:**
-
+  **Examples**
     To remove the tags '#BUG123' and '#needs-review' from all log lines:
 
     .. code-block::  lnav
 
       :delete-tags #BUG123 #needs-review
 
-  **See Also:**
-
+  **See Also**
     :ref:`comment`, :ref:`tag`
 
 ----
@@ -390,20 +353,17 @@
 
   Disable a filter created with filter-in/filter-out
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression used in the filter command
 
-  **Examples:**
-
+  **Examples**
     To disable the filter with the pattern 'last message repeated':
 
     .. code-block::  lnav
 
       :disable-filter last message repeated
 
-  **See Also:**
-
+  **See Also**
     :ref:`enable_filter`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -416,8 +376,7 @@
 
   Disable word-wrapping for the current view
 
-  **See Also:**
-
+  **See Also**
     :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
 
 ----
@@ -430,20 +389,17 @@
 
   Echo the given message
 
-  **Parameters:**
-
+  **Parameters**
     * **msg\*** --- The message to display
 
-  **Examples:**
-
+  **Examples**
     To output 'Hello, World!':
 
     .. code-block::  lnav
 
       :echo Hello, World!
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -456,20 +412,17 @@
 
   Enable a previously created and disabled filter
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression used in the filter command
 
-  **Examples:**
-
+  **Examples**
     To enable the disabled filter with the pattern 'last message repeated':
 
     .. code-block::  lnav
 
       :enable-filter last message repeated
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -482,8 +435,7 @@
 
   Enable word-wrapping for the current view
 
-  **See Also:**
-
+  **See Also**
     :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
 
 ----
@@ -496,12 +448,10 @@
 
   Evaluate the given command/query after doing environment variable substitution
 
-  **Parameters:**
-
+  **Parameters**
     * **command\*** --- The command or query to perform substitution on.
 
-  **Examples:**
-
+  **Examples**
     To output the user's home directory:
 
     .. code-block::  lnav
@@ -514,8 +464,7 @@
 
       :eval ;SELECT * FROM ${table}
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`echo`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -528,12 +477,10 @@
 
   Set the filter expression
 
-  **Parameters:**
-
+  **Parameters**
     * **expr\*** --- The SQL expression to evaluate for each log message.  The message values can be accessed using column names prefixed with a colon
 
-  **Examples:**
-
+  **Examples**
     To set a filter expression that matched syslog messages from 'syslogd':
 
     .. code-block::  lnav
@@ -546,8 +493,7 @@
 
       :filter-expr :log_body REGEXP 'id\d+' AND :log_body REGEXP 'foo'
 
-  **See Also:**
-
+  **See Also**
     :ref:`clear_filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -560,20 +506,17 @@
 
   Only show lines that match the given regular expression in the current view
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression to match
 
-  **Examples:**
-
+  **Examples**
     To filter out log messages that do not have the string 'dhclient':
 
     .. code-block::  lnav
 
       :filter-in dhclient
 
-  **See Also:**
-
+  **See Also**
     :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -586,20 +529,17 @@
 
   Remove lines that match the given regular expression in the current view
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression to match
 
-  **Examples:**
-
+  **Examples**
     To filter out log messages that contain the string 'last message repeated':
 
     .. code-block::  lnav
 
       :filter-out last message repeated
 
-  **See Also:**
-
+  **See Also**
     :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -612,12 +552,10 @@
 
   Go to the given location in the top view
 
-  **Parameters:**
-
+  **Parameters**
     * **line#|N%|date\*** --- A line number, percent into the file, or a timestamp
 
-  **Examples:**
-
+  **Examples**
     To go to line 22:
 
     .. code-block::  lnav
@@ -636,8 +574,7 @@
 
       :goto 2017-01-01
 
-  **See Also:**
-
+  **See Also**
     :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
@@ -661,12 +598,10 @@
 
   Hide log message fields by replacing them with an ellipsis
 
-  **Parameters:**
-
+  **Parameters**
     * **field-name** --- The name of the field to hide in the format for the top log line.  A qualified name can be used where the field name is prefixed by the format name and a dot to hide any field.
 
-  **Examples:**
-
+  **Examples**
     To hide the log_procname fields in all formats:
 
     .. code-block::  lnav
@@ -679,8 +614,7 @@
 
       :hide-fields syslog_log.log_procname
 
-  **See Also:**
-
+  **See Also**
     :ref:`enable_word_wrap`, :ref:`highlight`, :ref:`show_fields`
 
 ----
@@ -693,8 +627,7 @@
 
   Hide the given file(s) and skip indexing until it is shown again.  If no path is given, the current file in the view is hidden
 
-  **Parameters:**
-
+  **Parameters**
     * **path** --- A path or glob pattern that specifies the files to hide
 
 
@@ -708,12 +641,10 @@
 
   Hide lines that come after the given date
 
-  **Parameters:**
-
+  **Parameters**
     * **date\*** --- An absolute or relative date
 
-  **Examples:**
-
+  **Examples**
     To hide the lines after the top line in the view:
 
     .. code-block::  lnav
@@ -726,8 +657,7 @@
 
       :hide-lines-after 6am
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
@@ -740,12 +670,10 @@
 
   Hide lines that come before the given date
 
-  **Parameters:**
-
+  **Parameters**
     * **date\*** --- An absolute or relative date
 
-  **Examples:**
-
+  **Examples**
     To hide the lines before the top line in the view:
 
     .. code-block::  lnav
@@ -758,8 +686,7 @@
 
       :hide-lines-before 6am
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
@@ -772,8 +699,7 @@
 
   Hide lines that have not been bookmarked
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
 
 ----
@@ -786,20 +712,17 @@
 
   Add coloring to log messages fragments that match the given regular expression
 
-  **Parameters:**
-
+  **Parameters**
     * **pattern\*** --- The regular expression to match
 
-  **Examples:**
-
+  **Examples**
     To highlight numbers with three or more digits:
 
     .. code-block::  lnav
 
       :highlight \d{3,}
 
-  **See Also:**
-
+  **See Also**
     :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`
 
 ----
@@ -823,8 +746,7 @@
 
   Toggle the bookmark state for the top line in the current view
 
-  **See Also:**
-
+  **See Also**
     :ref:`hide_unmarked_lines`, :ref:`next_mark`, :ref:`prev_mark`
 
 ----
@@ -837,8 +759,7 @@
 
   Move to the next position in the location history
 
-  **See Also:**
-
+  **See Also**
     :ref:`goto`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
@@ -851,20 +772,17 @@
 
   Move to the next bookmark of the given type in the current view
 
-  **Parameters:**
-
+  **Parameters**
     * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
 
-  **Examples:**
-
+  **Examples**
     To go to the next error:
 
     .. code-block::  lnav
 
       :next-mark error
 
-  **See Also:**
-
+  **See Also**
     :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
@@ -877,12 +795,10 @@
 
   Open the given file(s) or URLs in lnav
 
-  **Parameters:**
-
+  **Parameters**
     * **path** --- The path to the file to open
 
-  **Examples:**
-
+  **Examples**
     To open the file '/path/to/file':
 
     .. code-block::  lnav
@@ -900,12 +816,10 @@
 
   Mark the top line in the log view as the start of a new partition with the given name
 
-  **Parameters:**
-
+  **Parameters**
     * **name\*** --- The name for the new partition
 
-  **Examples:**
-
+  **Examples**
     To mark the top line as the start of the partition named 'boot #1':
 
     .. code-block::  lnav
@@ -923,20 +837,17 @@
 
   Pipe the top line to the given shell command
 
-  **Parameters:**
-
+  **Parameters**
     * **shell-cmd\*** --- The shell command-line to execute
 
-  **Examples:**
-
+  **Examples**
     To write the top line to 'sed' for processing:
 
     .. code-block::  lnav
 
       :pipe-line-to sed -e 's/foo/bar/g'
 
-  **See Also:**
-
+  **See Also**
     :ref:`append_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -949,20 +860,17 @@
 
   Pipe the marked lines to the given shell command
 
-  **Parameters:**
-
+  **Parameters**
     * **shell-cmd\*** --- The shell command-line to execute
 
-  **Examples:**
-
+  **Examples**
     To write marked lines to 'sed' for processing:
 
     .. code-block::  lnav
 
       :pipe-to sed -e s/foo/bar/g
 
-  **See Also:**
-
+  **See Also**
     :ref:`append_to`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
 
 ----
@@ -975,8 +883,7 @@
 
   Move to the previous position in the location history
 
-  **See Also:**
-
+  **See Also**
     :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
@@ -989,20 +896,17 @@
 
   Move to the previous bookmark of the given type in the current view
 
-  **Parameters:**
-
+  **Parameters**
     * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
 
-  **Examples:**
-
+  **Examples**
     To go to the previous error:
 
     .. code-block::  lnav
 
       :prev-mark error
 
-  **See Also:**
-
+  **See Also**
     :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`prev_location`, :ref:`relative_goto`
 
 ----
@@ -1015,15 +919,13 @@
 
   Open the given prompt
 
-  **Parameters:**
-
+  **Parameters**
     * **type\*** --- The type of prompt -- command, script, search, sql, user
     * **--alt** --- Perform the alternate action for this prompt by default
     * **prompt** --- The prompt to display
     * **initial-value** --- The initial value to fill in for the prompt
 
-  **Examples:**
-
+  **Examples**
     To open the command prompt with 'filter-in' already filled in:
 
     .. code-block::  lnav
@@ -1080,20 +982,17 @@
 
   Redirect the output of commands to the given file
 
-  **Parameters:**
-
+  **Parameters**
     * **path** --- The path to the file to write.  If not specified, the current redirect will be cleared
 
-  **Examples:**
-
+  **Examples**
     To write the output of lnav commands to the file /tmp/script-output.txt:
 
     .. code-block::  lnav
 
       :redirect-to /tmp/script-output.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1117,12 +1016,10 @@
 
   Move the current view up or down by the given amount
 
-  **Parameters:**
-
+  **Parameters**
     * **line-count|N%\*** --- The amount to move the view by.
 
-  **Examples:**
-
+  **Examples**
     To move 22 lines down in the view:
 
     .. code-block::  lnav
@@ -1135,8 +1032,7 @@
 
       :relative-goto -10%
 
-  **See Also:**
-
+  **See Also**
     :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`
 
 ----
@@ -1149,20 +1045,17 @@
 
   Reset the configuration option to its default value
 
-  **Parameters:**
-
+  **Parameters**
     * **option\*** --- The path to the option to reset
 
-  **Examples:**
-
+  **Examples**
     To reset the '/ui/clock-format' option back to the builtin default:
 
     .. code-block::  lnav
 
       :reset-config /ui/clock-format
 
-  **See Also:**
-
+  **See Also**
     :ref:`config`
 
 ----
@@ -1197,12 +1090,10 @@
 
   Add the given command to the session file (~/.lnav/session)
 
-  **Parameters:**
-
+  **Parameters**
     * **lnav-command\*** --- The lnav command to save.
 
-  **Examples:**
-
+  **Examples**
     To add the command ':highlight foobar' to the session file:
 
     .. code-block::  lnav
@@ -1220,12 +1111,10 @@
 
   Set the minimum log level to display in the log view
 
-  **Parameters:**
-
+  **Parameters**
     * **log-level\*** --- The new minimum log level
 
-  **Examples:**
-
+  **Examples**
     To set the minimum log level displayed to error:
 
     .. code-block::  lnav
@@ -1243,20 +1132,17 @@
 
   Show log message fields that were previously hidden
 
-  **Parameters:**
-
+  **Parameters**
     * **field-name** --- The name of the field to show
 
-  **Examples:**
-
+  **Examples**
     To show all the log_procname fields in all formats:
 
     .. code-block::  lnav
 
       :show-fields log_procname
 
-  **See Also:**
-
+  **See Also**
     :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
 
 ----
@@ -1269,8 +1155,7 @@
 
   Show the given file(s) and resume indexing.
 
-  **Parameters:**
-
+  **Parameters**
     * **path** --- The path or glob pattern that specifies the files to show
 
 
@@ -1284,8 +1169,7 @@
 
   Show lines that were hidden by the 'hide-lines' commands
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
@@ -1298,8 +1182,7 @@
 
   Show lines that have not been bookmarked
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
 
 ----
@@ -1312,12 +1195,10 @@
 
   Visualize the given message field using a spectrogram
 
-  **Parameters:**
-
+  **Parameters**
     * **field-name\*** --- The name of the numeric field to visualize.
 
-  **Examples:**
-
+  **Examples**
     To visualize the sc_bytes field in the access_log format:
 
     .. code-block::  lnav
@@ -1335,12 +1216,10 @@
 
   Execute a SQL query that computes the characteristics of the values in the given column
 
-  **Parameters:**
-
+  **Parameters**
     * **column-name\*** --- The name of the column to analyze.
 
-  **Examples:**
-
+  **Examples**
     To get a summary of the sc_bytes column in the access_log table:
 
     .. code-block::  lnav
@@ -1358,12 +1237,10 @@
 
   Switch to the given view
 
-  **Parameters:**
-
+  **Parameters**
     * **view-name\*** --- The name of the view to switch to.
 
-  **Examples:**
-
+  **Examples**
     To switch to the 'schema' view:
 
     .. code-block::  lnav
@@ -1381,20 +1258,17 @@
 
   Attach tags to the top log line
 
-  **Parameters:**
-
+  **Parameters**
     * **tag** --- The tags to attach
 
-  **Examples:**
-
+  **Examples**
     To add the tags '#BUG123' and '#needs-review' to the top line:
 
     .. code-block::  lnav
 
       :tag #BUG123 #needs-review
 
-  **See Also:**
-
+  **See Also**
     :ref:`comment`, :ref:`delete_tags`, :ref:`untag`
 
 ----
@@ -1407,8 +1281,7 @@
 
   Toggle the filtering flag for the current view
 
-  **See Also:**
-
+  **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
 
 ----
@@ -1421,12 +1294,10 @@
 
   Switch to the given view or, if it is already displayed, switch to the previous view
 
-  **Parameters:**
-
+  **Parameters**
     * **view-name\*** --- The name of the view to toggle the display of.
 
-  **Examples:**
-
+  **Examples**
     To switch to the 'schema' view if it is not displayed or switch back to the previous view:
 
     .. code-block::  lnav
@@ -1444,12 +1315,10 @@
 
   Convert epoch time to a human-readable form
 
-  **Parameters:**
-
+  **Parameters**
     * **seconds\*** --- The epoch timestamp to convert
 
-  **Examples:**
-
+  **Examples**
     To convert the epoch time 1490191111:
 
     .. code-block::  lnav
@@ -1467,20 +1336,17 @@
 
   Detach tags from the top log line
 
-  **Parameters:**
-
+  **Parameters**
     * **tag** --- The tags to detach
 
-  **Examples:**
-
+  **Examples**
     To remove the tags '#BUG123' and '#needs-review' from the top line:
 
     .. code-block::  lnav
 
       :untag #BUG123 #needs-review
 
-  **See Also:**
-
+  **See Also**
     :ref:`comment`, :ref:`tag`
 
 ----
@@ -1493,20 +1359,17 @@
 
   Write SQL results to the given file in a columnar format
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write SQL results as text to /tmp/table.txt:
 
     .. code-block::  lnav
 
       :write-cols-to /tmp/table.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1519,20 +1382,17 @@
 
   Write SQL results to the given file in CSV format
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write SQL results as CSV to /tmp/table.csv:
 
     .. code-block::  lnav
 
       :write-csv-to /tmp/table.csv
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1545,20 +1405,17 @@
 
   Write SQL results to the given file in JSON format
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write SQL results as JSON to /tmp/table.json:
 
     .. code-block::  lnav
 
       :write-json-to /tmp/table.json
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1571,20 +1428,17 @@
 
   Write SQL results to the given file in JSON Lines format
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write SQL results as JSON Lines to /tmp/table.json:
 
     .. code-block::  lnav
 
       :write-jsonlines-to /tmp/table.json
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1597,20 +1451,17 @@
 
   Write the text in the top view to the given file without any formatting
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write the top view to /tmp/table.txt:
 
     .. code-block::  lnav
 
       :write-raw-to /tmp/table.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1623,20 +1474,17 @@
 
   Write the displayed text or SQL results to the given file without any formatting
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write only the displayed text to /tmp/table.txt:
 
     .. code-block::  lnav
 
       :write-screen-to /tmp/table.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
@@ -1649,20 +1497,17 @@
 
   Overwrite the given file with any marked lines in the current view
 
-  **Parameters:**
-
+  **Parameters**
     * **path\*** --- The path to the file to write
 
-  **Examples:**
-
+  **Examples**
     To write marked lines to the file /tmp/interesting-lines.txt:
 
     .. code-block::  lnav
 
       :write-to /tmp/interesting-lines.txt
 
-  **See Also:**
-
+  **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`
 
 ----
@@ -1675,12 +1520,10 @@
 
   Zoom the histogram view to the given level
 
-  **Parameters:**
-
+  **Parameters**
     * **zoom-level\*** --- The zoom level
 
-  **Examples:**
-
+  **Examples**
     To set the zoom level to '1-week':
 
     .. code-block::  lnav

@@ -45,7 +45,7 @@ static pcre *xpcre_compile(const char *pattern, int options = 0)
                                options,
                                &errptr,
                                &eoff,
-                               NULL)) == NULL) {
+                               nullptr)) == nullptr) {
         fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
         fprintf(stderr, "internal error: %s\n", errptr);
 
@@ -395,10 +395,10 @@ void setup_highlights(highlight_map_t &hm)
         "\\d+"))
         .with_role(view_colors::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "1.stringd"}] = highlighter(xpcre_compile(
-        "\"(?:\\\\.|[^\"])*\""))
+        R"("(?:\\.|[^"])*")"))
         .with_role(view_colors::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.strings"}] = highlighter(xpcre_compile(
-        "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
+        R"((?<![A-WY-Za-qstv-z])'(?:\\.|[^'])*')"))
         .with_role(view_colors::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.stringb"}] = highlighter(xpcre_compile(
         "`(?:\\\\.|[^`])*`"))
@@ -413,7 +413,7 @@ void setup_highlights(highlight_map_t &hm)
         "^\\@@ .*"))
         .with_role(view_colors::VCR_DIFF_SECTION);
     hm[{highlight_source_t::INTERNAL, "0.comment"}] = highlighter(xpcre_compile(
-        "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
+        R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#.*|\s+#.*|dnl.*)"))
         .with_role(view_colors::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}] = highlighter(xpcre_compile(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)"))

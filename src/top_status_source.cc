@@ -81,10 +81,9 @@ void top_status_source::update_time()
 
 void top_status_source::update_filename(listview_curses *lc)
 {
-    status_field &    sf_partition = this->tss_fields[TSF_PARTITION_NAME];
-    status_field &    sf_format   = this->tss_fields[TSF_FORMAT];
-    status_field &    sf_filename = this->tss_fields[TSF_FILENAME];
-    struct line_range lr(0);
+    auto &sf_partition = this->tss_fields[TSF_PARTITION_NAME];
+    auto &sf_format = this->tss_fields[TSF_FORMAT];
+    auto &sf_filename = this->tss_fields[TSF_FILENAME];
 
     if (lc->get_inner_height() > 0) {
         string_attrs_t::const_iterator line_attr;
