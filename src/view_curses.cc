@@ -672,17 +672,19 @@ void view_colors::init_roles(const lnav_theme &lt,
                     continue;
                 }
 
-                auto fg_str = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
-                auto bg_str = lt.lt_vars.find(COLOR_NAMES[ansi_bg]);
+                auto fg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
+                auto bg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_bg]);
+                auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
+                auto bg_str = bg_iter == lt.lt_vars.end() ? "" : bg_iter->second;
 
-                auto rgb_fg = rgb_color::from_str(fg_str->second)
+                auto rgb_fg = rgb_color::from_str(fg_str)
                     .unwrapOrElse([&](const auto& msg) {
-                        reporter(&fg_str->second, msg);
+                        reporter(&fg_str, msg);
                         return rgb_color{};
                     });
-                auto rgb_bg = rgb_color::from_str(bg_str->second)
+                auto rgb_bg = rgb_color::from_str(bg_str)
                     .unwrapOrElse([&](const auto& msg) {
-                        reporter(&fg_str->second, msg);
+                        reporter(&fg_str, msg);
                         return rgb_color{};
                     });
 
