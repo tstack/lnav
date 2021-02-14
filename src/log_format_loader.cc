@@ -792,7 +792,7 @@ static void write_sample_file()
         extract_metadata(sf.data(), sf.length(), meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
         auto script_path = dotlnav_path() / path;
-        if (statp(script_path, &st) == 0 && (size_t) st.st_size == sf.length()) {
+        if (statp(script_path, &st) == 0 && st.st_size == sf.length()) {
             // Assume it's the right contents and move on...
             continue;
         }

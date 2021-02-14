@@ -36,6 +36,12 @@
 
 namespace humanize {
 
+/**
+ * Format the given size as a human-friendly string.
+ *
+ * @param value The value to format.
+ * @return The formatted string.
+ */
 std::string file_size(ssize_t value);
 
 }

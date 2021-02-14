@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         printf("    { \"%s\", ptime_f%d, ftime_f%d },\n", argv[lpc], lpc, lpc);
     }
     printf("\n");
-    printf("    { NULL, NULL }\n");
+    printf("    { nullptr, nullptr, nullptr }\n");
     printf("};\n");
 
     printf("const char *PTIMEC_FORMAT_STR[] = {\n");
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
         printf("    \"%s\",\n", argv[lpc]);
     }
     printf("\n");
-    printf("    NULL\n");
+    printf("    nullptr\n");
     printf("};\n");
 
     return retval;

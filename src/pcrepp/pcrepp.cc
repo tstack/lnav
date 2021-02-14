@@ -165,7 +165,7 @@ void pcrepp::find_captures(const char *pattern)
         }
     }
 
-    ensure(this->p_capture_count == this->p_captures.size());
+    ensure((size_t) this->p_capture_count == this->p_captures.size());
 }
 
 bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const

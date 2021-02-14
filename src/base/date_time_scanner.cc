@@ -208,3 +208,33 @@ const char *date_time_scanner::scan(const char *time_dest,
 
     return retval;
 }
+
+void date_time_scanner::to_localtime(time_t t, exttm &tm_out)
+{
+    if (t < (24 * 60 * 60)) {
+        // Don't convert and risk going past the epoch.
+        return;
+    }
+
+    if (t < this->dts_local_offset_valid ||
+        t >= this->dts_local_offset_expiry) {
+        time_t new_gmt;
+
+        localtime_r(&t, &tm_out.et_tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+        tm_out.et_tm.tm_zone = nullptr;
+#endif
+        tm_out.et_tm.tm_isdst = 0;
+
+        new_gmt = tm2sec(&tm_out.et_tm);
+        this->dts_local_offset_cache = t - new_gmt;
+        this->dts_local_offset_valid = t;
+        this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);
+        this->dts_local_offset_expiry -=
+            this->dts_local_offset_expiry % EXPIRE_TIME;
+    }
+    else {
+        time_t adjust_gmt = t - this->dts_local_offset_cache;
+        gmtime_r(&adjust_gmt, &tm_out.et_tm);
+    }
+}

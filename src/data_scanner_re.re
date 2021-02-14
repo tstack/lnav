@@ -51,7 +51,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
     static const unsigned char *EMPTY = (const unsigned char *) "";
     pcre_input &pi = this->ds_pcre_input;
     struct _YYCURSOR {
-        const YYCTYPE operator*() const {
+        YYCTYPE operator*() const {
             if (this->val < this->lim) {
                 return *val;
             }

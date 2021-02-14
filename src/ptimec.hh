@@ -47,13 +47,13 @@
 #include "base/time_util.hh"
 
 #define PTIME_CONSUME(amount, block) \
-    if ((off_inout + amount) > len) { \
+    if ((off_inout + (amount)) > len) { \
         return false; \
     } \
     \
     block \
     \
-    off_inout += amount;
+    off_inout += (amount);
 
 #define PTIME_APPEND(ch) \
     if ((off_inout + 2) >= len) { \

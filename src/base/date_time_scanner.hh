@@ -39,12 +39,15 @@
 
 #include "time_util.hh"
 
+/**
+ * Scans a timestamp string to discover the date-time format using the custom
+ * ptimec parser.  Once a format is found, it is locked in so that the next
+ * time a timestamp needs to be scanned, the format does not have to be
+ * rediscovered.  The discovered date-time format can also be used to convert
+ * an exttm struct to a string using the ftime() method.
+ */
 struct date_time_scanner {
-    date_time_scanner() : dts_keep_base_tz(false),
-                          dts_local_time(false),
-                          dts_local_offset_cache(0),
-                          dts_local_offset_valid(0),
-                          dts_local_offset_expiry(0) {
+    date_time_scanner() {
         this->clear();
     };
 
@@ -55,6 +58,9 @@ struct date_time_scanner {
         this->dts_fmt_len = -1;
     };
 
+    /**
+     * Unlock this scanner so that the format is rediscovered.
+     */
     void unlock() {
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
@@ -72,44 +78,17 @@ struct date_time_scanner {
      * every call, so we cache the result and only call it again if the
      * requested time falls outside of a fifteen minute range.
      */
-    void to_localtime(time_t t, struct exttm &tm_out) {
-        if (t < (24 * 60 * 60)) {
-            // Don't convert and risk going past the epoch.
-            return;
-        }
+    void to_localtime(time_t t, struct exttm &tm_out);
 
-        if (t < this->dts_local_offset_valid ||
-            t >= this->dts_local_offset_expiry) {
-            time_t new_gmt;
-
-            localtime_r(&t, &tm_out.et_tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-            tm_out.et_tm.tm_zone = nullptr;
-#endif
-            tm_out.et_tm.tm_isdst = 0;
-
-            new_gmt = tm2sec(&tm_out.et_tm);
-            this->dts_local_offset_cache = t - new_gmt;
-            this->dts_local_offset_valid = t;
-            this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);
-            this->dts_local_offset_expiry -=
-                this->dts_local_offset_expiry % EXPIRE_TIME;
-        }
-        else {
-            time_t adjust_gmt = t - this->dts_local_offset_cache;
-            gmtime_r(&adjust_gmt, &tm_out.et_tm);
-        }
-    };
-
-    bool dts_keep_base_tz;
-    bool dts_local_time;
-    time_t dts_base_time;
+    bool dts_keep_base_tz{false};
+    bool dts_local_time{false};
+    time_t dts_base_time{0};
     struct exttm dts_base_tm;
-    int dts_fmt_lock;
-    int dts_fmt_len;
-    time_t dts_local_offset_cache;
-    time_t dts_local_offset_valid;
-    time_t dts_local_offset_expiry;
+    int dts_fmt_lock{-1};
+    int dts_fmt_len{-1};
+    time_t dts_local_offset_cache{0};
+    time_t dts_local_offset_valid{0};
+    time_t dts_local_offset_expiry{0};
 
     static const int EXPIRE_TIME = 15 * 60;
 

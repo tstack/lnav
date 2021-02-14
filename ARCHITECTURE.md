@@ -57,7 +57,7 @@ log format has matched yet, each line will be passed through the log format
 regular expressions to try and find a match.  Each line that is read is added
 to an index
 
-### Why is `mmap()` not used?
+#### Why is `mmap()` not used?
 
 Note that file contents are consumed using `pread(2)`/`read(2)` and not
 `mmap(2)` since `mmap(2)` does not react well to files changing out from
@@ -71,10 +71,21 @@ As files are being indexed, if a matching format is found, the file is
 it is added to the [logfile_sub_source](src/logfile_sub_source.hh), which
 collates all log messages together into a single index.
 
+## Log Formats
+
+[log_format](src/log_format.hh) instances are used to parse lines from files
+into `logline` objects.  The majority of log formats are
+[external_log_format](src/log_format_ext.hh) objects that are create from
+[JSON format definitions](https://lnav.readthedocs.io/en/latest/formats.html).
+The built-in definitions are located in the [formats](src/formats) directory.
+Log formats that cannot be handled through a simple regular expression are
+implemented in the [log_format_impls.cc](src/log_format_impls.cc) file.
+
 ## User Interface
 
 [![lnav TUI](docs/lnav-tui.png)](https://whimsical.com/lnav-tui-MQjXc7Vx23BxQTHrnuNp5F)
 
 The lnav text-user-interface is built on top of the basic drawing functionality
-of [ncurses](https://invisible-island.net/ncurses/announce.html).  However,
-
+provided by [ncurses](https://invisible-island.net/ncurses/announce.html).
+However, the higher-level functionality of panels, widgets, and such is not
+used.
