@@ -14,8 +14,8 @@ no setup.
 ### Links
 
 - [Main Site](https://lnav.org)
-- [**Documentation**](https://lnav.readthedocs.io) on Read the Docs
-- [Architecture](ARCHITECTURE.md)
+- [**Documentation**](https://docs.lnav.org) on Read the Docs
+- [Internal Architecture](ARCHITECTURE.md)
 
 ## Contributing
 
