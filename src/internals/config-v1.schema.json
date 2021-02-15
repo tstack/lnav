@@ -26,7 +26,11 @@
                         "cache-ttl": {
                             "title": "/tuning/archive-manager/cache-ttl",
                             "description": "The time-to-live for unpacked archives, expressed as a duration (e.g. '3d' for three days)",
-                            "type": "string"
+                            "type": "string",
+                            "examples": [
+                                "3d",
+                                "12h"
+                            ]
                         }
                     },
                     "additionalProperties": false
@@ -357,15 +361,18 @@
                             "type": "object",
                             "patternProperties": {
                                 "((?:x[0-9a-f]{2})+)": {
-                                    "description": "The hexadecimal encoding of key codes to map to a command.",
+                                    "description": "Map of key codes to commands to execute.  The field names are the keys to be mapped using as a hexadecimal representation of the UTF-8 encoding.  Each byte of the UTF-8 should start with an 'x' followed by the hexadecimal representation of the byte.",
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
                                     "properties": {
                                         "command": {
                                             "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/command",
-                                            "description": "The command to execute for the given key sequence.",
+                                            "description": "The command to execute for the given key sequence.  Use a script to execute more complicated operations.",
                                             "type": "string",
-                                            "pattern": "[:|;].*"
+                                            "pattern": "[:|;].*",
+                                            "examples": [
+                                                ":goto next hour"
+                                            ]
                                         },
                                         "alt-msg": {
                                             "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/alt-msg",

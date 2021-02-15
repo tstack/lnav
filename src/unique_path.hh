@@ -39,6 +39,9 @@
 
 #include "ghc/filesystem.hpp"
 
+/**
+ * A source of a path for the unique_path_generator.
+ */
 class unique_path_source {
 public:
     virtual ~unique_path_source() = default;
@@ -65,6 +68,10 @@ private:
     std::string ups_unique_path;
 };
 
+/**
+ * Given a collection of filesystem paths, this class will generate a shortened
+ * and unique path for each of the given paths.
+ */
 class unique_path_generator {
 public:
     void add_source(const std::shared_ptr<unique_path_source>& path_source);

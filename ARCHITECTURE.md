@@ -71,6 +71,14 @@ As files are being indexed, if a matching format is found, the file is
 it is added to the [logfile_sub_source](src/logfile_sub_source.hh), which
 collates all log messages together into a single index.
 
+### Timestamp Parsing
+
+Since all log messages need to have a timestamp, timestamp parsing needs to be
+very efficient.  The standard `strptime()` function is quite expensive, so lnav
+includes an optimized custom parser and code-generator in the
+[ptimec](src/ptimec.hh) component.  The code-generator is used at compile-time
+to generate parsers for several [common formats](src/time_formats.am).
+
 ## Log Formats
 
 [log_format](src/log_format.hh) instances are used to parse lines from files
@@ -83,9 +91,32 @@ implemented in the [log_format_impls.cc](src/log_format_impls.cc) file.
 
 ## User Interface
 
-[![lnav TUI](docs/lnav-tui.png)](https://whimsical.com/lnav-tui-MQjXc7Vx23BxQTHrnuNp5F)
-
-The lnav text-user-interface is built on top of the basic drawing functionality
-provided by [ncurses](https://invisible-island.net/ncurses/announce.html).
+The lnav text-user-interface is built on top of
+[ncurses](https://invisible-island.net/ncurses/announce.html).
 However, the higher-level functionality of panels, widgets, and such is not
-used.
+used.  Instead, the following custom components are built on top of the ncurses
+primitives:
+
+* [view_curses](src/view_curses.hh) - Provides the basics for text roles, which
+  allows for themes to color and style text.  The `mvwattrline()` function does
+  all the heavy lifting of drawing ["attributed" lines](src/attr_line.hh),
+  which are strings that have attributes associated with a given range of
+  characters.
+* [listview_curses](src/listview_curses.hh) - Displays a list of items that are
+  provided by a source.
+* [textview_curses](src/textview_curses.hh) - Builds on the list view by adding
+  support for searching, filtering, bookmarks, etc...  The main panel that
+  displays the logs/plaintext/help is a textview.
+* [statusview_curses](src/state-extension-functions.cc) - Draws the status bars
+  at the top and bottom of the TUI.
+* [vt52_curses](src/vt52_curses.hh) - Adapts vt52 escape codes to the ncurses
+  API.
+* [readline_curses](src/readline_curses.hh) - Provides access to the readline
+  library.  The readline code is executed in a child process since readline
+  does not get along with ncurses.  The child process and readline is set to
+  use a vt52 terminal and the vt52_curses view is uses to translate those
+  escape codes to ncurses.
+
+The following diagram shows the underlying components that make up the TUI:
+
+[![lnav TUI](docs/lnav-tui.png)](https://whimsical.com/lnav-tui-MQjXc7Vx23BxQTHrnuNp5F)

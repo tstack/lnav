@@ -61,58 +61,7 @@ builtin-sh-scripts.h builtin-sh-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCR
 %-json.cc %-json.h: $(srcdir)/%.json bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-json $<
 
-TIME_FORMATS = \
-    "@%@" \
-    "%Y-%m-%d %H:%M:%S" \
-    "%Y-%m-%d %H:%M:%S%z" \
-    "%Y-%m-%d %H:%M:%S %z" \
-    "%Y-%m-%d %H:%M" \
-    "%Y-%m-%dT%H:%M:%S.%f%z" \
-    "%y-%m-%dT%H:%M:%S.%f%z" \
-    "%Y-%m-%dT%H:%M:%SZ" \
-    "%Y-%m-%dT%H:%M:%S%z" \
-    "%Y-%m-%dT%H:%M:%S" \
-    "%Y-%m-%dT%H:%M:%S%z" \
-    "%Y/%m/%d %H:%M:%S" \
-    "%Y/%m/%d %H:%M:%S %z" \
-    "%Y/%m/%d %H:%M:%S%z" \
-    "%Y/%m/%d %H:%M" \
-    "%Y %b %d %a %H:%M:%S.%L" \
-    "%Y %b %d %H:%M:%S.%L" \
-    "%Y %b %d %H:%M:%S" \
-    "%a %b %d %H:%M:%S %Y" \
-    "%a %b %d %H:%M:%S.%f %Y" \
-    "%a %b %d %H:%M:%S %Z %Y" \
-    "%a %b %d %H:%M:%S " \
-    "%a %b %d %H:%M:%S.%L " \
-    "%d/%b/%Y:%H:%M:%S +0000" \
-    "%d/%b/%Y:%H:%M:%S %z" \
-    "%d-%b-%Y %H:%M:%S %z" \
-    "%d-%b-%Y %H:%M:%S %Z" \
-    "%d %b %Y %H:%M:%S" \
-    "%d %b %Y %H:%M:%S.%L" \
-    "%d %b %Y %H:%M:%S,%L" \
-    "%b %d %H:%M:%S" \
-    "%b %d %k:%M:%S" \
-    "%b %d %l:%M:%S" \
-    "%b %e, %Y %l:%M:%S %p" \
-    "%m/%d/%y %H:%M:%S" \
-    "%m/%d/%Y %I:%M:%S:%L %p %Z" \
-    "%m/%d/%Y %I:%M:%S %p %Z" \
-    "%m/%d/%Y %l:%M:%S %p %Z" \
-    "%m/%e/%Y %I:%M:%S %p" \
-    "%m/%e/%Y %l:%M:%S %p" \
-    "%d/%b/%y %H:%M:%S" \
-    "%m%d %H:%M:%S" \
-    "%H:%M:%S" \
-    "%M:%S" \
-    "%m/%d %H:%M:%S" \
-    "%Y-%m-%d" \
-    "%Y-%m" \
-    "%Y/%m/%d" \
-    "%Y/%m" \
-    "%s.%f" \
-    $()
+include time_formats.am
 
 time_fmts.cc: ptimec$(BUILD_EXEEXT)
 	$(PTIME_V)./ptimec$(BUILD_EXEEXT) $(TIME_FORMATS) > $@

@@ -47,11 +47,21 @@ own formats or if you need to modify existing ones.  Format directories can
 also contain '.sql' and '.lnav' script files that can be used automate log file
 analysis.
 
-The contents of the format configuration should be a JSON object with a field
-for each format defined by the file.  Each field name should be the symbolic
-name of the format.  This value will also be used as the SQL table name for
-the log.  The value for each field should be another object with the following
-fields:
+An **lnav** format file must contain a single JSON object, preferably with a
+:code:`$schema` property that refers to the
+`config-v1.schema <https://lnav.org/schemas/config-v1.schema.json>`_,
+like so:
+
+.. code-block:: json
+
+   {
+       "$schema": "https://lnav.org/schemas/config-v1.schema.json"
+   }
+
+Each format to be defined in the file should a separate field in the top-level
+object.  The field name should be the symbolic name of the format.  This value
+will also be used as the SQL table name for the log.  The value for each field
+should be another object with the following fields:
 
   :title: The short and human-readable name for the format.
   :description: A longer description of the format.
@@ -253,6 +263,7 @@ Example format:
 .. code-block:: json
 
     {
+        "$schema": "https://lnav.org/schemas/format-v1.schema.json",
         "example_log" : {
             "title" : "Example Log Format",
             "description" : "Log format used in the documentation example.",
@@ -293,6 +304,7 @@ with the following contents:
 .. code-block:: json
 
     {
+        "$schema": "https://lnav.org/schemas/format-v1.schema.json",
         "example_log" : {
             "regex" : {
                 "custom1" : {

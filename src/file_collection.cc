@@ -160,7 +160,7 @@ file_collection::watch_logfile(const std::string &filename,
     int rc;
 
     if (this->fc_closed_files.count(filename)) {
-        return make_ready_future(retval);
+        return lnav::futures::make_ready_future(retval);
     }
 
     if (loo.loo_fd != -1) {
@@ -177,14 +177,14 @@ file_collection::watch_logfile(const std::string &filename,
                 this->fc_file_names.end()) {
                 retval.fc_file_names.emplace(wilddir, logfile_open_options());
             }
-            return make_ready_future(retval);
+            return lnav::futures::make_ready_future(retval);
         }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
                 rc = -1;
                 errno = EINVAL;
             } else {
-                return make_ready_future(retval);
+                return lnav::futures::make_ready_future(retval);
             }
         }
     }
@@ -192,7 +192,7 @@ file_collection::watch_logfile(const std::string &filename,
         if (required) {
             retval.fc_name_to_errors[filename] = strerror(errno);
         }
-        return make_ready_future(retval);
+        return lnav::futures::make_ready_future(retval);
     }
 
     auto stat_iter = find_if(this->fc_new_stats.begin(),
@@ -204,7 +204,7 @@ file_collection::watch_logfile(const std::string &filename,
     if (stat_iter != this->fc_new_stats.end()) {
         // this file is probably a link that we have already scanned in this
         // pass.
-        return make_ready_future(retval);
+        return lnav::futures::make_ready_future(retval);
     }
 
     this->fc_new_stats.emplace_back(st);
@@ -214,7 +214,7 @@ file_collection::watch_logfile(const std::string &filename,
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
-            return make_ready_future(retval);
+            return lnav::futures::make_ready_future(retval);
         }
 
         auto func = [filename, loo, prog = this->fc_progress, errs = this->fc_name_to_errors]() mutable {
@@ -329,7 +329,7 @@ file_collection::watch_logfile(const std::string &filename,
         }
     }
 
-    return make_ready_future(retval);
+    return lnav::futures::make_ready_future(retval);
 }
 
 /**
@@ -338,7 +338,7 @@ file_collection::watch_logfile(const std::string &filename,
  * @param path     The glob pattern to expand.
  * @param required Passed to watch_logfile.
  */
-void file_collection::expand_filename(future_queue<file_collection> &fq,
+void file_collection::expand_filename(lnav::futures::future_queue<file_collection> &fq,
                                       const std::string &path,
                                       logfile_open_options &loo,
                                       bool required)
@@ -404,7 +404,7 @@ void file_collection::expand_filename(future_queue<file_collection> &fq,
 file_collection file_collection::rescan_files(bool required)
 {
     file_collection retval;
-    future_queue<file_collection> fq([&retval](auto &fc) {
+    lnav::futures::future_queue<file_collection> fq([&retval](auto &fc) {
         retval.merge(fc);
     });
 

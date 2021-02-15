@@ -33,6 +33,16 @@
 #include <deque>
 #include <future>
 
+namespace lnav {
+namespace futures {
+
+/**
+ * Create a future that is ready to immediately return a result.
+ *
+ * @tparam T The result type of the future.
+ * @param t The value the future should return.
+ * @return The new future.
+ */
 template<class T>
 std::future<std::decay_t<T>> make_ready_future( T&& t ) {
     std::promise<std::decay_t<T>> pr;
@@ -41,9 +51,18 @@ std::future<std::decay_t<T>> make_ready_future( T&& t ) {
     return r;
 }
 
-template<typename T>
+/**
+ * A queue used to limit the number of futures that are running concurrently.
+ *
+ * @tparam T The result of the futures.
+ * @tparam MAX_QUEUE_SIZE The maximum number of futures that can be in flight.
+ */
+template<typename T, int MAX_QUEUE_SIZE = 8>
 class future_queue {
 public:
+    /**
+     * @param processor The function to execute with the result of a future.
+     */
     explicit future_queue(std::function<void(const T&)> processor)
         : fq_processor(processor) {};
 
@@ -51,11 +70,24 @@ public:
         this->pop_to();
     }
 
+    /**
+     * Add a future to the queue.  If the size of the queue is greater than the
+     * MAX_QUEUE_SIZE, this call will block waiting for the first queued
+     * future to return a result.
+     *
+     * @param f The future to add to the queue.
+     */
     void push_back(std::future<T>&& f) {
         this->fq_deque.emplace_back(std::move(f));
-        this->pop_to(8);
+        this->pop_to(MAX_QUEUE_SIZE);
     }
 
+    /**
+     * Removes the next future from the queue, waits for the result, and then
+     * repeats until the queue reaches the given size.
+     *
+     * @param size The new desired size of the queue.
+     */
     void pop_to(size_t size = 0) {
         while (this->fq_deque.size() > size) {
             this->fq_processor(this->fq_deque.front().get());
@@ -66,5 +98,8 @@ public:
     std::function<void(const T&)> fq_processor;
     std::deque<std::future<T>> fq_deque;
 };
+
+}
+}
 
 #endif

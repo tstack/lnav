@@ -403,8 +403,11 @@ static void config_error_reporter(const yajlpp_parse_context &ypc,
 static struct json_path_container key_command_handlers = {
     yajlpp::property_handler("command")
         .with_synopsis("<command>")
-        .with_description("The command to execute for the given key sequence.")
+        .with_description(
+            "The command to execute for the given key sequence.  Use a script "
+            "to execute more complicated operations.")
         .with_pattern("[:|;].*")
+        .with_example(":goto next hour")
         .FOR_FIELD(key_command, kc_cmd),
     yajlpp::property_handler("alt-msg")
         .with_synopsis("<msg>")
@@ -414,7 +417,12 @@ static struct json_path_container key_command_handlers = {
 
 static struct json_path_container keymap_def_handlers = {
     yajlpp::pattern_property_handler("(?<key_seq>(?:x[0-9a-f]{2})+)")
-        .with_description("The hexadecimal encoding of key codes to map to a command.")
+        .with_synopsis("<utf8-key-code-in-hex>")
+        .with_description(
+            "Map of key codes to commands to execute.  The field names are "
+            "the keys to be mapped using as a hexadecimal representation of "
+            "the UTF-8 encoding.  Each byte of the UTF-8 should start with "
+            "an 'x' followed by the hexadecimal representation of the byte.")
         .with_obj_provider<key_command, key_map>([](const yajlpp_provider_context &ypc, key_map *km) {
             key_command &retval = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr("key_seq")];
 
@@ -863,6 +871,7 @@ static struct json_path_container ui_handlers = {
 
 static struct json_path_container archive_handlers = {
     yajlpp::property_handler("min-free-space")
+        .with_synopsis("<bytes>")
         .with_description(
             "The minimum free space, in bytes, to maintain when unpacking "
             "archives")
@@ -870,9 +879,12 @@ static struct json_path_container archive_handlers = {
         .for_field(&_lnav_config::lc_archive_manager,
                    &archive_manager::config::amc_min_free_space),
     yajlpp::property_handler("cache-ttl")
+        .with_synopsis("<duration>")
         .with_description(
             "The time-to-live for unpacked archives, expressed as a duration "
             "(e.g. '3d' for three days)")
+        .with_example("3d")
+        .with_example("12h")
         .for_field(&_lnav_config::lc_archive_manager,
                    &archive_manager::config::amc_cache_ttl),
 };

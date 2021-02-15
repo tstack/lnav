@@ -816,7 +816,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
                 HELP_MSG_1(X, "to close the file"));
         }
 
-        return make_ready_future(std::string());
+        return lnav::futures::make_ready_future(std::string());
     }
 }
 

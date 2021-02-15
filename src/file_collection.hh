@@ -83,8 +83,10 @@ struct file_collection {
     file_collection rescan_files(bool required = false);
 
     void
-    expand_filename(future_queue<file_collection> &fq, const std::string &path,
-                    logfile_open_options &loo, bool required);
+    expand_filename(lnav::futures::future_queue<file_collection> &fq,
+                    const std::string &path,
+                    logfile_open_options &loo,
+                    bool required);
 
     std::future<file_collection>
     watch_logfile(const std::string &filename, logfile_open_options &loo,

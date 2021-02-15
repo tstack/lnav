@@ -770,7 +770,7 @@ public:
                     int start,
                     int end);
 
-    bool is_searching() { return this->tc_searching > 0; };
+    bool is_searching() const { return this->tc_searching > 0; };
 
     void set_follow_search_for(int64_t ms_to_deadline,
                                std::function<bool()> func) {
