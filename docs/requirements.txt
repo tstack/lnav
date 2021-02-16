@@ -1,3 +1,4 @@
+Sphinx>=3.4.3
 sphinx-jsonschema
 sphinx-prompt
 pathlib
