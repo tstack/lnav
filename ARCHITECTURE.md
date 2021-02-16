@@ -97,21 +97,21 @@ However, the higher-level functionality of panels, widgets, and such is not
 used.  Instead, the following custom components are built on top of the ncurses
 primitives:
 
-* [view_curses](src/view_curses.hh) - Provides the basics for text roles, which
+- [view_curses](src/view_curses.hh) - Provides the basics for text roles, which
   allows for themes to color and style text.  The `mvwattrline()` function does
   all the heavy lifting of drawing ["attributed" lines](src/attr_line.hh),
   which are strings that have attributes associated with a given range of
   characters.
-* [listview_curses](src/listview_curses.hh) - Displays a list of items that are
+- [listview_curses](src/listview_curses.hh) - Displays a list of items that are
   provided by a source.
-* [textview_curses](src/textview_curses.hh) - Builds on the list view by adding
+- [textview_curses](src/textview_curses.hh) - Builds on the list view by adding
   support for searching, filtering, bookmarks, etc...  The main panel that
   displays the logs/plaintext/help is a textview.
-* [statusview_curses](src/state-extension-functions.cc) - Draws the status bars
+- [statusview_curses](src/state-extension-functions.cc) - Draws the status bars
   at the top and bottom of the TUI.
-* [vt52_curses](src/vt52_curses.hh) - Adapts vt52 escape codes to the ncurses
+- [vt52_curses](src/vt52_curses.hh) - Adapts vt52 escape codes to the ncurses
   API.
-* [readline_curses](src/readline_curses.hh) - Provides access to the readline
+- [readline_curses](src/readline_curses.hh) - Provides access to the readline
   library.  The readline code is executed in a child process since readline
   does not get along with ncurses.  The child process and readline is set to
   use a vt52 terminal and the vt52_curses view is uses to translate those
