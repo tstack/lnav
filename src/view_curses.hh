@@ -60,6 +60,7 @@
 #include <functional>
 
 #include "base/lnav_log.hh"
+#include "base/lrucache.hpp"
 #include "attr_line.hh"
 #include "optional.hpp"
 #include "styling.hh"
@@ -179,10 +180,7 @@ private:
  */
 class view_colors {
 public:
-    static const unsigned long BASIC_COLOR_COUNT = 8;
-    static const unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
-
-    static attr_t BASIC_HL_PAIRS[BASIC_COLOR_COUNT];
+    static constexpr unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
@@ -296,20 +294,10 @@ public:
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
-    int ensure_color_pair(int &pair_base, short fg, short bg);
-
-    int ensure_color_pair(short fg, short bg) {
-        return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
-    }
-
-    int ensure_color_pair(int &pair_base,
-                          const styling::color_unit &fg,
-                          const styling::color_unit &bg);
+    int ensure_color_pair(short fg, short bg);
 
     int ensure_color_pair(const styling::color_unit &fg,
-                          const styling::color_unit &bg) {
-        return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
-    }
+                          const styling::color_unit &bg);
 
     static constexpr short MATCH_COLOR_DEFAULT = -1;
     static constexpr short MATCH_COLOR_SEMANTIC = -10;
@@ -348,13 +336,18 @@ private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 
+    struct dyn_pair {
+        int dp_color_pair;
+    };
+
     /** Map of role IDs to attribute values. */
     std::pair<attr_t, attr_t> vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
     attr_t vc_role_reverse_colors[VCR__MAX];
     short vc_ansi_to_theme[8];
-    int vc_color_pair_end;
-    std::map<std::pair<short, short>, int> vc_dyn_pairs;
+    short vc_highlight_colors[HI_COLOR_COUNT];
+    int vc_color_pair_end{0};
+    cache::lru_cache<std::pair<short, short>, dyn_pair> vc_dyn_pairs;
 };
 
 enum class mouse_button_t {

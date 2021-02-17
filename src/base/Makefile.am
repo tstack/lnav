@@ -26,6 +26,7 @@ noinst_HEADERS = \
     is_utf8.hh \
     isc.hh \
     lnav_log.hh \
+    lrucache.hpp \
     math_util.hh \
     opt_util.hh \
     result.h \

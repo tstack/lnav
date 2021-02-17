@@ -334,6 +334,7 @@ void view_curses::mvwattrline(WINDOW *window,
                             iter->sa_range.length());
                     }
                     color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
+
                     attrs &= ~(A_LEFT|A_RIGHT);
                 }
 
@@ -410,17 +411,6 @@ void view_curses::mvwattrline(WINDOW *window,
 #endif
 }
 
-attr_t view_colors::BASIC_HL_PAIRS[view_colors::BASIC_COLOR_COUNT] = {
-    ansi_color_pair(COLOR_BLUE, COLOR_BLACK),
-    ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
-    ansi_color_pair(COLOR_GREEN, COLOR_BLACK),
-    ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK),
-    ansi_color_pair(COLOR_BLACK, COLOR_WHITE),
-    ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
-    ansi_color_pair(COLOR_YELLOW, COLOR_MAGENTA) | A_BOLD,
-    ansi_color_pair(COLOR_MAGENTA, COLOR_CYAN) | A_BOLD,
-};
-
 view_colors &view_colors::singleton()
 {
     static view_colors s_vc;
@@ -429,8 +419,18 @@ view_colors &view_colors::singleton()
 }
 
 view_colors::view_colors()
-    : vc_color_pair_end(0)
+    : vc_dyn_pairs(0)
 {
+    size_t color_index = 0;
+    for (int z = 0; z < 6; z++) {
+        for (int x = 1; x < 6; x += 2) {
+            for (int y = 1; y < 6; y += 2) {
+                short fg = 16 + x + (y * 6) + (z * 6 * 6);
+
+                this->vc_highlight_colors[color_index++] = fg;
+            }
+        }
+    }
 }
 
 bool view_colors::initialized = false;
@@ -525,6 +525,9 @@ void view_colors::init()
         }
     }
 
+    log_debug("COLOR_PAIRS = %d", COLOR_PAIRS);
+    singleton().vc_dyn_pairs.set_max_size(COLOR_PAIRS);
+
     initialized = true;
 
     {
@@ -559,7 +562,8 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
 
     require(pair_base < COLOR_PAIRS);
 
-    int pair = ++pair_base;
+    int pair = pair_base;
+    pair_base += 1;
 
     if (view_colors::initialized) {
         init_pair(pair, fg, bg);
@@ -624,7 +628,7 @@ pair<attr_t, attr_t> view_colors::to_attrs(
 void view_colors::init_roles(const lnav_theme &lt,
     lnav_config_listener::error_reporter &reporter)
 {
-    int color_pair_base = VC_ANSI_END;
+    int color_pair_base = VC_ANSI_END + 1;
     rgb_color fg, bg;
     string err;
 
@@ -642,16 +646,6 @@ void view_colors::init_roles(const lnav_theme &lt,
                     return rgb_color{};
                 });
             ident_bg = vc_active_palette->match_color(lab_color(rgb_bg));
-        }
-        for (int z = 0; z < 6; z++) {
-            for (int x = 1; x < 6; x += 2) {
-                for (int y = 1; y < 6; y += 2) {
-                    int fg = 16 + x + (y * 6) + (z * 6 * 6);
-
-                    init_pair(color_pair_base, fg, ident_bg);
-                    color_pair_base += 1;
-                }
-            }
         }
     } else {
         color_pair_base = VC_ANSI_END + HI_COLOR_COUNT;
@@ -916,16 +910,18 @@ void view_colors::init_roles(const lnav_theme &lt,
     this->vc_dyn_pairs.clear();
 }
 
-int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
+int view_colors::ensure_color_pair(short fg, short bg)
 {
     require(fg >= -100);
     require(bg >= -100);
 
     auto index_pair = make_pair(fg, bg);
-    auto existing = this->vc_dyn_pairs.find(index_pair);
+    auto existing = this->vc_dyn_pairs.get(index_pair);
 
-    if (existing != this->vc_dyn_pairs.end()) {
-        return existing->second;
+    if (existing) {
+        auto retval = existing.value().dp_color_pair;
+
+        return retval;
     }
 
     short def_pair = PAIR_NUMBER(this->attrs_for_role(VCR_TEXT));
@@ -933,26 +929,27 @@ int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
 
     pair_content(def_pair, &def_fg, &def_bg);
 
-    int retval = PAIR_NUMBER(attr_for_colors(
-        pair_base,
-        fg == -1 ? def_fg : fg,
-        bg == -1 ? def_bg : bg));
+    int new_pair = this->vc_color_pair_end + this->vc_dyn_pairs.size();
+    auto retval = PAIR_NUMBER(attr_for_colors(new_pair,
+                                              fg == -1 ? def_fg : fg,
+                                              bg == -1 ? def_bg : bg));
 
     if (initialized) {
-        this->vc_dyn_pairs[index_pair] = retval;
+        struct dyn_pair dp = { (int) retval };
+
+        this->vc_dyn_pairs.put(index_pair, dp);
     }
 
     return retval;
 }
 
-int view_colors::ensure_color_pair(int &pair_base,
-                                   const styling::color_unit &rgb_fg,
+int view_colors::ensure_color_pair(const styling::color_unit &rgb_fg,
                                    const styling::color_unit &rgb_bg)
 {
     auto fg = this->match_color(rgb_fg);
     auto bg = this->match_color(rgb_bg);
 
-    return this->ensure_color_pair(pair_base, fg, bg);
+    return this->ensure_color_pair(fg, bg);
 }
 
 short view_colors::match_color(const styling::color_unit &color) const
@@ -985,12 +982,7 @@ int view_colors::color_for_ident(const char *str, size_t len) const
         }
 
         unsigned long offset = index % HI_COLOR_COUNT;
-        auto cpair = COLOR_PAIR(VC_ANSI_END + offset);
-
-        short fg, bg;
-        auto pnum = PAIR_NUMBER(cpair);
-        pair_content(pnum, &fg, &bg);
-        retval = fg;
+        retval = this->vc_highlight_colors[offset];
     }
     else {
         retval = -1;

@@ -400,14 +400,8 @@ void readline_command_highlighter(attr_line_t &al, int x)
         if (COLOR_RE.match(pc, pi)) {
             pcre_context::capture_t *cap = pc[0];
             string hash_color = pi.get_substr(cap);
-            string errmsg;
-            attr_t color_hint_attrs = vc.attrs_for_role(view_colors::VCR_COLOR_HINT);
-            int pnum = PAIR_NUMBER(color_hint_attrs);
 
             styling::color_unit::from_str(hash_color).then([&](const auto& rgb_fg) {
-                pnum -= 1;
-                vc.ensure_color_pair(pnum, rgb_fg, styling::color_unit::make_empty());
-
                 al.get_attrs().emplace_back(
                     line_range{cap->c_begin, cap->c_begin + 1},
                     &view_curses::VC_ROLE,

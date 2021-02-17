@@ -411,6 +411,7 @@ add_library(diag STATIC
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
+        base/lrucache.hpp
         base/math_util.hh
         optional.hpp
         papertrail_proc.hh
