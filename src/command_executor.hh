@@ -63,7 +63,7 @@ struct exec_context {
         this->ec_local_vars.push(std::map<std::string, std::string>());
         this->ec_path_stack.emplace_back(".");
         this->ec_source.emplace("command", 1);
-        this->ec_output_stack.emplace_back(nonstd::nullopt);
+        this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
     }
 
     std::string get_error_prefix();
@@ -79,13 +79,17 @@ struct exec_context {
         for (auto iter = this->ec_output_stack.rbegin();
              iter != this->ec_output_stack.rend();
              ++iter) {
-            if (*iter) {
-                return *iter;
+            if (iter->second && *iter->second) {
+                return *iter->second;
             }
         }
 
         return nonstd::nullopt;
     }
+
+    void set_output(const std::string& name, FILE *file);
+
+    void clear_output();
 
     struct source_guard {
         source_guard(exec_context &context) : sg_context(context) {
@@ -95,6 +99,16 @@ struct exec_context {
         ~source_guard() {
             this->sg_context.ec_source.pop();
         }
+
+        exec_context &sg_context;
+    };
+
+    struct output_guard {
+        explicit output_guard(exec_context &context,
+                              std::string name = "default",
+                              const nonstd::optional<FILE *>& file = nonstd::nullopt);
+
+        ~output_guard();
 
         exec_context &sg_context;
     };
@@ -120,7 +134,7 @@ struct exec_context {
     std::map<std::string, std::string> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
     std::stack<std::pair<std::string, int>> ec_source;
-    std::vector<nonstd::optional<FILE *>> ec_output_stack;
+    std::vector<std::pair<std::string, nonstd::optional<FILE *>>> ec_output_stack;
 
     attr_line_t ec_accumulator;
 

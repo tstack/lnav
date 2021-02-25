@@ -39,7 +39,11 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 {
 #   define YYCTYPE unsigned char
 #   define CAPTURE(tok) { \
-        pi.pi_next_offset = YYCURSOR.val - (const unsigned char *) pi.get_string(); \
+        if (YYCURSOR.val == EMPTY) { \
+            pi.pi_next_offset = pi.pi_length; \
+        } else { \
+            pi.pi_next_offset = YYCURSOR.val - (const unsigned char *) pi.get_string(); \
+        } \
         cap[0].c_end = pi.pi_next_offset; \
         cap[1].c_end = pi.pi_next_offset; \
         token_out = tok; \
@@ -100,7 +104,9 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
     pc.set_count(2);
     cap[0].c_begin = pi.pi_next_offset;
+    cap[0].c_end = pi.pi_next_offset;
     cap[1].c_begin = pi.pi_next_offset;
+    cap[1].c_end = pi.pi_next_offset;
 
     /*!re2c
        re2c:yyfill:enable = 0;

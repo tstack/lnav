@@ -33,6 +33,13 @@ lnav v0.9.1:
      * Themes can now include definitions for text highlights under:
          /ui/theme-defs/<theme_name>/highlights
      * Added a "grayscale" theme that isn't so colorful.
+     * Added the humanize_file_size() SQL function that converts a numeric size
+       to a human-friendly string.
+     * Added the sparkline() SQL function that returns a "sparkline" bar made
+       out of unicode characters.  It can be used with a single value or as
+       an aggregator.
+     * Added a "log_time_msecs" hidden column to the log tables that returns
+       the timestamp as the number of milliseconds from the epoch.
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included
@@ -42,9 +49,15 @@ lnav v0.9.1:
      * The range_start and range_stop values of the regexp_capture() results
        now start at 1 instead of zero to match with what the other SQL string
        functions expect.
+     * The ":write-cols-to" command has been renamed to ":write-table-to".
+     * The DB view will limit the maximum column width to 120 characters.
+     * The ":echo" command now evaluates its message to do variable
+       substitution.
 
      Fixes:
      * Unicode text can now be entered in prompts.
+     * The replicate() SQL function would cause a crash if the number of
+       replications was zero.
 
 lnav v0.9.0:
      Features:

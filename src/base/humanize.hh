@@ -34,6 +34,8 @@
 
 #include <sys/types.h>
 
+#include "file_range.hh"
+
 namespace humanize {
 
 /**
@@ -42,7 +44,9 @@ namespace humanize {
  * @param value The value to format.
  * @return The formatted string.
  */
-std::string file_size(ssize_t value);
+std::string file_size(file_ssize_t value);
+
+const std::string& sparkline(double value, nonstd::optional<double> upper);
 
 }
 

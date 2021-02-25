@@ -200,7 +200,6 @@ bool rl_sql_help(readline_curses *rc)
         auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
         string ddl;
 
-        log_debug("ident %s", ident.c_str());
         if (vtab != nullptr) {
             ddl = trim(vtab->get_table_statement());
         } else if (vtab_module_iter != vtab_module_ddls.end()) {
@@ -367,7 +366,6 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     tc->reload_data();
 
-    log_debug("rl_search_int");
     switch (mode) {
     case LNM_SEARCH:
     case LNM_SEARCH_FILTERS:
@@ -633,22 +631,23 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
             rc->set_value("Unable to open temporary output file: " +
                           string(strerror(errno)));
         } else {
-            auto_fd fd(fileno(tmpout));
-            auto_fd fd_copy((const auto_fd &) fd);
+            auto fd_copy = auto_fd::dup_of(fileno(tmpout));
             char desc[256], timestamp[32];
-            time_t current_time = time(NULL);
+            time_t current_time = time(nullptr);
             string path_and_args = rc->get_value();
 
-            ec.ec_output_stack.back() = tmpout.in();
-            string result = execute_file(ec, path_and_args)
-                .map(ok_prefix)
-                .orElse(err_to_ok).unwrap();
-            string::size_type lf_index = result.find('\n');
-            if (lf_index != string::npos) {
-                result = result.substr(0, lf_index);
+            {
+                exec_context::output_guard og(ec, "tmp", tmpout.release());
+
+                string result = execute_file(ec, path_and_args)
+                    .map(ok_prefix)
+                    .orElse(err_to_ok).unwrap();
+                string::size_type lf_index = result.find('\n');
+                if (lf_index != string::npos) {
+                    result = result.substr(0, lf_index);
+                }
+                rc->set_value(result);
             }
-            rc->set_value(result);
-            ec.ec_output_stack.back() = nonstd::nullopt;
 
             struct stat st;
 
@@ -666,7 +665,7 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
                     .with_detect_format(false);
                 lnav_data.ld_files_to_front.emplace_back(desc, 0);
 
-                if (lnav_data.ld_rl_view != NULL) {
+                if (lnav_data.ld_rl_view != nullptr) {
                     lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_1(X, "to close the file"));
                 }

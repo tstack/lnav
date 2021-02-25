@@ -20,4 +20,4 @@
            (SELECT lt2.start_time AS end_time FROM lease_times AS lt2 WHERE lt1.start_time < lt2.start_time LIMIT 1) AS end_time,
            ip
       FROM lease_times AS lt1)
-:write-cols-to -
+:write-table-to -

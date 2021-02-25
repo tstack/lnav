@@ -137,19 +137,28 @@ inline ssize_t utf8_char_to_byte_index(const std::string &str, ssize_t ch_index)
     return retval;
 }
 
-inline Result<size_t, const char *> utf8_string_length(const std::string &str)
+inline Result<size_t, const char *> utf8_string_length(const char *str, ssize_t len = -1)
 {
     size_t retval = 0;
 
-    for (size_t byte_index = 0; byte_index < str.length();) {
-        auto ch_size = TRY(ww898::utf::utf8::char_size([&str, byte_index]() {
-            return std::make_pair(str[byte_index], str.length() - byte_index);
+    if (len == -1) {
+        len = strlen(str);
+    }
+
+    for (ssize_t byte_index = 0; byte_index < len;) {
+        auto ch_size = TRY(ww898::utf::utf8::char_size([str, len, byte_index]() {
+            return std::make_pair(str[byte_index], len - byte_index);
         }));
         byte_index += ch_size;
         retval += 1;
     }
 
     return Ok(retval);
+}
+
+inline Result<size_t, const char *> utf8_string_length(const std::string& str)
+{
+    return utf8_string_length(str.c_str(), str.length());
 }
 
 bool is_url(const char *fn);
@@ -159,5 +168,7 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len);
 void split_ws(const std::string &str, std::vector<std::string> &toks_out);
 
 std::string repeat(const std::string& input, size_t num);
+
+std::string center_str(const std::string& subject, size_t width);
 
 #endif

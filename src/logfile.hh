@@ -164,6 +164,8 @@ public:
      */
     std::shared_ptr<log_format> get_format() const { return this->lf_format; };
 
+    intern_string_t get_format_name() const;
+
     text_format_t get_text_format() const {
         return this->lf_text_format;
     }

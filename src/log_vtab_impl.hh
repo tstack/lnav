@@ -137,6 +137,7 @@ public:
         keys_inout.emplace_back("log_line");
         keys_inout.emplace_back("min(log_line)");
         keys_inout.emplace_back("log_mark");
+        keys_inout.emplace_back("log_time_msecs");
     };
 
     virtual void extract(std::shared_ptr<logfile> lf,

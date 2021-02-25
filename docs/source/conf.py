@@ -41,6 +41,7 @@ class CustSqliteLexer(RegexLexer):
         'root': [
             (r'\s+', Text),
             (r'--.*\n?', Comment.Single),
+            (r'#.*\n?', Comment.Single),
             (r'/\*', Comment.Multiline, 'multiline-comments'),
             (words((
                 'ABORT',

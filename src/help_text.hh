@@ -45,6 +45,11 @@ enum class help_context_t {
     HC_SQL_TABLE_VALUED_FUNCTION,
 };
 
+enum class help_function_type_t {
+    HFT_REGULAR,
+    HFT_AGGREGATE,
+};
+
 enum class help_nargs_t {
     HN_REQUIRED,
     HN_OPTIONAL,
@@ -82,6 +87,8 @@ struct help_text {
     std::vector<const char *> ht_enum_values;
     std::vector<const char *> ht_tags;
     std::vector<const char *> ht_opposites;
+    help_function_type_t ht_function_type{help_function_type_t::HFT_REGULAR};
+    void *ht_impl{nullptr};
 
     help_text() = default;
 
@@ -101,6 +108,12 @@ struct help_text {
 
     help_text &sql_function() noexcept {
         this->ht_context = help_context_t::HC_SQL_FUNCTION;
+        return *this;
+    };
+
+    help_text &sql_agg_function() noexcept {
+        this->ht_context = help_context_t::HC_SQL_FUNCTION;
+        this->ht_function_type = help_function_type_t::HFT_AGGREGATE;
         return *this;
     };
 
@@ -170,6 +183,12 @@ struct help_text {
     help_text &with_tags(const std::initializer_list<const char*> &tags) noexcept;
 
     help_text &with_opposites(const std::initializer_list<const char*> &opps) noexcept;
+
+    template<typename F>
+    help_text &with_impl(F impl) {
+        this->ht_impl = (void *) impl;
+        return *this;
+    }
 
     void index_tags();
 

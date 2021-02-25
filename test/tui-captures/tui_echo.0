@@ -188,71 +188,6 @@ K 68
 S  24 ┋   h                                                                            ┋
 A      ····└ normal
 K 6f
-S  24 ┋                                                                                ┋
-A      ····└ carriage-return
-S  14 ┋ Command Help ::                                                                ┋
-A      └ fg(#c0c0c0), bg(#000080), bold
-A      ··············└ normal, fg(#c0c0c0), bg(#000080)
-A      ···············└ fg(#000080), bg(#c0c0c0)
-A      ················└ fg(#000000), bg(#c0c0c0)
-S  15 ┋Synopsis                                                                        ┋
-A      └ normal, underline
-A      ········└ normal
-CSI Erase to Right
-S  16 ┋  :echo msg - Echo the given message                                            ┋
-A      ···└ bold  │
-A      ·······└ normal
-A      ········└ underline
-A      ···········└ normal
-CSI Erase to Right
-S  16 ┋                                                                                ┋
-A      ····································└ carriage-return
-S  17 ┋Parameter                                                                       ┋
-A      └ underline
-A      ·········└ normal
-CSI Erase to Right
-S  17 ┋                                                                                ┋
-A      ·········└ carriage-return
-S  18 ┋  msg   The message to display                                                  ┋
-A      ··└ fg(#008080), bold
-A      ·····└ normal
-CSI Erase to Right
-S  18 ┋                                                                                ┋
-A      ······························└ carriage-return
-S  19 ┋See Also                                                                        ┋
-A      └ underline
-A      ········└ normal
-CSI Erase to Right
-S  20 ┋  :alt-msg, :eval, :redirect-to, :write-cols-to, :write-csv-to,                 ┋
-A      ··└ bold  │ │    │ │           │ │             │ │            │
-A      ··········└ normal │           │ │             │ │            │
-A      ············└ bold │           │ │             │ │            │
-A      ·················└ normal      │ │             │ │            │
-A      ···················└ bold      │ │             │ │            │
-A      ·······························└ normal        │ │            │
-A      ·································└ bold        │ │            │
-A      ···············································└ normal       │
-A      ·················································└ bold       │
-A      ······························································└ normal
-CSI Erase to Right
-S  20 ┋                                                                                ┋
-A      ·······························································└ carriage-return
-S  21 ┋  :write-json-to, :write-jsonlines-to, :write-raw-to, :write-screen-to,         ┋
-A      ··└ bold        │ │                  │ │            │ │               │
-A      ················└ normal             │ │            │ │               │
-A      ··················└ bold             │ │            │ │               │
-A      ·····································└ normal       │ │               │
-A      ·······································└ bold       │ │               │
-A      ····················································└ normal          │
-A      ······················································└ bold          │
-A      ······································································└ normal
-CSI Erase to Right
-S  21 ┋                                                                                ┋
-A      ·······································································└ carriage-return
-S  22 ┋  :write-to                                                                     ┋
-A      ··└ bold   │
-A      ···········└ normal
-CSI Erase to Right
 S  24 ┋    o                                                                           ┋
 A      ·····└ normal
 K 20
@@ -275,33 +210,6 @@ A      ········└ carriage-return
 CSI Erase Below
 S  24 ┋                                                                                ┋
 A      └ normal
-S  14 ┋hoped that these features will allow the user to quickly and                   x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  15 ┋efficiently zero in on problems.                                               x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  16 ┋                                                                               x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  17 ┋                                                                               x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  18 ┋OPENING PATHS/URLs                                                             x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  19 ┋==================                                                             x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  20 ┋                                                                               x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  21 ┋The main arguments to lnav are the files, directories, glob patterns,          x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
-S  22 ┋or URLs to be viewed.  If no arguments are given, the default syslog           x┋
-A                                                                                     └┛ alt
-A      ················································································└ normal
 S  23 ┋ L0          0%                                                                 ┋
 A      ·└ fg(#000000), bg(#c0c0c0)
 S  23 ┋                                                        ?:View Help             ┋

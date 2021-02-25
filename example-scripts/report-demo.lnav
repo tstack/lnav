@@ -1,0 +1,83 @@
+#
+# @synopsis: report-demo [<output-path>]
+# @description: Generate a report for requests in access_log files
+#
+
+# Figure out the file path where the report should be written to, default is
+# stdout
+;SELECT CASE
+          WHEN $1 IS NULL THEN '-'
+          ELSE $1
+        END AS out_path
+
+# Redirect output from commands to $out_path
+:redirect-to $out_path
+
+# Print an introductory message
+;SELECT printf('\n%d total requests', count(1)) AS msg FROM access_log
+:echo $msg
+
+;WITH top_paths AS (
+        SELECT
+            cs_uri_stem,
+            count(1) AS total_hits,
+            sum(sc_bytes) as bytes,
+            count(distinct c_ip) as visitors
+          FROM access_log
+          WHERE sc_status BETWEEN 200 AND 300
+          GROUP BY cs_uri_stem
+          ORDER BY total_hits DESC
+          LIMIT 50),
+      weekly_hits_with_gaps AS (
+        SELECT timeslice(log_time_msecs, '1w') AS week,
+               cs_uri_stem,
+               count(1) AS weekly_hits
+          FROM access_log
+          WHERE cs_uri_stem IN (SELECT cs_uri_stem FROM top_paths) AND
+                sc_status BETWEEN 200 AND 300
+          GROUP BY week, cs_uri_stem),
+      all_weeks AS (
+        SELECT week
+          FROM weekly_hits_with_gaps
+          GROUP BY week
+          ORDER BY week ASC),
+      weekly_hits AS (
+        SELECT all_weeks.week,
+               top_paths.cs_uri_stem,
+               ifnull(weekly_hits, 0) AS hits
+          FROM all_weeks
+          CROSS JOIN top_paths
+          LEFT JOIN weekly_hits_with_gaps
+            ON all_weeks.week = weekly_hits_with_gaps.week AND
+               top_paths.cs_uri_stem = weekly_hits_with_gaps.cs_uri_stem)
+  SELECT weekly_hits.cs_uri_stem AS Path,
+         printf('%,9d', total_hits) AS Hits,
+         printf('%,9d', visitors) AS Visitors,
+         printf('%9s', humanize_file_size(bytes)) as Amount,
+         sparkline(hits) AS Weeks
+    FROM weekly_hits
+    LEFT JOIN top_paths ON top_paths.cs_uri_stem = weekly_hits.cs_uri_stem
+    GROUP BY weekly_hits.cs_uri_stem
+    ORDER BY Hits DESC
+    LIMIT 10
+
+:write-table-to -
+
+:echo
+:echo Failed Requests
+:echo
+
+;SELECT printf('%,9d', count(1)) AS Hits,
+        printf('%,9d', count(distinct c_ip)) AS Visitors,
+        sc_status AS Status,
+        cs_method AS Method,
+        group_concat(distinct cs_version) AS Versions,
+        cs_uri_stem AS Path,
+        replicate('|', (cast(count(1) AS REAL) / $total_requests) * 100.0) AS "% of Requests"
+    FROM access_log
+    WHERE sc_status >= 400
+    GROUP BY cs_method, cs_uri_stem
+    ORDER BY Hits DESC
+    LIMIT 10
+
+:write-table-to -

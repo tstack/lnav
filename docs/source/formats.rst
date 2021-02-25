@@ -333,9 +333,25 @@ can have a mix of SQL and **lnav** commands, as well as include other scripts.
 The type of statement to execute is determined by the leading character on a
 line: a semi-colon begins a SQL statement; a colon starts an **lnav** command;
 and a pipe (|) denotes another script to be executed.  Lines beginning with a
-hash are treated as comments.  Any arguments passed to a script can be
-referenced using '$N' where 'N' is the index of the argument.  Remember that
-you need to use the :ref:`:eval<eval>` command when referencing
+hash are treated as comments.  The following variables are defined in a script:
+
+.. envvar:: #
+
+   The number of arguments passed to the script.
+
+.. envvar:: __all__
+
+   A string containing all the arguments joined by a single space.
+
+.. envvar:: 0
+
+   The path to the script being executed.
+
+.. envvar:: 1-N
+
+   The arguments passed to the script.
+
+Remember that you need to use the :ref:`:eval<eval>` command when referencing
 variables in most **lnav** commands.  Scripts can provide help text to be
 displayed during interactive usage by adding the following tags in a comment
 header:
@@ -349,6 +365,17 @@ header:
 
     # @description: Say hello to the given names.
 
+
+
+.. tip::
+
+   The :ref:`:eval<eval>` command can be used to do variable substitution for
+   commands that do not natively support it.  For example, to substitute the
+   variable, :code:`pattern`, in a :ref:`:filter-out<filter_out>` command:
+
+   .. code-block:: lnav
+
+      :eval :filter-out ${pattern}
 
 Installing Formats
 ------------------

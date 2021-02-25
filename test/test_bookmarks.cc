@@ -41,16 +41,43 @@ int main(int argc, char *argv[])
   int lpc, retval = EXIT_SUCCESS;
   bookmark_vector<vis_line_t> bv, bv_cp;
 
-  bv.insert_once(vis_line_t(1));
-  bv.insert_once(vis_line_t(1));
+  bv.insert_once(vis_line_t(2));
+  bv.insert_once(vis_line_t(2));
   assert(bv.size() == 1);
 
+  bv.insert_once(vis_line_t(4));
   bv.insert_once(vis_line_t(3));
-  bv.insert_once(vis_line_t(2));
-  assert(bv[0] == 1);
-  assert(bv[1] == 2);
-  assert(bv[2] == 3);
-  
+  assert(bv[0] == 2);
+  assert(bv[1] == 3);
+  assert(bv[2] == 4);
+
+    {
+        auto range = bv.equal_range(0_vl, 5_vl);
+
+        assert(range.first != range.second);
+        assert(*range.first == 2_vl);
+        ++range.first;
+        assert(range.first != range.second);
+        assert(*range.first == 3_vl);
+        ++range.first;
+        assert(range.first != range.second);
+        assert(*range.first == 4_vl);
+        ++range.first;
+        assert(range.first == range.second);
+    }
+
+    {
+        auto range = bv.equal_range(0_vl, 1_vl);
+
+        assert(range.first == range.second);
+    }
+
+    {
+        auto range = bv.equal_range(10_vl, 10_vl);
+
+        assert(range.first == range.second);
+    }
+
   bv.clear();
   assert(bv.next(vis_line_t(0)) == -1);
   assert(bv.prev(vis_line_t(0)) == -1);

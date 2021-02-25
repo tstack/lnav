@@ -257,6 +257,7 @@ public:
         {
             ELEMENT_TRACE;
 
+            require(elem.e_capture.c_end >= -1);
             this->std::list<element>::push_front(elem);
         };
 
@@ -264,6 +265,7 @@ public:
         {
             ELEMENT_TRACE;
 
+            require(elem.e_capture.c_end >= -1);
             this->std::list<element>::push_back(elem);
         };
 

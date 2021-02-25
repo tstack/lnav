@@ -2099,7 +2099,7 @@ public:
 
     virtual bool next(log_cursor &lc, logfile_sub_source &lss)
     {
-        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+        lc.lc_curr_line = lc.lc_curr_line + 1_vl;
         lc.lc_sub_index = 0;
 
         if (lc.is_eof()) {
@@ -2107,7 +2107,7 @@ public:
         }
 
         content_line_t cl(lss.at(lc.lc_curr_line));
-        shared_ptr<logfile> lf = lss.find(cl);
+        auto lf = lss.find_file_ptr(cl);
         auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
@@ -2115,12 +2115,12 @@ public:
             return false;
         }
 
-        auto format = lf->get_format();
-
         this->elt_module_format.mf_mod_format = nullptr;
-        if (format->get_name() == this->lfvi_format.get_name()) {
+        if (lf->get_format_name() == this->lfvi_format.get_name()) {
             return true;
         } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
+            auto format = lf->get_format();
+
             return lf->read_line(lf_iter).map([this, format, cl](auto line) {
                 std::vector<logline_value> values;
                 shared_buffer_ref body_ref;

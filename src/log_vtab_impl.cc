@@ -60,6 +60,7 @@ static const char *LOG_COLUMNS = R"(  (
 
 static const char *LOG_FOOTER_COLUMNS = R"(
   -- END Format-specific fields
+  log_time_msecs  INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
   log_path        TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
   log_text        TEXT HIDDEN,                       -- The full text of the log message
   log_body        TEXT HIDDEN                        -- The body of the log message
@@ -518,6 +519,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
             switch (post_col_number) {
                 case 0: {
+                    sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                    break;
+                }
+                case 1: {
                     const string &fn = lf->get_filename();
 
                     sqlite3_result_text(ctx,
@@ -526,7 +531,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                         SQLITE_STATIC);
                     break;
                 }
-                case 1: {
+                case 2: {
                     shared_buffer_ref line;
 
                     lf->read_full_message(ll, line);
@@ -536,7 +541,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                         SQLITE_TRANSIENT);
                     break;
                 }
-                case 2: {
+                case 3: {
                     if (vc->line_values.empty()) {
                         lf->read_full_message(ll, vc->log_msg);
                         vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);

@@ -37,6 +37,8 @@
 
 const char *db_label_source::NULL_STR = "<NULL>";
 
+constexpr size_t MAX_COLUMN_WIDTH = 120;
+
 void db_label_source::text_value_for_line(textview_curses &tc, int row,
                                           std::string &label_out,
                                           text_sub_source::line_flags_t flags)
@@ -51,14 +53,20 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
         return;
     }
     for (int lpc = 0; lpc < (int)this->dls_rows[row].size(); lpc++) {
-        int padding = (this->dls_headers[lpc].hm_column_size -
-                       strlen(this->dls_rows[row][lpc]) -
-                       1);
+        auto actual_col_size = std::min(MAX_COLUMN_WIDTH,
+                                        this->dls_headers[lpc].hm_column_size);
+        auto cell_str = std::string(this->dls_rows[row][lpc]);
 
+        truncate_to(cell_str, MAX_COLUMN_WIDTH);
+
+        auto cell_length = utf8_string_length(cell_str)
+            .unwrapOr(MAX_COLUMN_WIDTH);
+        auto padding = actual_col_size - cell_length;
+        this->dls_cell_width[lpc] = cell_str.length() + padding;
         if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
-        label_out.append(this->dls_rows[row][lpc]);
+        label_out.append(cell_str);
         if (this->dls_headers[lpc].hm_column_type == SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
@@ -79,7 +87,7 @@ void db_label_source::text_attrs_for_line(textview_curses &tc, int row,
         if (row % 2 == 0) {
             sa.emplace_back(lr2, &view_curses::VC_STYLE, A_BOLD);
         }
-        lr.lr_start += this->dls_headers[lpc].hm_column_size - 1;
+        lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
         sa.emplace_back(lr, &view_curses::VC_GRAPHIC, ACS_VLINE);
         lr.lr_start += 1;
@@ -122,10 +130,11 @@ void db_label_source::push_header(const std::string &colstr, int type,
                                   bool graphable)
 {
     this->dls_headers.emplace_back(colstr);
+    this->dls_cell_width.push_back(0);
 
     header_meta &hm = this->dls_headers.back();
 
-    hm.hm_column_size = colstr.length() + 1;
+    hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
     hm.hm_graphable = graphable;
     if (colstr == "log_time") {
@@ -141,12 +150,6 @@ void db_label_source::push_column(const char *colstr)
     size_t value_len;
 
     if (colstr == nullptr) {
-        value_len = 0;
-    }
-    else {
-        value_len = strlen(colstr);
-    }
-    if (colstr == nullptr) {
         colstr = NULL_STR;
     }
     else {
@@ -155,6 +158,7 @@ void db_label_source::push_column(const char *colstr)
             throw "out of memory";
         }
     }
+    value_len = strlen(colstr);
 
     if (index == this->dls_time_column_index) {
         date_time_scanner dts;
@@ -175,7 +179,8 @@ void db_label_source::push_column(const char *colstr)
 
     this->dls_rows.back().push_back(colstr);
     this->dls_headers[index].hm_column_size =
-        std::max(this->dls_headers[index].hm_column_size, strlen(colstr) + 1);
+        std::max(this->dls_headers[index].hm_column_size,
+                 utf8_string_length(colstr, value_len).unwrapOr(value_len));
 
     if (colstr != nullptr && this->dls_headers[index].hm_graphable) {
         if (sscanf(colstr, "%lf", &num_value) != 1) {
@@ -215,6 +220,7 @@ void db_label_source::clear()
     }
     this->dls_rows.clear();
     this->dls_time_column.clear();
+    this->dls_cell_width.clear();
 }
 
 long db_label_source::column_name_to_index(const std::string &name) const
@@ -365,13 +371,25 @@ bool db_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
         for (size_t lpc = 0;
              lpc < this->dos_labels->dls_headers.size();
              lpc++) {
-            int before, total_fill =
-                dls->dls_headers[lpc].hm_column_size -
-                dls->dls_headers[lpc].hm_name.length();
+            auto actual_col_size = std::min(
+                MAX_COLUMN_WIDTH, dls->dls_headers[lpc].hm_column_size);
+            std::string cell_title = dls->dls_headers[lpc].hm_name;
 
-            struct line_range header_range(line.length(),
-                                           line.length() +
-                                           dls->dls_headers[lpc].hm_column_size);
+            truncate_to(cell_title, MAX_COLUMN_WIDTH);
+
+            auto cell_length = utf8_string_length(cell_title)
+                .unwrapOr(actual_col_size);
+            int before, total_fill = actual_col_size - cell_length;
+            auto line_len_before = line.length();
+
+            before = total_fill / 2;
+            total_fill -= before;
+            line.append(before, ' ');
+            line.append(cell_title);
+            line.append(total_fill, ' ');
+            line.append(1, ' ');
+
+            struct line_range header_range(line_len_before, line.length());
 
             int attrs =
                 vc.attrs_for_ident(dls->dls_headers[lpc].hm_name) | A_REVERSE;
@@ -379,12 +397,6 @@ bool db_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
                 attrs = A_UNDERLINE;
             }
             sa.emplace_back(header_range, &view_curses::VC_STYLE, attrs);
-
-            before = total_fill / 2;
-            total_fill -= before;
-            line.append(before, ' ');
-            line.append(dls->dls_headers[lpc].hm_name);
-            line.append(total_fill, ' ');
         }
 
         struct line_range lr(0);

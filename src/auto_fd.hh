@@ -73,6 +73,26 @@ public:
     };
 
     /**
+     * dup(2) the given file descriptor and wrap it in an auto_fd.
+     *
+     * @param fd The file descriptor to duplicate.
+     * @return A new auto_fd that contains the duplicated file descriptor.
+     */
+    static auto_fd dup_of(int fd) {
+        if (fd == -1) {
+            return auto_fd{};
+        }
+
+        auto new_fd = dup(fd);
+
+        if (new_fd == -1) {
+            throw std::bad_alloc();
+        }
+
+        return auto_fd(new_fd);
+    };
+
+    /**
      * Construct an auto_fd to manage the given file descriptor.
      *
      * @param fd The file descriptor to be managed.

@@ -61,7 +61,7 @@ public:
         size_t retval = 0;
 
         for (auto &dls_header : this->dls_headers) {
-            retval += dls_header.hm_column_size;
+            retval += dls_header.hm_column_size + 1;
         }
         return retval;
     };
@@ -75,8 +75,6 @@ public:
 
     void push_header(const std::string &colstr, int type, bool graphable);
 
-    /* TODO: add support for left and right justification... numbers should */
-    /* be right justified and strings should be left. */
     void push_column(const char *colstr);
 
     void clear();
@@ -117,8 +115,9 @@ public:
 
     stacked_bar_chart<std::string> dls_chart;
     std::vector<header_meta> dls_headers;
-    std::vector<std::vector<const char *> > dls_rows;
+    std::vector<std::vector<const char *>> dls_rows;
     std::vector<struct timeval> dls_time_column;
+    std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
 
     static const char *NULL_STR;

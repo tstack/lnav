@@ -424,7 +424,7 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
     char mode = '\0';
 
     ec.ec_path_stack.emplace_back(path.parent_path());
-    ec.ec_output_stack.emplace_back(nonstd::nullopt);
+    exec_context::output_guard og(ec);
     while ((line_size = getline(line.out(), &line_max_size, file)) != -1) {
         line_number += 1;
 
@@ -471,7 +471,6 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
     } else {
         fclose(file);
     }
-    ec.ec_output_stack.pop_back();
     ec.ec_path_stack.pop_back();
 
     return Ok(retval);
@@ -845,4 +844,42 @@ std::string exec_context::get_error_prefix()
     std::pair<std::string, int> source = this->ec_source.top();
 
     return fmt::format("{}:{}: error: ", source.first, source.second);
+}
+
+void exec_context::set_output(const string &name, FILE *file)
+{
+    log_info("redirecting command output to: %s", name.c_str());
+    this->ec_output_stack.back().second | [](auto file) {
+        if (file != stdout) {
+            fclose(file);
+        }
+    };
+    this->ec_output_stack.back() = std::make_pair(name, file);
+}
+
+void exec_context::clear_output()
+{
+    log_info("redirecting command output to screen");
+    this->ec_output_stack.back().second | [](auto file) {
+        if (file != stdout) {
+            fclose(file);
+        }
+    };
+    this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
+}
+
+exec_context::output_guard::output_guard(exec_context &context,
+                                         std::string name,
+                                         const nonstd::optional<FILE *> &file)
+    : sg_context(context) {
+    if (file) {
+        log_info("redirecting command output to: %s", name.c_str());
+    }
+    context.ec_output_stack.emplace_back(std::move(name), file);
+}
+
+exec_context::output_guard::~output_guard()
+{
+    this->sg_context.clear_output();
+    this->sg_context.ec_output_stack.pop_back();
 }

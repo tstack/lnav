@@ -172,6 +172,27 @@ inline void to_sqlite(sqlite3_context *ctx, const char *str)
     }
 }
 
+namespace lnav {
+namespace sqlite {
+struct text_buffer {
+    static text_buffer alloc(size_t size) {
+        return text_buffer {
+            (char *) malloc(size),
+            size,
+        };
+    }
+
+    char *tb_value;
+    size_t tb_length;
+};
+}
+}
+
+inline void to_sqlite(sqlite3_context *ctx, const lnav::sqlite::text_buffer &str)
+{
+    sqlite3_result_text(ctx, str.tb_value, str.tb_length, free);
+}
+
 inline void to_sqlite(sqlite3_context *ctx, const std::string &str)
 {
     sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);

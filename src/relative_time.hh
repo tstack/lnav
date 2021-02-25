@@ -274,7 +274,7 @@ public:
         }
     };
 
-    int64_t to_microseconds() {
+    int64_t to_microseconds() const {
         int64_t retval;
 
         retval = this->rt_field[RTF_YEARS].value * 12;

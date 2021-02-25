@@ -651,3 +651,12 @@ logfile::read_raw_message(logfile::const_iterator ll)
 
     return this->lf_line_buffer.read_range(this->get_file_range(ll));
 }
+
+intern_string_t logfile::get_format_name() const
+{
+    if (this->lf_format) {
+        return this->lf_format->get_name();
+    }
+
+    return {};
+}

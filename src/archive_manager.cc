@@ -89,6 +89,22 @@ public:
     auto_fd lh_fd;
 };
 
+#if HAVE_ARCHIVE_H
+/**
+ * Enables a subset of the supported archive formats to speed up detection,
+ * since some formats, like xar are unlikely to be used.
+ */
+static void enable_desired_archive_formats(archive *arc)
+{
+    archive_read_support_format_7zip(arc);
+    archive_read_support_format_cpio(arc);
+    archive_read_support_format_lha(arc);
+    archive_read_support_format_rar(arc);
+    archive_read_support_format_tar(arc);
+    archive_read_support_format_zip(arc);
+}
+#endif
+
 bool is_archive(const fs::path& filename)
 {
 #if HAVE_ARCHIVE_H
@@ -97,7 +113,7 @@ bool is_archive(const fs::path& filename)
     arc = archive_read_new();
 
     archive_read_support_filter_all(arc);
-    archive_read_support_format_all(arc);
+    enable_desired_archive_formats(arc);
     archive_read_support_format_raw(arc);
     log_debug("read open %s", filename.c_str());
     auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
@@ -254,7 +270,7 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
     auto_mem<archive> ext(archive_free);
 
     arc = archive_read_new();
-    archive_read_support_format_all(arc);
+    enable_desired_archive_formats(arc);
     archive_read_support_format_raw(arc);
     archive_read_support_filter_all(arc);
     ext = archive_write_disk_new();

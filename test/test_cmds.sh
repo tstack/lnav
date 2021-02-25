@@ -60,12 +60,15 @@ EOF
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ";SELECT 1 AS c1, 'Hello, World!' AS c2" \
-    -c ":write-cols-to -" \
+    -c ":write-table-to -" \
     "${test_dir}/logfile_access_log.*"
 
 check_output "writing columns does not work?" <<EOF
-c1       c2
- 1 Hello, World!
+┏━━┳━━━━━━━━━━━━━┓
+┃c1┃     c2      ┃
+┡━━╇━━━━━━━━━━━━━┩
+│ 1│Hello, World!│
+└━━┴━━━━━━━━━━━━━┘
 EOF
 
 
@@ -1103,7 +1106,7 @@ EOF
 export XYZ="World"
 
 run_test ${lnav_test} -n \
-    -c ':echo Hello, $XYZ!' \
+    -c ':echo Hello, \$XYZ!' \
     ${test_dir}/logfile_access_log.0
 
 check_output "echo hello" <<EOF
@@ -1123,7 +1126,7 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ':eval :echo Hello, $XYZ!' \
+    -c ':echo Hello, $XYZ!' \
     ${test_dir}/logfile_access_log.0
 
 check_output "eval echo hello" <<EOF

@@ -193,3 +193,22 @@ void shlex::scan_variable_ref(pcre_context::capture_t &cap_out,
         token_out = shlex_token_t::ST_ERROR;
     }
 }
+
+void shlex::resolve_home_dir(std::string &result,
+                             const pcre_context::capture_t cap) const
+{
+    if (cap.length() == 1) {
+        result.append(getenv_opt("HOME").value_or("~"));
+    } else {
+        auto username = (char *) alloca(cap.length());
+
+        memcpy(username, &this->s_str[cap.c_begin + 1], cap.length() - 1);
+        username[cap.length() - 1] = '\0';
+        auto pw = getpwnam(username);
+        if (pw != nullptr) {
+            result.append(pw->pw_dir);
+        } else {
+            result.append(&this->s_str[cap.c_begin], cap.length());
+        }
+    }
+}

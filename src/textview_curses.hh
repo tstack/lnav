@@ -635,64 +635,9 @@ public:
 
     void toggle_user_mark(bookmark_type_t *bm,
                           vis_line_t start_line,
-                          vis_line_t end_line = vis_line_t(-1))
-    {
-        if (end_line == -1) {
-            end_line = start_line;
-        }
-        if (start_line > end_line) {
-            std::swap(start_line, end_line);
-        }
+                          vis_line_t end_line = vis_line_t(-1));;
 
-        if (start_line >= this->get_inner_height()) {
-            return;
-        }
-        if (end_line >= this->get_inner_height()) {
-            end_line = vis_line_t(this->get_inner_height() - 1);
-        }
-        for (vis_line_t curr_line = start_line; curr_line <= end_line;
-             ++curr_line) {
-            bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
-            bookmark_vector<vis_line_t>::iterator iter;
-            bool added;
-
-            iter = bv.insert_once(curr_line);
-            if (iter == bv.end()) {
-                added = true;
-            }
-            else {
-                bv.erase(iter);
-                added = false;
-            }
-            if (this->tc_sub_source) {
-                this->tc_sub_source->text_mark(bm, curr_line, added);
-            }
-        }
-        this->search_range(start_line, end_line + 1_vl);
-        this->search_new_data();
-    };
-
-    void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked) {
-        bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
-        bookmark_vector<vis_line_t>::iterator iter;
-
-        if (marked) {
-            bv.insert_once(vl);
-        }
-        else {
-            iter = std::lower_bound(bv.begin(), bv.end(), vl);
-            if (iter != bv.end() && *iter == vl) {
-                bv.erase(iter);
-            }
-        }
-        if (this->tc_sub_source) {
-            this->tc_sub_source->text_mark(bm, vl, marked);
-        }
-
-        this->search_range(vl, vl + 1_vl);
-        this->search_new_data();
-        this->set_needs_update();
-    };
+    void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked);;
 
     textview_curses &set_sub_source(text_sub_source *src) {
         this->tc_sub_source = src;

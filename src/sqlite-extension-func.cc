@@ -98,7 +98,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                     agg_funcs[i].nArg,
                                     SQLITE_UTF8,
                                     (void *) &agg_funcs[i],
-                                    0,
+                                    nullptr,
                                     agg_funcs[i].xStep,
                                     agg_funcs[i].xFinalize);
 

@@ -84,11 +84,10 @@ std::string column_namer::add_column(const std::string &in_name)
 
     while (this->existing_name(retval)) {
         if (num == 0) {
-            log_debug("existing!");
             this->cn_name_counters[retval] = num;
         }
 
-        log_debug("dup %s", retval.c_str());
+        log_debug("column name already exists: %s", retval.c_str());
         snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
         retval = buffer;
         num += 1;

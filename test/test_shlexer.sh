@@ -46,7 +46,7 @@ check_output_ws "single" <<EOF
     'abc'
 sst ^
 sen     ^
-eval -- abc
+eval -- 'abc'
 split:
   0 -- abc
 EOF
@@ -57,7 +57,7 @@ check_output_ws "double" <<EOF
     "def"
 dst ^
 den     ^
-eval -- def
+eval -- "def"
 split:
   0 -- def
 EOF
@@ -68,7 +68,7 @@ check_output_ws "double with single" <<EOF
     "'"
 dst ^
 den   ^
-eval -- '
+eval -- "'"
 split:
   0 -- '
 EOF
@@ -79,7 +79,7 @@ check_output_ws "single with double" <<EOF
     '"'
 sst ^
 sen   ^
-eval -- "
+eval -- '"'
 split:
   0 -- "
 EOF
@@ -91,7 +91,7 @@ check_output_ws "double w/ref" <<EOF
 dst ^
 ref      ^--^
 den              ^
-eval -- abc xyz 123
+eval -- "abc xyz 123"
 split:
   0 -- abc xyz 123
 EOF
@@ -103,7 +103,7 @@ check_output_ws "double w/quoted-ref" <<EOF
 dst ^
 qrf      ^----^
 den                ^
-eval -- abc xyz 123
+eval -- "abc xyz 123"
 split:
   0 -- abc xyz 123
 EOF
@@ -114,7 +114,7 @@ check_output_ws "single w/ref" <<EOF
     'abc \$DEF 123'
 sst ^
 sen              ^
-eval -- abc \$DEF 123
+eval -- 'abc \$DEF 123'
 split:
   0 -- abc \$DEF 123
 EOF

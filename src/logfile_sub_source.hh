@@ -501,6 +501,14 @@ public:
         return retval;
     };
 
+    logfile *find_file_ptr(content_line_t &line)
+    {
+        auto retval = this->lss_files[line / MAX_LINES_PER_FILE]->get_file_ptr();
+        line = content_line_t(line % MAX_LINES_PER_FILE);
+
+        return retval;
+    };
+
     logline *find_line(content_line_t line)
     {
         logline *retval = nullptr;
@@ -599,7 +607,7 @@ public:
         {
             this->ld_filter_state.lfo_filter_state.clear();
         };
-\
+
         void set_file(const std::shared_ptr<logfile> &lf) {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             lf->set_logline_observer(&this->ld_filter_state);
@@ -607,6 +615,10 @@ public:
 
         std::shared_ptr<logfile> get_file() const {
             return this->ld_filter_state.lfo_filter_state.tfs_logfile;
+        };
+
+        logfile *get_file_ptr() const {
+            return this->ld_filter_state.lfo_filter_state.tfs_logfile.get();
         };
 
         bool is_visible() const {

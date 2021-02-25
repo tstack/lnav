@@ -113,6 +113,11 @@ size_t unquote_w3c(char *dst, const char *str, size_t len)
 void truncate_to(std::string &str, size_t max_char_len)
 {
     static const std::string ELLIPSIS = "\u22ef";
+
+    if (str.length() < max_char_len) {
+        return;
+    }
+
     auto str_char_len_res = utf8_string_length(str);
 
     if (str_char_len_res.isErr()) {
@@ -130,12 +135,16 @@ void truncate_to(std::string &str, size_t max_char_len)
         return;
     }
 
-    auto to_remove = (str_char_len - max_char_len) + 1;
+    auto chars_to_remove = (str_char_len - max_char_len) + 1;
     auto midpoint = str_char_len / 2;
-    auto to_keep_at_front = midpoint - (to_remove / 2);
-
-    str.erase(to_keep_at_front, to_remove);
-    str.insert(to_keep_at_front, ELLIPSIS);
+    auto chars_to_keep_at_front = midpoint - (chars_to_remove / 2);
+    auto bytes_to_keep_at_front =
+        utf8_char_to_byte_index(str, chars_to_keep_at_front);
+    auto remove_up_to_bytes =
+        utf8_char_to_byte_index(str, chars_to_keep_at_front + chars_to_remove);
+    auto bytes_to_remove = remove_up_to_bytes - bytes_to_keep_at_front;
+    str.erase(bytes_to_keep_at_front, bytes_to_remove);
+    str.insert(bytes_to_keep_at_front, ELLIPSIS);
 }
 
 bool is_url(const char *fn)
@@ -189,4 +198,21 @@ std::string repeat(const std::string& input, size_t num)
     std::ostringstream os;
     std::fill_n(std::ostream_iterator<std::string>(os), num, input);
     return os.str();
+}
+
+std::string center_str(const std::string &subject, size_t width)
+{
+    std::string retval = subject;
+
+    truncate_to(retval, width);
+
+    auto retval_length = utf8_string_length(retval).unwrapOr(retval.length());
+    auto total_fill = width - retval_length;
+    auto before = total_fill / 2;
+    auto after = total_fill - before;
+
+    retval.insert(0, before, ' ');
+    retval.append(after, ' ');
+
+    return retval;
 }

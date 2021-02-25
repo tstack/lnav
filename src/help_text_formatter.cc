@@ -466,6 +466,9 @@ static std::string link_name(const help_text &ht)
     } else {
         scrubbed_name = ht.ht_name;
     }
+    if (ht.ht_function_type == help_function_type_t::HFT_AGGREGATE) {
+        scrubbed_name += "_agg";
+    }
     for (auto &param : ht.ht_parameters) {
         if (!is_sql_infix && param.ht_name[0]) {
             continue;

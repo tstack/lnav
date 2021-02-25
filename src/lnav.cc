@@ -256,6 +256,7 @@ bool setup_logline_table(exec_context &ec)
 {
     // Hidden columns don't show up in the table_info pragma.
     static const char *hidden_table_columns[] = {
+        "log_time_msecs",
         "log_path",
         "log_text",
         "log_body",
@@ -2617,7 +2618,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     return EXIT_FAILURE;
                 }
                 init_session();
-                lnav_data.ld_exec_context.ec_output_stack.back() = stdout;
+                lnav_data.ld_exec_context.set_output("stdout", stdout);
                 alerter::singleton().enabled(false);
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];

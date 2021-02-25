@@ -1,0 +1,10 @@
+#
+# @synopsis: tag-ssh-msgs
+# @description: Tag interesting SSH log messages
+#
+
+;UPDATE all_logs
+     SET log_tags = json_concat(log_tags, '#ssh.invalid-user')
+     WHERE log_text LIKE '%Invalid user from%'
+
+;SELECT 'Tagged ' || changes() || ' messages';

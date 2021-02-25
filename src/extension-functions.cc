@@ -669,8 +669,8 @@ static void floorFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** string that constains s contatenated n times
 */
 static void replicateFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  unsigned char *z;        /* input string */
-  unsigned char *zo;       /* result string */
+    static const char *EMPTY = "";
+  unsigned char *z;        /* result string */
   i64 iCount;              /* times to repeat */
   i64 nLen;                /* length of the input string (no multibyte considerations) */
   i64 nTLen;               /* length of the result string (no multibyte considerations) */
@@ -683,28 +683,29 @@ static void replicateFunc(sqlite3_context *context, int argc, sqlite3_value **ar
 
   if( iCount<0 ){
     sqlite3_result_error(context, "domain error", -1);
-  }else{
+    return;
+  }
+
+  if (iCount == 0) {
+      sqlite3_result_text(context, EMPTY, 0, SQLITE_STATIC);
+      return;
+  }
 
     nLen  = sqlite3_value_bytes(argv[0]);
     nTLen = nLen*iCount;
     z= (unsigned char *) sqlite3_malloc(nTLen + 1);
-    zo= (unsigned char *) sqlite3_malloc(nLen + 1);
-    if (!z || !zo){
+    if (!z){
       sqlite3_result_error_nomem(context);
       if (z) sqlite3_free(z);
-      if (zo) sqlite3_free(zo);
       return;
     }
-    strcpy((char*)zo, (char*)sqlite3_value_text(argv[0]));
+    auto zo = sqlite3_value_text(argv[0]);
 
     for(i=0; i<iCount; ++i){
       strcpy((char*)(z+i*nLen), (char*)zo);
     }
 
-    sqlite3_result_text(context, (char*)z, -1, SQLITE_TRANSIENT);
-    sqlite3_free(z);
-    sqlite3_free(zo);
-  }
+    sqlite3_result_text(context, (char*)z, -1, sqlite3_free);
 }
 
 /*

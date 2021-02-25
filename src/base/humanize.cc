@@ -37,7 +37,7 @@
 
 namespace humanize {
 
-std::string file_size(ssize_t value)
+std::string file_size(file_ssize_t value)
 {
     static const double LN1024 = log(1024.0);
     static const std::vector<const char *> UNITS = {
@@ -59,6 +59,36 @@ std::string file_size(ssize_t value)
     return fmt::format(FMT_STRING("{:.1f}{}B"),
                        divisor == 0 ? value : value / divisor,
                        UNITS[exp]);
+}
+
+const std::string& sparkline(double value, nonstd::optional<double> upper_opt)
+{
+    static const std::string ZERO = " ";
+    static const std::string BARS[] = {
+        "\u2581",
+        "\u2582",
+        "\u2583",
+        "\u2584",
+        "\u2585",
+        "\u2586",
+        "\u2587",
+        "\u2588",
+    };
+    static const double BARS_COUNT = std::distance(begin(BARS), end(BARS));
+
+    if (value <= 0.0) {
+        return ZERO;
+    }
+
+    auto upper = upper_opt.value_or(100.0);
+
+    if (value >= upper) {
+        return BARS[(size_t) BARS_COUNT - 1];
+    }
+
+    size_t index = ceil((value / upper) * BARS_COUNT) - 1;
+
+    return BARS[index];
 }
 
 }

@@ -666,12 +666,8 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
 
     vector<string> split_args;
     shlex lexer(fn);
-    scoped_resolver scopes = {
-        &ec.ec_local_vars.top(),
-        &ec.ec_global_vars,
-    };
 
-    if (!lexer.split(split_args, scopes)) {
+    if (!lexer.split(split_args, ec.create_resolver())) {
         return ec.make_error("unable to parse arguments");
     }
     if (split_args.size() > 1) {
@@ -685,16 +681,15 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         mode = "w";
     }
 
-    textview_curses *            tc = *lnav_data.ld_view_stack.top();
-    bookmark_vector<vis_line_t> &bv =
-        tc->get_bookmarks()[&textview_curses::BM_USER];
-    db_label_source &dls = lnav_data.ld_db_row_source;
-    db_overlay_source &dos = lnav_data.ld_db_overlay;
+    auto *tc = *lnav_data.ld_view_stack.top();
+    auto &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
+    auto &dls = lnav_data.ld_db_row_source;
 
     if (args[0] == "write-csv-to" ||
         args[0] == "write-json-to" ||
         args[0] == "write-jsonlines-to" ||
-        args[0] == "write-cols-to") {
+        args[0] == "write-cols-to" ||
+        args[0] == "write-table-to") {
         if (dls.dls_headers.empty()) {
             return ec.make_error("no query result to write, use ';' to execute a query");
         }
@@ -791,26 +786,84 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
             line_count += 1;
         }
     }
-    else if (args[0] == "write-cols-to") {
-        attr_line_t header_line;
+    else if (args[0] == "write-cols-to" || args[0] == "write-table-to") {
+        bool first = true;
 
-        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], 0, 1, 0_vl, header_line);
-        fputs(header_line.get_string().c_str(), outfile);
-        fputc('\n', outfile);
-        for (size_t lpc = 0; lpc < dls.text_line_count(); lpc++) {
-            if (ec.ec_dry_run && lpc > 10) {
+        fprintf(outfile, "\u250f");
+        for (const auto& hdr : dls.dls_headers) {
+            auto cell_line = repeat("\u2501", hdr.hm_column_size);
+
+            if (!first) {
+                fprintf(outfile, "\u2533");
+            }
+            fprintf(outfile, "%s", cell_line.c_str());
+            first = false;
+        }
+        fprintf(outfile, "\u2513\n");
+
+        for (const auto& hdr : dls.dls_headers) {
+            auto centered_hdr = center_str(hdr.hm_name, hdr.hm_column_size);
+
+            fprintf(outfile, "\u2503");
+            fprintf(outfile, "%s", centered_hdr.c_str());
+        }
+        fprintf(outfile, "\u2503\n");
+
+        first = true;
+        fprintf(outfile, "\u2521");
+        for (const auto& hdr : dls.dls_headers) {
+            auto cell_line = repeat("\u2501", hdr.hm_column_size);
+
+            if (!first) {
+                fprintf(outfile, "\u2547");
+            }
+            fprintf(outfile, "%s", cell_line.c_str());
+            first = false;
+        }
+        fprintf(outfile, "\u2529\n");
+
+        for (size_t row = 0; row < dls.text_line_count(); row++) {
+            if (ec.ec_dry_run && row > 10) {
                 break;
             }
 
-            string line;
+            for (size_t col = 0; col < dls.dls_headers.size(); col++) {
+                const auto& hdr = dls.dls_headers[col];
 
-            dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line,
-                                    text_sub_source::RF_RAW);
-            fputs(line.c_str(), outfile);
-            fputc('\n', outfile);
+                fprintf(outfile, "\u2502");
+
+                auto cell = dls.dls_rows[row][col];
+                auto cell_byte_len = strlen(cell);
+                auto cell_length = utf8_string_length(cell, cell_byte_len)
+                    .unwrapOr(cell_byte_len);
+                auto padding = hdr.hm_column_size - cell_length;
+
+                if (hdr.hm_column_type != SQLITE3_TEXT) {
+                    fprintf(outfile, "%s", std::string(padding, ' ').c_str());
+                }
+                fprintf(outfile, "%s", cell);
+                if (hdr.hm_column_type == SQLITE3_TEXT) {
+                    fprintf(outfile, "%s", std::string(padding, ' ').c_str());
+                }
+            }
+            fprintf(outfile, "\u2502\n");
 
             line_count += 1;
         }
+
+        first = true;
+        fprintf(outfile, "\u2514");
+        for (const auto& hdr : dls.dls_headers) {
+            auto cell_line = repeat("\u2501", hdr.hm_column_size);
+
+            if (!first) {
+                fprintf(outfile, "\u2534");
+            }
+            fprintf(outfile, "%s", cell_line.c_str());
+            first = false;
+        }
+        fprintf(outfile, "\u2518\n");
+
     }
     else if (args[0] == "write-json-to") {
         yajlpp_gen gen;
@@ -1123,7 +1176,7 @@ static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, 
             return Ok(string("info: redirect will be cleared"));
         }
 
-        ec.ec_output_stack.back() = nonstd::nullopt;
+        ec.clear_output();
         return Ok(string("info: cleared redirect"));
     }
 
@@ -1146,13 +1199,18 @@ static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, 
         return Ok("info: output will be redirected to -- " + split_args[0]);
     }
 
-    FILE *file = fopen(split_args[0].c_str(), "w");
+    nonstd::optional<FILE *> file;
 
-    if (file == nullptr) {
-        return ec.make_error("unable to open file -- {}", split_args[0]);
+    if (split_args[0] == "-") {
+        ec.clear_output();
+    } else {
+        FILE *file = fopen(split_args[0].c_str(), "w");
+        if (file == nullptr) {
+            return ec.make_error("unable to open file -- {}", split_args[0]);
+        }
+
+        ec.set_output(split_args[0], file);
     }
-
-    ec.ec_output_stack.back() = file;
 
     return Ok("info: redirecting output to file -- " + split_args[0]);
 }
@@ -3396,19 +3454,23 @@ static Result<string, string> com_echo(exec_context &ec, string cmdline, vector<
     }
     else if (args.size() >= 1) {
         bool lf = true;
+        string src;
 
         if (args.size() > 2 && args[1] == "-n") {
             string::size_type index_in_cmdline = cmdline.find(args[1]);
 
             lf = false;
-            retval = cmdline.substr(index_in_cmdline + args[1].length() + 1);
+            src = cmdline.substr(index_in_cmdline + args[1].length() + 1);
         }
         else if (args.size() >= 2) {
-            retval = cmdline.substr(args[0].length() + 1);
+            src = cmdline.substr(args[0].length() + 1);
         }
         else {
-            retval = "";
+            src = "";
         }
+
+        auto lexer = shlex(src);
+        lexer.eval(retval, ec.create_resolver());
 
         auto ec_out = ec.get_output();
         if (ec.ec_dry_run) {
@@ -4804,11 +4866,11 @@ readline_context::command_t STD_COMMANDS[] = {
             })
     },
     {
-        "write-cols-to",
+        "write-table-to",
         com_save_to,
 
-        help_text(":write-cols-to")
-            .with_summary("Write SQL results to the given file in a columnar format")
+        help_text(":write-table-to")
+            .with_summary("Write SQL results to the given file in a tabular format")
             .with_parameter(help_text("path", "The path to the file to write"))
             .with_tags({"io", "scripting", "sql"})
             .with_example({
@@ -4873,7 +4935,8 @@ readline_context::command_t STD_COMMANDS[] = {
         com_redirect_to,
 
         help_text(":redirect-to")
-            .with_summary("Redirect the output of commands to the given file")
+            .with_summary("Redirect the output of commands that write to "
+                          "stdout to the given file")
             .with_parameter(help_text(
                 "path", "The path to the file to write."
                         "  If not specified, the current redirect will be cleared")
@@ -5256,9 +5319,13 @@ readline_context::command_t STD_COMMANDS[] = {
         com_echo,
 
         help_text(":echo")
-            .with_summary("Echo the given message")
+            .with_summary(
+                "Echo the given message to the screen or, if :redirect-to has "
+                "been called, to output file specified in the redirect.  "
+                "Variable substitution is performed on the message.  Use a "
+                "backslash to escape any special characters, like '$'")
             .with_parameter(help_text("msg", "The message to display"))
-            .with_tags({"scripting"})
+            .with_tags({"io", "scripting"})
             .with_example({
                 "To output 'Hello, World!'",
                 "Hello, World!"
@@ -5289,10 +5356,6 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"scripting"})
             .with_examples(
                 {
-                    {
-                        "To output the user's home directory",
-                        ":echo $HOME"
-                    },
                     {
                         "To substitute the table name from a variable",
                         ";SELECT * FROM ${table}"
@@ -5354,6 +5417,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
 static unordered_map<char const *, vector<char const *>> aliases = {
     { "quit", { "q", "q!" } },
+    { "write-table-to", { "write-cols-to", }}
 };
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)

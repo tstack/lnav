@@ -223,6 +223,7 @@ void add_filter_expr_possibilities(readline_curses *rlc, int context, const std:
     static const char *BUILTIN_VARS[] = {
         ":log_level",
         ":log_time",
+        ":log_time_msecs",
         ":log_mark",
         ":log_comment",
         ":log_tags",

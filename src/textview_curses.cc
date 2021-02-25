@@ -234,15 +234,22 @@ void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vi
     this->tc_searching += 1;
     this->tc_search_action(this);
 
-    bookmark_vector<vis_line_t> &search_bv = this->tc_bookmarks[&BM_SEARCH];
+    if (start != -1_vl) {
+        auto& search_bv = this->tc_bookmarks[&BM_SEARCH];
+        auto pair = search_bv.equal_range(start, stop);
 
-    if (start != -1) {
-        auto pair = search_bv.equal_range(vis_line_t(start), vis_line_t(stop));
-
+        if (pair.first != pair.second) {
+            this->set_needs_update();
+        }
         for (auto mark_iter = pair.first;
              mark_iter != pair.second;
              ++mark_iter) {
-            this->set_user_mark(&BM_SEARCH, *mark_iter, false);
+            if (this->tc_sub_source) {
+                this->tc_sub_source->text_mark(&BM_SEARCH, *mark_iter, false);
+            }
+        }
+        if (pair.first != pair.second) {
+            search_bv.erase(pair.first, pair.second);
         }
     }
 
@@ -650,6 +657,71 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start,
     }
 
     range_out = std::make_pair(prev_hit, next_hit);
+}
+
+void
+textview_curses::set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked)
+{
+    bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
+    bookmark_vector<vis_line_t>::iterator iter;
+
+    if (marked) {
+        bv.insert_once(vl);
+    }
+    else {
+        iter = std::lower_bound(bv.begin(), bv.end(), vl);
+        if (iter != bv.end() && *iter == vl) {
+            bv.erase(iter);
+        }
+    }
+    if (this->tc_sub_source) {
+        this->tc_sub_source->text_mark(bm, vl, marked);
+    }
+
+    if (marked) {
+        this->search_range(vl, vl + 1_vl);
+        this->search_new_data();
+    }
+    this->set_needs_update();
+}
+
+void
+textview_curses::toggle_user_mark(bookmark_type_t *bm, vis_line_t start_line,
+                                  vis_line_t end_line)
+{
+    if (end_line == -1) {
+        end_line = start_line;
+    }
+    if (start_line > end_line) {
+        std::swap(start_line, end_line);
+    }
+
+    if (start_line >= this->get_inner_height()) {
+        return;
+    }
+    if (end_line >= this->get_inner_height()) {
+        end_line = vis_line_t(this->get_inner_height() - 1);
+    }
+    for (vis_line_t curr_line = start_line; curr_line <= end_line;
+         ++curr_line) {
+        bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
+        bookmark_vector<vis_line_t>::iterator iter;
+        bool added;
+
+        iter = bv.insert_once(curr_line);
+        if (iter == bv.end()) {
+            added = true;
+        }
+        else {
+            bv.erase(iter);
+            added = false;
+        }
+        if (this->tc_sub_source) {
+            this->tc_sub_source->text_mark(bm, curr_line, added);
+        }
+    }
+    this->search_range(start_line, end_line + 1_vl);
+    this->search_new_data();
 }
 
 void text_time_translator::scroll_invoked(textview_curses *tc)

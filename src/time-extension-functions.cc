@@ -36,8 +36,10 @@
 #include <stdint.h>
 
 #include <string>
+#include <unordered_map>
 
 #include "base/date_time_scanner.hh"
+#include "base/lrucache.hpp"
 #include "sql_util.hh"
 #include "relative_time.hh"
 
@@ -45,47 +47,75 @@
 
 using namespace std;
 
-static string timeslice(const char *time_in, nonstd::optional<const char *> slice_in_opt)
+static lnav::sqlite::text_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
 {
-    const char *slice_in = slice_in_opt.value_or("15m");
-    auto parse_res = relative_time::from_str(slice_in, strlen(slice_in));
-    date_time_scanner dts;
-    time_t now;
+    thread_local date_time_scanner dts;
+    thread_local struct {
+        std::string c_slice_str;
+        relative_time c_rel_time;
+    } cache;
+    const auto slice_in = string_fragment(slice_in_opt.value_or("15m"));
 
-    time(&now);
-    dts.set_base_time(now);
-
-    if (parse_res.isErr()) {
-        throw sqlite_func_error("unable to parse time slice value: {} -- {}",
-                                slice_in, parse_res.unwrapErr().pe_msg);
-    }
-
-    auto rt = parse_res.unwrap();
-    if (rt.empty()) {
+    if (slice_in.empty()) {
         throw sqlite_func_error("no time slice value given");
     }
 
-    if (rt.is_absolute()) {
-        throw sqlite_func_error("absolute time slices are not valid");
+    if (slice_in != cache.c_slice_str.c_str()) {
+        auto parse_res = relative_time::from_str(slice_in.data());
+        if (parse_res.isErr()) {
+            throw sqlite_func_error("unable to parse time slice value: {} -- {}",
+                                    slice_in, parse_res.unwrapErr().pe_msg);
+        }
+
+        cache.c_rel_time = parse_res.unwrap();
+        if (cache.c_rel_time.empty()) {
+            throw sqlite_func_error("could not determine a time slice from: {}",
+                                    slice_in);
+        }
+
+        if (cache.c_rel_time.is_absolute()) {
+            throw sqlite_func_error("absolute time slices are not valid");
+        }
+
+        cache.c_slice_str = slice_in.to_string();
     }
 
-    struct exttm tm;
+    int64_t us, remainder;
     struct timeval tv;
 
-    if (dts.scan(time_in, strlen(time_in), nullptr, &tm, tv) == nullptr) {
-        throw sqlite_func_error("unable to parse time value -- {}", time_in);
+    switch (sqlite3_value_type(time_in)) {
+        case SQLITE3_TEXT: {
+            const char *time_in_str = reinterpret_cast<const char *>(sqlite3_value_text(
+                time_in));
+            struct exttm tm;
+
+            if (dts.scan(time_in_str, strlen(time_in_str), nullptr, &tm, tv, false) == nullptr) {
+                dts.unlock();
+                if (dts.scan(time_in_str, strlen(time_in_str), nullptr, &tm, tv, false) == nullptr) {
+                    throw sqlite_func_error("unable to parse time value -- {}",
+                                            time_in_str);
+                }
+            }
+
+            us = tv.tv_sec * 1000000LL + tv.tv_usec;
+            break;
+        }
+        case SQLITE_INTEGER: {
+            auto msecs = sqlite3_value_int64(time_in);
+
+            us = msecs * 1000LL;
+            break;
+        }
     }
 
-    int64_t us = tv.tv_sec * 1000000LL + tv.tv_usec, remainder;
-
-    remainder = us % rt.to_microseconds();
+    remainder = us % cache.c_rel_time.to_microseconds();
     us -= remainder;
 
-    tv.tv_sec = us / (1000 * 1000);
-    tv.tv_usec = us % (1000 * 1000);
+    tv.tv_sec = us / (1000LL * 1000LL);
+    tv.tv_usec = us % (1000LL * 1000LL);
 
-    char ts[64];
-    sql_strftime(ts, sizeof(ts), tv);
+    auto ts = lnav::sqlite::text_buffer::alloc(64);
+    ts.tb_length = sql_strftime(ts.tb_value, ts.tb_length, tv);
 
     return ts;
 }
@@ -132,7 +162,7 @@ int time_extension_functions(struct FuncDef **basic_funcs,
                 })
                 .with_example({
                     "To group log messages into five minute buckets and count them",
-                    "SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"
+                    "SELECT timeslice(log_time_msecs, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"
                 })
         ),
 

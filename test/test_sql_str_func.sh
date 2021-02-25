@@ -1,5 +1,30 @@
 #! /bin/bash
 
+run_test ./drive_sql "select humanize_file_size()"
+
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- wrong number of arguments to function humanize_file_size()
+EOF
+
+run_test ./drive_sql "select humanize_file_size('abc')"
+
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- Expecting an integer for argument number 0
+EOF
+
+run_test ./drive_sql "select humanize_file_size(1, 2)"
+
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- wrong number of arguments to function humanize_file_size()
+EOF
+
+run_test ./drive_sql "select humanize_file_size(10 * 1000 * 1000)"
+
+check_output "" <<EOF
+Row 0:
+  Column humanize_file_size(10 * 1000 * 1000): 9.5MB
+EOF
+
 run_test ./drive_sql "select startswith('.foo', '.')"
 
 check_output "" <<EOF

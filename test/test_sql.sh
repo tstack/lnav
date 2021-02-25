@@ -2,6 +2,15 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
+run_test ${lnav_test} -n \
+    -c ";SELECT replicate('foobar', 120)" \
+    ${test_dir}/logfile_empty.0
+
+check_output "long lines are not truncated?" <<EOF
+                                                replicate('foobar', 120)
+foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar⋯oobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar
+EOF
+
 cp ${srcdir}/logfile_syslog.2 logfile_syslog_test.2
 touch -t 201511030923 logfile_syslog_test.2
 run_test ${lnav_test} -n \

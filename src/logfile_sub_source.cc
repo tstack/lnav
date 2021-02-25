@@ -1068,6 +1068,10 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
                               SQLITE_STATIC);
             continue;
         }
+        if (strcmp(name, ":log_time_msecs") == 0) {
+            sqlite3_bind_int64(stmt, lpc + 1, ll->get_time_in_millis());
+            continue;
+        }
         if (strcmp(name, ":log_mark") == 0) {
             sqlite3_bind_int(stmt, lpc + 1, ll->is_marked());
             continue;

@@ -17,6 +17,7 @@
 
 #include "pcrepp/pcrepp.hh"
 
+#include "base/humanize.hh"
 #include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "column_namer.hh"
@@ -248,6 +249,60 @@ static void sql_spooky_hash_final(sqlite3_context *context)
     }
 }
 
+struct sparkline_context {
+    bool sc_initialized{true};
+    double sc_max_value{0.0};
+    std::vector<double> sc_values;
+};
+
+static void sparkline_step(sqlite3_context *context,
+                           int argc,
+                           sqlite3_value **argv)
+{
+    auto *sc = (sparkline_context *)
+        sqlite3_aggregate_context(context, sizeof(sparkline_context));
+
+    if (!sc->sc_initialized) {
+        new (sc) sparkline_context;
+    }
+
+    if (argc == 0) {
+        return;
+    }
+
+    sc->sc_values.push_back(sqlite3_value_double(argv[0]));
+    sc->sc_max_value = std::max(sc->sc_max_value, sc->sc_values.back());
+
+    if (argc >= 2) {
+        sc->sc_max_value = std::max(sc->sc_max_value,
+                                    sqlite3_value_double(argv[1]));
+    }
+}
+
+static void sparkline_final(sqlite3_context *context)
+{
+    auto *sc = (sparkline_context *)
+        sqlite3_aggregate_context(context, sizeof(sparkline_context));
+
+    if (!sc->sc_initialized) {
+        sqlite3_result_text(context, "", 0, SQLITE_STATIC);
+        return;
+    }
+
+    auto retval = (char *) sqlite3_malloc(sc->sc_values.size() * 3 + 1);
+    auto start = retval;
+
+    for (const auto& value : sc->sc_values) {
+        auto bar = humanize::sparkline(value, sc->sc_max_value);
+
+        strcpy(start, bar.c_str());
+        start += bar.length();
+    }
+    *start = '\0';
+
+    sqlite3_result_text(context, retval, -1, sqlite3_free);
+}
+
 int string_extension_functions(struct FuncDef **basic_funcs,
                                struct FuncDefAgg **agg_funcs)
 {
@@ -298,6 +353,34 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_example({
                     "To wrap alphanumeric words with angle brackets",
                     "SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')"
+                })
+        ),
+
+        sqlite_func_adapter<decltype(&humanize::file_size), humanize::file_size>::builder(
+            help_text("humanize_file_size",
+                      "Format the given file size as a human-friendly string")
+                .sql_function()
+                .with_parameter({"value", "The file size to format"})
+                .with_tags({"string"})
+                .with_example({
+                    "To format an amount",
+                    "SELECT humanize_file_size(10 * 1024 * 1024)"
+                })
+        ),
+
+        sqlite_func_adapter<decltype(&humanize::sparkline), humanize::sparkline>::builder(
+            help_text("sparkline",
+                      "Converts a numeric value on a range to a bar chart character")
+                .sql_function()
+                .with_parameter({"value", "The numeric value to convert"})
+                .with_parameter(help_text(
+                    "upper", "The upper bound of the numeric range (default: 100)")
+                                    .optional())
+                .with_tags({"string"})
+                .with_example({
+                    "To get the unicode block element for the value 32 in the "
+                    "range of 0-128",
+                    "SELECT sparkline(32, 128)"
                 })
         ),
 
@@ -388,13 +471,33 @@ int string_extension_functions(struct FuncDef **basic_funcs,
             sql_spooky_hash_step, sql_spooky_hash_final,
             help_text("group_spooky_hash",
                       "Compute the hash value for the given arguments")
-                .sql_function()
+                .sql_agg_function()
                 .with_parameter(help_text("str", "The string to hash")
                                     .one_or_more())
                 .with_tags({"string"})
                 .with_example({
                     "To produce a hash of all of the values of 'column1'",
                     "SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))"
+                })
+        },
+
+        {
+            "sparkline", -1, 0,
+            sparkline_step, sparkline_final,
+            help_text("sparkline",
+                      "An aggregate function to convert numeric values to a "
+                      "sparkline bar chart")
+                .sql_agg_function()
+                .with_parameter({"value", "The numeric values to chart"})
+                .with_parameter(help_text(
+                    "upper", "The upper bound of the numeric range.  "
+                             "If not provided, the default is derived from "
+                             "all of the provided values")
+                                    .optional())
+                .with_tags({"string"})
+                .with_example({
+                    "To chart the values in a JSON array",
+                    "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, 4, 5, 6, 7, 8]')"
                 })
         },
 

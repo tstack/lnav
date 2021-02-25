@@ -356,8 +356,7 @@ void data_parser::pairup(data_parser::schema_id_t *schema,
                     struct element blank;
 
                     blank.e_capture.c_begin = blank.e_capture.c_end =
-                        free_row.front().e_capture.
-                            c_begin;
+                        free_row.front().e_capture.c_begin;
                     blank.e_token = DNT_KEY;
                     pair_subs.PUSH_BACK(blank);
                     pair_subs.PUSH_BACK(free_row.front());
@@ -445,8 +444,8 @@ void data_parser::discover_format()
 
         elem.e_capture = *pc_iter;
 
-        require(elem.e_capture.c_begin != -1);
-        require(elem.e_capture.c_end != -1);
+        require(elem.e_capture.c_begin >= 0);
+        require(elem.e_capture.c_end >= 0);
 
         state_stack.top().update_for_element(elem);
         switch (elem.e_token) {
