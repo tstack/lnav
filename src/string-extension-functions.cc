@@ -289,7 +289,7 @@ static void sparkline_final(sqlite3_context *context)
         return;
     }
 
-    auto retval = (char *) sqlite3_malloc(sc->sc_values.size() * 3 + 1);
+    auto retval = (char *) malloc(sc->sc_values.size() * 3 + 1);
     auto start = retval;
 
     for (const auto& value : sc->sc_values) {
@@ -300,7 +300,9 @@ static void sparkline_final(sqlite3_context *context)
     }
     *start = '\0';
 
-    sqlite3_result_text(context, retval, -1, sqlite3_free);
+    sqlite3_result_text(context, retval, -1, free);
+
+    sc->~sparkline_context();
 }
 
 int string_extension_functions(struct FuncDef **basic_funcs,
