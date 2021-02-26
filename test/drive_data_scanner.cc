@@ -101,25 +101,27 @@ int main(int argc, char *argv[])
     }
     else {
         for (int lpc = 0; lpc < argc; lpc++) {
+            std::unique_ptr<ifstream> in_ptr;
             istream *in;
-            FILE *   out;
+            FILE *out;
 
             if (strcmp(argv[lpc], "-") == 0) {
                 in = &cin;
             }
             else {
-                ifstream *ifs = new ifstream(argv[lpc]);
+                auto ifs = std::make_unique<ifstream>(argv[lpc]);
 
                 if (!ifs->is_open()) {
                     fprintf(stderr, "error: unable to open file\n");
                     retval = EXIT_FAILURE;
                 }
                 else {
-                    in = ifs;
+                    in_ptr = std::move(ifs);
+                    in = in_ptr.get();
                 }
             }
 
-            if ((out = fopen(TMP_NAME, "w")) == NULL) {
+            if ((out = fopen(TMP_NAME, "w")) == nullptr) {
                 fprintf(stderr, "error: unable to temporary file for writing\n");
                 retval = EXIT_FAILURE;
             }
@@ -172,7 +174,7 @@ int main(int argc, char *argv[])
                 vector<logline_value> ll_values;
                 string_attrs_t sa;
 
-                if (format.get() != NULL) {
+                if (format.get() != nullptr) {
                     format->annotate(0, sbr, sa, ll_values);
                     body = find_string_attr_range(sa, &SA_BODY);
                 }
@@ -200,7 +202,7 @@ int main(int argc, char *argv[])
 
                 auto_mem<yajl_gen_t> gen(yajl_gen_free);
 
-                gen = yajl_gen_alloc(NULL);
+                gen = yajl_gen_alloc(nullptr);
                 yajl_gen_config(gen.in(), yajl_gen_beautify, true);
 
                 elements_to_json(gen, dp, &dp.dp_pairs);
@@ -237,7 +239,7 @@ int main(int argc, char *argv[])
                 }
 
                 fclose(data_parser::TRACE_FILE);
-                data_parser::TRACE_FILE = NULL;
+                data_parser::TRACE_FILE = nullptr;
             }
         }
     }
