@@ -137,7 +137,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        EOF { return false; }
 
-       ("u"|"r")?'"'('\\'.|'""'|[^\x00\"])*'"' {
+       ("u"|"r")?'"'('\\'.|[^\x00\"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (pi.get_string()[cap[1].c_begin]) {
            case 'u':
@@ -152,7 +152,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00\'])*"'"/[^sS] {
+       ("u"|"r")?"'"('\\'.|"''"|[^\x00\'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            switch (pi.get_string()[cap[1].c_begin]) {
            case 'u':
@@ -180,11 +180,11 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        }
        IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
 
-       "<""?"?[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*("/"|"?")">" {
+       "<""?"?[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"|[^\x00>]+)))*SPACE*("/"|"?")">" {
            RET(DT_XML_EMPTY_TAG);
        }
 
-       "<"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*"="SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*">" {
+       "<"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*"="SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"|[^\x00>]+)))*SPACE*">" {
            RET(DT_XML_OPEN_TAG);
        }
 

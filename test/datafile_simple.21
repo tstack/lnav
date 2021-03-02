@@ -1,0 +1,26 @@
+             {"correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test"}
+ key   2:2    ^                                                                                
+quot   2:17    ^-------------^                                                                 correctProperty
+ val   2:17    ^-------------^                                                                 correctProperty
+quot  20:24                      ^--^                                                          test
+ val  20:24                      ^--^                                                          test
+quot  28:45                              ^---------------^                                     incorrectProperty
+ val  28:45                              ^---------------^                                     incorrectProperty
+quot  49:55                                                   ^----^                           test\"
+ val  49:55                                                   ^----^                           test\"
+quot  59:71                                                             ^----------^           nextProperty
+ val  59:71                                                             ^----------^           nextProperty
+quot  74:78                                                                            ^--^    test
+ val  74:78                                                                            ^--^    test
+ grp   2:78    ^--------------------------------------------------------------------------^    correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test
+pair   2:78    ^--------------------------------------------------------------------------^    correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test
+msg         :{"correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test"}
+format      :{#}
+[
+    "correctProperty",
+    "test",
+    "incorrectProperty",
+    "test\\\"",
+    "nextProperty",
+    "test"
+]
