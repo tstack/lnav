@@ -72,6 +72,7 @@ CREATE TABLE regexp_capture (
         pcre_context_static<30> c_context;
         unique_ptr<pcre_input> c_input;
         string c_content;
+        bool c_content_as_blob{false};
         int c_index;
         int c_start_index;
         bool c_matched{false};
@@ -157,10 +158,17 @@ CREATE TABLE regexp_capture (
                 }
                 break;
             case RC_COL_VALUE:
-                sqlite3_result_text(ctx,
-                                    vc.c_content.c_str(),
-                                    vc.c_content.length(),
-                                    SQLITE_TRANSIENT);
+                if (vc.c_content_as_blob) {
+                    sqlite3_result_blob64(ctx,
+                                          vc.c_content.c_str(),
+                                          vc.c_content.length(),
+                                          SQLITE_STATIC);
+                } else {
+                    sqlite3_result_text(ctx,
+                                        vc.c_content.c_str(),
+                                        vc.c_content.length(),
+                                        SQLITE_STATIC);
+                }
                 break;
             case RC_COL_PATTERN: {
                 auto str = vc.c_pattern.get_pattern();
@@ -209,11 +217,13 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
         return SQLITE_OK;
     }
 
-    const char *value = (const char *) sqlite3_value_text(argv[0]);
+    auto byte_count = sqlite3_value_bytes(argv[0]);
+    auto blob = (const char *) sqlite3_value_blob(argv[0]);
+
+    pCur->c_content_as_blob = (sqlite3_value_type(argv[0]) == SQLITE_BLOB);
+    pCur->c_content.assign(blob, byte_count);
+
     const char *pattern = (const char *) sqlite3_value_text(argv[1]);
-
-    pCur->c_content = value;
-
     auto re_res = pcrepp::from_str(pattern);
     if (re_res.isErr()) {
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
@@ -228,6 +238,8 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     pCur->c_input = make_unique<pcre_input>(pCur->c_content);
     pCur->c_matched = pCur->c_pattern.match(pCur->c_context, *(pCur->c_input));
+
+    log_debug("matched %d", pCur->c_matched);
 
     return SQLITE_OK;
 }

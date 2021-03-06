@@ -40,6 +40,16 @@ lnav v0.9.1:
        an aggregator.
      * Added a "log_time_msecs" hidden column to the log tables that returns
        the timestamp as the number of milliseconds from the epoch.
+     * Added an "lnav_top_file()" SQL function that can be used to get the
+       name of the top line in the top view or NULL if the line did not come
+       from a file.
+     * Added a "mimetype" column to the lnav_file table that returns a guess as
+       to the MIME type of the file contents.
+     * Added a "content" hidden column to the lnav_file table that can be used
+       to read the contents of the file.  The contents can then be passed to
+       functions that operate on XML/JSON data, like xpath() or json_tree().
+     * Added an "lnav_top_view" SQL VIEW that returns the row for the top view
+       in the lnav_views table.
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included

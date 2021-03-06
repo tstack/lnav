@@ -47,6 +47,7 @@
 
 #include "lnav_config_fwd.hh"
 #include "archive_manager.cfg.hh"
+#include "file_vtab.cfg.hh"
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.
@@ -101,6 +102,7 @@ struct _lnav_config {
     key_map lc_active_keymap;
 
     archive_manager::config lc_archive_manager;
+    file_vtab::config lc_file_vtab;
 };
 
 extern struct _lnav_config lnav_config;

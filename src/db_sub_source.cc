@@ -105,7 +105,7 @@ void db_label_source::text_attrs_for_line(textview_curses &tc, int row,
                 this->dls_chart.chart_attrs_for_value(tc, left, this->dls_headers[lpc].hm_name, num_value, sa);
             }
         }
-        if (row_len > 2 &&
+        if (row_len > 2 && row_len < MAX_COLUMN_WIDTH &&
             ((row_value[0] == '{' && row_value[row_len - 1] == '}') ||
              (row_value[0] == '[' && row_value[row_len - 1] == ']'))) {
             json_ptr_walk jpw;

@@ -237,6 +237,9 @@ public:
     void set_value(const std::string &value)
     {
         this->rc_value            = value;
+        if (this->rc_value.length() > 1024) {
+            this->rc_value = this->rc_value.substr(0, 1024);
+        }
         this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
         this->set_needs_update();
     };

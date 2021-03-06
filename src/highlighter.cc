@@ -41,7 +41,7 @@ highlighter::highlighter(const highlighter &other)
     pcre_refcount(this->h_code, 1);
     this->study();
     this->h_attrs = other.h_attrs;
-    this->h_text_format = other.h_text_format;
+    this->h_text_formats = other.h_text_formats;
     this->h_format_name = other.h_format_name;
     this->h_nestable = other.h_nestable;
 }
@@ -67,7 +67,7 @@ highlighter &highlighter::operator=(const highlighter &other)
     this->study();
     this->h_format_name = other.h_format_name;
     this->h_attrs = other.h_attrs;
-    this->h_text_format = other.h_text_format;
+    this->h_text_formats = other.h_text_formats;
     this->h_nestable = other.h_nestable;
 
     return *this;

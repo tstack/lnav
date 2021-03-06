@@ -34,6 +34,20 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "file-vtab": {
+                    "description": "Settings related to the lnav_file virtual-table",
+                    "title": "/tuning/file-vtab",
+                    "type": "object",
+                    "properties": {
+                        "max-content-size": {
+                            "title": "/tuning/file-vtab/max-content-size",
+                            "description": "The maximum allowed file size for the content column",
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false

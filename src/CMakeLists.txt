@@ -276,6 +276,7 @@ add_library(diag STATIC
         listview_curses.cc
         lnav_commands.cc
         lnav_config.cc
+        base/lnav.gzip.cc
         base/lnav_log.cc
         lnav_util.cc
         log_accel.cc

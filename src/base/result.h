@@ -33,7 +33,10 @@ namespace types {
 
         E val;
     };
-}
+
+    template<>
+    struct Err<void> { };
+};
 
 template<typename T, typename CleanT = typename std::decay<T>::type>
 types::Ok<CleanT> Ok(T&& val) {
@@ -47,6 +50,10 @@ inline types::Ok<void> Ok() {
 template<typename E, typename CleanE = typename std::decay<E>::type>
 types::Err<CleanE> Err(E&& val) {
     return types::Err<CleanE>(std::forward<E>(val));
+}
+
+inline types::Err<void> Err() {
+    return {};
 }
 
 template<typename T, typename E> struct Result;
@@ -554,7 +561,7 @@ struct Storage {
 
     void construct(types::Ok<T> ok)
     {
-        new (&storage_) T(ok.val);
+        new (&storage_) T(std::move(ok.val));
         initialized_ = true;
     }
     void construct(types::Err<E> err)
@@ -796,17 +803,32 @@ struct Result {
     }
 
     template<typename Func>
-    Result<T, E> then(Func func) const {
+    Result<void, E> then(Func func) {
         if (this->isOk()) {
-            func(this->storage().template get<T>());
+            func(std::move(this->storage().template get<T>()));
+
+            return Ok();
         }
 
-        return *this;
+        return Err(std::move(this->storage().template get<E>()));
     }
 
     template<typename Func>
-    Result<T, E> otherwise(Func func) const {
-        return details::otherwise(*this, func);
+    Result<typename std::result_of<Func>::type, E> then(Func func) {
+        if (this->isOk()) {
+            return Ok(func(std::move(this->storage().template get<T>())));
+        }
+
+        return Err(std::move(this->storage().template get<E>()));
+    }
+
+    template<typename Func>
+    void otherwise(Func func) {
+        if (this->isOk()) {
+            return;
+        }
+
+        func(std::move(this->storage().template get<E>()));
     }
 
     template<typename Func,

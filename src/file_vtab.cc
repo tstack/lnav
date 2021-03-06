@@ -33,12 +33,14 @@
 #include <string.h>
 
 #include "base/injector.bind.hh"
+#include "base/lnav.gzip.hh"
 #include "base/lnav_log.hh"
 #include "file_collection.hh"
 #include "logfile.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"
 #include "log_format.hh"
+#include "file_vtab.cfg.hh"
 
 using namespace std;
 
@@ -52,9 +54,12 @@ CREATE TABLE lnav_file (
     device integer,       -- The device the file is stored on.
     inode integer,        -- The inode for the file on the device.
     filepath text,        -- The path to the file.
+    mimetype text,        -- The MIME type for the file.
     format text,          -- The log file format for the file.
     lines integer,        -- The number of lines in the file.
-    time_offset integer   -- The millisecond offset for timestamps.
+    time_offset integer,  -- The millisecond offset for timestamps.
+
+    content BLOB HIDDEN   -- The contents of the file.
 );
 )";
 
@@ -88,16 +93,64 @@ CREATE TABLE lnav_file (
                 to_sqlite(ctx, name);
                 break;
             case 3:
-                to_sqlite(ctx, format_name);
+                to_sqlite(ctx, fmt::format("{}", lf->get_text_format()));
                 break;
             case 4:
+                to_sqlite(ctx, format_name);
+                break;
+            case 5:
                 to_sqlite(ctx, (int64_t) lf->size());
                 break;
-            case 5: {
+            case 6: {
                 auto tv = lf->get_time_offset();
                 int64_t ms = (tv.tv_sec * 1000LL) + tv.tv_usec / 1000LL;
 
                 to_sqlite(ctx, ms);
+                break;
+            }
+            case 7: {
+                auto& cfg = injector::get<const file_vtab::config&>();
+                auto lf_stat = lf->get_stat();
+
+                if (lf_stat.st_size > cfg.fvc_max_content_size) {
+                    sqlite3_result_error(ctx, "file is too large", -1);
+                } else {
+                    auto fd = lf->get_fd();
+                    auto_mem<char> buf;
+                    buf = (char *) malloc(lf_stat.st_size);
+                    auto rc = pread(fd, buf, lf_stat.st_size, 0);
+
+                    if (rc == -1) {
+                        auto errmsg = fmt::format("unable to read file: {}",
+                                                  strerror(errno));
+
+                        sqlite3_result_error(ctx, errmsg.c_str(),
+                                             errmsg.length());
+                    } else if (rc != lf_stat.st_size) {
+                        auto errmsg = fmt::format("short read of file: {} < {}",
+                                                  rc, lf_stat.st_size);
+
+                        sqlite3_result_error(ctx, errmsg.c_str(),
+                                             errmsg.length());
+                    } else if (lnav::gzip::is_gzipped(buf, rc)) {
+                        lnav::gzip::uncompress(lf->get_unique_path(), buf, rc)
+                            .then([ctx](auto uncomp) {
+                                auto pair = uncomp.release();
+
+                                sqlite3_result_blob64(ctx,
+                                                      pair.first,
+                                                      pair.second,
+                                                      free);
+                            })
+                            .otherwise([ctx](auto msg) {
+                                sqlite3_result_error(ctx,
+                                                     msg.c_str(),
+                                                     msg.size());
+                            });
+                    } else {
+                        sqlite3_result_blob64(ctx, buf.release(), rc, free);
+                    }
+                }
                 break;
             }
             default:
@@ -125,9 +178,11 @@ CREATE TABLE lnav_file (
                    int64_t device,
                    int64_t inode,
                    std::string path,
+                   const char *text_format,
                    const char *format,
                    int64_t lines,
-                   int64_t time_offset) {
+                   int64_t time_offset,
+                   const char *content) {
         auto lf = this->lf_collection.fc_files[rowid];
         struct timeval tv = {
             (int) (time_offset / 1000LL),

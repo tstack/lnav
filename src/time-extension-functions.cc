@@ -47,7 +47,7 @@
 
 using namespace std;
 
-static lnav::sqlite::text_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
+static auto_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
 {
     thread_local date_time_scanner dts;
     thread_local struct {
@@ -114,9 +114,10 @@ static lnav::sqlite::text_buffer timeslice(sqlite3_value *time_in, nonstd::optio
     tv.tv_sec = us / (1000LL * 1000LL);
     tv.tv_usec = us % (1000LL * 1000LL);
 
-    auto ts = lnav::sqlite::text_buffer::alloc(64);
-    ts.tb_length = sql_strftime(ts.tb_value, ts.tb_length, tv);
+    auto ts = auto_buffer::alloc(64);
+    auto actual_length = sql_strftime(ts.in(), ts.size(), tv);
 
+    ts.shrink_to(actual_length);
     return ts;
 }
 

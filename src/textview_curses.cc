@@ -430,8 +430,8 @@ void textview_curses::textview_value_for_row(vis_line_t row,
             tc_highlight.first.first == highlight_source_t::INTERNAL ||
             tc_highlight.first.first == highlight_source_t::THEME;
 
-        if (tc_highlight.second.h_text_format != text_format_t::TF_UNKNOWN &&
-            source_format != tc_highlight.second.h_text_format) {
+        if (!tc_highlight.second.h_text_formats.empty() &&
+            tc_highlight.second.h_text_formats.count(source_format) == 0) {
             continue;
         }
 

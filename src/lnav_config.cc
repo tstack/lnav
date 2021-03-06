@@ -78,6 +78,10 @@ static auto a = injector::bind<archive_manager::config>::to_instance(+[]() {
     return &lnav_config.lc_archive_manager;
 });
 
+static auto fvc = injector::bind<file_vtab::config>::to_instance(+[]() {
+    return &lnav_config.lc_file_vtab;
+});
+
 ghc::filesystem::path dotlnav_path()
 {
     auto home_env = getenv("HOME");
@@ -889,10 +893,23 @@ static struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
+static struct json_path_container file_vtab_handlers = {
+    yajlpp::property_handler("max-content-size")
+        .with_synopsis("<bytes>")
+        .with_description(
+            "The maximum allowed file size for the content column")
+        .with_min_value(0)
+        .for_field(&_lnav_config::lc_file_vtab,
+                   &file_vtab::config::fvc_max_content_size),
+};
+
 static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
         .with_children(archive_handlers),
+    yajlpp::property_handler("file-vtab")
+        .with_description("Settings related to the lnav_file virtual-table")
+        .with_children(file_vtab_handlers),
 };
 
 static set<string> SUPPORTED_CONFIG_SCHEMAS = {

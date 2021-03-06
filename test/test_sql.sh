@@ -85,6 +85,67 @@ command-option:1: error: oops!
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";SELECT content, length(content) FROM lnav_file" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_empty.0
+
+check_output "empty content not handled correctly?" <<EOF
+content,length(content)
+,0
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT distinct xp.node_text FROM lnav_file, xpath('//author', content) as xp" \
+    -c ":write-csv-to -" \
+    ${test_dir}/books.xml
+
+check_output "xpath on file content not working?" <<EOF
+node_text
+"Gambardella, Matthew"
+"Ralls, Kim"
+"Corets, Eva"
+"Randall, Cynthia"
+"Thurman, Paula"
+"Knorr, Stefan"
+"Kress, Peter"
+"O'Brien, Tim"
+"Galos, Mike"
+EOF
+
+gzip -c ${srcdir}/logfile_json.json > logfile_json.json.gz
+dd if=logfile_json.json.gz of=logfile_json-trunc.json.gz bs=64 count=2
+
+run_test ${lnav_test} -n \
+    -c ";SELECT content FROM lnav_file" \
+    logfile_json-trunc.json.gz
+
+check_error_output "invalid gzip file working?" <<EOF
+command-option:1: error: unable to uncompress: logfile_json-trunc.json.gz -- buffer error
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT jget(rc.content, '/ts') AS ts FROM lnav_file, regexp_capture(lnav_file.content, '.*\n') as rc" \
+    -c ":write-csv-to -" \
+    logfile_json.json.gz
+
+check_output "jget on file content not working?" <<EOF
+ts
+2013-09-06T20:00:48.124817Z
+2013-09-06T20:00:49.124817Z
+2013-09-06T22:00:49.124817Z
+2013-09-06T22:00:59.124817Z
+2013-09-06T22:00:59.124817Z
+2013-09-06T22:00:59.124817Z
+2013-09-06T22:00:59.124817Z
+2013-09-06T22:00:59.124817Z
+2013-09-06T22:01:49.124817Z
+2013-09-06T22:01:49.124817Z
+2013-09-06T22:01:49.124817Z
+2013-09-06T22:01:49.124817Z
+2013-09-06T22:01:49.124817Z
+EOF
+
+run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET visible=0" \
     ${test_dir}/logfile_access_log.0
 

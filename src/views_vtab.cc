@@ -119,6 +119,7 @@ CREATE TABLE lnav_views (
     height INTEGER,         -- The height of the viewport.
     inner_height INTEGER,   -- The number of lines in the view.
     top_time DATETIME,      -- The time of the top line in the view, if the content is time-based.
+    top_file TEXT,          -- The file the top line is from.
     paused INTEGER,         -- Indicates if the view is paused and will not load new data.
     search TEXT,            -- The text to search for in the view.
     filtering INTEGER       -- Indicates if the view is applying filters.
@@ -174,16 +175,23 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
-            case 6:
-                sqlite3_result_int(ctx, tc.is_paused());
-                break;
-            case 7: {
-                const string &str = tc.get_current_search();
+            case 6: {
+                to_sqlite(ctx, tc.map_top_row([](const auto& al) {
+                    return get_string_attr(al.get_attrs(), &logline::L_FILE) | [](const auto* sa) {
+                        auto lf = (logfile *) sa->sa_value.sav_ptr;
 
-                sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
+                        return nonstd::make_optional(lf->get_filename());
+                    };
+                }));
                 break;
             }
-            case 8: {
+            case 7:
+                sqlite3_result_int(ctx, tc.is_paused());
+                break;
+            case 8:
+                to_sqlite(ctx, tc.get_current_search());
+                break;
+            case 9: {
                 auto tss = tc.get_sub_source();
 
                 if (tss != nullptr && tss->tss_supports_filtering) {
@@ -218,6 +226,7 @@ CREATE TABLE lnav_views (
                    int64_t height,
                    int64_t inner_height,
                    const char *top_time,
+                   const char *top_file,
                    bool is_paused,
                    const char *search,
                    bool do_filtering) {

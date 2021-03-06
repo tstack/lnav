@@ -207,6 +207,18 @@ find_string_attr(const string_attrs_t &sa, string_attr_type_t type, int start = 
     return iter;
 }
 
+inline nonstd::optional<const string_attr*>
+get_string_attr(const string_attrs_t &sa, string_attr_type_t type, int start = 0)
+{
+    auto iter = find_string_attr(sa, type, start);
+
+    if (iter == sa.end()) {
+        return nonstd::nullopt;
+    }
+
+    return nonstd::make_optional(&(*iter));
+}
+
 template<typename T>
 inline string_attrs_t::const_iterator
 find_string_attr_containing(const string_attrs_t &sa, string_attr_type_t type, T x)

@@ -194,6 +194,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
                     this->lf_index.size(),
                     (*iter)->get_name().get());
 
+                this->lf_text_format = text_format_t::TF_LOG;
                 this->lf_format = (*iter)->specialized();
                 this->set_format_base_time(this->lf_format.get());
                 this->lf_content_id = hasher()
@@ -410,7 +411,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
             size_t old_size = this->lf_index.size();
 
-            if (old_size == 0) {
+            if (old_size == 0 && this->lf_text_format == text_format_t::TF_UNKNOWN) {
                 file_range fr = this->lf_line_buffer.get_available();
                 auto avail_data = this->lf_line_buffer.read_range(fr);
 
@@ -420,6 +421,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
                             avail_sbr.get_data(), avail_sbr.length());
                     })
                     .unwrapOr(text_format_t::TF_UNKNOWN);
+                log_debug("setting text format to %d", this->lf_text_format);
             }
 
             auto read_result = this->lf_line_buffer.read_range(li.li_file_range);

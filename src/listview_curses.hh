@@ -277,6 +277,18 @@ public:
         return retval;
     };
 
+    template<typename F>
+    auto map_top_row(F func) -> typename std::result_of<F(const attr_line_t&)>::type {
+        if (this->get_inner_height() == 0) {
+            return nonstd::nullopt;
+        }
+
+        std::vector<attr_line_t> top_line{1};
+
+        this->lv_source->listview_value_for_rows(*this, this->lv_top, top_line);
+        return func(top_line[0]);
+    }
+
     /** @param win The curses window this view is attached to. */
     void set_window(WINDOW *win) { this->lv_window = win; };
 

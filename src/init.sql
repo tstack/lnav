@@ -85,6 +85,10 @@ CREATE TABLE lnav_example_log (
   log_body        text hidden
 );
 
+CREATE VIEW lnav_top_view AS
+    SELECT * FROM lnav_views WHERE name = (
+        SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
+
 INSERT INTO lnav_example_log VALUES
     (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, null, null, null, 'hw', 2, '/tmp/log', '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
     (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, null, null, null, 'gw', 4, '/tmp/log', '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),

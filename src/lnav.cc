@@ -2418,8 +2418,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     false,
                     open_temp_file(ghc::filesystem::temp_directory_path() /
                                    "lnav.fifo.XXXXXX")
-                        .then([](auto pair) {
+                        .map([](auto pair) {
                             ghc::filesystem::remove(pair.first);
+
+                            return pair;
                         })
                         .expect("Cannot create temporary file for FIFO")
                         .second);

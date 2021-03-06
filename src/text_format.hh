@@ -36,13 +36,61 @@
 
 #include <string>
 
+#include "fmt/format.h"
+
 enum class text_format_t {
     TF_UNKNOWN,
+    TF_LOG,
     TF_PYTHON,
     TF_RUST,
+    TF_JAVA,
     TF_C_LIKE,
     TF_SQL,
+    TF_XML,
+    TF_JSON,
 };
+
+
+namespace fmt {
+template<>
+struct formatter<text_format_t> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(text_format_t tf, FormatContext &ctx)
+    {
+        string_view name = "unknown";
+        switch (tf) {
+            case text_format_t::TF_UNKNOWN:
+                name = "application/octet-stream";
+                break;
+            case text_format_t::TF_LOG:
+                name = "text/log";
+                break;
+            case text_format_t::TF_PYTHON:
+                name = "text/python";
+                break;
+            case text_format_t::TF_RUST:
+                name = "text/rust";
+                break;
+            case text_format_t::TF_JAVA:
+                name = "text/java";
+                break;
+            case text_format_t::TF_C_LIKE:
+                name = "text/c";
+                break;
+            case text_format_t::TF_SQL:
+                name = "application/sql";
+                break;
+            case text_format_t::TF_XML:
+                name = "text/xml";
+                break;
+            case text_format_t::TF_JSON:
+                name = "application/json";
+                break;
+        }
+        return formatter<string_view>::format(name, ctx);
+    }
+};
+}
 
 /**
  * Try to detect the format of the given text file fragment.

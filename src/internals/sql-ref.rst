@@ -1833,6 +1833,17 @@ likely(*value*)
 ----
 
 
+.. _lnav_top_file:
+
+lnav_top_file()
+^^^^^^^^^^^^^^^
+
+  Return the name of the file that the top line in the current view came from.
+
+
+----
+
+
 .. _load_extension:
 
 load_extension(*path*, *\[entry-point\]*)

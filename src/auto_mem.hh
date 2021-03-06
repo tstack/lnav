@@ -38,6 +38,8 @@
 
 #include <exception>
 
+#include "base/result.h"
+
 typedef void (*free_func_t)(void *);
 
 /**
@@ -144,6 +146,64 @@ private:
     static_root_mem &operator =(static_root_mem &) { return *this; };
 
     T srm_value;
+};
+
+class auto_buffer {
+public:
+    static auto_buffer alloc(size_t size) {
+        return auto_buffer{ (char *) malloc(size), size };
+    }
+
+    auto_buffer(auto_buffer&& other) noexcept
+        : ab_buffer(other.ab_buffer), ab_size(other.ab_size) {
+        other.ab_buffer = nullptr;
+        other.ab_size = 0;
+    }
+
+    ~auto_buffer() {
+        free(this->ab_buffer);
+        this->ab_buffer = nullptr;
+        this->ab_size = 0;
+    }
+
+    char *in() {
+        return this->ab_buffer;
+    }
+
+    std::pair<char *, size_t> release() {
+        auto retval = std::make_pair(this->ab_buffer, this->ab_size);
+
+        this->ab_buffer = nullptr;
+        this->ab_size = 0;
+        return retval;
+    }
+
+    size_t size() const {
+        return this->ab_size;
+    }
+
+    void expand_by(size_t amount) {
+        auto new_size = this->ab_size + amount;
+        auto new_buffer = (char *) realloc(this->ab_buffer, new_size);
+
+        if (new_buffer == nullptr) {
+            throw std::bad_alloc();
+        }
+
+        this->ab_buffer = new_buffer;
+        this->ab_size = new_size;
+    }
+
+    auto_buffer& shrink_to(size_t new_size) {
+        this->ab_size = new_size;
+        return *this;
+    }
+private:
+    auto_buffer(char *buffer, size_t size) : ab_buffer(buffer), ab_size(size) {
+    }
+
+    char *ab_buffer;
+    size_t ab_size;
 };
 
 #endif

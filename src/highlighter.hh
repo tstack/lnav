@@ -32,6 +32,8 @@
 #ifndef highlighter_hh
 #define highlighter_hh
 
+#include <set>
+
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
 #include "text_format.hh"
@@ -82,7 +84,7 @@ struct highlighter {
     };
 
     highlighter &with_text_format(text_format_t tf) {
-        this->h_text_format = tf;
+        this->h_text_formats.insert(tf);
 
         return *this;
     }
@@ -121,7 +123,7 @@ struct highlighter {
     pcre *h_code;
     pcre_extra *h_code_extra;
     int h_attrs{-1};
-    text_format_t h_text_format{text_format_t::TF_UNKNOWN};
+    std::set<text_format_t> h_text_formats;
     intern_string_t h_format_name;
     bool h_nestable{true};
 };

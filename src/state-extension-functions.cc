@@ -65,6 +65,24 @@ static nonstd::optional<std::string> sql_log_top_datetime()
     return buffer;
 }
 
+static nonstd::optional<std::string> sql_lnav_top_file()
+{
+    auto top_view_opt = lnav_data.ld_view_stack.top();
+
+    if (!top_view_opt) {
+        return nonstd::nullopt;
+    }
+
+    auto top_view = top_view_opt.value();
+    return top_view->map_top_row([](const auto& al) {
+        return get_string_attr(al.get_attrs(), &logline::L_FILE) | [](const auto* sa) {
+            auto lf = (logfile *) sa->sa_value.sav_ptr;
+
+            return nonstd::make_optional(lf->get_filename());
+        };
+    });
+}
+
 static int64_t sql_error(const char *str)
 {
     throw sqlite_func_error("{}", str);
@@ -83,6 +101,12 @@ int state_extension_functions(struct FuncDef **basic_funcs,
         sqlite_func_adapter<decltype(&sql_log_top_datetime), sql_log_top_datetime>::builder(
             help_text("log_top_datetime",
                       "Return the timestamp of the line at the top of the log view.")
+                .sql_function()
+        ),
+
+        sqlite_func_adapter<decltype(&sql_lnav_top_file), sql_lnav_top_file>::builder(
+            help_text("lnav_top_file",
+                      "Return the name of the file that the top line in the current view came from.")
                 .sql_function()
         ),
 

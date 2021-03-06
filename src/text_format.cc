@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "pcrepp/pcrepp.hh"
+#include "yajl/api/yajl_parse.h"
 
 #include "text_format.hh"
 
@@ -54,6 +55,14 @@ text_format_t detect_text_format(const char *str, size_t len)
 )",
         PCRE_MULTILINE);
 
+    static pcrepp JAVA_MATCHERS = pcrepp(
+        "(?:"
+        "^package\\s+|"
+        "^import\\s+|"
+        "^\\s*(?:public)?\\s*class\\s*(\\w+\\s+)*\\s*{"
+        ")",
+        PCRE_MULTILINE);
+
     static pcrepp C_LIKE_MATCHERS = pcrepp(
         "(?:"
             "^#\\s*include\\s+|"
@@ -70,9 +79,25 @@ text_format_t detect_text_format(const char *str, size_t len)
             ")",
         PCRE_MULTILINE|PCRE_CASELESS);
 
+    static pcrepp XML_MATCHERS = pcrepp(
+        "(?:"
+        R"(<\?xml(\s+\w+\s*=\s*"[^"]*")*\?>|)"
+        R"(</?\w+(\s+\w+\s*=\s*"[^"]*")*\s*>)"
+        ")",
+        PCRE_MULTILINE|PCRE_CASELESS);
+
     text_format_t retval = text_format_t::TF_UNKNOWN;
     pcre_input pi(str, 0, len);
     pcre_context_static<30> pc;
+
+    {
+        auto_mem<yajl_handle_t> jhandle(yajl_free);
+
+        jhandle = yajl_alloc(nullptr, nullptr, nullptr);
+        if (yajl_parse(jhandle, (unsigned char *) str, len) == yajl_status_ok) {
+            return text_format_t::TF_JSON;
+        }
+    }
 
     if (PYTHON_MATCHERS.match(pc, pi)) {
         return text_format_t::TF_PYTHON;
@@ -82,12 +107,20 @@ text_format_t detect_text_format(const char *str, size_t len)
         return text_format_t::TF_RUST;
     }
 
+    if (JAVA_MATCHERS.match(pc, pi)) {
+        return text_format_t::TF_JAVA;
+    }
+
     if (C_LIKE_MATCHERS.match(pc, pi)) {
         return text_format_t::TF_C_LIKE;
     }
 
     if (SQL_MATCHERS.match(pc, pi)) {
         return text_format_t::TF_SQL;
+    }
+
+    if (XML_MATCHERS.match(pc, pi)) {
+        return text_format_t::TF_XML;
     }
 
     return retval;

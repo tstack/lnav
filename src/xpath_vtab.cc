@@ -106,6 +106,7 @@ CREATE TABLE xpath (
         sqlite3_int64 c_rowid{0};
         string c_xpath;
         string c_value;
+        bool c_value_as_blob{false};
         pugi::xpath_query c_query;
         pugi::xml_document c_doc;
         pugi::xpath_node_set c_results;
@@ -253,10 +254,17 @@ CREATE TABLE xpath (
                                     SQLITE_STATIC);
                 break;
             case XP_COL_VALUE:
-                sqlite3_result_text(ctx,
-                                    vc.c_value.c_str(),
-                                    vc.c_value.length(),
-                                    SQLITE_STATIC);
+                if (vc.c_value_as_blob) {
+                    sqlite3_result_blob64(ctx,
+                                          vc.c_value.c_str(),
+                                          vc.c_value.length(),
+                                          SQLITE_STATIC);
+                } else {
+                    sqlite3_result_text(ctx,
+                                        vc.c_value.c_str(),
+                                        vc.c_value.length(),
+                                        SQLITE_STATIC);
+                }
                 break;
         }
 
@@ -298,7 +306,10 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
         return SQLITE_OK;
     }
 
-    pCur->c_value = (const char *) sqlite3_value_text(argv[1]);
+    pCur->c_value_as_blob = (sqlite3_value_type(argv[1]) == SQLITE_BLOB);
+    auto byte_count = sqlite3_value_bytes(argv[1]);
+    auto blob = (const char *) sqlite3_value_blob(argv[1]);
+    pCur->c_value.assign(blob, byte_count);
     auto parse_res = pCur->c_doc.load_string(pCur->c_value.c_str());
     if (!parse_res) {
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(

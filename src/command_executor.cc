@@ -792,8 +792,10 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         auto pp = make_shared<piper_proc>(
             fd, false, open_temp_file(ghc::filesystem::temp_directory_path() /
             "lnav.out.XXXXXX")
-                .then([](auto pair) {
+                .map([](auto pair) {
                     ghc::filesystem::remove(pair.first);
+
+                    return pair;
                 })
                 .expect("Cannot create temporary file for callback")
                 .second);

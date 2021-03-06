@@ -2027,8 +2027,10 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                         false,
                         open_temp_file(ghc::filesystem::temp_directory_path() /
                                        "lnav.fifo.XXXXXX")
-                            .then([](auto pair) {
+                            .map([](auto pair) {
                                 ghc::filesystem::remove(pair.first);
+
+                                return pair;
                             })
                             .expect("Cannot create temporary file for FIFO")
                             .second);

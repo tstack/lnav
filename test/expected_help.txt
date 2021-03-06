@@ -1887,6 +1887,11 @@ Parameter
 
 
 Synopsis
+  lnav_top_file() -- Return the name of the file that the top line in the 
+    current view came from.
+
+
+Synopsis
   load_extension(path, [entry-point]) -- Loads SQLite extensions out of the 
     given shared library file using the given entry point.
 Parameters

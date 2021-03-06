@@ -26,6 +26,7 @@ noinst_HEADERS = \
     is_utf8.hh \
     isc.hh \
     lnav_log.hh \
+    lnav.gzip.hh \
     lrucache.hpp \
     math_util.hh \
     opt_util.hh \
@@ -39,6 +40,7 @@ libbase_a_SOURCES = \
 	intern_string.cc \
     is_utf8.cc \
     isc.cc \
+    lnav.gzip.cc \
     lnav_log.cc \
     string_util.cc \
     time_util.cc

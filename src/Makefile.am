@@ -177,6 +177,7 @@ noinst_HEADERS = \
 	field_overlay_source.hh \
 	file_collection.hh \
 	file_format.hh \
+	file_vtab.cfg.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
 	filter_status_source.hh \
