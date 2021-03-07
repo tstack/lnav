@@ -85,13 +85,13 @@ command-option:1: error: oops!
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";SELECT content, length(content) FROM lnav_file" \
+    -c ";SELECT basename(filepath) as name, content, length(content) FROM lnav_file" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_empty.0
 
 check_output "empty content not handled correctly?" <<EOF
-content,length(content)
-,0
+name,content,length(content)
+logfile_empty.0,,0
 EOF
 
 run_test ${lnav_test} -n \
