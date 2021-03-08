@@ -1813,9 +1813,9 @@ int main(int argc, char *argv[])
     int lpc, c, retval = EXIT_SUCCESS;
 
     shared_ptr<piper_proc> stdin_reader;
-    const char *         stdin_out = nullptr;
-    int                  stdin_out_fd = -1;
-    bool exec_stdin = false;
+    const char *stdin_out = nullptr;
+    int stdin_out_fd = -1;
+    bool exec_stdin = false, load_stdin = false;
     const char *LANG = getenv("LANG");
     ghc::filesystem::path stdin_tmp_path;
 
@@ -2361,11 +2361,18 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
+    if (argc == 0) {
+        load_stdin = true;
+    }
+
     for (lpc = 0; lpc < argc; lpc++) {
         auto_mem<char> abspath;
         struct stat    st;
 
-        if (startswith(argv[lpc], "pt:")) {
+        if (strcmp(argv[lpc], "-") == 0) {
+            load_stdin = true;
+        }
+        else if (startswith(argv[lpc], "pt:")) {
 #ifdef HAVE_LIBCURL
             lnav_data.ld_pt_search = argv[lpc];
 #else
@@ -2519,7 +2526,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         retval = EXIT_FAILURE;
     }
 
-    if (!isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO) && !exec_stdin) {
+    if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO) && !exec_stdin) {
         if (stdin_out == nullptr) {
             auto pattern = dotlnav_path() / "stdin-captures/stdin.XXXXXX";
 
