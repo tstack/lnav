@@ -185,26 +185,6 @@ void add_view_text_possibilities(readline_curses *rlc, int context, const string
 
     rlc->clear_possibilities(context, type);
 
-    // XXX We might want to remove this since it can be kinda slow.
-    {
-        auto_mem<FILE> pfile(pclose);
-
-        pfile = open_clipboard(CT_FIND, CO_READ);
-        if (pfile.in() != nullptr) {
-            char buffer[64];
-
-            if (fgets(buffer, sizeof(buffer), pfile) != nullptr) {
-                char *nl;
-
-                buffer[sizeof(buffer) - 1] = '\0';
-                if ((nl = strchr(buffer, '\n')) != nullptr) {
-                    *nl = '\0';
-                }
-                rlc->add_possibility(context, type, std::string(buffer));
-            }
-        }
-    }
-
     for (vis_line_t curr_line = tc->get_top();
          curr_line <= tc->get_bottom();
          ++curr_line) {

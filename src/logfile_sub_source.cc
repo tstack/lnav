@@ -170,6 +170,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         return;
     }
 
+    require(!this->lss_in_value_for_line);
+
+    this->lss_in_value_for_line = true;
     this->lss_token_flags = flags;
     this->lss_token_file_data = this->find_data(line);
     this->lss_token_file = (*this->lss_token_file_data)->get_file();
@@ -217,6 +220,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         exec_context ec(&this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
         string rewritten_line;
 
+        ec.with_perms(exec_context::perm_t::READ_ONLY);
+        ec.ec_local_vars.push(map<string, string>());
         ec.ec_top_line = vis_line_t(row);
         add_ansi_vars(ec.ec_global_vars);
         add_global_vars(ec);
@@ -329,6 +334,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             value_out.insert(0, 12 - rel_length, ' ');
         }
     }
+    this->lss_in_value_for_line = false;
 }
 
 void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
@@ -705,7 +711,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                  iter++) {
                 logfile_data *ld = iter->get();
                 shared_ptr<logfile> lf = ld->get_file();
-                if (lf == NULL) {
+                if (lf == nullptr) {
                     continue;
                 }
 

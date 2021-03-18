@@ -1053,12 +1053,12 @@ void external_log_format::rewrite(exec_context &ec,
                                   string_attrs_t &sa,
                                   string &value_out)
 {
-    vector<logline_value>::iterator iter, shift_iter;
-    vector<logline_value> &values = *ec.ec_line_values;
+    vector<logline_value>::iterator shift_iter;
+    auto &values = *ec.ec_line_values;
 
     value_out.assign(line.get_data(), line.length());
 
-    for (iter = values.begin(); iter != values.end(); ++iter) {
+    for (auto iter = values.begin(); iter != values.end(); ++iter) {
         if (!iter->lv_origin.is_valid()) {
             log_debug("not rewriting value with invalid origin -- %s", iter->lv_meta.lvm_name.get());
             continue;
@@ -1070,7 +1070,7 @@ void external_log_format::rewrite(exec_context &ec,
             continue;
         }
 
-        value_def &vd = *vd_iter->second;
+        const auto &vd = *vd_iter->second;
 
         if (vd.vd_rewriter.empty()) {
             continue;
@@ -1080,7 +1080,7 @@ void external_log_format::rewrite(exec_context &ec,
                                    ":" +
                                    vd_iter->first.to_string(),
                                    1);
-        string field_value = execute_any(ec, vd.vd_rewriter)
+        auto field_value = execute_any(ec, vd.vd_rewriter)
             .orElse(err_to_ok).unwrap();
         struct line_range adj_origin = iter->origin_in_full_msg(
             value_out.c_str(), value_out.length());

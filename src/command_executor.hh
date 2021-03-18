@@ -52,18 +52,34 @@ typedef std::future<std::string> (*pipe_callback_t)(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
 struct exec_context {
+    enum class perm_t {
+        READ_WRITE,
+        READ_ONLY,
+    };
+
     exec_context(std::vector<logline_value> *line_values = nullptr,
                  sql_callback_t sql_callback = ::sql_callback,
                  pipe_callback_t pipe_callback = nullptr)
-        : ec_top_line(vis_line_t(0)),
-          ec_dry_run(false),
-          ec_line_values(line_values),
+        : ec_line_values(line_values),
           ec_sql_callback(sql_callback),
           ec_pipe_callback(pipe_callback) {
         this->ec_local_vars.push(std::map<std::string, std::string>());
         this->ec_path_stack.emplace_back(".");
         this->ec_source.emplace("command", 1);
         this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
+    }
+
+    bool is_read_write() const {
+        return this->ec_perms == perm_t::READ_WRITE;
+    }
+
+    bool is_read_only() const {
+        return this->ec_perms == perm_t::READ_ONLY;
+    }
+
+    exec_context& with_perms(perm_t perms) {
+        this->ec_perms = perms;
+        return *this;
     }
 
     std::string get_error_prefix();
@@ -125,8 +141,9 @@ struct exec_context {
         };
     }
 
-    vis_line_t ec_top_line;
-    bool ec_dry_run;
+    vis_line_t ec_top_line{0_vl};
+    bool ec_dry_run{false};
+    perm_t ec_perms{perm_t::READ_WRITE};
 
     std::map<std::string, std::string> ec_override;
     std::vector<logline_value> *ec_line_values;

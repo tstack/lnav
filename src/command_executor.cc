@@ -173,6 +173,12 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         alt_msg = "";
         return ec.make_error("No statement given");
     }
+#ifdef HAVE_SQLITE3_STMT_READONLY
+    else if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in())) {
+        return ec.make_error(
+            "modifying statements are not allowed in this context: {}", sql);
+    }
+#endif
     else {
         bool done = false;
         int param_count;
@@ -605,9 +611,11 @@ Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem
 Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_mode)
 {
     string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
-    auto _cleanup = finally([] {
-        rescan_files();
-        rebuild_indexes();
+    auto _cleanup = finally([&ec] {
+        if (ec.is_read_write()) {
+            rescan_files();
+            rebuild_indexes();
+        }
     });
 
     switch (cmdline_with_mode[0]) {
@@ -700,12 +708,11 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
 
 int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 {
-    db_label_source &dls = lnav_data.ld_db_row_source;
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    auto &dls = lnav_data.ld_db_row_source;
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
-        lss.text_clear_marks(&BM_QUERY);
+        lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
 
         return 0;
     }

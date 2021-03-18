@@ -985,6 +985,8 @@ private:
     size_t            lss_longest_line{0};
     meta_grepper lss_meta_grepper;
     log_location_history lss_location_history;
+
+    bool lss_in_value_for_line{false};
 };
 
 #endif
