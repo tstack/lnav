@@ -470,6 +470,7 @@ void filter_sub_source::rl_perform(readline_curses *rc)
     if (new_value.empty()) {
         this->rl_abort(rc);
     } else {
+        top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
         switch (tf->get_lang()) {
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {

@@ -189,7 +189,7 @@ protected:
 class empty_filter : public text_filter {
 public:
     empty_filter(type_t type, size_t index)
-        : text_filter(type, filter_lang_t::NONE, "", index) {
+        : text_filter(type, filter_lang_t::REGEX, "", index) {
     }
 
     bool matches(const logfile &lf, logfile::const_iterator ll,
