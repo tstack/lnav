@@ -1039,7 +1039,7 @@ void update_hits(textview_curses *tc)
             unsigned long width;
             vis_line_t height;
             attr_line_t all_matches;
-            char linebuf[32];
+            char linebuf[64];
             int last_line = tc->get_inner_height();
             int max_line_width;
 

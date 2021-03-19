@@ -191,6 +191,7 @@ dist_noinst_DATA = \
 	bad-config2/formats/invalid-config/config.truncated.json \
 	bad-config-json/formats/invalid-json/format.json \
 	bad-config-json/formats/invalid-key/format.json \
+	books.xml \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
@@ -279,6 +280,7 @@ dist_noinst_DATA = \
 	logfile_w3c.6 \
 	logfile_w3c_big.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	logfile_xml_msg.0 \
 	multiline.lnav \
 	nested.lnav \
 	mvwattrline_output.0 \
