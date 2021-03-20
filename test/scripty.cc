@@ -1009,6 +1009,14 @@ int main(int argc, char *argv[])
                 to.tv_sec = 0;
                 to.tv_usec = 10000;
                 rc = select(maxfd + 1, &ready_rfds, nullptr, nullptr, &to);
+                gettimeofday(&now, nullptr);
+                timersub(&now, &last, &diff);
+                if (diff.tv_sec > 10) {
+                    scripty_data.sd_looping = false;
+                    kill(ct.get_child_pid(), SIGKILL);
+                    retval = EXIT_FAILURE;
+                    break;
+                }
                 if (rc == 0) {
                 } else if (rc < 0) {
                     switch (errno) {
@@ -1016,6 +1024,7 @@ int main(int argc, char *argv[])
                             break;
                         default:
                             fprintf(stderr, "%s:select %s\n", tstamp(), strerror(errno));
+                            kill(ct.get_child_pid(), SIGKILL);
                             scripty_data.sd_looping = false;
                             break;
                     }
@@ -1023,8 +1032,6 @@ int main(int argc, char *argv[])
                     char buffer[1024];
 
                     fprintf(stderr, "%s:fds ready %d\n", tstamp(), rc);
-                    gettimeofday(&now, nullptr);
-                    timersub(&now, &last, &diff);
                     if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
                         rc = read(STDIN_FILENO, buffer, sizeof(buffer));
                         if (rc < 0) {
@@ -1039,6 +1046,7 @@ int main(int argc, char *argv[])
                                 tm.new_user_input(buffer[lpc]);
                             }
                         }
+                        last = now;
                     }
                     if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
                         rc = read(ct.get_fd(), buffer, sizeof(buffer));
@@ -1056,12 +1064,14 @@ int main(int argc, char *argv[])
                                             buffer[lpc] & 0xff);
 #endif
                                     tm.new_input(buffer[lpc]);
+                                    if (!tm.tm_waiting_on_input) {
+                                        last = now;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                last = now;
             }
         }
 
