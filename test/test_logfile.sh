@@ -1,5 +1,7 @@
 #! /bin/bash
 
+echo ${top_srcdir}
+echo ${top_builddir}
 
 echo "2013-06-06T19:13:20.123  Hi" | run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
     -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log'
@@ -83,7 +85,7 @@ Jan  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/
 EOF
     fi
 
-    (cd ${srcdir} && tar cfz ${builddir}/test-logs.tgz logfile_access_log.* logfile_empty.0 -C ${builddir} ../src/lnav)
+    tar cfz ${builddir}/test-logs.tgz -C ${top_srcdir} test/logfile_access_log.0 test/logfile_access_log.1 test/logfile_empty.0 -C ${builddir}/.. src/lnav
 
     dd if=test-logs.tgz of=test-logs-trunc.tgz bs=4096 count=20
 
@@ -99,12 +101,12 @@ EOF
 10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
 EOF
 
-    if ! test -f tmp/*/*-test-logs.tgz/logfile_access_log.0; then
+    if ! test -f tmp/*/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file not unpacked"
         exit 1
     fi
 
-    if test -w tmp/*/*-test-logs.tgz/logfile_access_log.0; then
+    if test -w tmp/*/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file is writable"
         exit 1
     fi
@@ -113,7 +115,7 @@ EOF
         -c ':config /tuning/archive-manager/cache-ttl 0d' \
         -n -q ${srcdir}/logfile_syslog.0
 
-    if test -f tmp/lnav*/*-test-logs.tgz/logfile_access_log.0; then
+    if test -f tmp/lnav*/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archive cache not deleted?"
         exit 1
     fi
@@ -135,7 +137,7 @@ EOF
         > test_logfile.trunc.out
     mv test_logfile.trunc.out `test_err_filename`
     check_error_output "truncated tgz not reported correctly" <<EOF
-error: unable to open file: /test-logs-trunc.tgz -- failed to read file: /test-logs-trunc.tgz >> ../src/lnav -- truncated gzip input
+error: unable to open file: /test-logs-trunc.tgz -- failed to read file: /test-logs-trunc.tgz >> src/lnav -- truncated gzip input
 EOF
 
     mkdir -p rotmp
@@ -149,7 +151,7 @@ EOF
         > test_logfile.rotmp.out
     mv test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/arc-NNN-test-logs.tgz/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
+error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/arc-NNN-test-logs.tgz/test/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
 EOF
 fi
 
