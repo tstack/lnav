@@ -52,7 +52,7 @@ jobs:
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get install libncursesw5-dev libpcre++-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev
+        run: sudo apt-get install libncurses-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev
       - name: autogen
         run: ./autogen.sh
       - name: configure
