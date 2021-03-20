@@ -100,7 +100,9 @@ ghc::filesystem::path dotlnav_path()
             if (xdg_config_home != nullptr) {
                 auto xdg_path = ghc::filesystem::path(xdg_config_home);
 
-                return xdg_path / "lnav";
+                if (ghc::filesystem::is_directory(xdg_path)) {
+                    return xdg_path / "lnav";
+                }
             }
 
             auto home_config = home_path / ".config";
