@@ -767,7 +767,10 @@ static void write_sample_file()
                                O_WRONLY | O_TRUNC | O_CREAT,
                                0644)) == -1 ||
             (write(sample_fd.get(), sf.data(), sf.length()) == -1)) {
-            perror("error: unable to write default format file");
+            fprintf(stderr,
+                    "error:unable to write default format file: %s -- %s\n",
+                    sample_path.c_str(),
+                    strerror(errno));
         }
     }
 
@@ -778,7 +781,10 @@ static void write_sample_file()
 
         if ((sh_fd = openp(sh_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(sh_fd.get(), sf.data(), sf.length()) == -1) {
-            perror("error: unable to write default text file");
+            fprintf(stderr,
+                    "error:unable to write default text file: %s -- %s\n",
+                    sh_path.c_str(),
+                    strerror(errno));
         }
     }
 
@@ -798,7 +804,10 @@ static void write_sample_file()
         }
         if ((script_fd = openp(script_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(script_fd.get(), sf.data(), sf.length()) == -1) {
-            perror("error: unable to write default text file");
+            fprintf(stderr,
+                    "error:unable to write default text file: %s -- %s\n",
+                    script_path.c_str(),
+                    strerror(errno));
         }
     }
 }

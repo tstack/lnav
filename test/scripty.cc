@@ -982,6 +982,7 @@ int main(int argc, char *argv[])
             struct timeval last, now;
             fd_set read_fds;
             term_machine tm(ct);
+            size_t last_replay_size = scripty_data.sd_replay.size();
 
             scripty_data.sd_child_pid = ct.get_child_pid();
             signal(SIGINT, sigpass);
@@ -1012,6 +1013,7 @@ int main(int argc, char *argv[])
                 gettimeofday(&now, nullptr);
                 timersub(&now, &last, &diff);
                 if (diff.tv_sec > 10) {
+                    fprintf(stderr, "%s:replay timed out!\n", tstamp());
                     scripty_data.sd_looping = false;
                     kill(ct.get_child_pid(), SIGKILL);
                     retval = EXIT_FAILURE;
@@ -1054,8 +1056,9 @@ int main(int argc, char *argv[])
                         if (rc <= 0) {
                             scripty_data.sd_looping = false;
                         } else {
-                            if (passout)
+                            if (passout) {
                                 log_perror(write(STDOUT_FILENO, buffer, rc));
+                            }
                             if (scripty_data.sd_from_child != nullptr) {
                                 for (size_t lpc = 0; lpc < rc; lpc++) {
 #if 0
@@ -1064,8 +1067,11 @@ int main(int argc, char *argv[])
                                             buffer[lpc] & 0xff);
 #endif
                                     tm.new_input(buffer[lpc]);
-                                    if (!tm.tm_waiting_on_input) {
+                                    if (scripty_data.sd_replay.size() !=
+                                        last_replay_size) {
                                         last = now;
+                                        last_replay_size =
+                                            scripty_data.sd_replay.size();
                                     }
                                 }
                             }

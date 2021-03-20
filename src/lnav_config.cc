@@ -1112,7 +1112,10 @@ void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string
         auto fd = auto_fd(openp(sample_path, O_WRONLY|O_TRUNC|O_CREAT, 0644));
         auto sf = bsf.to_string_fragment();
         if (fd == -1 || write(fd.get(), sf.data(), sf.length()) == -1) {
-            perror("error: unable to write default config file");
+            fprintf(stderr,
+                    "error:unable to write default config file: %s -- %s\n",
+                    sample_path.c_str(),
+                    strerror(errno));
         }
     }
 
