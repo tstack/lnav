@@ -91,6 +91,10 @@ struct big_array {
         return this->ba_ptr[index];
     };
 
+    const T &operator[](size_t index) const {
+        return this->ba_ptr[index];
+    };
+
     T &back() {
         return this->ba_ptr[this->ba_size - 1];
     }

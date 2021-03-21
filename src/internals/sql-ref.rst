@@ -3251,7 +3251,7 @@ timediff(*time1*, *time2*)
 timeslice(*time*, *slice*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Return the start of the slice of time that the given timestamp falls in.
+  Return the start of the slice of time that the given timestamp falls in.  If the time falls outside of the slice, NULL is returned.
 
   **Parameters**
     * **time\*** --- The timestamp to get the time slice for.
@@ -3269,8 +3269,20 @@ timeslice(*time*, *slice*)
 
     .. code-block::  custsqlite
 
-      ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice
-      2017-01-01 05:00:00.000
+      ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1) FROM lnav_example_log GROUP BY slice
+               slice          count(1) 
+      2017-02-03 04:05:00.000        2 
+      2017-02-03 04:25:00.000        1 
+      2017-02-03 04:55:00.000        1 
+
+    To group log messages by those before 4:30am and after:
+
+    .. code-block::  custsqlite
+
+      ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
+               slice          count(1) 
+      <NULL>                         3 
+      2017-02-03 04:30:00.000        1 
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`

@@ -1,5 +1,19 @@
 #! /bin/bash
 
+run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'after 12pm')"
+
+check_output "after 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 12:01:00', 'after 12pm'): 2015-08-07 12:00:00.000
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 11:59:00', 'after 12pm')"
+
+check_output "not after 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 11:59:00', 'after 12pm'): (null)
+EOF
+
 run_test ./drive_sql "select timeslice()"
 
 check_error_output "timeslice()" <<EOF
@@ -21,8 +35,23 @@ EOF
 
 run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', '8 am')"
 
-check_error_output "timeslice abs" <<EOF
-error: sqlite3_exec failed -- absolute time slices are not valid
+check_output "timeslice abs" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 12:01:00', '8 am'): (null)
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 08:00:33', '8 am')"
+
+check_output "timeslice abs" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 08:00:33', '8 am'): 2015-08-07 08:00:00.000
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 08:01:33', '8 am')"
+
+check_output "timeslice abs" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 08:01:33', '8 am'): (null)
 EOF
 
 run_test ./drive_sql "select timeslice(null, null)"
@@ -30,6 +59,20 @@ run_test ./drive_sql "select timeslice(null, null)"
 check_output "timeslice(null, null)" <<EOF
 Row 0:
   Column timeslice(null, null): (null)
+EOF
+
+run_test ./drive_sql "select timeslice(null)"
+
+check_output "timeslice(null)" <<EOF
+Row 0:
+  Column timeslice(null): (null)
+EOF
+
+run_test ./drive_sql "select timeslice(1616300753.333, '100ms')"
+
+check_output "100ms slice" <<EOF
+Row 0:
+  Column timeslice(1616300753.333, '100ms'): 2021-03-21 04:25:53.300
 EOF
 
 run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', '5m')"

@@ -215,6 +215,16 @@ inline void to_sqlite(sqlite3_context *ctx, double val)
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
 
 template<typename T>
+inline void to_sqlite(sqlite3_context *ctx, nonstd::optional<T> &val)
+{
+    if (val.has_value()) {
+        to_sqlite(ctx, val.value());
+    } else {
+        sqlite3_result_null(ctx);
+    }
+}
+
+template<typename T>
 inline void to_sqlite(sqlite3_context *ctx, const nonstd::optional<T> &val)
 {
     if (val.has_value()) {

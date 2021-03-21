@@ -91,6 +91,100 @@ TEST_CASE("reltime")
     struct exttm tm, tm2;
     time_t new_time;
 
+    {
+        auto rt_res = relative_time::from_str("sun after 1pm");
+
+        CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1615727900;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+        auto win_tm = *win_opt;
+            CHECK(win_tm.et_tm.tm_year == 121);
+            CHECK(win_tm.et_tm.tm_mon == 2);
+            CHECK(win_tm.et_tm.tm_mday == 14);
+            CHECK(win_tm.et_tm.tm_hour == 13);
+            CHECK(win_tm.et_tm.tm_min == 0);
+            CHECK(win_tm.et_tm.tm_sec == 0);
+    }
+
+    {
+        auto rt_res = relative_time::from_str("0:05");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 5 * 60 + 15;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+        auto win_tm = *win_opt;
+            CHECK(win_tm.et_tm.tm_sec == 0);
+            CHECK(win_tm.et_tm.tm_min == 5);
+            CHECK(win_tm.et_tm.tm_hour == 0);
+
+        t_in = 4 * 60 + 15;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        win_opt = rt.window_start(tm);
+            CHECK(!win_opt.has_value());
+    }
+
+    {
+        auto rt_res = relative_time::from_str("mon");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1615841352;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+        auto win_tm = *win_opt;
+            CHECK(win_tm.et_tm.tm_year == 121);
+            CHECK(win_tm.et_tm.tm_mon == 2);
+            CHECK(win_tm.et_tm.tm_mday == 15);
+            CHECK(win_tm.et_tm.tm_hour == 0);
+            CHECK(win_tm.et_tm.tm_min == 0);
+            CHECK(win_tm.et_tm.tm_sec == 0);
+    }
+
+    {
+        auto rt_res = relative_time::from_str("tue");
+
+        CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+        CHECK(rt.rt_included_days ==
+              std::set<relative_time::token_t>{relative_time::RTT_TUESDAY});
+    }
+
+    {
+        auto rt_res = relative_time::from_str("1m");
+
+        CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 30;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+        auto win_tm = *win_opt;
+        CHECK(win_tm.et_tm.tm_sec == 0);
+        CHECK(win_tm.et_tm.tm_min == 0);
+        CHECK(win_tm.et_tm.tm_hour == 0);
+
+        t_in = 90;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        win_opt = rt.window_start(tm);
+        win_tm = *win_opt;
+            CHECK(win_tm.et_tm.tm_sec == 0);
+            CHECK(win_tm.et_tm.tm_min == 1);
+            CHECK(win_tm.et_tm.tm_hour == 0);
+    }
+
     relative_time rt;
     for (int lpc = 0; TEST_DATA[lpc].reltime; lpc++) {
         auto res = relative_time::from_str(TEST_DATA[lpc].reltime);
@@ -144,7 +238,7 @@ TEST_CASE("reltime")
     CHECK(rt.is_absolute());
 
     tm = base_tm;
-    rt.add(tm);
+    tm = rt.adjust(tm);
 
     new_time = timegm(&tm.et_tm);
     tm.et_tm = *gmtime(&new_time);
@@ -154,7 +248,7 @@ TEST_CASE("reltime")
     rt = relative_time::from_str("5 minutes ago").unwrap();
 
     tm = base_tm;
-    rt.add(tm);
+    tm = rt.adjust(tm);
 
     new_time = timegm(&tm.et_tm);
 
@@ -163,20 +257,20 @@ TEST_CASE("reltime")
     rt = relative_time::from_str("today at 4pm").unwrap();
     memset(&tm, 0, sizeof(tm));
     memset(&tm2, 0, sizeof(tm2));
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
     tm2.et_tm.tm_hour = 16;
     tm2.et_tm.tm_min = 0;
     tm2.et_tm.tm_sec = 0;
-    rt.add(tm);
+    tm = rt.adjust(tm);
     tm.et_tm.tm_yday = 0;
     tm2.et_tm.tm_yday = 0;
     tm.et_tm.tm_wday = 0;
     tm2.et_tm.tm_wday = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     tm2.et_tm.tm_gmtoff = 0;
-    tm2.et_tm.tm_zone = NULL;
+    tm2.et_tm.tm_zone = nullptr;
 #endif
     CHECK(tm.et_tm.tm_year == tm2.et_tm.tm_year);
     CHECK(tm.et_tm.tm_mon == tm2.et_tm.tm_mon);
@@ -186,14 +280,14 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 
     rt = relative_time::from_str("yesterday at 4pm").unwrap();
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
     tm2.et_tm.tm_mday -= 1;
     tm2.et_tm.tm_hour = 16;
     tm2.et_tm.tm_min = 0;
     tm2.et_tm.tm_sec = 0;
-    rt.add(tm);
+    tm = rt.adjust(tm);
     tm.et_tm.tm_yday = 0;
     tm2.et_tm.tm_yday = 0;
     tm.et_tm.tm_wday = 0;
@@ -210,21 +304,21 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 
     rt = relative_time::from_str("2 days ago").unwrap();
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
     tm2.et_tm.tm_mday -= 2;
     tm2.et_tm.tm_hour = 0;
     tm2.et_tm.tm_min = 0;
     tm2.et_tm.tm_sec = 0;
-    rt.add(tm);
+    tm = rt.adjust(tm);
     tm.et_tm.tm_yday = 0;
     tm2.et_tm.tm_yday = 0;
     tm.et_tm.tm_wday = 0;
     tm2.et_tm.tm_wday = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     tm2.et_tm.tm_gmtoff = 0;
-    tm2.et_tm.tm_zone = NULL;
+    tm2.et_tm.tm_zone = nullptr;
 #endif
         CHECK(tm.et_tm.tm_year == tm2.et_tm.tm_year);
         CHECK(tm.et_tm.tm_mon == tm2.et_tm.tm_mon);

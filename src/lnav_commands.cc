@@ -172,9 +172,9 @@ static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdli
 
         auto parse_res = relative_time::from_str(args[1]);
         if (parse_res.isOk()) {
-            new_time = parse_res.unwrap().add(top_time).to_timeval();
+            new_time = parse_res.unwrap().adjust(top_time).to_timeval();
         }
-        else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
+        else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, new_time) != nullptr) {
             // nothing to do
         } else {
             return ec.make_error("could not parse timestamp -- {}", args[1]);
@@ -316,7 +316,7 @@ static Result<string, string> com_goto(exec_context &ec, string cmdline, vector<
                 }
 
                 do {
-                    struct exttm tm = rt.add(tv);
+                    auto tm = rt.adjust(tv);
 
                     tv = tm.to_timeval();
                     new_vl = vis_line_t(ttt->row_for_time(tv));
@@ -2708,7 +2708,7 @@ static Result<string, string> com_pt_time(exec_context &ec, string cmdline, vect
         dts.set_base_time(now);
         if (parse_res.isOk()) {
             tm.et_tm = *gmtime(&now);
-            parse_res.unwrap().add(tm);
+            tm = parse_res.unwrap().adjust(tm);
             new_time.tv_sec = timegm(&tm.et_tm);
         }
         else {
@@ -3296,10 +3296,7 @@ static Result<string, string> com_hide_line(exec_context &ec, string cmdline, ve
                     cl = lnav_data.ld_log_source.at(vl);
                     ll = lnav_data.ld_log_source.find_line(cl);
                     ll->to_exttm(tm);
-                    parse_res.unwrap().add(tm);
-
-                    tv.tv_sec = timegm(&tm.et_tm);
-                    tv.tv_usec = tm.et_nsec / 1000;
+                    tv = parse_res.unwrap().adjust(tm).to_timeval();
 
                     tv_set = true;
                 }

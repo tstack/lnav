@@ -134,15 +134,14 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
     return retval;
 }
 
-vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
+vis_line_t logfile_sub_source::find_from_time(const struct timeval &start) const
 {
-    vector<uint32_t>::iterator lb;
     vis_line_t retval(-1);
 
-    lb = lower_bound(this->lss_filtered_index.begin(),
-                     this->lss_filtered_index.end(),
-                     start,
-                     filtered_logline_cmp(*this));
+    auto lb = lower_bound(this->lss_filtered_index.begin(),
+                          this->lss_filtered_index.end(),
+                          start,
+                          filtered_logline_cmp(*this));
     if (lb != this->lss_filtered_index.end()) {
         retval = vis_line_t(lb - this->lss_filtered_index.begin());
     }

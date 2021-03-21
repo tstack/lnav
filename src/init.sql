@@ -80,6 +80,7 @@ CREATE TABLE lnav_example_log (
   ex_procname     text collate 'BINARY',
   ex_duration     integer,
 
+  log_time_msecs  int hidden,
   log_path        text hidden collate naturalnocase,
   log_text        text hidden,
   log_body        text hidden
@@ -90,7 +91,7 @@ CREATE VIEW lnav_top_view AS
         SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
 INSERT INTO lnav_example_log VALUES
-    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, null, null, null, 'hw', 2, '/tmp/log', '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
-    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, null, null, null, 'gw', 4, '/tmp/log', '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
-    (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, null, null, null, 'gw', 1, '/tmp/log', '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
-    (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, null, null, null, 'gw', 10, '/tmp/log', '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');
+    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, null, null, null, 'hw', 2, 1486094706000, '/tmp/log', '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
+    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, null, null, null, 'gw', 4, 1486094706000, '/tmp/log', '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
+    (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, null, null, null, 'gw', 1, 1486095906000, '/tmp/log', '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
+    (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, null, null, null, 'gw', 10, 1486097706000, '/tmp/log', '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');

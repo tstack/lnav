@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <chrono>
 #include "time_util.hh"
 
 static time_t BAD_DATE = -1;
@@ -181,4 +182,16 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res)
     res->tm_isdst = 0;
 
     return (res);
+}
+
+struct timeval exttm::to_timeval() const
+{
+    struct timeval retval;
+
+    retval.tv_sec = tm2sec(&this->et_tm);
+    retval.tv_usec =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::nanoseconds(this->et_nsec)).count();
+
+    return retval;
 }

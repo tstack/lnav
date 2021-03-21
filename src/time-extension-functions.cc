@@ -47,7 +47,7 @@
 
 using namespace std;
 
-static auto_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
+static nonstd::optional<auto_buffer> timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
 {
     thread_local date_time_scanner dts;
     thread_local struct {
@@ -73,21 +73,17 @@ static auto_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char
                                     slice_in);
         }
 
-        if (cache.c_rel_time.is_absolute()) {
-            throw sqlite_func_error("absolute time slices are not valid");
-        }
-
         cache.c_slice_str = slice_in.to_string();
     }
 
-    int64_t us, remainder;
     struct timeval tv;
+    struct exttm tm;
 
     switch (sqlite3_value_type(time_in)) {
+        case SQLITE_BLOB:
         case SQLITE3_TEXT: {
             const char *time_in_str = reinterpret_cast<const char *>(sqlite3_value_text(
                 time_in));
-            struct exttm tm;
 
             if (dts.scan(time_in_str, strlen(time_in_str), nullptr, &tm, tv, false) == nullptr) {
                 dts.unlock();
@@ -96,26 +92,42 @@ static auto_buffer timeslice(sqlite3_value *time_in, nonstd::optional<const char
                                             time_in_str);
                 }
             }
-
-            us = tv.tv_sec * 1000000LL + tv.tv_usec;
             break;
         }
         case SQLITE_INTEGER: {
-            auto msecs = sqlite3_value_int64(time_in);
+            auto msecs = std::chrono::milliseconds(sqlite3_value_int64(time_in));
 
-            us = msecs * 1000LL;
+            tv.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(msecs)
+                .count();
+            tm.et_tm = *gmtime(&tv.tv_sec);
+            tm.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                msecs % 1000).count();
             break;
+        }
+        case SQLITE_FLOAT: {
+            auto secs = sqlite3_value_double(time_in);
+            double integ;
+            auto fract = modf(secs, &integ);
+
+            tv.tv_sec = integ;
+            tm.et_tm = *gmtime(&tv.tv_sec);
+            tm.et_nsec = floor(fract * 1000000000.0);
+            break;
+        }
+        case SQLITE_NULL: {
+            return nonstd::nullopt;
         }
     }
 
-    remainder = us % cache.c_rel_time.to_microseconds();
-    us -= remainder;
+    auto win_start_opt = cache.c_rel_time.window_start(tm);
 
-    tv.tv_sec = us / (1000LL * 1000LL);
-    tv.tv_usec = us % (1000LL * 1000LL);
+    if (!win_start_opt) {
+        return nonstd::nullopt;
+    }
 
+    auto win_start = *win_start_opt;
     auto ts = auto_buffer::alloc(64);
-    auto actual_length = sql_strftime(ts.in(), ts.size(), tv);
+    auto actual_length = sql_strftime(ts.in(), ts.size(), win_start.to_timeval());
 
     ts.shrink_to(actual_length);
     return ts;
@@ -129,14 +141,14 @@ nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
     auto parse_res1 = relative_time::from_str(time1, -1);
 
     if (parse_res1.isOk()) {
-        tv1 = parse_res1.unwrap().add_now().to_timeval();
+        tv1 = parse_res1.unwrap().adjust_now().to_timeval();
     } else if (!dts1.convert_to_timeval(time1, -1, nullptr, tv1)) {
         return nonstd::nullopt;
     }
 
     auto parse_res2 = relative_time::from_str(time2, -1);
     if (parse_res2.isOk()) {
-        tv2 = parse_res2.unwrap().add_now().to_timeval();
+        tv2 = parse_res2.unwrap().adjust_now().to_timeval();
     } else if (!dts2.convert_to_timeval(time2, -1, nullptr, tv2)) {
         return nonstd::nullopt;
     }
@@ -152,7 +164,8 @@ int time_extension_functions(struct FuncDef **basic_funcs,
     static struct FuncDef time_funcs[] = {
         sqlite_func_adapter<decltype(&timeslice), timeslice>::builder(
             help_text("timeslice",
-                      "Return the start of the slice of time that the given timestamp falls in.")
+                      "Return the start of the slice of time that the given timestamp falls in.  "
+                      "If the time falls outside of the slice, NULL is returned.")
                 .sql_function()
                 .with_parameter({"time", "The timestamp to get the time slice for."})
                 .with_parameter({"slice", "The size of the time slices"})
@@ -163,7 +176,11 @@ int time_extension_functions(struct FuncDef **basic_funcs,
                 })
                 .with_example({
                     "To group log messages into five minute buckets and count them",
-                    "SELECT timeslice(log_time_msecs, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"
+                    "SELECT timeslice(log_time_msecs, '5m') AS slice, count(1) FROM lnav_example_log GROUP BY slice"
+                })
+                .with_example({
+                    "To group log messages by those before 4:30am and after",
+                    "SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice"
                 })
         ),
 

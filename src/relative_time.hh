@@ -35,7 +35,9 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
+#include <set>
 #include <array>
+#include <chrono>
 #include <string>
 
 #include "ptimec.hh"
@@ -54,6 +56,15 @@ public:
         RTT_AT,
         RTT_TIME,
         RTT_NUMBER,
+
+        RTT_SUNDAY,
+        RTT_MONDAY,
+        RTT_TUESDAY,
+        RTT_WEDNESDAY,
+        RTT_THURSDAY,
+        RTT_FRIDAY,
+        RTT_SATURDAY,
+
         RTT_MICROS,
         RTT_MILLIS,
         RTT_SECONDS,
@@ -106,6 +117,10 @@ public:
         return from_str(str.c_str(), str.length());
     }
 
+    static relative_time from_timeval(const struct timeval& tv);
+
+    static relative_time from_usecs(std::chrono::microseconds usecs);
+
     relative_time() {
         this->clear();
     };
@@ -148,7 +163,7 @@ public:
     };
 
     bool is_absolute() const {
-        return this->rt_absolute_field_end > 0;
+        return !this->rt_included_days.empty() || this->rt_absolute_field_end > 0;
     };
 
     bool is_absolute(rt_field_type rft) const {
@@ -160,6 +175,9 @@ public:
     }
 
     bool empty() const {
+        if (!this->rt_included_days.empty()) {
+            return false;
+        }
         for (auto rtf : this->rt_field) {
             if (rtf.is_set) {
                 return false;
@@ -168,111 +186,28 @@ public:
         return true;
     };
 
-    struct exttm add_now() {
+    struct exttm adjust_now() const {
         struct exttm tm;
         time_t now;
 
         time(&now);
+        memset(&tm, 0, sizeof(tm));
         tm.et_tm = *gmtime(&now);
-        this->add(tm);
-
-        return tm;
+        return this->adjust(tm);
     };
 
-    struct exttm add(const struct timeval &tv) {
+    struct exttm adjust(const struct timeval &tv) const {
         struct exttm tm;
 
+        memset(&tm, 0, sizeof(tm));
         tm.et_tm = *gmtime(&tv.tv_sec);
         tm.et_nsec = tv.tv_usec * 1000;
-        this->add(tm);
-
-        return tm;
+        return this->adjust(tm);
     }
 
-    void add(struct exttm &tm) {
-        if (this->rt_field[RTF_MICROSECONDS].is_set && this->is_absolute(RTF_MICROSECONDS)) {
-            tm.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000;
-        }
-        else {
-            tm.et_nsec += this->rt_field[RTF_MICROSECONDS].value * 1000;
-        }
-        if (this->rt_field[RTF_SECONDS].is_set && this->is_absolute(RTF_SECONDS)) {
-            if (this->rt_next &&
-                this->rt_field[RTF_SECONDS].value <= tm.et_tm.tm_sec) {
-                tm.et_tm.tm_min += 1;
-            }
-            if (this->rt_previous &&
-                this->rt_field[RTF_SECONDS].value >= tm.et_tm.tm_sec) {
-                tm.et_tm.tm_min -= 1;
-            }
-            tm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
-        }
-        else {
-            tm.et_tm.tm_sec += this->rt_field[RTF_SECONDS].value;
-        }
-        if (this->rt_field[RTF_MINUTES].is_set && this->is_absolute(RTF_MINUTES)) {
-            if (this->rt_next &&
-                this->rt_field[RTF_MINUTES].value <= tm.et_tm.tm_min) {
-                tm.et_tm.tm_hour += 1;
-            }
-            if (this->rt_previous && (this->rt_field[RTF_MINUTES].value == 0 ||
-                (this->rt_field[RTF_MINUTES].value >= tm.et_tm.tm_min))) {
-                tm.et_tm.tm_hour -= 1;
-            }
-            tm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
-        }
-        else {
-            tm.et_tm.tm_min += this->rt_field[RTF_MINUTES].value;
-        }
-        if (this->rt_field[RTF_HOURS].is_set && this->is_absolute(RTF_HOURS)) {
-            if (this->rt_next &&
-                this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour) {
-                tm.et_tm.tm_mday += 1;
-            }
-            if (this->rt_previous &&
-                this->rt_field[RTF_HOURS].value >= tm.et_tm.tm_hour) {
-                tm.et_tm.tm_mday -= 1;
-            }
-            tm.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
-        }
-        else {
-            tm.et_tm.tm_hour += this->rt_field[RTF_HOURS].value;
-        }
-        if (this->rt_field[RTF_DAYS].is_set && this->is_absolute(RTF_DAYS)) {
-            if (this->rt_next &&
-                this->rt_field[RTF_DAYS].value <= tm.et_tm.tm_mday) {
-                tm.et_tm.tm_mon += 1;
-            }
-            if (this->rt_previous &&
-                this->rt_field[RTF_DAYS].value >= tm.et_tm.tm_mday) {
-                tm.et_tm.tm_mon -= 1;
-            }
-            tm.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
-        }
-        else {
-            tm.et_tm.tm_mday += this->rt_field[RTF_DAYS].value;
-        }
-        if (this->rt_field[RTF_MONTHS].is_set && this->is_absolute(RTF_MONTHS)) {
-            if (this->rt_next &&
-                this->rt_field[RTF_MONTHS].value <= tm.et_tm.tm_mon) {
-                tm.et_tm.tm_year += 1;
-            }
-            if (this->rt_previous &&
-                this->rt_field[RTF_MONTHS].value >= tm.et_tm.tm_mon) {
-                tm.et_tm.tm_year -= 1;
-            }
-            tm.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
-        }
-        else {
-            tm.et_tm.tm_mon += this->rt_field[RTF_MONTHS].value;
-        }
-        if (this->rt_field[RTF_YEARS].is_set && this->is_absolute(RTF_YEARS)) {
-            tm.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
-        }
-        else {
-            tm.et_tm.tm_year += this->rt_field[RTF_YEARS].value;
-        }
-    };
+    struct exttm adjust(const struct exttm &tm) const;
+
+    nonstd::optional<exttm> window_start(const struct exttm &tm) const;
 
     int64_t to_microseconds() const {
         int64_t retval;
@@ -283,20 +218,19 @@ public:
         retval = (retval + this->rt_field[RTF_HOURS].value) * 60;
         retval = (retval + this->rt_field[RTF_MINUTES].value) * 60;
         retval = (retval + this->rt_field[RTF_SECONDS].value) * 1000 * 1000;
+        retval = (retval + this->rt_field[RTF_MICROSECONDS].value);
 
         return retval;
     };
 
-    void from_timeval(const struct timeval& tv);
-
-    void to_timeval(struct timeval &tv_out) {
+    void to_timeval(struct timeval &tv_out) const {
         int64_t us = this->to_microseconds();
 
         tv_out.tv_sec = us / (1000 * 1000);
         tv_out.tv_usec = us % (1000 * 1000);
     };
 
-    struct timeval to_timeval() {
+    struct timeval to_timeval() const {
         int64_t us = this->to_microseconds();
         struct timeval retval;
 
@@ -305,7 +239,7 @@ public:
         return retval;
     };
 
-    std::string to_string();
+    std::string to_string() const;
 
     void rollover();
 
@@ -318,11 +252,18 @@ public:
         _rt_field() : value(0), is_set(false) {
         };
 
+        void clear() {
+            this->value = 0;
+            this->is_set = false;
+        }
+
         int64_t value;
         bool is_set;
     };
 
     std::array<_rt_field, RTF__MAX> rt_field;
+    std::set<token_t> rt_included_days;
+    std::chrono::microseconds rt_duration{0};
 
     bool rt_next;
     bool rt_previous;

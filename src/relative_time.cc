@@ -31,12 +31,14 @@
 
 #include <assert.h>
 
+#include "base/time_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "relative_time.hh"
 
 using namespace std;
+using namespace std::chrono_literals;
 
-static struct {
+static const struct {
     const char *name;
     pcrepp pcre;
 } MATCHERS[relative_time::RTT__MAX] = {
@@ -49,6 +51,15 @@ static struct {
     { "time",
         pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{3,6}))?)?") },
     { "num", pcrepp("\\A((?:-|\\+)?\\d+)") },
+
+    { "sun", pcrepp("\\Asun(days?)?\\b") },
+    { "mon", pcrepp("\\Amon(days?)?\\b") },
+    { "tue", pcrepp("\\Atue(s(days?)?)?\\b") },
+    { "wed", pcrepp("\\Awed(nesdays?)?\\b") },
+    { "thu", pcrepp("\\Athu(rsdays?)?\\b") },
+    { "fri", pcrepp("\\Afri(days?)?\\b") },
+    { "sat", pcrepp("\\Asat(urdays?)?\\b") },
+
     { "us", pcrepp("\\A(?:micros(?:econds?)?|us(?![a-zA-Z]))") },
     { "ms", pcrepp("\\A(?:millis(?:econds?)?|ms(?![a-zA-Z]))") },
     { "sec", pcrepp("\\As(?:ec(?:onds?)?)?(?![a-zA-Z])") },
@@ -154,7 +165,7 @@ relative_time::from_str(const char *str, size_t len)
                     gettimeofday(&tv, nullptr);
                     localtime_r(&tv.tv_sec, &tm.et_tm);
                     tm.et_nsec = tv.tv_usec * 1000;
-                    retval.add(tm);
+                    tm = retval.adjust(tm);
 
                     retval.rt_field[RTF_YEARS] = tm.et_tm.tm_year;
                     retval.rt_field[RTF_MONTHS] = tm.et_tm.tm_mon;
@@ -193,6 +204,7 @@ relative_time::from_str(const char *str, size_t len)
                         retval.rt_field[RTF_MINUTES] = 0;
                         retval.rt_field[RTF_SECONDS] = 0;
                         retval.rt_field[RTF_MICROSECONDS] = 0;
+                        retval.rt_duration = 1min;
                         retval.rt_absolute_field_end = RTF__MAX;
                         number_set = false;
                     }
@@ -207,6 +219,36 @@ relative_time::from_str(const char *str, size_t len)
                     }
                     else if (retval.rt_field[RTF_HOURS].value < 12) {
                         retval.rt_field[RTF_HOURS].value += 12;
+                    }
+                    if (base_token == RTT_AFTER) {
+                        std::chrono::microseconds usecs = 0s;
+                        uint64_t carry = 0;
+
+                        if (retval.rt_field[RTF_MICROSECONDS].value > 0) {
+                            usecs += std::chrono::microseconds(
+                                1000000ULL - retval.rt_field[RTF_MICROSECONDS].value);
+                            carry = 1;
+                        }
+                        if (carry || retval.rt_field[RTF_SECONDS].value > 0) {
+                            usecs += std::chrono::seconds(
+                                60 - carry - retval.rt_field[RTF_SECONDS].value);
+                            carry = 1;
+                        }
+                        if (carry || retval.rt_field[RTF_MINUTES].value > 0) {
+                            usecs += std::chrono::minutes(
+                                60 - carry - retval.rt_field[RTF_MINUTES].value);
+                            carry = 1;
+                        }
+                        usecs += std::chrono::hours(
+                            24 - retval.rt_field[RTF_HOURS].value);
+                        retval.rt_duration = usecs;
+                    }
+                    if (base_token == RTT_BEFORE) {
+                        retval.rt_duration =
+                            std::chrono::hours(retval.rt_field[RTF_HOURS].value) +
+                            std::chrono::minutes(retval.rt_field[RTF_MINUTES].value) +
+                            std::chrono::seconds(retval.rt_field[RTF_SECONDS].value) +
+                            std::chrono::microseconds(retval.rt_field[RTF_MICROSECONDS].value);
                     }
                     break;
                 case RTT_A:
@@ -237,11 +279,15 @@ relative_time::from_str(const char *str, size_t len)
                                         atoi(substr.c_str());
                                     break;
                             }
+                        } else {
+                            retval.rt_field[RTF_MICROSECONDS].clear();
+                            retval.rt_duration = 1s;
                         }
                     }
                     else {
-                        retval.rt_field[RTF_SECONDS] = 0;
-                        retval.rt_field[RTF_MICROSECONDS] = 0;
+                        retval.rt_field[RTF_SECONDS].clear();
+                        retval.rt_field[RTF_MICROSECONDS].clear();
+                        retval.rt_duration = 1min;
                     }
                     retval.rt_absolute_field_end = RTF__MAX;
                     break;
@@ -339,7 +385,6 @@ relative_time::from_str(const char *str, size_t len)
                         retval.rt_absolute_field_end = RTF__MAX;
                     }
                     break;
-                case RTT_BEFORE:
                 case RTT_AGO:
                     if (retval.empty()) {
                         pe_out.pe_msg = "Expecting a time unit";
@@ -357,6 +402,7 @@ relative_time::from_str(const char *str, size_t len)
                         retval.rt_absolute_field_end = last_field_type;
                     }
                     break;
+                case RTT_BEFORE:
                 case RTT_AFTER:
                     base_token = token;
                     break;
@@ -387,6 +433,19 @@ relative_time::from_str(const char *str, size_t len)
                          lpc2++) {
                         retval.rt_field[lpc2] = 0;
                     }
+                    break;
+
+                case RTT_SUNDAY:
+                case RTT_MONDAY:
+                case RTT_TUESDAY:
+                case RTT_WEDNESDAY:
+                case RTT_THURSDAY:
+                case RTT_FRIDAY:
+                case RTT_SATURDAY:
+                    if (retval.rt_duration == 0s) {
+                        retval.rt_duration = 24h;
+                    }
+                    retval.rt_included_days.insert(token);
                     break;
 
                 case RTT__MAX:
@@ -443,20 +502,50 @@ void relative_time::rollover()
     }
 }
 
-void relative_time::from_timeval(const struct timeval& tv)
+relative_time relative_time::from_timeval(const struct timeval& tv)
 {
-    this->clear();
-    this->rt_field[RTF_SECONDS] = tv.tv_sec;
-    this->rt_field[RTF_MICROSECONDS] = tv.tv_usec;
-    this->rollover();
+    relative_time retval;
+
+    retval.clear();
+    retval.rt_field[RTF_SECONDS] = tv.tv_sec;
+    retval.rt_field[RTF_MICROSECONDS] = tv.tv_usec;
+    retval.rollover();
+
+    return retval;
 }
 
-std::string relative_time::to_string()
+relative_time relative_time::from_usecs(std::chrono::microseconds usecs)
 {
+    relative_time retval;
+
+    retval.clear();
+    retval.rt_field[RTF_MICROSECONDS] = usecs.count();
+    retval.rollover();
+
+    return retval;
+}
+
+std::string relative_time::to_string() const
+{
+    static const char *DAYS[] = {
+        "sun",
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+    };
+
     char dst[128] = "";
     char *pos = dst;
 
     if (this->is_absolute()) {
+        for (const auto& day_token : this->rt_included_days) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            "%s ", DAYS[day_token - RTT_SUNDAY]);
+        }
+
         pos += snprintf(pos, sizeof(dst) - (pos - dst),
                         "%s",
                         this->rt_next ? "next " :
@@ -526,6 +615,210 @@ std::string relative_time::to_string()
     }
 
     return dst;
+}
+
+struct exttm relative_time::adjust(const exttm &tm) const
+{
+    auto retval = tm;
+
+    if (this->rt_field[RTF_MICROSECONDS].is_set && this->is_absolute(RTF_MICROSECONDS)) {
+        retval.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000;
+    }
+    else {
+        retval.et_nsec += this->rt_field[RTF_MICROSECONDS].value * 1000;
+    }
+    if (this->rt_field[RTF_SECONDS].is_set && this->is_absolute(RTF_SECONDS)) {
+        if (this->rt_next &&
+            this->rt_field[RTF_SECONDS].value <= tm.et_tm.tm_sec) {
+            retval.et_tm.tm_min += 1;
+        }
+        if (this->rt_previous &&
+            this->rt_field[RTF_SECONDS].value >= tm.et_tm.tm_sec) {
+            retval.et_tm.tm_min -= 1;
+        }
+        retval.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
+    }
+    else {
+        retval.et_tm.tm_sec += this->rt_field[RTF_SECONDS].value;
+    }
+    if (this->rt_field[RTF_MINUTES].is_set && this->is_absolute(RTF_MINUTES)) {
+        if (this->rt_next &&
+            this->rt_field[RTF_MINUTES].value <= tm.et_tm.tm_min) {
+            retval.et_tm.tm_hour += 1;
+        }
+        if (this->rt_previous && (this->rt_field[RTF_MINUTES].value == 0 ||
+                                  (this->rt_field[RTF_MINUTES].value >= tm.et_tm.tm_min))) {
+            retval.et_tm.tm_hour -= 1;
+        }
+        retval.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
+    }
+    else {
+        retval.et_tm.tm_min += this->rt_field[RTF_MINUTES].value;
+    }
+    if (this->rt_field[RTF_HOURS].is_set && this->is_absolute(RTF_HOURS)) {
+        if (this->rt_next &&
+            this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour) {
+            retval.et_tm.tm_mday += 1;
+        }
+        if (this->rt_previous &&
+            this->rt_field[RTF_HOURS].value >= tm.et_tm.tm_hour) {
+            retval.et_tm.tm_mday -= 1;
+        }
+        retval.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
+    }
+    else {
+        retval.et_tm.tm_hour += this->rt_field[RTF_HOURS].value;
+    }
+    if (this->rt_field[RTF_DAYS].is_set && this->is_absolute(RTF_DAYS)) {
+        if (this->rt_next &&
+            this->rt_field[RTF_DAYS].value <= tm.et_tm.tm_mday) {
+            retval.et_tm.tm_mon += 1;
+        }
+        if (this->rt_previous &&
+            this->rt_field[RTF_DAYS].value >= tm.et_tm.tm_mday) {
+            retval.et_tm.tm_mon -= 1;
+        }
+        retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
+    }
+    else {
+        retval.et_tm.tm_mday += this->rt_field[RTF_DAYS].value;
+    }
+    if (this->rt_field[RTF_MONTHS].is_set && this->is_absolute(RTF_MONTHS)) {
+        if (this->rt_next &&
+            this->rt_field[RTF_MONTHS].value <= tm.et_tm.tm_mon) {
+            retval.et_tm.tm_year += 1;
+        }
+        if (this->rt_previous &&
+            this->rt_field[RTF_MONTHS].value >= tm.et_tm.tm_mon) {
+            retval.et_tm.tm_year -= 1;
+        }
+        retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
+    }
+    else {
+        retval.et_tm.tm_mon += this->rt_field[RTF_MONTHS].value;
+    }
+    if (this->rt_field[RTF_YEARS].is_set && this->is_absolute(RTF_YEARS)) {
+        retval.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
+    }
+    else {
+        retval.et_tm.tm_year += this->rt_field[RTF_YEARS].value;
+    }
+
+    return retval;
+}
+
+nonstd::optional<exttm> relative_time::window_start(
+    const struct exttm &tm) const
+{
+    auto retval = tm;
+
+    if (this->is_relative()) {
+        uint64_t us, remainder;
+
+        auto tv = tm.to_timeval();
+        us = (uint64_t) tv.tv_sec * 1000000ULL + (uint64_t) tv.tv_usec;
+        remainder = us % this->to_microseconds();
+        us -= remainder;
+
+        tv.tv_sec = us / 1000000ULL;
+        tv.tv_usec = us % 1000000ULL;
+
+        retval.et_tm = *gmtime(&tv.tv_sec);
+        retval.et_nsec = tv.tv_usec * 1000ULL;
+
+        return retval;
+    }
+
+    bool clear = false;
+
+    if (this->rt_field[RTF_YEARS].is_set) {
+        if (this->rt_field[RTF_YEARS].value > tm.et_tm.tm_year) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_year = this->rt_field[RTF_YEARS].value - 1900;
+        clear = true;
+    }
+
+    if (this->rt_field[RTF_MONTHS].is_set) {
+        if (this->rt_field[RTF_MONTHS].value - 1 > tm.et_tm.tm_mon) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value - 1;
+        clear = true;
+    } else if (clear) {
+        retval.et_tm.tm_mon = 0;
+    }
+
+    if (this->rt_field[RTF_DAYS].is_set) {
+        if (this->rt_field[RTF_DAYS].value > tm.et_tm.tm_mday) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
+        clear = true;
+    } else if (clear) {
+        retval.et_tm.tm_mday = 1;
+    }
+
+    if (!this->rt_included_days.empty()) {
+        auto iter = this->rt_included_days.find((token_t) (RTT_SUNDAY + tm.et_tm.tm_wday));
+
+        if (iter == this->rt_included_days.end()) {
+            return nonstd::nullopt;
+        }
+        clear = true;
+    }
+
+    if (this->rt_field[RTF_HOURS].is_set &&
+        this->rt_field[RTF_HOURS].value) {
+        if (this->rt_field[RTF_HOURS].value > tm.et_tm.tm_hour) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
+        clear = true;
+    } else if (clear) {
+        retval.et_tm.tm_hour = 0;
+    }
+
+    if (this->rt_field[RTF_MINUTES].is_set) {
+        if (this->rt_field[RTF_MINUTES].value > tm.et_tm.tm_min) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
+        clear = true;
+    } else if (clear) {
+        retval.et_tm.tm_min = 0;
+    }
+
+    if (this->rt_field[RTF_SECONDS].is_set) {
+        if (this->rt_field[RTF_SECONDS].value > tm.et_tm.tm_sec) {
+            return nonstd::nullopt;
+        }
+        retval.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
+        clear = true;
+    } else if (clear) {
+        retval.et_tm.tm_sec = 0;
+    }
+
+    if (this->rt_field[RTF_MICROSECONDS].is_set) {
+        if (this->rt_field[RTF_MICROSECONDS].value > tm.et_nsec / 1000) {
+            return nonstd::nullopt;
+        }
+        retval.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000ULL;
+        clear = true;
+    } else if (clear) {
+        retval.et_nsec = 0;
+    }
+
+    auto tv = tm.to_timeval();
+    auto start_time = retval.to_timeval();
+    auto end_time = relative_time::from_usecs(this->rt_duration)
+        .adjust(retval).to_timeval();
+
+    if (tv < start_time || end_time < tv) {
+        return nonstd::nullopt;
+    }
+
+    return retval;
 }
 
 size_t duration2str(int64_t millis, std::string &value_out)

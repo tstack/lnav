@@ -2778,7 +2778,8 @@ Examples
 
 Synopsis
   timeslice(time, slice) -- Return the start of the slice of time that the 
-    given timestamp falls in.
+    given timestamp falls in.  If the time falls outside of the slice, NULL is 
+    returned.
 Parameters
   time    The timestamp to get the time slice for.
   slice   The size of the time slices
@@ -2790,8 +2791,13 @@ Examples
    
 
 #2 To group log messages into five minute buckets and count them:
-   ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(*) FROM lnav_example_log GROUP 
+   ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1) FROM lnav_example_log GROUP 
           BY slice
+   
+
+#3 To group log messages by those before 4:30am and after:
+   ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM 
+          lnav_example_log GROUP BY slice
    
 
 

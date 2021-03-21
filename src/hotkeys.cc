@@ -925,7 +925,7 @@ bool handle_paging_key(int ch)
                     logline *ll = lnav_data.ld_log_source.find_line(cl);
                     ll->to_exttm(tm);
                     do {
-                        rt.add(tm);
+                        tm = rt.adjust(tm);
                         new_vl = lnav_data.ld_log_source.find_from_time(tm);
 
                         if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {

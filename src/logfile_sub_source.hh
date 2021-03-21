@@ -491,7 +491,7 @@ public:
 
     std::shared_ptr<logfile> find(const char *fn, content_line_t &line_base);
 
-    std::shared_ptr<logfile> find(content_line_t &line)
+    std::shared_ptr<logfile> find(content_line_t &line) const
     {
         std::shared_ptr<logfile> retval;
 
@@ -509,7 +509,7 @@ public:
         return retval;
     };
 
-    logline *find_line(content_line_t line)
+    logline *find_line(content_line_t line) const
     {
         logline *retval = nullptr;
         std::shared_ptr<logfile> lf = this->find(line);
@@ -523,7 +523,7 @@ public:
         return retval;
     };
 
-    vis_line_t find_from_time(const struct timeval &start);
+    vis_line_t find_from_time(const struct timeval &start) const;
 
     vis_line_t find_from_time(time_t start) {
         struct timeval tv = { start, 0 };
@@ -531,13 +531,8 @@ public:
         return this->find_from_time(tv);
     };
 
-    vis_line_t find_from_time(exttm &etm) {
-        struct timeval tv;
-
-        tv.tv_sec = timegm(&etm.et_tm);
-        tv.tv_usec = etm.et_nsec / 1000;
-
-        return this->find_from_time(tv);
+    vis_line_t find_from_time(const exttm &etm) const {
+        return this->find_from_time(etm.to_timeval());
     };
 
     nonstd::optional<vis_line_t> find_from_content(content_line_t cl) {
@@ -893,7 +888,7 @@ private:
     };
 
     struct filtered_logline_cmp {
-        filtered_logline_cmp(logfile_sub_source & lc)
+        filtered_logline_cmp(const logfile_sub_source & lc)
                 : llss_controller(lc) { };
         bool operator()(const uint32_t &lhs, const uint32_t &rhs) const
         {
@@ -916,7 +911,7 @@ private:
             return (*ll_lhs) < rhs;
         };
 
-        logfile_sub_source & llss_controller;
+        const logfile_sub_source & llss_controller;
     };
 
     /**

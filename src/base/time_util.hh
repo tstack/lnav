@@ -73,14 +73,7 @@ struct exttm {
         return memcmp(this, &other, sizeof(exttm)) == 0;
     };
 
-    struct timeval to_timeval() const {
-        struct timeval retval;
-
-        retval.tv_sec = tm2sec(&this->et_tm);
-        retval.tv_usec = this->et_nsec * 1000;
-
-        return retval;
-    };
+    struct timeval to_timeval() const;
 };
 
 inline
