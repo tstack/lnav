@@ -304,11 +304,13 @@ void rl_change(readline_curses *rc)
                     dtc.get_dimensions(height, width);
                     format_help_text_for_term(ht, min(70UL, width), al);
                     lnav_data.ld_doc_source.replace_with(al);
+                    dtc.set_needs_update();
 
                     al.clear();
                     etc.get_dimensions(height, width);
                     format_example_text_for_term(ht, eval_example, width, al);
                     lnav_data.ld_example_source.replace_with(al);
+                    etc.set_needs_update();
                 }
 
                 if (cmd.c_prompt != nullptr && generation == 0 &&
@@ -688,8 +690,8 @@ void rl_alt_callback(readline_curses *rc)
 
 void rl_display_matches(readline_curses *rc)
 {
-    const std::vector<std::string> &matches = rc->get_matches();
-    textview_curses &tc = lnav_data.ld_match_view;
+    const auto &matches = rc->get_matches();
+    auto &tc = lnav_data.ld_match_view;
     unsigned long width;
     __attribute((unused))
     unsigned long height;

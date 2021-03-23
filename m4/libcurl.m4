@@ -5,11 +5,11 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2006, David Shaw <dshaw@jabberwocky.com>
+# Copyright (C) 2006 - 2020, David Shaw <dshaw@jabberwocky.com>
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -82,7 +82,7 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
   AH_TEMPLATE([LIBCURL_PROTOCOL_SMTP],[Defined if libcurl supports SMTP])
 
   AC_ARG_WITH(libcurl,
-     AC_HELP_STRING([--with-libcurl=PREFIX],[look for the curl library in PREFIX/lib and headers in PREFIX/include]),
+     AS_HELP_STRING([--with-libcurl=PREFIX],[look for the curl library in PREFIX/lib and headers in PREFIX/include]),
      [_libcurl_with=$withval],[_libcurl_with=ifelse([$1],,[yes],[$1])])
 
   if test "$_libcurl_with" != "no" ; then
@@ -127,14 +127,7 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
               LIBCURL_CPPFLAGS=`$_libcurl_config --cflags`
            fi
            if test x"$LIBCURL" = "x" ; then
-              if $5; then
-                 LIBCURL=`$_libcurl_config --static-libs`
-                 if test x"$LIBCURL" = "x"; then
-                    LIBCURL=`$_libcurl_config --libs`
-                 fi
-              else
-                 LIBCURL=`$_libcurl_config --libs`
-              fi
+              LIBCURL=`$_libcurl_config --libs`
 
               # This is so silly, but Apple actually has a bug in their
               # curl-config script.  Fixed in Tiger, but there are still
@@ -145,23 +138,6 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
                  ;;
               esac
            fi
-
-           dnl If we are on OS X and we haven't picked up libcurl static or
-           dnl otherwise, then let's just go ahead and use the one present on
-           dnl the system. Since this compiled binary will only run on OS X
-           dnl which almost always has cURL installed, it's OK to add the
-           dnl static dependency.
-           AS_IF([test "x${LIBCURL}" = "x"],
-                [AS_CASE(["$host_os"],
-                    [darwin*],
-                    [AS_IF([test "x$_libcurl_config" != "x"],
-                        AS_VAR_SET(LIBCURL, $($_libcurl_config --libs)),
-                        []
-                    )],
-                    []
-                )],
-                []
-            )
 
            # All curl-config scripts support --feature
            _libcurl_features=`$_libcurl_config --feature`
@@ -202,7 +178,7 @@ x=CURLOPT_WRITEDATA;
 x=CURLOPT_ERRORBUFFER;
 x=CURLOPT_STDERR;
 x=CURLOPT_VERBOSE;
-if (x) ;
+if (x) {;}
 ]])],libcurl_cv_lib_curl_usable=yes,libcurl_cv_lib_curl_usable=no)
 
            CPPFLAGS=$_libcurl_save_cppflags

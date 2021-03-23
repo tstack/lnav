@@ -11,8 +11,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.291.tar.gz"
-        SHA1 "4f57243b24a02b9c7ec5ea02c09d5c77c6a97cba"
+        URL "https://github.com/cpp-pm/hunter/archive/v0.23.296.tar.gz"
+        SHA1 "232f5022ee1d45955a7e8d3e1720f31bac1bb534"
         LOCAL
 )
 

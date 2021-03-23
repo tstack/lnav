@@ -96,6 +96,7 @@ readline_context *readline_context::loaded_context;
 set<string> *     readline_context::arg_possibilities;
 static string last_match_str;
 static bool last_match_str_valid;
+static nonstd::optional<std::string> rewrite_line_start;
 
 static void sigalrm(int sig)
 {
@@ -678,8 +679,6 @@ void readline_curses::start()
                 else {
                     uint64_t h1 = 1, h2 = 2;
 
-                    SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
-
                     if (rl_last_func == readline_context::command_complete) {
                         rl_last_func = rl_menu_complete;
                     }
@@ -690,7 +689,31 @@ void readline_curses::start()
 
                     if (complete_done) {
                         last_match_str_valid = false;
+                    } else if (rewrite_line_start &&
+                               !startswith(rl_line_buffer,
+                                           rewrite_line_start->c_str())) {
+                        // If the line was rewritten, the extra text stays on
+                        // the screen, so we need to delete it, make sure the
+                        // append character is there, and redisplay.  For
+                        // example, ':co<TAB>' will complete ':comment' and
+                        // append the current comment.  Pressing '<TAB>' again
+                        // would switch to ':config' and the comment text would
+                        // be left on the display.
+                        rl_delete_text(rl_point, rl_end);
+                        if (rl_completion_append_character &&
+                            rl_line_buffer[rl_point] !=
+                            rl_completion_append_character) {
+                            char buf[2] = {
+                                (char) rl_completion_append_character, '\0'
+                            };
+
+                            rl_insert_text(buf);
+                        }
+                        rl_redisplay();
                     }
+                    rewrite_line_start = nonstd::nullopt;
+
+                    SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
 
                     if (h1 == last_h1 && h2 == last_h2) {
                         // do nothing
@@ -731,9 +754,10 @@ void readline_curses::start()
                         rl_extend_line_buffer(strlen(initial) + 1);
                         strcpy(rl_line_buffer, initial);
                         rl_end = strlen(initial);
+                        rewrite_line_start = std::string(rl_line_buffer, rl_point);
                         rl_redisplay();
                         if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                    'l',
+                                    'c',
                                     rl_line_buffer,
                                     rl_end) != 0) {
                             perror("line: write failed");
@@ -845,8 +869,10 @@ void readline_curses::start()
             if (setitimer(ITIMER_REAL, &itv, nullptr) < 0) {
                 log_error("setitimer: %s", strerror(errno));
             }
-            current_context->second->save();
-            current_context = this->rc_contexts.end();
+            if (current_context != this->rc_contexts.end()) {
+                current_context->second->save();
+                current_context = this->rc_contexts.end();
+            }
         }
         if (got_winch) {
             struct winsize new_ws;
@@ -1260,10 +1286,17 @@ std::string readline_curses::get_match_string() const
     auto len = ::min((size_t) this->vc_x, this->rc_line_buffer.size()) - this->rc_match_start;
     auto context = this->get_active_context();
 
-    if (context->get_append_character() != 0 &&
-        this->rc_line_buffer[this->rc_match_start + len - 2] ==
-        context->get_append_character()) {
-        len -= 2;
+    if (context->get_append_character() != 0) {
+        if (this->rc_line_buffer.length() > (this->rc_match_start + len - 1) &&
+            this->rc_line_buffer[this->rc_match_start + len - 1] ==
+            context->get_append_character()) {
+            len -= 1;
+        } else if (this->rc_line_buffer.length() >
+                   (this->rc_match_start + len - 2) &&
+                   this->rc_line_buffer[this->rc_match_start + len - 2] ==
+                   context->get_append_character()) {
+            len -= 2;
+        }
     }
 
     return this->rc_line_buffer.substr(this->rc_match_start, len);
