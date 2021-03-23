@@ -12,16 +12,12 @@ for the small-scale.  It is a terminal application that can understand
 your log files and make it easy for you to find problems with little to
 no setup.
 
-### Links
+## Screenshot
 
-- [Main Site](https://lnav.org)
-- [**Documentation**](https://docs.lnav.org) on Read the Docs
-- [Internal Architecture](ARCHITECTURE.md)
+The following screenshot shows a syslog file. Log lines are displayed with
+highlights. Errors are red and warnings are yellow.
 
-## Contributing
-
-- [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
-- [Make a one-time donation on Ko-fi](https://ko-fi.com/tstack)
+[![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
 
 ## Features
 
@@ -32,45 +28,9 @@ no setup.
 - Use SQL to analyze your logs
 - And more...
 
-## Prerequisites
-
-The following software packages are required to build lnav:
-
-- gcc/clang  - A C++14-compatible compiler.
-- libpcre    - The Perl Compatible Regular Expression (PCRE) library.
-- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
-- ncurses    - The ncurses text UI library.
-- readline   - The readline line editing library.
-- zlib       - The zlib compression library.
-- bz2        - The bzip2 compression library.
-- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
-- libarchive - The libarchive library for opening archive files, like zip/tgz.
-
 ## Installation
 
-Lnav follows the usual GNU style for configuring and installing software:
-
-Run `./autogen.sh` if compiling from a cloned repository.
-
-```
-$ ./configure
-$ make
-$ sudo make install
-```
-
-## Cygwin users
-
-It should compile fine in Cygwin.
-
-Alternatively, you can get the generated binary from [AppVeyor](https://ci.appveyor.com/project/tstack/lnav) artifacts.
-
-Remember that you still need the lnav dependencies under Cygwin, here is a quick way to do it:
-
-```
-setup-x86_64.exe -q -P libpcre1 -P libsqlite3_0 -P libstdc++6
-```
-
-Currently, the x64 version seems to be working better than the x86 one.
+[Download a statically-linked binary for Linux/MacOS from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
 
 ## Usage
 
@@ -139,12 +99,44 @@ efficiency you may want to limit the number of log lines fed into
 In case of a persistent journal, you may want to limit the number
 of log lines fed into `lnav` via `journalctl`'s `-b` option.
 
-## Screenshot
+## Links
 
-The following screenshot shows a syslog file. Log lines are displayed with
-highlights. Errors are red and warnings are yellow.
+- [Main Site](https://lnav.org)
+- [**Documentation**](https://docs.lnav.org) on Read the Docs
+- [Internal Architecture](ARCHITECTURE.md)
 
-[![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
+## Contributing
+
+- [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+- [Make a one-time donation on Ko-fi](https://ko-fi.com/tstack)
+
+### Building From Source
+
+#### Prerequisites
+
+The following software packages are required to build lnav:
+
+- gcc/clang  - A C++14-compatible compiler.
+- libpcre    - The Perl Compatible Regular Expression (PCRE) library.
+- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
+- ncurses    - The ncurses text UI library.
+- readline   - The readline line editing library.
+- zlib       - The zlib compression library.
+- bz2        - The bzip2 compression library.
+- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
+- libarchive - The libarchive library for opening archive files, like zip/tgz.
+
+#### Build
+
+Lnav follows the usual GNU style for configuring and installing software:
+
+Run `./autogen.sh` if compiling from a cloned repository.
+
+```
+$ ./configure
+$ make
+$ sudo make install
+```
 
 ## See Also
 
