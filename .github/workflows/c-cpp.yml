@@ -20,7 +20,7 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-code-coverage --enable-debug CFLAGS=-g3 CXXFLAGS=-g3
+      run: ./configure --disable-static --enable-code-coverage --enable-debug CFLAGS=-g3 CXXFLAGS=-g3
     - name: make
       run: make -j2
     - name: make check
@@ -56,7 +56,7 @@ jobs:
       - name: autogen
         run: ./autogen.sh
       - name: configure
-        run: ./configure
+        run: ./configure --disable-static
       - name: make
         run: make -j4
       - name: make distcheck
