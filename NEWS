@@ -50,6 +50,9 @@ lnav v0.9.1:
        functions that operate on XML/JSON data, like xpath() or json_tree().
      * Added an "lnav_top_view" SQL VIEW that returns the row for the top view
        in the lnav_views table.
+     * The "generate_series()" SQLite extension is now included by default.
+       One change from the standard implementation is that both the start and
+       stop are required parameters.
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included

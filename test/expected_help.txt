@@ -1480,6 +1480,30 @@ Example
 
 
 Synopsis
+  generate_series(start, stop, [step]) -- A table-valued-function that returns 
+    the whole numbers between a lower and upper bound, inclusive
+Parameters
+  start   The starting point of the series
+  stop    The stopping point of the series
+  step    The increment between each value
+Result
+  value   The number in the series
+
+Examples
+#1 To generate the numbers in the range [10, 14]:
+   ;SELECT value FROM generate_series(10, 14)
+   
+
+#2 To generate every other number in the range [10, 14]:
+   ;SELECT value FROM generate_series(10, 14, 2)
+   
+
+#3 To count down from five to 1:
+   ;SELECT value FROM generate_series(1, 5, -1)
+   
+
+
+Synopsis
   gethostbyaddr(hostname) -- Get the hostname for the given IP address
 Parameter
   hostname   The IP address to lookup.

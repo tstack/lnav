@@ -1168,6 +1168,57 @@ floor(*num*)
 ----
 
 
+.. _generate_series:
+
+generate_series(*start*, *stop*, *\[step\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued-function that returns the whole numbers between a lower and upper bound, inclusive
+
+  **Parameters**
+    * **start\*** --- The starting point of the series
+    * **stop\*** --- The stopping point of the series
+    * **step** --- The increment between each value
+
+  **Examples**
+    To generate the numbers in the range [10, 14]:
+
+    .. code-block::  custsqlite
+
+      ;SELECT value FROM generate_series(10, 14)
+      value 
+         10 
+         11 
+         12 
+         13 
+         14 
+
+    To generate every other number in the range [10, 14]:
+
+    .. code-block::  custsqlite
+
+      ;SELECT value FROM generate_series(10, 14, 2)
+      value 
+         10 
+         12 
+         14 
+
+    To count down from five to 1:
+
+    .. code-block::  custsqlite
+
+      ;SELECT value FROM generate_series(1, 5, -1)
+      value 
+          5 
+          4 
+          3 
+          2 
+          1 
+
+
+----
+
+
 .. _gethostbyaddr:
 
 gethostbyaddr(*hostname*)

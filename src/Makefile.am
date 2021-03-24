@@ -115,6 +115,7 @@ AM_LDFLAGS = \
 
 AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
+	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-I$(srcdir)/fmtlib \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
@@ -291,7 +292,11 @@ noinst_HEADERS = \
 nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
 
+THIRD_PARTY_SRCS = \
+	third-party/sqlite/ext/series.c
+
 libdiag_a_SOURCES = \
+	$(THIRD_PARTY_SRCS) \
 	all_logs_vtab.cc \
 	ansi_scrubber.cc \
 	archive_manager.cc \

@@ -77,6 +77,22 @@ check_output "w3c headers are not captured?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";SELECT * FROM generate_series()" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "generate_series() works without params?" <<EOF
+command-option:1: error: the start parameter is required
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT * FROM generate_series(1)" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "generate_series() works without stop param?" <<EOF
+command-option:1: error: the stop parameter is required
+EOF
+
+run_test ${lnav_test} -n \
     -c ";SELECT raise_error('oops!')" \
     ${test_dir}/logfile_access_log.0
 

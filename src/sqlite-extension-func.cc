@@ -35,11 +35,20 @@
 
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
+#include "auto_mem.hh"
 #include "sql_util.hh"
 
 #include "sqlite-extension-func.hh"
 
 using namespace std;
+
+extern "C" {
+int sqlite3_series_init(
+    sqlite3 *db,
+    char **pzErrMsg,
+    const sqlite3_api_routines *pApi
+);
+}
 
 sqlite_registration_func_t sqlite_registration_funcs[] = {
     common_extension_functions,
@@ -59,7 +68,13 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
 
     assert(db != nullptr);
     assert(reg_funcs != nullptr);
-    
+
+    {
+        auto_mem<char> errmsg(sqlite3_free);
+
+        sqlite3_series_init(db, errmsg.out(), nullptr);
+    }
+
     for (lpc = 0; reg_funcs[lpc]; lpc++) {
         struct FuncDef *basic_funcs = nullptr;
         struct FuncDefAgg *agg_funcs = nullptr;
@@ -679,6 +694,27 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "SELECT total(ex_duration) FROM lnav_example_log"
             }),
 
+        help_text("generate_series",
+                  "A table-valued-function that returns the whole numbers "
+                  "between a lower and upper bound, inclusive")
+            .sql_table_valued_function()
+            .with_parameter({"start", "The starting point of the series"})
+            .with_parameter({"stop", "The stopping point of the series"})
+            .with_parameter(help_text("step", "The increment between each value")
+                                .optional())
+            .with_result({"value", "The number in the series"})
+            .with_example({
+                "To generate the numbers in the range [10, 14]",
+                "SELECT value FROM generate_series(10, 14)"
+            })
+            .with_example({
+                "To generate every other number in the range [10, 14]",
+                "SELECT value FROM generate_series(10, 14, 2)"
+            })
+            .with_example({
+                "To count down from five to 1",
+                "SELECT value FROM generate_series(1, 5, -1)"
+            })
     };
 
     for (auto &ht : builtin_funcs) {

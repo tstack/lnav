@@ -357,6 +357,8 @@ add_library(diag STATIC
         yajl/yajl_version.c
         spookyhash/SpookyV2.cpp
 
+        third-party/sqlite/ext/series.c
+
         all_logs_vtab.hh
         archive_manager.hh
         archive_manager.cfg.hh
@@ -511,6 +513,7 @@ target_include_directories(
 )
 
 target_link_libraries(diag ${lnav_LIBS})
+target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 
 check_library_exists(util openpty "" HAVE_LIBUTIL)
 
