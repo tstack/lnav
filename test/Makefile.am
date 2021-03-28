@@ -80,7 +80,6 @@ TEXT2C_OBJS = \
 
 LDADD = \
     -lz \
-    libtestdummy.a \
     $(CONFIG_OBJS) \
     $(TEXT2C_OBJS) \
     $(top_builddir)/src/libdiag.a \
@@ -90,6 +89,7 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
+    libtestdummy.a \
     $(CURSES_LIB) \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
