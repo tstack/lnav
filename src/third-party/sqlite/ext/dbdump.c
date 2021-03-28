@@ -146,7 +146,11 @@ static char quoteChar(const char *zName){
   for(i=0; zName[i]; i++){
     if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
   }
+#if 0
   return sqlite3_keyword_check(zName, i) ? '"' : 0;
+#else
+  return 0;
+#endif
 }
 
 
