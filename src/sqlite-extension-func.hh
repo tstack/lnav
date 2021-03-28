@@ -91,4 +91,14 @@ extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
 
+extern "C" {
+int sqlite3_db_dump(
+    sqlite3 *db,               /* The database connection */
+    const char *zSchema,       /* Which schema to dump.  Usually "main". */
+    const char *zTable,        /* Which table to dump.  NULL means everything. */
+    int (*xCallback)(const char*,void*),   /* Output sent to this callback */
+    void *pArg                             /* Second argument of the callback */
+);
+}
+
 #endif

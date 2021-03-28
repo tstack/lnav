@@ -118,9 +118,6 @@ struct bind_multiple : multiple_storage<T> {
 
         return *this;
     }
-
-private:
-
 };
 
 }

@@ -43,6 +43,9 @@
 
 namespace injector {
 
+template<typename Annotation>
+void force_linking(Annotation anno);
+
 template<class ...>
 using void_t = void;
 
@@ -56,11 +59,15 @@ struct has_injectable<T, void_t<typename T::injectable>> : std::true_type
 template<typename T, typename...Annotations>
 struct singleton_storage {
     static T *get() {
+        static int _[] = {0, (force_linking(Annotations{}), 0)...};
+        (void)_;
         assert(ss_data != nullptr);
         return ss_data;
     }
 
     static std::shared_ptr<T> create() {
+        static int _[] = {0, (force_linking(Annotations{}), 0)...};
+        (void)_;
         return ss_factory();
     }
 protected:

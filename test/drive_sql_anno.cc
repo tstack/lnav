@@ -38,38 +38,6 @@
 
 using namespace std;
 
-struct lnav_data_t lnav_data;
-
-void rebuild_hist()
-{
-}
-
-bool setup_logline_table(exec_context &ec)
-{
-    return false;
-}
-
-bool rescan_files(bool required)
-{
-    return false;
-}
-
-void wait_for_children()
-{
-
-}
-
-void rebuild_indexes()
-{
-}
-
-textview_curses *get_textview_for_mode(ln_mode_t mode)
-{
-    return nullptr;
-}
-
-readline_context::command_map_t lnav_commands;
-
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

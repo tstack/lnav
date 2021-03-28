@@ -1058,19 +1058,19 @@ static void exec_sql_in_path(sqlite3 *db, const ghc::filesystem::path &path, std
     log_info("executing SQL files in path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
-            string filename(gl->gl_pathv[lpc]);
-            string content;
+            auto filename = ghc::filesystem::path(gl->gl_pathv[lpc]);
+            auto read_res = read_file(filename);
 
-            if (read_file(filename, content)) {
+            if (read_res.isOk()) {
                 log_info("Executing SQL file: %s", filename.c_str());
+                auto content = read_res.unwrap();
+
                 sql_execute_script(db, filename.c_str(), content.c_str(), errors);
             }
             else {
-                errors.push_back(
-                    "error:unable to read file '" +
-                    filename +
-                    "' -- " +
-                    string(strerror(errno)));
+                errors.push_back(fmt::format(
+                    "error:unable to read file '{}' -- {}",
+                    filename.string(), read_res.unwrapErr()));
             }
         }
     }

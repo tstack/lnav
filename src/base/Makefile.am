@@ -20,6 +20,7 @@ noinst_HEADERS = \
     func_util.hh \
     future_util.hh \
 	humanize.hh \
+	humanize.time.hh \
 	injector.hh \
 	injector.bind.hh \
 	intern_string.hh \
@@ -37,6 +38,7 @@ noinst_HEADERS = \
 libbase_a_SOURCES = \
     date_time_scanner.cc \
 	humanize.cc \
+	humanize.time.cc \
 	intern_string.cc \
     is_utf8.cc \
     isc.cc \

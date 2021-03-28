@@ -57,10 +57,6 @@
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 
-std::string time_ago(time_t last_time, bool convert_local = false);
-
-std::string precise_time_ago(const struct timeval &tv, bool convert_local = false);
-
 #if SIZEOF_OFF_T == 8
 #define FORMAT_OFF_T    "%qd"
 #elif SIZEOF_OFF_T == 4
@@ -111,28 +107,6 @@ private:
     SpookyHash h_context;
 };
 
-template<typename UnaryFunction, typename Member>
-struct object_field_t {
-    object_field_t(UnaryFunction &func, Member &mem)
-        : of_func(func), of_mem(mem) {};
-
-    template<typename Object>
-    void operator()(Object obj)
-    {
-        this->of_func(obj.*(this->of_mem));
-    };
-
-    UnaryFunction &of_func;
-    Member         of_mem;
-};
-
-template<typename UnaryFunction, typename Member>
-object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func,
-                                                   Member mem)
-{
-    return object_field_t<UnaryFunction, Member>(func, mem);
-}
-
 bool change_to_parent_dir();
 
 bool next_format(const char * const fmt[], int &index, int &locked_index);
@@ -151,19 +125,7 @@ inline bool is_glob(const char *fn)
 
 std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 
-bool read_file(const ghc::filesystem::path &path, std::string &out);
-
-inline
-time_t convert_log_time_to_local(time_t value) {
-    struct tm tm;
-
-    localtime_r(&value, &tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-    tm.tm_zone = NULL;
-#endif
-    tm.tm_isdst = 0;
-    return tm2sec(&tm);
-}
+Result<std::string, std::string> read_file(const ghc::filesystem::path &path);
 
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);

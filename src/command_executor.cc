@@ -40,6 +40,7 @@
 #include "sql_util.hh"
 #include "lnav_config.hh"
 #include "service_tags.hh"
+#include "bound_tags.hh"
 
 #include "command_executor.hh"
 #include "db_sub_source.hh"
@@ -138,15 +139,20 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
 
     lnav_data.ld_bottom_source.grep_error("");
 
-    if (stmt_str == ".schema") {
-        alt_msg = "";
+    if (startswith(stmt_str, ".")) {
+        vector<string> args;
+        split_ws(stmt_str, args);
 
-        ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
+        auto sql_cmd_map = injector::get<
+            readline_context::command_map_t *, sql_cmd_map_tag>();
+        auto cmd_iter = sql_cmd_map->find(args[0]);
 
-        lnav_data.ld_mode = LNM_PAGING;
-        return Ok(string());
+        if (cmd_iter != sql_cmd_map->end()) {
+            return cmd_iter->second->c_func(ec, stmt_str, args);
+        }
     }
-    else if (stmt_str == ".msgformats") {
+
+    if (stmt_str == ".msgformats") {
         stmt_str = MSG_FORMAT_STMT;
     }
 

@@ -80,6 +80,7 @@
 #include "init-sql.h"
 #include "logfile.hh"
 #include "base/func_util.hh"
+#include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
 #include "base/isc.hh"
 #include "base/string_util.hh"
@@ -252,6 +253,16 @@ static auto bound_curl =
     injector::bind_multiple<isc::service>()
         .add_singleton<curl_looper, services::curl_streamer_t>();
 
+template<>
+void injector::force_linking(last_relative_time_tag anno)
+{
+}
+
+template<>
+void injector::force_linking(services::curl_streamer_t anno)
+{
+}
+
 bool setup_logline_table(exec_context &ec)
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -260,13 +271,6 @@ bool setup_logline_table(exec_context &ec)
         "log_path",
         "log_text",
         "log_body",
-
-        nullptr
-    };
-
-    static const char *commands[] = {
-        ".schema",
-        ".msgformats",
 
         nullptr
     };
@@ -326,7 +330,6 @@ bool setup_logline_table(exec_context &ec)
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
             hidden_table_columns);
-        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", commands);
 
         for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
             struct FuncDef *basic_funcs;
@@ -1133,7 +1136,9 @@ static void wait_for_pipers()
 static void looper()
 {
     try {
-        exec_context &ec = lnav_data.ld_exec_context;
+        auto sql_cmd_map = injector::get<
+            readline_context::command_map_t*, sql_cmd_map_tag>();
+        auto& ec = lnav_data.ld_exec_context;
 
         readline_context command_context("cmd", &lnav_commands);
 
@@ -1141,7 +1146,7 @@ static void looper()
         readline_context search_filters_context("search-filters", nullptr, false);
         readline_context search_files_context("search-files", nullptr, false);
         readline_context index_context("capture");
-        readline_context sql_context("sql", nullptr, false);
+        readline_context sql_context("sql", sql_cmd_map, false);
         readline_context exec_context("exec");
         readline_context user_context("user");
         readline_curses  rlc;
@@ -1430,7 +1435,7 @@ static void looper()
                     if (session_data.sd_save_time) {
                         std::string ago;
 
-                        ago = time_ago(session_data.sd_save_time);
+                        ago = humanize::time::time_ago(session_data.sd_save_time);
                         lnav_data.ld_rl_view->set_value(
                             ("restored session from " ANSI_BOLD_START) +
                             ago +

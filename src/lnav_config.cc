@@ -979,11 +979,15 @@ Result<config_file_type, std::string>
 detect_config_file_type(const ghc::filesystem::path &path)
 {
     static const char *id_path[] = {"$schema", nullptr};
-    string content;
 
-    if (!read_file(path.string(), content)) {
-        return Err(fmt::format("unable to open file: {}", path.string()));
+    auto read_res = read_file(path);
+
+    if (read_res.isErr()) {
+        return Err(fmt::format("unable to open file: {} -- {}",
+                               path.string(), read_res.unwrapErr()));
     }
+
+    auto content = read_res.unwrap();
     if (startswith(content, "#")) {
         content.insert(0, "//");
     }

@@ -1,0 +1,257 @@
+/**
+ * Copyright (c) 2021, Timothy Stack
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * * Neither the name of Timothy Stack nor the names of its contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "config.h"
+
+#include "base/lnav_log.hh"
+#include "lnav.hh"
+#include "lnav_util.hh"
+#include "bound_tags.hh"
+#include "base/injector.bind.hh"
+#include "readline_curses.hh"
+#include "sqlite-extension-func.hh"
+
+static
+Result<std::string, std::string> sql_cmd_dump(
+    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("filename");
+        args.emplace_back("tables");
+        return Ok(retval);
+    }
+
+    if (args.size() < 2) {
+        return ec.make_error("expecting a file name to write to");
+    }
+
+    auto_mem<FILE> file(fclose);
+
+    if ((file = fopen(args[1].c_str(), "w+")) == nullptr) {
+        return ec.make_error("unable to open '{}' for writing: {}",
+                             args[1], strerror(errno));
+    }
+
+    for (size_t lpc = 2; lpc < args.size(); lpc++) {
+        sqlite3_db_dump(lnav_data.ld_db.in(),
+                        "main",
+                        args[lpc].c_str(),
+                        (int (*)(const char *, void*)) fputs,
+                        file.in());
+    }
+
+    retval = "generated";
+    return Ok(retval);
+}
+
+static
+Result<std::string, std::string> sql_cmd_read(
+    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("filename");
+        return Ok(retval);
+    }
+
+    std::vector<std::string> split_args;
+    shlex lexer(cmdline);
+
+    if (!lexer.split(split_args, ec.create_resolver())) {
+        return ec.make_error("unable to parse arguments");
+    }
+
+    for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
+        auto read_res = read_file(split_args[lpc]);
+
+        if (read_res.isErr()) {
+            return ec.make_error("unable to read script file: {} -- {}",
+                                 split_args[lpc],
+                                 read_res.unwrapErr());
+        }
+
+        auto script = read_res.unwrap();
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        const char *start = script.c_str();
+
+        do {
+            const char *tail;
+            auto rc = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                         start,
+                                         -1,
+                                         stmt.out(),
+                                         &tail);
+
+            if (rc != SQLITE_OK) {
+                const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+                return ec.make_error("{}", errmsg);
+            }
+
+            if (stmt.in() != nullptr) {
+                std::string alt_msg;
+                auto exec_res = execute_sql(ec,
+                                            std::string(start, tail - start),
+                                            alt_msg);
+                if (exec_res.isErr()) {
+                    return exec_res;
+                }
+            }
+
+            start = tail;
+        } while (start[0]);
+    }
+
+    if (lnav_data.ld_flags & LNF_HEADLESS) {
+        if (ec.ec_local_vars.size() == 1) {
+            ensure_view(&lnav_data.ld_views[LNV_DB]);
+        }
+    } else if (lnav_data.ld_db_row_source.dls_rows.size() > 1) {
+        ensure_view(&lnav_data.ld_views[LNV_DB]);
+    }
+    return Ok(retval);
+}
+
+static
+Result<std::string, std::string> sql_cmd_schema(
+    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        return Ok(retval);
+    }
+
+    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
+
+    return Ok(retval);
+}
+
+static
+Result<std::string, std::string> sql_cmd_generic(
+    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("*");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static readline_context::command_t sql_commands[] = {
+    {
+        ".dump",
+        sql_cmd_dump,
+        help_text(".dump",
+                  "Dump the contents of the database")
+            .sql_command()
+            .with_parameter({"path", "The path to the file to write"})
+            .with_tags({"io",}),
+    },
+    {
+        ".msgformats",
+        sql_cmd_schema,
+        help_text(".msgformats", "df")
+            .sql_command(),
+    },
+    {
+        ".read",
+        sql_cmd_read,
+        help_text(".read",
+                  "Switch to the SCHEMA view that contains a dump of the "
+                  "current database schema")
+            .sql_command(),
+    },
+    {
+        ".schema",
+        sql_cmd_schema,
+        help_text(".schema",
+                  "Switch to the SCHEMA view that contains a dump of the "
+                  "current database schema")
+            .sql_command(),
+    },
+    {
+        "ATTACH",
+        sql_cmd_generic,
+    },
+    {
+        "CREATE",
+        sql_cmd_generic,
+    },
+    {
+        "DELETE",
+        sql_cmd_generic,
+    },
+    {
+        "DETACH",
+        sql_cmd_generic,
+    },
+    {
+        "DROP",
+        sql_cmd_generic,
+    },
+    {
+        "INSERT",
+        sql_cmd_generic,
+    },
+    {
+        "SELECT",
+        sql_cmd_generic,
+    },
+    {
+        "UPDATE",
+        sql_cmd_generic,
+    },
+    {
+        "WITH",
+        sql_cmd_generic,
+    },
+};
+
+static readline_context::command_map_t sql_cmd_map;
+
+static auto bound_sql_cmd_map = injector::bind<
+    readline_context::command_map_t, sql_cmd_map_tag>::to_instance(+[]() {
+    for (auto& cmd : sql_commands) {
+        sql_cmd_map[cmd.c_name] = &cmd;
+    }
+
+    return &sql_cmd_map;
+});
+
+template<>
+void injector::force_linking(sql_cmd_map_tag anno)
+{
+}

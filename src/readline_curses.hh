@@ -86,7 +86,7 @@ public:
 
         _command_t(const char *name,
                    command_func_t func,
-                   help_text help,
+                   help_text help = {},
                    prompt_func_t prompt = nullptr) noexcept
             : c_name(name), c_func(func), c_help(std::move(help)), c_prompt(prompt) {};
 

@@ -3,9 +3,15 @@ enable_testing()
 
 include_directories(
         .
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/fmtlib
         ${CMAKE_CURRENT_BINARY_DIR}/../src
         ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+add_library(testdummy STATIC
+        test_stubs.cc)
+target_link_libraries(testdummy PkgConfig::libpcre)
 
 add_executable(test_abbrev test_abbrev.cc)
 target_link_libraries(test_abbrev diag PkgConfig::libpcre)
@@ -59,20 +65,20 @@ target_link_libraries(test_reltime diag PkgConfig::libpcre)
 add_test(NAME test_reltime COMMAND test_reltime)
 
 add_executable(test_top_status test_top_status.cc)
-target_link_libraries(test_top_status diag PkgConfig::libpcre)
+target_link_libraries(test_top_status diag testdummy PkgConfig::libpcre)
 add_test(NAME test_top_status COMMAND test_top_status)
 
 add_executable(drive_view_colors drive_view_colors.cc)
-target_link_libraries(drive_view_colors diag PkgConfig::ncursesw)
+target_link_libraries(drive_view_colors diag testdummy PkgConfig::ncursesw)
 
 add_executable(drive_vt52_curses drive_vt52_curses.cc)
 target_link_libraries(drive_vt52_curses diag PkgConfig::ncursesw)
 
 add_executable(drive_sql_anno drive_sql_anno.cc)
-target_link_libraries(drive_sql_anno diag PkgConfig::libpcre)
+target_link_libraries(drive_sql_anno diag testdummy PkgConfig::libpcre)
 
 add_executable(drive_data_scanner drive_data_scanner.cc)
-target_link_libraries(drive_data_scanner diag PkgConfig::libpcre)
+target_link_libraries(drive_data_scanner diag testdummy PkgConfig::libpcre)
 
 add_executable(scripty scripty.cc)
 target_link_libraries(scripty diag PkgConfig::ncursesw)

@@ -266,6 +266,7 @@ add_library(diag STATIC
         hist_source.cc
         hotkeys.cc
         base/humanize.cc
+        base/humanize.time.cc
         input_dispatcher.cc
         base/intern_string.cc
         base/is_utf8.cc
@@ -314,6 +315,7 @@ add_library(diag STATIC
         pcrepp/pcrepp.cc
         piper_proc.cc
         spectro_source.cc
+        sql_commands.cc
         sql_util.cc
         state-extension-functions.cc
         styling.cc
@@ -358,6 +360,7 @@ add_library(diag STATIC
         spookyhash/SpookyV2.cpp
 
         third-party/sqlite/ext/series.c
+        third-party/sqlite/ext/dbdump.c
 
         all_logs_vtab.hh
         archive_manager.hh
@@ -394,6 +397,7 @@ add_library(diag STATIC
         highlighter.hh
         hotkeys.hh
         base/humanize.hh
+        base/humanize.time.hh
         input_dispatcher.hh
         base/injector.hh
         base/injector.bind.hh
@@ -440,6 +444,7 @@ add_library(diag STATIC
         shlex.hh
         simdutf8check.h
         spectro_source.hh
+        sql_util.hh
         strong_int.hh
         string_attr_type.hh
         sysclip.hh

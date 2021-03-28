@@ -108,6 +108,7 @@ int sqlite_authorizer(void* pUserData, int action_code, const char *detail1,
                       const char *detail2, const char *detail3,
                       const char *detail4);
 
+extern string_attr_type SQL_COMMAND_ATTR;
 extern string_attr_type SQL_KEYWORD_ATTR;
 extern string_attr_type SQL_IDENTIFIER_ATTR;
 extern string_attr_type SQL_FUNCTION_ATTR;

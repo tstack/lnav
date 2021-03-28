@@ -174,6 +174,38 @@ void format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &o
                 .append("\n");
             break;
         }
+        case help_context_t::HC_SQL_COMMAND: {
+            out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
+                .append("\n")
+                .append(body_indent, ' ')
+                .append(";")
+                .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
+            for (auto &param : ht.ht_parameters) {
+                out.append(" ");
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                    out.append("[");
+                }
+                out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                    out.append("]");
+                }
+                if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
+                    out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
+                    out.append(" [");
+                    out.append("...", &view_curses::VC_STYLE, A_UNDERLINE);
+                    out.append(" ");
+                    out.append(param.ht_name, &view_curses::VC_STYLE,
+                               A_UNDERLINE);
+                    out.append("N", &view_curses::VC_STYLE, A_UNDERLINE);
+                    out.append("]");
+                }
+            }
+            out.append(" - ")
+                .append(attr_line_t::from_ansi_str(ht.ht_summary),
+                        &tws.with_indent(body_indent + 2))
+                .append("\n");
+            break;
+        }
         case help_context_t::HC_SQL_INFIX:
         case help_context_t::HC_SQL_KEYWORD: {
             size_t line_start = body_indent;
@@ -500,6 +532,9 @@ void format_help_text_for_rst(const help_text &ht,
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND:
             prefix = ":";
+            break;
+        case help_context_t::HC_SQL_COMMAND:
+            prefix = ";";
             break;
         case help_context_t::HC_SQL_FUNCTION:
         case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:

@@ -45,101 +45,6 @@
 
 using namespace std;
 
-std::string time_ago(time_t last_time, bool convert_local)
-{
-    time_t      delta, current_time = time(nullptr);
-    const char *fmt;
-    char        buffer[64];
-    int         amount;
-
-    if (convert_local) {
-        current_time = convert_log_time_to_local(current_time);
-    }
-
-    delta = current_time - last_time;
-    if (delta < 0) {
-        return "in the future";
-    }
-    else if (delta < 60) {
-        return "just now";
-    }
-    else if (delta < (60 * 2)) {
-        return "one minute ago";
-    }
-    else if (delta < (60 * 60)) {
-        fmt    = "%d minutes ago";
-        amount = delta / 60;
-    }
-    else if (delta < (2 * 60 * 60)) {
-        return "one hour ago";
-    }
-    else if (delta < (24 * 60 * 60)) {
-        fmt    = "%d hours ago";
-        amount = delta / (60 * 60);
-    }
-    else if (delta < (2 * 24 * 60 * 60)) {
-        return "one day ago";
-    }
-    else if (delta < (365 * 24 * 60 * 60)) {
-        fmt    = "%d days ago";
-        amount = delta / (24 * 60 * 60);
-    }
-    else if (delta < (2 * 365 * 24 * 60 * 60)) {
-        return "over a year ago";
-    }
-    else {
-        fmt = "over %d years ago";
-        amount = delta / (365 * 24 * 60 * 60);
-    }
-
-    snprintf(buffer, sizeof(buffer), fmt, amount);
-
-    return std::string(buffer);
-}
-
-std::string precise_time_ago(const struct timeval &tv, bool convert_local)
-{
-    struct timeval now, diff;
-
-    gettimeofday(&now, nullptr);
-    if (convert_local) {
-        now.tv_sec = convert_log_time_to_local(now.tv_sec);
-    }
-
-    timersub(&now, &tv, &diff);
-    if (diff.tv_sec < 0) {
-        return time_ago(tv.tv_sec);
-    }
-    else if (diff.tv_sec <= 1) {
-        return "a second ago";
-    }
-    else if (diff.tv_sec < (10 * 60)) {
-        char buf[64];
-
-        if (diff.tv_sec < 60) {
-            snprintf(buf, sizeof(buf),
-                     "%2ld seconds ago",
-                     diff.tv_sec);
-        }
-        else {
-            time_t seconds = diff.tv_sec % 60;
-            time_t minutes = diff.tv_sec / 60;
-
-            snprintf(buf, sizeof(buf),
-                     "%2ld minute%s and %2ld second%s ago",
-                     minutes,
-                     minutes > 1 ? "s" : "",
-                     seconds,
-                     seconds == 1 ? "" : "s");
-        }
-
-        return string(buf);
-    }
-    else {
-        return time_ago(tv.tv_sec, convert_local);
-    }
-}
-
 bool change_to_parent_dir()
 {
     bool retval = false;
@@ -211,17 +116,22 @@ string build_path(const vector<ghc::filesystem::path> &paths)
     return retval;
 }
 
-bool read_file(const ghc::filesystem::path &filename, string &out)
+Result<std::string, std::string> read_file(const ghc::filesystem::path &path)
 {
-    std::ifstream sql_file(filename.string());
+    try {
+        ghc::filesystem::ifstream file_stream(path);
 
-    if (sql_file) {
-        out.assign((std::istreambuf_iterator<char>(sql_file)),
-                   std::istreambuf_iterator<char>());
-        return true;
+        if (!file_stream) {
+            return Err(std::string(strerror(errno)));
+        }
+
+        std::string retval;
+        retval.assign((std::istreambuf_iterator<char>(file_stream)),
+                      std::istreambuf_iterator<char>());
+        return Ok(retval);
+    } catch (const std::exception& e) {
+        return Err(std::string(e.what()));
     }
-
-    return false;
 }
 
 Result<std::pair<ghc::filesystem::path, int>, std::string>

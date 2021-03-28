@@ -439,7 +439,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
 
 static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip)
 {
-    static string keyword_re_str = sql_keyword_re() + "|\\.schema|\\.msgformats";
+    static string keyword_re_str = sql_keyword_re();
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
     static pcrepp ident_pcre("(?:\\$|:)?(\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
@@ -451,7 +451,7 @@ static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip)
         nullptr
     };
 
-    view_colors &vc = view_colors::singleton();
+    auto &vc = view_colors::singleton();
 
     int keyword_attrs = vc.attrs_for_role(view_colors::VCR_KEYWORD);
     int symbol_attrs = vc.attrs_for_role(view_colors::VCR_SYMBOL);
@@ -460,7 +460,18 @@ static void readline_sqlite_highlighter_int(attr_line_t &al, int x, int skip)
 
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string(), skip);
-    string &line = al.get_string();
+    auto &line = al.get_string();
+
+    if (startswith(line, ";.")) {
+        auto space = line.find(' ');
+        struct line_range lr{2, -1};
+
+        if (space != std::string::npos) {
+            lr.lr_end = space;
+        }
+        al.get_attrs().emplace_back(lr, &view_curses::VC_STYLE, keyword_attrs);
+        return;
+    }
 
     while (ident_pcre.match(pc, pi)) {
         pcre_context::capture_t *cap = pc.first_valid();

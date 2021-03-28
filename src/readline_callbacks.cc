@@ -183,10 +183,8 @@ bool rl_sql_help(readline_curses *rc)
             lnav_data.ld_doc_source.replace_with(doc_al);
             dtc.reload_data();
 
-            if (!ex_al.empty()) {
-                lnav_data.ld_example_source.replace_with(ex_al);
-                etc.reload_data();
-            }
+            lnav_data.ld_example_source.replace_with(ex_al);
+            etc.reload_data();
 
             has_doc = true;
         }

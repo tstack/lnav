@@ -41,10 +41,13 @@
 
 #include "auto_mem.hh"
 #include "sql_util.hh"
+#include "base/injector.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "readline_curses.hh"
+#include "bound_tags.hh"
 #include "sqlite-extension-func.hh"
 
 using namespace std;
@@ -886,6 +889,7 @@ string sql_keyword_re(void)
     return retval;
 }
 
+string_attr_type SQL_COMMAND_ATTR("sql_command");
 string_attr_type SQL_KEYWORD_ATTR("sql_keyword");
 string_attr_type SQL_IDENTIFIER_ATTR("sql_ident");
 string_attr_type SQL_FUNCTION_ATTR("sql_func");
@@ -897,16 +901,16 @@ string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
 
 void annotate_sql_statement(attr_line_t &al)
 {
-    static string keyword_re_str =
-        R"(\A)" + sql_keyword_re() + R"(|\.schema|\.msgformats)";
+    static string keyword_re_str = R"(\A)" + sql_keyword_re();
 
     static struct {
         pcrepp re;
         string_attr_type_t type;
     } PATTERNS[] = {
+        { pcrepp{R"(^(\.\w+))"}, &SQL_COMMAND_ATTR },
         { pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR },
         { pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR },
-        { pcrepp{keyword_re_str.c_str(), PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
+        { pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
         { pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
         { pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
         { pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
@@ -917,14 +921,14 @@ void annotate_sql_statement(attr_line_t &al)
 
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string());
-    string &line = al.get_string();
-    string_attrs_t &sa = al.get_attrs();
+    auto &line = al.get_string();
+    auto &sa = al.get_attrs();
 
     while (pi.pi_next_offset < line.length()) {
         if (ws_pattern.match(pc, pi, PCRE_ANCHORED)) {
             continue;
         }
-        for (auto &pat : PATTERNS) {
+        for (const auto &pat : PATTERNS) {
             if (pat.re.match(pc, pi, PCRE_ANCHORED)) {
                 pcre_context::capture_t *cap = pc.all();
                 struct line_range lr(cap->c_begin, cap->c_end);
@@ -990,8 +994,24 @@ vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x
 
     x = al.nearest_text(x);
 
+    {
+        auto sa_opt = get_string_attr(al.get_attrs(), &SQL_COMMAND_ATTR);
+
+        if (sa_opt) {
+            auto sql_cmd_map = injector::get<
+                readline_context::command_map_t*, sql_cmd_map_tag>();
+            auto cmd_name = al.get_substring((*sa_opt)->sa_range);
+            auto cmd_iter = sql_cmd_map->find(cmd_name);
+
+            if (cmd_iter != sql_cmd_map->end()) {
+                return {&cmd_iter->second->c_help};
+            }
+        }
+    }
+
     vector<string> kw;
     auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
+
         if (sa.sa_type != &SQL_FUNCTION_ATTR &&
             sa.sa_type != &SQL_KEYWORD_ATTR) {
             return false;

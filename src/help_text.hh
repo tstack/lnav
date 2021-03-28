@@ -39,6 +39,7 @@ enum class help_context_t {
     HC_PARAMETER,
     HC_RESULT,
     HC_COMMAND,
+    HC_SQL_COMMAND,
     HC_SQL_KEYWORD,
     HC_SQL_INFIX,
     HC_SQL_FUNCTION,
@@ -119,6 +120,11 @@ struct help_text {
 
     help_text &sql_table_valued_function() noexcept {
         this->ht_context = help_context_t::HC_SQL_TABLE_VALUED_FUNCTION;
+        return *this;
+    };
+
+    help_text &sql_command() noexcept {
+        this->ht_context = help_context_t::HC_SQL_COMMAND;
         return *this;
     };
 

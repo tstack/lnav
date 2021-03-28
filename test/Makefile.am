@@ -24,6 +24,11 @@ AM_CPPFLAGS = \
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
 
+noinst_LIBRARIES = libtestdummy.a
+
+libtestdummy_a_SOURCES = \
+	test_stubs.cc
+
 check_PROGRAMS = \
 	drive_data_scanner \
 	drive_line_buffer \
@@ -75,6 +80,7 @@ TEXT2C_OBJS = \
 
 LDADD = \
     -lz \
+    libtestdummy.a \
     $(CONFIG_OBJS) \
     $(TEXT2C_OBJS) \
     $(top_builddir)/src/libdiag.a \

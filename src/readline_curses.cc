@@ -502,6 +502,8 @@ readline_curses::readline_curses()
 
 readline_curses::~readline_curses()
 {
+    this->rc_pty[RCF_MASTER].reset();
+    this->rc_command_pipe[RCF_MASTER].reset();
     if (this->rc_child == 0) {
         _exit(0);
     }
@@ -509,7 +511,7 @@ readline_curses::~readline_curses()
         int status;
 
         log_debug("term child %d", this->rc_child);
-        kill(this->rc_child, SIGTERM);
+        log_perror(kill(this->rc_child, SIGTERM));
         this->rc_child = -1;
 
         while (wait(&status) < 0 && (errno == EINTR)) {

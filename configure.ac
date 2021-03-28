@@ -90,8 +90,8 @@ AC_CHECK_SIZEOF(size_t)
 AC_STRUCT_TIMEZONE
 
 AC_ARG_ENABLE([static],
-              AS_HELP_STRING([--disable-static],
-                             [Disable static linking]))
+              AS_HELP_STRING([--enable-static],
+                             [Enable static linking]))
 
 AC_SEARCH_LIBS(openpty, util)
 AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
@@ -101,7 +101,7 @@ AC_SEARCH_LIBS(BZ2_bzopen, bz2,
 AC_SUBST(BZIP2_SUPPORT)
 AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(backtrace, execinfo)
-LIBCURL_CHECK_CONFIG([], [7.23.0], [], [], [test x"${enable_static}" != x"no"])
+LIBCURL_CHECK_CONFIG([], [7.23.0], [], [])
 
 # Sometimes, curses depends on these libraries being linked in...
 AC_ARG_ENABLE([tinfo],
@@ -193,7 +193,7 @@ AS_VAR_SET(static_lib_list,
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libarchive.a"])
 
-if test x"${enable_static}" != x"no"; then
+if test x"${enable_static}" = x"yes"; then
     case "$host_os" in
     darwin*)
         STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first"

@@ -2,6 +2,26 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
+
+run_test ${lnav_test} -n \
+    -c ";.read nonexistent-file" \
+    ${test_dir}/logfile_empty.0
+
+check_error_output "read worked with a nonexistent file?" <<EOF
+command-option:1: error: unable to read script file: nonexistent-file -- No such file or directory
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";.read ${test_dir}/file_for_dot_read.sql" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_syslog.0
+
+check_output ".read did not work?" <<EOF
+log_line,log_body
+1, attempting to mount entry /auto/opt
+EOF
+
+
 run_test ${lnav_test} -n \
     -c ";SELECT replicate('foobar', 120)" \
     ${test_dir}/logfile_empty.0

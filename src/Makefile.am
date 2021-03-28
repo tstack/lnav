@@ -248,9 +248,9 @@ noinst_HEADERS = \
 	shlex.hh \
 	simdutf8check.h \
 	spectro_source.hh \
-	styling.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
+	styling.hh \
 	statusview_curses.hh \
 	string_attr_type.hh \
 	strnatcmp.h \
@@ -293,6 +293,7 @@ nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
 
 THIRD_PARTY_SRCS = \
+	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
 
 libdiag_a_SOURCES = \
@@ -372,6 +373,7 @@ libdiag_a_SOURCES = \
 	textfile_sub_source.cc \
 	timer.cc \
 	piper_proc.cc \
+	sql_commands.cc \
 	sql_util.cc \
 	state-extension-functions.cc \
 	strnatcmp.c \

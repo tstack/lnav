@@ -25,15 +25,47 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file bound_tags.hh
  */
 
-#ifndef lnav_bound_tags_hh
-#define lnav_bound_tags_hh
+#include "config.h"
 
-struct last_relative_time_tag {};
+#include "lnav.hh"
+#include "base/injector.hh"
+#include "service_tags.hh"
 
-struct sql_cmd_map_tag {};
+struct lnav_data_t lnav_data;
 
-#endif
+void rebuild_hist()
+{
+}
+
+bool setup_logline_table(exec_context &ec)
+{
+    return false;
+}
+
+bool rescan_files(bool required)
+{
+    return false;
+}
+
+void wait_for_children()
+{
+
+}
+
+void rebuild_indexes()
+{
+}
+
+textview_curses *get_textview_for_mode(ln_mode_t mode)
+{
+    return nullptr;
+}
+
+readline_context::command_map_t lnav_commands;
+
+template<>
+void injector::force_linking(services::curl_streamer_t anno)
+{
+}

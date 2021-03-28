@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include "lnav.hh"
+#include "base/injector.hh"
 #include "auto_mem.hh"
 #include "sqlite-extension-func.hh"
 #include "regexp_vtab.hh"
@@ -16,8 +16,6 @@
 struct callback_state {
     int cs_row;
 };
-
-struct lnav_data_t lnav_data;
 
 static int sql_callback(void *ptr,
                         int ncols,
@@ -35,36 +33,6 @@ static int sql_callback(void *ptr,
     
     return 0;
 }
-
-void rebuild_hist()
-{
-}
-
-bool setup_logline_table(exec_context &ec)
-{
-    return false;
-}
-
-bool rescan_files(bool required)
-{
-    return false;
-}
-
-void wait_for_children()
-{
-
-}
-
-void rebuild_indexes()
-{
-}
-
-textview_curses *get_textview_for_mode(ln_mode_t mode)
-{
-    return nullptr;
-}
-
-readline_context::command_map_t lnav_commands;
 
 int main(int argc, char *argv[])
 {

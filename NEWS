@@ -53,6 +53,7 @@ lnav v0.9.1:
      * The "generate_series()" SQLite extension is now included by default.
        One change from the standard implementation is that both the start and
        stop are required parameters.
+     * Added the ";.read" SQL command for executing a plain SQL file.
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included

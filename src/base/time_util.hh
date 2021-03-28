@@ -45,6 +45,18 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res);
 time_t tm2sec(const struct tm *t);
 void secs2wday(const struct timeval &tv, struct tm *res);
 
+inline
+time_t convert_log_time_to_local(time_t value) {
+    struct tm tm;
+
+    localtime_r(&value, &tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm.tm_zone = NULL;
+#endif
+    tm.tm_isdst = 0;
+    return tm2sec(&tm);
+}
+
 constexpr time_t MAX_TIME_T = 4000000000LL;
 
 enum exttm_bits_t {
