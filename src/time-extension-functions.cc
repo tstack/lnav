@@ -130,7 +130,7 @@ static nonstd::optional<auto_buffer> timeslice(sqlite3_value *time_in, nonstd::o
     auto actual_length = sql_strftime(ts.in(), ts.size(), win_start.to_timeval());
 
     ts.shrink_to(actual_length);
-    return ts;
+    return std::move(ts);
 }
 
 static
