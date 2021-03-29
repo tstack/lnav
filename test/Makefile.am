@@ -24,8 +24,14 @@ AM_CPPFLAGS = \
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
 
+noinst_LIBRARIES = \
+	libtestdummy.a
+
+libtestdummy_a_SOURCES = \
+	test_stubs.cc
+
 DUMMY_OBJS = \
-	test_stubs.o
+	test_stubs.$(OBJEXT)
 
 check_PROGRAMS = \
 	drive_data_scanner \
@@ -65,16 +71,16 @@ AM_LDFLAGS = \
 	$(CURSES_LIB)
 
 CONFIG_OBJS = \
-	../src/ansi-palette-json.o \
-	../src/default-config.o \
-	../src/xterm-palette-json.o
+	../src/ansi-palette-json.$(OBJEXT) \
+	../src/default-config.$(OBJEXT) \
+	../src/xterm-palette-json.$(OBJEXT)
 
 TEXT2C_OBJS = \
-	../src/builtin-scripts.o \
-	../src/builtin-sh-scripts.o \
-	../src/default-formats.o \
-	../src/help-txt.o \
-	../src/time_fmts.o
+	../src/builtin-scripts.$(OBJEXT) \
+	../src/builtin-sh-scripts.$(OBJEXT) \
+	../src/default-formats.$(OBJEXT) \
+	../src/help-txt.$(OBJEXT) \
+	../src/time_fmts.$(OBJEXT)
 
 LDADD = \
     -lz \
@@ -196,6 +202,7 @@ dist_noinst_DATA = \
 	bad-config-json/formats/invalid-json/format.json \
 	bad-config-json/formats/invalid-key/format.json \
 	books.xml \
+	file_for_dot_read.sql \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
