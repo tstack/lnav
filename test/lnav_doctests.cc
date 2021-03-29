@@ -42,13 +42,6 @@
 
 using namespace std;
 
-std::vector<std::shared_ptr<log_format>>& log_format::get_root_formats()
-{
-    static std::vector<std::shared_ptr<log_format>> retval;
-
-    return retval;
-}
-
 #if 0
 TEST_CASE("overwritten-logfile") {
     string fname = "reload_test.0";

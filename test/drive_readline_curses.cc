@@ -56,21 +56,6 @@ static struct {
     volatile sig_atomic_t dd_looping;
 } drive_data;
 
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
-{
-    return "";
-}
-
-void add_global_vars(exec_context &ec)
-{
-}
-
-struct exec_context {
-
-};
-
-exec_context INIT_EXEC_CONTEXT;
-
 static void rl_callback(readline_curses *rc)
 {
     string line = rc->get_value();

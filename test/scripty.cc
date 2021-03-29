@@ -81,19 +81,13 @@
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 
+#include "base/string_util.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "termios_guard.hh"
 #include "styling.hh"
 
 using namespace std;
-
-std::string repeat(const std::string& input, size_t num)
-{
-    std::ostringstream os;
-    std::fill_n(std::ostream_iterator<std::string>(os), num, input);
-    return os.str();
-}
 
 /**
  * An RAII class for opening a PTY and forking a child process.

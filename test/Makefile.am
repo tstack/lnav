@@ -24,10 +24,8 @@ AM_CPPFLAGS = \
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
 
-noinst_LIBRARIES = libtestdummy.a
-
-libtestdummy_a_SOURCES = \
-	test_stubs.cc
+DUMMY_OBJS = \
+	test_stubs.o
 
 check_PROGRAMS = \
 	drive_data_scanner \
@@ -82,6 +80,7 @@ LDADD = \
     -lz \
     $(CONFIG_OBJS) \
     $(TEXT2C_OBJS) \
+    $(DUMMY_OBJS) \
     $(top_builddir)/src/libdiag.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
@@ -89,7 +88,6 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
-    libtestdummy.a \
     $(CURSES_LIB) \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
