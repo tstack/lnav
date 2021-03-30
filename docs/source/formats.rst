@@ -425,8 +425,8 @@ Executing the format file should then install it automatically:
 Format Order When Scanning a File
 ---------------------------------
 
-When **lnav** loads a file, it tries each log format against the first ~1000
-lines of the file trying to find a match.  When a match is found, that log
+When **lnav** loads a file, it tries each log format against the first 15,000
+lines [#]_ of the file trying to find a match.  When a match is found, that log
 format will be locked in and used for the rest of the lines in that file.
 Since there may be overlap between formats, **lnav** performs a test on
 startup to determine which formats match each others sample lines.  Using
@@ -441,3 +441,6 @@ log file for the "Format order" message:
 .. prompt:: bash
 
     lnav -d /tmp/lnav.log
+
+.. [#] The maximum number of lines to check can be configured.  See the
+       :ref:`tuning` section for more details.

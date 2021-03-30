@@ -48,6 +48,7 @@
 #include "lnav_config_fwd.hh"
 #include "archive_manager.cfg.hh"
 #include "file_vtab.cfg.hh"
+#include "logfile.cfg.hh"
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.
@@ -103,6 +104,7 @@ struct _lnav_config {
 
     archive_manager::config lc_archive_manager;
     file_vtab::config lc_file_vtab;
+    lnav::logfile::config lc_logfile;
 };
 
 extern struct _lnav_config lnav_config;

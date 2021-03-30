@@ -82,6 +82,10 @@ static auto fvc = injector::bind<file_vtab::config>::to_instance(+[]() {
     return &lnav_config.lc_file_vtab;
 });
 
+static auto lc = injector::bind<lnav::logfile::config>::to_instance(+[]() {
+    return &lnav_config.lc_logfile;
+});
+
 ghc::filesystem::path dotlnav_path()
 {
     auto home_env = getenv("HOME");
@@ -905,6 +909,16 @@ static struct json_path_container file_vtab_handlers = {
                    &file_vtab::config::fvc_max_content_size),
 };
 
+static struct json_path_container logfile_handlers = {
+    yajlpp::property_handler("max-unrecognized-lines")
+        .with_synopsis("<lines>")
+        .with_description(
+            "The maximum number of lines in a file to use when detecting the format")
+        .with_min_value(1)
+        .for_field(&_lnav_config::lc_logfile,
+                   &lnav::logfile::config::lc_max_unrecognized_lines),
+};
+
 static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
@@ -912,6 +926,9 @@ static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("file-vtab")
         .with_description("Settings related to the lnav_file virtual-table")
         .with_children(file_vtab_handlers),
+    yajlpp::property_handler("logfile")
+        .with_description("Settings related to log files")
+        .with_children(logfile_handlers),
 };
 
 static set<string> SUPPORTED_CONFIG_SCHEMAS = {

@@ -216,6 +216,7 @@ noinst_HEADERS = \
 	log_level_re.re \
 	log_search_table.hh \
 	logfile.hh \
+	logfile.cfg.hh \
 	logfile_fwd.hh \
 	logfile_sub_source.hh \
 	mapbox/recursive_wrapper.hpp \

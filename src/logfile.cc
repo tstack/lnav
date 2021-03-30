@@ -43,13 +43,14 @@
 #include <time.h>
 
 #include "base/string_util.hh"
+#include "base/injector.hh"
 #include "logfile.hh"
+#include "logfile.cfg.hh"
 #include "log_format.hh"
 #include "lnav_util.hh"
 
 using namespace std;
 
-static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(const string &filename, logfile_open_options &loo)
@@ -165,7 +166,8 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
         found = this->lf_format->scan(*this, this->lf_index, li, sbr);
     }
     else if (this->lf_options.loo_detect_format &&
-             this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
+             this->lf_index.size() <
+             injector::get<const lnav::logfile::config &>().lc_max_unrecognized_lines) {
         auto &root_formats = log_format::get_root_formats();
         vector<std::shared_ptr<log_format>>::iterator iter;
 

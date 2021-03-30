@@ -48,6 +48,20 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "logfile": {
+                    "description": "Settings related to log files",
+                    "title": "/tuning/logfile",
+                    "type": "object",
+                    "properties": {
+                        "max-unrecognized-lines": {
+                            "title": "/tuning/logfile/max-unrecognized-lines",
+                            "description": "The maximum number of lines in a file to use when detecting the format",
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false

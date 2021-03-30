@@ -198,6 +198,8 @@ Reference
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
 
 
+.. _tuning:
+
 Tuning
 ------
 
