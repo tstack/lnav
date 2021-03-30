@@ -74,14 +74,17 @@ by prefixing them with a dollar-sign (e.g. :code:`$black`).  The following
 variables can also be defined to control the values of the ANSI colors that
 are log messages or plain text:
 
-* black
-* red
-* green
-* yellow
-* blue
-* magenta
-* cyan
-* white
+.. csv-table:: ANSI colors
+   :header: "Variable Name", "ANSI Escape"
+
+   "black", "ESC[30m"
+   "red", "ESC[31m"
+   "green", "ESC[32m"
+   "yellow", "ESC[33m"
+   "blue", "ESC[34m"
+   "magenta", "ESC[35m"
+   "cyan", "ESC[36m"
+   "white", "ESC[37m"
 
 Specifying Colors
 ^^^^^^^^^^^^^^^^^
