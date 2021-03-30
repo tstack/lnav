@@ -219,7 +219,7 @@ Session
    * - Keypress
      - Command
    * - :kbd:`Ctrl` + :kbd:`R`
-     - Reset current session.
+     - Reset the current :ref:`session<sessions>` state.
 
 Query Prompts
 -------------

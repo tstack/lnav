@@ -55,6 +55,7 @@ if test x"${OS}" != x"FreeBSD"; then
             PATH="${FAKE_ROOT}/bin:${PATH}"
     else
         ../lnav/configure \
+            --enable-static \
             --with-libarchive=${FAKE_ROOT} \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
             CPPFLAGS="-I${FAKE_ROOT}/include -O2" \
@@ -63,6 +64,7 @@ if test x"${OS}" != x"FreeBSD"; then
     fi
 else
     ../lnav/configure \
+        --enable-static \
         LDFLAGS="-L${FAKE_ROOT}/lib -static" \
         LIBS="-lm -lelf" \
         CPPFLAGS="-I${FAKE_ROOT}/include -O2" \
