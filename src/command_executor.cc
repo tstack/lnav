@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "base/string_util.hh"
+#include "base/injector.hh"
 #include "yajlpp/json_ptr.hh"
 #include "lnav.hh"
 #include "log_format_loader.hh"

@@ -253,14 +253,16 @@ static auto bound_curl =
     injector::bind_multiple<isc::service>()
         .add_singleton<curl_looper, services::curl_streamer_t>();
 
+namespace injector {
 template<>
-void injector::force_linking(last_relative_time_tag anno)
+void force_linking(last_relative_time_tag anno)
 {
 }
 
 template<>
-void injector::force_linking(services::curl_streamer_t anno)
+void force_linking(services::curl_streamer_t anno)
 {
+}
 }
 
 bool setup_logline_table(exec_context &ec)

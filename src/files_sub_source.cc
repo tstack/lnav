@@ -164,7 +164,7 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
     const auto &fc = lnav_data.ld_active_files;
     auto filename_width =
         std::min(fc.fc_largest_path_length,
-                 std::max((size_t) 40, dim.second - 30));
+                 std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (line < fc.fc_name_to_errors.size()) {
         auto iter = fc.fc_name_to_errors.begin();
@@ -223,7 +223,7 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     const auto dim = tc.get_dimensions();
     auto filename_width =
         std::min(fc.fc_largest_path_length,
-                 std::max((size_t) 40, dim.second - 30));
+                 std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (selected) {
         value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);

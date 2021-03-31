@@ -43,6 +43,8 @@
 using namespace std;
 
 extern "C" {
+struct sqlite3_api_routines;
+
 int sqlite3_series_init(
     sqlite3 *db,
     char **pzErrMsg,

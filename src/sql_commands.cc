@@ -251,7 +251,9 @@ static auto bound_sql_cmd_map = injector::bind<
     return &sql_cmd_map;
 });
 
+namespace injector {
 template<>
-void injector::force_linking(sql_cmd_map_tag anno)
+void force_linking(sql_cmd_map_tag anno)
 {
+}
 }

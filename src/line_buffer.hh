@@ -121,7 +121,7 @@ public:
             unsigned char bits = 0;
             unsigned char in_bits = 0;
             Bytef index[GZ_WINSIZE];
-            indexDict(z_stream const & s, const off_t size) {
+            indexDict(z_stream const & s, const file_size_t size) {
                 assert((s.data_type & GZ_END_OF_BLOCK_MASK));
                 assert(!(s.data_type & GZ_END_OF_FILE_MASK));
                 assert(size >= s.avail_out + GZ_WINSIZE);

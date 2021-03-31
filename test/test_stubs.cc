@@ -65,7 +65,9 @@ textview_curses *get_textview_for_mode(ln_mode_t mode)
 
 readline_context::command_map_t lnav_commands;
 
+namespace injector {
 template<>
-void injector::force_linking(services::curl_streamer_t anno)
+void force_linking(services::curl_streamer_t anno)
 {
+}
 }
