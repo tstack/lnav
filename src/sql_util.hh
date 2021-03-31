@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 
+#include "base/time_util.hh"
 #include "attr_line.hh"
 #include "help_text.hh"
 
@@ -67,7 +68,7 @@ void dump_sqlite_schema(sqlite3 *db, std::string &schema_out);
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename);
 
-ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
+ssize_t sql_strftime(char *buffer, size_t buffer_size, lnav::time64_t tim, int millis,
     char sep = ' ');
 
 inline ssize_t sql_strftime(char *buffer, size_t buffer_size,

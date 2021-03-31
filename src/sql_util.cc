@@ -523,13 +523,13 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
     }
 }
 
-ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
+ssize_t sql_strftime(char *buffer, size_t buffer_size, lnav::time64_t tim, int millis,
     char sep)
 {
     struct tm gmtm;
     int year, month, index = 0;
 
-    secs2tm(&time, &gmtm);
+    secs2tm(tim, &gmtm);
     year = gmtm.tm_year + 1900;
     month = gmtm.tm_mon + 1;
     buffer[index++] = '0' + ((year / 1000) % 10);

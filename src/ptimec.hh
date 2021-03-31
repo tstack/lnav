@@ -292,7 +292,7 @@ inline void ftime_S(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     off_t off_start = off_inout;
-    time_t epoch = 0;
+    lnav::time64_t epoch = 0;
 
     while (off_inout < len && isdigit(str[off_inout])) {
         if ((off_inout - off_start) > 11) {
@@ -308,7 +308,7 @@ inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return false;
     }
 
-    secs2tm(&epoch, &dst->et_tm);
+    secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch > 0);
@@ -325,7 +325,7 @@ inline void ftime_s(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 inline bool ptime_q(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     off_t off_start = off_inout;
-    time_t epoch = 0;
+    lnav::time64_t epoch = 0;
 
     while (off_inout < len && isxdigit(str[off_inout])) {
         if ((off_inout - off_start) > 11) {
@@ -362,7 +362,7 @@ inline bool ptime_q(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return false;
     }
 
-    secs2tm(&epoch, &dst->et_tm);
+    secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch > 0);
@@ -448,7 +448,7 @@ inline void ftime_H(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     uint64_t epoch_ms = 0;
-    time_t epoch;
+    lnav::time64_t epoch;
 
     while (off_inout < len && isdigit(str[off_inout])) {
         epoch_ms *= 10;
@@ -463,7 +463,7 @@ inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return false;
     }
 
-    secs2tm(&epoch, &dst->et_tm);
+    secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch_ms > 0);
@@ -481,7 +481,7 @@ inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     uint64_t epoch_us = 0;
-    time_t epoch;
+    lnav::time64_t epoch;
 
     while (off_inout < len && isdigit(str[off_inout])) {
         epoch_us *= 10;
@@ -496,7 +496,7 @@ inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return false;
     }
 
-    secs2tm(&epoch, &dst->et_tm);
+    secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch_us > 0);
@@ -1008,13 +1008,13 @@ inline bool ptime_at(struct exttm *dst, const char *str, off_t &off_inout, ssize
         }
         dst->et_nsec = 0;
 
-        time_t small_secs = secs - 4611686018427387914ULL;
+        lnav::time64_t small_secs = secs - 4611686018427387914ULL;
 
         if (small_secs >= MAX_TIME_T) {
             return false;
         }
 
-        secs2tm(&small_secs, &dst->et_tm);
+        secs2tm(small_secs, &dst->et_tm);
     });
 
     if ((len - off_inout) == 8) {

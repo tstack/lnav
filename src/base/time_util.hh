@@ -33,9 +33,16 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <inttypes.h>
 #include <string.h>
 
-struct tm *secs2tm(time_t *tim_p, struct tm *res);
+namespace lnav {
+
+using time64_t = uint64_t;
+
+}
+
+struct tm *secs2tm(lnav::time64_t tim, struct tm *res);
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
  *
@@ -57,7 +64,7 @@ time_t convert_log_time_to_local(time_t value) {
     return tm2sec(&tm);
 }
 
-constexpr time_t MAX_TIME_T = 4000000000LL;
+constexpr lnav::time64_t MAX_TIME_T = 4000000000LL;
 
 enum exttm_bits_t {
     ETB_YEAR_SET,

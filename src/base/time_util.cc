@@ -118,16 +118,16 @@ void secs2wday(const struct timeval &tv, struct tm *res)
         res->tm_wday += DAYSPERWEEK;
 }
 
-struct tm *secs2tm(time_t *tim_p, struct tm *res)
+struct tm *secs2tm(lnav::time64_t tim, struct tm *res)
 {
     long days, rem;
-    time_t lcltime;
+    lnav::time64_t lcltime;
     int y;
     int yleap;
     const unsigned short int *ip;
 
     /* base decision about std/dst time on current time */
-    lcltime = *tim_p;
+    lcltime = tim;
 
     days = ((long)lcltime) / SECSPERDAY;
     rem = ((long)lcltime) % SECSPERDAY;
