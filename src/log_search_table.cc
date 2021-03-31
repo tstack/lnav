@@ -37,7 +37,6 @@ const static std::string LOG_MSG_INSTANCE = "log_msg_instance";
 static auto instance_name = intern_string::lookup("log_msg_instance");
 static auto instance_meta = logline_value_meta(
     instance_name, value_kind_t::VALUE_INTEGER, 0);
-static auto empty = intern_string::lookup("", 0);
 
 log_search_table::log_search_table(pcrepp pattern,
                                    intern_string_t table_name)
