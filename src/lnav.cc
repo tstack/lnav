@@ -1437,7 +1437,9 @@ static void looper()
                     if (session_data.sd_save_time) {
                         std::string ago;
 
-                        ago = humanize::time::time_ago(session_data.sd_save_time);
+                        ago = humanize::time::point::from_tv({
+                            (time_t) session_data.sd_save_time, 0})
+                            .as_time_ago();
                         lnav_data.ld_rl_view->set_value(
                             ("restored session from " ANSI_BOLD_START) +
                             ago +

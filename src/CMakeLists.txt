@@ -13,6 +13,8 @@ set(VCS_PACKAGE_STRING "test")
 
 configure_file(config.cmake.h.in config.h)
 
+add_subdirectory(base)
+
 add_executable(bin2c bin2c.hh bin2c.c)
 target_link_libraries(bin2c ZLIB::zlib)
 
@@ -226,6 +228,25 @@ add_custom_command(
 )
 list(APPEND GEN_SRCS builtin-sh-scripts.h builtin-sh-scripts.cc)
 
+add_library(cppfmt STATIC
+
+        fmtlib/format.cc
+        fmtlib/os.cc
+        fmtlib/fmt/chrono.h
+        fmtlib/fmt/color.h
+        fmtlib/fmt/compile.h
+        fmtlib/fmt/core.h
+        fmtlib/fmt/format-inl.h
+        fmtlib/fmt/format.h
+        fmtlib/fmt/locale.h
+        fmtlib/fmt/os.h
+        fmtlib/fmt/ostream.h
+        fmtlib/fmt/posix.h
+        fmtlib/fmt/printf.h
+        fmtlib/fmt/ranges.h
+        fmtlib/fmt/time.h
+        )
+
 add_library(diag STATIC
         ${GEN_SRCS}
 
@@ -235,7 +256,6 @@ add_library(diag STATIC
         ansi_scrubber.cc
         archive_manager.cc
         attr_line.cc
-        base/isc.cc
         bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
@@ -243,7 +263,6 @@ add_library(diag STATIC
         column_namer.cc
         command_executor.cc
         curl_looper.cc
-        base/date_time_scanner.cc
         db_sub_source.cc
         elem_to_json.cc
         environ_vtab.cc
@@ -265,11 +284,7 @@ add_library(diag STATIC
         highlighter.cc
         hist_source.cc
         hotkeys.cc
-        base/humanize.cc
-        base/humanize.time.cc
         input_dispatcher.cc
-        base/intern_string.cc
-        base/is_utf8.cc
         json-extension-functions.cc
         yajlpp/json_op.cc
         yajlpp/json_ptr.cc
@@ -277,8 +292,6 @@ add_library(diag STATIC
         listview_curses.cc
         lnav_commands.cc
         lnav_config.cc
-        base/lnav.gzip.cc
-        base/lnav_log.cc
         lnav_util.cc
         log_accel.cc
         log_actions.cc
@@ -319,7 +332,6 @@ add_library(diag STATIC
         sql_util.cc
         state-extension-functions.cc
         styling.cc
-        base/string_util.cc
         string_attr_type.cc
         strnatcmp.c
         text_format.cc
@@ -327,7 +339,6 @@ add_library(diag STATIC
         textfile_sub_source.cc
         textview_curses.cc
         top_status_source.cc
-        base/time_util.cc
         time-extension-functions.cc
         timer.cc
         unique_path.cc
@@ -376,12 +387,8 @@ add_library(diag STATIC
         command_executor.hh
         column_namer.hh
         curl_looper.hh
-        base/date_time_scanner.hh
         doc_status_source.hh
         elem_to_json.hh
-        base/enum_util.hh
-        base/func_util.hh
-        base/future_util.hh
         field_overlay_source.hh
         file_collection.hh
         file_format.hh
@@ -396,14 +403,7 @@ add_library(diag STATIC
         help_text_formatter.hh
         highlighter.hh
         hotkeys.hh
-        base/humanize.hh
-        base/humanize.time.hh
         input_dispatcher.hh
-        base/injector.hh
-        base/injector.bind.hh
-        base/intern_string.hh
-        base/is_utf8.hh
-        base/isc.hh
         k_merge_tree.h
         log_actions.hh
         log_data_helper.hh
@@ -418,8 +418,6 @@ add_library(diag STATIC
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
-        base/lrucache.hpp
-        base/math_util.hh
         optional.hpp
         papertrail_proc.hh
         plain_text_source.hh
@@ -432,8 +430,6 @@ add_library(diag STATIC
         readline_possibilities.hh
         regexp_vtab.hh
         relative_time.hh
-        base/result.h
-        base/time_util.hh
         styling.hh
         ring_span.hh
         safe/accessmode.h
@@ -486,22 +482,6 @@ add_library(diag STATIC
         ghc/fs_std_fwd.hpp
         ghc/fs_std_impl.hpp
 
-        fmtlib/format.cc
-        fmtlib/os.cc
-        fmtlib/fmt/chrono.h
-        fmtlib/fmt/color.h
-        fmtlib/fmt/compile.h
-        fmtlib/fmt/core.h
-        fmtlib/fmt/format-inl.h
-        fmtlib/fmt/format.h
-        fmtlib/fmt/locale.h
-        fmtlib/fmt/os.h
-        fmtlib/fmt/ostream.h
-        fmtlib/fmt/posix.h
-        fmtlib/fmt/printf.h
-        fmtlib/fmt/ranges.h
-        fmtlib/fmt/time.h
-
         ww898/cp_utf8.hpp
 
         log_level_re.cc
@@ -517,7 +497,7 @@ target_include_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(diag ${lnav_LIBS})
+target_link_libraries(diag base ${lnav_LIBS})
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 
 check_library_exists(util openpty "" HAVE_LIBUTIL)

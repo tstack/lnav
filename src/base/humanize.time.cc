@@ -29,48 +29,59 @@
 
 #include "config.h"
 
+#include <chrono>
+
+#include "fmt/format.h"
 #include "time_util.hh"
 #include "humanize.time.hh"
 
 namespace humanize {
 namespace time {
 
-std::string time_ago(time_t last_time, bool convert_local)
+using namespace std::chrono_literals;
+
+point point::from_tv(const timeval &tv)
 {
-    time_t delta, current_time = ::time(nullptr);
+    return point(tv);
+}
+
+std::string point::as_time_ago()
+{
+    struct timeval current_time = this->p_recent_point
+        .value_or(current_timeval());
     const char *fmt;
     char buffer[64];
     int amount;
 
-    if (convert_local) {
-        current_time = convert_log_time_to_local(current_time);
+    if (this->p_convert_to_local) {
+        current_time.tv_sec = convert_log_time_to_local(current_time.tv_sec);
     }
 
-    delta = current_time - last_time;
-    if (delta < 0) {
+    auto delta = std::chrono::seconds(current_time.tv_sec - this->p_past_point.tv_sec);
+    if (delta < 0s) {
         return "in the future";
-    } else if (delta < 60) {
+    } else if (delta < 1min) {
         return "just now";
-    } else if (delta < (60 * 2)) {
+    } else if (delta < 2min) {
         return "one minute ago";
-    } else if (delta < (60 * 60)) {
+    } else if (delta < 1h) {
         fmt = "%d minutes ago";
-        amount = delta / 60;
-    } else if (delta < (2 * 60 * 60)) {
+        amount = std::chrono::duration_cast<std::chrono::minutes>(delta).count();
+    } else if (delta < 2h) {
         return "one hour ago";
-    } else if (delta < (24 * 60 * 60)) {
+    } else if (delta < 24h) {
         fmt = "%d hours ago";
-        amount = delta / (60 * 60);
-    } else if (delta < (2 * 24 * 60 * 60)) {
+        amount = std::chrono::duration_cast<std::chrono::hours>(delta).count();
+    } else if (delta < 48h) {
         return "one day ago";
-    } else if (delta < (365 * 24 * 60 * 60)) {
+    } else if (delta < 365 * 24h) {
         fmt = "%d days ago";
-        amount = delta / (24 * 60 * 60);
-    } else if (delta < (2 * 365 * 24 * 60 * 60)) {
+        amount = delta / 24h;
+    } else if (delta < (2 * 365 * 24h)) {
         return "over a year ago";
     } else {
         fmt = "over %d years ago";
-        amount = delta / (365 * 24 * 60 * 60);
+        amount = delta / (365 * 24h);
     }
 
     snprintf(buffer, sizeof(buffer), fmt, amount);
@@ -78,42 +89,35 @@ std::string time_ago(time_t last_time, bool convert_local)
     return std::string(buffer);
 }
 
-std::string precise_time_ago(const struct timeval &tv, bool convert_local)
+std::string point::as_precise_time_ago()
 {
     struct timeval now, diff;
 
-    gettimeofday(&now, nullptr);
-    if (convert_local) {
+    now = this->p_recent_point.value_or(current_timeval());
+    if (this->p_convert_to_local) {
         now.tv_sec = convert_log_time_to_local(now.tv_sec);
     }
 
-    timersub(&now, &tv, &diff);
+    timersub(&now, &this->p_past_point, &diff);
     if (diff.tv_sec < 0) {
-        return time_ago(tv.tv_sec);
+        return this->as_time_ago();
     } else if (diff.tv_sec <= 1) {
         return "a second ago";
     } else if (diff.tv_sec < (10 * 60)) {
-        char buf[64];
-
         if (diff.tv_sec < 60) {
-            snprintf(buf, sizeof(buf),
-                     "%2ld seconds ago",
-                     diff.tv_sec);
-        } else {
-            time_t seconds = diff.tv_sec % 60;
-            time_t minutes = diff.tv_sec / 60;
-
-            snprintf(buf, sizeof(buf),
-                     "%2ld minute%s and %2ld second%s ago",
-                     minutes,
-                     minutes > 1 ? "s" : "",
-                     seconds,
-                     seconds == 1 ? "" : "s");
+            return fmt::format("{:2} seconds ago", diff.tv_sec);
         }
 
-        return std::string(buf);
+        time_t seconds = diff.tv_sec % 60;
+        time_t minutes = diff.tv_sec / 60;
+
+        return fmt::format("{:2} minute{} and {:2} second{} ago",
+                           minutes,
+                           minutes > 1 ? "s" : "",
+                           seconds,
+                           seconds == 1 ? "" : "s");
     } else {
-        return time_ago(tv.tv_sec, convert_local);
+        return this->as_time_ago();
     }
 }
 

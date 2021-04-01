@@ -27,47 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_humanize_time_hh
-#define lnav_humanize_time_hh
+#include "config.h"
 
-#include <string>
-
-#include "optional.hpp"
-
-namespace humanize {
-namespace time {
-
-class point {
-public:
-    static point from_tv(const struct timeval &tv);
-
-    point &with_recent_point(const struct timeval &tv)
-    {
-        this->p_recent_point = tv;
-        return *this;
-    }
-
-    point &with_convert_to_local(bool convert_to_local)
-    {
-        this->p_convert_to_local = convert_to_local;
-        return *this;
-    }
-
-    std::string as_time_ago();
-
-    std::string as_precise_time_ago();
-
-private:
-    explicit point(const struct timeval &tv) : p_past_point{tv.tv_sec,
-                                                            tv.tv_usec}
-    {}
-
-    struct timeval p_past_point;
-    nonstd::optional<struct timeval> p_recent_point;
-    bool p_convert_to_local{false};
-};
-
-}
-}
-
-#endif
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.hh"

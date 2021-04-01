@@ -77,8 +77,9 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 first_line = lss.find_line(lss.at(vis_line_t(0)));
                 last_line = lss.find_line(lss.at(lv.get_bottom()));
                 last_time = "Last message: " ANSI_BOLD_START +
-                    humanize::time::precise_time_ago(
-                    last_line->get_timeval(), true) + ANSI_NORM;
+                    humanize::time::point::from_tv(last_line->get_timeval())
+                    .with_convert_to_local(true)
+                    .as_precise_time_ago() + ANSI_NORM;
                 duration2str(last_line->get_time_in_millis() -
                              first_line->get_time_in_millis(),
                              time_span);
@@ -285,7 +286,9 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
     time_str.append(" -- ");
     time_lr.lr_start = time_str.length();
-    time_str.append(humanize::time::precise_time_ago(ll->get_timeval(), true));
+    time_str.append(humanize::time::point::from_tv(ll->get_timeval())
+                        .with_convert_to_local(true)
+                        .as_precise_time_ago());
     time_lr.lr_end = time_str.length();
     time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
 

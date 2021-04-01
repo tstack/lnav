@@ -46,3 +46,17 @@ libbase_a_SOURCES = \
     lnav_log.cc \
     string_util.cc \
     time_util.cc
+
+check_PROGRAMS = \
+    test_base
+
+test_base_SOURCES = \
+    humanize.time.tests.cc \
+    test_base.cc
+
+test_base_LDADD = \
+    libbase.a \
+    ../fmtlib/libcppfmt.a
+
+TESTS = \
+    test_base

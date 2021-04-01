@@ -127,6 +127,14 @@ inline mstime_t getmstime() {
     return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
 }
 
+inline struct timeval current_timeval() {
+    struct timeval retval;
+
+    gettimeofday(&retval, nullptr);
+
+    return retval;
+}
+
 inline time_t day_num(time_t ti)
 {
     return ti / (24 * 60 * 60);
