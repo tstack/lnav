@@ -830,11 +830,11 @@ size_t duration2str(int64_t millis, std::string &value_out)
         const char *format;
         const char *symbol;
     } intervals[] = {
-        { 1000, "%03qd%s", ""  },
-        {   60, "%qd%s",   "s" },
-        {   60, "%qd%s",   "m" },
-        {   24, "%qd%s",   "h" },
-        {    0, "%qd%s",   "d" },
+        { 1000, "%03lld%s", ""  },
+        {   60, "%lld%s",   "s" },
+        {   60, "%lld%s",   "m" },
+        {   24, "%lld%s",   "h" },
+        {    0, "%lld%s",   "d" },
     };
 
     struct rel_interval *curr_interval = intervals;

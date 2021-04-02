@@ -58,7 +58,7 @@
 #include "ghc/filesystem.hpp"
 
 #if SIZEOF_OFF_T == 8
-#define FORMAT_OFF_T    "%qd"
+#define FORMAT_OFF_T    "%lld"
 #elif SIZEOF_OFF_T == 4
 #define FORMAT_OFF_T    "%ld"
 #else
