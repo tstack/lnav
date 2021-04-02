@@ -42,7 +42,10 @@ target_include_directories(
 target_link_libraries(base cppfmt PkgConfig::libpcre)
 
 add_executable(test_base
+
+        humanize.file_size.tests.cc
         humanize.time.tests.cc
+        string_util.tests.cc
         test_base.cc)
 target_link_libraries(test_base base)
 add_test(NAME test_base COMMAND test_base)

@@ -51,7 +51,9 @@ check_PROGRAMS = \
     test_base
 
 test_base_SOURCES = \
+    humanize.file_size.tests.cc \
     humanize.time.tests.cc \
+    string_util.tests.cc \
     test_base.cc
 
 test_base_LDADD = \

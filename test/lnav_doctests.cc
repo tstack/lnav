@@ -37,7 +37,6 @@
 #include "relative_time.hh"
 #include "unique_path.hh"
 #include "logfile.hh"
-#include "base/humanize.hh"
 #include "log_format.hh"
 
 using namespace std;
@@ -87,16 +86,6 @@ TEST_CASE("duration2str") {
     CHECK(val == "-10s000");
 }
 
-TEST_CASE("humanize::file_size") {
-        CHECK(humanize::file_size(0) == "0.0 B");
-        CHECK(humanize::file_size(1) == "1.0 B");
-        CHECK(humanize::file_size(1024) == "1.0KB");
-        CHECK(humanize::file_size(1500) == "1.5KB");
-        CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL) == "42.1GB");
-        CHECK(humanize::file_size(-1LL) == "Unknown");
-        CHECK(humanize::file_size(std::numeric_limits<int64_t>::max()) == "8.0EB");
-}
-
 TEST_CASE("byte_array") {
     using my_array_t = byte_array<8>;
 
@@ -118,35 +107,6 @@ TEST_CASE("byte_array") {
     ba1.clear();
     CHECK(ba1.to_string() == "0000000000000000");
     CHECK(ba2.to_string() == "6162636431323334");
-}
-
-TEST_CASE("truncate_to") {
-    const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";
-    std::string str;
-
-    truncate_to(str, 10);
-    CHECK(str == "");
-    str = "abc";
-    truncate_to(str, 10);
-    CHECK(str == "abc");
-    str = orig;
-    truncate_to(str, 10);
-    CHECK(str == "01234\u22efwxyz");
-    str = orig;
-    truncate_to(str, 1);
-    CHECK(str == "\u22ef");
-    str = orig;
-    truncate_to(str, 2);
-    CHECK(str == "\u22ef");
-    str = orig;
-    truncate_to(str, 3);
-    CHECK(str == "0\u22efz");
-    str = orig;
-    truncate_to(str, 4);
-    CHECK(str == "01\u22efz");
-    str = orig;
-    truncate_to(str, 5);
-    CHECK(str == "01\u22efyz");
 }
 
 TEST_CASE("ptime_fmt") {
