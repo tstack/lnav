@@ -30,6 +30,8 @@
 #ifndef lnav_humanize_time_hh
 #define lnav_humanize_time_hh
 
+#include <sys/time.h>
+
 #include <string>
 
 #include "optional.hpp"
