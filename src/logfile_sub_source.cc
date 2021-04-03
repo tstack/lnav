@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <sqlite3.h>
 
+#include "base/humanize.time.hh"
 #include "base/string_util.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
@@ -303,9 +304,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
-        int64_t curr_millis, diff;
-
-        curr_millis = this->lss_token_line->get_time_in_millis();
+        auto curr_tv = this->lss_token_line->get_timeval();
+        struct timeval diff_tv;
 
         vis_line_t prev_mark =
             tc.get_bookmarks()[&textview_curses::BM_USER].prev(vis_line_t(row));
@@ -314,24 +314,19 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         if (prev_mark == -1 && next_mark != -1) {
             auto next_line = this->find_line(this->at(next_mark));
 
-            diff = curr_millis - next_line->get_time_in_millis();
+            diff_tv = curr_tv - next_line->get_timeval();
         } else {
-            if (prev_mark == -1) {
+            if (prev_mark == -1_vl) {
                 prev_mark = 0_vl;
             }
 
             auto first_line = this->find_line(this->at(prev_mark));
-            auto start_millis = first_line->get_time_in_millis();
-            diff = curr_millis - start_millis;
+            auto start_tv = first_line->get_timeval();
+            diff_tv = curr_tv - start_tv;
         }
 
-        value_out = "|" + value_out;
-        string relstr;
-        size_t rel_length = duration2str(diff, relstr);
-        value_out.insert(0, relstr);
-        if (rel_length < 12) {
-            value_out.insert(0, 12 - rel_length, ' ');
-        }
+        auto relstr = humanize::time::duration::from_tv(diff_tv).to_string();
+        value_out = fmt::format(FMT_STRING("{: >12}|{}"), relstr, value_out);
     }
     this->lss_in_value_for_line = false;
 }

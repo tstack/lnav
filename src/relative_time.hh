@@ -270,11 +270,4 @@ public:
     int rt_absolute_field_end;
 };
 
-size_t duration2str(int64_t millis, std::string &value_out);
-
-inline
-size_t str2reltime(const struct timeval &tv, std::string &value_out) {
-    return duration2str(tv.tv_sec * 1000 + tv.tv_usec / 1000, value_out);
-};
-
 #endif //LNAV_RELATIVE_TIME_HH

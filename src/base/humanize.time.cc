@@ -45,7 +45,7 @@ point point::from_tv(const timeval &tv)
     return point(tv);
 }
 
-std::string point::as_time_ago()
+std::string point::as_time_ago() const
 {
     struct timeval current_time = this->p_recent_point
         .value_or(current_timeval());
@@ -89,7 +89,7 @@ std::string point::as_time_ago()
     return std::string(buffer);
 }
 
-std::string point::as_precise_time_ago()
+std::string point::as_precise_time_ago() const
 {
     struct timeval now, diff;
 
@@ -119,6 +119,78 @@ std::string point::as_precise_time_ago()
     } else {
         return this->as_time_ago();
     }
+}
+
+duration duration::from_tv(const struct timeval &tv)
+{
+    return duration{tv};
+}
+
+std::string duration::to_string() const
+{
+    /* 24h22m33s111 */
+
+    static const struct rel_interval {
+        uint64_t length;
+        const char *format;
+        const char *symbol;
+    } intervals[] = {
+        { 1000, "%03lld%s", ""  },
+        {   60, "%lld%s",   "s" },
+        {   60, "%lld%s",   "m" },
+        {   24, "%lld%s",   "h" },
+        {    0, "%lld%s",   "d" },
+    };
+
+    auto *curr_interval = intervals;
+    auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::seconds(this->d_timeval.tv_sec)) +
+                 std::chrono::microseconds(this->d_timeval.tv_usec);
+    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(usecs);
+    std::string retval;
+    bool neg = false;
+
+    if (millis < 0s) {
+        neg = true;
+        millis = -millis;
+    }
+
+    uint64_t remaining;
+    if (millis >= 10min) {
+        remaining = std::chrono::duration_cast<std::chrono::seconds>(millis)
+            .count();
+        curr_interval += 1;
+    } else {
+        remaining = millis.count();
+    }
+
+    for (; curr_interval != std::end(intervals); curr_interval++) {
+        uint64_t amount;
+        char segment[32];
+
+        if (curr_interval->length) {
+            amount = remaining % curr_interval->length;
+            remaining = remaining / curr_interval->length;
+        }
+        else {
+            amount = remaining;
+            remaining = 0;
+        }
+
+        if (!amount && !remaining) {
+            break;
+        }
+
+        snprintf(segment, sizeof(segment), curr_interval->format, amount,
+                 curr_interval->symbol);
+        retval.insert(0, segment);
+    }
+
+    if (neg) {
+        retval.insert(0, "-");
+    }
+
+    return retval;
 }
 
 }

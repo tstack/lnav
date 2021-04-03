@@ -80,9 +80,9 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                     humanize::time::point::from_tv(last_line->get_timeval())
                     .with_convert_to_local(true)
                     .as_precise_time_ago() + ANSI_NORM;
-                duration2str(last_line->get_time_in_millis() -
-                             first_line->get_time_in_millis(),
-                             time_span);
+                time_span = humanize::time::duration::from_tv(
+                    last_line->get_timeval() - first_line->get_timeval())
+                    .to_string();
 
                 time_t local_now = convert_log_time_to_local(now);
                 time_t five_minutes_ago = local_now - (5 * 60 * 60);
@@ -325,7 +325,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
             timersub(&curr_tv, &actual_tv, &diff_tv);
             time_str.append(";  Diff: ");
             time_lr.lr_start = time_str.length();
-            str2reltime(diff_tv, time_str);
+            time_str.append(humanize::time::duration::from_tv(diff_tv)
+                                .to_string());
             time_lr.lr_end = time_str.length();
             time_line.with_attr(string_attr(
                 time_lr,

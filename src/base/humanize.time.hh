@@ -55,9 +55,9 @@ public:
         return *this;
     }
 
-    std::string as_time_ago();
+    std::string as_time_ago() const;
 
-    std::string as_precise_time_ago();
+    std::string as_precise_time_ago() const;
 
 private:
     explicit point(const struct timeval &tv) : p_past_point{tv.tv_sec,
@@ -67,6 +67,17 @@ private:
     struct timeval p_past_point;
     nonstd::optional<struct timeval> p_recent_point;
     bool p_convert_to_local{false};
+};
+
+class duration {
+public:
+    static duration from_tv(const struct timeval& tv);
+
+    std::string to_string() const;
+private:
+    explicit duration(const struct timeval& tv) : d_timeval(tv) {}
+
+    struct timeval d_timeval;
 };
 
 }

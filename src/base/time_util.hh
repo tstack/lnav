@@ -117,6 +117,15 @@ bool operator!=(const struct timeval &left, const struct timeval &right) {
            left.tv_usec != right.tv_usec;
 }
 
+inline
+struct timeval operator-(const struct timeval& lhs, const struct timeval& rhs)
+{
+    struct timeval diff;
+
+    timersub(&lhs, &rhs, &diff);
+    return diff;
+}
+
 typedef int64_t mstime_t;
 
 inline mstime_t getmstime() {

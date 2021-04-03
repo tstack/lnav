@@ -100,3 +100,29 @@ TEST_CASE("time ago")
               .with_recent_point({1612000000, 0})
               .as_time_ago() == "23 days ago");
 }
+
+TEST_CASE("duration to_string") {
+    std::string val;
+
+    val = humanize::time::duration::from_tv({25 * 60 * 60, 123000})
+        .to_string();
+    CHECK(val == "1d1h0m0s");
+    val = humanize::time::duration::from_tv({10, 123000})
+        .to_string();
+    CHECK(val == "10s123");
+    val = humanize::time::duration::from_tv({10, 0})
+        .to_string();
+    CHECK(val == "10s000");
+    val = humanize::time::duration::from_tv({0, 100000})
+        .to_string();
+    CHECK(val == "100");
+    val = humanize::time::duration::from_tv({0, 0})
+        .to_string();
+    CHECK(val == "");
+    val = humanize::time::duration::from_tv({0, -10000})
+        .to_string();
+    CHECK(val == "-010");
+    val = humanize::time::duration::from_tv({-10, 0})
+        .to_string();
+    CHECK(val == "-10s000");
+}
