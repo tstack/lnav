@@ -94,11 +94,11 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
+    $(READLINE_LIBS) \
     $(CURSES_LIB) \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
-    $(READLINE_LIBS) \
     $(LIBCURL)
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
