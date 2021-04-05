@@ -372,17 +372,28 @@ int string_extension_functions(struct FuncDef **basic_funcs,
 
         sqlite_func_adapter<decltype(&humanize::sparkline), humanize::sparkline>::builder(
             help_text("sparkline",
-                      "Converts a numeric value on a range to a bar chart character")
+                      "Function used to generate a sparkline bar chart.  "
+                      "The non-aggregate version converts a single numeric "
+                      "value on a range to a bar chart character.  The "
+                      "aggregate version returns a string with a bar "
+                      "character for every numeric input")
                 .sql_function()
                 .with_parameter({"value", "The numeric value to convert"})
                 .with_parameter(help_text(
-                    "upper", "The upper bound of the numeric range (default: 100)")
+                    "upper",
+                    "The upper bound of the numeric range.  The non-aggregate "
+                    "version defaults to 100.  The aggregate version uses the "
+                    "largest value in the inputs.")
                                     .optional())
                 .with_tags({"string"})
                 .with_example({
                     "To get the unicode block element for the value 32 in the "
                     "range of 0-128",
                     "SELECT sparkline(32, 128)"
+                })
+                .with_example({
+                    "To chart the values in a JSON array",
+                    "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, 4, 5, 6, 7, 8]')"
                 })
         ),
 
@@ -486,21 +497,6 @@ int string_extension_functions(struct FuncDef **basic_funcs,
         {
             "sparkline", -1, 0,
             sparkline_step, sparkline_final,
-            help_text("sparkline",
-                      "An aggregate function to convert numeric values to a "
-                      "sparkline bar chart")
-                .sql_agg_function()
-                .with_parameter({"value", "The numeric values to chart"})
-                .with_parameter(help_text(
-                    "upper", "The upper bound of the numeric range.  "
-                             "If not provided, the default is derived from "
-                             "all of the provided values")
-                                    .optional())
-                .with_tags({"string"})
-                .with_example({
-                    "To chart the values in a JSON array",
-                    "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, 4, 5, 6, 7, 8]')"
-                })
         },
 
         {nullptr}
