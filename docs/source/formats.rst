@@ -101,10 +101,18 @@ should be another object with the following fields:
 
         [ { "field": "ts" }, " ", { "field": "msg" } ]
 
-    :field: The name of the message field that should be inserted at this
-      point in the message.  The special "__timestamp__" field name can be
-      used to insert a human-readable timestamp.  The "__level__" field can
-      be used to insert the level name as defined by lnav.
+    :field: The name or `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_
+      of the message field that should be inserted at this point in the
+      message.  The special :code:`__timestamp__` field name can be used to
+      insert a human-readable timestamp.  The :code:`__level__` field can be
+      used to insert the level name as defined by lnav.
+
+      .. tip::
+
+        Use a JSON-Pointer to reference nested fields.  For example, to include
+        a "procname" property that is nested in a "details" object, you would
+        write the field reference as :code:`/details/procname`.
+
     :min-width: The minimum width for the field.  If the value for the field
       in a given log message is shorter, padding will be added as needed to
       meet the minimum-width requirement. (v0.8.2+)

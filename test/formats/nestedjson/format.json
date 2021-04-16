@@ -7,11 +7,11 @@
         "line-format" : [
             { "field" : "ts" },
             " ",
-            { "field" : "@fields/lvl" },
+            { "field" : "/@fields/lvl" },
             " ",
             { "field" : "@fields/msg" }
         ],
-        "level-field" : "@fields/lvl",
+        "level-field" : "/@fields/lvl",
         "timestamp-field": "ts",
         "body-field" : "@fields/msg",
         "value" : {

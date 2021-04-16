@@ -1881,6 +1881,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
         static const intern_string_t level_field = intern_string::lookup("__level__");
         json_format_element &jfe = *iter;
 
+        if (startswith(jfe.jfe_value.get(), "/")) {
+            jfe.jfe_value = intern_string::lookup(jfe.jfe_value.get() + 1);
+        }
         if (!jfe.jfe_ts_format.empty()) {
             if (!jfe.jfe_value.empty() && jfe.jfe_value != ts) {
                 log_warning("%s:line-format[%d]:ignoring field '%s' since "

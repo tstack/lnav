@@ -216,8 +216,10 @@ static int read_format_int(yajlpp_parse_context *ypc, long long val)
 static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
-    string value = string((const char *)str, len);
-    string field_name = ypc->get_path_fragment(1);
+    auto leading_slash = len > 0 && str[0] == '/';
+    auto value = string((const char *) (leading_slash ? str + 1 : str),
+                        leading_slash ? len - 1 : len);
+    auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "file-pattern") {
         elf->elf_file_pattern = value;
