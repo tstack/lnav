@@ -2144,6 +2144,67 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
 
+    lnav_data.ld_views[LNV_HELP]
+        .set_sub_source(&lnav_data.ld_help_source)
+        .set_word_wrap(true);
+    auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
+                                            lnav_data.ld_text_source);
+    if (lnav_data.ld_flags & LNF_HEADLESS) {
+        log_fos->fos_show_status = false;
+    }
+    lnav_data.ld_views[LNV_LOG]
+        .set_sub_source(&lnav_data.ld_log_source)
+        .set_delegate(new action_delegate(lnav_data.ld_log_source))
+        .add_input_delegate(lnav_data.ld_log_source)
+        .set_tail_space(2_vl)
+        .set_overlay_source(log_fos);
+    lnav_data.ld_views[LNV_TEXT]
+        .set_sub_source(&lnav_data.ld_text_source);
+    lnav_data.ld_views[LNV_HISTOGRAM]
+        .set_sub_source(&lnav_data.ld_hist_source2);
+    lnav_data.ld_views[LNV_DB]
+        .set_sub_source(&lnav_data.ld_db_row_source);
+    lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
+    lnav_data.ld_views[LNV_DB]
+        .set_overlay_source(&lnav_data.ld_db_overlay);
+    lnav_data.ld_views[LNV_SPECTRO]
+        .set_sub_source(&lnav_data.ld_spectro_source)
+        .set_overlay_source(&lnav_data.ld_spectro_source)
+        .add_input_delegate(lnav_data.ld_spectro_source)
+        .set_tail_space(2_vl);
+
+    lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
+    lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
+    lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
+    lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
+    lnav_data.ld_filter_view
+        .set_sub_source(&lnav_data.ld_filter_source)
+        .add_input_delegate(lnav_data.ld_filter_source)
+        .add_child_view(&lnav_data.ld_filter_source.fss_match_view)
+        .add_child_view(&lnav_data.ld_filter_source.fss_editor);
+    lnav_data.ld_files_view
+        .set_sub_source(&lnav_data.ld_files_source)
+        .add_input_delegate(lnav_data.ld_files_source);
+
+    for (lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
+    }
+
+    {
+        hist_source2 &hs = lnav_data.ld_hist_source2;
+
+        lnav_data.ld_log_source.set_index_delegate(
+            new hist_index_delegate(lnav_data.ld_hist_source2,
+                                    lnav_data.ld_views[LNV_HISTOGRAM]));
+        hs.init();
+        lnav_data.ld_zoom_level = 3;
+        hs.set_time_slice(ZOOM_LEVELS[lnav_data.ld_zoom_level]);
+    }
+
+    for (lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_title(view_titles[lpc]);
+    }
+
     load_formats(lnav_data.ld_config_paths, loader_errors);
 
     {
@@ -2234,67 +2295,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     init_lnav_commands(lnav_commands);
-
-    lnav_data.ld_views[LNV_HELP]
-        .set_sub_source(&lnav_data.ld_help_source)
-        .set_word_wrap(true);
-    auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
-                                            lnav_data.ld_text_source);
-    if (lnav_data.ld_flags & LNF_HEADLESS) {
-        log_fos->fos_show_status = false;
-    }
-    lnav_data.ld_views[LNV_LOG]
-        .set_sub_source(&lnav_data.ld_log_source)
-        .set_delegate(new action_delegate(lnav_data.ld_log_source))
-        .add_input_delegate(lnav_data.ld_log_source)
-        .set_tail_space(2_vl)
-        .set_overlay_source(log_fos);
-    lnav_data.ld_views[LNV_TEXT]
-        .set_sub_source(&lnav_data.ld_text_source);
-    lnav_data.ld_views[LNV_HISTOGRAM]
-        .set_sub_source(&lnav_data.ld_hist_source2);
-    lnav_data.ld_views[LNV_DB]
-        .set_sub_source(&lnav_data.ld_db_row_source);
-    lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
-    lnav_data.ld_views[LNV_DB]
-        .set_overlay_source(&lnav_data.ld_db_overlay);
-    lnav_data.ld_views[LNV_SPECTRO]
-        .set_sub_source(&lnav_data.ld_spectro_source)
-        .set_overlay_source(&lnav_data.ld_spectro_source)
-        .add_input_delegate(lnav_data.ld_spectro_source)
-        .set_tail_space(2_vl);
-
-    lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
-    lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
-    lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
-    lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
-    lnav_data.ld_filter_view
-             .set_sub_source(&lnav_data.ld_filter_source)
-             .add_input_delegate(lnav_data.ld_filter_source)
-             .add_child_view(&lnav_data.ld_filter_source.fss_match_view)
-             .add_child_view(&lnav_data.ld_filter_source.fss_editor);
-    lnav_data.ld_files_view
-        .set_sub_source(&lnav_data.ld_files_source)
-        .add_input_delegate(lnav_data.ld_files_source);
-
-    for (lpc = 0; lpc < LNV__MAX; lpc++) {
-        lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
-    }
-
-    {
-        hist_source2 &hs = lnav_data.ld_hist_source2;
-
-        lnav_data.ld_log_source.set_index_delegate(
-                new hist_index_delegate(lnav_data.ld_hist_source2,
-                        lnav_data.ld_views[LNV_HISTOGRAM]));
-        hs.init();
-        lnav_data.ld_zoom_level = 3;
-        hs.set_time_slice(ZOOM_LEVELS[lnav_data.ld_zoom_level]);
-    }
-
-    for (lpc = 0; lpc < LNV__MAX; lpc++) {
-        lnav_data.ld_views[lpc].set_title(view_titles[lpc]);
-    }
 
     lnav_data.ld_looping        = true;
     lnav_data.ld_mode           = LNM_PAGING;
