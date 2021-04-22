@@ -14,6 +14,8 @@ set(VCS_PACKAGE_STRING "test")
 configure_file(config.cmake.h.in config.h)
 
 add_subdirectory(base)
+add_subdirectory(remote)
+add_subdirectory(tailer)
 
 add_executable(bin2c bin2c.hh bin2c.c)
 target_link_libraries(bin2c ZLIB::zlib)

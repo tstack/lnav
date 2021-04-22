@@ -30,6 +30,7 @@ noinst_HEADERS = \
     lnav.gzip.hh \
     lrucache.hpp \
     math_util.hh \
+    network.tcp.hh \
     opt_util.hh \
     result.h \
     string_util.hh \
@@ -44,6 +45,7 @@ libbase_a_SOURCES = \
     isc.cc \
     lnav.gzip.cc \
     lnav_log.cc \
+    network.tcp.cc \
     string_util.cc \
     time_util.cc
 

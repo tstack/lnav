@@ -56,6 +56,14 @@ public:
         return *this;
     };
 
+    pid_t in() const {
+        return this->ap_child;
+    }
+
+    bool failed() const {
+        return this->ap_child == -1;
+    }
+
     bool in_child() const
     {
         return this->ap_child == 0;

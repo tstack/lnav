@@ -10,6 +10,7 @@ add_library(base STATIC
         isc.cc
         lnav.gzip.cc
         lnav_log.cc
+        network.tcp.cc
         string_util.cc
         time_util.cc
 
@@ -27,6 +28,7 @@ add_library(base STATIC
         isc.hh
         lrucache.hpp
         math_util.hh
+        network.tcp.hh
         result.h
         time_util.hh
         )
@@ -46,6 +48,8 @@ add_executable(test_base
         humanize.file_size.tests.cc
         humanize.time.tests.cc
         string_util.tests.cc
+        network.tcp.tests.cc
+
         test_base.cc)
 target_link_libraries(test_base base)
 add_test(NAME test_base COMMAND test_base)
