@@ -34,7 +34,7 @@ drive_tailer_SOURCES = \
     drive_tailer.cc
 
 drive_tailer_LDADD = \
-    ../base/libbase.a \
-    ../fmtlib/libcppfmt.a \
     libtailercommon.a \
-    libtailerpp.a
+    libtailerpp.a \
+    ../base/libbase.a \
+    ../fmtlib/libcppfmt.a
