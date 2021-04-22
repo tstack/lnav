@@ -69,6 +69,7 @@ struct packet_offer_block {
 
 struct packet_tail_block {
     std::string ttb_path;
+    int64_t ptb_offset;
     std::vector<uint8_t> ttb_bits;
 };
 

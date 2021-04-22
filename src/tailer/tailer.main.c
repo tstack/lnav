@@ -343,6 +343,7 @@ int poll_paths(struct list *path_list)
                                 send_packet(STDOUT_FILENO,
                                             TPT_TAIL_BLOCK,
                                             TPPT_STRING, curr->cps_path,
+                                            TPPT_INT64, curr->cps_client_file_offset,
                                             TPPT_BITS, bytes_read, buffer,
                                             TPPT_DONE);
                                 curr->cps_client_file_offset += bytes_read;

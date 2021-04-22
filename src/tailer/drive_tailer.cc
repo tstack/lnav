@@ -63,8 +63,8 @@ int main(int argc, char *const *argv)
         auto exe_dir = this_exe.parent_path();
         auto tailer_exe = exe_dir / "tailer";
 
-	if (host != nullptr) {
-            execlp("ssh", "ssh", "-q", host, "./tailer", NULL);
+        if (host != nullptr) {
+            execlp("ssh", "ssh", "-q", host, "./tailer", nullptr);
         } else {
             execvp(tailer_exe.c_str(), argv);
         }
@@ -118,7 +118,6 @@ int main(int argc, char *const *argv)
                 auto local_path = tmppath / remote_path;
                 auto fd = auto_fd(open(local_path.c_str(), O_RDONLY));
 
-                fprintf(stderr, "offer fd %d\n", fd.get());
                 if (fd == -1) {
                     printf("sending need block\n");
                     send_packet(to_child.get(),
@@ -134,7 +133,7 @@ int main(int argc, char *const *argv)
                 auto bytes_read = pread(fd, buffer, tob.tob_length,
                                         tob.tob_offset);
 
-                fprintf(stderr, "debug: bytes_read %ld\n", bytes_read);
+                // fprintf(stderr, "debug: bytes_read %ld\n", bytes_read);
                 if (bytes_read == tob.tob_length) {
                     tailer::hash_frag thf;
                     calc_sha_256(thf.thf_hash, buffer, bytes_read);
@@ -155,8 +154,8 @@ int main(int argc, char *const *argv)
                             TPPT_DONE);
             },
             [&](const tailer::packet_tail_block &ttb) {
-                //printf("got a tail: %s %ld\n", ttb.ttb_path.c_str(),
-                //       ttb.ttb_bits.size());
+                //printf("got a tail: %s %lld %ld\n", ttb.ttb_path.c_str(),
+                //       ttb.ptb_offset, ttb.ttb_bits.size());
                 auto remote_path = ghc::filesystem::absolute(
                     ghc::filesystem::path(ttb.ttb_path)).relative_path();
                 auto local_path = tmppath / remote_path;
@@ -169,7 +168,7 @@ int main(int argc, char *const *argv)
                 if (fd == -1) {
                     perror("open");
                 } else {
-                    write(fd, ttb.ttb_bits.data(), ttb.ttb_bits.size());
+                    pwrite(fd, ttb.ttb_bits.data(), ttb.ttb_bits.size(), ttb.ptb_offset);
                 }
             }
         );

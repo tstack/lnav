@@ -88,6 +88,7 @@ Result<packet, std::string> read_packet(int fd)
 
             TRY(read_payloads_into(fd,
                                    ttb.ttb_path,
+                                   ttb.ptb_offset,
                                    ttb.ttb_bits));
             return Ok(packet{ttb});
         }
