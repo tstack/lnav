@@ -38,8 +38,9 @@
 int main(int argc, char *const *argv)
 {
     auto tmppath = ghc::filesystem::temp_directory_path() / "drive_tailer";
+    auto host = getenv("TAILER_HOST");
 
-    ghc::filesystem::remove_all(tmppath);
+    // ghc::filesystem::remove_all(tmppath);
     ghc::filesystem::create_directories(tmppath);
 
     auto_pipe in_pipe(STDIN_FILENO);
@@ -62,7 +63,11 @@ int main(int argc, char *const *argv)
         auto exe_dir = this_exe.parent_path();
         auto tailer_exe = exe_dir / "tailer";
 
-        execvp(tailer_exe.c_str(), argv);
+	if (host != nullptr) {
+            execlp("ssh", "ssh", "-q", host, "./tailer", NULL);
+        } else {
+            execvp(tailer_exe.c_str(), argv);
+        }
         exit(EXIT_FAILURE);
     }
 
