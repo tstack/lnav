@@ -664,3 +664,16 @@ intern_string_t logfile::get_format_name() const
 
     return {};
 }
+
+nonstd::optional<logfile::const_iterator>
+logfile::find_from_time(const timeval &tv) const
+{
+    auto retval = std::lower_bound(this->lf_index.begin(),
+                                   this->lf_index.end(),
+                                   tv);
+    if (retval == this->lf_index.end()) {
+        return nonstd::nullopt;
+    }
+
+    return retval;
+}

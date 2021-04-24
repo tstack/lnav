@@ -78,6 +78,12 @@ struct big_array {
         return this->ba_size;
     };
 
+    void shrink_to(size_t new_size) {
+        require(new_size <= this->ba_size);
+
+        this->ba_size = new_size;
+    }
+
     bool empty() const {
         return this->ba_size == 0;
     };

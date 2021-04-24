@@ -439,6 +439,7 @@ public:
     enum class rebuild_result {
         rr_no_change,
         rr_appended_lines,
+        rr_partial_rebuild,
         rr_full_rebuild,
     };
 

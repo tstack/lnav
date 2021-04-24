@@ -95,10 +95,12 @@ TEST_AGENTS = [
 
 def access_log_msgs():
     while True:
+        now = datetime.datetime.now()
+        ts = now - datetime.timedelta(seconds=1)
         yield '%s - %s [%s +0000] "%s %s %s" %s %s "%s" "%s"\n' % (
             random.choice(TEST_ADDRESSES),
             random.choice(TEST_USERNAMES),
-            datetime.datetime.now().strftime(ACCESS_LOG_DATE_FMT),
+            ts.strftime(ACCESS_LOG_DATE_FMT),
             random.choice(TEST_METHODS),
             random.choice(TEST_URLS),
             random.choice(TEST_VERSIONS),
@@ -155,8 +157,8 @@ while True:
         for i in range(random.randrange(0, 4)):
             with open(fname, "a+") as fp:
                 fp.write(gen.next())
-                if random.uniform(0.0, 1.0) < 0.010:
-                    fp.truncate(0)
-            time.sleep(random.uniform(0.00, 0.01))
-            if random.uniform(0.0, 1.0) < 0.001:
-                os.remove(fname)
+                #if random.uniform(0.0, 1.0) < 0.010:
+                #    fp.truncate(0)
+            time.sleep(random.uniform(0.05, 0.10))
+            #if random.uniform(0.0, 1.0) < 0.001:
+            #    os.remove(fname)

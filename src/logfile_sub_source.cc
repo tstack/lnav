@@ -120,11 +120,13 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end() && retval == nullptr;
          iter++) {
-        logfile_data &ld = *(*iter);
-        if (ld.get_file() == nullptr) {
+        auto &ld = *(*iter);
+        auto lf = ld.get_file_ptr();
+
+        if (lf == nullptr) {
             continue;
         }
-        if (strcmp(ld.get_file()->get_filename().c_str(), fn) == 0) {
+        if (strcmp(lf->get_filename().c_str(), fn) == 0) {
             retval = ld.get_file();
         }
         else {
@@ -583,28 +585,32 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
     int file_count = 0;
     bool force = this->lss_force_rebuild;
     rebuild_result retval = rebuild_result::rr_no_change;
+    nonstd::optional<struct timeval> lowest_tv = nonstd::nullopt;
+    vis_line_t search_start = 0_vl;
 
     this->lss_force_rebuild = false;
     if (force) {
+        log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
     }
 
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
          iter++) {
-        logfile_data &ld = *(*iter);
+        auto &ld = *(*iter);
+        auto lf = ld.get_file_ptr();
 
-        if (ld.get_file() == NULL) {
+        if (lf == nullptr) {
             if (ld.ld_lines_indexed > 0) {
+                log_debug("%d: file closed, doing full rebuild",
+                          ld.ld_file_index);
                 force  = true;
                 retval = rebuild_result::rr_full_rebuild;
             }
         }
         else {
-            logfile &lf = *ld.get_file();
-
             if (!this->tss_view->is_paused()) {
-                switch (lf.rebuild_index()) {
+                switch (lf->rebuild_index()) {
                     case logfile::RR_NO_NEW_LINES:
                         // No changes
                         break;
@@ -613,8 +619,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                             retval = rebuild_result::rr_appended_lines;
                         }
                         if (!this->lss_index.empty() &&
-                            lf.size() > ld.ld_lines_indexed) {
-                            logline &new_file_line = lf[ld.ld_lines_indexed];
+                            lf->size() > ld.ld_lines_indexed) {
+                            logline &new_file_line = (*lf)[ld.ld_lines_indexed];
                             content_line_t cl = this->lss_index.back();
                             logline *last_indexed_line = this->find_line(cl);
 
@@ -623,25 +629,42 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                             if (last_indexed_line == nullptr ||
                                 new_file_line <
                                 last_indexed_line->get_timeval()) {
-                                force = true;
-                                retval = rebuild_result::rr_full_rebuild;
+                                log_debug("%s:%ld: found older lines, full "
+                                          "rebuild: %p  %lld < %lld",
+                                          lf->get_filename().c_str(),
+                                          ld.ld_lines_indexed,
+                                          last_indexed_line,
+                                          new_file_line.get_time_in_millis(),
+                                          last_indexed_line->get_time_in_millis());
+                                if (retval <= rebuild_result::rr_partial_rebuild) {
+                                    retval = rebuild_result::rr_partial_rebuild;
+                                    if (!lowest_tv) {
+                                        lowest_tv = new_file_line.get_timeval();
+                                    } else if (new_file_line.get_timeval() <
+                                               lowest_tv.value()) {
+                                        lowest_tv = new_file_line.get_timeval();
+                                    }
+                                }
                             }
                         }
                         break;
                     case logfile::RR_INVALID:
                     case logfile::RR_NEW_ORDER:
+                        log_debug("%s: log file has a new order, full rebuild",
+                                  lf->get_filename().c_str());
                         retval = rebuild_result::rr_full_rebuild;
                         force = true;
                         break;
                 }
             }
             file_count += 1;
-            total_lines += (*iter)->get_file()->size();
+            total_lines += lf->size();
         }
     }
 
     if (this->lss_index.reserve(total_lines)) {
         force = true;
+        retval = rebuild_result::rr_full_rebuild;
     }
 
     if (force) {
@@ -657,6 +680,66 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         this->lss_longest_line = 0;
         this->lss_basename_width = 0;
         this->lss_filename_width = 0;
+    } else if (retval == rebuild_result::rr_partial_rebuild) {
+        size_t remaining = 0;
+
+        log_debug("partial rebuild with lowest time: %ld",
+                  lowest_tv.value().tv_sec);
+        for (iter = this->lss_files.begin();
+             iter != this->lss_files.end();
+             iter++) {
+            logfile_data &ld = *(*iter);
+            auto lf = ld.get_file_ptr();
+
+            if (lf == nullptr) {
+                continue;
+            }
+
+            auto line_iter = lf->find_from_time(lowest_tv.value());
+
+            if (line_iter) {
+                log_debug("%s: lowest line time %ld; line %ld; size %ld",
+                          lf->get_filename().c_str(),
+                          line_iter.value()->get_timeval().tv_sec,
+                          std::distance(lf->cbegin(), line_iter.value()),
+                          lf->size());
+            }
+            ld.ld_lines_indexed = std::distance(
+                lf->cbegin(), line_iter.value_or(lf->cend()));
+            remaining += lf->size() - ld.ld_lines_indexed;
+        }
+
+        auto row_iter = lower_bound(this->lss_index.begin(),
+                                    this->lss_index.end(),
+                                    *lowest_tv,
+                                    logline_cmp(*this));
+        this->lss_index.shrink_to(std::distance(
+            this->lss_index.begin(), row_iter));
+        log_debug("new index size %ld/%ld; remain %ld",
+                  this->lss_index.ba_size,
+                  this->lss_index.ba_capacity,
+                  remaining);
+        auto filt_row_iter = lower_bound(this->lss_filtered_index.begin(),
+                                    this->lss_filtered_index.end(),
+                                    *lowest_tv,
+                                    filtered_logline_cmp(*this));
+        this->lss_filtered_index.resize(std::distance(
+            this->lss_filtered_index.begin(), filt_row_iter));
+        search_start = vis_line_t(this->lss_filtered_index.size());
+
+        if (this->lss_index_delegate) {
+            this->lss_index_delegate->index_start(*this);
+            for (const auto row_in_full_index : this->lss_filtered_index) {
+                auto cl = this->lss_index[row_in_full_index];
+                uint64_t line_number;
+                auto ld_iter = this->find_data(cl, line_number);
+                auto& ld = *ld_iter;
+                auto line_iter = ld->get_file_ptr()->begin() + line_number;
+
+                this->lss_index_delegate->index_line(
+                    *this, ld->get_file_ptr(), line_iter);
+            }
+        }
     }
 
     if (retval != rebuild_result::rr_no_change || force) {
@@ -664,7 +747,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         logline_cmp line_cmper(*this);
 
         for (auto& ld : this->lss_files) {
-            std::shared_ptr<logfile> lf = ld->get_file();
+            auto lf = ld->get_file_ptr();
 
             if (lf == nullptr) {
                 continue;
@@ -679,7 +762,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
 
         if (full_sort) {
             for (auto& ld : this->lss_files) {
-                shared_ptr<logfile> lf = ld->get_file();
+                auto lf = ld->get_file_ptr();
 
                 if (lf == nullptr) {
                     continue;
@@ -704,7 +787,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                  iter != this->lss_files.end();
                  iter++) {
                 logfile_data *ld = iter->get();
-                shared_ptr<logfile> lf = ld->get_file();
+                auto lf = ld->get_file_ptr();
                 if (lf == nullptr) {
                     continue;
                 }
@@ -725,7 +808,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                 }
 
                 int file_index = ld->ld_file_index;
-                int line_index = lf_iter - ld->get_file()->begin();
+                int line_index = lf_iter - ld->get_file_ptr()->begin();
 
                 content_line_t con_line(file_index * MAX_LINES_PER_FILE +
                                         line_index);
@@ -739,10 +822,13 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            if ((*iter)->get_file() == nullptr)
-                continue;
+            auto lf = (*iter)->get_file_ptr();
 
-            (*iter)->ld_lines_indexed = (*iter)->get_file()->size();
+            if (lf == nullptr) {
+                continue;
+            }
+
+            (*iter)->ld_lines_indexed = lf->size();
         }
 
         this->lss_filtered_index.reserve(this->lss_index.size());
@@ -765,7 +851,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                 continue;
             }
 
-            auto line_iter = (*ld)->get_file()->begin() + line_number;
+            auto lf = (*ld)->get_file_ptr();
+            auto line_iter = lf->begin() + line_number;
 
             if (line_iter->is_ignored()) {
                 continue;
@@ -777,9 +864,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                  this->check_extra_filters(ld, line_iter))) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
-                    shared_ptr<logfile> lf = (*ld)->get_file();
                     this->lss_index_delegate->index_line(
-                            *this, lf.get(), lf->begin() + line_number);
+                            *this, lf, lf->begin() + line_number);
                 }
             }
         }
@@ -793,7 +879,12 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         case rebuild_result::rr_no_change:
             break;
         case rebuild_result::rr_full_rebuild:
+            log_debug("redoing search");
             this->tss_view->redo_search();
+            break;
+        case rebuild_result::rr_partial_rebuild:
+            log_debug("redoing search from: %d", (int) search_start);
+            this->tss_view->search_new_data(search_start);
             break;
         case rebuild_result::rr_appended_lines:
             this->tss_view->search_new_data();
@@ -889,7 +980,7 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
 void logfile_sub_source::text_filters_changed()
 {
     for (auto& ld : *this) {
-        shared_ptr<logfile> lf = ld->get_file();
+        auto lf = ld->get_file_ptr();
 
         if (lf != nullptr) {
             ld->ld_filter_state.clear_deleted_filter_state();
@@ -915,7 +1006,8 @@ void logfile_sub_source::text_filters_changed()
             continue;
         }
 
-        auto line_iter = (*ld)->get_file()->begin() + line_number;
+        auto lf = (*ld)->get_file_ptr();
+        auto line_iter = lf->begin() + line_number;
 
         if (!this->tss_apply_filters ||
             (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
@@ -923,9 +1015,7 @@ void logfile_sub_source::text_filters_changed()
              this->check_extra_filters(ld, line_iter))) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
-                shared_ptr<logfile> lf = (*ld)->get_file();
-                this->lss_index_delegate->index_line(
-                        *this, lf.get(), lf->begin() + line_number);
+                this->lss_index_delegate->index_line(*this, lf, line_iter);
             }
         }
     }
@@ -1027,7 +1117,7 @@ void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt
 
 bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
 {
-    auto lf = (*ld)->get_file();
+    auto lf = (*ld)->get_file_ptr();
     char timestamp_buffer[64];
     shared_buffer_ref sbr, raw_sbr;
     lf->read_full_message(ll, sbr);

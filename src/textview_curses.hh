@@ -801,8 +801,8 @@ public:
         }
     }
 
-    void search_new_data() {
-        this->search_range(-1_vl);
+    void search_new_data(vis_line_t start = -1_vl) {
+        this->search_range(start);
         if (this->tc_search_child) {
             this->tc_search_child->get_grep_proc()->start();
         }

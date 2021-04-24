@@ -36,6 +36,7 @@ namespace services {
 
 struct ui_t {};
 struct curl_streamer_t {};
+struct remote_tailer_t {};
 
 }
 

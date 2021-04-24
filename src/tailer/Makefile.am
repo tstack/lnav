@@ -1,4 +1,13 @@
 
+include $(top_srcdir)/aminclude_static.am
+
+AM_CPPFLAGS = \
+	$(CODE_COVERAGE_CPPFLAGS)
+
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+
 noinst_LIBRARIES = libtailercommon.a libtailerpp.a
 
 noinst_HEADERS = \

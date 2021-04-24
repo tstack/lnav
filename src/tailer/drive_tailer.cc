@@ -127,6 +127,16 @@ int main(int argc, char *const *argv)
                     return;
                 }
 
+                struct stat st;
+
+                if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode)) {
+                    ghc::filesystem::remove_all(local_path);
+                    send_packet(to_child.get(),
+                                TPT_NEED_BLOCK,
+                                TPPT_STRING, tob.tob_path.c_str(),
+                                TPPT_DONE);
+                    return;
+                }
                 auto_mem<char> buffer;
 
                 buffer = (char *) malloc(tob.tob_length);
@@ -146,7 +156,7 @@ int main(int argc, char *const *argv)
                         return;
                     }
                 } else if (bytes_read == -1) {
-                    ghc::filesystem::remove(local_path);
+                    ghc::filesystem::remove_all(local_path);
                 }
                 send_packet(to_child.get(),
                             TPT_NEED_BLOCK,
@@ -168,6 +178,7 @@ int main(int argc, char *const *argv)
                 if (fd == -1) {
                     perror("open");
                 } else {
+                    ftruncate(fd, ttb.ptb_offset);
                     pwrite(fd, ttb.ttb_bits.data(), ttb.ttb_bits.size(), ttb.ptb_offset);
                 }
             }

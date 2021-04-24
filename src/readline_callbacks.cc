@@ -440,13 +440,12 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
         return;
     }
 
+    case LNM_PAGING:
+    case LNM_FILTER:
+    case LNM_FILES:
     case LNM_EXEC:
     case LNM_USER:
         return;
-
-    default:
-        require(0);
-        break;
     }
 
     if (!complete) {

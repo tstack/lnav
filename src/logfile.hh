@@ -244,6 +244,8 @@ public:
     /** @return The number of lines in the index. */
     size_t size() const { return this->lf_index.size(); }
 
+    nonstd::optional<const_iterator> find_from_time(const struct timeval& tv) const;
+
     logline &operator[](int index) { return this->lf_index[index]; };
 
     logline &front() {

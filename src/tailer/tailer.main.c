@@ -136,7 +136,7 @@ struct client_path_state *create_client_path_state(const char *path)
     retval->cps_path = strdup(path);
     retval->cps_last_path_state = PS_UNKNOWN;
     memset(&retval->cps_last_stat, 0, sizeof(retval->cps_last_stat));
-    retval->cps_client_file_offset = 0;
+    retval->cps_client_file_offset = -1;
     retval->cps_client_file_read_length = 0;
     retval->cps_client_state = CS_INIT;
     list_init(&retval->cps_children);
@@ -198,7 +198,7 @@ void set_client_path_state_error(struct client_path_state *cps)
         send_error(cps, "unable to open -- %s", strerror(errno));
     }
     cps->cps_last_path_state = PS_ERROR;
-    cps->cps_client_file_offset = 0;
+    cps->cps_client_file_offset = -1;
     cps->cps_client_state = CS_INIT;
 }
 
@@ -306,6 +306,13 @@ int poll_paths(struct list *path_list)
         int rc = lstat(curr->cps_path, &st);
 
         if (rc == -1) {
+            memset(&st, 0, sizeof(st));
+            set_client_path_state_error(curr);
+        } else if (curr->cps_client_file_offset >= 0 &&
+                   ((curr->cps_last_stat.st_dev != st.st_dev &&
+                     curr->cps_last_stat.st_ino != st.st_ino) ||
+                    (st.st_size < curr->cps_last_stat.st_size))) {
+            send_error(curr, "replaced");
             set_client_path_state_error(curr);
         } else if (S_ISREG(st.st_mode)) {
             switch (curr->cps_client_state) {
@@ -318,9 +325,12 @@ int poll_paths(struct list *path_list)
                             set_client_path_state_error(curr);
                         } else {
                             char buffer[64 * 1024];
-                            int64_t bytes_read = pread(fd,
-                                                       buffer, sizeof(buffer),
-                                                       curr->cps_client_file_offset);
+                            int64_t bytes_read = pread(
+                                fd,
+                                buffer, sizeof(buffer),
+                                curr->cps_client_file_offset < 0 ?
+                                0 :
+                                curr->cps_client_file_offset);
 
                             if (bytes_read == -1) {
                                 set_client_path_state_error(curr);
@@ -340,6 +350,10 @@ int poll_paths(struct list *path_list)
                                             TPPT_DONE);
                                 curr->cps_client_state = CS_OFFERED;
                             } else {
+                                if (curr->cps_client_file_offset < 0) {
+                                    curr->cps_client_file_offset = 0;
+                                }
+
                                 send_packet(STDOUT_FILENO,
                                             TPT_TAIL_BLOCK,
                                             TPPT_STRING, curr->cps_path,
@@ -406,6 +420,8 @@ int poll_paths(struct list *path_list)
                 retval += poll_paths(&curr->cps_children);
             }
         }
+
+        curr->cps_last_stat = st;
 
         curr = (struct client_path_state *) curr->cps_node.n_succ;
     }
@@ -503,7 +519,6 @@ int main(int argc, char *argv[])
                 timeout = 0;
             } else {
                 timeout = 1000;
-                fprintf(stderr, "all synced!\n");
             }
         }
     }

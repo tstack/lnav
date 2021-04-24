@@ -263,6 +263,11 @@ template<>
 void force_linking(services::curl_streamer_t anno)
 {
 }
+
+template<>
+void force_linking(services::remote_tailer_t anno)
+{
+}
 }
 
 bool setup_logline_table(exec_context &ec)
