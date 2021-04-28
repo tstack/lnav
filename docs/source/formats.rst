@@ -49,13 +49,13 @@ analysis.
 
 An **lnav** format file must contain a single JSON object, preferably with a
 :code:`$schema` property that refers to the
-`config-v1.schema <https://lnav.org/schemas/config-v1.schema.json>`_,
+`format-v1.schema <https://lnav.org/schemas/format-v1.schema.json>`_,
 like so:
 
 .. code-block:: json
 
    {
-       "$schema": "https://lnav.org/schemas/config-v1.schema.json"
+       "$schema": "https://lnav.org/schemas/format-v1.schema.json"
    }
 
 Each format to be defined in the file should a separate field in the top-level
