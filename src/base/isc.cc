@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include <algorithm>
+
 #include "isc.hh"
 
 namespace isc {
