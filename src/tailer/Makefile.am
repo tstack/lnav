@@ -1,6 +1,8 @@
 
 include $(top_srcdir)/aminclude_static.am
 
+BUILT_SOURCES = tailerbin.h tailerbin.cc
+
 AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS)
 
