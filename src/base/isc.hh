@@ -35,6 +35,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <utility>
 
 #include "injector.hh"
 #include "time_util.hh"
@@ -93,88 +94,115 @@ private:
     safe_message_list mp_messages;
 };
 
-class service {
+class service_base;
+using service_list = std::vector<std::shared_ptr<service_base>>;
+
+struct supervisor {
+    explicit supervisor(service_list servs = {},
+                        service_base *parent = nullptr);
+
+    ~supervisor();
+
+    bool empty() const {
+        return this->s_service_list.empty();
+    }
+
+    void add_child_service(std::shared_ptr<service_base> new_service);
+
+    void stop_children();
+
+    void cleanup_children();
+protected:
+    service_list s_service_list;
+    service_base *s_parent;
+};
+
+class service_base : public std::enable_shared_from_this<service_base> {
 public:
-    virtual ~service() = default;
+    explicit service_base(std::string name)
+        : s_name(std::move(name)), s_children({}, this) {
+    }
 
-    void start() {
-        log_debug("starting service thread");
-        this->s_thread = std::thread(&service::run, this);
-        this->s_started = true;
-    };
+    virtual ~service_base() = default;
 
-    void stop() {
-        if (this->s_started) {
-            this->s_looping = false;
-            this->s_port.send(empty_msg());
-            log_debug("waiting for service thread");
-            this->s_thread.join();
-            log_debug("service thread joined");
-            this->s_started = false;
-        }
-    };
+    bool is_looping() const {
+        return this->s_looping;
+    }
 
-    msg_port& get_port() { return this->s_port; };
+    msg_port& get_port() {
+        return this->s_port;
+    }
+
+    friend supervisor;
+private:
+    void start();
+
+    void stop();
 
 protected:
     void *run();
     virtual void loop_body() {};
+    virtual void child_finished(std::shared_ptr<service_base> child) {};
+    virtual void stopped() {};
     virtual std::chrono::milliseconds compute_timeout(mstime_t current_time) const {
         using namespace std::literals::chrono_literals;
 
         return 1s;
     };
 
+    const std::string s_name;
     bool s_started{false};
     std::thread s_thread;
     std::atomic<bool> s_looping{true};
     msg_port s_port;
+    supervisor s_children;
 };
 
-using service_list = std::vector<std::shared_ptr<service>>;
-
-struct service_guard {
-    service_guard(service_list servs)
-        : sg_service_list(servs) {
-        for (auto& serv : servs) {
-            serv->start();
-        }
-    };
-
-    ~service_guard() {
-        for (auto& serv : this->sg_service_list) {
-            serv->stop();
-        }
+template<typename T>
+class service : public service_base {
+public:
+    explicit service(std::string sub_name = "")
+        : service_base(std::string(__PRETTY_FUNCTION__) + " " + sub_name) {
     }
-private:
-    service_list sg_service_list;
+
+    template<typename F>
+    void send(F msg) {
+        this->s_port.send({
+            [lifetime = this->shared_from_this(), this, msg]() {
+                msg(*(static_cast<T *>(this)));
+            }
+        });
+    }
+
+    template<typename F, class Rep, class Period>
+    void send_and_wait(F msg,
+                       const std::chrono::duration<Rep, Period>& rel_time) {
+        msg_port reply_port;
+
+        this->s_port.send({
+            [lifetime = this->shared_from_this(), this, &reply_port, msg]() {
+                msg(*(static_cast<T *>(this)));
+                reply_port.send(empty_msg());
+            }
+        });
+        reply_port.template process_for(rel_time);
+    }
 };
 
 template<typename T, typename Service, typename...Annotations>
 struct to {
-    void send(std::function<void(T)> cb) {
-        auto& service = injector::get<isc::service&, Service>();
+    void send(std::function<void(T&)> cb) {
+        auto& service = injector::get<T&, Service>();
 
-        service.get_port().send({
-            [cb]() {
-                cb(injector::get<T, Service, Annotations...>());
-            }
-        });
+        service.send(cb);
     }
 
     template<class Rep, class Period>
     void send_and_wait(std::function<void(T)> cb,
                        const std::chrono::duration<Rep, Period>& rel_time) {
-        auto& service = injector::get<isc::service&, Service>();
-        msg_port reply_port;
+        auto& service = injector::get<T&, Service>();
 
-        service.get_port().send({
-            [cb, &reply_port]() {
-                cb(injector::get<T, Service, Annotations...>());
-                reply_port.send(empty_msg());
-            }
-        });
-        reply_port.template process_for(rel_time);
+        service.send_and_wait(cb, rel_time);
     }
 
     void send_and_wait(std::function<void(T)> cb) {

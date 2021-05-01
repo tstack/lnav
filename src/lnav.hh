@@ -45,6 +45,7 @@
 #include <unordered_map>
 
 #include "base/future_util.hh"
+#include "base/isc.hh"
 #include "safe/safe.h"
 #include "logfile.hh"
 #include "hist_source.hh"
@@ -283,6 +284,12 @@ struct lnav_data_t {
     int ld_fifo_counter;
 
     struct key_repeat_history ld_key_repeat_history;
+};
+
+struct static_service {};
+
+class main_looper : public isc::service<main_looper>, public static_service {
+public:
 };
 
 extern struct lnav_data_t lnav_data;

@@ -2,6 +2,7 @@
 add_library(base STATIC
         ../config.h
 
+        auto_pid.cc
         date_time_scanner.cc
         humanize.cc
         humanize.time.cc
@@ -15,6 +16,7 @@ add_library(base STATIC
         time_util.cc
 
 
+        auto_pid.hh
         date_time_scanner.hh
         enum_util.hh
         func_util.hh

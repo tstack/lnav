@@ -259,6 +259,14 @@ public:
         return intern_string::lookup(&this->pi_string[iter->c_begin], iter->length());
     };
 
+    nonstd::optional<std::string> get_substr_opt(pcre_context::const_iterator iter) const {
+        if (iter->is_valid()) {
+            return std::string(&this->pi_string[iter->c_begin], iter->length());
+        }
+
+        return nonstd::nullopt;
+    }
+
     void get_substr(pcre_context::const_iterator iter, char *dst) const {
         memcpy(dst, &this->pi_string[iter->c_begin], iter->length());
         dst[iter->length()] = '\0';
@@ -562,6 +570,17 @@ public:
     };
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const;
+
+    template<size_t MATCH_COUNT>
+    nonstd::optional<pcre_context_static<MATCH_COUNT>> match(pcre_input &pi, int options = 0) const {
+        pcre_context_static<MATCH_COUNT> pc;
+
+        if (this->match(pc, pi, options)) {
+            return pc;
+        }
+
+        return nonstd::nullopt;
+    }
 
     std::string replace(const char *str, const char *repl) const;
 

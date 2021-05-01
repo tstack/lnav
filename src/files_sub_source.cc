@@ -58,6 +58,9 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             if (sel < 0) {
                 return true;
             }
+            if (sel >= fc.fc_files.size()) {
+                return true;
+            }
 
             auto& lss = lnav_data.ld_log_source;
             auto &lf = fc.fc_files[sel];

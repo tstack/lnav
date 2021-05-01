@@ -123,6 +123,7 @@
 #include "xpath_vtab.hh"
 #include "textfile_highlighters.hh"
 #include "base/future_util.hh"
+#include "tailer/tailer.looper.hh"
 #include "service_tags.hh"
 
 #ifdef HAVE_LIBCURL
@@ -250,8 +251,16 @@ static auto bound_scripts =
     injector::bind<available_scripts>::to_singleton();
 
 static auto bound_curl =
-    injector::bind_multiple<isc::service>()
+    injector::bind_multiple<isc::service_base>()
         .add_singleton<curl_looper, services::curl_streamer_t>();
+
+static auto bound_tailer =
+    injector::bind_multiple<isc::service_base>()
+        .add_singleton<tailer::looper, services::remote_tailer_t>();
+
+static auto bound_main =
+    injector::bind_multiple<static_service>()
+        .add_singleton<main_looper, services::main_t>();
 
 namespace injector {
 template<>
@@ -266,6 +275,11 @@ void force_linking(services::curl_streamer_t anno)
 
 template<>
 void force_linking(services::remote_tailer_t anno)
+{
+}
+
+template<>
+void force_linking(services::main_t anno)
 {
 }
 }
@@ -1473,6 +1487,13 @@ static void looper()
                                            active_copy,
                                            false);
             }
+
+            {
+                auto& mlooper = injector::get<main_looper&, services::main_t>();
+
+                mlooper.get_port().process_for(0s);
+            }
+
             if (initial_rescan_completed) {
                 rebuild_indexes();
             } else {
@@ -1638,7 +1659,12 @@ static void looper()
                 }
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
-                    !lnav_data.ld_active_files.fc_other_files.empty()) {
+                    !lnav_data.ld_active_files.fc_other_files.empty() &&
+                    std::any_of(lnav_data.ld_active_files.fc_other_files.begin(),
+                                lnav_data.ld_active_files.fc_other_files.end(),
+                                [](const auto& pair) {
+                                    return pair.second == file_format_t::FF_ARCHIVE;
+                                })) {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }
 
@@ -2406,7 +2432,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 });
         }
 #endif
-        else if (is_glob(argv[lpc])) {
+        else if (is_glob(argv[lpc]) || strchr(argv[lpc], ':') != nullptr) {
             lnav_data.ld_active_files.fc_file_names
                 .emplace(argv[lpc], logfile_open_options());
         }
@@ -2588,7 +2614,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         usage();
     }
     else {
-        isc::service_guard serv_guard(injector::get<isc::service_list>());
+        isc::supervisor root_superv(injector::get<isc::service_list>());
 
         try {
             log_info("startup: %s", VCS_PACKAGE_STRING);

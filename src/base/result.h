@@ -885,6 +885,34 @@ struct Result {
         std::terminate();
     }
 
+    template<typename U = T>
+    typename std::enable_if<
+        !std::is_same<U, void>::value,
+        U
+    >::type
+    unwrap() {
+        if (isOk()) {
+            return std::move(storage().template get<U>());
+        }
+
+        ::fprintf(stderr, "Attempting to unwrap an error Result\n");
+        std::terminate();
+    }
+
+    template<typename U = T>
+    typename std::enable_if<
+        std::is_same<U, void>::value,
+        U
+    >::type
+    unwrap() const {
+        if (isOk()) {
+            return;
+        }
+
+        ::fprintf(stderr, "Attempting to unwrap an error Result\n");
+        std::terminate();
+    }
+
     E unwrapErr() const {
         if (isErr()) {
             return storage().template get<E>();
@@ -944,6 +972,5 @@ bool operator==(const Result<T, E>& lhs, types::Err<E> err) {
             typedef details::ResultErrType<decltype(res)>::type E; \
             return types::Err<E>(res.storage().get<E>());          \
         }                                                          \
-        typedef details::ResultOkType<decltype(res)>::type T;      \
-        res.storage().get<T>();                                    \
+        res.unwrap();                         \
     })

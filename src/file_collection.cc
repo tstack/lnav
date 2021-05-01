@@ -36,8 +36,13 @@
 #include <unordered_map>
 
 #include "base/opt_util.hh"
+#include "base/isc.hh"
 #include "logfile.hh"
 #include "file_collection.hh"
+#include "pcrepp/pcrepp.hh"
+#include "tailer/tailer.looper.hh"
+#include "service_tags.hh"
+#include "lnav_util.hh"
 
 static std::mutex REALPATH_CACHE_MUTEX;
 static std::unordered_map<std::string, std::string> REALPATH_CACHE;
@@ -45,10 +50,21 @@ static std::unordered_map<std::string, std::string> REALPATH_CACHE;
 void file_collection::close_files(const std::vector<std::shared_ptr<logfile>> &files)
 {
     for (const auto& lf : files) {
-        if (lf->is_valid_filename()) {
-            std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+        auto actual_path_opt = lf->get_actual_path();
 
-            REALPATH_CACHE.erase(lf->get_filename());
+        if (actual_path_opt) {
+            std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+            auto path_str = actual_path_opt.value().string();
+
+            for (auto iter = REALPATH_CACHE.begin();
+                 iter != REALPATH_CACHE.end();) {
+                if (iter->first == path_str || iter->second == path_str) {
+                    iter = REALPATH_CACHE.erase(iter);
+                } else {
+                    ++iter;
+                }
+            }
+
         } else {
             this->fc_file_names.erase(lf->get_filename());
         }
@@ -107,6 +123,9 @@ void file_collection::merge(const file_collection &other)
     this->fc_file_names.insert(other.fc_file_names.begin(),
                                other.fc_file_names.end());
     if (!other.fc_files.empty()) {
+        for (const auto& lf : other.fc_files) {
+            this->fc_name_to_errors.erase(lf->get_filename());
+        }
         this->fc_files.insert(this->fc_files.end(),
                               other.fc_files.begin(),
                               other.fc_files.end());
@@ -343,6 +362,9 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                                       logfile_open_options &loo,
                                       bool required)
 {
+    static const pcrepp REMOTE_PATTERN(
+        "(?:(?<username>[^@]+)@)?(?<hostname>[^:]+):(?<path>.*)");
+
     static_root_mem<glob_t, globfree> gl;
 
     {
@@ -353,8 +375,32 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
         }
     }
 
+    pcre_context_static<30> pc;
+    pcre_input pi(path);
+
     if (is_url(path.c_str())) {
         return;
+    }
+
+    if (REMOTE_PATTERN.match(pc, pi)) {
+        auto iter = this->fc_other_files.find(path);
+
+        if (iter != this->fc_other_files.end()) {
+            return;
+        }
+
+        const auto username = pi.get_substr_opt(pc["username"]);
+        const auto hostname = pi.get_substr(pc["hostname"]);
+        const auto remote_path = pi.get_substr(pc["path"]);
+        file_collection retval;
+
+        isc::to<tailer::looper &, services::remote_tailer_t>()
+            .send([=](auto &tlooper) {
+                tlooper.add_remote(to_netloc(username, hostname), remote_path);
+            });
+        retval.fc_other_files[path] = file_format_t::FF_REMOTE;
+
+        fq.push_back(lnav::futures::make_ready_future(retval));
     } else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         int lpc;
 

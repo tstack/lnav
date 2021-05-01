@@ -38,9 +38,11 @@
 #include <sys/select.h>
 
 #include <new>
+#include <string>
 #include <exception>
 
 #include "base/lnav_log.hh"
+#include "base/result.h"
 
 /**
  * Resource management class for file descriptors.
@@ -229,6 +231,16 @@ private:
 
 class auto_pipe {
 public:
+    static Result<auto_pipe, std::string> for_child_fd(int child_fd) {
+        auto_pipe retval(child_fd);
+
+        if (retval.open() == -1) {
+            return Err(std::string(strerror(errno)));
+        }
+
+        return Ok(retval);
+    }
+
     explicit auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)
         : ap_child_flags(child_flags), ap_child_fd(child_fd)
     {

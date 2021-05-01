@@ -27,41 +27,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_tailer_h
-#define lnav_tailer_h
+#include "config.h"
 
-#include <sys/types.h>
+#include <unistd.h>
 
-typedef enum {
-    TPPT_DONE,
-    TPPT_STRING,
-    TPPT_HASH,
-    TPPT_INT64,
-    TPPT_BITS,
-} tailer_packet_payload_type_t;
+#include "lnav_log.hh"
+#include "fmt/format.h"
+#include "auto_pid.hh"
 
-typedef enum {
-    TPT_ERROR,
-    TPT_OPEN_PATH,
-    TPT_CLOSE_PATH,
-    TPT_OFFER_BLOCK,
-    TPT_NEED_BLOCK,
-    TPT_ACK_BLOCK,
-    TPT_TAIL_BLOCK,
-    TPT_LOG,
-} tailer_packet_type_t;
+namespace lnav {
+namespace pid {
+Result<auto_pid<process_state::RUNNING>, std::string> from_fork()
+{
+    auto pid = ::fork();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    if (pid == -1) {
+        return Err(fmt::format("fork() failed: {}", strerror(errno)));
+    }
 
-ssize_t send_packet(int fd,
-                    tailer_packet_type_t tpt,
-                    tailer_packet_payload_type_t payload_type,
-                    ...);
+    if (pid != 0) {
+        log_debug("started child: %d", pid);
+    }
 
-#ifdef __cplusplus
-};
-#endif
-
-#endif
+    return Ok(auto_pid<process_state::RUNNING>(pid));
+}
+}
+}

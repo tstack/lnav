@@ -2002,7 +2002,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 }
 #endif
             }
-            else if (is_glob(fn.c_str())) {
+            else if (is_glob(fn.c_str()) || fn.find(':') != string::npos) {
                 file_names.emplace(fn, logfile_open_options());
                 retval = "info: watching -- " + fn;
             }

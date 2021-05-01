@@ -17,7 +17,7 @@ add_subdirectory(base)
 add_subdirectory(remote)
 add_subdirectory(tailer)
 
-add_executable(bin2c bin2c.hh bin2c.c)
+add_executable(bin2c bin2c.hh tools/bin2c.c)
 target_link_libraries(bin2c ZLIB::zlib)
 
 add_executable(ptimec ptimec.hh ptimec.c)
@@ -381,7 +381,6 @@ add_library(diag STATIC
         attr_line.hh
         auto_fd.hh
         auto_mem.hh
-        auto_pid.hh
         big_array.hh
         bottom_status_source.hh
         bound_tags.hh
@@ -499,7 +498,13 @@ target_include_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(diag base ${lnav_LIBS})
+target_link_libraries(diag
+        base
+        tailerservice
+        tailerpp
+        tailercommon
+        ${lnav_LIBS}
+        )
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 
 check_library_exists(util openpty "" HAVE_LIBUTIL)

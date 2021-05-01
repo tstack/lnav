@@ -25,6 +25,27 @@ add_library(
 )
 target_link_libraries(tailerpp base)
 
+add_custom_command(
+        OUTPUT tailerbin.h tailerbin.cc
+        COMMAND bin2c -n tailer_bin tailerbin tailer
+        DEPENDS bin2c tailer
+)
+
+add_library(
+        tailerservice
+
+        tailer.looper.hh
+        tailer.looper.cc
+        tailerbin.h
+        tailerbin.cc
+)
+target_include_directories(
+        tailerservice
+        PUBLIC
+
+        ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(tailerservice base)
+
 add_executable(
         drive_tailer
 

@@ -42,6 +42,7 @@ class logline_observer;
 enum class logfile_name_source {
     USER,
     ARCHIVE,
+    REMOTE,
 };
 
 struct logfile_open_options {

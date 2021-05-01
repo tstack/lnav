@@ -14,6 +14,7 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 noinst_LIBRARIES = libbase.a
 
 noinst_HEADERS = \
+    auto_pid.hh \
     date_time_scanner.hh \
     enum_util.hh \
     file_range.hh \
@@ -37,6 +38,7 @@ noinst_HEADERS = \
     time_util.hh
 
 libbase_a_SOURCES = \
+    auto_pid.cc \
     date_time_scanner.cc \
 	humanize.cc \
 	humanize.time.cc \

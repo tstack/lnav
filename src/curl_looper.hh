@@ -143,7 +143,7 @@ protected:
     int cr_completions;
 };
 
-class curl_looper : public isc::service {
+class curl_looper : public isc::service<curl_looper> {
 public:
     curl_looper()
             : cl_curl_multi(curl_multi_cleanup) {

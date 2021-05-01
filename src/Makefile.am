@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/aminclude_static.am
 
-SUBDIRS = fmtlib base tailer pcrepp pugixml yajl yajlpp .
+SUBDIRS = tools fmtlib base tailer pcrepp pugixml yajl yajlpp .
 
 bin_PROGRAMS = lnav
 
@@ -23,8 +23,8 @@ RE2C_V_0 = @echo "  RE2C   " $@;
 
 include formats/formats.am
 
-default-formats.h default-formats.cc: bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
+default-formats.h default-formats.cc: tools/bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
 
 include keymaps/keymaps.am
 include themes/themes.am
@@ -35,31 +35,31 @@ CONFIG_FILES = \
     $(THEME_FILES) \
     $()
 
-default-config.h default-config.cc: bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
+default-config.h default-config.cc: tools/bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
 
 include scripts/scripts.am
 
-builtin-scripts.h builtin-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
+builtin-scripts.h builtin-scripts.cc: tools/bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
-builtin-sh-scripts.h builtin-sh-scripts.cc: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
+builtin-sh-scripts.h builtin-sh-scripts.cc: tools/bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
 
-%-sh.cc: $(srcdir)/%.sh bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sh $<
+%-sh.cc: $(srcdir)/%.sh tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-sh $<
 
-%-txt.cc %-txt.h: $(srcdir)/%.txt bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-txt $<
+%-txt.cc %-txt.h: $(srcdir)/%.txt tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-txt $<
 
-%-sql.cc %-sql.h: $(srcdir)/%.sql bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sql $<
+%-sql.cc %-sql.h: $(srcdir)/%.sql tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-sql $<
 
-%-lnav.cc %-lnav.h: $(srcdir)/%.lnav bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-lnav $<
+%-lnav.cc %-lnav.h: $(srcdir)/%.lnav tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-lnav $<
 
-%-json.cc %-json.h: $(srcdir)/%.json bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-json $<
+%-json.cc %-json.h: $(srcdir)/%.json tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-json $<
 
 include time_formats.am
 
@@ -130,6 +130,9 @@ LDADD = \
 	fmtlib/libcppfmt.a \
 	pcrepp/libpcrepp.a \
 	pugixml/libpugixml.a \
+	tailer/libtailerservice.a \
+	tailer/libtailercommon.a \
+	tailer/libtailerpp.a \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
 	$(READLINE_LIBS) \
@@ -157,7 +160,6 @@ noinst_HEADERS = \
 	attr_line.hh \
 	auto_fd.hh \
 	auto_mem.hh \
-	auto_pid.hh \
 	big_array.hh \
 	bin2c.hh \
 	bookmarks.hh \
@@ -404,9 +406,6 @@ lnav_SOURCES = lnav.cc $(PLUGIN_SRCS)
 
 lnav_test_SOURCES = lnav.cc test_override.c $(PLUGIN_SRCS)
 
-bin2c$(BUILD_EXEEXT): bin2c.c
-	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -lz
-
 ptimec$(BUILD_EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $?
 
@@ -415,12 +414,10 @@ RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
-	bin2c.c \
 	ptimec.c
 
 CLEANFILES = \
-	ptimec$(BUILD_EXEEXT) \
-	bin2c$(BUILD_EXEEXT)
+	ptimec$(BUILD_EXEEXT)
 
 DISTCLEANFILES = \
     $(LNAV_BUILT_FILES) \

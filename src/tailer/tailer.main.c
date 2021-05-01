@@ -303,7 +303,7 @@ int poll_paths(struct list *path_list)
 
     while (curr->cps_node.n_succ != NULL) {
         struct stat st;
-        int rc = lstat(curr->cps_path, &st);
+        int rc = stat(curr->cps_path, &st);
 
         if (rc == -1) {
             memset(&st, 0, sizeof(st));
@@ -374,6 +374,8 @@ int poll_paths(struct list *path_list)
                     break;
                 }
             }
+
+            curr->cps_last_path_state = PS_OK;
         } else if (S_ISDIR(st.st_mode)) {
             DIR *dir = opendir(curr->cps_path);
 
@@ -419,6 +421,8 @@ int poll_paths(struct list *path_list)
 
                 retval += poll_paths(&curr->cps_children);
             }
+
+            curr->cps_last_path_state = PS_OK;
         }
 
         curr->cps_last_stat = st;
@@ -440,6 +444,7 @@ int main(int argc, char *argv[])
 
         pfds[0].fd = STDIN_FILENO;
         pfds[0].events = POLLIN;
+        pfds[0].revents = 0;
 
         int ready_count = poll(pfds, 1, timeout);
 
@@ -462,10 +467,17 @@ int main(int argc, char *argv[])
                             fprintf(stderr, "error: invalid open packet\n");
                             done = 1;
                         } else if (type == TPT_OPEN_PATH) {
-                            struct client_path_state *cps = create_client_path_state(path);
+                            struct client_path_state *cps;
 
-                            fprintf(stderr, "info: monitoring path: %s\n", path);
-                            list_append(&client_path_list, &cps->cps_node);
+                            cps = find_client_path_state(&client_path_list, path);
+                            if (cps != NULL) {
+                                fprintf(stderr, "warning: already monitoring -- %s\n", path);
+                            } else {
+                                cps = create_client_path_state(path);
+
+                                fprintf(stderr, "info: monitoring path: %s\n", path);
+                                list_append(&client_path_list, &cps->cps_node);
+                            }
                         } else {
                             struct client_path_state *cps = find_client_path_state(&client_path_list, path);
 

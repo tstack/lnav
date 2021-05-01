@@ -88,6 +88,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
                  (long long) this->lf_stat.st_mtime,
                  filename.c_str());
 
+        this->lf_actual_path = filename;
         this->lf_valid_filename = true;
     }
     else {
@@ -119,13 +120,13 @@ bool logfile::exists() const
 {
     struct stat st;
 
-    if (!this->lf_valid_filename) {
+    if (!this->lf_actual_path) {
         return true;
     }
 
-    if (::stat(this->lf_filename.c_str(), &st) == -1) {
+    if (::stat(this->lf_actual_path.value().c_str(), &st) == -1) {
         log_error("%s: stat failed -- %s",
-                  this->lf_filename.c_str(),
+                  this->lf_actual_path.value().c_str(),
                   strerror(errno));
         return false;
     }

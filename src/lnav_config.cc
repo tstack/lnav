@@ -53,7 +53,7 @@
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
-#include "auto_pid.hh"
+#include "base/auto_pid.hh"
 #include "lnav_config.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -212,8 +212,14 @@ bool install_from_git(const char *repo)
     auto local_configs_path = configs_path / local_name;
     auto local_staging_path = staging_path / local_name;
 
-    auto_pid git_cmd(fork());
+    auto fork_res = lnav::pid::from_fork();
+    if (fork_res.isErr()) {
+        fprintf(stderr, "error: cannot fork() to run git: %s\n",
+                fork_res.unwrapErr().c_str());
+        _exit(1);
+    }
 
+    auto git_cmd = fork_res.unwrap();
     if (git_cmd.in_child()) {
         if (ghc::filesystem::is_directory(local_formats_path)) {
             printf("Updating format repo: %s\n", repo);
@@ -231,9 +237,10 @@ bool install_from_git(const char *repo)
         _exit(1);
     }
 
-    git_cmd.wait_for_child();
+    auto finished_child = std::move(git_cmd).wait_for_child();
 
-    if (!git_cmd.was_normal_exit() || git_cmd.exit_status() != 0) {
+    if (!finished_child.was_normal_exit() ||
+        finished_child.exit_status() != 0) {
         return false;
     }
 

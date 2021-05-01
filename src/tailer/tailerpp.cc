@@ -68,29 +68,29 @@ Result<packet, std::string> read_packet(int fd)
     }
     switch (type) {
         case TPT_ERROR: {
-            packet_error te;
+            packet_error pe;
 
-            TRY(read_payloads_into(fd, te.te_path, te.te_msg));
-            return Ok(packet{te});
+            TRY(read_payloads_into(fd, pe.pe_path, pe.pe_msg));
+            return Ok(packet{pe});
         }
         case TPT_OFFER_BLOCK: {
-            packet_offer_block tob;
+            packet_offer_block pob;
 
             TRY(read_payloads_into(fd,
-                                   tob.tob_path,
-                                   tob.tob_offset,
-                                   tob.tob_length,
-                                   tob.tob_hash));
-            return Ok(packet{tob});
+                                   pob.pob_path,
+                                   pob.pob_offset,
+                                   pob.pob_length,
+                                   pob.pob_hash));
+            return Ok(packet{pob});
         }
         case TPT_TAIL_BLOCK: {
-            packet_tail_block ttb;
+            packet_tail_block ptb;
 
             TRY(read_payloads_into(fd,
-                                   ttb.ttb_path,
-                                   ttb.ptb_offset,
-                                   ttb.ttb_bits));
-            return Ok(packet{ttb});
+                                   ptb.ptb_path,
+                                   ptb.ptb_offset,
+                                   ptb.ptb_bits));
+            return Ok(packet{ptb});
         }
         default:
             assert(0);

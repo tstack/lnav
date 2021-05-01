@@ -39,6 +39,7 @@ enum class file_format_t {
     FF_UNKNOWN,
     FF_SQLITE_DB,
     FF_ARCHIVE,
+    FF_REMOTE,
 };
 
 file_format_t detect_file_format(const ghc::filesystem::path& filename);
@@ -56,6 +57,9 @@ struct formatter<file_format_t> : formatter<string_view> {
                 break;
             case file_format_t::FF_ARCHIVE:
                 name = "Archive";
+                break;
+            case file_format_t::FF_REMOTE:
+                name = "Remote";
                 break;
             default:
                 break;

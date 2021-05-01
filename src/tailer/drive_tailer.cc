@@ -31,7 +31,7 @@
 #include "config.h"
 
 #include "ghc/filesystem.hpp"
-#include "auto_pid.hh"
+#include "base/auto_pid.hh"
 #include "auto_fd.hh"
 #include "tailerpp.hh"
 
@@ -43,17 +43,33 @@ int main(int argc, char *const *argv)
     // ghc::filesystem::remove_all(tmppath);
     ghc::filesystem::create_directories(tmppath);
 
-    auto_pipe in_pipe(STDIN_FILENO);
-    auto_pipe out_pipe(STDOUT_FILENO);
-
-    in_pipe.open();
-    out_pipe.open();
-
-    auto child = auto_pid(fork());
-
-    if (child.failed()) {
+    auto in_pipe_res = auto_pipe::for_child_fd(STDIN_FILENO);
+    if (in_pipe_res.isErr()) {
+        fprintf(stderr,
+                "cannot open stdin pipe for child: %s\n",
+                in_pipe_res.unwrapErr().c_str());
         exit(EXIT_FAILURE);
     }
+
+    auto out_pipe_res = auto_pipe::for_child_fd(STDOUT_FILENO);
+    if (out_pipe_res.isErr()) {
+        fprintf(stderr,
+                "cannot open stdout pipe for child: %s\n",
+                out_pipe_res.unwrapErr().c_str());
+        exit(EXIT_FAILURE);
+    }
+
+    auto fork_res = lnav::pid::from_fork();
+    if (fork_res.isErr()) {
+        fprintf(stderr,
+                "cannot start tailer: %s\n",
+                fork_res.unwrapErr().c_str());
+        exit(EXIT_FAILURE);
+    }
+
+    auto in_pipe = in_pipe_res.unwrap();
+    auto out_pipe = out_pipe_res.unwrap();
+    auto child = fork_res.unwrap();
 
     in_pipe.after_fork(child.in());
     out_pipe.after_fork(child.in());
@@ -98,23 +114,26 @@ int main(int argc, char *const *argv)
                 printf("all done!\n");
                 done = true;
             },
-            [&](const tailer::packet_error &te) {
-                printf("Got an error: %s -- %s\n", te.te_path.c_str(),
-                       te.te_msg.c_str());
+            [&](const tailer::packet_log &te) {
+                printf("log: %s\n", te.pl_msg.c_str());
+            },
+            [&](const tailer::packet_error &pe) {
+                printf("Got an error: %s -- %s\n", pe.pe_path.c_str(),
+                       pe.pe_msg.c_str());
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(te.te_path)).relative_path();
+                    ghc::filesystem::path(pe.pe_path)).relative_path();
                 auto local_path = tmppath / remote_path;
 
                 printf("removing %s\n", local_path.c_str());
                 ghc::filesystem::remove_all(local_path);
             },
-            [&](const tailer::packet_offer_block &tob) {
-                printf("Got an offer: %s  %lld - %lld\n", tob.tob_path.c_str(),
-                       tob.tob_offset, tob.tob_length);
+            [&](const tailer::packet_offer_block &pob) {
+                printf("Got an offer: %s  %lld - %lld\n", pob.pob_path.c_str(),
+                       pob.pob_offset, pob.pob_length);
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(tob.tob_path)).relative_path();
+                    ghc::filesystem::path(pob.pob_path)).relative_path();
                 auto local_path = tmppath / remote_path;
                 auto fd = auto_fd(open(local_path.c_str(), O_RDONLY));
 
@@ -122,7 +141,7 @@ int main(int argc, char *const *argv)
                     printf("sending need block\n");
                     send_packet(to_child.get(),
                                 TPT_NEED_BLOCK,
-                                TPPT_STRING, tob.tob_path.c_str(),
+                                TPPT_STRING, pob.pob_path.c_str(),
                                 TPPT_DONE);
                     return;
                 }
@@ -133,25 +152,25 @@ int main(int argc, char *const *argv)
                     ghc::filesystem::remove_all(local_path);
                     send_packet(to_child.get(),
                                 TPT_NEED_BLOCK,
-                                TPPT_STRING, tob.tob_path.c_str(),
+                                TPPT_STRING, pob.pob_path.c_str(),
                                 TPPT_DONE);
                     return;
                 }
                 auto_mem<char> buffer;
 
-                buffer = (char *) malloc(tob.tob_length);
-                auto bytes_read = pread(fd, buffer, tob.tob_length,
-                                        tob.tob_offset);
+                buffer = (char *) malloc(pob.pob_length);
+                auto bytes_read = pread(fd, buffer, pob.pob_length,
+                                        pob.pob_offset);
 
                 // fprintf(stderr, "debug: bytes_read %ld\n", bytes_read);
-                if (bytes_read == tob.tob_length) {
+                if (bytes_read == pob.pob_length) {
                     tailer::hash_frag thf;
                     calc_sha_256(thf.thf_hash, buffer, bytes_read);
 
-                    if (thf == tob.tob_hash) {
+                    if (thf == pob.pob_hash) {
                         send_packet(to_child.get(),
                                     TPT_ACK_BLOCK,
-                                    TPPT_STRING, tob.tob_path.c_str(),
+                                    TPPT_STRING, pob.pob_path.c_str(),
                                     TPPT_DONE);
                         return;
                     }
@@ -160,14 +179,14 @@ int main(int argc, char *const *argv)
                 }
                 send_packet(to_child.get(),
                             TPT_NEED_BLOCK,
-                            TPPT_STRING, tob.tob_path.c_str(),
+                            TPPT_STRING, pob.pob_path.c_str(),
                             TPPT_DONE);
             },
-            [&](const tailer::packet_tail_block &ttb) {
-                //printf("got a tail: %s %lld %ld\n", ttb.ttb_path.c_str(),
-                //       ttb.ptb_offset, ttb.ttb_bits.size());
+            [&](const tailer::packet_tail_block &ptb) {
+                //printf("got a tail: %s %lld %ld\n", ptb.ptb_path.c_str(),
+                //       ptb.ptb_offset, ptb.ptb_bits.size());
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(ttb.ttb_path)).relative_path();
+                    ghc::filesystem::path(ptb.ptb_path)).relative_path();
                 auto local_path = tmppath / remote_path;
 
                 ghc::filesystem::create_directories(local_path.parent_path());
@@ -178,15 +197,15 @@ int main(int argc, char *const *argv)
                 if (fd == -1) {
                     perror("open");
                 } else {
-                    ftruncate(fd, ttb.ptb_offset);
-                    pwrite(fd, ttb.ttb_bits.data(), ttb.ttb_bits.size(), ttb.ptb_offset);
+                    ftruncate(fd, ptb.ptb_offset);
+                    pwrite(fd, ptb.ptb_bits.data(), ptb.ptb_bits.size(), ptb.ptb_offset);
                 }
             }
         );
     }
 
-    child.wait_for_child();
-    if (!child.was_normal_exit()) {
+    auto finished_child = std::move(child).wait_for_child();
+    if (!finished_child.was_normal_exit()) {
         fprintf(stderr, "error: child exited abnormally\n");
     }
 }

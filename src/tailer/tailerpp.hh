@@ -46,8 +46,8 @@ struct packet_eof {
 };
 
 struct packet_error {
-    std::string te_path;
-    std::string te_msg;
+    std::string pe_path;
+    std::string pe_msg;
 };
 
 struct hash_frag {
@@ -60,17 +60,21 @@ struct hash_frag {
     }
 };
 
+struct packet_log {
+    std::string pl_msg;
+};
+
 struct packet_offer_block {
-    std::string tob_path;
-    int64_t tob_offset;
-    int64_t tob_length;
-    hash_frag tob_hash;
+    std::string pob_path;
+    int64_t pob_offset;
+    int64_t pob_length;
+    hash_frag pob_hash;
 };
 
 struct packet_tail_block {
-    std::string ttb_path;
+    std::string ptb_path;
     int64_t ptb_offset;
-    std::vector<uint8_t> ttb_bits;
+    std::vector<uint8_t> ptb_bits;
 };
 
 using packet = mapbox::util::variant<

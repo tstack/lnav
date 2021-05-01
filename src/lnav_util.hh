@@ -127,6 +127,9 @@ std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 
 Result<std::string, std::string> read_file(const ghc::filesystem::path &path);
 
+std::string to_netloc(const nonstd::optional<std::string>& username,
+                      std::string hostname);
+
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);
 

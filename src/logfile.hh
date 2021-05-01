@@ -119,6 +119,10 @@ public:
         return this->lf_activity;
     };
 
+    nonstd::optional<ghc::filesystem::path> get_actual_path() const {
+        return this->lf_actual_path;
+    }
+
     /** @return The filename as given in the constructor. */
     const std::string &get_filename() const { return this->lf_filename; };
 
@@ -390,6 +394,7 @@ protected:
     bool        lf_named_file{true};
     bool        lf_valid_filename;
     std::string lf_filename;
+    nonstd::optional<ghc::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
     struct stat lf_stat;
