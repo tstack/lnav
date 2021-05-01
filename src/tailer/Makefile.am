@@ -33,7 +33,7 @@ libtailerpp_a_SOURCES = \
     tailerpp.cc
 
 tailerbin.h tailerbin.cc: tailer ../tools/bin2c$(BUILD_EXEEXT)
-	../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin $(*) $<
+	../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin tailer
 
 libtailerservice_a_CPPFLAGS = \
     -I$(srcdir)/.. \
