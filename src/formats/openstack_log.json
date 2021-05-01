@@ -11,8 +11,18 @@
             "mod-std": {
                 "module-format": true,
                 "pattern": "^(?<level>\\w+) (?<logger>\\S+) \\[(?<tid>[^\\]]+)\\] (?<body>.*)"
+            },
+            "keystone": {
+                "pattern": "^[(](?<logger>[^)]+)[)]: (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<level>\\w+) (?<body>.*)"
+            },
+            "keystone-debug": {
+                "pattern": "^[(](?<logger>[^)]+)[)]: (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<level>\\w+) [(](?<user>[^)]+)[)] (?<body>.*)"
             }
         },
+        "timestamp-format": [
+            "%Y-%m-%d %H:%M:%S.%L",
+            "%Y-%m-%d %H:%M:%S,%L"
+        ],
         "level-field": "level",
         "level": {
             "critical": "CRITICAL",
@@ -34,11 +44,21 @@
             "logger": {
                 "kind": "string",
                 "identifier": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
             }
         },
         "sample": [
             {
                 "line": "2014-10-28 10:42:22.772 23623 INFO neutron.wsgi [req-40743023-00ed-441c-9d0a-19b8167ea0ad None] 10.1.255.252 - - [28/Oct/2014 10:42:22] GET /v2.0/floatingips.json?fixed_ip_address=80.0.0.9&port_id=b4291e0e-a941-4663-9379-7af6471e983f HTTP/1.1 200 208 0.008971"
+            },
+            {
+                "line": "(sqlalchemy.orm.mapper.Mapper): 2021-04-27 06:25:32,122 INFO (User|user) Identified primary key columns: ColumnSet([Column('id', String(length=64), table=<user>, primary_key=True, nullable=False)])"
+            },
+            {
+                "line": "(sqlalchemy.pool.QueuePool): 2021-04-28 16:37:00,355 DEBUG Connection <pymysql.connections.Connection object at 0x7fd88717d0d0> being returned to pool"
             }
         ]
     }
