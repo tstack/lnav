@@ -92,6 +92,14 @@ Result<packet, std::string> read_packet(int fd)
                                    ptb.ptb_bits));
             return Ok(packet{ptb});
         }
+        case TPT_LINK_BLOCK: {
+            packet_link pl;
+
+            TRY(read_payloads_into(fd,
+                                   pl.pl_path,
+                                   pl.pl_link_value));
+            return Ok(packet{pl});
+        }
         default:
             assert(0);
             break;

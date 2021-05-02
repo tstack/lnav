@@ -48,6 +48,7 @@ typedef enum {
     TPT_NEED_BLOCK,
     TPT_ACK_BLOCK,
     TPT_TAIL_BLOCK,
+    TPT_LINK_BLOCK,
     TPT_LOG,
 } tailer_packet_type_t;
 

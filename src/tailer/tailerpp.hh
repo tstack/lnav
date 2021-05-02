@@ -77,8 +77,13 @@ struct packet_tail_block {
     std::vector<uint8_t> ptb_bits;
 };
 
+struct packet_link {
+    std::string pl_path;
+    std::string pl_link_value;
+};
+
 using packet = mapbox::util::variant<
-    packet_eof, packet_error, packet_offer_block, packet_tail_block>;
+    packet_eof, packet_error, packet_offer_block, packet_tail_block, packet_link>;
 
 int readall(int sock, void *buf, size_t len);
 

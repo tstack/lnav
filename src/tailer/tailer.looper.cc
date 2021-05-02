@@ -417,7 +417,9 @@ void tailer::looper::host_tailer::loop_body()
                     ghc::filesystem::path(ptb.ptb_path)).relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
-                log_debug("writing tail to: %s", local_path.c_str());
+                log_debug("tailer(%s): writing tail to: %s",
+                          this->ht_netloc.c_str(),
+                          local_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
                 auto fd = auto_fd(
                     ::open(local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT,
@@ -431,6 +433,34 @@ void tailer::looper::host_tailer::loop_body()
                            ptb.ptb_bits.data(), ptb.ptb_bits.size(),
                            ptb.ptb_offset);
                 }
+                return std::move(this->ht_state);
+            },
+            [&](const tailer::packet_link &pl) {
+                auto remote_path = ghc::filesystem::absolute(
+                    ghc::filesystem::path(pl.pl_path)).relative_path();
+                auto local_path = this->ht_local_path / remote_path;
+                auto remote_link_path = ghc::filesystem::path(pl.pl_link_value);
+                std::string link_path;
+
+                if (remote_path.is_absolute()) {
+                    auto local_link_path =
+                        this->ht_local_path / remote_link_path.relative_path();
+
+                    link_path = local_link_path.string();
+                } else {
+                    link_path = remote_link_path.string();
+                }
+
+                log_debug("tailer(%s): symlinking %s -> %s",
+                          this->ht_netloc.c_str(),
+                          local_path.c_str(),
+                          link_path.c_str());
+                ghc::filesystem::create_directories(local_path.parent_path());
+                ghc::filesystem::remove_all(local_path);
+                if (symlink(link_path.c_str(), local_path.c_str()) < 0) {
+                    log_error("symlink failed: %s", strerror(errno));
+                }
+
                 return std::move(this->ht_state);
             }
         );
