@@ -207,11 +207,11 @@ void send_error(struct client_path_state *cps, char *msg, ...)
                 TPPT_DONE);
 }
 
-void set_client_path_state_error(struct client_path_state *cps)
+void set_client_path_state_error(struct client_path_state *cps, const char *op)
 {
     if (cps->cps_last_path_state != PS_ERROR) {
         // tell client of the problem
-        send_error(cps, "unable to open -- %s", strerror(errno));
+        send_error(cps, "unable to %s -- %s", op, strerror(errno));
     }
     cps->cps_last_path_state = PS_ERROR;
     cps->cps_client_file_offset = -1;
@@ -323,7 +323,7 @@ int poll_paths(struct list *path_list)
 
             memset(&gl, 0, sizeof(gl));
             if (glob(curr->cps_path, 0, NULL, &gl) != 0) {
-                set_client_path_state_error(curr);
+                set_client_path_state_error(curr, "glob");
             } else {
                 struct list prev_children;
 
@@ -361,24 +361,22 @@ int poll_paths(struct list *path_list)
 
         if (rc == -1) {
             memset(&st, 0, sizeof(st));
-            set_client_path_state_error(curr);
+            set_client_path_state_error(curr, "lstat");
         } else if (curr->cps_client_file_offset >= 0 &&
                    ((curr->cps_last_stat.st_dev != st.st_dev &&
                      curr->cps_last_stat.st_ino != st.st_ino) ||
                     (st.st_size < curr->cps_last_stat.st_size))) {
             send_error(curr, "replaced");
-            set_client_path_state_error(curr);
+            set_client_path_state_error(curr, "replace");
         } else if (S_ISLNK(st.st_mode)) {
             switch (curr->cps_client_state) {
                 case CS_INIT: {
                     char buffer[PATH_MAX];
-                    char *target_path;
                     ssize_t link_len;
 
                     link_len = readlink(curr->cps_path, buffer, sizeof(buffer));
-                    target_path = realpath(curr->cps_path, NULL);
-                    if (link_len < 0 || target_path == NULL) {
-                        set_client_path_state_error(curr);
+                    if (link_len < 0) {
+                        set_client_path_state_error(curr, "readlink");
                     } else {
                         buffer[link_len] = '\0';
                         send_packet(STDOUT_FILENO,
@@ -388,16 +386,17 @@ int poll_paths(struct list *path_list)
                                     TPPT_DONE);
                         curr->cps_client_state = CS_SYNCED;
 
-                        struct client_path_state *child =
-                            create_client_path_state(target_path);
+                        if (buffer[0] == '/') {
+                            struct client_path_state *child =
+                                create_client_path_state(buffer);
 
-                        fprintf(stderr, "info: monitoring link path %s\n",
-                                target_path);
-                        list_append(&curr->cps_children, &child->cps_node);
+                            fprintf(stderr, "info: monitoring link path %s\n",
+                                    buffer);
+                            list_append(&curr->cps_children, &child->cps_node);
+                        }
 
                         retval += 1;
                     }
-                    free(target_path);
                     break;
                 }
                 case CS_SYNCED:
@@ -421,7 +420,7 @@ int poll_paths(struct list *path_list)
                         int fd = open(curr->cps_path, O_RDONLY);
 
                         if (fd == -1) {
-                            set_client_path_state_error(curr);
+                            set_client_path_state_error(curr, "open");
                         } else {
                             char buffer[64 * 1024];
                             int64_t bytes_read = pread(
@@ -432,7 +431,7 @@ int poll_paths(struct list *path_list)
                                 curr->cps_client_file_offset);
 
                             if (bytes_read == -1) {
-                                set_client_path_state_error(curr);
+                                set_client_path_state_error(curr, "pread");
                             } else if (curr->cps_client_state == CS_INIT) {
                                 uint8_t hash[SHA_256_HASH_SIZE];
 
@@ -484,7 +483,7 @@ int poll_paths(struct list *path_list)
             DIR *dir = opendir(curr->cps_path);
 
             if (dir == NULL) {
-                set_client_path_state_error(curr);
+                set_client_path_state_error(curr, "opendir");
             } else {
                 struct list prev_children;
                 struct dirent *entry;
