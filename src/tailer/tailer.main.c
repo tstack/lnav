@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <glob.h>
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -52,6 +53,13 @@ struct list {
     struct node *l_head;
     struct node *l_tail;
     struct node *l_tail_pred;
+};
+
+int is_glob(const char *fn)
+{
+    return (strchr(fn, '*') != NULL ||
+            strchr(fn, '?') != NULL ||
+            strchr(fn, '[') != NULL);
 };
 
 void list_init(struct list *l)
@@ -310,6 +318,44 @@ int poll_paths(struct list *path_list)
     int retval = 0;
 
     while (curr->cps_node.n_succ != NULL) {
+        if (is_glob(curr->cps_path)) {
+            glob_t gl;
+
+            memset(&gl, 0, sizeof(gl));
+            if (glob(curr->cps_path, 0, NULL, &gl) != 0) {
+                set_client_path_state_error(curr);
+            } else {
+                struct list prev_children;
+
+                list_move(&prev_children, &curr->cps_children);
+                for (size_t lpc = 0; lpc < gl.gl_pathc; lpc++) {
+                    struct client_path_state *child;
+
+                    if ((child = find_client_path_state(
+                        &prev_children, gl.gl_pathv[lpc])) == NULL) {
+                        child = create_client_path_state(gl.gl_pathv[lpc]);
+                    } else {
+                        list_remove(&child->cps_node);
+                    }
+                    list_append(&curr->cps_children, &child->cps_node);
+                }
+                globfree(&gl);
+
+                struct client_path_state *child;
+
+                while ((child = (struct client_path_state *) list_remove_head(
+                    &prev_children)) != NULL) {
+                    send_error(child, "deleted");
+                    delete_client_path_state(child);
+                }
+
+                retval += poll_paths(&curr->cps_children);
+            }
+
+            curr = (struct client_path_state *) curr->cps_node.n_succ;
+            continue;
+        }
+
         struct stat st;
         int rc = lstat(curr->cps_path, &st);
 
