@@ -494,6 +494,9 @@ int poll_paths(struct list *path_list)
                         strcmp(entry->d_name, "..") == 0) {
                         continue;
                     }
+                    if (entry->d_type != DT_REG) {
+                        continue;
+                    }
 
                     char full_path[PATH_MAX];
 
