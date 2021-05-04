@@ -1,5 +1,12 @@
 lnav v0.9.1:
      Features:
+     * Files on remote machines can be viewed/tailed if they are accessible
+       via SSH.  The syntax for specifying the host and path is similar to
+       scp.  For example, to view the files in the /var/log directory on the
+       machine "host1.example.org":
+         user@host1.example.org:/var/log
+       Note that you must be able to log into the machine without any
+       interaction.
      * Added the ':filter-expr' command to filter log messages based on an SQL
        expression.  This command allows much greater control over filtering.
      * Added support for archive files, like zip, and other compression formats,
