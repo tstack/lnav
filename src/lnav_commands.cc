@@ -2171,6 +2171,7 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
     }
     else {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
+        nonstd::optional<ghc::filesystem::path> actual_path;
         string fn;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
@@ -2198,8 +2199,11 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
                 content_line_t cl = lss.at(vl);
                 std::shared_ptr<logfile> lf = lss.find(cl);
 
+                actual_path = lf->get_actual_path();
                 fn = lf->get_filename();
-                lf->close();
+                if (!ec.ec_dry_run) {
+                    lf->close();
+                }
             }
         } else {
             return ec.make_error("close must be run in the log or text file views");
@@ -2215,7 +2219,10 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
                             clooper.close_request(fn);
                         });
                 }
-                lnav_data.ld_active_files.fc_file_names.erase(fn);
+                if (actual_path) {
+                    lnav_data.ld_active_files.fc_file_names
+                        .erase(actual_path.value().string());
+                }
                 lnav_data.ld_active_files.fc_closed_files.insert(fn);
                 retval = "info: closed -- " + fn;
             }

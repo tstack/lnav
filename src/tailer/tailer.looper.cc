@@ -232,6 +232,17 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
     ));
 }
 
+ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
+{
+    auto local_path = ghc::filesystem::temp_directory_path() /
+                      fmt::format("lnav-{}-remotes", getuid());
+    auto_mem<char> resolved_path;
+
+    resolved_path = realpath(local_path.c_str(), nullptr);
+
+    return resolved_path.in();
+}
+
 tailer::looper::host_tailer::host_tailer(const std::string &netloc,
                                          auto_pid<process_state::RUNNING> child,
                                          auto_fd to_child,
@@ -239,9 +250,7 @@ tailer::looper::host_tailer::host_tailer(const std::string &netloc,
                                          auto_fd err_from_child)
     : isc::service<host_tailer>(netloc),
       ht_netloc(netloc),
-      ht_local_path(ghc::filesystem::temp_directory_path() /
-                    fmt::format("lnav-{}-remotes", getuid()) /
-                    netloc),
+      ht_local_path(tmp_path() / netloc),
       ht_error_reader([
           netloc, err = std::move(err_from_child), &eq = this->ht_error_queue]() mutable {
           read_err_pipe(netloc, err, eq);
@@ -490,6 +499,15 @@ void tailer::looper::host_tailer::stopped()
 std::string tailer::looper::host_tailer::get_display_path(const std::string& remote_path) const
 {
     return fmt::format("{}:{}", this->ht_netloc, remote_path);
+}
+
+auto_pid<process_state::FINISHED>
+tailer::looper::host_tailer::connected::close() &&
+{
+    this->ht_to_child.reset();
+    this->ht_from_child.reset();
+
+    return std::move(this->ht_child).wait_for_child();
 }
 
 void

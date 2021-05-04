@@ -72,6 +72,8 @@ private:
         compute_timeout(mstime_t current_time) const override;
 
     private:
+        static ghc::filesystem::path tmp_path();
+
         std::string get_display_path(const std::string& remote_path) const;
 
         struct connected {
@@ -80,12 +82,7 @@ private:
             auto_fd ht_from_child;
             std::set<std::string> c_desired_paths;
 
-            auto_pid<process_state::FINISHED> close() && {
-                this->ht_to_child.reset();
-                this->ht_from_child.reset();
-
-                return std::move(this->ht_child).wait_for_child();
-            }
+            auto_pid<process_state::FINISHED> close() &&;
         };
 
         struct disconnected {};
