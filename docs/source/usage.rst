@@ -65,6 +65,27 @@ archives that have not been accessed in the past two days will be automatically
 deleted the next time **lnav** is started.
 
 
+Remote Files
+^^^^^^^^^^^^
+
+Files on remote machines can be viewed and tailed if you have access to the
+machines via SSH.  First, make sure you can SSH into the remote machine without
+any interaction by: 1) accepting the host key as known and 2) copying your
+identity's public key to the :file:`.ssh/authorized_keys` file on the remote
+machine.  Once the setup is complete, you can open a file on a remote host
+using the same syntax as :command:`scp(1)` where the username and host are
+given, followed by a colon, and then the path to the files, like so::
+
+    [user@]host:/path/to/logs
+
+For example, to open :file:`/var/log/syslog.log` on "host1.example.com" as the
+user "dean", you would write:
+
+.. prompt:: bash
+
+   lnav dean@host1.example.com:/var/log/syslog.log
+
+
 Searching
 ---------
 
