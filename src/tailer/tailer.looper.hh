@@ -64,6 +64,8 @@ private:
         void open_remote_path(const std::string& path);
 
     protected:
+        void *run() override;
+
         void loop_body() override;
 
         void stopped() override;

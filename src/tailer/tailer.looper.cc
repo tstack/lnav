@@ -70,10 +70,7 @@ static void read_err_pipe(const std::string &netloc, auto_fd &err,
                     if (eq.size() < 10) {
                         eq.template emplace_back(line_str.to_string());
                     }
-                    log_debug("tailer(%s): %.*s",
-                              netloc.c_str(),
-                              line_str.length(),
-                              line_str.data());
+                    log_debug("%.*s", line_str.length(), line_str.data());
                 });
             }
         }
@@ -116,8 +113,7 @@ void tailer::looper::loop_body()
             this->l_remotes[netloc]->send(
                 [paths = rpq.rpq_new_paths](auto &ht) {
                     for (const auto &path : paths) {
-                        log_debug("  adding path to tailer -- %s",
-                                  path.c_str());
+                        log_debug("adding path to tailer -- %s", path.c_str());
                         ht.open_remote_path(path);
                     }
                 });
@@ -161,6 +157,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         std::vector<std::string> error_queue;
         log_debug("starting err reader");
         std::thread err_reader([netloc, err = std::move(err_pipe.read_end()), &error_queue]() mutable {
+            log_set_thread_prefix(fmt::format("tailer({})", netloc));
             read_err_pipe(netloc, err, error_queue);
         });
 
@@ -274,8 +271,7 @@ void tailer::looper::host_tailer::open_remote_path(const std::string& path)
                         TPPT_DONE);
         },
         [&](const disconnected& d) {
-            log_warning("tailer(%s): disconnected from host, cannot tail: %s",
-                        this->ht_netloc.c_str(),
+            log_warning("disconnected from host, cannot tail: %s",
                         path.c_str());
         }
     );
@@ -307,7 +303,7 @@ void tailer::looper::host_tailer::loop_body()
         auto packet = read_res.unwrap();
         this->ht_state = packet.match(
             [&](const tailer::packet_eof &te) {
-                log_debug("tailer(%s): all done!", this->ht_netloc.c_str());
+                log_debug("all done!");
 
                 auto finished_child = std::move(conn).close();
                 if (finished_child.exit_status() != 0 &&
@@ -319,8 +315,7 @@ void tailer::looper::host_tailer::loop_body()
                 return state_v{disconnected()};
             },
             [&](const tailer::packet_log &pl) {
-                log_debug("tailer(%s): %s\n",
-                          this->ht_netloc.c_str(), pl.pl_msg.c_str());
+                log_debug("%s\n", pl.pl_msg.c_str());
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_error &pe) {
@@ -426,9 +421,7 @@ void tailer::looper::host_tailer::loop_body()
                     ghc::filesystem::path(ptb.ptb_path)).relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
-                log_debug("tailer(%s): writing tail to: %s",
-                          this->ht_netloc.c_str(),
-                          local_path.c_str());
+                log_debug("writing tail to: %s", local_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
                 auto fd = auto_fd(
                     ::open(local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT,
@@ -460,8 +453,7 @@ void tailer::looper::host_tailer::loop_body()
                     link_path = remote_link_path.string();
                 }
 
-                log_debug("tailer(%s): symlinking %s -> %s",
-                          this->ht_netloc.c_str(),
+                log_debug("symlinking %s -> %s",
                           local_path.c_str(),
                           link_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
@@ -499,6 +491,13 @@ void tailer::looper::host_tailer::stopped()
 std::string tailer::looper::host_tailer::get_display_path(const std::string& remote_path) const
 {
     return fmt::format("{}:{}", this->ht_netloc, remote_path);
+}
+
+void *tailer::looper::host_tailer::run()
+{
+    log_set_thread_prefix(fmt::format("tailer({})", this->ht_netloc));
+
+    return service_base::run();
 }
 
 auto_pid<process_state::FINISHED>

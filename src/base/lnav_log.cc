@@ -130,6 +130,7 @@ struct thid {
 uint32_t thid::COUNTER = 0;
 
 thread_local thid current_thid;
+thread_local std::string thread_log_prefix;
 
 static struct {
     size_t lr_length;
@@ -192,6 +193,11 @@ void log_argv(int argc, char *argv[])
     for (int lpc = 0; lpc < argc; lpc++) {
         log_info("    [%d] = %s", lpc, argv[lpc]);
     }
+}
+
+void log_set_thread_prefix(std::string prefix)
+{
+    thread_log_prefix = std::move(prefix);
 }
 
 void log_host_info()
@@ -313,6 +319,12 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         current_thid.t_id,
         src_file,
         line_number);
+    if (!thread_log_prefix.empty()) {
+        prefix_size += snprintf(
+            &line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
+            "%s ",
+            thread_log_prefix.c_str());
+    }
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
         fmt, args);
     if (rc >= (ssize_t)(MAX_LOG_LINE_SIZE - prefix_size)) {

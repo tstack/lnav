@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <string>
 
 #ifndef lnav_dead2
 #define lnav_dead2 __attribute__((noreturn))
@@ -62,6 +63,7 @@ void log_msg_extra_complete();
 void log_install_handlers();
 void log_abort() lnav_dead2;
 void log_pipe_err(int fd);
+void log_set_thread_prefix(std::string prefix);
 
 struct log_state_dumper {
 public:

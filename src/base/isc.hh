@@ -140,7 +140,7 @@ private:
     void stop();
 
 protected:
-    void *run();
+    virtual void *run();
     virtual void loop_body() {};
     virtual void child_finished(std::shared_ptr<service_base> child) {};
     virtual void stopped() {};
