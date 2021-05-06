@@ -464,7 +464,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 break;
             }
             if (begin_size == 0 && !has_format &&
-                li.li_file_range.fr_offset > 32 * 1024) {
+                li.li_file_range.fr_offset > 256 * 1024) {
                 break;
             }
         }

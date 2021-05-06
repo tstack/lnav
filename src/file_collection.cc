@@ -299,7 +299,7 @@ file_collection::watch_logfile(const std::string &filename,
                                 .with_source(logfile_name_source::ARCHIVE)
                                 .with_visibility(is_visible)
                                 .with_non_utf_visibility(false)
-                                .with_visible_size_limit(128 * 1024);
+                                .with_visible_size_limit(256 * 1024);
                         });
                     if (res.isErr()) {
                         log_error("archive extraction failed: %s",
