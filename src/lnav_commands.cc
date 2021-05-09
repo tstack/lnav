@@ -44,6 +44,7 @@
 #include <yajl/api/yajl_tree.h>
 
 #include "bound_tags.hh"
+#include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
 #include "base/string_util.hh"
@@ -73,6 +74,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "service_tags.hh"
 #include "sqlite-extension-func.hh"
+#include "tailer/tailer.looper.hh"
 
 using namespace std;
 
@@ -2087,7 +2089,25 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             string fn = iter->first;
             auto_fd preview_fd;
 
-            if (is_glob(fn.c_str())) {
+            if (fn.find(':') != string::npos) {
+                auto id = lnav_data.ld_preview_generation;
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_value("Loading %s...", fn.c_str());
+                lnav_data.ld_preview_source.clear();
+
+                isc::to<tailer::looper &, services::remote_tailer_t>()
+                    .send([id, fn](auto &tlooper) {
+                        auto rp_opt = humanize::network::remote_path::from_str(fn);
+                        auto rp = *rp_opt;
+
+                        tlooper.load_preview(
+                            id,
+                            humanize::network::to_netloc(rp.rp_username, rp.rp_hostname),
+                            rp.rp_path);
+                    });
+                lnav_data.ld_preview_view.set_needs_update();
+            }
+            else if (is_glob(fn.c_str())) {
                 static_root_mem<glob_t, globfree> gl;
 
                 if (glob(fn.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {

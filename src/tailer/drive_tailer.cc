@@ -203,6 +203,12 @@ int main(int argc, char *const *argv)
             },
             [&](const tailer::packet_link &pl) {
 
+            },
+            [&](const tailer::packet_preview_error &ppe) {
+
+            },
+            [&](const tailer::packet_preview_data &ppd) {
+
             }
         );
     }

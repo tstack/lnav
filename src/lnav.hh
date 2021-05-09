@@ -226,6 +226,7 @@ struct lnav_data_t {
     doc_status_source                       ld_doc_status_source;
     preview_status_source                   ld_preview_status_source;
     bool                                    ld_preview_hidden;
+    int64_t                                 ld_preview_generation{0};
     action_broadcaster<listview_curses>     ld_scroll_broadcaster;
     action_broadcaster<listview_curses>     ld_view_stack_broadcaster;
 

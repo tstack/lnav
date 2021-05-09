@@ -82,8 +82,21 @@ struct packet_link {
     std::string pl_link_value;
 };
 
+struct packet_preview_error {
+    int64_t ppe_id;
+    std::string ppe_path;
+    std::string ppe_msg;
+};
+
+struct packet_preview_data {
+    int64_t ppd_id;
+    std::string ppd_path;
+    std::vector<uint8_t> ppd_bits;
+};
+
 using packet = mapbox::util::variant<
-    packet_eof, packet_error, packet_offer_block, packet_tail_block, packet_link>;
+    packet_eof, packet_error, packet_offer_block, packet_tail_block,
+    packet_link, packet_preview_error, packet_preview_data>;
 
 int readall(int sock, void *buf, size_t len);
 
@@ -98,6 +111,10 @@ inline Result<void, std::string> read_payloads_into(int fd)
 
     return Ok();
 }
+
+template<typename ...Ts>
+Result<void, std::string>
+read_payloads_into(int fd, std::string &str, Ts &...args);
 
 template<typename ...Ts>
 Result<void, std::string>
@@ -167,7 +184,6 @@ read_payloads_into(int fd, std::string &str, Ts &...args)
 
     readall(fd, &payload_type, sizeof(payload_type));
     if (payload_type != TPPT_STRING) {
-        printf("not a string! %d\n", payload_type);
         return Err(
             fmt::format("expecting string payload, found: {}", payload_type));
     }

@@ -100,6 +100,24 @@ Result<packet, std::string> read_packet(int fd)
                                    pl.pl_link_value));
             return Ok(packet{pl});
         }
+        case TPT_PREVIEW_ERROR: {
+            packet_preview_error ppe;
+
+            TRY(read_payloads_into(fd,
+                                   ppe.ppe_id,
+                                   ppe.ppe_path,
+                                   ppe.ppe_msg));
+            return Ok(packet{ppe});
+        }
+        case TPT_PREVIEW_DATA: {
+            packet_preview_data ppd;
+
+            TRY(read_payloads_into(fd,
+                                   ppd.ppd_id,
+                                   ppd.ppd_path,
+                                   ppd.ppd_bits));
+            return Ok(packet{ppd});
+        }
         default:
             assert(0);
             break;

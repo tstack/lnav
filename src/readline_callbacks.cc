@@ -381,6 +381,7 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
     case LNM_COMMAND: {
         lnav_data.ld_exec_context.ec_dry_run = true;
 
+        lnav_data.ld_preview_generation += 1;
         lnav_data.ld_preview_status_source.get_description().clear();
         lnav_data.ld_preview_source.clear();
         auto result = execute_command(lnav_data.ld_exec_context, rc->get_value());

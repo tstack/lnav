@@ -49,6 +49,7 @@ static void read_err_pipe(const std::string &netloc, auto_fd &err,
     file_range pipe_range;
     bool done = false;
 
+    log_info("stderr reader started...");
     lb.set_fd(err);
     while (!done) {
         auto load_res = lb.load_next_line(pipe_range);
@@ -130,6 +131,37 @@ void tailer::looper::add_remote(std::string netloc, std::string path)
     this->l_netlocs_to_paths[netloc].rpq_new_paths.insert(path);
 }
 
+void tailer::looper::load_preview(int64_t id, std::string netloc, std::string path)
+{
+    auto iter = this->l_remotes.find(netloc);
+
+    if (iter == this->l_remotes.end()) {
+        auto create_res = host_tailer::for_host(netloc);
+
+        if (create_res.isErr()) {
+            auto msg = create_res.unwrapErr();
+            isc::to<main_looper&, services::main_t>()
+                .send([id, msg](auto& mlooper) {
+                    if (lnav_data.ld_preview_generation != id) {
+                        return;
+                    }
+                    lnav_data.ld_preview_status_source.get_description().clear();
+                    lnav_data.ld_preview_source.clear();
+                    lnav_data.ld_bottom_source.grep_error(msg);
+                });
+            return;
+        }
+
+        auto ht = create_res.unwrap();
+        this->l_remotes[netloc] = ht;
+        this->s_children.add_child_service(ht);
+    }
+
+    this->l_remotes[netloc]->send([id, path](auto &ht) {
+        ht.load_preview(id, path);
+    });
+}
+
 Result<std::shared_ptr<tailer::looper::host_tailer>, std::string>
 tailer::looper::host_tailer::for_host(const std::string& netloc)
 {
@@ -166,8 +198,10 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         ssize_t total_bytes = 0;
 
         while (total_bytes < sf.length()) {
+            log_debug("attempting to write %d", sf.length() - total_bytes);
             auto rc = write(in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
 
+            log_debug("wrote %d", rc);
             if (rc < 0) {
                 break;
             }
@@ -233,9 +267,14 @@ ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
 {
     auto local_path = ghc::filesystem::temp_directory_path() /
                       fmt::format("lnav-{}-remotes", getuid());
+
+    ghc::filesystem::create_directories(local_path);
     auto_mem<char> resolved_path;
 
     resolved_path = realpath(local_path.c_str(), nullptr);
+    if (resolved_path.in() == nullptr) {
+        return local_path;
+    }
 
     return resolved_path.in();
 }
@@ -273,6 +312,33 @@ void tailer::looper::host_tailer::open_remote_path(const std::string& path)
         [&](const disconnected& d) {
             log_warning("disconnected from host, cannot tail: %s",
                         path.c_str());
+        }
+    );
+}
+
+void tailer::looper::host_tailer::load_preview(int64_t id, const std::string &path)
+{
+    this->ht_state.match(
+        [&](connected& conn) {
+            send_packet(conn.ht_to_child.get(),
+                        TPT_LOAD_PREVIEW,
+                        TPPT_STRING, path.c_str(),
+                        TPPT_INT64, id,
+                        TPPT_DONE);
+        },
+        [&](const disconnected& d) {
+            log_warning("disconnected from host, cannot preview: %s",
+                        path.c_str());
+
+            auto msg = fmt::format("error: disconnected from {}", this->ht_netloc);
+            isc::to<main_looper&, services::main_t>()
+                .send([=](auto& mlooper) {
+                    if (lnav_data.ld_preview_generation != id) {
+                        return;
+                    }
+                    lnav_data.ld_preview_status_source.get_description()
+                        .set_value(msg);
+                });
         }
     );
 }
@@ -462,6 +528,44 @@ void tailer::looper::host_tailer::loop_body()
                     log_error("symlink failed: %s", strerror(errno));
                 }
 
+                return std::move(this->ht_state);
+            },
+            [&](const tailer::packet_preview_error &ppe) {
+                isc::to<main_looper&, services::main_t>()
+                    .send([ppe](auto& mlooper) {
+                        if (lnav_data.ld_preview_generation != ppe.ppe_id) {
+                            log_debug("preview ID mismatch: %lld != %lld",
+                                      lnav_data.ld_preview_generation,
+                                      ppe.ppe_id);
+                            return;
+                        }
+                        lnav_data.ld_preview_status_source.get_description()
+                            .clear();
+                        lnav_data.ld_preview_source.clear();
+                        lnav_data.ld_bottom_source.grep_error(ppe.ppe_msg);
+                    });
+
+                return std::move(this->ht_state);
+            },
+            [&](const tailer::packet_preview_data &ppd) {
+                isc::to<main_looper&, services::main_t>()
+                    .send([netloc = this->ht_netloc, ppd](auto& mlooper) {
+                        if (lnav_data.ld_preview_generation != ppd.ppd_id) {
+                            log_debug("preview ID mismatch: %lld != %lld",
+                                      lnav_data.ld_preview_generation,
+                                      ppd.ppd_id);
+                            return;
+                        }
+                        std::string str(ppd.ppd_bits.begin(),
+                                        ppd.ppd_bits.end());
+                        lnav_data.ld_preview_status_source.get_description()
+                            .set_value("For file: %s:%s",
+                                       netloc.c_str(),
+                                       ppd.ppd_path.c_str());
+                        lnav_data.ld_preview_source
+                            .replace_with(str)
+                            .set_text_format(detect_text_format(str));
+                    });
                 return std::move(this->ht_state);
             }
         );

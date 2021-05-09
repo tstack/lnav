@@ -197,7 +197,7 @@ void log_argv(int argc, char *argv[])
 
 void log_set_thread_prefix(std::string prefix)
 {
-    thread_log_prefix = std::move(prefix);
+    // thread_log_prefix = std::move(prefix);
 }
 
 void log_host_info()
@@ -319,12 +319,14 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         current_thid.t_id,
         src_file,
         line_number);
+#if 0
     if (!thread_log_prefix.empty()) {
         prefix_size += snprintf(
             &line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
             "%s ",
             thread_log_prefix.c_str());
     }
+#endif
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
         fmt, args);
     if (rc >= (ssize_t)(MAX_LOG_LINE_SIZE - prefix_size)) {

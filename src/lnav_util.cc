@@ -134,15 +134,6 @@ Result<std::string, std::string> read_file(const ghc::filesystem::path &path)
     }
 }
 
-std::string to_netloc(const nonstd::optional<std::string>& username,
-                      std::string hostname)
-{
-    return fmt::format("{}{}{}",
-                       username.value_or(std::string()),
-                       username ? "@" : "",
-                       hostname);
-}
-
 Result<std::pair<ghc::filesystem::path, int>, std::string>
 open_temp_file(const ghc::filesystem::path &pattern)
 {

@@ -36,6 +36,7 @@
 #include <unordered_map>
 
 #include "base/opt_util.hh"
+#include "base/humanize.network.hh"
 #include "base/isc.hh"
 #include "logfile.hh"
 #include "file_collection.hh"
@@ -362,9 +363,6 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                                       logfile_open_options &loo,
                                       bool required)
 {
-    static const pcrepp REMOTE_PATTERN(
-        "(?:(?<username>[^@]+)@)?(?<hostname>[^:]+):(?<path>.*)");
-
     static_root_mem<glob_t, globfree> gl;
 
     {
@@ -375,28 +373,26 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
         }
     }
 
-    pcre_context_static<30> pc;
-    pcre_input pi(path);
-
     if (is_url(path.c_str())) {
         return;
     }
 
-    if (REMOTE_PATTERN.match(pc, pi)) {
+    auto rp_opt = humanize::network::remote_path::from_str(path);
+    if (rp_opt) {
         auto iter = this->fc_other_files.find(path);
+        auto rp = *rp_opt;
 
         if (iter != this->fc_other_files.end()) {
             return;
         }
 
-        const auto username = pi.get_substr_opt(pc["username"]);
-        const auto hostname = pi.get_substr(pc["hostname"]);
-        const auto remote_path = pi.get_substr(pc["path"]);
         file_collection retval;
 
         isc::to<tailer::looper &, services::remote_tailer_t>()
             .send([=](auto &tlooper) {
-                tlooper.add_remote(to_netloc(username, hostname), remote_path);
+                tlooper.add_remote(
+                    humanize::network::to_netloc(rp.rp_username, rp.rp_hostname),
+                    rp.rp_path);
             });
         retval.fc_other_files[path] = file_format_t::FF_REMOTE;
 

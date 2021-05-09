@@ -44,6 +44,8 @@ class looper : public isc::service<looper> {
 public:
     void add_remote(std::string netloc, std::string path);
 
+    void load_preview(int64_t id, std::string netloc, std::string path);
+
 protected:
     void loop_body() override;
 
@@ -62,6 +64,8 @@ private:
                     auto_fd err_from_child);
 
         void open_remote_path(const std::string& path);
+
+        void load_preview(int64_t id, const std::string& path);
 
     protected:
         void *run() override;

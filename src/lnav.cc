@@ -777,6 +777,7 @@ void rl_blur(readline_curses *rc)
 
     fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].get_overlay_source();
     fos->fos_active = fos->fos_active_prev;
+    lnav_data.ld_preview_generation += 1;
 }
 
 readline_context::command_map_t lnav_commands;
@@ -1440,6 +1441,7 @@ static void looper()
             gettimeofday(&current_time, nullptr);
 
             lnav_data.ld_top_source.update_time(current_time);
+            lnav_data.ld_preview_view.set_needs_update();
 
             layout_views();
 

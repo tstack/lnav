@@ -4,7 +4,12 @@ include $(top_srcdir)/aminclude_static.am
 BUILT_SOURCES = tailerbin.h tailerbin.cc
 
 AM_CPPFLAGS = \
-	$(CODE_COVERAGE_CPPFLAGS)
+	-Wall \
+	$(CODE_COVERAGE_CPPFLAGS) \
+	$(LIBARCHIVE_CFLAGS) \
+	$(READLINE_CFLAGS) \
+	$(SQLITE3_CFLAGS) \
+	$(LIBCURL_CPPFLAGS)
 
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
@@ -26,6 +31,7 @@ libtailercommon_a_SOURCES = \
     tailer.c
 
 libtailerpp_a_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib
 
@@ -36,6 +42,7 @@ tailerbin.h tailerbin.cc: tailer ../tools/bin2c$(BUILD_EXEEXT)
 	../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin tailer
 
 libtailerservice_a_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib
 

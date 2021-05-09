@@ -288,6 +288,23 @@ static char *readstr(int sock)
     return retval;
 }
 
+static int readint64(int sock, int64_t *i)
+{
+    tailer_packet_payload_type_t payload_type = read_payload_type(sock);
+
+    if (payload_type != TPPT_INT64) {
+        fprintf(stderr, "error: expected int64, got: %d\n", payload_type);
+        return -1;
+    }
+
+    if (readall(sock, i, sizeof(*i)) == -1) {
+        fprintf(stderr, "error: unable to read int64\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 struct list client_path_list;
 
 struct client_path_state *find_client_path_state(struct list *path_list, const char *path)
@@ -310,6 +327,26 @@ struct client_path_state *find_client_path_state(struct list *path_list, const c
     }
 
     return NULL;
+}
+
+void send_preview_error(int64_t id, const char *path, const char *msg)
+{
+    send_packet(STDOUT_FILENO,
+                TPT_PREVIEW_ERROR,
+                TPPT_INT64, id,
+                TPPT_STRING, path,
+                TPPT_STRING, msg,
+                TPPT_DONE);
+}
+
+void send_preview_data(int64_t id, const char *path, int64_t len, const char *bits)
+{
+    send_packet(STDOUT_FILENO,
+                TPT_PREVIEW_DATA,
+                TPPT_INT64, id,
+                TPPT_STRING, path,
+                TPPT_BITS, len, bits,
+                TPPT_DONE);
 }
 
 int poll_paths(struct list *path_list)
@@ -565,9 +602,17 @@ int main(int argc, char *argv[])
             } else {
                 switch (type) {
                     case TPT_OPEN_PATH:
-                    case TPT_CLOSE_PATH: {
+                    case TPT_CLOSE_PATH:
+                    case TPT_LOAD_PREVIEW: {
                         const char *path = readstr(STDIN_FILENO);
+                        int64_t preview_id = 0;
 
+                        if (type == TPT_LOAD_PREVIEW) {
+                            if (readint64(STDIN_FILENO, &preview_id) == -1) {
+                                done = 1;
+                                break;
+                            }
+                        }
                         if (path == NULL) {
                             fprintf(stderr, "error: unable to get path to open\n");
                             done = 1;
@@ -586,7 +631,7 @@ int main(int argc, char *argv[])
                                 fprintf(stderr, "info: monitoring path: %s\n", path);
                                 list_append(&client_path_list, &cps->cps_node);
                             }
-                        } else {
+                        } else if (type == TPT_CLOSE_PATH) {
                             struct client_path_state *cps = find_client_path_state(&client_path_list, path);
 
                             if (cps == NULL) {
@@ -595,7 +640,135 @@ int main(int argc, char *argv[])
                                 list_remove(&cps->cps_node);
                                 delete_client_path_state(cps);
                             }
-                        };
+                        } else if (type == TPT_LOAD_PREVIEW) {
+                            struct stat st;
+
+                            fprintf(stderr,
+                                    "info: load preview request -- %lld\n",
+                                    preview_id);
+                            if (is_glob(path)) {
+                                glob_t gl;
+
+                                memset(&gl, 0, sizeof(gl));
+                                if (glob(path, 0, NULL, &gl) != 0) {
+                                    char msg[1024];
+
+                                    snprintf(msg, sizeof(msg),
+                                             "error: cannot glob %s -- %s",
+                                             path,
+                                             strerror(errno));
+                                    send_preview_error(preview_id, path, msg);
+                                } else {
+                                    char *bits = malloc(1024 * 1024);
+                                    int lpc, line_count = 10;
+
+                                    bits[0] = '\0';
+                                    for (lpc = 0;
+                                         line_count > 0 && lpc < gl.gl_pathc;
+                                         lpc++, line_count--) {
+                                        strcat(bits, gl.gl_pathv[lpc]);
+                                        strcat(bits, "\n");
+                                    }
+
+                                    if (lpc < gl.gl_pathc) {
+                                        strcat(bits, " ... and more! ...\n");
+                                    }
+
+                                    send_preview_data(preview_id, path, strlen(bits), bits);
+
+                                    globfree(&gl);
+                                    free(bits);
+                                }
+                            }
+                            else if (stat(path, &st) == -1) {
+                                char msg[1024];
+
+                                snprintf(msg, sizeof(msg),
+                                         "error: cannot open %s -- %s",
+                                         path,
+                                         strerror(errno));
+                                send_preview_error(preview_id, path, msg);
+                            } else if (S_ISREG(st.st_mode)) {
+                                size_t capacity = 1024 * 1024;
+                                char *bits = malloc(capacity);
+                                FILE *file;
+
+                                if ((file = fopen(path, "r")) == NULL) {
+                                    char msg[1024];
+
+                                    snprintf(msg, sizeof(msg),
+                                             "error: cannot open %s -- %s",
+                                             path,
+                                             strerror(errno));
+                                    send_preview_error(preview_id, path, msg);
+                                } else {
+                                    int line_count = 10;
+                                    size_t offset = 0;
+                                    char *line;
+
+                                    while (line_count &&
+                                           (capacity - offset) > 1024 &&
+                                           (line = fgets(&bits[offset], capacity - offset, file)) != NULL) {
+                                        offset += strlen(line);
+                                        line_count -= 1;
+                                    }
+
+                                    fclose(file);
+
+                                    send_preview_data(preview_id, path, offset, bits);
+                                }
+                                free(bits);
+                            } else if (S_ISDIR(st.st_mode)) {
+                                DIR *dir = opendir(path);
+
+                                if (dir == NULL) {
+                                    char msg[1024];
+
+                                    snprintf(msg, sizeof(msg),
+                                             "error: unable to open directory -- %s",
+                                             path);
+                                    send_preview_error(preview_id, path, msg);
+                                } else {
+                                    char *bits = malloc(1024 * 1024);
+                                    struct dirent *entry;
+                                    int line_count = 10;
+
+                                    bits[0] = '\0';
+                                    while ((entry = readdir(dir)) != NULL) {
+                                        if (strcmp(entry->d_name, ".") == 0 ||
+                                            strcmp(entry->d_name, "..") == 0) {
+                                            continue;
+                                        }
+                                        if (entry->d_type != DT_REG &&
+                                            entry->d_type != DT_DIR) {
+                                            continue;
+                                        }
+                                        if (line_count == 1) {
+                                            strcat(bits, " ... and more! ...\n");
+                                            break;
+                                        }
+
+                                        strcat(bits, entry->d_name);
+                                        strcat(bits, "\n");
+
+                                        line_count -= 1;
+                                    }
+
+                                    closedir(dir);
+
+                                    send_preview_data(preview_id, path, strlen(bits), bits);
+
+                                    free(bits);
+                                }
+                            } else {
+                                char msg[1024];
+
+                                snprintf(msg, sizeof(msg),
+                                         "error: path is not a file or directory -- %s",
+                                         path);
+                                send_preview_error(preview_id, path, msg);
+                            }
+                        }
                         break;
                     }
                     case TPT_ACK_BLOCK:

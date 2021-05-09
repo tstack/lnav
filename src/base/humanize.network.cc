@@ -27,45 +27,49 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_tailer_h
-#define lnav_tailer_h
+#include "config.h"
 
-#include <sys/types.h>
+#include "humanize.network.hh"
+#include "pcrepp/pcrepp.hh"
+#include "fmt/format.h"
 
-typedef enum {
-    TPPT_DONE,
-    TPPT_STRING,
-    TPPT_HASH,
-    TPPT_INT64,
-    TPPT_BITS,
-} tailer_packet_payload_type_t;
+namespace humanize {
+namespace network {
 
-typedef enum {
-    TPT_ERROR,
-    TPT_OPEN_PATH,
-    TPT_CLOSE_PATH,
-    TPT_OFFER_BLOCK,
-    TPT_NEED_BLOCK,
-    TPT_ACK_BLOCK,
-    TPT_TAIL_BLOCK,
-    TPT_LINK_BLOCK,
-    TPT_LOG,
-    TPT_LOAD_PREVIEW,
-    TPT_PREVIEW_ERROR,
-    TPT_PREVIEW_DATA,
-} tailer_packet_type_t;
+nonstd::optional<remote_path> remote_path::from_str(const char *str)
+{
+    static const pcrepp REMOTE_PATTERN(
+        "(?:(?<username>[^@]+)@)?(?<hostname>[^:]+):(?<path>.*)");
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    pcre_context_static<30> pc;
+    pcre_input pi(str);
 
-ssize_t send_packet(int fd,
-                    tailer_packet_type_t tpt,
-                    tailer_packet_payload_type_t payload_type,
-                    ...);
+    if (!REMOTE_PATTERN.match(pc, pi)) {
+        return nonstd::nullopt;
+    }
 
-#ifdef __cplusplus
-};
-#endif
+    const auto username = pi.get_substr_opt(pc["username"]);
+    const auto hostname = pi.get_substr(pc["hostname"]);
+    auto path = pi.get_substr(pc["path"]);
 
-#endif
+    if (path.empty()) {
+        path = ".";
+    }
+    return remote_path {
+        username,
+        hostname,
+        path,
+    };
+}
+
+std::string to_netloc(const nonstd::optional<std::string>& username,
+                      std::string hostname)
+{
+    return fmt::format("{}{}{}",
+                       username.value_or(std::string()),
+                       username ? "@" : "",
+                       hostname);
+}
+
+}
+}

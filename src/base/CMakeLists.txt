@@ -5,6 +5,7 @@ add_library(base STATIC
         auto_pid.cc
         date_time_scanner.cc
         humanize.cc
+        humanize.network.cc
         humanize.time.cc
         intern_string.cc
         is_utf8.cc
@@ -22,6 +23,7 @@ add_library(base STATIC
         func_util.hh
         future_util.hh
         humanize.hh
+        humanize.network.hh
         humanize.time.hh
         injector.hh
         injector.bind.hh

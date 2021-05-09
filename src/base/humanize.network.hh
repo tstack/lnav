@@ -27,45 +27,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_tailer_h
-#define lnav_tailer_h
+#ifndef lnav_humanize_network_hh
+#define lnav_humanize_network_hh
 
-#include <sys/types.h>
+#include <string>
 
-typedef enum {
-    TPPT_DONE,
-    TPPT_STRING,
-    TPPT_HASH,
-    TPPT_INT64,
-    TPPT_BITS,
-} tailer_packet_payload_type_t;
+#include "optional.hpp"
 
-typedef enum {
-    TPT_ERROR,
-    TPT_OPEN_PATH,
-    TPT_CLOSE_PATH,
-    TPT_OFFER_BLOCK,
-    TPT_NEED_BLOCK,
-    TPT_ACK_BLOCK,
-    TPT_TAIL_BLOCK,
-    TPT_LINK_BLOCK,
-    TPT_LOG,
-    TPT_LOAD_PREVIEW,
-    TPT_PREVIEW_ERROR,
-    TPT_PREVIEW_DATA,
-} tailer_packet_type_t;
+namespace humanize {
+namespace network {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct remote_path {
+    static nonstd::optional<remote_path> from_str(const char *str);
+    static nonstd::optional<remote_path> from_str(const std::string& str) {
+        return from_str(str.c_str());
+    }
 
-ssize_t send_packet(int fd,
-                    tailer_packet_type_t tpt,
-                    tailer_packet_payload_type_t payload_type,
-                    ...);
+    nonstd::optional<std::string> rp_username;
+    std::string rp_hostname;
+    std::string rp_path;
 
-#ifdef __cplusplus
+private:
+    remote_path(nonstd::optional<std::string> username,
+                std::string hostname,
+                std::string path) :
+        rp_username(std::move(username)),
+        rp_hostname(std::move(hostname)),
+        rp_path(std::move(path))
+    {}
 };
-#endif
+
+std::string to_netloc(const nonstd::optional<std::string> &username,
+                      std::string hostname);
+
+}
+}
+
 
 #endif

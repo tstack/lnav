@@ -31,6 +31,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "sha-256.h"
 #include "tailer.h"

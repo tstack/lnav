@@ -5,7 +5,11 @@ AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
     -Wall \
     -I$(top_srcdir)/src/ \
-    -I$(top_srcdir)/src/fmtlib
+    -I$(top_srcdir)/src/fmtlib \
+    $(LIBARCHIVE_CFLAGS) \
+    $(READLINE_CFLAGS) \
+    $(SQLITE3_CFLAGS) \
+    $(LIBCURL_CPPFLAGS)
 
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
@@ -21,6 +25,7 @@ noinst_HEADERS = \
     func_util.hh \
     future_util.hh \
 	humanize.hh \
+	humanize.network.hh \
 	humanize.time.hh \
 	injector.hh \
 	injector.bind.hh \
@@ -41,6 +46,7 @@ libbase_a_SOURCES = \
     auto_pid.cc \
     date_time_scanner.cc \
 	humanize.cc \
+	humanize.network.cc \
 	humanize.time.cc \
 	intern_string.cc \
     is_utf8.cc \
