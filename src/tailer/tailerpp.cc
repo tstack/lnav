@@ -118,11 +118,17 @@ Result<packet, std::string> read_packet(int fd)
                                    ppd.ppd_bits));
             return Ok(packet{ppd});
         }
+        case TPT_POSSIBLE_PATH: {
+            packet_possible_path ppp;
+
+            TRY(read_payloads_into(fd,
+                                   ppp.ppp_path));
+            return Ok(packet{ppp});
+        }
         default:
             assert(0);
             break;
     }
 }
-
 
 }

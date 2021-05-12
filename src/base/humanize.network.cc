@@ -36,10 +36,24 @@
 namespace humanize {
 namespace network {
 
-nonstd::optional<remote_path> remote_path::from_str(const char *str)
+namespace locality {
+
+std::string to_string(const ::network::locality &l)
+{
+    return fmt::format("{}{}{}",
+                       l.l_username.value_or(std::string()),
+                       l.l_username ? "@" : "",
+                       l.l_hostname);
+}
+
+}
+
+namespace path {
+
+nonstd::optional<::network::path> from_str(const char *str)
 {
     static const pcrepp REMOTE_PATTERN(
-        "(?:(?<username>[^@]+)@)?(?<hostname>[^:]+):(?<path>.*)");
+        "(?:(?<username>[^@]+)@)?(?<hostname>[^/:]+):(?<path>.*)");
 
     pcre_context_static<30> pc;
     pcre_input pi(str);
@@ -55,21 +69,12 @@ nonstd::optional<remote_path> remote_path::from_str(const char *str)
     if (path.empty()) {
         path = ".";
     }
-    return remote_path {
-        username,
-        hostname,
+    return ::network::path{
+        { username, hostname, nonstd::nullopt },
         path,
     };
 }
 
-std::string to_netloc(const nonstd::optional<std::string>& username,
-                      std::string hostname)
-{
-    return fmt::format("{}{}{}",
-                       username.value_or(std::string()),
-                       username ? "@" : "",
-                       hostname);
 }
-
 }
 }

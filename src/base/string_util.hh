@@ -70,11 +70,11 @@ inline bool endswith(const char *str, const char *suffix)
 template<int N>
 inline bool endswith(const std::string& str, const char (&suffix) [N])
 {
-    if (N > str.length()) {
+    if (N - 1 > str.length()) {
         return false;
     }
 
-    return strcmp(&str[str.size() - N], suffix) == 0;
+    return strcmp(&str[str.size() - (N - 1)], suffix) == 0;
 }
 
 void truncate_to(std::string &str, size_t max_char_len);

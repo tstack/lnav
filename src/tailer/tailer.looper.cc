@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
 #include "tailer.looper.hh"
 #include "tailer.h"
@@ -126,17 +127,19 @@ void tailer::looper::loop_body()
     }
 }
 
-void tailer::looper::add_remote(std::string netloc, std::string path)
+void tailer::looper::add_remote(const network::path& path)
 {
-    this->l_netlocs_to_paths[netloc].rpq_new_paths.insert(path);
+    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    this->l_netlocs_to_paths[netloc_str].rpq_new_paths.insert(path.p_path);
 }
 
-void tailer::looper::load_preview(int64_t id, std::string netloc, std::string path)
+void tailer::looper::load_preview(int64_t id, const network::path& path)
 {
-    auto iter = this->l_remotes.find(netloc);
+    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    auto iter = this->l_remotes.find(netloc_str);
 
     if (iter == this->l_remotes.end()) {
-        auto create_res = host_tailer::for_host(netloc);
+        auto create_res = host_tailer::for_host(netloc_str);
 
         if (create_res.isErr()) {
             auto msg = create_res.unwrapErr();
@@ -145,7 +148,9 @@ void tailer::looper::load_preview(int64_t id, std::string netloc, std::string pa
                     if (lnav_data.ld_preview_generation != id) {
                         return;
                     }
-                    lnav_data.ld_preview_status_source.get_description().clear();
+                    lnav_data.ld_preview_status_source.get_description()
+                        .set_cylon(false)
+                        .clear();
                     lnav_data.ld_preview_source.clear();
                     lnav_data.ld_bottom_source.grep_error(msg);
                 });
@@ -153,12 +158,34 @@ void tailer::looper::load_preview(int64_t id, std::string netloc, std::string pa
         }
 
         auto ht = create_res.unwrap();
-        this->l_remotes[netloc] = ht;
+        this->l_remotes[netloc_str] = ht;
         this->s_children.add_child_service(ht);
     }
 
-    this->l_remotes[netloc]->send([id, path](auto &ht) {
-        ht.load_preview(id, path);
+    this->l_remotes[netloc_str]->send([id, file_path = path.p_path](auto &ht) {
+        ht.load_preview(id, file_path);
+    });
+}
+
+void tailer::looper::complete_path(const network::path& path)
+{
+    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    auto iter = this->l_remotes.find(netloc_str);
+
+    if (iter == this->l_remotes.end()) {
+        auto create_res = host_tailer::for_host(netloc_str);
+
+        if (create_res.isErr()) {
+            return;
+        }
+
+        auto ht = create_res.unwrap();
+        this->l_remotes[netloc_str] = ht;
+        this->s_children.add_child_service(ht);
+    }
+
+    this->l_remotes[netloc_str]->send([file_path = path.p_path](auto &ht) {
+        ht.complete_path(file_path);
     });
 }
 
@@ -337,8 +364,25 @@ void tailer::looper::host_tailer::load_preview(int64_t id, const std::string &pa
                         return;
                     }
                     lnav_data.ld_preview_status_source.get_description()
+                        .set_cylon(false)
                         .set_value(msg);
                 });
+        }
+    );
+}
+
+void tailer::looper::host_tailer::complete_path(const std::string &path)
+{
+    this->ht_state.match(
+        [&](connected& conn) {
+            send_packet(conn.ht_to_child.get(),
+                        TPT_COMPLETE_PATH,
+                        TPPT_STRING, path.c_str(),
+                        TPPT_DONE);
+        },
+        [&](const disconnected& d) {
+            log_warning("disconnected from host, cannot preview: %s",
+                        path.c_str());
         }
     );
 }
@@ -438,7 +482,7 @@ void tailer::looper::host_tailer::loop_body()
                 }
 
                 if (fd == -1) {
-                    log_debug("sending need block");
+                    log_debug("file not found, sending need block");
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
                                 TPPT_STRING, pob.pob_path.c_str(),
@@ -449,6 +493,7 @@ void tailer::looper::host_tailer::loop_body()
                 struct stat st;
 
                 if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode)) {
+                    log_debug("path changed, sending need block");
                     ghc::filesystem::remove_all(local_path);
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
@@ -467,13 +512,17 @@ void tailer::looper::host_tailer::loop_body()
                     calc_sha_256(thf.thf_hash, buffer, bytes_read);
 
                     if (thf == pob.pob_hash) {
+                        log_debug("local file block is same, sending ack");
                         send_packet(conn.ht_to_child.get(),
                                     TPT_ACK_BLOCK,
                                     TPPT_STRING, pob.pob_path.c_str(),
                                     TPPT_DONE);
                         return std::move(this->ht_state);
                     }
+                    log_debug("local file is different, sending need block");
                 } else if (bytes_read == -1) {
+                    log_debug("unable to read file, sending need block -- %s",
+                              strerror(errno));
                     ghc::filesystem::remove_all(local_path);
                 }
                 send_packet(conn.ht_to_child.get(),
@@ -487,7 +536,10 @@ void tailer::looper::host_tailer::loop_body()
                     ghc::filesystem::path(ptb.ptb_path)).relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
-                log_debug("writing tail to: %s", local_path.c_str());
+                log_debug("writing tail to: %lld/%ld %s",
+                          ptb.ptb_offset,
+                          ptb.ptb_bits.size(),
+                          local_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
                 auto fd = auto_fd(
                     ::open(local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT,
@@ -540,6 +592,7 @@ void tailer::looper::host_tailer::loop_body()
                             return;
                         }
                         lnav_data.ld_preview_status_source.get_description()
+                            .set_cylon(false)
                             .clear();
                         lnav_data.ld_preview_source.clear();
                         lnav_data.ld_bottom_source.grep_error(ppe.ppe_msg);
@@ -559,12 +612,26 @@ void tailer::looper::host_tailer::loop_body()
                         std::string str(ppd.ppd_bits.begin(),
                                         ppd.ppd_bits.end());
                         lnav_data.ld_preview_status_source.get_description()
+                            .set_cylon(false)
                             .set_value("For file: %s:%s",
                                        netloc.c_str(),
                                        ppd.ppd_path.c_str());
                         lnav_data.ld_preview_source
                             .replace_with(str)
                             .set_text_format(detect_text_format(str));
+                    });
+                return std::move(this->ht_state);
+            },
+            [&](const tailer::packet_possible_path &ppp) {
+                log_debug("got poss! %s", ppp.ppp_path.c_str());
+                auto full_path = fmt::format("{}:{}",
+                                             this->ht_netloc,
+                                             ppp.ppp_path);
+
+                isc::to<main_looper&, services::main_t>()
+                    .send([full_path](auto& mlooper) {
+                        lnav_data.ld_rl_view->add_possibility(
+                            LNM_COMMAND, "remote-path", full_path);
                     });
                 return std::move(this->ht_state);
             }

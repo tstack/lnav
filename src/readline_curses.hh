@@ -233,6 +233,9 @@ public:
     void set_display_match_action(const action& va) { this->rc_display_match = va; };
     void set_display_next_action(const action& va) { this->rc_display_next = va; };
     void set_blur_action(const action& va) { this->rc_blur = va; };
+    void set_completion_request_action(const action& va) {
+        this->rc_completion_request = va;
+    }
 
     void set_value(const std::string &value)
     {
@@ -374,6 +377,10 @@ public:
         return retval;
     }
 
+    std::string get_remote_complete_path() const {
+        return this->rc_remote_complete_path;
+    }
+
 private:
     enum {
         RCF_MASTER,
@@ -402,6 +409,7 @@ private:
     std::vector<std::string> rc_matches;
     bool rc_is_alt_focus{false};
     bool rc_ready_for_input{false};
+    std::string rc_remote_complete_path;
 
     action rc_change;
     action rc_perform;
@@ -411,5 +419,6 @@ private:
     action rc_display_match;
     action rc_display_next;
     action rc_blur;
+    action rc_completion_request;
 };
 #endif

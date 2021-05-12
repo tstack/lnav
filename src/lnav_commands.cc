@@ -2092,18 +2092,16 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             if (fn.find(':') != string::npos) {
                 auto id = lnav_data.ld_preview_generation;
                 lnav_data.ld_preview_status_source.get_description()
+                    .set_cylon(true)
                     .set_value("Loading %s...", fn.c_str());
                 lnav_data.ld_preview_source.clear();
 
                 isc::to<tailer::looper &, services::remote_tailer_t>()
                     .send([id, fn](auto &tlooper) {
-                        auto rp_opt = humanize::network::remote_path::from_str(fn);
-                        auto rp = *rp_opt;
-
-                        tlooper.load_preview(
-                            id,
-                            humanize::network::to_netloc(rp.rp_username, rp.rp_hostname),
-                            rp.rp_path);
+                        auto rp_opt = humanize::network::path::from_str(fn);
+                        if (rp_opt) {
+                            tlooper.load_preview(id, *rp_opt);
+                        }
                     });
                 lnav_data.ld_preview_view.set_needs_update();
             }

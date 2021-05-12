@@ -377,7 +377,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
         return;
     }
 
-    auto rp_opt = humanize::network::remote_path::from_str(path);
+    auto rp_opt = humanize::network::path::from_str(path);
     if (rp_opt) {
         auto iter = this->fc_other_files.find(path);
         auto rp = *rp_opt;
@@ -390,9 +390,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
 
         isc::to<tailer::looper &, services::remote_tailer_t>()
             .send([=](auto &tlooper) {
-                tlooper.add_remote(
-                    humanize::network::to_netloc(rp.rp_username, rp.rp_hostname),
-                    rp.rp_path);
+                tlooper.add_remote(rp);
             });
         retval.fc_other_files[path] = file_format_t::FF_REMOTE;
 

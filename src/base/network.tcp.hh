@@ -36,6 +36,30 @@
 #include "result.h"
 
 namespace network {
+
+struct locality {
+    locality(nonstd::optional<std::string> username,
+             std::string hostname,
+             nonstd::optional<std::string> service) :
+        l_username(std::move(username)),
+        l_hostname(std::move(hostname)),
+        l_service(std::move(service))
+    {}
+
+    nonstd::optional<std::string> l_username;
+    std::string l_hostname;
+    nonstd::optional<std::string> l_service;
+};
+
+struct path {
+    locality p_locality;
+    std::string p_path;
+
+    path(locality l, std::string path) : p_locality(std::move(l)),
+                                         p_path(std::move(path))
+    {}
+};
+
 namespace tcp {
 
 Result<auto_fd, std::string> connect(const char *hostname,

@@ -94,11 +94,130 @@ struct packet_preview_data {
     std::vector<uint8_t> ppd_bits;
 };
 
+struct packet_possible_path {
+    std::string ppp_path;
+};
+
 using packet = mapbox::util::variant<
     packet_eof, packet_error, packet_offer_block, packet_tail_block,
-    packet_link, packet_preview_error, packet_preview_data>;
+    packet_link, packet_preview_error, packet_preview_data,
+    packet_possible_path>;
+
+struct recv_payload_type {};
+struct recv_payload_length {};
+struct recv_payload_content {};
 
 int readall(int sock, void *buf, size_t len);
+
+namespace details {
+
+template<class ...>
+using void_t = void;
+
+template <class, class = void>
+struct has_data : std::false_type {};
+
+template <class T>
+struct has_data<T, decltype(void(std::declval<T &>().data()))> : std::true_type
+{};
+
+template <typename T,
+    std::enable_if_t<has_data<T>::value, bool> = true>
+uint8_t *get_data(T& t) {
+    return (uint8_t *) t.data();
+}
+
+template <typename T,
+    std::enable_if_t<!has_data<T>::value, bool> = true>
+uint8_t *get_data(T& t) {
+    return (uint8_t *) &t;
+}
+
+}
+
+template<int PAYLOAD_TYPE, typename EXPECT = recv_payload_type>
+struct protocol_recv {
+    static constexpr bool HAS_LENGTH =
+        (PAYLOAD_TYPE == TPPT_STRING) || (PAYLOAD_TYPE == TPPT_BITS);
+
+    using after_type = typename std::conditional<
+        HAS_LENGTH,
+        recv_payload_length,
+        recv_payload_content>::type;
+
+    static
+    Result<protocol_recv<PAYLOAD_TYPE, after_type>, std::string>
+    create(int fd) {
+        return protocol_recv<PAYLOAD_TYPE>(fd).read_type();
+    }
+
+    Result<protocol_recv<PAYLOAD_TYPE, after_type>, std::string>
+    read_type() && {
+        static_assert(std::is_same<EXPECT, recv_payload_type>::value,
+                      "read_type() cannot be called in this state");
+
+        tailer_packet_payload_type_t payload_type;
+
+        if (readall(this->pr_fd, &payload_type, sizeof(payload_type)) == -1) {
+            return Err(fmt::format("unable to read payload type: {}",
+                                   strerror(errno)));
+        }
+
+        if (payload_type != PAYLOAD_TYPE) {
+            return Err(fmt::format(
+                "payload-type mismatch, got: {}; expected: {}",
+                payload_type, PAYLOAD_TYPE));
+        }
+
+        return Ok(protocol_recv<PAYLOAD_TYPE, after_type>(this->pr_fd));
+    }
+
+    template<typename T>
+    Result<protocol_recv<PAYLOAD_TYPE, recv_payload_content>, std::string>
+    read_length(T& data) && {
+        static_assert(std::is_same<EXPECT, recv_payload_length>::value,
+                      "read_length() cannot be called in this state");
+
+        if (readall(this->pr_fd, &this->pr_length, sizeof(this->pr_length)) == -1) {
+            return Err(fmt::format("unable to read content length: {}",
+                                   strerror(errno)));
+        }
+
+        try {
+            data.resize(this->pr_length);
+        } catch (...) {
+            return Err(fmt::format("unable to resize data to {}", this->pr_length));
+        }
+
+        return Ok(protocol_recv<PAYLOAD_TYPE, recv_payload_content>(
+            this->pr_fd, this->pr_length));
+    }
+
+    template<typename T>
+    Result<void, std::string>
+    read_content(T& data) && {
+        static_assert(std::is_same<EXPECT, recv_payload_content>::value,
+                      "read_content() cannot be called in this state");
+        static_assert(!HAS_LENGTH || details::has_data<T>::value,
+            "boo");
+
+        if (!HAS_LENGTH) {
+            this->pr_length = sizeof(T);
+        }
+        if (readall(this->pr_fd, details::get_data(data), this->pr_length) == -1) {
+            return Err(fmt::format("unable to read "));
+        }
+
+        return Ok();
+    }
+private:
+    template<int P, typename E> friend struct protocol_recv;
+
+    explicit protocol_recv(int fd, int32_t length = 0) : pr_fd(fd), pr_length(length) {}
+
+    int pr_fd;
+    int32_t pr_length;
+};
 
 inline Result<void, std::string> read_payloads_into(int fd)
 {
@@ -120,25 +239,9 @@ template<typename ...Ts>
 Result<void, std::string>
 read_payloads_into(int fd, std::vector<uint8_t> &bits, Ts &...args)
 {
-    tailer_packet_payload_type_t payload_type;
-
-    if (readall(fd, &payload_type, sizeof(payload_type)) == -1) {
-        return Err(fmt::format("unable to read bits payload type"));
-    }
-    if (payload_type != TPPT_BITS) {
-        return Err(
-            fmt::format("expecting bits payload, found: {}", payload_type));
-    }
-
-    int64_t length;
-    if (readall(fd, &length, sizeof(length)) == -1) {
-        return Err(std::string("unable to read bits length"));
-    }
-
-    bits.resize(length);
-    if (readall(fd, bits.data(), length) == -1) {
-        return Err(fmt::format("unable to read bits of length: {}", length));
-    }
+    TRY(TRY(TRY(protocol_recv<TPPT_BITS>::create(fd))
+                .read_length(bits))
+            .read_content(bits));
 
     return read_payloads_into(fd, args...);
 }
@@ -147,15 +250,8 @@ template<typename ...Ts>
 Result<void, std::string>
 read_payloads_into(int fd, hash_frag &thf, Ts &...args)
 {
-    tailer_packet_payload_type_t payload_type;
-
-    readall(fd, &payload_type, sizeof(payload_type));
-    if (payload_type != TPPT_HASH) {
-        return Err(
-            fmt::format("expecting int64 payload, found: {}", payload_type));
-    }
-
-    readall(fd, thf.thf_hash, SHA_256_HASH_SIZE);
+    TRY(TRY(protocol_recv<TPPT_HASH>::create(fd))
+            .read_content(thf.thf_hash));
 
     return read_payloads_into(fd, args...);
 }
@@ -163,15 +259,8 @@ read_payloads_into(int fd, hash_frag &thf, Ts &...args)
 template<typename ...Ts>
 Result<void, std::string> read_payloads_into(int fd, int64_t &i, Ts &...args)
 {
-    tailer_packet_payload_type_t payload_type;
-
-    readall(fd, &payload_type, sizeof(payload_type));
-    if (payload_type != TPPT_INT64) {
-        return Err(
-            fmt::format("expecting int64 payload, found: {}", payload_type));
-    }
-
-    readall(fd, &i, sizeof(i));
+    TRY(TRY(protocol_recv<TPPT_INT64>::create(fd))
+            .read_content(i));
 
     return read_payloads_into(fd, args...);
 }
@@ -180,29 +269,9 @@ template<typename ...Ts>
 Result<void, std::string>
 read_payloads_into(int fd, std::string &str, Ts &...args)
 {
-    tailer_packet_payload_type_t payload_type;
-
-    readall(fd, &payload_type, sizeof(payload_type));
-    if (payload_type != TPPT_STRING) {
-        return Err(
-            fmt::format("expecting string payload, found: {}", payload_type));
-    }
-
-    int32_t length;
-    if (readall(fd, &length, sizeof(length)) == -1) {
-        return Err(std::string("unable to read string length"));
-    }
-
-    auto_mem<char> child_str;
-
-    child_str = (char *) malloc(length);
-    if (child_str == nullptr) {
-        return Err(fmt::format("string size is too large: {}", length));
-    }
-    if (readall(fd, child_str, length) == -1) {
-        return Err(fmt::format("unable to read string of size: {}", length));
-    }
-    str.assign(child_str.in(), length);
+    TRY(TRY(TRY(protocol_recv<TPPT_STRING>::create(fd))
+                .read_length(str))
+            .read_content(str));
 
     return read_payloads_into(fd, args...);
 }

@@ -65,7 +65,7 @@ public:
      * @param fmt The format string.
      * @param ... Arguments for the format.
      */
-    void set_value(const char *fmt, ...)
+    status_field& set_value(const char *fmt, ...)
     {
         char    buffer[256];
         va_list args;
@@ -74,6 +74,8 @@ public:
         vsnprintf(buffer, sizeof(buffer), fmt, args);
         this->set_value(std::string(buffer));
         va_end(args);
+
+        return *this;
     };
 
     void set_stitch_value(view_colors::role_t left, view_colors::role_t right)
@@ -97,8 +99,13 @@ public:
     void right_justify(bool yes) { this->sf_right_justify = yes; };
     bool is_right_justified() const { return this->sf_right_justify; };
 
-    void set_cylon(bool yes) { this->sf_cylon = yes; };
+    status_field& set_cylon(bool yes) {
+        this->sf_cylon = yes;
+        return *this;
+    };
     bool is_cylon() const { return this->sf_cylon; };
+
+    void do_cylon();
 
     /** @return True if this field's value is an empty string. */
     bool empty() const { return this->sf_value.get_string().empty(); };

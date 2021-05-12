@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "base/injector.hh"
+#include "base/humanize.network.hh"
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "lnav_config.hh"
@@ -43,6 +44,8 @@
 #include "help_text_formatter.hh"
 #include "sqlite-extension-func.hh"
 #include "yajlpp/yajlpp.hh"
+#include "tailer/tailer.looper.hh"
+#include "service_tags.hh"
 
 using namespace std;
 
@@ -231,7 +234,9 @@ void rl_change(readline_curses *rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_preview_source.clear();
-    lnav_data.ld_preview_status_source.get_description().clear();
+    lnav_data.ld_preview_status_source.get_description()
+        .set_cylon(false)
+        .clear();
 
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
@@ -260,7 +265,9 @@ void rl_change(readline_curses *rc)
                 lnav_data.ld_doc_source.clear();
                 lnav_data.ld_example_source.clear();
                 lnav_data.ld_preview_source.clear();
-                lnav_data.ld_preview_status_source.get_description().clear();
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_cylon(false)
+                    .clear();
                 lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
             }
@@ -382,7 +389,9 @@ static void rl_search_internal(readline_curses *rc, ln_mode_t mode, bool complet
         lnav_data.ld_exec_context.ec_dry_run = true;
 
         lnav_data.ld_preview_generation += 1;
-        lnav_data.ld_preview_status_source.get_description().clear();
+        lnav_data.ld_preview_status_source.get_description()
+            .set_cylon(false)
+            .clear();
         lnav_data.ld_preview_source.clear();
         auto result = execute_command(lnav_data.ld_exec_context, rc->get_value());
 
@@ -470,7 +479,9 @@ void lnav_rl_abort(readline_curses *rc)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
     lnav_data.ld_doc_source.clear();
-    lnav_data.ld_preview_status_source.get_description().clear();
+    lnav_data.ld_preview_status_source.get_description()
+        .set_cylon(false)
+        .clear();
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
@@ -505,7 +516,9 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
-    lnav_data.ld_preview_status_source.get_description().clear();
+    lnav_data.ld_preview_status_source.get_description()
+        .set_cylon(false)
+        .clear();
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
@@ -745,4 +758,16 @@ void rl_display_next(readline_curses *rc)
     else {
         tc.shift_top(tc.get_height());
     }
+}
+
+void rl_completion_request(readline_curses *rc)
+{
+    isc::to<tailer::looper&, services::remote_tailer_t>()
+        .send([rc](auto &tlooper) {
+            auto rp_opt = humanize::network::path::from_str(
+                rc->get_remote_complete_path());
+            if (rp_opt) {
+                tlooper.complete_path(*rp_opt);
+            }
+        });
 }

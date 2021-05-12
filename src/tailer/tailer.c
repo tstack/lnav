@@ -70,7 +70,7 @@ ssize_t send_packet(int fd,
                 break;
             }
             case TPPT_BITS: {
-                int64_t length = va_arg(args, int64_t);
+                int32_t length = va_arg(args, int32_t);
                 const char *bits = va_arg(args, const char *);
 
                 write(fd, &length, sizeof(length));

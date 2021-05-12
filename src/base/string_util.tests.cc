@@ -35,6 +35,14 @@
 
 #include "base/string_util.hh"
 
+TEST_CASE ("endswith")
+{
+    std::string hw("hello");
+
+    CHECK(endswith(hw, "f") == false);
+    CHECK(endswith(hw, "lo") == true);
+}
+
 TEST_CASE ("truncate_to")
 {
     const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";

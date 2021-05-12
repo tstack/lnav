@@ -381,7 +381,40 @@ char **readline_context::attempted_completion(const char *text,
                 if (proto.empty()) {
                     arg_possibilities = nullptr;
                 } else if (proto[0] == "filename") {
-                    return nullptr; /* XXX */
+                    shlex fn_lexer(rl_line_buffer, rl_point);
+                    std::vector<std::string> fn_list;
+                    int found = 0;
+
+                    if (fn_lexer.split(fn_list, scope)) {
+                        const auto& last_fn = fn_list.back();
+
+                        if (last_fn.find(':') != string::npos) {
+                            auto rp_iter = loaded_context->rc_possibilities.find("remote-path");
+                            if (rp_iter != loaded_context->rc_possibilities.end()) {
+                                for (const auto& poss : rp_iter->second) {
+                                    if (startswith(poss, last_fn.c_str())) {
+                                        found += 1;
+                                    }
+                                }
+                                if (found) {
+                                    arg_possibilities = &rp_iter->second;
+                                }
+                            }
+                            if (!found ||
+                                (endswith(last_fn, "/") && found == 1)) {
+                                char msg[2048];
+
+                                snprintf(msg, sizeof(msg),
+                                         "\t:%s",
+                                         last_fn.c_str());
+                                sendstring(child_this->rc_command_pipe[1],
+                                           msg, strlen(msg));
+                            }
+                        }
+                    }
+                    if (!found) {
+                        return nullptr; /* XXX */
+                    }
                 } else {
                     arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
                 }
@@ -496,7 +529,8 @@ readline_curses::readline_curses()
       rc_abort(noop_func{}),
       rc_display_match(noop_func{}),
       rc_display_next(noop_func{}),
-      rc_blur(noop_func{})
+      rc_blur(noop_func{}),
+      rc_completion_request(noop_func{})
 {
 }
 
@@ -826,6 +860,10 @@ void readline_curses::start()
                         this->rc_contexts[context]->
                                                       add_possibility(string(type),
                                                                       string(&msg[prompt_start]));
+                        if (rl_last_func == rl_complete ||
+                            rl_last_func == rl_menu_complete) {
+                            rl_last_func = NULL;
+                        }
                     }
                     else if (sscanf(msg,
                                     "rp:%d:%31[^:]:%n",
@@ -1010,6 +1048,15 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_display_match(this);
                 }
                 this->rc_match_index = 0;
+            }
+            else if (msg[0] == '\t') {
+                char path[2048];
+
+                if (sscanf(msg, "\t:%s", path) != 1) {
+                    require(0);
+                }
+                this->rc_remote_complete_path = path;
+                this->rc_completion_request(this);
             }
             else if (msg[0] == 'n') {
                 if (sscanf(msg, "n:%d", &this->rc_match_index) != 1) {

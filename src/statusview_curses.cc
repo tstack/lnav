@@ -48,16 +48,25 @@ void status_field::set_value(std::string value)
     this->sf_value.with_string(value);
 
     if (this->sf_cylon) {
-        struct line_range lr(this->sf_cylon_pos, this->sf_width);
-        view_colors &vc = view_colors::singleton();
+        this->do_cylon();
+    }
+}
 
-        sa.emplace_back(lr, &view_curses::VC_STYLE,
-            vc.attrs_for_role(view_colors::VCR_ACTIVE_STATUS) | A_REVERSE);
+void status_field::do_cylon()
+{
+    string_attrs_t &sa = this->sf_value.get_attrs();
 
-        this->sf_cylon_pos += 1;
-        if (this->sf_cylon_pos > this->sf_width) {
-            this->sf_cylon_pos = 0;
-        }
+    remove_string_attr(sa, &view_curses::VC_STYLE);
+
+    struct line_range lr(this->sf_cylon_pos, this->sf_width);
+    view_colors &vc = view_colors::singleton();
+
+    sa.emplace_back(lr, &view_curses::VC_STYLE,
+                    vc.attrs_for_role(view_colors::VCR_ACTIVE_STATUS) | A_REVERSE);
+
+    this->sf_cylon_pos += 1;
+    if (this->sf_cylon_pos > this->sf_width) {
+        this->sf_cylon_pos = 0;
     }
 }
 
@@ -103,6 +112,8 @@ void statusview_curses::do_update()
                         sa.sa_value.sav_int = view_colors::VCR_NONE;
                     }
                 }
+            } else if (sf.is_cylon()) {
+                sf.do_cylon();
             }
             if (sf.get_left_pad() > 0) {
                 val.insert(0, sf.get_left_pad(), ' ');

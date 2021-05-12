@@ -34,6 +34,7 @@
 
 #include "base/isc.hh"
 #include "base/auto_pid.hh"
+#include "base/network.tcp.hh"
 #include "auto_fd.hh"
 #include "ghc/filesystem.hpp"
 #include "mapbox/variant.hpp"
@@ -42,9 +43,11 @@ namespace tailer {
 
 class looper : public isc::service<looper> {
 public:
-    void add_remote(std::string netloc, std::string path);
+    void add_remote(const network::path& path);
 
-    void load_preview(int64_t id, std::string netloc, std::string path);
+    void load_preview(int64_t id, const network::path& path);
+
+    void complete_path(const network::path& path);
 
 protected:
     void loop_body() override;
@@ -66,6 +69,8 @@ private:
         void open_remote_path(const std::string& path);
 
         void load_preview(int64_t id, const std::string& path);
+
+        void complete_path(const std::string& path);
 
     protected:
         void *run() override;

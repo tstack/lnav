@@ -375,7 +375,7 @@ void send_preview_error(int64_t id, const char *path, const char *msg)
                 TPPT_DONE);
 }
 
-void send_preview_data(int64_t id, const char *path, int64_t len, const char *bits)
+void send_preview_data(int64_t id, const char *path, int32_t len, const char *bits)
 {
     send_packet(STDOUT_FILENO,
                 TPT_PREVIEW_DATA,
@@ -496,12 +496,14 @@ int poll_paths(struct list *path_list)
                             set_client_path_state_error(curr, "open");
                         } else {
                             char buffer[64 * 1024];
-                            int64_t bytes_read = pread(
-                                fd,
-                                buffer, sizeof(buffer),
+                            int64_t file_offset =
                                 curr->cps_client_file_offset < 0 ?
                                 0 :
-                                curr->cps_client_file_offset);
+                                curr->cps_client_file_offset;
+                            int32_t bytes_read = pread(
+                                fd,
+                                buffer, sizeof(buffer),
+                                file_offset);
 
                             if (bytes_read == -1) {
                                 set_client_path_state_error(curr, "pread");
@@ -514,8 +516,7 @@ int poll_paths(struct list *path_list)
                                 send_packet(STDOUT_FILENO,
                                             TPT_OFFER_BLOCK,
                                             TPPT_STRING, curr->cps_path,
-                                            TPPT_INT64,
-                                            curr->cps_client_file_offset,
+                                            TPPT_INT64, file_offset,
                                             TPPT_INT64, bytes_read,
                                             TPPT_HASH, hash,
                                             TPPT_DONE);
@@ -614,6 +615,38 @@ int poll_paths(struct list *path_list)
     return retval;
 }
 
+static
+void send_possible_paths(const char *glob_path, int depth)
+{
+    glob_t gl;
+
+    memset(&gl, 0, sizeof(gl));
+    if (glob(glob_path, GLOB_MARK, NULL, &gl) == 0) {
+        for (size_t lpc = 0;
+             lpc < gl.gl_pathc;
+             lpc++) {
+            const char *child_path = gl.gl_pathv[lpc];
+            size_t child_len = strlen(gl.gl_pathv[lpc]);
+
+            send_packet(STDOUT_FILENO,
+                        TPT_POSSIBLE_PATH,
+                        TPPT_STRING, child_path,
+                        TPPT_DONE);
+
+            if (depth == 0 && child_path[child_len - 1] == '/') {
+                char *child_copy = malloc(child_len + 2);
+
+                strcpy(child_copy, child_path);
+                strcat(child_copy, "*");
+                send_possible_paths(child_copy, depth + 1);
+                free(child_copy);
+            }
+        }
+    }
+
+    globfree(&gl);
+}
+
 int main(int argc, char *argv[])
 {
     int done = 0, timeout = 0;
@@ -642,7 +675,8 @@ int main(int argc, char *argv[])
                 switch (type) {
                     case TPT_OPEN_PATH:
                     case TPT_CLOSE_PATH:
-                    case TPT_LOAD_PREVIEW: {
+                    case TPT_LOAD_PREVIEW:
+                    case TPT_COMPLETE_PATH: {
                         const char *path = readstr(&rstate, STDIN_FILENO);
                         int64_t preview_id = 0;
 
@@ -807,6 +841,25 @@ int main(int argc, char *argv[])
                                          path);
                                 send_preview_error(preview_id, path, msg);
                             }
+                        } else if (type == TPT_COMPLETE_PATH) {
+                            size_t path_len = strlen(path);
+                            char *glob_path = malloc(path_len + 3);
+                            struct stat st;
+
+                            strcpy(glob_path, path);
+                            fprintf(stderr, "complete path: %s\n", path);
+                            if (path[path_len - 1] != '/' &&
+                                stat(path, &st) == 0 &&
+                                S_ISDIR(st.st_mode)) {
+                                strcat(glob_path, "/");
+                            }
+                            if (path[path_len - 1] != '*') {
+                                strcat(glob_path, "*");
+                            }
+                            fprintf(stderr, "complete glob path: %s\n", glob_path);
+                            send_possible_paths(glob_path, 0);
+
+                            free(glob_path);
                         }
                         break;
                     }

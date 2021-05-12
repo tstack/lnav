@@ -209,6 +209,9 @@ int main(int argc, char *const *argv)
             },
             [&](const tailer::packet_preview_data &ppd) {
 
+            },
+            [&](const tailer::packet_possible_path &ppp) {
+
             }
         );
     }

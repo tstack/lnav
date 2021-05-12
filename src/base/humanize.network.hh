@@ -33,32 +33,27 @@
 #include <string>
 
 #include "optional.hpp"
+#include "network.tcp.hh"
 
 namespace humanize {
 namespace network {
 
-struct remote_path {
-    static nonstd::optional<remote_path> from_str(const char *str);
-    static nonstd::optional<remote_path> from_str(const std::string& str) {
-        return from_str(str.c_str());
-    }
+namespace locality {
 
-    nonstd::optional<std::string> rp_username;
-    std::string rp_hostname;
-    std::string rp_path;
+std::string to_string(const ::network::locality &l);
 
-private:
-    remote_path(nonstd::optional<std::string> username,
-                std::string hostname,
-                std::string path) :
-        rp_username(std::move(username)),
-        rp_hostname(std::move(hostname)),
-        rp_path(std::move(path))
-    {}
-};
+}
 
-std::string to_netloc(const nonstd::optional<std::string> &username,
-                      std::string hostname);
+namespace path {
+
+nonstd::optional<::network::path> from_str(const char *str);
+
+inline nonstd::optional<::network::path> from_str(const std::string &str)
+{
+    return from_str(str.c_str());
+}
+
+}
 
 }
 }

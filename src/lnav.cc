@@ -80,6 +80,7 @@
 #include "init-sql.h"
 #include "logfile.hh"
 #include "base/func_util.hh"
+#include "base/humanize.network.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
 #include "base/isc.hh"
@@ -1296,6 +1297,7 @@ static void looper()
         rlc.set_display_match_action(rl_display_matches);
         rlc.set_display_next_action(rl_display_next);
         rlc.set_blur_action(rl_blur);
+        rlc.set_completion_request_action(rl_completion_request);
         rlc.set_alt_value(HELP_MSG_2(
             e, E, "to move forward/backward through error messages"));
 
