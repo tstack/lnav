@@ -38,6 +38,7 @@
 #include "readline_highlighters.hh"
 #include "vtab_module_json.hh"
 #include "log_format_ext.hh"
+#include "log_vtab_impl.hh"
 
 using namespace std;
 
@@ -361,7 +362,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         return;
     }
 
-    this->fos_known_key_size = 0;
+    this->fos_known_key_size = LOG_BODY.length();
     this->fos_unknown_key_size = 0;
 
     for (auto & ldh_line_value : this->fos_log_helper.ldh_line_values) {
@@ -434,7 +435,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         std::string field_name, orig_field_name;
         if (lv.lv_meta.lvm_struct_name.empty()) {
             if (curr_elf && curr_elf->elf_body_field == lv.lv_meta.lvm_name) {
-                field_name = "log_body";
+                field_name = LOG_BODY;
             } else {
                 field_name = lv.lv_meta.lvm_name.to_string();
             }

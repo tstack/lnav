@@ -44,7 +44,7 @@
       :alt-msg Press t to switch to the text view
 
   **See Also**
-    :ref:`echo`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`
+    :ref:`echo`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -67,7 +67,7 @@
       :append-to /tmp/interesting-lines.txt
 
   **See Also**
-    :ref:`echo`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`
+    :ref:`echo`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -227,7 +227,7 @@
       :create-logline-table task_durations
 
   **See Also**
-    :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`
+    :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -251,7 +251,7 @@
       :create-search-table task_durations duration=(?<duration>\d+)
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`delete_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`delete_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -308,7 +308,7 @@
       :delete-logline-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -331,7 +331,7 @@
       :delete-search-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -413,7 +413,7 @@
       :echo Hello, World!
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -472,7 +472,7 @@
       :eval ;SELECT * FROM ${table}
 
   **See Also**
-    :ref:`alt_msg`, :ref:`echo`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`echo`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -884,7 +884,7 @@
       :pipe-line-to sed -e 's/foo/bar/g'
 
   **See Also**
-    :ref:`append_to`, :ref:`echo`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`
+    :ref:`append_to`, :ref:`echo`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -907,7 +907,7 @@
       :pipe-to sed -e s/foo/bar/g
 
   **See Also**
-    :ref:`append_to`, :ref:`echo`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`
+    :ref:`append_to`, :ref:`echo`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -1029,7 +1029,7 @@
       :redirect-to /tmp/script-output.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1406,7 +1406,7 @@
       :write-table-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1429,7 +1429,7 @@
       :write-csv-to /tmp/table.csv
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1452,7 +1452,7 @@
       :write-json-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1475,7 +1475,7 @@
       :write-jsonlines-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1485,20 +1485,20 @@
 :write-raw-to *path*
 ^^^^^^^^^^^^^^^^^^^^
 
-  Write the text in the top view to the given file without any formatting
+  In the log view, write the original log file content of the marked messages to the file.  In the DB view, the contents of the cells are written to the output file.
 
   **Parameters**
     * **path\*** --- The path to the file to write
 
   **Examples**
-    To write the top view to /tmp/table.txt:
+    To write the marked lines in the log view to /tmp/table.txt:
 
     .. code-block::  lnav
 
       :write-raw-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1521,7 +1521,7 @@
       :write-screen-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`
 
 ----
 
@@ -1544,7 +1544,30 @@
       :write-to /tmp/interesting-lines.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_view_to`, :ref:`write_view_to`
+
+----
+
+
+.. _write_view_to:
+
+:write-view-to *path*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Write the text in the top view to the given file without any formatting
+
+  **Parameters**
+    * **path\*** --- The path to the file to write
+
+  **Examples**
+    To write the top view to /tmp/table.txt:
+
+    .. code-block::  lnav
+
+      :write-view-to /tmp/table.txt
+
+  **See Also**
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
 
 ----
 

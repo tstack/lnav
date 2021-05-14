@@ -79,6 +79,12 @@ lnav v0.9.1:
      * The DB view will limit the maximum column width to 120 characters.
      * The ":echo" command now evaluates its message to do variable
        substitution.
+     * The ":write-raw-to" command has been changed to write the original
+       log file content of marked lines.  For example, when viewing a JSON
+       log, the JSON-Line values from the log file will be written to the
+       output file.  The ":write-view-to" command has been added to perform
+       the previous work of ":write-raw-to" where the raw content of the view
+       is written to the file.
 
      Fixes:
      * Unicode text can now be entered in prompts.

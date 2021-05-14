@@ -72,6 +72,8 @@ struct log_cursor {
     };
 };
 
+const std::string LOG_BODY = "log_body";
+
 class log_vtab_impl {
 public:
     struct vtab_column {

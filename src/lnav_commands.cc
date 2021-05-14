@@ -832,7 +832,10 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
             return ec.make_error("no query result to write, use ';' to execute a query");
         }
     }
-    else if (args[0] != "write-raw-to" && args[0] != "write-screen-to") {
+    else if (args[0] == "write-raw-to" && tc == &lnav_data.ld_views[LNV_DB]) {
+    }
+    else if (args[0] != "write-screen-to" &&
+             args[0] != "write-view-to") {
         all_user_marks = combined_user_marks(tc->get_bookmarks());
         if (all_user_marks.empty()) {
             return ec.make_error("no lines marked to write, use 'm' to mark lines");
@@ -1083,23 +1086,67 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
 
                 line_count += 1;
             }
-        } else {
-            bool wrapped = tc->get_word_wrap();
-            auto tss = tc->get_sub_source();
+        } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            nonstd::optional<std::pair<logfile *, content_line_t>> last_line;
+            bookmark_vector<vis_line_t> visited;
+            auto &lss = lnav_data.ld_log_source;
+            vector<attr_line_t> rows(1);
+            size_t count = 0;
+            string line;
 
-            tc->set_word_wrap(to_term);
+            for (auto iter = all_user_marks.begin();
+                 iter != all_user_marks.end();
+                 iter++, count++) {
+                if (ec.ec_dry_run && count > 10) {
+                    break;
+                }
+                auto cl = lss.at(*iter);
+                auto lf = lss.find(cl);
+                auto lf_iter = lf->begin() + cl;
 
-            for (size_t lpc = 0; lpc < tss->text_line_count(); lpc++) {
-                string line;
+                while (lf_iter->get_sub_offset() != 0) {
+                    --lf_iter;
+                }
 
-                tss->text_value_for_line(*tc, lpc, line, text_sub_source::RF_RAW);
-                fprintf(outfile, "%s\n", line.c_str());
+                auto line_pair = std::make_pair(
+                    lf.get(), content_line_t(std::distance(lf->begin(), lf_iter)));
+                if (last_line && last_line.value() == line_pair) {
+                    continue;
+                }
+                last_line = line_pair;
+                auto read_res = lf->read_raw_message(lf_iter);
+                if (read_res.isErr()) {
+                    log_error("unable to read message: %s",
+                              read_res.unwrapErr().c_str());
+                    continue;
+                }
+                auto sbr = read_res.unwrap();
+                fprintf(outfile, "%.*s\n", (int) sbr.length(), sbr.get_data());
 
                 line_count += 1;
             }
-
-            tc->set_word_wrap(wrapped);
         }
+    }
+    else if (args[0] == "write-view-to") {
+        bool wrapped = tc->get_word_wrap();
+        auto tss = tc->get_sub_source();
+
+        tc->set_word_wrap(to_term);
+
+        for (size_t lpc = 0; lpc < tss->text_line_count(); lpc++) {
+            if (ec.ec_dry_run && lpc >= 10) {
+                break;
+            }
+
+            string line;
+
+            tss->text_value_for_line(*tc, lpc, line, text_sub_source::RF_RAW);
+            fprintf(outfile, "%s\n", line.c_str());
+
+            line_count += 1;
+        }
+
+        tc->set_word_wrap(wrapped);
     }
     else {
         vector<attr_line_t> rows(1);
@@ -5073,13 +5120,29 @@ readline_context::command_t STD_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-raw-to")
+            .with_summary(
+                "In the log view, write the original log file content "
+                "of the marked messages to the file.  In the DB view, "
+                "the contents of the cells are written to the output file.")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
+            .with_example({
+                "To write the marked lines in the log view to /tmp/table.txt",
+                "/tmp/table.txt"
+            })
+    },
+    {
+        "write-view-to",
+        com_save_to,
+
+        help_text(":write-view-to")
             .with_summary("Write the text in the top view to the given file without any formatting")
             .with_parameter(help_text("path", "The path to the file to write"))
             .with_tags({"io", "scripting", "sql"})
             .with_example({
-                "To write the top view to /tmp/table.txt",
-                "/tmp/table.txt"
-            })
+                              "To write the top view to /tmp/table.txt",
+                              "/tmp/table.txt"
+                          })
     },
     {
         "write-screen-to",

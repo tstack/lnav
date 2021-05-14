@@ -83,7 +83,7 @@ EOF
 
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
-    -c ":write-raw-to -" \
+    -c ":write-view-to -" \
     "${test_dir}/logfile_access_log.0"
 
 check_output "writing raw log does not work?" <<EOF

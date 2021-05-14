@@ -63,7 +63,8 @@ static const char *LOG_FOOTER_COLUMNS = R"(
   log_time_msecs  INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
   log_path        TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
   log_text        TEXT HIDDEN,                       -- The full text of the log message
-  log_body        TEXT HIDDEN                        -- The body of the log message
+  log_body        TEXT HIDDEN,                       -- The body of the log message
+  log_raw_text    TEXT HIDDEN                        -- The raw text from the log file
 );
 )";
 
@@ -560,6 +561,22 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                         sqlite3_result_text(ctx,
                                             &msg_start[body_range.lr_start],
                                             body_range.length(),
+                                            SQLITE_TRANSIENT);
+                    }
+                    break;
+                }
+                case 4: {
+                    auto read_res = lf->read_raw_message(ll);
+
+                    if (read_res.isErr()) {
+                        auto msg = fmt::format("unable to read line -- {}",
+                                               read_res.unwrapErr());
+                        sqlite3_result_error(ctx, msg.c_str(), msg.length());
+                    } else {
+                        auto sbr = read_res.unwrap();
+
+                        sqlite3_result_text(ctx,
+                                            sbr.get_data(), sbr.length(),
                                             SQLITE_TRANSIENT);
                     }
                     break;

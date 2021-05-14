@@ -23,7 +23,8 @@ These columns would be available for its row in the :code:`access_log` table:
 
 .. note:: Some columns are hidden by default to reduce the amount of noise in
    results, but they can still be accessed when explicitly used.  The hidden
-   columns are: :code:`log_path`, :code:`log_text`, and :code:`log_body`.
+   columns are: :code:`log_path`, :code:`log_text`, :code:`log_body`, and
+   :code:`log_raw_text`.
 
 You can activate the SQL prompt by pressing the :kbd:`;` key.  At the
 prompt, you can start typing in the desired SQL statement and/or double-tap
@@ -69,6 +70,56 @@ The DB view has the following display features:
 * JSON columns in the top row can be pretty-printed by pressing :kbd:`p`.
   The display will show the value and JSON-Pointer path that can be passed to
   the `jget`_ function.
+
+
+Log Tables
+----------
+
+Each log format has its own database table that can be used to access log
+messages that match that format.  The table name is the same as the format
+name, for example, the :code:`syslog_log` format will have a table that is
+also named :code:`syslog_log`.  There is also an :code:`all_logs` table
+that provides access to all messages from all formats.
+
+.. note:: Only the displayed log messages are reflected in the SQLite
+   interface.  Any log messages that have been filtered out are not
+   accessible.
+
+The columns in the log tables are made up of several builtins along with
+the values captured by the log format specification.  Use the :code:`.schema`
+command in the SQL prompt to examine a dump of the current database schema.
+
+The following columns are builtin and included in a :code:`SELECT *`:
+
+  :log_line: The line number for the message in the log view.
+  :log_part: The partition the message is in.  This column can be changed by
+    an :code:`UPDATE` or the :ref:`:parition-name<partition_name>` command.
+  :log_time: The adjusted timestamp for the log message.  This time can differ
+    from the log message's time stamp if it arrived out-of-order and the log
+    format expects log files to be time-ordered.
+  :log_actual_time: The log messages original timestamp in the file.
+  :log_idle_msecs: The difference in time between this messages and the
+    previous.  The unit of time is milliseconds.
+  :log_level: The log message level.
+  :log_mark: True if the log message was marked by the user.
+  :log_comment: The comment for the message.  This column can be changed by
+    an :code:`UPDATE` or the :ref:`:comment<comment>` command.
+  :log_tags: A JSON list of tags for the message.  This column can be changed
+    by an :code:`UPDATE` or the :ref:`:tag<tag>` command.
+  :log_filters: A JSON list of filter IDs that matched this message
+
+The following columns are builtin and are hidden, so they will *not* be
+included in a :code:`SELECT *`:
+
+  :log_time_msecs: The adjusted timestamp for the log message as the number of
+    milliseconds from the epoch.  This column can be more efficient to use for
+    time-related operations, like :ref:`timeslice()<timeslice>`.
+  :log_path: The path to the log file this message is from.
+  :log_text: The full text of the log message.
+  :log_body: The body of the log message.
+  :log_raw_text: The raw text of this message from the log file.  In this case
+    of JSON and CSV logs, this will be the exact line of JSON-Line and CSV
+    text from the file.
 
 Extensions
 ----------
