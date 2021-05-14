@@ -27,8 +27,8 @@ pair 162:177                                                                    
  num 196:199                                                                                                                                                                                                     ^-^  144
  val 196:199                                                                                                                                                                                                     ^-^  144
 pair 179:199                                                                                                                                                                                    ^------------------^  compressor_pages 144
-msg         : hibernate_teardown: wired_pages 518290, free_pages 5699523, active_pages 40010, inactive_pages 0, speculative_pages 0, cleaned_pages 0, compressor_pages 144
-format      : hibernate_teardown: wired_pages #, free_pages #, active_pages #, inactive_pages #, speculative_pages #, cleaned_pages #, compressor_pages #
+msg         :hibernate_teardown: wired_pages 518290, free_pages 5699523, active_pages 40010, inactive_pages 0, speculative_pages 0, cleaned_pages 0, compressor_pages 144
+format      :hibernate_teardown: wired_pages #, free_pages #, active_pages #, inactive_pages #, speculative_pages #, cleaned_pages #, compressor_pages #
 {
     "wired_pages": 518290,
     "free_pages": 5699523,

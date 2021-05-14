@@ -338,7 +338,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                                              string_attrs_t &value_out)
 {
     view_colors &     vc        = view_colors::singleton();
-    logline *         next_line = NULL;
+    logline *         next_line = nullptr;
     struct line_range lr;
     int time_offset_end = 0;
     int attrs           = 0;
@@ -351,7 +351,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         next_line = this->find_line(this->at(vis_line_t(row + 1)));
     }
 
-    if (next_line != NULL &&
+    if (next_line != nullptr &&
         (day_num(next_line->get_time()) >
          day_num(this->lss_token_line->get_time()))) {
         attrs |= A_UNDERLINE;
@@ -418,8 +418,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = 0;
     lr.lr_end = 1;
     {
-        vis_bookmarks &bm = lv.get_bookmarks();
-        bookmark_vector<vis_line_t> &bv = bm[&BM_FILES];
+        auto &bm = lv.get_bookmarks();
+        const auto &bv = bm[&BM_FILES];
         bool is_first_for_file = binary_search(
             bv.begin(), bv.end(), vis_line_t(row));
         bool is_last_for_file = binary_search(
@@ -505,8 +505,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                            this->lss_token_file->get_format()->get_name());
 
     {
-        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_META];
-        bookmark_vector<vis_line_t>::iterator bv_iter;
+        const auto &bv = lv.get_bookmarks()[&textview_curses::BM_META];
+        bookmark_vector<vis_line_t>::const_iterator bv_iter;
 
         bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
         if (bv_iter != bv.begin()) {
@@ -667,6 +667,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         retval = rebuild_result::rr_full_rebuild;
     }
 
+    auto& vis_bm = this->tss_view->get_bookmarks();
+
     if (force) {
         full_sort = true;
         for (iter = this->lss_files.begin();
@@ -680,6 +682,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         this->lss_longest_line = 0;
         this->lss_basename_width = 0;
         this->lss_filename_width = 0;
+        vis_bm[&textview_curses::BM_USER_EXPR].clear();
     } else if (retval == rebuild_result::rr_partial_rebuild) {
         size_t remaining = 0;
 
@@ -726,6 +729,12 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         this->lss_filtered_index.resize(std::distance(
             this->lss_filtered_index.begin(), filt_row_iter));
         search_start = vis_line_t(this->lss_filtered_index.size());
+
+        auto bm_range = vis_bm[&textview_curses::BM_USER_EXPR].equal_range(
+            search_start, -1_vl);
+        auto bm_new_size = std::distance(vis_bm[&textview_curses::BM_USER_EXPR]
+            .begin(), bm_range.first);
+        vis_bm[&textview_curses::BM_USER_EXPR].resize(bm_new_size);
 
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_start(*this);
@@ -862,6 +871,15 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                 (!(*ld)->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                                                   line_number) &&
                  this->check_extra_filters(ld, line_iter))) {
+                if (this->eval_sql_filter(this->lss_marker_stmt.in(),
+                                          ld, line_iter)) {
+                    line_iter->set_expr_mark(true);
+                    vis_bm[&textview_curses::BM_USER_EXPR]
+                        .insert_once(vis_line_t(this->lss_filtered_index.size()));
+                }
+                else {
+                    line_iter->set_expr_mark(false);
+                }
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
                     this->lss_index_delegate->index_line(
@@ -988,6 +1006,7 @@ void logfile_sub_source::text_filters_changed()
         }
     }
 
+    auto& vis_bm = this->tss_view->get_bookmarks();
     uint32_t filtered_in_mask, filtered_out_mask;
 
     this->get_filters().get_enabled_mask(filtered_in_mask, filtered_out_mask);
@@ -995,6 +1014,7 @@ void logfile_sub_source::text_filters_changed()
     if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_start(*this);
     }
+    vis_bm[&textview_curses::BM_USER_EXPR].clear();
 
     this->lss_filtered_index.clear();
     for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
@@ -1013,6 +1033,15 @@ void logfile_sub_source::text_filters_changed()
             (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
                                            line_number) &&
              this->check_extra_filters(ld, line_iter))) {
+            if (this->eval_sql_filter(this->lss_marker_stmt.in(),
+                                      ld, line_iter)) {
+                line_iter->set_expr_mark(true);
+                vis_bm[&textview_curses::BM_USER_EXPR]
+                    .insert_once(vis_line_t(this->lss_filtered_index.size()));
+            }
+            else {
+                line_iter->set_expr_mark(false);
+            }
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
                 this->lss_index_delegate->index_line(*this, lf, line_iter);
@@ -1115,8 +1144,44 @@ void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt
     }
 }
 
+void
+logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
+{
+    auto& vis_bm = this->tss_view->get_bookmarks();
+    auto& expr_marks_bv = vis_bm[&textview_curses::BM_USER_EXPR];
+
+    expr_marks_bv.clear();
+    this->lss_marker_stmt_text = std::move(stmt_str);
+    this->lss_marker_stmt = stmt;
+    if (this->lss_index_delegate) {
+        this->lss_index_delegate->index_start(*this);
+    }
+    for (auto row = 0_vl; row < this->lss_filtered_index.size(); row += 1_vl) {
+        auto cl = this->at(row);
+        auto ld = this->find_data(cl);
+        auto ll = (*ld)->get_file()->begin() + cl;
+
+        if (this->eval_sql_filter(this->lss_marker_stmt.in(), ld, ll)) {
+            ll->set_expr_mark(true);
+            expr_marks_bv.insert_once(row);
+        } else {
+            ll->set_expr_mark(false);
+        }
+        if (this->lss_index_delegate) {
+            this->lss_index_delegate->index_line(*this, (*ld)->get_file_ptr(), ll);
+        }
+    }
+    if (this->lss_index_delegate) {
+        this->lss_index_delegate->index_complete(*this);
+    }
+}
+
 bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
 {
+    if (stmt == nullptr) {
+        return false;
+    }
+
     auto lf = (*ld)->get_file_ptr();
     char timestamp_buffer[64];
     shared_buffer_ref sbr, raw_sbr;
@@ -1160,10 +1225,6 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
         }
         if (strcmp(name, ":log_time_msecs") == 0) {
             sqlite3_bind_int64(stmt, lpc + 1, ll->get_time_in_millis());
-            continue;
-        }
-        if (strcmp(name, ":log_mark") == 0) {
-            sqlite3_bind_int(stmt, lpc + 1, ll->is_marked());
             continue;
         }
         if (strcmp(name, ":log_mark") == 0) {
@@ -1296,7 +1357,7 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
 
 bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
 {
-    if (this->lss_marked_only && !ll->is_marked()) {
+    if (this->lss_marked_only && !(ll->is_marked() || ll->is_expr_marked())) {
         return false;
     }
 

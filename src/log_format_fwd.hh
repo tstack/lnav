@@ -75,7 +75,8 @@ public:
           ll_sub_offset(0),
           ll_valid_utf(1),
           ll_level(l),
-          ll_module_id(mod)
+          ll_module_id(mod),
+          ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
@@ -90,7 +91,8 @@ public:
           ll_sub_offset(0),
           ll_valid_utf(1),
           ll_level(l),
-          ll_module_id(mod)
+          ll_module_id(mod),
+          ll_expr_mark(0)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -154,6 +156,12 @@ public:
     };
 
     bool is_marked() const { return this->ll_level & LEVEL_MARK; };
+
+    void set_expr_mark(bool val) {
+        this->ll_expr_mark = val;
+    };
+
+    bool is_expr_marked() const { return this->ll_expr_mark; };
 
     void set_time_skew(bool val) {
         if (val) {
@@ -290,7 +298,8 @@ private:
     unsigned int ll_sub_offset : 15;
     unsigned int ll_valid_utf : 1;
     uint8_t  ll_level;
-    uint8_t  ll_module_id;
+    uint8_t  ll_module_id : 7;
+    uint8_t  ll_expr_mark : 1;
     char     ll_schema[2];
 };
 

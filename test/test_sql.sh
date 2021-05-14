@@ -40,9 +40,9 @@ run_test ${lnav_test} -n \
 
 check_output "all_logs does not work?" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_format,log_msg_format,log_msg_schema
-0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is up,f7ca05240a1c3f67c85b9db38bf90171
-1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is up,f7ca05240a1c3f67c85b9db38bf90171
-2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log, # is down,a2ea6285505d1a8947504667581daf1b
+0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is up,aff2bfc3c61e7b86329b83190f0912b3
+1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is up,aff2bfc3c61e7b86329b83190f0912b3
+2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is down,506560b3c73dee057732e69a3c666718
 EOF
 
 

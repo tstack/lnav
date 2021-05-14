@@ -12,7 +12,8 @@
         "keymap_def_zoom": "Press ${ansi_bold}z${ansi_norm}/${ansi_bold}Z${ansi_norm} to zoom in/out",
         "keymap_def_clear": "Press ${ansi_bold}C${ansi_norm} to clear marked messages",
         "keymap_def_prev_location": "Press ${ansi_bold}{${ansi_norm} to move to the previous location in history",
-        "keymap_def_next_location": "Press ${ansi_bold}}${ansi_norm} to move to the next location in history"
+        "keymap_def_next_location": "Press ${ansi_bold}}${ansi_norm} to move to the next location in history",
+        "keymap_def_next_mark": "Press ${ansi_bold}c${ansi_norm} to copy marked lines to the clipboard; press ${ansi_bold}C${ansi_norm} to clear marked lines"
     },
     "ui": {
         "keymap-defs": {
@@ -126,6 +127,13 @@
                 "x6e": {
                     "command": ":next-mark search",
                     "alt-msg": "${keymap_def_scroll_horiz}"
+                },
+                "x75": {
+                    "command": ":next-mark",
+                    "alt-msg": "${keymap_def_next_mark}"
+                },
+                "x55": {
+                    "command": ":prev-mark"
                 },
                 "x7d": {
                     "command": ":next-location",

@@ -542,7 +542,8 @@ void readline_context::save()
 }
 
 readline_curses::readline_curses()
-    : rc_change(noop_func{}),
+    : rc_focus(noop_func{}),
+      rc_change(noop_func{}),
       rc_perform(noop_func{}),
       rc_alt_perform(noop_func{}),
       rc_timeout(noop_func{}),
@@ -1177,6 +1178,7 @@ void readline_curses::focus(int context, const std::string& prompt, const std::s
         this->rewrite_line(initial.size(), initial);
     }
     this->rc_is_alt_focus = false;
+    this->rc_focus(this);
 }
 
 void readline_curses::rewrite_line(int pos, const std::string& value)

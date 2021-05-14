@@ -225,6 +225,7 @@ public:
         this->rc_contexts[id] = &rc;
     };
 
+    void set_focus_action(const action& va) { this->rc_focus = va; };
     void set_change_action(const action& va) { this->rc_change = va; };
     void set_perform_action(const action& va) { this->rc_perform = va; };
     void set_alt_perform_action(const action& va) { this->rc_alt_perform = va; };
@@ -411,6 +412,7 @@ private:
     bool rc_ready_for_input{false};
     std::string rc_remote_complete_path;
 
+    action rc_focus;
     action rc_change;
     action rc_perform;
     action rc_alt_perform;

@@ -350,53 +350,6 @@ bool handle_paging_key(int ch)
             }
             break;
 
-        case 'u': {
-            vis_line_t user_top, meta_top;
-
-            lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
-            HELP_MSG_1(C, "to clear marked lines"));
-
-            user_top = next_cluster(&bookmark_vector<vis_line_t>::next,
-                                    &textview_curses::BM_USER,
-                                    tc->get_top());
-            meta_top = next_cluster(&bookmark_vector<vis_line_t>::next,
-                                    &textview_curses::BM_META,
-                                    tc->get_top());
-            if (user_top == -1 && meta_top == -1) {
-                alerter::singleton().chime();
-            }
-            else {
-                if (user_top == -1) {
-                    user_top = vis_line_t(INT_MAX);
-                }
-                if (meta_top == -1) {
-                    meta_top = vis_line_t(INT_MAX);
-                }
-
-                tc->set_top(min(user_top, meta_top));
-            }
-            break;
-        }
-
-        case 'U': {
-            vis_line_t user_top, meta_top;
-
-            user_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                    &textview_curses::BM_USER,
-                                    tc->get_top());
-            meta_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                    &textview_curses::BM_META,
-                                    tc->get_top());
-            if (user_top == -1 && meta_top == -1) {
-                alerter::singleton().chime();
-            }
-            else {
-                tc->set_top(max(user_top, meta_top));
-            }
-            break;
-        }
-
         case 'J':
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end() ||
@@ -687,7 +640,7 @@ bool handle_paging_key(int ch)
                 field_overlay_source *fos;
 
                 fos = (field_overlay_source *) tc->get_overlay_source();
-                fos->fos_active = !fos->fos_active;
+                fos->fos_contexts.top().c_show = !fos->fos_contexts.top().c_show;
                 tc->reload_data();
             }
             else if (tc == &lnav_data.ld_views[LNV_DB]) {

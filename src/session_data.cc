@@ -1490,7 +1490,7 @@ static void save_session_with_id(const std::string session_id)
                     }
 
                     if (lpc == LNV_LOG) {
-                        for (auto format : log_format::get_root_formats()) {
+                        for (const auto& format : log_format::get_root_formats()) {
                             auto *elf = dynamic_cast<external_log_format *>(format.get());
 
                             if (elf == nullptr) {
@@ -1525,6 +1525,11 @@ static void save_session_with_id(const std::string session_id)
                             sql_strftime(max_time_str, sizeof(max_time_str), max_time);
                             cmd_array.gen("hide-lines-after "
                                           + string(max_time_str));
+                        }
+
+                        auto mark_expr = lss.get_sql_marker_text();
+                        if (!mark_expr.empty()) {
+                            cmd_array.gen("mark-expr " + mark_expr);
                         }
                     }
                 }
@@ -1589,6 +1594,7 @@ void reset_session()
     lnav_data.ld_log_source.clear_min_max_log_times();
     lnav_data.ld_log_source.set_min_log_level(LEVEL_UNKNOWN);
     lnav_data.ld_log_source.set_sql_filter("", nullptr);
+    lnav_data.ld_log_source.set_sql_marker("", nullptr);
 
     lnav_data.ld_log_source.get_user_bookmark_metadata().clear();
 

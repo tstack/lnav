@@ -1038,6 +1038,36 @@ check_output "histogram is not working?" <<EOF
  Sat Nov 03 08:00:00          1 normal         0 errors         0 warnings         0 marks
 EOF
 
+
+run_test ${lnav_test} -n \
+    -c ":mark-expr" \
+    ${test_dir}/logfile_syslog.0
+
+check_error_output ":mark-expr works without an expression?" <<EOF
+command-option:1: error: expecting an SQL expression
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":mark-expr :log_procname lik" \
+    ${test_dir}/logfile_syslog.0
+
+check_error_output ":mark-expr works with a bad expression?" <<EOF
+command-option:1: error: near "lik": syntax error
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":mark-expr :cs_uri_stem LIKE '%vmk%'" \
+    -c ":write-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "mark-expr is not working?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
 run_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":mark" \

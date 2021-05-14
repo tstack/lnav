@@ -62,7 +62,7 @@ void layout_views();
 void execute_examples();
 attr_line_t eval_example(const help_text &ht, const help_example &ex);
 
-vis_line_t next_cluster(
+nonstd::optional<vis_line_t> next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
     bookmark_type_t *bt,
     vis_line_t top);

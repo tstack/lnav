@@ -484,7 +484,7 @@ bool ensure_view(textview_curses *expected_tc)
     return retval;
 }
 
-vis_line_t next_cluster(
+nonstd::optional<vis_line_t> next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
     bookmark_type_t *bt,
     const vis_line_t top)
@@ -527,7 +527,7 @@ vis_line_t next_cluster(
         return last_top;
     }
 
-    return -1_vl;
+    return nonstd::nullopt;
 }
 
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
@@ -535,10 +535,9 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
                     vis_line_t top)
 {
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
-    vis_line_t new_top;
+    auto new_top = next_cluster(f, bt, top);
 
-    new_top = next_cluster(f, bt, top);
-    if (new_top == -1) {
+    if (!new_top) {
         new_top = next_cluster(f, bt,
                                tc->is_selectable() ?
                                tc->get_selection() :
@@ -546,13 +545,13 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
     }
     if (new_top != -1) {
         tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
-            lh->loc_history_append(new_top);
+            lh->loc_history_append(new_top.value());
         };
 
         if (tc->is_selectable()) {
-            tc->set_selection(new_top);
+            tc->set_selection(new_top.value());
         } else {
-            tc->set_top(new_top);
+            tc->set_top(new_top.value());
         }
         return true;
     }
@@ -565,7 +564,7 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
 void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
 {
     key_repeat_history &krh = lnav_data.ld_key_repeat_history;
-    vis_line_t height, new_top, initial_top;
+    vis_line_t height, initial_top;
     unsigned long width;
 
     if (tc->is_selectable()) {
@@ -573,27 +572,27 @@ void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
     } else {
         initial_top = tc->get_top();
     }
-    new_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                           bt,
-                           initial_top);
+    auto new_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
+                                bt,
+                                initial_top);
 
     tc->get_dimensions(height, width);
     if (krh.krh_count > 1 &&
         initial_top < (krh.krh_start_line - (1.5 * height)) &&
-        (initial_top - new_top) < height) {
+        (!new_top || ((initial_top - new_top.value()) < height))) {
         bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[bt];
         new_top = bv.next(std::max(0_vl, initial_top - height));
     }
 
-    if (new_top != -1) {
+    if (new_top) {
         tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
-            lh->loc_history_append(new_top);
+            lh->loc_history_append(new_top.value());
         };
 
         if (tc->is_selectable()) {
-            tc->set_selection(new_top);
+            tc->set_selection(new_top.value());
         } else {
-            tc->set_top(new_top);
+            tc->set_top(new_top.value());
         }
     }
     else {

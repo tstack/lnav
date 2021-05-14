@@ -477,6 +477,8 @@ public:
 
     void set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt);
 
+    void set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt);
+
     void set_preview_sql_filter(sqlite3_stmt *stmt) {
         this->lss_preview_filter_stmt = stmt;
     }
@@ -488,6 +490,10 @@ public:
             return filt.value()->get_id();
         }
         return "";
+    }
+
+    std::string get_sql_marker_text() const {
+        return this->lss_marker_stmt_text;
     }
 
     std::shared_ptr<logfile> find(const char *fn, content_line_t &line_base);
@@ -961,6 +967,8 @@ private:
 
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
+    auto_mem<sqlite3_stmt> lss_marker_stmt{sqlite3_finalize};
+    std::string lss_marker_stmt_text;
 
     line_flags_t lss_token_flags{0};
     iterator lss_token_file_data;

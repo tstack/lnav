@@ -12,8 +12,8 @@ pair  54:63                                                        ^-------^    
 pair  65:78                                                                   ^-----------^   xid=0xd16b79d
  grp  65:78                                                                   ^-----------^   xid=0xd16b79d
 pair  65:78                                                                   ^-----------^   xid=0xd16b79d
-msg         : DHCPACK from 10.1.10.1 (xid=0xd16b79d)
-format      : # from # (#)
+msg         :DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+format      :# from # (#)
 {
     "col_0": "DHCPACK",
     "col_1": "10.1.10.1",

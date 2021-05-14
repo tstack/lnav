@@ -37,6 +37,7 @@
 #include "field_overlay_source.hh"
 #include "readline_highlighters.hh"
 #include "vtab_module_json.hh"
+#include "log_format_ext.hh"
 
 using namespace std;
 
@@ -222,8 +223,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         ll->get_msg_level() == log_level_t::LEVEL_INVALID) {
         display = true;
     }
-    if (this->fos_active) {
-        display = true;
+    if (!this->fos_contexts.empty()) {
+        display = this->fos_contexts.top().c_show;
     }
 
     this->build_meta_line(lv, this->fos_lines, lv.get_top());
@@ -351,11 +352,12 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         time_str.append(offset_str);
     }
 
-    if (this->fos_active || diff_tv.tv_sec > 0) {
+    if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show) ||
+        diff_tv.tv_sec > 0) {
         this->fos_lines.emplace_back(time_line);
     }
 
-    if (!this->fos_active) {
+    if (this->fos_contexts.empty() || !this->fos_contexts.top().c_show) {
         return;
     }
 
@@ -366,6 +368,9 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         auto& meta = ldh_line_value.lv_meta;
         int this_key_size = meta.lvm_name.size();
 
+        if (!this->fos_contexts.empty()) {
+            this_key_size += this->fos_contexts.top().c_prefix.length();
+        }
         if (meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             this_key_size += 9;
         }
@@ -410,6 +415,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         }
 
         auto curr_format = lv.lv_meta.lvm_format.value();
+        auto curr_elf = dynamic_cast<external_log_format *>(curr_format);
         string format_name = curr_format->get_name().to_string();
         attr_line_t al;
         string str, value_str = lv.to_string();
@@ -425,8 +431,18 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
             last_format = curr_format;
         }
 
+        std::string field_name, orig_field_name;
         if (lv.lv_meta.lvm_struct_name.empty()) {
-            str = "   " + lv.lv_meta.lvm_name.to_string();
+            if (curr_elf && curr_elf->elf_body_field == lv.lv_meta.lvm_name) {
+                field_name = "log_body";
+            } else {
+                field_name = lv.lv_meta.lvm_name.to_string();
+            }
+            orig_field_name = field_name;
+            if (!this->fos_contexts.empty()) {
+                field_name = this->fos_contexts.top().c_prefix + field_name;
+            }
+            str = "   " + field_name;
         } else {
             auto_mem<char, sqlite3_free> jgetter;
 
@@ -440,10 +456,11 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
         al.with_string(str);
         if (lv.lv_meta.lvm_struct_name.empty()) {
+            auto prefix_len = field_name.length() - orig_field_name.length();
             al.with_attr(string_attr(
-                line_range(3, 3 + lv.lv_meta.lvm_name.size()),
+                line_range(3 + prefix_len, 3 + prefix_len + field_name.size()),
                 &view_curses::VC_STYLE,
-                vc.attrs_for_ident(lv.lv_meta.lvm_name)));
+                vc.attrs_for_ident(orig_field_name)));
         } else {
             al.with_attr(string_attr(
                 line_range(8, 8 + lv.lv_meta.lvm_struct_name.size()),
@@ -509,6 +526,11 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         this->add_key_line_attrs(0);
     }
 
+    if (!this->fos_contexts.empty() &&
+        !this->fos_contexts.top().c_show_discovered) {
+        return;
+    }
+
     if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
         this->fos_lines.emplace_back(" No discovered message fields");
     }
@@ -519,8 +541,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
             &view_curses::VC_STYLE,
             vc.attrs_for_ident("logline")
         ));
-        attr_line_t &al = this->fos_lines.back();
-        string &disc_str = al.get_string();
+        auto &al = this->fos_lines.back();
+        auto &disc_str = al.get_string();
 
         al.with_attr(string_attr(
             line_range(disc_str.length(), -1),
@@ -529,15 +551,13 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         disc_str.append(this->fos_log_helper.ldh_msg_format);
     }
 
-    data_parser::element_list_t::iterator iter;
-
-    iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
+    auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
     for (size_t lpc = 0;
          lpc < this->fos_log_helper.ldh_parser->dp_pairs.size(); lpc++, ++iter) {
-        string &name = this->fos_log_helper.ldh_namer->cn_names[lpc];
-        string val = this->fos_log_helper.ldh_parser->get_element_string(
+        auto &name = this->fos_log_helper.ldh_namer->cn_names[lpc];
+        auto val = this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->back());
-        attr_line_t al("   " + name + " = " + val);
+        attr_line_t al(fmt::format("   {} = {}", name, val));
 
         al.with_attr(string_attr(
                 line_range(3, 3 + name.length()),

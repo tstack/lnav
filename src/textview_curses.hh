@@ -611,6 +611,7 @@ public:
     using action = std::function<void(textview_curses*)>;
 
     static bookmark_type_t BM_USER;
+    static bookmark_type_t BM_USER_EXPR;
     static bookmark_type_t BM_SEARCH;
     static bookmark_type_t BM_META;
 
@@ -635,9 +636,9 @@ public:
 
     void toggle_user_mark(bookmark_type_t *bm,
                           vis_line_t start_line,
-                          vis_line_t end_line = vis_line_t(-1));;
+                          vis_line_t end_line = vis_line_t(-1));
 
-    void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked);;
+    void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked);
 
     textview_curses &set_sub_source(text_sub_source *src) {
         this->tc_sub_source = src;

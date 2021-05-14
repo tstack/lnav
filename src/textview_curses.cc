@@ -114,6 +114,7 @@ void text_filter::end_of_message(logfile_filter_state &lfs)
 }
 
 bookmark_type_t textview_curses::BM_USER("user");
+bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 bookmark_type_t textview_curses::BM_SEARCH("search");
 bookmark_type_t textview_curses::BM_META("meta");
 
@@ -395,7 +396,6 @@ bool textview_curses::handle_mouse(mouse_event &me)
 void textview_curses::textview_value_for_row(vis_line_t row,
                                              attr_line_t &value_out)
 {
-    bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
     string_attrs_t &sa = value_out.get_attrs();
     string &str = value_out.get_string();
     text_format_t source_format = this->tc_sub_source->get_text_format();
@@ -508,7 +508,10 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     }
 #endif
 
-    if (binary_search(user_marks.begin(), user_marks.end(), row)) {
+    const auto &user_marks = this->tc_bookmarks[&BM_USER];
+    const auto &user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
+    if (binary_search(user_marks.begin(), user_marks.end(), row) ||
+        binary_search(user_expr_marks.begin(), user_expr_marks.end(), row)) {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         &view_curses::VC_STYLE,
                         A_REVERSE);

@@ -30,6 +30,7 @@
 #ifndef LNAV_FIELD_OVERLAY_SOURCE_H
 #define LNAV_FIELD_OVERLAY_SOURCE_H
 
+#include <utility>
 #include <vector>
 
 #include "listview_curses.hh"
@@ -94,9 +95,19 @@ public:
                          std::vector<attr_line_t> &dst,
                          vis_line_t row);
 
+    struct context {
+        context(std::string prefix, bool show, bool show_discovered)
+            : c_prefix(std::move(prefix)), c_show(show),
+              c_show_discovered(show_discovered)
+        {}
+
+        std::string c_prefix;
+        bool c_show{false};
+        bool c_show_discovered{true};
+    };
+
     bool fos_show_status{true};
-    bool fos_active{false};
-    bool fos_active_prev{false};
+    std::stack<context> fos_contexts;
     logfile_sub_source &fos_lss;
     textfile_sub_source &fos_tss;
     log_data_helper fos_log_helper;

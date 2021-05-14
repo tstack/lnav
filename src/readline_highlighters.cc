@@ -360,7 +360,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
     static const pcrepp RE_PREFIXES(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
-    static const pcrepp SQL_PREFIXES("^:(filter-expr)");
+    static const pcrepp SQL_PREFIXES("^:(filter-expr|mark-expr)");
     static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
     static const pcrepp COLOR_PREFIXES("^:(config)");
     static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{3}))");

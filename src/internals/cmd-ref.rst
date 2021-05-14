@@ -121,6 +121,19 @@
 ----
 
 
+.. _clear_mark_expr:
+
+:clear-mark-expr
+^^^^^^^^^^^^^^^^
+
+  Clear the mark expression
+
+  **See Also**
+    :ref:`hide_unmarked_lines`, :ref:`mark_expr`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+
+----
+
+
 .. _clear_partition:
 
 :clear-partition
@@ -746,6 +759,29 @@
 ----
 
 
+.. _mark_expr:
+
+:mark-expr *expr*
+^^^^^^^^^^^^^^^^^
+
+  Set the bookmark expression
+
+  **Parameters**
+    * **expr\*** --- The SQL expression to evaluate for each log message.  The message values can be accessed using column names prefixed with a colon
+
+  **Examples**
+    To mark lines from 'dhclient' that mention 'eth0':
+
+    .. code-block::  lnav
+
+      :mark-expr :log_procname = 'dhclient' AND :log_body LIKE '%eth0%'
+
+  **See Also**
+    :ref:`clear_mark_expr`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+
+----
+
+
 .. _next_location:
 
 :next-location
@@ -767,7 +803,7 @@
   Move to the next bookmark of the given type in the current view
 
   **Parameters**
-    * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
+    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
 
   **Examples**
     To go to the next error:
@@ -897,7 +933,7 @@
   Move to the previous bookmark of the given type in the current view
 
   **Parameters**
-    * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
+    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
 
   **Examples**
     To go to the previous error:

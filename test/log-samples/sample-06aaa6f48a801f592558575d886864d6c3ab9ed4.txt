@@ -29,8 +29,8 @@ wspc 116:117                                                                    
  sym 117:119                                                                                                                      ^^   GB
  val 112:119                                                                                                                 ^-----^   17.1 GB
 pair 112:119                                                                                                                 ^-----^   17.1 GB
-msg         : Device: /dev/sda [SAT], VBOX HARDDISK, S/N:VBc8882b62-a0263a39, FW:1.0, 17.1 GB 
-format      : Device: #], #, #, FW:#, # 
+msg         :Device: /dev/sda [SAT], VBOX HARDDISK, S/N:VBc8882b62-a0263a39, FW:1.0, 17.1 GB 
+format      :Device: #], #, #, FW:#, # 
 {
     "Device": "/dev/sda [SAT",
     "col_0": "VBOX HARDDISK",

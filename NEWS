@@ -9,6 +9,9 @@ lnav v0.9.1:
        interaction.
      * Added the ':filter-expr' command to filter log messages based on an SQL
        expression.  This command allows much greater control over filtering.
+     * Added the ':mark-expr' command to mark log messages based on an SQL
+       expression.  This command makes it easier to programmatically mark
+       log messages compared to using SQL.
      * Added support for archive files, like zip, and other compression formats,
        like xz, when compiled with libarchive.  When one of these types of
        files is detected, they are unpacked into a temporary directory and

@@ -5,8 +5,8 @@ pair  61:70                                                               ^-----
  key  94:94                                                                                               ^      
  sym  94:98                                                                                                ^--^  mDNS
 pair  94:98                                                                                                ^--^  mDNS
-msg         : Interface eth0.IPv4 no longer relevant for mDNS.
-format      : Interface # no longer relevant for #
+msg         :Interface eth0.IPv4 no longer relevant for mDNS.
+format      :Interface # no longer relevant for #
 {
     "col_0": "eth0.IPv4",
     "col_1": "mDNS"

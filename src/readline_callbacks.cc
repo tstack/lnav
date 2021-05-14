@@ -43,6 +43,7 @@
 #include "log_format_loader.hh"
 #include "help_text_formatter.hh"
 #include "sqlite-extension-func.hh"
+#include "field_overlay_source.hh"
 #include "yajlpp/yajlpp.hh"
 #include "tailer/tailer.looper.hh"
 #include "service_tags.hh"
@@ -228,6 +229,11 @@ bool rl_sql_help(readline_curses *rc)
 
 void rl_change(readline_curses *rc)
 {
+    static const std::set<std::string> COMMANDS_WITH_SQL = {
+        "filter-expr",
+        "mark-expr",
+    };
+
     textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
@@ -256,6 +262,26 @@ void rl_change(readline_curses *rc)
                 generation = 0;
             } else {
                 generation += 1;
+            }
+
+            auto os = tc->get_overlay_source();
+            if (!args.empty() && os != nullptr) {
+                auto fos = dynamic_cast<field_overlay_source *>(os);
+
+                if (fos != nullptr) {
+                    if (generation == 0) {
+                        auto& top_ctx = fos->fos_contexts.top();
+
+                        if (COMMANDS_WITH_SQL.count(args[0]) > 0) {
+                            top_ctx.c_prefix = ":";
+                            top_ctx.c_show = true;
+                            top_ctx.c_show_discovered = false;
+                        } else {
+                            top_ctx.c_prefix = ":";
+                            top_ctx.c_show = false;
+                        }
+                    }
+                }
             }
 
             if (!args.empty()) {
@@ -295,7 +321,8 @@ void rl_change(readline_curses *rc)
                             "Unknown configuration option: " + args[1]);
                 }
             }
-            else if (args[0] != "filter-expr" || !rl_sql_help(rc)) {
+            else if ((args[0] != "filter-expr" && args[0] != "mark-expr") ||
+                     !rl_sql_help(rc)) {
                 readline_context::command_t &cmd = *iter->second;
                 const help_text &ht = cmd.c_help;
 

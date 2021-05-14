@@ -432,7 +432,7 @@ public:
 
     void logfile_indexing(const shared_ptr<logfile>& lf,
                           file_off_t off,
-                          file_size_t total)
+                          file_size_t total) override
     {
         static sig_atomic_t index_counter = 0;
 
@@ -490,11 +490,11 @@ public:
 
     };
 
-    void index_start(logfile_sub_source &lss) {
+    void index_start(logfile_sub_source &lss) override {
         this->hid_source.clear();
     };
 
-    void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) {
+    void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) override {
         if (ll->is_continued() || ll->get_time() == 0) {
             return;
         }
@@ -516,12 +516,12 @@ public:
         }
 
         this->hid_source.add_value(ll->get_time(), ht);
-        if (ll->is_marked()) {
+        if (ll->is_marked() || ll->is_expr_marked()) {
             this->hid_source.add_value(ll->get_time(), hist_source2::HT_MARK);
         }
     };
 
-    void index_complete(logfile_sub_source &lss) {
+    void index_complete(logfile_sub_source &lss) override {
         this->hid_view.reload_data();
     };
 
@@ -788,12 +788,20 @@ static void handle_rl_key(int ch)
     }
 }
 
+void rl_focus(readline_curses *rc)
+{
+    auto fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG]
+                        .get_overlay_source();
+
+    fos->fos_contexts.emplace("", false, true);
+}
+
 void rl_blur(readline_curses *rc)
 {
-    field_overlay_source *fos;
+    auto fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG]
+        .get_overlay_source();
 
-    fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].get_overlay_source();
-    fos->fos_active = fos->fos_active_prev;
+    fos->fos_contexts.pop();
     lnav_data.ld_preview_generation += 1;
 }
 
@@ -1306,6 +1314,7 @@ static void looper()
 
         rlc.set_window(lnav_data.ld_window);
         rlc.set_y(-1);
+        rlc.set_focus_action(rl_focus);
         rlc.set_change_action(rl_change);
         rlc.set_perform_action(rl_callback);
         rlc.set_alt_perform_action(rl_alt_callback);
@@ -2208,6 +2217,7 @@ int main(int argc, char *argv[])
     if (lnav_data.ld_flags & LNF_HEADLESS) {
         log_fos->fos_show_status = false;
     }
+    log_fos->fos_contexts.emplace("", false, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
         .set_delegate(new action_delegate(lnav_data.ld_log_source))

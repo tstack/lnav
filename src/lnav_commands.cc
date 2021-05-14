@@ -97,6 +97,21 @@ static string remaining_args(const string &cmdline,
     return cmdline.substr(index_in_cmdline);
 }
 
+static bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks &vb)
+{
+    const auto &bv = vb[&textview_curses::BM_USER];
+    const auto &bv_expr = vb[&textview_curses::BM_USER_EXPR];
+    bookmark_vector<vis_line_t> retval;
+
+    for (const auto row : bv) {
+        retval.insert_once(row);
+    }
+    for (const auto row : bv_expr) {
+        retval.insert_once(row);
+    }
+    return retval;
+}
+
 static string refresh_pt_search()
 {
     string retval;
@@ -439,6 +454,82 @@ static Result<string, string> com_mark(exec_context &ec, string cmdline, vector<
     return Ok(retval);
 }
 
+static Result<string, string> com_mark_expr(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty() || lnav_data.ld_view_stack.vs_views.empty()) {
+        args.emplace_back("filter-expr-syms");
+    } else if (args.size() < 2) {
+        return ec.make_error("expecting an SQL expression");
+    } else if (*lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_LOG]) {
+        return ec.make_error(":mark-expr is only supported for the LOG view");
+    } else {
+        auto expr = remaining_args(cmdline, args);
+        auto stmt_str = fmt::format("SELECT 1 WHERE {}", expr);
+
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
+        auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                          stmt_str.c_str(),
+                                          stmt_str.size(),
+                                          SQLITE_PREPARE_PERSISTENT,
+                                          stmt.out(),
+                                          nullptr);
+#else
+        auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                          stmt_str.c_str(),
+                                          stmt_str.size(),
+                                          stmt.out(),
+                                          nullptr);
+#endif
+        if (retcode != SQLITE_OK) {
+            const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+            return ec.make_error("{}", errmsg);
+        }
+
+        auto& lss = lnav_data.ld_log_source;
+        if (ec.ec_dry_run) {
+            lss.set_preview_sql_filter(stmt.release());
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("Matches are highlighted in the text view");
+        } else {
+            lss.set_sql_marker(expr, stmt.release());
+        }
+    }
+
+    return Ok(retval);
+}
+
+static string com_mark_expr_prompt(exec_context &ec, const string &cmdline)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+    if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        return "";
+    }
+
+    return fmt::format("{} {}",
+                       trim(cmdline),
+                       trim(lnav_data.ld_log_source.get_sql_marker_text()));
+}
+
+static Result<string, string> com_clear_mark_expr(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+
+    } else {
+        if (!ec.ec_dry_run) {
+            lnav_data.ld_log_source.set_sql_marker("", nullptr);
+        }
+    }
+
+    return Ok(retval);
+}
+
 static Result<string, string> com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
@@ -447,24 +538,69 @@ static Result<string, string> com_goto_mark(exec_context &ec, string cmdline, ve
         args.emplace_back("mark-type");
     }
     else {
+        static const std::set<bookmark_type_t*> DEFAULT_TYPES = {
+            &textview_curses::BM_USER,
+            &textview_curses::BM_USER_EXPR,
+            &textview_curses::BM_META,
+        };
+
         textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
-        string type_name = "user";
+        std::set<bookmark_type_t*> mark_types;
 
         if (args.size() > 1) {
-            type_name = args[1];
+            for (size_t lpc = 1; lpc < args.size(); lpc++) {
+                auto bt = bookmark_type_t::find_type(args[lpc]);
+                if (bt == nullptr) {
+                    return ec.make_error("unknown bookmark type");
+                }
+                mark_types.insert(bt);
+            }
+        } else {
+            mark_types = DEFAULT_TYPES;
         }
 
-        bookmark_type_t *bt = bookmark_type_t::find_type(type_name);
-        if (bt == nullptr) {
-            return ec.make_error("unknown bookmark type");
-        }
-        else if (!ec.ec_dry_run) {
+        if (!ec.ec_dry_run) {
+            nonstd::optional<vis_line_t> new_top;
+
             if (args[0] == "next-mark") {
-                moveto_cluster(&bookmark_vector<vis_line_t>::next,
-                               bt,
-                               search_forward_from(tc));
+                auto search_from_top = search_forward_from(tc);
+
+                for (const auto& bt : mark_types) {
+                    auto bt_top = next_cluster(
+                        &bookmark_vector<vis_line_t>::next,
+                        bt,
+                        search_from_top);
+
+                    if (bt_top && (!new_top || bt_top < new_top.value())) {
+                        new_top = bt_top;
+                    }
+                }
+
+                if (!new_top) {
+                    return ec.make_error("no more bookmarks after here");
+                }
             } else {
-                previous_cluster(bt, tc);
+                for (const auto& bt : mark_types) {
+                    auto bt_top = next_cluster(
+                        &bookmark_vector<vis_line_t>::prev,
+                        bt,
+                        tc->get_top());
+
+                    if (bt_top && (!new_top || bt_top > new_top.value())) {
+                        new_top = bt_top;
+                    }
+                }
+
+                if (!new_top) {
+                    return ec.make_error("no more bookmarks before here");
+                }
+            }
+
+            if (new_top) {
+                tc->get_sub_source()->get_location_history() | [new_top](auto lh) {
+                    lh->loc_history_append(new_top.value());
+                };
+                tc->set_top(new_top.value());
             }
             lnav_data.ld_bottom_source.grep_error("");
         }
@@ -684,8 +820,8 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
     }
 
     auto *tc = *lnav_data.ld_view_stack.top();
-    auto &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
     auto &dls = lnav_data.ld_db_row_source;
+    bookmark_vector<vis_line_t> all_user_marks;
 
     if (args[0] == "write-csv-to" ||
         args[0] == "write-json-to" ||
@@ -697,7 +833,8 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         }
     }
     else if (args[0] != "write-raw-to" && args[0] != "write-screen-to") {
-        if (bv.empty()) {
+        all_user_marks = combined_user_marks(tc->get_bookmarks());
+        if (all_user_marks.empty()) {
             return ec.make_error("no lines marked to write, use 'm' to mark lines");
         }
     }
@@ -717,7 +854,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
             tcgetattr(1, &curr_termios);
             curr_termios.c_oflag |= ONLCR|OPOST;
             tcsetattr(1, TCSANOW, &curr_termios);
-            setvbuf(stdout, NULL, _IONBF, 0);
+            setvbuf(stdout, nullptr, _IONBF, 0);
             to_term = true;
             fprintf(outfile,
                     "\n---------------- Press any key to exit lo-fi display "
@@ -966,11 +1103,12 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
     }
     else {
         vector<attr_line_t> rows(1);
-        bookmark_vector<vis_line_t>::iterator iter;
         size_t count = 0;
         string line;
 
-        for (iter = bv.begin(); iter != bv.end(); iter++, count++) {
+        for (auto iter = all_user_marks.begin();
+             iter != all_user_marks.end();
+             iter++, count++) {
             if (ec.ec_dry_run && count > 10) {
                 break;
             }
@@ -1035,9 +1173,8 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
         return Ok(string());
     }
 
-    textview_curses *            tc = *lnav_data.ld_view_stack.top();
-    bookmark_vector<vis_line_t> &bv =
-            tc->get_bookmarks()[&textview_curses::BM_USER];
+    auto *tc = *lnav_data.ld_view_stack.top();
+    auto bv = combined_user_marks(tc->get_bookmarks());
     bool pipe_line_to = (args[0] == "pipe-line-to");
 
     string cmd = trim(remaining_args(cmdline, args));
@@ -1058,7 +1195,7 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
 
         case 0: {
             const char *args[] = {
-                    "sh", "-c", cmd.c_str(), NULL,
+                "sh", "-c", cmd.c_str(), nullptr,
             };
             auto path_v = ec.ec_path_stack;
             string path;
@@ -1240,7 +1377,7 @@ static Result<string, string> com_highlight(exec_context &ec, string cmdline, ve
                                       PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
-                                      NULL)) == NULL) {
+                                      nullptr)) == nullptr) {
             return ec.make_error("{}", errptr);
         }
         else {
@@ -1263,7 +1400,7 @@ static Result<string, string> com_highlight(exec_context &ec, string cmdline, ve
             } else {
                 hm[{highlight_source_t::INTERACTIVE, args[1]}] = hl;
 
-                if (lnav_data.ld_rl_view != NULL) {
+                if (lnav_data.ld_rl_view != nullptr) {
                     lnav_data.ld_rl_view->add_possibility(
                         LNM_COMMAND, "highlight", args[1]);
                 }
@@ -3388,11 +3525,11 @@ static Result<string, string> com_hide_unmarked(exec_context &ec, string cmdline
     } else if (ec.ec_dry_run) {
         retval = "";
     } else {
-        textview_curses *            tc = *lnav_data.ld_view_stack.top();
-        bookmark_vector<vis_line_t> &bv =
-            tc->get_bookmarks()[&textview_curses::BM_USER];
+        auto *tc = *lnav_data.ld_view_stack.top();
+        const auto &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
+        const auto &bv_expr = tc->get_bookmarks()[&textview_curses::BM_USER_EXPR];
 
-        if (bv.empty()) {
+        if (bv.empty() && bv_expr.empty()) {
             return ec.make_error("no lines have been marked");
         } else {
             lnav_data.ld_log_source.set_marked_only(true);
@@ -4394,11 +4531,8 @@ static void sql_prompt(vector<string> &args)
     lnav_data.ld_status[LNS_BOTTOM].do_update();
 
     auto* fos = (field_overlay_source *) log_view.get_overlay_source();
-    fos->fos_active_prev = fos->fos_active;
-    if (!fos->fos_active) {
-        fos->fos_active = true;
-        tc->reload_data();
-    }
+    fos->fos_contexts.top().c_show = true;
+    tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
 }
@@ -4573,12 +4707,42 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"bookmarks"})
     },
     {
+        "mark-expr",
+        com_mark_expr,
+
+        help_text(":mark-expr")
+            .with_summary("Set the bookmark expression")
+            .with_parameter(help_text(
+                "expr",
+                "The SQL expression to evaluate for each log message.  "
+                "The message values can be accessed using column names "
+                "prefixed with a colon"))
+            .with_opposites({"clear-mark-expr"})
+            .with_tags({"bookmarks"})
+            .with_example({
+                "To mark lines from 'dhclient' that mention 'eth0'",
+                ":log_procname = 'dhclient' AND :log_body LIKE '%eth0%'"
+            }),
+
+        com_mark_expr_prompt,
+    },
+    {
+        "clear-mark-expr",
+        com_clear_mark_expr,
+
+        help_text(":clear-mark-expr")
+            .with_summary("Clear the mark expression")
+            .with_opposites({"mark-expr"})
+            .with_tags({"bookmarks"})
+    },
+    {
         "next-mark",
         com_goto_mark,
 
         help_text(":next-mark")
             .with_summary("Move to the next bookmark of the given type in the current view")
-            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta"))
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta")
+                                .one_or_more())
             .with_example({
                 "To go to the next error",
                 "error"
@@ -4591,7 +4755,8 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":prev-mark")
             .with_summary("Move to the previous bookmark of the given type in the current view")
-            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta"))
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta")
+                                .one_or_more())
             .with_example({
                 "To go to the previous error",
                 "error"
