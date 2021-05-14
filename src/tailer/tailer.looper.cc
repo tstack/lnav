@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <regex>
+
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
 #include "tailer.looper.hh"
@@ -129,13 +131,13 @@ void tailer::looper::loop_body()
 
 void tailer::looper::add_remote(const network::path& path)
 {
-    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    auto netloc_str = fmt::format("{}", path.home());
     this->l_netlocs_to_paths[netloc_str].rpq_new_paths.insert(path.p_path);
 }
 
 void tailer::looper::load_preview(int64_t id, const network::path& path)
 {
-    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    auto netloc_str = fmt::format("{}", path.home());
     auto iter = this->l_remotes.find(netloc_str);
 
     if (iter == this->l_remotes.end()) {
@@ -169,7 +171,7 @@ void tailer::looper::load_preview(int64_t id, const network::path& path)
 
 void tailer::looper::complete_path(const network::path& path)
 {
-    auto netloc_str = humanize::network::locality::to_string(path.p_locality);
+    auto netloc_str = fmt::format("{}", path.home());
     auto iter = this->l_remotes.find(netloc_str);
 
     if (iter == this->l_remotes.end()) {
@@ -193,6 +195,15 @@ Result<std::shared_ptr<tailer::looper::host_tailer>, std::string>
 tailer::looper::host_tailer::for_host(const std::string& netloc)
 {
     log_debug("tailer(%s): transferring tailer to remote", netloc.c_str());
+
+    auto rp = humanize::network::path::from_str(netloc).value();
+    auto ssh_dest = rp.p_locality.l_hostname;
+    if (rp.p_locality.l_username.has_value()) {
+        ssh_dest = fmt::format("{}@{}",
+                               rp.p_locality.l_username.value(),
+                               rp.p_locality.l_hostname);
+    }
+
     {
         auto in_pipe = TRY(auto_pipe::for_child_fd(STDIN_FILENO));
         auto out_pipe = TRY(auto_pipe::for_child_fd(STDOUT_FILENO));
@@ -207,7 +218,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             execlp("ssh", "ssh",
                    "-oStrictHostKeyChecking=no",
                    "-oBatchMode=yes",
-                   netloc.c_str(),
+                   ssh_dest.c_str(),
                    "cat > tailer.bin && chmod ugo+rx ./tailer.bin",
                    nullptr);
             exit(EXIT_FAILURE);
@@ -275,7 +286,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
                // "-q",
                "-oStrictHostKeyChecking=no",
                "-oBatchMode=yes",
-               netloc.c_str(),
+               ssh_dest.c_str(),
                "./tailer.bin",
                nullptr);
         exit(EXIT_FAILURE);
@@ -306,6 +317,14 @@ ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
     return resolved_path.in();
 }
 
+static
+std::string scrub_netloc(const std::string& netloc)
+{
+    const static std::regex TO_SCRUB(R"([^\w\.\@])");
+
+    return std::regex_replace(netloc, TO_SCRUB, "_");
+}
+
 tailer::looper::host_tailer::host_tailer(const std::string &netloc,
                                          auto_pid<process_state::RUNNING> child,
                                          auto_fd to_child,
@@ -313,7 +332,7 @@ tailer::looper::host_tailer::host_tailer(const std::string &netloc,
                                          auto_fd err_from_child)
     : isc::service<host_tailer>(netloc),
       ht_netloc(netloc),
-      ht_local_path(tmp_path() / netloc),
+      ht_local_path(tmp_path() / scrub_netloc(netloc)),
       ht_error_reader([
           netloc, err = std::move(err_from_child), &eq = this->ht_error_queue]() mutable {
           read_err_pipe(netloc, err, eq);
@@ -322,6 +341,7 @@ tailer::looper::host_tailer::host_tailer(const std::string &netloc,
           std::move(child),
           std::move(to_child),
           std::move(from_child),
+          {}
       })
 {
 }
@@ -623,8 +643,8 @@ void tailer::looper::host_tailer::loop_body()
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_possible_path &ppp) {
-                log_debug("got poss! %s", ppp.ppp_path.c_str());
-                auto full_path = fmt::format("{}:{}",
+                log_debug("possible path: %s", ppp.ppp_path.c_str());
+                auto full_path = fmt::format("{}{}",
                                              this->ht_netloc,
                                              ppp.ppp_path);
 
@@ -661,7 +681,7 @@ void tailer::looper::host_tailer::stopped()
 
 std::string tailer::looper::host_tailer::get_display_path(const std::string& remote_path) const
 {
-    return fmt::format("{}:{}", this->ht_netloc, remote_path);
+    return fmt::format("{}{}", this->ht_netloc, remote_path);
 }
 
 void *tailer::looper::host_tailer::run()

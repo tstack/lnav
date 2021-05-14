@@ -22,7 +22,6 @@ libpcrepp_a_SOURCES = \
 test_pcrepp_SOURCES = test_pcrepp.cc
 test_pcrepp_LDADD = \
     libpcrepp.a \
-    $(top_builddir)/src/base/libbase.a \
     $(PCRE_LIBS)
 
 check_PROGRAMS = \

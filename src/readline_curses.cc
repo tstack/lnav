@@ -385,35 +385,55 @@ char **readline_context::attempted_completion(const char *text,
                     std::vector<std::string> fn_list;
                     int found = 0;
 
-                    if (fn_lexer.split(fn_list, scope)) {
-                        const auto& last_fn = fn_list.back();
+                    fn_lexer.split(fn_list, scope);
 
-                        if (last_fn.find(':') != string::npos) {
-                            auto rp_iter = loaded_context->rc_possibilities.find("remote-path");
-                            if (rp_iter != loaded_context->rc_possibilities.end()) {
-                                for (const auto& poss : rp_iter->second) {
-                                    if (startswith(poss, last_fn.c_str())) {
-                                        found += 1;
-                                    }
-                                }
-                                if (found) {
-                                    arg_possibilities = &rp_iter->second;
+                    const auto& last_fn =
+                        fn_list.size() <= 1 ? "" : fn_list.back();
+
+                    if (last_fn.find(':') != string::npos) {
+                        auto rp_iter = loaded_context->rc_possibilities.find("remote-path");
+                        if (rp_iter != loaded_context->rc_possibilities.end()) {
+                            for (const auto& poss : rp_iter->second) {
+                                if (startswith(poss, last_fn.c_str())) {
+                                    found += 1;
                                 }
                             }
-                            if (!found ||
-                                (endswith(last_fn, "/") && found == 1)) {
-                                char msg[2048];
-
-                                snprintf(msg, sizeof(msg),
-                                         "\t:%s",
-                                         last_fn.c_str());
-                                sendstring(child_this->rc_command_pipe[1],
-                                           msg, strlen(msg));
+                            if (found) {
+                                arg_possibilities = &rp_iter->second;
                             }
+                        }
+                        if (!found ||
+                            (endswith(last_fn, "/") && found == 1)) {
+                            char msg[2048];
+
+                            snprintf(msg, sizeof(msg),
+                                     "\t:%s",
+                                     last_fn.c_str());
+                            sendstring(child_this->rc_command_pipe[1],
+                                       msg, strlen(msg));
                         }
                     }
                     if (!found) {
-                        return nullptr; /* XXX */
+                        static std::set<std::string> file_name_set;
+
+                        file_name_set.clear();
+                        auto_mem<char> completed_fn;
+                        int fn_state = 0;
+                        auto recent_netlocs_iter = loaded_context->
+                            rc_possibilities.find("recent-netlocs");
+
+                        if (recent_netlocs_iter !=
+                            loaded_context->rc_possibilities.end()) {
+                            file_name_set.insert(
+                                recent_netlocs_iter->second.begin(),
+                                recent_netlocs_iter->second.end());
+                        }
+                        while ((completed_fn = rl_filename_completion_function(
+                            last_fn.c_str(), fn_state)) != nullptr) {
+                            file_name_set.insert(completed_fn.in());
+                            fn_state += 1;
+                        }
+                        arg_possibilities = &file_name_set;
                     }
                 } else {
                     arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);

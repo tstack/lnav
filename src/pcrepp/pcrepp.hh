@@ -55,7 +55,6 @@
 #include <vector>
 #include <exception>
 
-#include "base/lnav_log.hh"
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
@@ -78,7 +77,7 @@ public:
         
         capture(int begin, int end) : c_begin(begin), c_end(end)
         {
-            require(begin <= end);
+            assert(begin <= end);
         };
 
         int c_begin;

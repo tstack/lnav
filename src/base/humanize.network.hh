@@ -34,16 +34,65 @@
 
 #include "optional.hpp"
 #include "network.tcp.hh"
+#include "fmt/format.h"
 
-namespace humanize {
-namespace network {
+namespace fmt {
 
-namespace locality {
+template<>
+struct formatter<network::locality> {
+    constexpr auto parse(format_parse_context& ctx) {
+        auto it = ctx.begin(), end = ctx.end();
 
-std::string to_string(const ::network::locality &l);
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const network::locality& l, FormatContext& ctx) {
+        bool is_ipv6 = l.l_hostname.find(':') != std::string::npos;
+
+        return format_to(
+            ctx.out(),
+            "{}{}{}{}{}",
+            l.l_username.value_or(std::string()),
+            l.l_username ? "@" : "",
+            is_ipv6 ? "[" : "",
+            l.l_hostname,
+            is_ipv6 ? "]" : "");
+    }
+};
+
+template<>
+struct formatter<network::path> {
+    constexpr auto parse(format_parse_context& ctx) {
+        auto it = ctx.begin(), end = ctx.end();
+
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const network::path& p, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "{}:{}",
+            p.p_locality,
+            p.p_path == "." ? "" : p.p_path);
+    }
+};
 
 }
 
+namespace humanize {
+namespace network {
 namespace path {
 
 nonstd::optional<::network::path> from_str(const char *str);
@@ -54,7 +103,6 @@ inline nonstd::optional<::network::path> from_str(const std::string &str)
 }
 
 }
-
 }
 }
 

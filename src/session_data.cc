@@ -40,6 +40,8 @@
 #include <utility>
 #include <yajl/api/yajl_tree.h>
 
+#include "base/isc.hh"
+#include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "lnav.hh"
@@ -50,6 +52,7 @@
 #include "session_data.hh"
 #include "command_executor.hh"
 #include "log_format_ext.hh"
+#include "service_tags.hh"
 
 using namespace std;
 
@@ -82,12 +85,25 @@ CREATE TABLE IF NOT EXISTS time_offset (
 
     PRIMARY KEY (log_time, log_format, log_hash, session_time)
 );
+
+CREATE TABLE IF NOT EXISTS recent_netlocs (
+    netloc text,
+
+    access_time datetime DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (netloc)
+);
 )";
 
 static const char *BOOKMARK_LRU_STMT =
     "DELETE FROM bookmarks WHERE access_time <= "
     "  (SELECT access_time FROM bookmarks "
     "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
+
+static const char *NETLOC_LRU_STMT =
+    "DELETE FROM recent_netlocs WHERE access_time <= "
+    "  (SELECT access_time FROM bookmarks "
+    "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
 
 static const char *UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
@@ -403,6 +419,32 @@ void load_time_bookmarks()
         }
     }
 
+    {
+        if (sqlite3_prepare_v2(db.in(),
+                               "SELECT netloc FROM recent_netlocs",
+                               -1,
+                               stmt.out(),
+                               nullptr) != SQLITE_OK) {
+            return;
+        }
+
+        bool done = false;
+
+        while (!done) {
+            switch (sqlite3_step(stmt.in())) {
+                case SQLITE_ROW: {
+                    auto netloc = sqlite3_column_text(stmt.in(), 0);
+
+                    session_data.sd_recent_netlocs.insert((const char *) netloc);
+                    break;
+                }
+                default:
+                    done = true;
+                    break;
+            }
+        }
+    }
+
     if (sqlite3_prepare_v2(db.in(),
                            "SELECT log_time, log_format, log_hash, session_time, part_name, access_time, comment,"
                            " tags, session_time=? as same_session FROM bookmarks WHERE "
@@ -412,7 +454,7 @@ void load_time_bookmarks()
                            stmt.out(),
                            nullptr) != SQLITE_OK) {
         log_error(
-                "could not prepare bookmark select statement -- %s\n",
+                "could not prepare bookmark select statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1032,14 +1074,50 @@ static void save_time_bookmarks()
         return;
     }
 
-    if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, NULL, NULL, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
         log_error("unable to make bookmark table -- %s\n", errmsg.in());
         return;
     }
 
-    if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", NULL, NULL, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
         log_error("unable to begin transaction -- %s\n", errmsg.in());
         return;
+    }
+
+    {
+        static const char *UPDATE_NETLOCS_STMT =
+            R"(REPLACE INTO recent_netlocs (netloc) VALUES (?))";
+
+        std::set<std::string> netlocs;
+
+        isc::to<tailer::looper&, services::remote_tailer_t>()
+            .send_and_wait([&netlocs](auto& tlooper) {
+                netlocs = tlooper.active_netlocs();
+            });
+
+        if (sqlite3_prepare_v2(db.in(),
+                               UPDATE_NETLOCS_STMT,
+                               -1,
+                               stmt.out(),
+                               nullptr) != SQLITE_OK) {
+            log_error("could not prepare recent_netlocs statement -- %s",
+                      sqlite3_errmsg(db));
+            return;
+        }
+
+        for (const auto& netloc : netlocs) {
+            bind_to_sqlite(stmt.in(), 1, netloc);
+
+            if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+                log_error(
+                    "could not execute bookmark insert statement -- %s",
+                    sqlite3_errmsg(db));
+                return;
+            }
+
+            sqlite3_reset(stmt.in());
+        }
+        session_data.sd_recent_netlocs.insert(netlocs.begin(), netlocs.end());
     }
 
     logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -1053,7 +1131,7 @@ static void save_time_bookmarks()
                            stmt.out(),
                            nullptr) != SQLITE_OK) {
         log_error(
-                "could not prepare bookmark delete statement -- %s\n",
+                "could not prepare bookmark delete statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1066,7 +1144,7 @@ static void save_time_bookmarks()
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             log_error(
-                    "could not execute bookmark insert statement -- %s\n",
+                    "could not execute bookmark insert statement -- %s",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1260,13 +1338,18 @@ static void save_time_bookmarks()
         sqlite3_reset(stmt.in());
     }
 
-    if (sqlite3_exec(db.in(), "COMMIT", NULL, NULL, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
         log_error("unable to begin transaction -- %s\n", errmsg.in());
         return;
     }
 
-    if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, NULL, NULL, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
         log_error("unable to delete old bookmarks -- %s\n", errmsg.in());
+        return;
+    }
+
+    if (sqlite3_exec(db.in(), NETLOC_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+        log_error("unable to delete old netlocs -- %s\n", errmsg.in());
         return;
     }
 }
@@ -1289,6 +1372,8 @@ static void save_session_with_id(const std::string session_id)
 
     auto view_file_name = dotlnav_path() / view_base_name;
     auto view_file_tmp_name = view_file_name.string() + ".tmp";
+
+
 
     if ((file = fopen(view_file_tmp_name.c_str(), "w")) == nullptr) {
         perror("Unable to open session file");

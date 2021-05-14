@@ -285,6 +285,22 @@ void force_linking(services::main_t anno)
 }
 }
 
+void add_recent_netlocs_possibilities()
+{
+    readline_curses *rc = lnav_data.ld_rl_view;
+
+    rc->clear_possibilities(LNM_COMMAND, "recent-netlocs");
+    std::set<std::string> netlocs;
+
+    isc::to<tailer::looper&, services::remote_tailer_t>()
+        .send_and_wait([&netlocs](auto& tlooper) {
+            netlocs = tlooper.active_netlocs();
+        });
+    netlocs.insert(session_data.sd_recent_netlocs.begin(),
+                   session_data.sd_recent_netlocs.end());
+    rc->add_possibility(LNM_COMMAND, "recent-netlocs", netlocs);
+}
+
 bool setup_logline_table(exec_context &ec)
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -816,6 +832,7 @@ static void usage()
         "  -c cmd     Execute a command after the files have been loaded.\n"
         "  -f path    Execute the commands in the given file.\n"
         "  -n         Run without the curses UI. (headless mode)\n"
+        "  -N         Do not open the default syslog file if no files are given\n"
         "  -q         Do not print the log messages after executing all\n"
         "             of the commands.\n"
         "\n"
@@ -1903,7 +1920,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_config_paths.emplace_back("/etc/lnav");
     lnav_data.ld_config_paths.emplace_back(SYSCONFDIR "/lnav");
     lnav_data.ld_config_paths.emplace_back(dotlnav_path());
-    while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nqtw:vVW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nNqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -1978,6 +1995,10 @@ int main(int argc, char *argv[])
 
         case 'n':
             lnav_data.ld_flags |= LNF_HEADLESS;
+            break;
+
+        case 'N':
+            lnav_data.ld_flags |= LNF_NO_DEFAULT;
             break;
 
         case 'q':
@@ -2335,13 +2356,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_mode           = LNM_PAGING;
 
     if ((isatty(STDIN_FILENO) || is_dev_null(STDIN_FILENO)) && argc == 0 &&
-        !(lnav_data.ld_flags & LNF__ALL)) {
+        !(lnav_data.ld_flags & LNF__ALL) &&
+        !(lnav_data.ld_flags & LNF_NO_DEFAULT)) {
         lnav_data.ld_flags |= LNF_SYSLOG;
     }
     if (lnav_data.ld_flags != 0) {
         char start_dir[FILENAME_MAX];
 
-        if (getcwd(start_dir, sizeof(start_dir)) == NULL) {
+        if (getcwd(start_dir, sizeof(start_dir)) == nullptr) {
             perror("getcwd");
         }
         else {
@@ -2609,7 +2631,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     if (lnav_data.ld_active_files.fc_file_names.empty() &&
         lnav_data.ld_commands.empty() &&
         lnav_data.ld_pt_search.empty() &&
-        !(lnav_data.ld_flags & LNF_HELP)) {
+        !(lnav_data.ld_flags & (LNF_HELP|LNF_NO_DEFAULT))) {
         fprintf(stderr, "error: no log files given/found.\n");
         retval = EXIT_FAILURE;
     }

@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/aminclude_static.am
 
-SUBDIRS = tools fmtlib base tailer pcrepp pugixml yajl yajlpp .
+SUBDIRS = tools fmtlib pcrepp base tailer pugixml yajl yajlpp .
 
 bin_PROGRAMS = lnav
 

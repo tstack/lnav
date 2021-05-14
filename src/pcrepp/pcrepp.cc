@@ -165,7 +165,7 @@ void pcrepp::find_captures(const char *pattern)
         }
     }
 
-    ensure((size_t) this->p_capture_count == this->p_captures.size());
+    assert((size_t) this->p_capture_count == this->p_captures.size());
 }
 
 bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
@@ -207,8 +207,6 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
                 return true;
 
             default:
-                log_error("pcre_exec error(%d) with pattern -- %s",
-                          rc, this->p_pattern.c_str());
                 break;
         }
     }
@@ -307,7 +305,7 @@ void pcrepp::study()
 #endif
                                     &errptr);
     if (!this->p_code_extra && errptr) {
-        log_error("pcre_study error: %s", errptr);
+        // log_error("pcre_study error: %s", errptr);
     }
     if (this->p_code_extra != nullptr) {
         pcre_extra *extra = this->p_code_extra;

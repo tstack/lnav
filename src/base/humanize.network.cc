@@ -31,29 +31,17 @@
 
 #include "humanize.network.hh"
 #include "pcrepp/pcrepp.hh"
-#include "fmt/format.h"
 
 namespace humanize {
 namespace network {
-
-namespace locality {
-
-std::string to_string(const ::network::locality &l)
-{
-    return fmt::format("{}{}{}",
-                       l.l_username.value_or(std::string()),
-                       l.l_username ? "@" : "",
-                       l.l_hostname);
-}
-
-}
-
 namespace path {
 
 nonstd::optional<::network::path> from_str(const char *str)
 {
     static const pcrepp REMOTE_PATTERN(
-        "(?:(?<username>[^@]+)@)?(?<hostname>[^/:]+):(?<path>.*)");
+        "(?:(?<username>[\\w\\._\\-]+)@)?"
+        "(?:\\[(?<ipv6>[^\\]]+)\\]|(?<hostname>[^\\[/:]+)):"
+        "(?<path>.*)");
 
     pcre_context_static<30> pc;
     pcre_input pi(str);
@@ -63,14 +51,16 @@ nonstd::optional<::network::path> from_str(const char *str)
     }
 
     const auto username = pi.get_substr_opt(pc["username"]);
-    const auto hostname = pi.get_substr(pc["hostname"]);
+    const auto ipv6 = pi.get_substr_opt(pc["ipv6"]);
+    const auto hostname = pi.get_substr_opt(pc["hostname"]);
+    const auto locality_hostname = ipv6 ? ipv6.value() : hostname.value();
     auto path = pi.get_substr(pc["path"]);
 
     if (path.empty()) {
         path = ".";
     }
     return ::network::path{
-        { username, hostname, nonstd::nullopt },
+        { username, locality_hostname, nonstd::nullopt },
         path,
     };
 }

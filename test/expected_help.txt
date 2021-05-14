@@ -32,8 +32,8 @@ OPTIONS
 =======
 
 Lnav takes a list of files to view and/or you can use the flag
-arguments to load well-known log files, such as the syslog or apache
-log files.  The flag arguments are:
+arguments to load well-known log files, such as the syslog log
+files.  The flag arguments are:
 
   -a         Load all of the most recent log file types.
   -r         Recursively load files from the given directory hierarchies.
@@ -43,6 +43,9 @@ When using the flag arguments, lnav will look for the files relative
 to the current directory and its parent directories.  In other words,
 if you are working within a directory that has the well-known log
 files, those will be preferred over any others.
+
+If you do not want the default syslog file to be loaded when
+no files are specified, you can pass the '-N' flag.
 
 Any files given on the command-line are scanned to determine their log
 file format and to create an index for each line in the file.  You do

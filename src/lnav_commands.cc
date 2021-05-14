@@ -4284,6 +4284,7 @@ static void command_prompt(vector<string> &args)
     add_env_possibilities(LNM_COMMAND);
     add_tag_possibilities();
     add_file_possibilities();
+    add_recent_netlocs_possibilities();
 
     if (tc == &lnav_data.ld_views[LNV_LOG]) {
         add_filter_expr_possibilities(lnav_data.ld_rl_view,
@@ -5081,11 +5082,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":open")
             .with_summary(
-#ifdef HAVE_LIBCURL
-                "Open the given file(s) or URLs in lnav"
-#else
-                "Open the given file(s) in lnav"
-#endif
+                "Open the given file(s) in lnav.  Opening files on machines "
+                "accessible via SSH can be done using the syntax: "
+                "[user@]host:/path/to/logs"
             )
             .with_parameter(
                 help_text{"path", "The path to the file to open"}
@@ -5093,6 +5092,10 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_example({
                 "To open the file '/path/to/file'",
                 "/path/to/file"
+            })
+            .with_example({
+                "To open the remote file '/var/log/syslog.log'",
+                "dean@host1.example.com:/var/log/syslog.log"
             })
     },
     {

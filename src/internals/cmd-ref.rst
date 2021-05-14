@@ -787,7 +787,7 @@
 :open *path*
 ^^^^^^^^^^^^
 
-  Open the given file(s) or URLs in lnav
+  Open the given file(s) in lnav.  Opening files on machines accessible via SSH can be done using the syntax: [user@]host:/path/to/logs
 
   **Parameters**
     * **path** --- The path to the file to open
@@ -798,6 +798,12 @@
     .. code-block::  lnav
 
       :open /path/to/file
+
+    To open the remote file '/var/log/syslog.log':
+
+    .. code-block::  lnav
+
+      :open dean@host1.example.com:/var/log/syslog.log
 
 
 ----

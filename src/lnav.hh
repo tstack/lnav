@@ -103,6 +103,7 @@ enum {
     LNB_UPDATE_FORMATS,
     LNB_VERBOSE,
     LNB_SECURE_MODE,
+    LNB_NO_DEFAULT,
 };
 
 /** Flags set on the lnav command-line. */
@@ -118,6 +119,7 @@ typedef enum {
     LNF_UPDATE_FORMATS = (1L << LNB_UPDATE_FORMATS),
     LNF_VERBOSE = (1L << LNB_VERBOSE),
     LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
+    LNF_NO_DEFAULT = (1L << LNB_NO_DEFAULT),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP),
 } lnav_flags_t;

@@ -48,6 +48,7 @@
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
 #include "json_ptr.hh"
+#include "base/lnav_log.hh"
 #include "base/intern_string.hh"
 #include "base/file_range.hh"
 

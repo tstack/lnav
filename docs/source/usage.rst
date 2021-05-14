@@ -85,6 +85,11 @@ user "dean", you would write:
 
    lnav dean@host1.example.com:/var/log/syslog.log
 
+Remote files can also be opened using the :ref:`:open<open>` command.  Opening
+a remote file in the TUI has the advantage that the file path can be
+:kbd:`TAB`-completed and a preview is shown of the first few lines of the
+file.
+
 
 Searching
 ---------

@@ -60,6 +60,10 @@ Options
 
    Run without the curses UI (headless mode).
 
+.. option:: -N
+
+   Do not open the default syslog file if no files are given.
+
 .. option:: -r
 
    Recursively load files from the given base directories.

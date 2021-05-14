@@ -49,6 +49,7 @@ struct session_data_t {
     uint64_t sd_save_time{0};
     bool sd_time_offset{false};
     std::map<std::string, file_state> sd_file_states;
+    std::set<std::string> sd_recent_netlocs;
     view_state sd_view_states[LNV__MAX];
 };
 

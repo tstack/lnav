@@ -14,6 +14,7 @@ set(VCS_PACKAGE_STRING "test")
 configure_file(config.cmake.h.in config.h)
 
 add_subdirectory(base)
+add_subdirectory(pcrepp)
 add_subdirectory(remote)
 add_subdirectory(tailer)
 
@@ -327,7 +328,6 @@ add_library(diag STATIC
         statusview_curses.cc
         string-extension-functions.cc
         sysclip.cc
-        pcrepp/pcrepp.cc
         piper_proc.cc
         spectro_source.cc
         sql_commands.cc
@@ -500,6 +500,7 @@ target_include_directories(
 
 target_link_libraries(diag
         base
+        pcrepp
         tailerservice
         tailerpp
         tailercommon

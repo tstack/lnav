@@ -647,6 +647,159 @@ void send_possible_paths(const char *glob_path, int depth)
     globfree(&gl);
 }
 
+static
+void handle_load_preview_request(const char *path, int64_t preview_id)
+{
+    struct stat st;
+
+    fprintf(stderr, "info: load preview request -- %lld\n", preview_id);
+    if (is_glob(path)) {
+        glob_t gl;
+
+        memset(&gl, 0, sizeof(gl));
+        if (glob(path, 0, NULL, &gl) != 0) {
+            char msg[1024];
+
+            snprintf(msg, sizeof(msg),
+                     "error: cannot glob %s -- %s",
+                     path,
+                     strerror(errno));
+            send_preview_error(preview_id, path, msg);
+        } else {
+            char *bits = malloc(1024 * 1024);
+            int lpc, line_count = 10;
+
+            bits[0] = '\0';
+            for (lpc = 0;
+                 line_count > 0 && lpc < gl.gl_pathc;
+                 lpc++, line_count--) {
+                strcat(bits, gl.gl_pathv[lpc]);
+                strcat(bits, "\n");
+            }
+
+            if (lpc < gl.gl_pathc) {
+                strcat(bits, " ... and more! ...\n");
+            }
+
+            send_preview_data(preview_id, path, strlen(bits), bits);
+
+            globfree(&gl);
+            free(bits);
+        }
+    }
+    else if (stat(path, &st) == -1) {
+        char msg[1024];
+
+        snprintf(msg, sizeof(msg),
+                 "error: cannot open %s -- %s",
+                 path,
+                 strerror(errno));
+        send_preview_error(preview_id, path, msg);
+    } else if (S_ISREG(st.st_mode)) {
+        size_t capacity = 1024 * 1024;
+        char *bits = malloc(capacity);
+        FILE *file;
+
+        if ((file = fopen(path, "r")) == NULL) {
+            char msg[1024];
+
+            snprintf(msg, sizeof(msg),
+                     "error: cannot open %s -- %s",
+                     path,
+                     strerror(errno));
+            send_preview_error(preview_id, path, msg);
+        } else {
+            int line_count = 10;
+            size_t offset = 0;
+            char *line;
+
+            while (line_count &&
+                   (capacity - offset) > 1024 &&
+                   (line = fgets(&bits[offset], capacity - offset, file)) != NULL) {
+                offset += strlen(line);
+                line_count -= 1;
+            }
+
+            fclose(file);
+
+            send_preview_data(preview_id, path, offset, bits);
+        }
+        free(bits);
+    } else if (S_ISDIR(st.st_mode)) {
+        DIR *dir = opendir(path);
+
+        if (dir == NULL) {
+            char msg[1024];
+
+            snprintf(msg, sizeof(msg),
+                     "error: unable to open directory -- %s",
+                     path);
+            send_preview_error(preview_id, path, msg);
+        } else {
+            char *bits = malloc(1024 * 1024);
+            struct dirent *entry;
+            int line_count = 10;
+
+            bits[0] = '\0';
+            while ((entry = readdir(dir)) != NULL) {
+                if (strcmp(entry->d_name, ".") == 0 ||
+                    strcmp(entry->d_name, "..") == 0) {
+                    continue;
+                }
+                if (entry->d_type != DT_REG &&
+                    entry->d_type != DT_DIR) {
+                    continue;
+                }
+                if (line_count == 1) {
+                    strcat(bits, " ... and more! ...\n");
+                    break;
+                }
+
+                strcat(bits, entry->d_name);
+                strcat(bits, "\n");
+
+                line_count -= 1;
+            }
+
+            closedir(dir);
+
+            send_preview_data(preview_id, path, strlen(bits), bits);
+
+            free(bits);
+        }
+    } else {
+        char msg[1024];
+
+        snprintf(msg, sizeof(msg),
+                 "error: path is not a file or directory -- %s",
+                 path);
+        send_preview_error(preview_id, path, msg);
+    }
+}
+
+static
+void handle_complete_path_request(const char *path)
+{
+    size_t path_len = strlen(path);
+    char *glob_path = malloc(path_len + 3);
+    struct stat st;
+
+    strcpy(glob_path, path);
+    fprintf(stderr, "complete path: %s\n", path);
+    if (path[path_len - 1] != '/' &&
+        stat(path, &st) == 0 &&
+        S_ISDIR(st.st_mode)) {
+        strcat(glob_path, "/");
+    }
+    if (path[path_len - 1] != '*') {
+        strcat(glob_path, "*");
+    }
+    fprintf(stderr, "complete glob path: %s\n", glob_path);
+    send_possible_paths(glob_path, 0);
+
+    free(glob_path);
+}
+
 int main(int argc, char *argv[])
 {
     int done = 0, timeout = 0;
@@ -677,7 +830,7 @@ int main(int argc, char *argv[])
                     case TPT_CLOSE_PATH:
                     case TPT_LOAD_PREVIEW:
                     case TPT_COMPLETE_PATH: {
-                        const char *path = readstr(&rstate, STDIN_FILENO);
+                        char *path = readstr(&rstate, STDIN_FILENO);
                         int64_t preview_id = 0;
 
                         if (type == TPT_LOAD_PREVIEW) {
@@ -714,153 +867,12 @@ int main(int argc, char *argv[])
                                 delete_client_path_state(cps);
                             }
                         } else if (type == TPT_LOAD_PREVIEW) {
-                            struct stat st;
-
-                            fprintf(stderr,
-                                    "info: load preview request -- %lld\n",
-                                    preview_id);
-                            if (is_glob(path)) {
-                                glob_t gl;
-
-                                memset(&gl, 0, sizeof(gl));
-                                if (glob(path, 0, NULL, &gl) != 0) {
-                                    char msg[1024];
-
-                                    snprintf(msg, sizeof(msg),
-                                             "error: cannot glob %s -- %s",
-                                             path,
-                                             strerror(errno));
-                                    send_preview_error(preview_id, path, msg);
-                                } else {
-                                    char *bits = malloc(1024 * 1024);
-                                    int lpc, line_count = 10;
-
-                                    bits[0] = '\0';
-                                    for (lpc = 0;
-                                         line_count > 0 && lpc < gl.gl_pathc;
-                                         lpc++, line_count--) {
-                                        strcat(bits, gl.gl_pathv[lpc]);
-                                        strcat(bits, "\n");
-                                    }
-
-                                    if (lpc < gl.gl_pathc) {
-                                        strcat(bits, " ... and more! ...\n");
-                                    }
-
-                                    send_preview_data(preview_id, path, strlen(bits), bits);
-
-                                    globfree(&gl);
-                                    free(bits);
-                                }
-                            }
-                            else if (stat(path, &st) == -1) {
-                                char msg[1024];
-
-                                snprintf(msg, sizeof(msg),
-                                         "error: cannot open %s -- %s",
-                                         path,
-                                         strerror(errno));
-                                send_preview_error(preview_id, path, msg);
-                            } else if (S_ISREG(st.st_mode)) {
-                                size_t capacity = 1024 * 1024;
-                                char *bits = malloc(capacity);
-                                FILE *file;
-
-                                if ((file = fopen(path, "r")) == NULL) {
-                                    char msg[1024];
-
-                                    snprintf(msg, sizeof(msg),
-                                             "error: cannot open %s -- %s",
-                                             path,
-                                             strerror(errno));
-                                    send_preview_error(preview_id, path, msg);
-                                } else {
-                                    int line_count = 10;
-                                    size_t offset = 0;
-                                    char *line;
-
-                                    while (line_count &&
-                                           (capacity - offset) > 1024 &&
-                                           (line = fgets(&bits[offset], capacity - offset, file)) != NULL) {
-                                        offset += strlen(line);
-                                        line_count -= 1;
-                                    }
-
-                                    fclose(file);
-
-                                    send_preview_data(preview_id, path, offset, bits);
-                                }
-                                free(bits);
-                            } else if (S_ISDIR(st.st_mode)) {
-                                DIR *dir = opendir(path);
-
-                                if (dir == NULL) {
-                                    char msg[1024];
-
-                                    snprintf(msg, sizeof(msg),
-                                             "error: unable to open directory -- %s",
-                                             path);
-                                    send_preview_error(preview_id, path, msg);
-                                } else {
-                                    char *bits = malloc(1024 * 1024);
-                                    struct dirent *entry;
-                                    int line_count = 10;
-
-                                    bits[0] = '\0';
-                                    while ((entry = readdir(dir)) != NULL) {
-                                        if (strcmp(entry->d_name, ".") == 0 ||
-                                            strcmp(entry->d_name, "..") == 0) {
-                                            continue;
-                                        }
-                                        if (entry->d_type != DT_REG &&
-                                            entry->d_type != DT_DIR) {
-                                            continue;
-                                        }
-                                        if (line_count == 1) {
-                                            strcat(bits, " ... and more! ...\n");
-                                            break;
-                                        }
-
-                                        strcat(bits, entry->d_name);
-                                        strcat(bits, "\n");
-
-                                        line_count -= 1;
-                                    }
-
-                                    closedir(dir);
-
-                                    send_preview_data(preview_id, path, strlen(bits), bits);
-
-                                    free(bits);
-                                }
-                            } else {
-                                char msg[1024];
-
-                                snprintf(msg, sizeof(msg),
-                                         "error: path is not a file or directory -- %s",
-                                         path);
-                                send_preview_error(preview_id, path, msg);
-                            }
+                            handle_load_preview_request(path, preview_id);
                         } else if (type == TPT_COMPLETE_PATH) {
-                            size_t path_len = strlen(path);
-                            char *glob_path = malloc(path_len + 3);
-                            struct stat st;
-
-                            strcpy(glob_path, path);
-                            fprintf(stderr, "complete path: %s\n", path);
-                            if (path[path_len - 1] != '/' &&
-                                stat(path, &st) == 0 &&
-                                S_ISDIR(st.st_mode)) {
-                                strcat(glob_path, "/");
-                            }
-                            if (path[path_len - 1] != '*') {
-                                strcat(glob_path, "*");
-                            }
-                            fprintf(stderr, "complete glob path: %s\n", glob_path);
-                            send_possible_paths(glob_path, 0);
-
-                            free(glob_path);
+                            handle_complete_path_request(path);
                         }
+
+                        free(path);
                         break;
                     }
                     case TPT_ACK_BLOCK:

@@ -58,6 +58,13 @@ struct path {
     path(locality l, std::string path) : p_locality(std::move(l)),
                                          p_path(std::move(path))
     {}
+
+    path home() const {
+        return {
+            this->p_locality,
+            ".",
+        };
+    }
 };
 
 namespace tcp {

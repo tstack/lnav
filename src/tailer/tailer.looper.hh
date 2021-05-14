@@ -49,6 +49,15 @@ public:
 
     void complete_path(const network::path& path);
 
+    std::set<std::string> active_netlocs() {
+        std::set<std::string> retval;
+
+        for (const auto& pair : this->l_remotes) {
+            retval.insert(pair.first);
+        }
+        return retval;
+    }
+
 protected:
     void loop_body() override;
 

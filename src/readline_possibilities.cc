@@ -32,6 +32,8 @@
 #include <regex>
 #include <string>
 
+#include "base/isc.hh"
+#include "tailer/tailer.looper.hh"
 #include "lnav.hh"
 #include "sql_util.hh"
 #include "data_parser.hh"
@@ -39,6 +41,8 @@
 #include "yajlpp/yajlpp_def.hh"
 #include "lnav_config.hh"
 #include "sqlite-extension-func.hh"
+#include "service_tags.hh"
+#include "session_data.hh"
 
 #include "readline_possibilities.hh"
 
