@@ -54,9 +54,9 @@
 #include <string>
 #include <utility>
 
+#include "base/paths.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
-#include "lnav_config.hh"
 #include "shlex.hh"
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
@@ -502,7 +502,7 @@ readline_context::readline_context(std::string name,
     memset(&this->rc_history, 0, sizeof(this->rc_history));
     history_set_history_state(&this->rc_history);
 
-    auto config_dir = dotlnav_path();
+    auto config_dir = lnav::paths::dotlnav();
     auto hpath = (config_dir / this->rc_name).string() + ".history";
     read_history(hpath.c_str());
     this->save();
@@ -946,7 +946,7 @@ void readline_curses::start()
         }
     }
 
-    auto config_dir = dotlnav_path();
+    auto config_dir = lnav::paths::dotlnav();
     for (auto& pair : this->rc_contexts) {
         pair.second->load();
 

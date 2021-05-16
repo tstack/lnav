@@ -44,6 +44,7 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/humanize.hh"
+#include "base/paths.hh"
 #include "lnav_util.hh"
 
 #include "archive_manager.hh"
@@ -164,10 +165,7 @@ bool is_archive(const fs::path& filename)
 static
 fs::path archive_cache_path()
 {
-    auto subdir_name = fmt::format("lnav-{}-archives", getuid());
-    auto tmp_path = fs::temp_directory_path();
-
-    return tmp_path / fs::path(subdir_name);
+    return lnav::paths::workdir() / "archives";
 }
 
 fs::path

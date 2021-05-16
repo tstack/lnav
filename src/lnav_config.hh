@@ -51,14 +51,6 @@
 #include "logfile.cfg.hh"
 
 /**
- * Compute the path to a file in the user's '.lnav' directory.
- *
- * @param  sub The path to the file in the '.lnav' directory.
- * @return     The full path
- */
-ghc::filesystem::path dotlnav_path();
-
-/**
  * Check if an experimental feature should be enabled by
  * examining the LNAV_EXP environment variable.
  *

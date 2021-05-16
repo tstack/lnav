@@ -42,6 +42,7 @@
 
 #include "fmt/format.h"
 
+#include "base/paths.hh"
 #include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -760,7 +761,7 @@ struct json_path_container root_format_handler = json_path_container {
 static void write_sample_file()
 {
     for (const auto& bsf : lnav_format_json) {
-        auto sample_path = dotlnav_path() /
+        auto sample_path = lnav::paths::dotlnav() /
             fmt::format("formats/default/{}.sample", bsf.get_name());
         auto sf = bsf.to_string_fragment();
         auto_fd sample_fd;
@@ -777,7 +778,7 @@ static void write_sample_file()
     }
 
     for (const auto& bsf : lnav_sh_scripts) {
-        auto sh_path = dotlnav_path() / fmt::format("formats/default/{}", bsf.get_name());
+        auto sh_path = lnav::paths::dotlnav() / fmt::format("formats/default/{}", bsf.get_name());
         auto sf = bsf.to_string_fragment();
         auto_fd sh_fd;
 
@@ -799,7 +800,7 @@ static void write_sample_file()
 
         extract_metadata(sf.data(), sf.length(), meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
-        auto script_path = dotlnav_path() / path;
+        auto script_path = lnav::paths::dotlnav() / path;
         if (statp(script_path, &st) == 0 && st.st_size == sf.length()) {
             // Assume it's the right contents and move on...
             continue;
@@ -922,7 +923,7 @@ static void load_from_path(const ghc::filesystem::path &path, std::vector<string
 void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
                   std::vector<std::string> &errors)
 {
-    auto default_source = dotlnav_path() / "default";
+    auto default_source = lnav::paths::dotlnav() / "default";
     yajlpp_parse_context ypc_builtin(default_source.string(), &root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;

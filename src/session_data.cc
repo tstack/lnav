@@ -41,6 +41,7 @@
 #include <yajl/api/yajl_tree.h>
 
 #include "base/isc.hh"
+#include "base/paths.hh"
 #include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -48,7 +49,6 @@
 #include "logfile.hh"
 #include "sql_util.hh"
 #include "lnav_util.hh"
-#include "lnav_config.hh"
 #include "session_data.hh"
 #include "command_executor.hh"
 #include "log_format_ext.hh"
@@ -231,7 +231,7 @@ static void cleanup_session_data()
     static_root_mem<glob_t, globfree>   session_file_list;
     std::list<struct session_file_info> session_info_list;
     map<string, int> session_count;
-    auto session_file_pattern = dotlnav_path() / "*-*.ts*.json";
+    auto session_file_pattern = lnav::paths::dotlnav() / "*-*.ts*.json";
 
     if (glob(session_file_pattern.c_str(),
              0,
@@ -349,7 +349,7 @@ nonstd::optional<session_pair_t> scan_sessions()
     snprintf(view_info_pattern_base, sizeof(view_info_pattern_base),
              "view-info-%s.*.json",
              session_id.value().c_str());
-    auto view_info_pattern = dotlnav_path() / view_info_pattern_base;
+    auto view_info_pattern = lnav::paths::dotlnav() / view_info_pattern_base;
     if (glob(view_info_pattern.c_str(), 0, nullptr,
              view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
@@ -401,7 +401,7 @@ void load_time_bookmarks()
     logfile_sub_source &lss = lnav_data.ld_log_source;
     std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
     auto_mem<sqlite3, sqlite_close_wrapper> db;
-    auto db_path = dotlnav_path() / LOG_METADATA_NAME;
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     logfile_sub_source::iterator file_iter;
     bool reload_needed = false;
@@ -1065,7 +1065,7 @@ static void save_user_bookmarks(
 static void save_time_bookmarks()
 {
     auto_mem<sqlite3, sqlite_close_wrapper> db;
-    auto db_path = dotlnav_path() / LOG_METADATA_NAME;
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<char, sqlite3_free> errmsg;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
@@ -1370,7 +1370,7 @@ static void save_session_with_id(const std::string session_id)
              lnav_data.ld_session_time,
              getppid());
 
-    auto view_file_name = dotlnav_path() / view_base_name;
+    auto view_file_name = lnav::paths::dotlnav() / view_base_name;
     auto view_file_tmp_name = view_file_name.string() + ".tmp";
 
 

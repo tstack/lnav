@@ -50,10 +50,10 @@ Archive Support
 If **lnav** is compiled with `libarchive <https://www.libarchive.org>`_,
 any files to be opened will be examined to see if they are a supported archive
 type.  If so, the contents of the archive will be extracted to the
-:code:`$TMPDIR/lnav-${UID}-archives/` directory.  Once extracted, the files
-within will be loaded into lnav.  To speed up opening large amounts of files,
-any file that meets the following conditions will be automatically hidden and
-not indexed:
+:code:`$TMPDIR/lnav-user-${UID}-work/archives/` directory.  Once extracted, the
+files within will be loaded into lnav.  To speed up opening large amounts of
+files, any file that meets the following conditions will be automatically
+hidden and not indexed:
 
 * Binary files
 * Plain text files that are larger than 128KB

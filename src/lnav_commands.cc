@@ -47,6 +47,7 @@
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
+#include "base/paths.hh"
 #include "base/string_util.hh"
 #include "curl_looper.hh"
 #include "lnav.hh"
@@ -1248,7 +1249,7 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
             string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
-            path_v.emplace_back(dotlnav_path() / "formats/default");
+            path_v.emplace_back(lnav::paths::dotlnav() / "formats/default");
 
             if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
                 logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -2050,8 +2051,8 @@ static Result<string, string> com_session(exec_context &ec, string cmdline, vect
         }
         else {
             auto saved_cmd = trim(remaining_args(cmdline, args));
-            auto old_file_name = dotlnav_path() / "session";
-            auto new_file_name = dotlnav_path() / "session.tmp";
+            auto old_file_name = lnav::paths::dotlnav() / "session";
+            auto new_file_name = lnav::paths::dotlnav() / "session.tmp";
 
             ifstream session_file(old_file_name.string());
             ofstream new_session_file(new_file_name.string());

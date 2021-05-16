@@ -86,6 +86,7 @@
 #include "base/isc.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
+#include "base/paths.hh"
 #include "bound_tags.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
@@ -1399,7 +1400,7 @@ static void looper()
             sc.window_change();
         }
 
-        auto session_path = dotlnav_path() / "session";
+        auto session_path = lnav::paths::dotlnav() / "session";
         execute_file(ec, session_path.string());
 
         sb(*lnav_data.ld_view_stack.top());
@@ -1928,7 +1929,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_debug_log_name = "/dev/null";
     lnav_data.ld_config_paths.emplace_back("/etc/lnav");
     lnav_data.ld_config_paths.emplace_back(SYSCONFDIR "/lnav");
-    lnav_data.ld_config_paths.emplace_back(dotlnav_path());
+    lnav_data.ld_config_paths.emplace_back(lnav::paths::dotlnav());
     while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nNqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
@@ -2075,8 +2076,8 @@ int main(int argc, char *argv[])
     }
 
     if (lnav_data.ld_flags & LNF_INSTALL) {
-        auto formats_installed_path = dotlnav_path() / "formats/installed";
-        auto configs_installed_path = dotlnav_path() / "configs/installed";
+        auto formats_installed_path = lnav::paths::dotlnav() / "formats/installed";
+        auto configs_installed_path = lnav::paths::dotlnav() / "configs/installed";
 
         if (argc == 0) {
             fprintf(stderr, "error: expecting file format paths\n");
@@ -2604,7 +2605,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO) && !exec_stdin) {
         if (stdin_out == nullptr) {
-            auto pattern = dotlnav_path() / "stdin-captures/stdin.XXXXXX";
+            auto pattern = lnav::paths::dotlnav() / "stdin-captures/stdin.XXXXXX";
 
             auto open_result = open_temp_file(pattern);
             if (open_result.isErr()) {

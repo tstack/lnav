@@ -13,6 +13,7 @@ add_library(base STATIC
         lnav.gzip.cc
         lnav_log.cc
         network.tcp.cc
+        paths.cc
         string_util.cc
         time_util.cc
 
@@ -33,6 +34,7 @@ add_library(base STATIC
         lrucache.hpp
         math_util.hh
         network.tcp.hh
+        paths.hh
         result.h
         time_util.hh
         )

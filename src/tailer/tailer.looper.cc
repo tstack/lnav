@@ -33,6 +33,7 @@
 
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
+#include "base/paths.hh"
 #include "tailer.looper.hh"
 #include "tailer.h"
 #include "tailerpp.hh"
@@ -303,8 +304,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
 ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
 {
-    auto local_path = ghc::filesystem::temp_directory_path() /
-                      fmt::format("lnav-{}-remotes", getuid());
+    auto local_path = lnav::paths::workdir() / "remotes";
 
     ghc::filesystem::create_directories(local_path);
     auto_mem<char> resolved_path;

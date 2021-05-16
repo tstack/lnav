@@ -60,14 +60,14 @@ EOF
         run_test env TMPDIR=tmp ${lnav_test} -d /tmp/lnav.err -n \
             logfile_syslog.1.xz
 
-        sed -e "s|lnav-[0-9]*-archives|lnav-NNN-archives|g" \
+        sed -e "s|lnav-user-[0-9]*-work|lnav-user-NNN-work|g" \
             -e "s|arc-[0-9a-z]*-logfile|arc-NNN-logfile|g" \
             -e "s|space on disk \(.*\) is|space on disk (NNN) is|g" \
             -e "s|${builddir}||g" \
             `test_err_filename` > test_logfile.big.out
         mv test_logfile.big.out `test_err_filename`
         check_error_output "decompression worked?" <<EOF
-error: unable to open file: /logfile_syslog.1.xz -- available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-NNN-archives/arc-NNN-logfile_syslog.1.xz'
+error: unable to open file: /logfile_syslog.1.xz -- available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
         run_test env TMPDIR=tmp ${lnav_test} -n \
@@ -101,12 +101,12 @@ EOF
 10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
 EOF
 
-    if ! test -f tmp/*/*-test-logs.tgz/test/logfile_access_log.0; then
+    if ! test -f tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file not unpacked"
         exit 1
     fi
 
-    if test -w tmp/*/*-test-logs.tgz/test/logfile_access_log.0; then
+    if test -w tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file is writable"
         exit 1
     fi
@@ -115,7 +115,7 @@ EOF
         -c ':config /tuning/archive-manager/cache-ttl 0d' \
         -n -q ${srcdir}/logfile_syslog.0
 
-    if test -f tmp/lnav*/*-test-logs.tgz/test/logfile_access_log.0; then
+    if test -f tmp/lnav*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archive cache not deleted?"
         exit 1
     fi
@@ -144,14 +144,14 @@ EOF
     chmod ugo-w rotmp
     run_test env TMPDIR=rotmp ${lnav_test} -n test-logs.tgz
 
-    sed -e "s|lnav-[0-9]*-archives|lnav-NNN-archives|g" \
+    sed -e "s|lnav-user-[0-9]*-work|lnav-user-NNN-work|g" \
         -e "s|arc-[0-9a-z]*-test|arc-NNN-test|g" \
         -e "s|${builddir}||g" \
         `test_err_filename` | head -1 \
         > test_logfile.rotmp.out
-    mv test_logfile.rotmp.out `test_err_filename`
+    cp test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/arc-NNN-test-logs.tgz/test/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
+error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-user-NNN-work/archives/arc-NNN-test-logs.tgz/test/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-user-NNN-work'
 EOF
 fi
 

@@ -49,6 +49,7 @@
 #include "auto_fd.hh"
 #include "base/injector.hh"
 #include "base/injector.bind.hh"
+#include "base/paths.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
@@ -86,42 +87,6 @@ static auto lc = injector::bind<lnav::logfile::config>::to_instance(+[]() {
     return &lnav_config.lc_logfile;
 });
 
-ghc::filesystem::path dotlnav_path()
-{
-    auto home_env = getenv("HOME");
-    auto xdg_config_home = getenv("XDG_CONFIG_HOME");
-
-    if (home_env != nullptr) {
-        auto home_path = ghc::filesystem::path(home_env);
-
-        if (ghc::filesystem::is_directory(home_path)) {
-            auto home_lnav = home_path / ".lnav";
-
-            if (ghc::filesystem::is_directory(home_lnav)) {
-                return home_lnav;
-            }
-
-            if (xdg_config_home != nullptr) {
-                auto xdg_path = ghc::filesystem::path(xdg_config_home);
-
-                if (ghc::filesystem::is_directory(xdg_path)) {
-                    return xdg_path / "lnav";
-                }
-            }
-
-            auto home_config = home_path / ".config";
-
-            if (ghc::filesystem::is_directory(home_config)) {
-                return home_config / "lnav";
-            }
-
-            return home_lnav;
-        }
-    }
-
-    return ghc::filesystem::current_path();
-}
-
 bool check_experimental(const char *feature_name)
 {
     const char *env_value = getenv("LNAV_EXP");
@@ -150,7 +115,7 @@ void ensure_dotlnav()
         "crash",
     };
 
-    auto path = dotlnav_path();
+    auto path = lnav::paths::dotlnav();
 
     for (auto sub_path : subdirs) {
         auto full_path = path / sub_path;
@@ -203,9 +168,9 @@ bool install_from_git(const char *repo)
 {
     static const std::regex repo_name_converter("[^\\w]");
 
-    auto formats_path = dotlnav_path() / "formats";
-    auto configs_path = dotlnav_path() / "configs";
-    auto staging_path = dotlnav_path() / "staging";
+    auto formats_path = lnav::paths::dotlnav() / "formats";
+    auto configs_path = lnav::paths::dotlnav() / "configs";
+    auto staging_path = lnav::paths::dotlnav() / "staging";
     string local_name = std::regex_replace(repo, repo_name_converter, "_");
 
     auto local_formats_path = formats_path / local_name;
@@ -289,7 +254,7 @@ bool install_from_git(const char *repo)
 bool update_installs_from_git()
 {
     static_root_mem<glob_t, globfree> gl;
-    auto git_formats = dotlnav_path() / "formats/*/.git";
+    auto git_formats = lnav::paths::dotlnav() / "formats/*/.git";
     bool found = false, retval = true;
 
     if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
@@ -341,7 +306,7 @@ static struct json_path_container format_handlers = {
 
 void install_extra_formats()
 {
-    auto config_root = dotlnav_path() / "remote-config";
+    auto config_root = lnav::paths::dotlnav() / "remote-config";
     auto_fd fd;
 
     if (access(config_root.c_str(), R_OK) == 0) {
@@ -1131,10 +1096,10 @@ static void load_default_configs(struct _lnav_config &config_obj,
 
 void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string> &errors)
 {
-    auto user_config = dotlnav_path() / "config.json";
+    auto user_config = lnav::paths::dotlnav() / "config.json";
 
     for (auto& bsf : lnav_config_json) {
-        auto sample_path = dotlnav_path() /
+        auto sample_path = lnav::paths::dotlnav() /
                            "configs" /
                            "default" /
                            fmt::format("{}.sample", bsf.get_name());
@@ -1199,8 +1164,8 @@ string save_config()
 {
     yajlpp_gen gen;
     auto filename = fmt::format("config.json.{}.tmp", getpid());
-    auto user_config_tmp = dotlnav_path() / filename;
-    auto user_config = dotlnav_path() / "config.json";
+    auto user_config_tmp = lnav::paths::dotlnav() / filename;
+    auto user_config = lnav::paths::dotlnav() / "config.json";
 
     yajl_gen_config(gen, yajl_gen_beautify, true);
     yajlpp_gen_context ygc(gen, lnav_config_handlers);
