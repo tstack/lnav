@@ -30,8 +30,12 @@ ${lnav_test} -d /tmp/lnav.err -nN \
 run_test ${lnav_test} -d /tmp/lnav.err -n \
     nonexistent-host:${test_dir}/logfile_access_log.0
 
+sed -e "s|ssh:.*|...|g" `test_err_filename` | head -1 \
+    > test_remote.err
+
+mv test_remote.err `test_err_filename`
 check_error_output "no error for nonexistent-host?" <<EOF
-error: unable to open file: nonexistent-host: -- failed to ssh to host: ssh: Could not resolve hostname nonexistent-host: nodename nor servname provided, or not known
+error: unable to open file: nonexistent-host: -- failed to ssh to host: ...
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \
