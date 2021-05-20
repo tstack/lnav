@@ -533,8 +533,20 @@ void tailer::looper::host_tailer::loop_body()
                 log_debug("Got an error: %s -- %s", pe.pe_path.c_str(),
                        pe.pe_msg.c_str());
 
-                if (conn.c_desired_paths.count(pe.pe_path)) {
+                auto desired_iter = conn.c_desired_paths.find(pe.pe_path);
+                if (desired_iter != conn.c_desired_paths.end()) {
                     report_error(this->get_display_path(pe.pe_path), pe.pe_msg);
+                    if (!desired_iter->second.loo_tail) {
+                        conn.c_desired_paths.erase(desired_iter);
+                    }
+                }
+                else {
+                    auto child_iter = conn.c_child_paths.find(pe.pe_path);
+
+                    if (child_iter != conn.c_child_paths.end() &&
+                        !child_iter->second.loo_tail) {
+                        conn.c_child_paths.erase(child_iter);
+                    }
                 }
 
                 auto remote_path = ghc::filesystem::absolute(
@@ -544,6 +556,14 @@ void tailer::looper::host_tailer::loop_body()
                 log_debug("removing %s", local_path.c_str());
                 this->ht_active_files.erase(local_path);
                 ghc::filesystem::remove_all(local_path);
+
+                if (conn.c_desired_paths.empty() &&
+                    conn.c_child_paths.empty()) {
+                    log_info("tailer(%s): all desired paths synced",
+                             this->ht_netloc.c_str());
+                    return state_v{synced{}};
+                }
+
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_offer_block &pob) {

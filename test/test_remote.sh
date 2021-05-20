@@ -2,6 +2,10 @@
 
 export HOME=${PWD}/remote
 
+rm -rf remote-tmp
+mkdir -p remote-tmp
+export TMPDIR=remote-tmp
+
 cat > remote/sshd_config <<EOF
 Port 2222
 UsePam no
@@ -39,10 +43,37 @@ error: unable to open file: nonexistent-host: -- failed to ssh to host: ...
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \
+    localhost:nonexistent-file
+
+check_error_output "no error for nonexistent-file?" <<EOF
+error: unable to open file: localhost:nonexistent-file -- unable to lstat -- No such file or directory
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
     localhost:${test_dir}/logfile_access_log.0
 
 check_output "could not download remote file?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    "localhost:${test_dir}/logfile_access_log.*"
+
+check_output "could not download remote file?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    "localhost:${test_dir}/remote-log-dir"
+
+check_output "could not download remote file?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
 EOF
