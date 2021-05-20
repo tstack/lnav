@@ -24,11 +24,14 @@ trap 'kill $(cat remote/sshd.pid)' EXIT
 
 $SSHD_PATH -E ${PWD}/remote/sshd.log -f remote/sshd_config
 
+${lnav_test} -d /tmp/lnav.err -nN \
+    -c ":config /tuning/remote/ssh/options/F ${PWD}/remote/ssh_config"
+
 run_test ${lnav_test} -d /tmp/lnav.err -n \
     nonexistent-host:${test_dir}/logfile_access_log.0
 
 check_error_output "no error for nonexistent-host?" <<EOF
-error: unable to open file: nonexistent-host: -- failed to ssh to host: kex_exchange_identification: Connection closed by remote host
+error: unable to open file: nonexistent-host: -- failed to ssh to host: ssh: Could not resolve hostname nonexistent-host: nodename nor servname provided, or not known
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \
