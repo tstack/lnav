@@ -247,6 +247,18 @@ check_output "time_offset in lnav_file table is not working?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET time_offset=14400000 WHERE endswith(filepath, 'logfile_block.1')" \
+    ${test_dir}/logfile_block.1 \
+    ${test_dir}/logfile_block.2
+
+check_output "time_offset in lnav_file table is not reordering?" <<EOF
+Wed May 19 12:00:01  2021 line 1
+Wed May 19 12:00:02 UTC 2021 line 2
+Wed May 19 12:00:03  2021 line 3
+Wed May 19 12:00:04 UTC 2021 line 4
+EOF
+
+run_test ${lnav_test} -n \
     -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.*

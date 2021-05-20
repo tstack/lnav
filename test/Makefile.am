@@ -24,6 +24,14 @@ AM_CPPFLAGS = \
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
 
+remote/ssh_host_rsa_key:
+	mkdir -p remote
+	ssh-keygen -f remote/ssh_host_rsa_key -N '' -t rsa
+
+remote/ssh_host_dsa_key:
+	mkdir -p remote
+	ssh-keygen -f remote/ssh_host_dsa_key -N '' -t dsa
+
 noinst_LIBRARIES = \
 	libtestdummy.a
 
@@ -174,6 +182,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
+	test_remote.sh \
 	test_scripts.sh \
 	test_sessions.sh \
 	test_shlexer.sh \
@@ -408,7 +417,10 @@ DISTCLEANFILES = \
 	empty \
 	scripts-empty
 
+all-local: remote/ssh_host_dsa_key remote/ssh_host_rsa_key
+
 distclean-local:
+	$(RM_V)rm -rf remote
 	$(RM_V)rm -rf sessions
 	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf rotmp

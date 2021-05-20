@@ -124,6 +124,9 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
                 size_t len;
                 yajl_gen_get_buf(handle, &buf, &len);
                 if (status != yajl_gen_status_ok) {
+                    log_error("yajl_gen failure for: %s -- %d",
+                              jph.jph_property.c_str(),
+                              status);
                     return status;
                 }
             }
@@ -832,7 +835,8 @@ yajlpp_parse_context &yajlpp_parse_context::set_path(const string &path)
     for (size_t lpc = 0; lpc < path.size(); lpc++) {
         switch (path[lpc]) {
             case '/':
-                this->ypc_path_index_stack.push_back(1 + lpc);
+                this->ypc_path_index_stack.push_back(
+                    this->ypc_path_index_stack.empty() ? 1 : 0 + lpc);
                 break;
         }
     }
@@ -846,7 +850,7 @@ const char *yajlpp_parse_context::get_path_fragment(int offset, char *frag_in,
     size_t start, end;
 
     if (offset < 0) {
-        offset = this->ypc_path_index_stack.size() + offset;
+        offset = ((int) this->ypc_path_index_stack.size()) + offset;
     }
     start = this->ypc_path_index_stack[offset] + ((offset == 0) ? 0 : 1);
     if ((offset + 1) < (int)this->ypc_path_index_stack.size()) {

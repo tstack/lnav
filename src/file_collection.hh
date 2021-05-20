@@ -62,6 +62,7 @@ struct file_collection {
         fc_renamed_files;
     std::set<std::string> fc_closed_files;
     std::map<std::string, file_format_t> fc_other_files;
+    std::set<std::string> fc_synced_files;
     std::shared_ptr<safe_scan_progress> fc_progress;
     std::vector<struct stat> fc_new_stats;
     size_t fc_largest_path_length{0};

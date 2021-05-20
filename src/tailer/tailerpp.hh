@@ -65,6 +65,7 @@ struct packet_log {
 };
 
 struct packet_offer_block {
+    std::string pob_root_path;
     std::string pob_path;
     int64_t pob_offset;
     int64_t pob_length;
@@ -72,12 +73,19 @@ struct packet_offer_block {
 };
 
 struct packet_tail_block {
+    std::string ptb_root_path;
     std::string ptb_path;
     int64_t ptb_offset;
     std::vector<uint8_t> ptb_bits;
 };
 
+struct packet_synced {
+    std::string ps_root_path;
+    std::string ps_path;
+};
+
 struct packet_link {
+    std::string pl_root_path;
     std::string pl_path;
     std::string pl_link_value;
 };
@@ -101,7 +109,7 @@ struct packet_possible_path {
 using packet = mapbox::util::variant<
     packet_eof, packet_error, packet_offer_block, packet_tail_block,
     packet_link, packet_preview_error, packet_preview_data,
-    packet_possible_path>;
+    packet_possible_path, packet_synced>;
 
 struct recv_payload_type {};
 struct recv_payload_length {};

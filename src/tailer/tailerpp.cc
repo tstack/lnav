@@ -77,6 +77,7 @@ Result<packet, std::string> read_packet(int fd)
             packet_offer_block pob;
 
             TRY(read_payloads_into(fd,
+                                   pob.pob_root_path,
                                    pob.pob_path,
                                    pob.pob_offset,
                                    pob.pob_length,
@@ -87,15 +88,25 @@ Result<packet, std::string> read_packet(int fd)
             packet_tail_block ptb;
 
             TRY(read_payloads_into(fd,
+                                   ptb.ptb_root_path,
                                    ptb.ptb_path,
                                    ptb.ptb_offset,
                                    ptb.ptb_bits));
             return Ok(packet{ptb});
         }
+        case TPT_SYNCED: {
+            packet_synced ps;
+
+            TRY(read_payloads_into(fd,
+                                   ps.ps_root_path,
+                                   ps.ps_path));
+            return Ok(packet{ps});
+        }
         case TPT_LINK_BLOCK: {
             packet_link pl;
 
             TRY(read_payloads_into(fd,
+                                   pl.pl_root_path,
                                    pl.pl_path,
                                    pl.pl_link_value));
             return Ok(packet{pl});

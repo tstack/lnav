@@ -293,6 +293,10 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 logfile::rebuild_result_t logfile::rebuild_index()
 {
     if (!this->lf_indexing) {
+        if (this->lf_sort_needed) {
+            this->lf_sort_needed = false;
+            return rebuild_result_t::RR_NEW_ORDER;
+        }
         return logfile::rebuild_result_t::RR_NO_NEW_LINES;
     }
 
@@ -506,6 +510,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
         } else {
             retval = RR_NEW_LINES;
         }
+    }
+    else if (this->lf_sort_needed) {
+        retval = RR_NEW_ORDER;
+        this->lf_sort_needed = false;
     }
 
     this->lf_index_time = this->lf_line_buffer.get_file_time();

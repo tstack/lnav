@@ -119,6 +119,8 @@ void file_collection::merge(const file_collection &other)
     this->fc_recursive = other.fc_recursive;
     this->fc_rotated = other.fc_rotated;
 
+    this->fc_synced_files.insert(other.fc_synced_files.begin(),
+                                 other.fc_synced_files.end());
     this->fc_name_to_errors.insert(other.fc_name_to_errors.begin(),
                                    other.fc_name_to_errors.end());
     this->fc_file_names.insert(other.fc_file_names.begin(),
@@ -390,7 +392,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
 
         isc::to<tailer::looper &, services::remote_tailer_t>()
             .send([=](auto &tlooper) {
-                tlooper.add_remote(rp);
+                tlooper.add_remote(rp, loo);
             });
         retval.fc_other_files[path] = file_format_t::FF_REMOTE;
 

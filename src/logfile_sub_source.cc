@@ -263,15 +263,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                                                  adjusted_tm);
             }
 
-            if (len > time_range.length()) {
-                ssize_t padding = len - time_range.length();
-
-                value_out.insert(time_range.lr_start,
-                                 padding,
-                                 ' ');
-            }
             value_out.replace(time_range.lr_start,
-                              len,
+                              time_range.length(),
                               buffer,
                               len);
             this->lss_token_shift_start = time_range.lr_start;

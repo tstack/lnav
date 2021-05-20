@@ -36,6 +36,7 @@ add_library(
 
         tailer.looper.hh
         tailer.looper.cc
+        tailer.looper.cfg.hh
         tailerbin.h
         tailerbin.cc
 )

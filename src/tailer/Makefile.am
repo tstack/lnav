@@ -24,6 +24,7 @@ noinst_HEADERS = \
     sha-256.h \
     tailer.h \
     tailer.looper.hh \
+    tailer.looper.cfg.hh \
     tailerpp.hh
 
 libtailercommon_a_SOURCES = \

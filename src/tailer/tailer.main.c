@@ -385,13 +385,19 @@ void send_preview_data(int64_t id, const char *path, int32_t len, const char *bi
                 TPPT_DONE);
 }
 
-int poll_paths(struct list *path_list)
+int poll_paths(struct list *path_list, struct client_path_state *root_cps)
 {
     struct client_path_state *curr = (struct client_path_state *) path_list->l_head;
+    int is_top = root_cps == NULL;
     int retval = 0;
 
     while (curr->cps_node.n_succ != NULL) {
+        if (is_top) {
+            root_cps = curr;
+        }
+
         if (is_glob(curr->cps_path)) {
+            int changes = 0;
             glob_t gl;
 
             memset(&gl, 0, sizeof(gl));
@@ -407,6 +413,7 @@ int poll_paths(struct list *path_list)
                     if ((child = find_client_path_state(
                         &prev_children, gl.gl_pathv[lpc])) == NULL) {
                         child = create_client_path_state(gl.gl_pathv[lpc]);
+                        changes += 1;
                     } else {
                         list_remove(&child->cps_node);
                     }
@@ -420,9 +427,21 @@ int poll_paths(struct list *path_list)
                     &prev_children)) != NULL) {
                     send_error(child, "deleted");
                     delete_client_path_state(child);
+                    changes += 1;
                 }
 
-                retval += poll_paths(&curr->cps_children);
+                retval += poll_paths(&curr->cps_children, root_cps);
+            }
+
+            if (changes) {
+                curr->cps_client_state = CS_INIT;
+            } else if (curr->cps_client_state != CS_SYNCED) {
+                send_packet(STDOUT_FILENO,
+                            TPT_SYNCED,
+                            TPPT_STRING, root_cps->cps_path,
+                            TPPT_STRING, curr->cps_path,
+                            TPPT_DONE);
+                curr->cps_client_state = CS_SYNCED;
             }
 
             curr = (struct client_path_state *) curr->cps_node.n_succ;
@@ -454,6 +473,7 @@ int poll_paths(struct list *path_list)
                         buffer[link_len] = '\0';
                         send_packet(STDOUT_FILENO,
                                     TPT_LINK_BLOCK,
+                                    TPPT_STRING, root_cps->cps_path,
                                     TPPT_STRING, curr->cps_path,
                                     TPPT_STRING, buffer,
                                     TPPT_DONE);
@@ -482,13 +502,14 @@ int poll_paths(struct list *path_list)
                     break;
             }
 
-            retval += poll_paths(&curr->cps_children);
+            retval += poll_paths(&curr->cps_children, root_cps);
 
             curr->cps_last_path_state = PS_OK;
         } else if (S_ISREG(st.st_mode)) {
             switch (curr->cps_client_state) {
                 case CS_INIT:
-                case CS_TAILING: {
+                case CS_TAILING:
+                case CS_SYNCED: {
                     if (curr->cps_client_file_offset < st.st_size) {
                         int fd = open(curr->cps_path, O_RDONLY);
 
@@ -515,6 +536,7 @@ int poll_paths(struct list *path_list)
                                 curr->cps_client_file_read_length = bytes_read;
                                 send_packet(STDOUT_FILENO,
                                             TPT_OFFER_BLOCK,
+                                            TPPT_STRING, root_cps->cps_path,
                                             TPPT_STRING, curr->cps_path,
                                             TPPT_INT64, file_offset,
                                             TPPT_INT64, bytes_read,
@@ -528,26 +550,30 @@ int poll_paths(struct list *path_list)
 
                                 send_packet(STDOUT_FILENO,
                                             TPT_TAIL_BLOCK,
+                                            TPPT_STRING, root_cps->cps_path,
                                             TPPT_STRING, curr->cps_path,
                                             TPPT_INT64, curr->cps_client_file_offset,
                                             TPPT_BITS, bytes_read, buffer,
                                             TPPT_DONE);
                                 curr->cps_client_file_offset += bytes_read;
+                                curr->cps_client_state = CS_TAILING;
                             }
                             close(fd);
 
                             retval = 1;
                         }
+                    } else if (curr->cps_client_state != CS_SYNCED) {
+                        send_packet(STDOUT_FILENO,
+                                    TPT_SYNCED,
+                                    TPPT_STRING, root_cps->cps_path,
+                                    TPPT_STRING, curr->cps_path,
+                                    TPPT_DONE);
+                        curr->cps_client_state = CS_SYNCED;
                     }
                     break;
                 }
                 case CS_OFFERED: {
                     // Still waiting for the client ack
-                    break;
-                }
-                case CS_SYNCED: {
-                    fprintf(stderr, "internal-error: got synced for %s\n",
-                            curr->cps_path);
                     break;
                 }
             }
@@ -561,6 +587,7 @@ int poll_paths(struct list *path_list)
             } else {
                 struct list prev_children;
                 struct dirent *entry;
+                int changes = 0;
 
                 list_move(&prev_children, &curr->cps_children);
                 while ((entry = readdir(dir)) != NULL) {
@@ -584,6 +611,7 @@ int poll_paths(struct list *path_list)
                         // new file
                         fprintf(stderr, "info: monitoring child path: %s\n", full_path);
                         child = create_client_path_state(full_path);
+                        changes += 1;
                     } else {
                         list_remove(&child->cps_node);
                     }
@@ -597,9 +625,21 @@ int poll_paths(struct list *path_list)
                     &prev_children)) != NULL) {
                     send_error(child, "deleted");
                     delete_client_path_state(child);
+                    changes += 1;
                 }
 
-                retval += poll_paths(&curr->cps_children);
+                retval += poll_paths(&curr->cps_children, root_cps);
+
+                if (changes) {
+                    curr->cps_client_state = CS_INIT;
+                } else if (curr->cps_client_state != CS_SYNCED) {
+                    send_packet(STDOUT_FILENO,
+                                TPT_SYNCED,
+                                TPPT_STRING, root_cps->cps_path,
+                                TPPT_STRING, curr->cps_path,
+                                TPPT_DONE);
+                    curr->cps_client_state = CS_SYNCED;
+                }
             }
 
             curr->cps_last_path_state = PS_OK;
@@ -805,6 +845,9 @@ int main(int argc, char *argv[])
     int done = 0, timeout = 0;
     recv_state_t rstate = RS_PACKET_TYPE;
 
+    // No need to leave ourselves around
+    unlink(argv[0]);
+
     list_init(&client_path_list);
 
     while (!done) {
@@ -912,7 +955,7 @@ int main(int argc, char *argv[])
         }
 
         if (!done) {
-            if (poll_paths(&client_path_list)) {
+            if (poll_paths(&client_path_list, NULL)) {
                 timeout = 0;
             } else {
                 timeout = 1000;

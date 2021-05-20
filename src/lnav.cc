@@ -904,13 +904,32 @@ bool update_active_files(const file_collection& new_files)
 
 bool rescan_files(bool req)
 {
+    auto& mlooper = injector::get<main_looper&, services::main_t>();
     bool done = false;
+    auto delay = 0ms;
 
     do {
         auto fc = lnav_data.ld_active_files.rescan_files(req);
+        bool all_synced = true;
 
         update_active_files(fc);
-        done = fc.fc_file_names.empty();
+        mlooper.get_port().process_for(delay);
+        if (lnav_data.ld_flags & LNF_HEADLESS) {
+            for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
+                if (pair.second != file_format_t::FF_REMOTE) {
+                    continue;
+                }
+
+                if (lnav_data.ld_active_files.fc_synced_files
+                        .count(pair.first) == 0) {
+                    all_synced = false;
+                }
+            }
+            if (!all_synced) {
+                delay = 30ms;
+            }
+        }
+        done = fc.fc_file_names.empty() && all_synced;
     } while (!done);
     return true;
 }
@@ -2470,8 +2489,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
 #endif
         else if (is_glob(argv[lpc]) || strchr(argv[lpc], ':') != nullptr) {
-            lnav_data.ld_active_files.fc_file_names
-                .emplace(argv[lpc], logfile_open_options());
+            lnav_data.ld_active_files.fc_file_names[argv[lpc]]
+                .with_tail(!(lnav_data.ld_flags & LNF_HEADLESS));
         }
         else if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,

@@ -447,7 +447,7 @@ public:
                                typename std::enable_if<!std::is_integral<T>::value>::type* dummy = 0)
     {
         yajl_gen_array_open(this->yg_handle);
-        for (auto elem : container) {
+        for (const auto& elem : container) {
             yajl_gen_status rc = (*this)(elem);
 
             if (rc != yajl_gen_status_ok) {

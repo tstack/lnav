@@ -87,6 +87,10 @@ static auto lc = injector::bind<lnav::logfile::config>::to_instance(+[]() {
     return &lnav_config.lc_logfile;
 });
 
+static auto tc = injector::bind<tailer::config>::to_instance(+[]() {
+    return &lnav_config.lc_tailer;
+});
+
 bool check_experimental(const char *feature_name)
 {
     const char *env_value = getenv("LNAV_EXP");
@@ -445,7 +449,8 @@ static struct json_path_container global_var_handlers = {
                 paths_out.emplace_back(iter.first);
               }
             })
-        .FOR_FIELD(_lnav_config, lc_global_vars)};
+        .FOR_FIELD(_lnav_config, lc_global_vars)
+};
 
 static struct json_path_container style_config_handlers =
     json_path_container{
@@ -801,6 +806,7 @@ static struct json_path_container theme_def_handlers = {
 
 static struct json_path_container theme_defs_handlers = {
     yajlpp::pattern_property_handler("(?<theme_name>[\\w\\-]+)")
+        .with_description("Theme definitions")
         .with_obj_provider<lnav_theme, _lnav_config>([](const yajlpp_provider_context &ypc, _lnav_config *root) {
             lnav_theme &lt = root->lc_ui_theme_defs[ypc.ypc_extractor.get_substr("theme_name")];
 
@@ -891,6 +897,55 @@ static struct json_path_container logfile_handlers = {
                    &lnav::logfile::config::lc_max_unrecognized_lines),
 };
 
+static struct json_path_container ssh_config_handlers = {
+    yajlpp::pattern_property_handler("(?<config_name>\\w+)")
+        .with_synopsis("name")
+        .with_description("Set an SSH configuration value")
+        .with_path_provider<_lnav_config>([](
+            auto *m, std::vector<std::string> &paths_out) {
+            for (const auto& pair : m->lc_tailer.c_ssh_config) {
+                paths_out.emplace_back(pair.first);
+            }
+        })
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_ssh_config),
+};
+
+static struct json_path_container ssh_option_handlers = {
+    yajlpp::pattern_property_handler("(?<option_name>\\w+)")
+        .with_synopsis("name")
+        .with_description("Set an option to be passed to the SSH command")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_ssh_options),
+};
+
+static struct json_path_container ssh_handlers = {
+    yajlpp::property_handler("command")
+        .with_synopsis("ssh-command")
+        .with_description("The SSH command to execute")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_ssh_cmd),
+    yajlpp::property_handler("flags")
+        .with_description("The flags to pass to the SSH command")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_ssh_flags),
+    yajlpp::property_handler("options")
+        .with_description("The options to pass to the SSH command")
+        .with_children(ssh_option_handlers),
+    yajlpp::property_handler("config")
+        .with_description(
+            "The ssh_config options to pass to SSH with the -o option")
+        .with_children(ssh_config_handlers),
+};
+
+static struct json_path_container remote_handlers = {
+    yajlpp::property_handler("ssh")
+        .with_description(
+            "Settings related to the ssh command used to contact remote "
+            "machines")
+        .with_children(ssh_handlers),
+};
+
 static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
@@ -901,6 +956,9 @@ static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("logfile")
         .with_description("Settings related to log files")
         .with_children(logfile_handlers),
+    yajlpp::property_handler("remote")
+        .with_description("Settings related to remote file support")
+        .with_children(remote_handlers),
 };
 
 static set<string> SUPPORTED_CONFIG_SCHEMAS = {

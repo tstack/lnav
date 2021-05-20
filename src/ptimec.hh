@@ -197,7 +197,6 @@ inline void ftime_a(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 
 inline void ftime_Z(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
 {
-
 }
 
 inline void ftime_b(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)

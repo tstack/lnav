@@ -262,7 +262,7 @@ check_error_output "config clock-format 1" <<EOF
 EOF
 
 check_output "config clock-format 1" <<EOF
-info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+/ui/clock-format = "%a %b %d %H:%M:%S %Z"
 EOF
 
 run_test ${lnav_test} -nvq \
@@ -275,9 +275,9 @@ check_error_output "config clock-format 2" <<EOF
 EOF
 
 check_output "config clock-format 2" <<EOF
-info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+/ui/clock-format = "%a %b %d %H:%M:%S %Z"
 info: changed config option -- /ui/clock-format
-info: /ui/clock-format = "abc"
+/ui/clock-format = "abc"
 EOF
 
 run_test ${lnav_test} -nvq \
@@ -292,7 +292,7 @@ EOF
 check_output "config clock-format 3" <<EOF
 info: changed config option -- /ui/clock-format
 info: reset option -- /ui/clock-format
-info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+/ui/clock-format = "%a %b %d %H:%M:%S %Z"
 EOF
 
 

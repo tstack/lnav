@@ -532,6 +532,88 @@ struct json_path_handler : public json_path_handler_base {
 
     template<
         typename... Args,
+        std::enable_if_t<LastIs<std::map<std::string, std::string>, Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context *ypc,
+                                     const unsigned char *str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto key = ypc->get_path_fragment(-1);
+
+            json_path_handler::get_field(obj, args...)[key] = std::string((const char *) str, len);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context &ygc,
+                                           const json_path_handler_base &jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            {
+                yajlpp_generator gen(handle);
+
+                for (const auto& pair : field) {
+                    gen(pair.first);
+                    gen(pair.second);
+                }
+            }
+
+            return yajl_gen_status_ok;
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<std::string, Args...>::value, bool> = true
+    >
+    json_path_handler &for_field(Args... args) {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context *ypc,
+                                     const unsigned char *str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+
+            json_path_handler::get_field(obj, args...) = std::string((const char *) str, len);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context &ygc,
+                                           const json_path_handler_base &jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field);
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
         std::enable_if_t<LastIsNumber<Args...>::value, bool> = true
     >
     json_path_handler &for_field(Args... args) {

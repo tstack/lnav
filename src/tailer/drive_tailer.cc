@@ -201,6 +201,9 @@ int main(int argc, char *const *argv)
                     pwrite(fd, ptb.ptb_bits.data(), ptb.ptb_bits.size(), ptb.ptb_offset);
                 }
             },
+            [&](const tailer::packet_synced &ps) {
+
+            },
             [&](const tailer::packet_link &pl) {
 
             },

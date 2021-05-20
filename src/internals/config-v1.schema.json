@@ -62,6 +62,58 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "remote": {
+                    "description": "Settings related to remote file support",
+                    "title": "/tuning/remote",
+                    "type": "object",
+                    "properties": {
+                        "ssh": {
+                            "description": "Settings related to the ssh command used to contact remote machines",
+                            "title": "/tuning/remote/ssh",
+                            "type": "object",
+                            "properties": {
+                                "command": {
+                                    "title": "/tuning/remote/ssh/command",
+                                    "description": "The SSH command to execute",
+                                    "type": "string"
+                                },
+                                "flags": {
+                                    "title": "/tuning/remote/ssh/flags",
+                                    "description": "The flags to pass to the SSH command",
+                                    "type": "string"
+                                },
+                                "options": {
+                                    "description": "The options to pass to the SSH command",
+                                    "title": "/tuning/remote/ssh/options",
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "(\\w+)": {
+                                            "title": "/tuning/remote/ssh/options/<option_name>",
+                                            "description": "Set an option to be passed to the SSH command",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "config": {
+                                    "description": "The ssh_config options to pass to SSH with the -o option",
+                                    "title": "/tuning/remote/ssh/config",
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "(\\w+)": {
+                                            "title": "/tuning/remote/ssh/config/<config_name>",
+                                            "description": "Set an SSH configuration value",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false
@@ -105,6 +157,7 @@
                     "type": "object",
                     "patternProperties": {
                         "([\\w\\-]+)": {
+                            "description": "Theme definitions",
                             "title": "/ui/theme-defs/<theme_name>",
                             "type": "object",
                             "properties": {

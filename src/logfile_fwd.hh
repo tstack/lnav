@@ -94,6 +94,12 @@ struct logfile_open_options {
         return *this;
     }
 
+    logfile_open_options &with_tail(bool val) {
+        this->loo_tail = val;
+
+        return *this;
+    }
+
     std::string loo_filename;
     auto_fd loo_fd;
     logfile_name_source loo_source{logfile_name_source::USER};
@@ -102,6 +108,7 @@ struct logfile_open_options {
     bool loo_is_visible{true};
     bool loo_non_utf_is_visible{true};
     ssize_t loo_visible_size_limit{-1};
+    bool loo_tail{true};
 };
 
 #endif

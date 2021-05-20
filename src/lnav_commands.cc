@@ -3861,7 +3861,7 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
 
                     retval = help_text;
                 } else {
-                    retval = "info: " + option + " = " + trim(old_value);
+                    retval = fmt::format("{} = {}", option, trim(old_value));
                 }
             }
             else {

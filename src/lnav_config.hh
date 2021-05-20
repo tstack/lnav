@@ -49,6 +49,7 @@
 #include "archive_manager.cfg.hh"
 #include "file_vtab.cfg.hh"
 #include "logfile.cfg.hh"
+#include "tailer/tailer.looper.cfg.hh"
 
 /**
  * Check if an experimental feature should be enabled by
@@ -97,6 +98,7 @@ struct _lnav_config {
     archive_manager::config lc_archive_manager;
     file_vtab::config lc_file_vtab;
     lnav::logfile::config lc_logfile;
+    tailer::config lc_tailer;
 };
 
 extern struct _lnav_config lnav_config;

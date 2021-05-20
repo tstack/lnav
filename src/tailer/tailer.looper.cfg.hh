@@ -27,48 +27,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_tailer_h
-#define lnav_tailer_h
+#ifndef lnav_tailer_looper_cfg_hh
+#define lnav_tailer_looper_cfg_hh
 
-#include <sys/types.h>
+namespace tailer {
 
-typedef enum {
-    TPPT_DONE,
-    TPPT_STRING,
-    TPPT_HASH,
-    TPPT_INT64,
-    TPPT_BITS,
-} tailer_packet_payload_type_t;
-
-typedef enum {
-    TPT_ERROR,
-    TPT_OPEN_PATH,
-    TPT_CLOSE_PATH,
-    TPT_OFFER_BLOCK,
-    TPT_NEED_BLOCK,
-    TPT_ACK_BLOCK,
-    TPT_TAIL_BLOCK,
-    TPT_LINK_BLOCK,
-    TPT_SYNCED,
-    TPT_LOG,
-    TPT_LOAD_PREVIEW,
-    TPT_PREVIEW_ERROR,
-    TPT_PREVIEW_DATA,
-    TPT_COMPLETE_PATH,
-    TPT_POSSIBLE_PATH,
-} tailer_packet_type_t;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-ssize_t send_packet(int fd,
-                    tailer_packet_type_t tpt,
-                    tailer_packet_payload_type_t payload_type,
-                    ...);
-
-#ifdef __cplusplus
+struct config {
+    std::string c_ssh_cmd{"ssh"};
+    std::string c_ssh_flags{};
+    std::map<std::string, std::string> c_ssh_options{};
+    std::map<std::string, std::string> c_ssh_config{
+        {"BatchMode", "yes"},
+        {"StrictHostKeyChecking", "yes"},
+    };
 };
-#endif
+
+}
 
 #endif

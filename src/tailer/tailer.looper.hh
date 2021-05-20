@@ -31,6 +31,7 @@
 #define lnav_tailer_looper_hh
 
 #include <set>
+#include <logfile_fwd.hh>
 
 #include "base/isc.hh"
 #include "base/auto_pid.hh"
@@ -43,13 +44,17 @@ namespace tailer {
 
 class looper : public isc::service<looper> {
 public:
-    void add_remote(const network::path& path);
+    void add_remote(const network::path &path, logfile_open_options options);
 
     void load_preview(int64_t id, const network::path& path);
 
     void complete_path(const network::path& path);
 
-    std::set<std::string> active_netlocs() {
+    bool empty() const {
+        return this->l_netlocs_to_paths.empty();
+    }
+
+    std::set<std::string> active_netlocs() const {
         std::set<std::string> retval;
 
         for (const auto& pair : this->l_remotes) {
@@ -75,11 +80,15 @@ private:
                     auto_fd to_child, auto_fd from_child,
                     auto_fd err_from_child);
 
-        void open_remote_path(const std::string& path);
+        void open_remote_path(const std::string& path, logfile_open_options loo);
 
         void load_preview(int64_t id, const std::string& path);
 
         void complete_path(const std::string& path);
+
+        bool is_synced() const {
+            return this->ht_state.is<synced>();
+        }
 
     protected:
         void *run() override;
@@ -100,14 +109,16 @@ private:
             auto_pid<process_state::RUNNING> ht_child;
             auto_fd ht_to_child;
             auto_fd ht_from_child;
-            std::set<std::string> c_desired_paths;
+            std::map<std::string, logfile_open_options> c_desired_paths;
+            std::map<std::string, logfile_open_options> c_child_paths;
 
             auto_pid<process_state::FINISHED> close() &&;
         };
 
         struct disconnected {};
+        struct synced {};
 
-        using state_v = mapbox::util::variant<connected, disconnected>;
+        using state_v = mapbox::util::variant<connected, disconnected, synced>;
 
         const std::string ht_netloc;
         const ghc::filesystem::path ht_local_path;
@@ -123,8 +134,10 @@ private:
 
     struct remote_path_queue {
         attempt_time_point rpq_next_attempt_time{std::chrono::steady_clock::now()};
-        std::set<std::string> rpq_new_paths;
-        std::set<std::string> rpq_existing_paths;
+        std::map<std::string, logfile_open_options> rpq_new_paths;
+        std::map<std::string, logfile_open_options> rpq_existing_paths;
+
+        void send_synced_to_main(const std::string& netloc);
     };
 
     std::map<std::string, remote_path_queue> l_netlocs_to_paths;
