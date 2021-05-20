@@ -32,6 +32,11 @@ remote/ssh_host_dsa_key:
 	mkdir -p remote
 	ssh-keygen -f remote/ssh_host_dsa_key -N '' -t dsa
 
+remote/id_rsa:
+	mkdir -p remote
+	ssh-keygen -f remote/id_rsa -N '' -t rsa
+	cp -f remote/id_rsa.pub remote/authorized_keys
+
 noinst_LIBRARIES = \
 	libtestdummy.a
 
@@ -357,6 +362,7 @@ TESTS = \
 	test_log_accel \
 	test_logfile.sh \
 	test_reltime \
+	test_remote.sh \
 	test_scripts.sh \
 	test_sessions.sh \
 	test_shlexer.sh \
@@ -417,7 +423,7 @@ DISTCLEANFILES = \
 	empty \
 	scripts-empty
 
-all-local: remote/ssh_host_dsa_key remote/ssh_host_rsa_key
+all-local: remote/ssh_host_dsa_key remote/ssh_host_rsa_key remote/id_rsa
 
 distclean-local:
 	$(RM_V)rm -rf remote
