@@ -1,0 +1,34 @@
+name: tailer-ape
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: update apt
+        run: sudo apt-get update
+      - name: Install packages
+        run: >-
+          wget https://justine.lol/cosmopolitan/cosmopolitan-amalgamation-1.0.zip &&
+          unzip cosmopolitan-amalgamation-1.0.zip
+      - name: Build
+        run: >-
+          gcc -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie -mno-red-zone
+          -fno-omit-frame-pointer -pg -mnop-mcount
+          -o tailer.dbg -I src/tailer
+          src/tailer/tailer.main.c src/tailer/tailer.c
+          -fuse-ld=bfd -Wl,-T,ape.lds
+          -include cosmopolitan.h crt.o ape.o cosmopolitan.a
+      - name: Objcopy
+        run: objcopy -S -O binary tailer.dbg tailer
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          # Artifact name
+          name: tailer
+          # A file, directory or wildcard pattern that describes what to upload
+          path: tailer
