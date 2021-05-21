@@ -28,6 +28,12 @@
             },
             "vum-log4cpp": {
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{3}) '(?<category>[^']*)' (?<tid>\\d+) (?<level>[a-zA-Z]+)\\]\\s+(?>\\[(?<file>\\S+), (?<line>\\d+)\\])? (?<body>.*$)"
+            },
+            "pylog2": {
+                "pattern": "^(?<prc>[^:]+):(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\[(?<tid>\\w+)\\](?<file>[^:]+):(?<line>\\d+) \\[(?<level>[a-zA-Z]+)\\]\\s+(?<body>(?:.|\\n)*)$"
+            },
+            "pylog3": {
+                "pattern": "^(?<prc>[^:]+): (?<tid>\\d+): (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<file>[^:]+):(?<line>\\d+) (?<level>[a-zA-Z]+)\\s+(?<body>(?:.|\\n)*)$"
             }
         },
         "level-field": "level",
@@ -111,6 +117,12 @@
             },
             {
                 "line": "[2020-05-26 19:46:43:259 'ConfigurationMgr' 139700477753600 INFO]  [configurationMgr, 155] Configuration manager created...vcidbInit"
+            },
+            {
+                "line": "HsmService:2021-05-19 17:36:35,978[MainThread]hsmService:737 [INFO] HSM Service is initialized"
+            },
+            {
+                "line": "ImageService: 139853338433792: 2021-05-19 17:36:35,675 imageService:769 INFO Image service is initialized"
             }
         ]
     }
