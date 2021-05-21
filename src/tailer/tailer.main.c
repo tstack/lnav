@@ -528,7 +528,9 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
 
                             if (bytes_read == -1) {
                                 set_client_path_state_error(curr, "pread");
-                            } else if (curr->cps_client_state == CS_INIT) {
+                            } else if (curr->cps_client_state == CS_INIT &&
+                                (curr->cps_client_file_offset < 0 ||
+                                 bytes_read > 0)) {
                                 uint8_t hash[SHA_256_HASH_SIZE];
 
                                 calc_sha_256(hash, buffer, bytes_read);
