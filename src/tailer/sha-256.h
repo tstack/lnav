@@ -1,5 +1,7 @@
 
+#ifndef __COSMOPOLITAN__
 #include <stdint.h>
+#endif
 
 #define SHA_256_HASH_SIZE 32
 

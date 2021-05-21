@@ -27,11 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __COSMOPOLITAN__
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
+#endif
 
 #include "sha-256.h"
 #include "tailer.h"

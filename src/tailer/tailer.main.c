@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __COSMOPOLITAN__
 #include <glob.h>
 #include <stdio.h>
 #include <assert.h>
@@ -40,6 +41,7 @@
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
+#endif
 
 #include "sha-256.h"
 #include "tailer.h"
@@ -241,12 +243,10 @@ static recv_state_t readall(recv_state_t state, int sock, void *buf, size_t len)
         ssize_t rc = read(sock, &cbuf[offset], len);
 
         if (rc == -1) {
-            switch (errno) {
-                case EAGAIN:
-                case EINTR:
-                    break;
-                default:
-                    return RS_ERROR;
+            if (errno == EAGAIN || errno == EINTR) {
+
+            } else {
+                return RS_ERROR;
             }
         }
         else if (rc == 0) {

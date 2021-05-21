@@ -30,7 +30,9 @@
 #ifndef lnav_tailer_h
 #define lnav_tailer_h
 
+#ifndef __COSMOPOLITAN__
 #include <sys/types.h>
+#endif
 
 typedef enum {
     TPPT_DONE,
