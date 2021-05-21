@@ -1,5 +1,8 @@
+
+#ifndef __COSMOPOLITAN__
 #include <stdint.h>
 #include <string.h>
+#endif
 
 #include "sha-256.h"
 
