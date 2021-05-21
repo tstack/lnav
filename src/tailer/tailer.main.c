@@ -529,8 +529,8 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                             if (bytes_read == -1) {
                                 set_client_path_state_error(curr, "pread");
                             } else if (curr->cps_client_state == CS_INIT &&
-                                (curr->cps_client_file_offset < 0 ||
-                                 bytes_read > 0)) {
+                                       (curr->cps_client_file_offset < 0 ||
+                                        bytes_read > 0)) {
                                 uint8_t hash[SHA_256_HASH_SIZE];
 
                                 calc_sha_256(hash, buffer, bytes_read);
@@ -941,9 +941,13 @@ int main(int argc, char *argv[])
                                 cps->cps_client_state = CS_TAILING;
                             } else if (type == TPT_ACK_BLOCK) {
                                 // fprintf(stderr, "info: client acked: %s\n", path);
-                                cps->cps_client_file_offset +=
-                                    cps->cps_client_file_read_length;
-                                cps->cps_client_state = CS_INIT;
+                                if (cps->cps_client_file_read_length == 0) {
+                                    cps->cps_client_state = CS_TAILING;
+                                } else {
+                                    cps->cps_client_file_offset +=
+                                        cps->cps_client_file_read_length;
+                                    cps->cps_client_state = CS_INIT;
+                                }
                             }
                             free(path);
                         }
