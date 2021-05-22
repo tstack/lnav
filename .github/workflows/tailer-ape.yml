@@ -24,7 +24,13 @@ jobs:
           -fuse-ld=bfd -Wl,-T,ape.lds
           -include cosmopolitan.h crt.o ape.o cosmopolitan.a
       - name: Objcopy
-        run: objcopy -S -O binary tailer.dbg tailer
+        run: objcopy -S -O binary tailer.dbg src/tailer/tailer.ape
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          # Optional, but recommended
+          # Defaults to "Apply automatic changes"
+          commit_message: Update tailer
+          file_pattern: src/tailer/tailer.ape
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
