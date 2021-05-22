@@ -46,7 +46,7 @@ run_test ${lnav_test} -d /tmp/lnav.err -n \
     localhost:nonexistent-file
 
 check_error_output "no error for nonexistent-file?" <<EOF
-error: unable to open file: localhost:nonexistent-file -- unable to lstat -- No such file or directory
+error: unable to open file: localhost:nonexistent-file -- unable to lstat -- ENOENT[2]
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \

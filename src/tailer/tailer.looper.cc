@@ -274,7 +274,9 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             std::vector<char *> args;
 
             arg_strs.emplace_back(fmt::format(
-                "cat > {} && chmod ugo+rx ./{}", tailer_bin_name, tailer_bin_name));
+                "cat > {} && chmod ugo+rx ./{}",
+                tailer_bin_name,
+                tailer_bin_name));
 
             fmt::print(stderr, "tailer({}): executing -- {}\n",
                        netloc,
@@ -350,7 +352,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         std::vector<char *> args;
 
         arg_strs.emplace_back(fmt::format(
-            "./{}", tailer_bin_name, tailer_bin_name));
+            "bash -c ./{}", tailer_bin_name, tailer_bin_name));
 
         fmt::print(stderr, "tailer({}): executing -- {}\n",
                    netloc,
