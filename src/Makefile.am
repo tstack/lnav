@@ -297,6 +297,7 @@ nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
 
 THIRD_PARTY_SRCS = \
+    third-party/backward-cpp/backward.hpp \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
 

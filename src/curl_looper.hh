@@ -50,7 +50,7 @@ public:
     };
 };
 
-class curl_looper : public isc::service {
+class curl_looper : public isc::service<curl_looper> {
 public:
     void start() { };
     void stop() { };
