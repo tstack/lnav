@@ -416,6 +416,7 @@ static void sigabrt(int sig)
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
+#if 0
         {
             backward::StackTrace st;
 
@@ -437,6 +438,7 @@ static void sigabrt(int sig)
                 write(fd, buf, strlen(buf));
             }
         }
+#endif
         log_ring.lr_length = 0;
         log_ring.lr_frag_start = BUFFER_SIZE;
         log_ring.lr_frag_end = 0;

@@ -11,6 +11,12 @@ sudo apk add \
     ncurses \
     autoconf \
     automake \
+    elfutils \
+    elfutils-dev \
+    libdwarf \
+    libdwarf-dev \
+    libdwarf-static \
+    libelf-static \
     libexecinfo-dev \
     libexecinfo-static \
     libtool \
