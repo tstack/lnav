@@ -117,6 +117,7 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-I$(srcdir)/fmtlib \
+	-I$(srcdir)/third-party \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \

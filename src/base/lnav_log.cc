@@ -47,6 +47,7 @@
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
+#include "backward-cpp/backward.hpp"
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -415,6 +416,27 @@ static void sigabrt(int sig)
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
+        {
+            backward::StackTrace st;
+
+            st.load_here(32);
+            backward::TraceResolver tr;
+
+            tr.load_stacktrace(st);
+            for (size_t lpc = 0; lpc < st.size(); lpc++) {
+                auto trace = tr.resolve(st[lpc]);
+                char buf[1024];
+
+                snprintf(buf, sizeof(buf),
+                         "Frame %lu:%s:%s (%s:%d)\n",
+                         lpc,
+                         trace.object_filename.c_str(),
+                         trace.object_function.c_str(),
+                         trace.source.filename.c_str(),
+                         trace.source.line);
+                write(fd, buf, strlen(buf));
+            }
+        }
         log_ring.lr_length = 0;
         log_ring.lr_frag_start = BUFFER_SIZE;
         log_ring.lr_frag_end = 0;

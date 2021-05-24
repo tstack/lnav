@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
     -Wall \
     -I$(top_srcdir)/src/ \
+    -I$(top_srcdir)/src/third-party \
     -I$(top_srcdir)/src/fmtlib \
     $(LIBARCHIVE_CFLAGS) \
     $(READLINE_CFLAGS) \

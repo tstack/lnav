@@ -45,6 +45,7 @@ target_include_directories(
         .
         ..
         ../fmtlib
+        ../third-party
         ${CMAKE_CURRENT_BINARY_DIR}/..
 )
 target_link_libraries(base cppfmt PkgConfig::libpcre)

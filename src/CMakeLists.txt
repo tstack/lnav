@@ -496,6 +496,7 @@ target_include_directories(
         .
         fmtlib
         ${CMAKE_CURRENT_BINARY_DIR}
+        third-party
 )
 
 target_link_libraries(diag
