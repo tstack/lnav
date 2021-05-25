@@ -14,7 +14,7 @@ jobs:
       - name: Install packages
         run: >-
           wget https://github.com/tstack/cosmopolitan/releases/download/v1.0stack/cosmopolitan-amalgamation-1.0-stack.zip &&
-          unzip cosmopolitan-amalgamation-1.0.zip
+          unzip cosmopolitan-amalgamation-1.0-stack.zip
       - name: Build
         run: >-
           gcc -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie -mno-red-zone
