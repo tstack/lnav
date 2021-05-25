@@ -13,7 +13,7 @@ jobs:
         run: sudo apt-get update
       - name: Install packages
         run: >-
-          wget https://justine.lol/cosmopolitan/cosmopolitan-amalgamation-1.0.zip &&
+          wget https://github.com/tstack/cosmopolitan/releases/download/v1.0stack/cosmopolitan-amalgamation-1.0-stack.zip &&
           unzip cosmopolitan-amalgamation-1.0.zip
       - name: Build
         run: >-
