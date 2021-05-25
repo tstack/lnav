@@ -47,7 +47,9 @@
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
+#if BACKWARD_HAS_DW == 1
 #include "backward-cpp/backward.hpp"
+#endif
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -90,6 +92,7 @@
 #include "opt_util.hh"
 #include "lnav_log.hh"
 #include "enum_util.hh"
+#include "auto_mem.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LOG_LINE_SIZE = 2048;
@@ -372,7 +375,7 @@ void log_msg_extra_complete()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
-static void sigabrt(int sig)
+static void sigabrt(int sig, siginfo_t *info, void *ctx)
 {
     char crash_path[1024], latest_crash_path[1024];
     int fd;
@@ -416,11 +419,25 @@ static void sigabrt(int sig)
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
-#if 0
+#if BACKWARD_HAS_DW == 1
         {
+            ucontext_t *uctx = static_cast<ucontext_t *>(ctx);
+            void *error_addr = nullptr;
+
+#ifdef REG_RIP // x86_64
+            error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.gregs[REG_RIP]);
+#elif defined(REG_EIP) // x86_32
+            error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.gregs[REG_EIP]);
+#endif
+
             backward::StackTrace st;
 
-            st.load_here(32);
+            if (error_addr) {
+                st.load_from(error_addr, 32, reinterpret_cast<void *>(uctx),
+                             info->si_addr);
+            } else {
+                st.load_here(32, reinterpret_cast<void *>(uctx), info->si_addr);
+            }
             backward::TraceResolver tr;
 
             tr.load_stacktrace(st);
@@ -528,16 +545,39 @@ static void sigabrt(int sig)
 
 void log_install_handlers()
 {
-    signal(SIGABRT, sigabrt);
-    signal(SIGSEGV, sigabrt);
-    signal(SIGBUS, sigabrt);
-    signal(SIGILL, sigabrt);
-    signal(SIGFPE, sigabrt);
+    const size_t stack_size = 8 * 1024 * 1024;
+    const int sigs[] = {
+        SIGABRT,
+        SIGSEGV,
+        SIGBUS,
+        SIGILL,
+        SIGFPE,
+    };
+    static auto_mem<void> stack_content;
+
+    stack_t ss;
+
+    stack_content = malloc(stack_size);
+    ss.ss_sp = stack_content;
+    ss.ss_size = stack_size;
+    ss.ss_flags = 0;
+    sigaltstack(&ss, nullptr);
+    for (const auto sig : sigs) {
+        struct sigaction sa;
+
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER | SA_RESETHAND;
+        sigfillset(&sa.sa_mask);
+        sigdelset(&sa.sa_mask, sig);
+        sa.sa_sigaction = sigabrt;
+
+        sigaction(sig, &sa, nullptr);
+    }
 }
 
 void log_abort()
 {
-    sigabrt(SIGABRT);
+    raise(SIGABRT);
     _exit(1);
 }
 
