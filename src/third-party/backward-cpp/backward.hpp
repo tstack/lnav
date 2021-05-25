@@ -1019,11 +1019,7 @@ public:
 
     unw_cursor_t cursor;
     if (context()) {
-#if defined(UNW_INIT_SIGNAL_FRAME)
       result = unw_init_local2(&cursor, &ctx, UNW_INIT_SIGNAL_FRAME);
-#else
-      result = unw_init_local(&cursor, &ctx);
-#endif
     } else {
       unw_getcontext(&ctx);
       ;

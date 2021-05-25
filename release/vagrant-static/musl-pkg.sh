@@ -13,11 +13,11 @@ sudo apk add \
     automake \
     elfutils \
     elfutils-dev \
-    libdwarf \
-    libdwarf-dev \
-    libdwarf-static \
     libelf-static \
     libexecinfo-dev \
     libexecinfo-static \
     libtool \
+    libunwind \
+    libunwind-dev \
+    libunwind-static \
     linux-headers
