@@ -238,6 +238,13 @@
 #include <dwarf.h>
 #include <elfutils/libdw.h>
 #include <elfutils/libdwfl.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#undef _GNU_SOURCE
+#else
+#include <dlfcn.h>
+#endif
 #endif
 
 #if BACKWARD_HAS_DWARF == 1
