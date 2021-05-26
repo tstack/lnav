@@ -213,9 +213,11 @@ check_error_output "rename-stdin when there is no stdin file?" <<EOF
 ../test/.lnav/formats/default/rename-stdin.lnav:7: error: no data was redirected to lnav's standard-input
 EOF
 
-echo 'Hello, World!' | run_test ${lnav_test} -n \
+run_test ${lnav_test} -n \
     -c "|rename-stdin foo" \
-    -c ";SELECT filepath FROM lnav_file"
+    -c ";SELECT filepath FROM lnav_file" <<EOF
+Hello, World!
+EOF
 
 check_output "rename of stdin did not work?" <<EOF
 filepath
@@ -1246,8 +1248,9 @@ llline,jgline
 EOF
 
 
-cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
-    -c ";select log_body from syslog_log where log_procname = 'automount'"
+run_test ${lnav_test} -n \
+    -c ";select log_body from syslog_log where log_procname = 'automount'" \
+    < ${test_dir}/logfile_syslog.0
 
 check_output "querying against stdin is not working?" <<EOF
                 log_body
@@ -1257,8 +1260,9 @@ check_output "querying against stdin is not working?" <<EOF
 EOF
 
 
-cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
-    -c ";select log_body from syslog_log where log_procname = 'sudo'"
+run_test ${lnav_test} -n \
+    -c ";select log_body from syslog_log where log_procname = 'sudo'" \
+    < ${test_dir}/logfile_syslog.0
 
 check_output "single result is not working?" <<EOF
                                                       log_body

@@ -1,6 +1,9 @@
 
 include $(top_srcdir)/aminclude_static.am
 
+TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
+LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
+
 BUILT_SOURCES = tailerbin.h tailerbin.cc
 
 AM_CPPFLAGS = \
@@ -58,7 +61,7 @@ libtailerservice_a_SOURCES = \
     tailerbin.cc \
     tailer.looper.cc
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
     drive_tailer \
     tailer
 
@@ -79,6 +82,12 @@ drive_tailer_LDADD = \
     libtailerpp.a \
     ../base/libbase.a \
     ../fmtlib/libcppfmt.a
+
+dist_noinst_SCRIPTS = \
+    test_tailer.sh
+
+TESTS = \
+    test_tailer.sh
 
 DISTCLEANFILES = \
     tailerbin.h \

@@ -71,6 +71,7 @@ LAST_TEST=""
 #
 run_test() {
     LAST_TEST="test: $@"
+    export test_num=`expr ${test_num} \+ 1`
     "$@" > ${test_file_base}_${test_num}.tmp 2> ${test_file_base}_${test_num}.err
 }
 
@@ -90,6 +91,10 @@ run_test() {
 #     EOF
 #
 check_output() {
+    sed -i "" \
+        -e "s;${test_dir};{test_dir};g" \
+        -e "s;${top_srcdir};{top_srcdir};g" \
+        ${test_file_base}_${test_num}.tmp
     diff -w -u - ${test_file_base}_${test_num}.tmp > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
         echo $LAST_TEST
@@ -97,7 +102,6 @@ check_output() {
         cat ${test_file_base}_${test_num}.diff
 	    exit 1
     fi
-    test_num=`expr ${test_num} \+ 1`
 }
 
 check_output_ws() {
@@ -108,7 +112,6 @@ check_output_ws() {
         cat ${test_file_base}_${test_num}.diff
 	    exit 1
     fi
-    test_num=`expr ${test_num} \+ 1`
 }
 
 test_filename() {
@@ -120,6 +123,10 @@ test_err_filename() {
 }
 
 check_error_output() {
+    sed -i "" \
+        -e "s;${test_dir};{test_dir};g" \
+        -e "s;${top_srcdir};{top_srcdir};g" \
+        ${test_file_base}_${test_num}.err
     diff -w -u - ${test_file_base}_${test_num}.err \
         > ${test_file_base}_${test_num}.err.diff
     if test $? -ne 0; then
@@ -150,7 +157,6 @@ grep_output_for() {
 	echo "${test_file_base}_${test_num}.tmp: $2"
 	exit 1
     fi
-    test_num=`expr ${test_num} \+ 1`
 }
 
 on_error_log() {

@@ -45,10 +45,8 @@ run_test ${lnav_test} -n \
     -I ${test_dir}/bad-config2 \
     ${test_dir}/logfile_access_log.0
 
-sed -i "" -e "s|/.*/format|format|g" `test_err_filename`
-
 check_error_output "config bad theme" <<EOF
-warning:formats/invalid-config/config.malformed.json:line 2
+warning:{test_dir}/bad-config2/formats/invalid-config/config.malformed.json:line 2
 warning:  unexpected path --
 warning:    /ui
 warning:  accepted paths --
@@ -56,7 +54,7 @@ warning:    \$schema The URI of the schema for this file -- Specifies the type o
 warning:    tuning  -- Internal settings
 warning:    ui  -- User-interface settings
 warning:    global  -- Global variable definitions
-warning:formats/invalid-config/config.truncated.json:line 2
+warning:{test_dir}/bad-config2/formats/invalid-config/config.truncated.json:line 2
 warning:  unexpected path --
 warning:    /ui
 warning:  accepted paths --
@@ -64,8 +62,8 @@ warning:    \$schema The URI of the schema for this file -- Specifies the type o
 warning:    tuning  -- Internal settings
 warning:    ui  -- User-interface settings
 warning:    global  -- Global variable definitions
-error:formats/invalid-config/config.malformed.json:3:invalid json -- parse error: object key and value must be separated by a colon (':')
+error:{test_dir}/bad-config2/formats/invalid-config/config.malformed.json:3:invalid json -- parse error: object key and value must be separated by a colon (':')
                "ui": "theme",     "abc",     "def": "" }
                      (right here) ------^
-error:formats/invalid-config/config.truncated.json: invalid json -- parse error: premature EOF
+error:{test_dir}/bad-config2/formats/invalid-config/config.truncated.json: invalid json -- parse error: premature EOF
 EOF

@@ -488,15 +488,16 @@ info 0x0
 error 0x0
 EOF
 
-
-echo "Hi" | run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.log
+run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.log <<EOF
+Hi
+EOF
 
 check_output "piping to stdin is not working?" <<EOF
 2013-06-06T19:13:20.123  Hi
 2013-06-06T19:13:20.123  ---- END-OF-STDIN ----
 EOF
 
-run_test ${lnav_test} -C ${srcdir}/logfile_bad_access_log.0
+run_test ${lnav_test} -C ${test_dir}/logfile_bad_access_log.0
 
 sed -i "" -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_err_filename`
 

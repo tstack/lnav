@@ -27,21 +27,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <unistd.h>
 #include "config.h"
+
+#include <unistd.h>
+#include <thread>
 
 #include "ghc/filesystem.hpp"
 #include "base/auto_pid.hh"
 #include "auto_fd.hh"
 #include "tailerpp.hh"
+#include "line_buffer.hh"
+
+static void read_err_pipe(auto_fd &err, std::string& eq)
+{
+    while (true) {
+        char buffer[1024];
+        auto rc = read(err.get(), buffer, sizeof(buffer));
+
+        if (rc <= 0) {
+            break;
+        }
+
+        eq.append(buffer, rc);
+    }
+}
 
 int main(int argc, char *const *argv)
 {
-    auto tmppath = ghc::filesystem::temp_directory_path() / "drive_tailer";
-    auto host = getenv("TAILER_HOST");
-
-    // ghc::filesystem::remove_all(tmppath);
-    ghc::filesystem::create_directories(tmppath);
+    if (argc != 3) {
+        fprintf(stderr,
+                "usage: %s <cmd> <path>\n",
+                argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
     auto in_pipe_res = auto_pipe::for_child_fd(STDIN_FILENO);
     if (in_pipe_res.isErr()) {
@@ -59,6 +77,14 @@ int main(int argc, char *const *argv)
         exit(EXIT_FAILURE);
     }
 
+    auto err_pipe_res = auto_pipe::for_child_fd(STDERR_FILENO);
+    if (err_pipe_res.isErr()) {
+        fprintf(stderr,
+                "cannot open stderr pipe for child: %s\n",
+                out_pipe_res.unwrapErr().c_str());
+        exit(EXIT_FAILURE);
+    }
+
     auto fork_res = lnav::pid::from_fork();
     if (fork_res.isErr()) {
         fprintf(stderr,
@@ -69,35 +95,52 @@ int main(int argc, char *const *argv)
 
     auto in_pipe = in_pipe_res.unwrap();
     auto out_pipe = out_pipe_res.unwrap();
+    auto err_pipe = err_pipe_res.unwrap();
     auto child = fork_res.unwrap();
 
     in_pipe.after_fork(child.in());
     out_pipe.after_fork(child.in());
+    err_pipe.after_fork(child.in());
 
     if (child.in_child()) {
         auto this_exe = ghc::filesystem::path(argv[0]);
         auto exe_dir = this_exe.parent_path();
         auto tailer_exe = exe_dir / "tailer";
+        char *child_argv[] = { strdup(tailer_exe.c_str()), strdup("-k") };
 
-        if (host != nullptr) {
-            execlp("ssh", "ssh", "-q", host, "./tailer", nullptr);
-        } else {
-            execvp(tailer_exe.c_str(), argv);
-        }
+        execvp(tailer_exe.c_str(), child_argv);
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stderr, "info: child pid %d\n", child.in());
+    std::string error_queue;
+    std::thread err_reader([err = std::move(err_pipe.read_end()), &error_queue]() mutable {
+        read_err_pipe(err, error_queue);
+    });
 
     auto &to_child = in_pipe.write_end();
     auto &from_child = out_pipe.read_end();
+    auto cmd = std::string(argv[1]);
 
-    for (int lpc = 1; lpc < argc; lpc++) {
-        send_packet(to_child,
-                    TPT_OPEN_PATH,
-                    TPPT_STRING, argv[lpc],
+    if (cmd == "preview") {
+        send_packet(to_child.get(),
+                    TPT_LOAD_PREVIEW,
+                    TPPT_STRING, argv[2],
+                    TPPT_INT64, int64_t{1234},
                     TPPT_DONE);
     }
+    else if (cmd == "possible") {
+        send_packet(to_child.get(),
+                    TPT_COMPLETE_PATH,
+                    TPPT_STRING, argv[2],
+                    TPPT_DONE);
+    }
+    else {
+        fprintf(stderr,
+                "error: unknown command -- %s\n", cmd.c_str());
+        exit(EXIT_FAILURE);
+    }
+
+    close(to_child.get());
 
     bool done = false;
     while (!done) {
@@ -123,10 +166,8 @@ int main(int argc, char *const *argv)
 
                 auto remote_path = ghc::filesystem::absolute(
                     ghc::filesystem::path(pe.pe_path)).relative_path();
-                auto local_path = tmppath / remote_path;
 
-                printf("removing %s\n", local_path.c_str());
-                ghc::filesystem::remove_all(local_path);
+                printf("removing %s\n", remote_path.c_str());
             },
             [&](const tailer::packet_offer_block &pob) {
                 printf("Got an offer: %s  %lld - %lld\n", pob.pob_path.c_str(),
@@ -134,6 +175,7 @@ int main(int argc, char *const *argv)
 
                 auto remote_path = ghc::filesystem::absolute(
                     ghc::filesystem::path(pob.pob_path)).relative_path();
+#if 0
                 auto local_path = tmppath / remote_path;
                 auto fd = auto_fd(open(local_path.c_str(), O_RDONLY));
 
@@ -181,8 +223,10 @@ int main(int argc, char *const *argv)
                             TPT_NEED_BLOCK,
                             TPPT_STRING, pob.pob_path.c_str(),
                             TPPT_DONE);
+#endif
             },
             [&](const tailer::packet_tail_block &ptb) {
+#if 0
                 //printf("got a tail: %s %lld %ld\n", ptb.ptb_path.c_str(),
                 //       ptb.ptb_offset, ptb.ptb_bits.size());
                 auto remote_path = ghc::filesystem::absolute(
@@ -200,6 +244,7 @@ int main(int argc, char *const *argv)
                     ftruncate(fd, ptb.ptb_offset);
                     pwrite(fd, ptb.ptb_bits.data(), ptb.ptb_bits.size(), ptb.ptb_offset);
                 }
+#endif
             },
             [&](const tailer::packet_synced &ps) {
 
@@ -208,13 +253,19 @@ int main(int argc, char *const *argv)
 
             },
             [&](const tailer::packet_preview_error &ppe) {
-
+                fprintf(stderr,
+                        "preview error: %s -- %s\n",
+                        ppe.ppe_path.c_str(),
+                        ppe.ppe_msg.c_str());
             },
             [&](const tailer::packet_preview_data &ppd) {
-
+                printf("preview of file: %s\n%.*s\n",
+                       ppd.ppd_path.c_str(),
+                       (int) ppd.ppd_bits.size(),
+                       ppd.ppd_bits.data());
             },
             [&](const tailer::packet_possible_path &ppp) {
-
+                printf("possible path: %s\n", ppp.ppp_path.c_str());
             }
         );
     }
@@ -223,4 +274,9 @@ int main(int argc, char *const *argv)
     if (!finished_child.was_normal_exit()) {
         fprintf(stderr, "error: child exited abnormally\n");
     }
+
+    err_reader.join();
+
+    printf("tailer stderr:\n%s", error_queue.c_str());
+    fprintf(stderr, "tailer stderr:\n%s", error_queue.c_str());
 }

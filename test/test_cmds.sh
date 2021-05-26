@@ -1096,9 +1096,9 @@ check_output "multiline commands do not work?" <<EOF
 Hello: Jules
 EOF
 
-
-printf 'Hello, World!' | run_test ${lnav_test} -n \
+printf "Hello, World!" | run_test ${lnav_test} -n \
   -c ":switch-to-view text"
+test_num=`expr ${test_num} \+ 1`
 
 check_output "stdin with no line feed failed" <<EOF
 Hello, World!

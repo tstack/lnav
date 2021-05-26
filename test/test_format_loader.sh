@@ -6,10 +6,8 @@ lnav_test="${top_builddir}/src/lnav-test"
 run_test ${lnav_test} -C \
     -I ${test_dir}/bad-config-json
 
-sed -i "" -e "s|/.*/format|format|g" `test_err_filename`
-
 check_error_output "invalid format not detected?" <<EOF
-warning:format.json:line 5
+warning:{test_dir}/bad-config-json/formats/invalid-key/format.json:line 5
 warning:  unexpected path --
 warning:    /invalid_key_log/value/test/identifiers
 warning:  accepted paths --
@@ -22,7 +20,7 @@ warning:    hidden <bool> -- Indicates whether or not this field should be hidde
 warning:    action-list <string> -- Actions to execute when this field is clicked on
 warning:    rewriter <command> -- A command that will rewrite this field when pretty-printing
 warning:    description <string> -- A description of the field
-error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
+error:{test_dir}/bad-config-json/formats/invalid-json/format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
           ar_log": {         "abc"     } }
                      (right here) ------^
 error:foobar_log: no regexes specified for format
@@ -34,12 +32,8 @@ EOF
 run_test ${lnav_test} -C \
     -I ${test_dir}/bad-config
 
-sed -i "" -e "s|/.*/init.sql|init.sql|g" \
-    -e "s|/.*/format|format|g" \
-    `test_err_filename`
-
 check_error_output "invalid format not detected?" <<EOF
-error:format.json:line 18
+error:{test_dir}/bad-config/formats/invalid-sample/format.json:line 18
   Invalid value, 'foo', for option:
     /bad_sample_log/value/pid/kind string|integer|float|boolean|json|quoted -- The type of data in the field
   Allowed values:
@@ -65,7 +59,7 @@ error:  against pattern bad_sample_log/regex/semi -- ^(?<timestamp>\d+); (?<body
 error:bad_sample_log:partial sample matched -- 1428634687123
 error:  against pattern bad_sample_log/regex/std -- ^(?<timestamp>\d+): (?<pid>\w+) (?<body>.*)$
 error:no_sample_log:no sample logs provided, all formats must have samples
-error:init.sql:2:near "TALE": syntax error
+error:{test_dir}/bad-config/formats/invalid-sql/init.sql:2:near "TALE": syntax error
 EOF
 
 run_test ${lnav_test} -n \

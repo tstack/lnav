@@ -848,7 +848,9 @@ int main(int argc, char *argv[])
     recv_state_t rstate = RS_PACKET_TYPE;
 
     // No need to leave ourselves around
-    unlink(argv[0]);
+    if (argc == 1) {
+        unlink(argv[0]);
+    }
 
     list_init(&client_path_list);
 
