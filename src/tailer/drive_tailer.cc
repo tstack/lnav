@@ -81,7 +81,7 @@ int main(int argc, char *const *argv)
     if (err_pipe_res.isErr()) {
         fprintf(stderr,
                 "cannot open stderr pipe for child: %s\n",
-                out_pipe_res.unwrapErr().c_str());
+                err_pipe_res.unwrapErr().c_str());
         exit(EXIT_FAILURE);
     }
 
@@ -106,9 +106,8 @@ int main(int argc, char *const *argv)
         auto this_exe = ghc::filesystem::path(argv[0]);
         auto exe_dir = this_exe.parent_path();
         auto tailer_exe = exe_dir / "tailer";
-        char *child_argv[] = { strdup(tailer_exe.c_str()), strdup("-k") };
 
-        execvp(tailer_exe.c_str(), child_argv);
+        execlp(tailer_exe.c_str(), tailer_exe.c_str(), "-k", nullptr);
         exit(EXIT_FAILURE);
     }
 
