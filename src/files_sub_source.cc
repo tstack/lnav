@@ -188,7 +188,7 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
         auto iter = fc.fc_other_files.begin();
         std::advance(iter, line);
         auto path = ghc::filesystem::path(iter->first);
-        auto fn = path.filename().string();
+        auto fn = path.string();
 
         truncate_to(fn, filename_width);
         value_out = fmt::format(

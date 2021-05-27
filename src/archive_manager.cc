@@ -33,6 +33,7 @@
 
 #include <unistd.h>
 
+#define HAVE_ARCHIVE_H 1
 #if HAVE_ARCHIVE_H
 #include "archive.h"
 #include "archive_entry.h"
@@ -258,10 +259,24 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
     done_path += ".done";
 
     if (fs::exists(done_path)) {
-        fs::last_write_time(
-            done_path, std::chrono::system_clock::now());
-        log_debug("already extracted! %s", done_path.c_str());
-        return Ok();
+        size_t file_count = 0;
+        if (fs::is_directory(tmp_path)) {
+            for (const auto& entry : fs::directory_iterator(tmp_path)) {
+                (void) entry;
+                file_count += 1;
+            }
+        }
+        if (file_count > 0) {
+            fs::last_write_time(
+                done_path, std::chrono::system_clock::now());
+            log_info("%s: archive has already been extracted!", done_path.c_str());
+            return Ok();
+        } else {
+            log_warning("%s: archive cache has been damaged, re-extracting",
+                        done_path.c_str());
+        }
+
+        fs::remove(done_path);
     }
 
     auto_mem<archive> arc(archive_free);

@@ -1480,7 +1480,7 @@ static void looper()
 
         while (lnav_data.ld_looping) {
             auto loop_deadline = ui_clock::now() +
-                (session_stage == 0 ? 3s : 100ms);
+                (session_stage == 0 ? 3s : 50ms);
 
             vector<struct pollfd> pollfds;
             size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
@@ -1517,6 +1517,7 @@ static void looper()
 
                     lnav_data.ld_session_loaded = true;
                     session_stage += 1;
+                    loop_deadline = ui_clock::now();
                     log_debug("file count %d",
                               lnav_data.ld_active_files.fc_files.size())
                 }
@@ -1620,15 +1621,16 @@ static void looper()
 
             auto ui_now = ui_clock::now();
             auto poll_to =
-                (ui_now < loop_deadline) ?
+                (ui_now < loop_deadline && session_stage >= 1) ?
                 std::chrono::duration_cast<std::chrono::milliseconds>(loop_deadline - ui_now) :
                 0ms;
 
             if (initial_rescan_completed &&
                 lnav_data.ld_input_dispatcher.in_escape() &&
-                poll_to < 15ms) {
+                poll_to > 15ms) {
                 poll_to = 15ms;
             }
+            // log_debug("poll %d", poll_to.count());
             rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
             gettimeofday(&current_time, nullptr);
@@ -1767,11 +1769,13 @@ static void looper()
                                 .set_top(vis_line_t(vs.vs_top));
                         }
                     }
-                    if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
-                        log_debug("switching to paging!");
-                        lnav_data.ld_mode = LNM_PAGING;
-                    } else {
-                        lnav_data.ld_files_view.set_selection(0_vl);
+                    if (lnav_data.ld_mode == LNM_FILES) {
+                        if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+                            log_debug("switching to paging!");
+                            lnav_data.ld_mode = LNM_PAGING;
+                        } else {
+                            lnav_data.ld_files_view.set_selection(0_vl);
+                        }
                     }
                     session_stage += 1;
                     load_time_bookmarks();
