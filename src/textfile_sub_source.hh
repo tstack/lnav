@@ -98,7 +98,7 @@ public:
     void push_back(const std::shared_ptr<logfile>& lf);
 
     template<class T>
-    bool rescan_files(T &callback) {
+    bool rescan_files(T &callback, nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt) {
         file_iterator iter;
         bool retval = false;
 
@@ -119,7 +119,7 @@ public:
 
             try {
                 uint32_t old_size = lf->size();
-                logfile::rebuild_result_t new_text_data = lf->rebuild_index();
+                logfile::rebuild_result_t new_text_data = lf->rebuild_index(deadline);
 
                 if (lf->get_format() != nullptr) {
                     iter = this->tss_files.erase(iter);

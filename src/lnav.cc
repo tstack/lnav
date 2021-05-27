@@ -596,7 +596,7 @@ public:
     int front_top;
 };
 
-void rebuild_indexes()
+void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     textview_curses &log_view  = lnav_data.ld_views[LNV_LOG];
@@ -615,7 +615,7 @@ void rebuild_indexes()
         textfile_sub_source *tss = &lnav_data.ld_text_source;
         textfile_callback cb;
 
-        if (tss->rescan_files(cb)) {
+        if (tss->rescan_files(cb, deadline)) {
             text_view.reload_data();
         }
 
@@ -650,7 +650,7 @@ void rebuild_indexes()
         lnav_data.ld_active_files.close_files(closed_files);
     }
 
-    auto result = lss.rebuild_index();
+    auto result = lss.rebuild_index(deadline);
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
         bool force =
@@ -1479,10 +1479,10 @@ static void looper()
         // rlc.do_update();
 
         while (lnav_data.ld_looping) {
+            auto loop_deadline = ui_clock::now() +
+                (session_stage == 0 ? 3s : 100ms);
+
             vector<struct pollfd> pollfds;
-            auto poll_to = initial_rescan_completed ?
-                           timeval{ 0, 333000 } :
-                           timeval{ 0, 0 };
             size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
             int rc;
 
@@ -1545,7 +1545,7 @@ static void looper()
             }
 
             if (initial_rescan_completed) {
-                rebuild_indexes();
+                rebuild_indexes(loop_deadline);
             } else {
                 lnav_data.ld_files_view.set_overlay_needs_update();
             }
@@ -1618,11 +1618,18 @@ static void looper()
             lnav_data.ld_filter_view.update_poll_set(pollfds);
             lnav_data.ld_files_view.update_poll_set(pollfds);
 
+            auto ui_now = ui_clock::now();
+            auto poll_to =
+                (ui_now < loop_deadline) ?
+                std::chrono::duration_cast<std::chrono::milliseconds>(loop_deadline - ui_now) :
+                0ms;
+
             if (initial_rescan_completed &&
-                lnav_data.ld_input_dispatcher.in_escape()) {
-                poll_to.tv_usec = 15000;
+                lnav_data.ld_input_dispatcher.in_escape() &&
+                poll_to < 15ms) {
+                poll_to = 15ms;
             }
-            rc = poll(&pollfds[0], pollfds.size(), poll_to.tv_usec / 1000);
+            rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
             gettimeofday(&current_time, nullptr);
             lnav_data.ld_input_dispatcher.poll(current_time);
@@ -1689,7 +1696,7 @@ static void looper()
                 else {
                     timer.start_fade(index_counter, 3);
                 }
-                rebuild_indexes();
+                rebuild_indexes(loop_deadline);
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
                     lnav_data.ld_text_source.text_line_count() > 0) {
@@ -1713,7 +1720,7 @@ static void looper()
                     std::any_of(lnav_data.ld_active_files.fc_other_files.begin(),
                                 lnav_data.ld_active_files.fc_other_files.end(),
                                 [](const auto& pair) {
-                                    return pair.second == file_format_t::FF_ARCHIVE;
+                                    return pair.second == file_format_t::FF_SQLITE_DB;
                                 })) {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }
@@ -1761,6 +1768,7 @@ static void looper()
                         }
                     }
                     if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+                        log_debug("switching to paging!");
                         lnav_data.ld_mode = LNM_PAGING;
                     } else {
                         lnav_data.ld_files_view.set_selection(0_vl);

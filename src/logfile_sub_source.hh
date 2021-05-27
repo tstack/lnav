@@ -443,7 +443,7 @@ public:
         rr_full_rebuild,
     };
 
-    rebuild_result rebuild_index();
+    rebuild_result rebuild_index(nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
 
     void text_update_marks(vis_bookmarks &bm);
 

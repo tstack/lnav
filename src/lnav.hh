@@ -308,7 +308,7 @@ extern const ssize_t ZOOM_COUNT;
     "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
 void rebuild_hist();
-void rebuild_indexes();
+void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
 
 bool setup_logline_table(exec_context &ec);
 

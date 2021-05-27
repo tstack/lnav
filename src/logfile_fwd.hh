@@ -32,9 +32,12 @@
 #ifndef lnav_logfile_fwd_hh
 #define lnav_logfile_fwd_hh
 
+#include <chrono>
 #include <string>
 
 #include "auto_fd.hh"
+
+using ui_clock = std::chrono::steady_clock;
 
 class logfile;
 class logline_observer;

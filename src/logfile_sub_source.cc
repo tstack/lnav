@@ -570,7 +570,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 }
 
-logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
+logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 {
     iterator iter;
     size_t total_lines = 0;
@@ -603,7 +603,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         }
         else {
             if (!this->tss_view->is_paused()) {
-                switch (lf->rebuild_index()) {
+                switch (lf->rebuild_index(deadline)) {
                     case logfile::RR_NO_NEW_LINES:
                         // No changes
                         break;

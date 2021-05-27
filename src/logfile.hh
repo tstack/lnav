@@ -331,7 +331,7 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    rebuild_result_t rebuild_index();
+    rebuild_result_t rebuild_index(nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
 
     void reobserve_from(iterator iter);
 

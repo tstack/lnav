@@ -290,7 +290,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
     return retval;
 }
 
-logfile::rebuild_result_t logfile::rebuild_index()
+logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 {
     if (!this->lf_indexing) {
         if (this->lf_sort_needed) {
@@ -386,12 +386,25 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
         bool sort_needed = this->lf_sort_needed;
         this->lf_sort_needed = false;
+        size_t limit = 50 * 1000;
 
+        if (deadline) {
+            if (ui_clock::now() > deadline.value()) {
+                if (has_format) {
+                    limit = 1000;
+                } else {
+                    limit = 100;
+                }
+            } else if (!has_format) {
+                limit = 250;
+            }
+        }
         if (!has_format) {
-            log_debug("loading file... %s", this->lf_filename.c_str());
+            log_debug("loading file... %s:%d", this->lf_filename.c_str(),
+                      begin_size);
         }
         auto prev_range = file_range{off};
-        while (true) {
+        while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
 
             if (load_result.isErr()) {
@@ -413,6 +426,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
+                if (this->lf_logfile_observer != nullptr) {
+                    this->lf_logfile_observer->logfile_indexing(
+                        this->shared_from_this(), 0, 0);
+                }
                 break;
             }
 
@@ -468,17 +485,24 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 break;
             }
             if (begin_size == 0 && !has_format &&
-                li.li_file_range.fr_offset > 256 * 1024) {
+                li.li_file_range.fr_offset > 16 * 1024) {
                 break;
             }
+
+            limit -= 1;
         }
 
         if (this->lf_format == nullptr &&
             this->lf_options.loo_visible_size_limit > 0 &&
+            prev_range.fr_offset > 256 * 1024 &&
             st.st_size >= this->lf_options.loo_visible_size_limit) {
             log_info("file has unknown format and is too large: %s",
                      this->lf_filename.c_str());
             this->lf_indexing = false;
+            if (this->lf_logfile_observer != nullptr) {
+                this->lf_logfile_observer->logfile_indexing(
+                    this->shared_from_this(), 0, 0);
+            }
         }
 
         if (this->lf_logline_observer != nullptr) {

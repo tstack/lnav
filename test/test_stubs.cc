@@ -54,7 +54,7 @@ void wait_for_children()
 
 }
 
-void rebuild_indexes()
+void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
 }
 
