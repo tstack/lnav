@@ -33,7 +33,6 @@
 
 #include <unistd.h>
 
-#define HAVE_ARCHIVE_H 1
 #if HAVE_ARCHIVE_H
 #include "archive.h"
 #include "archive_entry.h"
