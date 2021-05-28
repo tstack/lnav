@@ -20,7 +20,7 @@ PACKAGE_URLS = \
 	https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.se/download/curl-7.76.0.tar.gz \
+	https://curl.se/download/curl-7.77.0.tar.gz \
 	https://tukaani.org/xz/xz-5.2.5.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs musl
@@ -66,7 +66,7 @@ osx-package: clean-outbox osx-build
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
 	rm -rf osx-pkg
 
-release: linux-ospkg osx-package musl-package
+release: osx-package musl-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb

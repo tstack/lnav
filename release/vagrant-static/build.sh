@@ -71,11 +71,11 @@ else
         PATH="${FAKE_ROOT}/bin:${PATH}"
 fi
 
-${MAKE} -j2 && strip -o /vagrant/lnav src/lnav
+${MAKE} -j2 && cp src/lnav /vagrant/lnav
 
 if test x"${OS}" != x"FreeBSD"; then
     mkdir instdir
-    make install-strip DESTDIR=$PWD/instdir
+    make install DESTDIR=$PWD/instdir
     (cd instdir/ && zip -r "${TARGET_FILE}" .)
 fi
 
