@@ -38,6 +38,7 @@ struct config {
     std::map<std::string, std::string> c_ssh_options{};
     std::map<std::string, std::string> c_ssh_config{
         {"BatchMode", "yes"},
+        {"ConnectTimeout", "10"},
         {"StrictHostKeyChecking", "yes"},
     };
 };

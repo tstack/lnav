@@ -395,6 +395,11 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                 tlooper.add_remote(rp, loo);
             });
         retval.fc_other_files[path] = file_format_t::FF_REMOTE;
+        {
+            this->fc_progress->writeAccess()->
+                sp_tailers[fmt::format("{}", rp.home())].tp_message =
+                "Initializing...";
+        }
 
         fq.push_back(lnav::futures::make_ready_future(retval));
     } else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {

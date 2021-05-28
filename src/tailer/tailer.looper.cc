@@ -83,6 +83,12 @@ static void read_err_pipe(const std::string &netloc, auto_fd &err,
     }
 }
 
+static void update_tailer_progress(const std::string& netloc, const std::string& msg)
+{
+    lnav_data.ld_active_files.fc_progress->writeAccess()->
+        sp_tailers[netloc].tp_message = msg;
+}
+
 void tailer::looper::loop_body()
 {
     auto now = std::chrono::steady_clock::now();
@@ -248,6 +254,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 {
     log_debug("tailer(%s): transferring tailer to remote", netloc.c_str());
 
+    update_tailer_progress(netloc, "Transferring tailer...");
+
     auto& cfg = injector::get<const tailer::config&>();
     auto tailer_bin_name = fmt::format("tailer.bin.{}", getpid());
 
@@ -337,6 +345,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             return Err(fmt::format("failed to ssh to host: {}", error_msg));
         }
     }
+
+    update_tailer_progress(netloc, "Starting tailer...");
 
     auto in_pipe = TRY(auto_pipe::for_child_fd(STDIN_FILENO));
     auto out_pipe = TRY(auto_pipe::for_child_fd(STDOUT_FILENO));
@@ -535,6 +545,9 @@ void tailer::looper::host_tailer::loop_body()
                 log_debug("Got an error: %s -- %s", pe.pe_path.c_str(),
                        pe.pe_msg.c_str());
 
+                lnav_data.ld_active_files.fc_progress->writeAccess()->
+                    sp_tailers.erase(this->ht_netloc);
+
                 auto desired_iter = conn.c_desired_paths.find(pe.pe_path);
                 if (desired_iter != conn.c_desired_paths.end()) {
                     report_error(this->get_display_path(pe.pe_path), pe.pe_msg);
@@ -611,10 +624,16 @@ void tailer::looper::host_tailer::loop_body()
 
                     auto custom_name = this->get_display_path(pob.pob_path);
                     isc::to<main_looper &, services::main_t>()
-                        .send([local_path, custom_name, loo](auto &mlooper) {
+                        .send([local_path, custom_name, loo, netloc = this->ht_netloc](auto &mlooper) {
                             auto &active_fc = lnav_data.ld_active_files;
                             auto lpath_str = local_path.string();
 
+                            {
+                                safe::WriteAccess<safe_scan_progress> sp(
+                                    *active_fc.fc_progress);
+
+                                sp->sp_tailers.erase(netloc);
+                            }
                             if (active_fc.fc_file_names.count(lpath_str) > 0) {
                                 log_debug("already in fc_file_names");
                                 return;
@@ -887,6 +906,8 @@ tailer::looper::child_finished(std::shared_ptr<service_base> child)
                 this->l_netlocs_to_paths.erase(netloc_iter);
             }
         }
+        lnav_data.ld_active_files.fc_progress->writeAccess()->
+            sp_tailers.erase(iter->first);
         this->l_remotes.erase(iter);
         return;
     }
@@ -925,5 +946,7 @@ void tailer::looper::report_error(std::string path, std::string msg)
 
             fc.fc_name_to_errors[path] = msg;
             update_active_files(fc);
+            lnav_data.ld_active_files.fc_progress->writeAccess()->
+                sp_tailers.erase(path);
         });
 }

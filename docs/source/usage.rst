@@ -65,6 +65,8 @@ archives that have not been accessed in the past two days will be automatically
 deleted the next time **lnav** is started.
 
 
+.. _remote:
+
 Remote Files
 ^^^^^^^^^^^^
 
@@ -90,6 +92,14 @@ a remote file in the TUI has the advantage that the file path can be
 :kbd:`TAB`-completed and a preview is shown of the first few lines of the
 file.
 
+.. note::
+
+  Remote file access is implemented by transferring an
+  `αcτµαlly pδrταblε εxεcµταblε <https://justine.lol/ape.html>`_ to the
+  destination and invoking it.  An APE binary can run on most any x86_64
+  machine and OS (i.e. MacOS, Linux, FreeBSD, Windows).  The binary is
+  baked into the lnav executable itself, so there is no extra setup that
+  needs to be done on the remote machine.
 
 Searching
 ---------

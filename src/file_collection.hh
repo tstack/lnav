@@ -43,9 +43,15 @@
 #include "logfile_fwd.hh"
 #include "archive_manager.hh"
 #include "file_format.hh"
+#include "tailer/tailer.looper.hh"
+
+struct tailer_progress {
+    std::string tp_message;
+};
 
 struct scan_progress {
     std::list<archive_manager::extract_progress> sp_extractions;
+    std::map<std::string, tailer_progress> sp_tailers;
 };
 
 using safe_scan_progress = safe::Safe<scan_progress>;

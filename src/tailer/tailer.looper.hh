@@ -44,7 +44,8 @@ namespace tailer {
 
 class looper : public isc::service<looper> {
 public:
-    void add_remote(const network::path &path, logfile_open_options options);
+    void add_remote(const network::path &path,
+                    logfile_open_options options);
 
     void load_preview(int64_t id, const network::path& path);
 

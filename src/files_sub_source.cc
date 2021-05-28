@@ -295,31 +295,51 @@ size_t files_sub_source::text_size_for_line(textview_curses &tc, int line,
     return 0;
 }
 
+static
+auto spinner_index()
+{
+    auto now = ui_clock::now();
+
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()).count() / 100;
+}
+
 bool
 files_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
                                              int bottom, vis_line_t line,
                                              attr_line_t &value_out)
 {
     if (y == 0) {
+        static const char PROG[] = "-\\|/";
+        constexpr size_t PROG_SIZE = sizeof(PROG) - 1;
+
         auto &fc = lnav_data.ld_active_files;
         auto &fc_prog = fc.fc_progress;
         safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
 
         if (!sp->sp_extractions.empty()) {
-            static char PROG[] = "-\\|/";
-
             const auto& prog = sp->sp_extractions.front();
 
             value_out.with_ansi_string(fmt::format(
                 "{} Extracting "
                 ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
                 "... {:>8}/{}",
-                PROG[this->fos_counter % sizeof(PROG)],
+                PROG[spinner_index() % PROG_SIZE],
                 prog.ep_path.filename().string(),
                 humanize::file_size(prog.ep_out_size),
                 humanize::file_size(prog.ep_total_size)));
+            return true;
+        }
+        if (!sp->sp_tailers.empty()) {
+            auto first_iter = sp->sp_tailers.begin();
 
-            this->fos_counter += 1;
+            value_out.with_ansi_string(fmt::format(
+                "{} Connecting to "
+                ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                ": {}",
+                PROG[spinner_index() % PROG_SIZE],
+                first_iter->first,
+                first_iter->second.tp_message));
             return true;
         }
     }

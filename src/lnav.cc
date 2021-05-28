@@ -1499,7 +1499,9 @@ static void looper()
                 auto new_files = rescan_future.get();
                 if (!initial_rescan_completed &&
                     new_files.fc_file_names.empty() &&
-                    new_files.fc_files.empty()) {
+                    new_files.fc_files.empty() &&
+                    lnav_data.ld_active_files.fc_progress->readAccess()->
+                    sp_tailers.empty()) {
                     initial_rescan_completed = true;
 
                     load_session();
