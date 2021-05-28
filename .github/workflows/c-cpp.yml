@@ -77,6 +77,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           # Artifact name
-          name: Linux 64-bit
+          name: lnav-tot-linux-64bit.zip
           # A file, directory or wildcard pattern that describes what to upload
           path: src/lnav

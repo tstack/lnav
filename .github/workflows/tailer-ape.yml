@@ -31,10 +31,3 @@ jobs:
           # Defaults to "Apply automatic changes"
           commit_message: Update tailer
           file_pattern: src/tailer/tailer.ape
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          # Artifact name
-          name: tailer
-          # A file, directory or wildcard pattern that describes what to upload
-          path: tailer
