@@ -1486,8 +1486,9 @@ static void looper()
 
         // rlc.do_update();
 
-        auto last_rebuild_time = ui_clock::now() - 1min;
-        auto last_status_update_time = ui_clock::now() - 1min;
+        auto next_rebuild_time = ui_clock::now();
+        auto next_status_update_time = next_rebuild_time;
+        auto next_rescan_time = next_rebuild_time;
 
         while (lnav_data.ld_looping) {
             auto loop_deadline = ui_clock::now() +
@@ -1505,7 +1506,8 @@ static void looper()
             layout_views();
 
             auto scan_timeout = initial_rescan_completed ? 0s : 10ms;
-            if (rescan_future.wait_for(scan_timeout) ==
+            if (rescan_future.valid() &&
+                rescan_future.wait_for(scan_timeout) ==
                 std::future_status::ready) {
                 auto new_files = rescan_future.get();
                 if (!initial_rescan_completed &&
@@ -1548,6 +1550,12 @@ static void looper()
 
                 active_copy.clear();
                 active_copy.merge(lnav_data.ld_active_files);
+                rescan_future = std::future<file_collection>{};
+                next_rescan_time = ui_clock::now() + 333ms;
+            }
+
+            if (!rescan_future.valid() &&
+                (session_stage < 2 || ui_clock::now() >= next_rescan_time)) {
                 rescan_future = std::async(std::launch::async,
                                            &file_collection::rescan_files,
                                            active_copy,
@@ -1562,12 +1570,10 @@ static void looper()
 
             auto ui_now = ui_clock::now();
             if (initial_rescan_completed) {
-                auto rebuild_diff = ui_now - last_rebuild_time;
-
-                if (rebuild_diff >= 333ms) {
+                if (ui_now >= next_rebuild_time) {
                     rebuild_indexes(loop_deadline);
                     if (ui_clock::now() < loop_deadline) {
-                        last_rebuild_time = ui_clock::now();
+                        next_rebuild_time = ui_clock::now() + 333ms;
                     }
                 }
             } else {
@@ -1579,12 +1585,11 @@ static void looper()
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_preview_view.do_update();
-            auto status_update_diff = ui_now - last_status_update_time;
-            if (status_update_diff >= 100ms) {
+            if (ui_clock::now() >= next_status_update_time) {
                 for (auto &sc : lnav_data.ld_status) {
                     sc.do_update();
                 }
-                last_status_update_time = ui_now;
+                next_status_update_time = ui_clock::now() + 100ms;
             }
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
