@@ -110,7 +110,7 @@ public:
         for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
             std::shared_ptr<logfile> lf = (*iter);
 
-            if (!lf->exists() || lf->is_closed()) {
+            if (lf->is_closed()) {
                 iter = this->tss_files.erase(iter);
                 this->detach_observer(lf);
                 closed_files.template emplace_back(lf);

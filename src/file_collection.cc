@@ -325,13 +325,12 @@ file_collection::watch_logfile(const std::string &filename,
                 default:
                     log_info("loading new file: filename=%s", filename.c_str());
 
-                    /* It's a new file, load it in. */
-                    try {
-                        auto lf = std::make_shared<logfile>(filename, loo);
-
-                        retval.fc_files.push_back(lf);
-                    } catch (logfile::error &e) {
-                        retval.fc_name_to_errors[filename] = e.what();
+                    auto open_res = logfile::open(filename, loo);
+                    if (open_res.isOk()) {
+                        retval.fc_files.push_back(open_res.unwrap());
+                    }
+                    else {
+                        retval.fc_name_to_errors[filename] = open_res.unwrapErr();
                     }
                     break;
             }

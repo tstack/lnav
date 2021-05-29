@@ -42,6 +42,8 @@
 
 #include <time.h>
 
+#include <utility>
+
 #include "base/string_util.hh"
 #include "base/injector.hh"
 #include "logfile.hh"
@@ -53,62 +55,74 @@ using namespace std;
 
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
-logfile::logfile(const string &filename, logfile_open_options &loo)
-    : lf_filename(filename)
+Result<std::shared_ptr<logfile>, std::string> logfile::open(
+    std::string filename, logfile_open_options &loo)
 {
     require(!filename.empty());
 
-    this->lf_options = std::move(loo);
-    memset(&this->lf_stat, 0, sizeof(this->lf_stat));
-    if (this->lf_options.loo_fd == -1) {
+    auto lf = std::shared_ptr<logfile>(new logfile(std::move(filename), loo));
+
+    memset(&lf->lf_stat, 0, sizeof(lf->lf_stat));
+    if (lf->lf_options.loo_fd == -1) {
         char resolved_path[PATH_MAX];
 
         errno = 0;
-        if (realpath(filename.c_str(), resolved_path) == nullptr) {
-            throw error(resolved_path, errno);
+        if (realpath(lf->lf_filename.c_str(), resolved_path) == nullptr) {
+            return Err(fmt::format("realpath({}) failed with: {}",
+                                   lf->lf_filename, strerror(errno)));
         }
 
-        if (stat(resolved_path, &this->lf_stat) == -1) {
-            throw error(filename, errno);
+        if (stat(resolved_path, &lf->lf_stat) == -1) {
+            return Err(fmt::format("stat({}) failed with: {}",
+                                   lf->lf_filename, strerror(errno)));
         }
 
-        if (!S_ISREG(this->lf_stat.st_mode)) {
-            throw error(filename, EINVAL);
+        if (!S_ISREG(lf->lf_stat.st_mode)) {
+            return Err(fmt::format("{} is not a regular file",
+                                   lf->lf_filename, strerror(errno)));
         }
 
-        if ((this->lf_options.loo_fd = open(resolved_path, O_RDONLY)) == -1) {
-            throw error(filename, errno);
+        if ((lf->lf_options.loo_fd = ::open(resolved_path, O_RDONLY)) == -1) {
+            return Err(fmt::format("open({}) failed with: {}",
+                                   lf->lf_filename, strerror(errno)));
         }
 
-        this->lf_options.loo_fd.close_on_exec();
+        lf->lf_options.loo_fd.close_on_exec();
 
         log_info("Creating logfile: fd=%d; size=%" PRId64 "; mtime=%" PRId64 "; filename=%s",
-                 (int) this->lf_options.loo_fd,
-                 (long long) this->lf_stat.st_size,
-                 (long long) this->lf_stat.st_mtime,
-                 filename.c_str());
+                 (int) lf->lf_options.loo_fd,
+                 (long long) lf->lf_stat.st_size,
+                 (long long) lf->lf_stat.st_mtime,
+                 lf->lf_filename.c_str());
 
-        this->lf_actual_path = filename;
-        this->lf_valid_filename = true;
+        lf->lf_actual_path = lf->lf_filename;
+        lf->lf_valid_filename = true;
     }
     else {
-        log_perror(fstat(this->lf_options.loo_fd, &this->lf_stat));
-        this->lf_named_file = false;
-        this->lf_valid_filename = false;
+        log_perror(fstat(lf->lf_options.loo_fd, &lf->lf_stat));
+        lf->lf_named_file = false;
+        lf->lf_valid_filename = false;
     }
 
-    if (!this->lf_options.loo_filename.empty()) {
-        this->set_filename(this->lf_options.loo_filename);
-        this->lf_valid_filename = false;
+    if (!lf->lf_options.loo_filename.empty()) {
+        lf->set_filename(lf->lf_options.loo_filename);
+        lf->lf_valid_filename = false;
     }
 
-    this->lf_content_id = hasher().update(this->lf_filename).to_string();
-    this->lf_line_buffer.set_fd(this->lf_options.loo_fd);
-    this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
+    lf->lf_content_id = hasher().update(lf->lf_filename).to_string();
+    lf->lf_line_buffer.set_fd(lf->lf_options.loo_fd);
+    lf->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
-    this->lf_indexing = this->lf_options.loo_is_visible;
+    lf->lf_indexing = lf->lf_options.loo_is_visible;
 
-    ensure(this->invariant());
+    ensure(lf->invariant());
+
+    return Ok(lf);
+}
+
+logfile::logfile(string filename, logfile_open_options &loo)
+    : lf_filename(std::move(filename)), lf_options(std::move(loo))
+{
 }
 
 logfile::~logfile()
@@ -124,7 +138,11 @@ bool logfile::exists() const
         return true;
     }
 
-    if (::stat(this->lf_actual_path.value().c_str(), &st) == -1) {
+    if (this->lf_options.loo_source == logfile_name_source::ARCHIVE) {
+        return true;
+    }
+
+    if (statp(this->lf_actual_path.value(), &st) == -1) {
         log_error("%s: stat failed -- %s",
                   this->lf_actual_path.value().c_str(),
                   strerror(errno));
@@ -306,7 +324,10 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
     this->lf_activity.la_polls += 1;
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
-        throw error(this->lf_filename, errno);
+        if (errno == EINTR) {
+            return logfile::rebuild_result_t::RR_NO_NEW_LINES;
+        }
+        return logfile::rebuild_result_t::RR_INVALID;
     }
 
     // Check the previous stat against the last to see if things are wonky.
@@ -391,12 +412,14 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
         if (deadline) {
             if (ui_clock::now() > deadline.value()) {
                 if (has_format) {
+                    log_warning("with format ran past deadline! -- %s",
+                                this->lf_filename.c_str());
                     limit = 1000;
                 } else {
                     limit = 100;
                 }
             } else if (!has_format) {
-                limit = 250;
+                limit = 1000;
             }
         }
         if (!has_format) {
@@ -475,10 +498,14 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
             }
 
             if (this->lf_logfile_observer != nullptr) {
-                this->lf_logfile_observer->logfile_indexing(
+                auto indexing_res = this->lf_logfile_observer->logfile_indexing(
                     this->shared_from_this(),
                     this->lf_line_buffer.get_read_offset(li.li_file_range.next_offset()),
                     st.st_size);
+
+                if (indexing_res == logfile_observer::indexing_result::BREAK) {
+                    break;
+                }
             }
 
             if (!has_format && this->lf_format != nullptr) {
@@ -618,8 +645,11 @@ void logfile::reobserve_from(iterator iter)
         }
 
         if (this->lf_logfile_observer != nullptr) {
-            this->lf_logfile_observer->logfile_indexing(
+            auto indexing_res = this->lf_logfile_observer->logfile_indexing(
                 this->shared_from_this(), offset, this->size());
+            if (indexing_res == logfile_observer::indexing_result::BREAK) {
+                break;
+            }
         }
 
         this->read_line(iter).then([this, iter](auto sbr) {

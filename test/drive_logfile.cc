@@ -101,81 +101,82 @@ int main(int argc, char *argv[])
     } else if (argc == 0) {
         fprintf(stderr, "error: expecting log file name\n");
     } else {
-        try {
             logfile_open_options default_loo;
-            logfile lf(argv[0], default_loo);
+            auto open_res = logfile::open(argv[0], default_loo);
+
+            if (open_res.isErr()) {
+                fprintf(stderr,
+                        "unable to open logfile: %s\n",
+                        open_res.unwrapErr().c_str());
+                return EXIT_FAILURE;
+            }
+
+            auto lf = open_res.unwrap();
             struct stat st;
 
             stat(argv[0], &st);
-            assert(strcmp(argv[0], lf.get_filename().c_str()) == 0);
+            assert(strcmp(argv[0], lf->get_filename().c_str()) == 0);
 
-            lf.rebuild_index();
-            assert(!lf.is_closed());
-            lf.rebuild_index();
-            assert(!lf.is_closed());
-            lf.rebuild_index();
-            assert(!lf.is_closed());
-            assert(lf.get_activity().la_polls == 3);
-            if (lf.size() > 1) {
-                assert(lf.get_activity().la_reads == 2);
+            lf->rebuild_index();
+            assert(!lf->is_closed());
+            lf->rebuild_index();
+            assert(!lf->is_closed());
+            lf->rebuild_index();
+            assert(!lf->is_closed());
+            assert(lf->get_activity().la_polls == 3);
+            if (lf->size() > 1) {
+                assert(lf->get_activity().la_reads == 2);
             }
-            if (expected_format == "") {
-                assert(lf.get_format() == NULL);
+            if (expected_format.empty()) {
+                assert(lf->get_format() == nullptr);
             } else {
-                //printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
-                assert(lf.get_format() != NULL);
+                //printf("%s %s\n", lf->get_format()->get_name().c_str(), expected_format.c_str());
+                assert(lf->get_format() != nullptr);
                 assert(
-                    lf.get_format()->get_name().to_string() == expected_format);
+                    lf->get_format()->get_name().to_string() == expected_format);
             }
-            if (!lf.is_compressed()) {
-                assert(lf.get_modified_time() == st.st_mtime);
+            if (!lf->is_compressed()) {
+                assert(lf->get_modified_time() == st.st_mtime);
             }
 
             switch (mode) {
                 case MODE_NONE:
                     break;
                 case MODE_ECHO:
-                    for (logfile::iterator iter = lf.begin();
-                         iter != lf.end(); ++iter) {
-                        auto sbr = lf.read_line(iter).unwrap();
+                    for (auto iter = lf->begin();
+                         iter != lf->end(); ++iter) {
+                        auto sbr = lf->read_line(iter).unwrap();
 
                         printf("%.*s\n", (int) sbr.length(), sbr.get_data());
                     }
                     break;
                 case MODE_LINE_COUNT:
-                    printf("%zd\n", lf.size());
+                    printf("%zd\n", lf->size());
                     break;
                 case MODE_TIMES:
-                    for (logfile::iterator iter = lf.begin();
-                         iter != lf.end(); ++iter) {
-                        if (iter->is_ignored()) {
+                    for (auto & iter : *lf) {
+                        if (iter.is_ignored()) {
                             continue;
                         }
 
                         char buffer[1024];
                         time_t lt;
 
-                        lt = iter->get_time();
+                        lt = iter.get_time();
                         strftime(buffer, sizeof(buffer),
                                  "%b %d %H:%M:%S %Y",
                                  gmtime(&lt));
-                        printf("%s -- %03d\n", buffer, iter->get_millis());
+                        printf("%s -- %03d\n", buffer, iter.get_millis());
                     }
                     break;
                 case MODE_LEVELS:
-                    for (logfile::iterator iter = lf.begin();
-                         iter != lf.end(); ++iter) {
-                        log_level_t level = iter->get_level_and_flags();
+                    for (auto & iter : *lf) {
+                        log_level_t level = iter.get_level_and_flags();
                         printf("%s 0x%x\n", level_names[level & ~LEVEL__FLAGS],
                                level & LEVEL__FLAGS);
                     }
                     break;
             }
-        } catch (const logfile::error &e) {
-            fprintf(stderr, "logfile error -- %s (%d)", e.e_filename.c_str(),
-                    e.e_err);
-            assert(false);
-        }
     }
 
     return retval;

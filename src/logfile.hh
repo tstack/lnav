@@ -62,14 +62,20 @@ class logfile_observer {
 public:
     virtual ~logfile_observer() = default;
 
+    enum class indexing_result {
+        CONTINUE,
+        BREAK,
+    };
+
     /**
      * @param lf The logfile object that is doing the indexing.
      * @param off The current offset in the file being processed.
      * @param total The total size of the file.
+     * @return false
      */
-    virtual void logfile_indexing(const std::shared_ptr<logfile>& lf,
-                                  file_off_t off,
-                                  file_size_t total) = 0;
+    virtual indexing_result logfile_indexing(const std::shared_ptr<logfile>& lf,
+                                             file_off_t off,
+                                             file_size_t total) = 0;
 };
 
 struct logfile_activity {
@@ -85,21 +91,6 @@ class logfile :
     public unique_path_source,
     public std::enable_shared_from_this<logfile> {
 public:
-
-    class error : public std::exception {
-public:
-        error(std::string filename, int err)
-            : e_filename(std::move(filename)),
-              e_err(err) { };
-
-        const char *what() const noexcept override {
-            return strerror(this->e_err);
-        };
-
-        std::string e_filename;
-        int         e_err;
-    };
-
     typedef std::vector<logline>::iterator       iterator;
     typedef std::vector<logline>::const_iterator const_iterator;
 
@@ -111,7 +102,8 @@ public:
      * constructor should open the file specified by 'filename'.  The
      * descriptor needs to be seekable.
      */
-    logfile(const std::string &filename, logfile_open_options &loo);
+    static Result<std::shared_ptr<logfile>, std::string> open(
+        std::string filename, logfile_open_options &loo);
 
     ~logfile() override;
 
@@ -377,7 +369,6 @@ public:
     ghc::filesystem::path get_path() const override;
 
 protected:
-
     /**
      * Process a line from the file.
      *
@@ -389,15 +380,18 @@ protected:
 
     void set_format_base_time(log_format *lf);
 
+private:
+    logfile(std::string filename, logfile_open_options &loo);
+
+    std::string lf_filename;
     logfile_open_options lf_options;
     logfile_activity lf_activity;
     bool        lf_named_file{true};
-    bool        lf_valid_filename;
-    std::string lf_filename;
+    bool        lf_valid_filename{true};
     nonstd::optional<ghc::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
-    struct stat lf_stat;
+    struct stat lf_stat{};
     std::shared_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
     time_t      lf_index_time{0};

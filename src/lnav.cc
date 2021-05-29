@@ -431,14 +431,14 @@ public:
 
     };
 
-    void logfile_indexing(const shared_ptr<logfile>& lf,
-                          file_off_t off,
-                          file_size_t total) override
+    indexing_result logfile_indexing(const shared_ptr<logfile>& lf,
+                                     file_off_t off,
+                                     file_size_t total) override
     {
         static sig_atomic_t index_counter = 0;
 
         if (lnav_data.ld_flags & (LNF_HEADLESS|LNF_CHECK_CONFIG)) {
-            return;
+            return indexing_result::CONTINUE;
         }
 
         /* XXX require(off <= total); */
@@ -454,8 +454,9 @@ public:
         }
 
         if (!lnav_data.ld_looping) {
-            throw logfile::error(lf->get_filename(), EINTR);
+            return indexing_result::BREAK;
         }
+        return indexing_result::CONTINUE;
     };
 
 private:
@@ -554,6 +555,7 @@ public:
 
     void promote_file(const shared_ptr<logfile> &lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
+            this->did_promotion = true;
             log_info("promoting text file to log file: %s (%s)",
                      lf->get_filename().c_str(),
                      lf->get_content_id().c_str());
@@ -594,6 +596,7 @@ public:
 
     shared_ptr<logfile> front_file;
     int front_top;
+    bool did_promotion{false};
 };
 
 void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
@@ -634,6 +637,11 @@ void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 text_view.set_top(vis_line_t(cb.front_top));
                 scroll_downs[LNV_TEXT] = false;
             }
+        }
+        if (cb.did_promotion && deadline) {
+            // If there's a new log file, extend the deadline so it can be
+            // indexed quickly.
+            deadline = deadline.value() + 500ms;
         }
     }
 
@@ -1478,6 +1486,9 @@ static void looper()
 
         // rlc.do_update();
 
+        auto last_rebuild_time = ui_clock::now() - 1min;
+        auto last_status_update_time = ui_clock::now() - 1min;
+
         while (lnav_data.ld_looping) {
             auto loop_deadline = ui_clock::now() +
                 (session_stage == 0 ? 3s : 50ms);
@@ -1504,6 +1515,8 @@ static void looper()
                     sp_tailers.empty()) {
                     initial_rescan_completed = true;
 
+                    log_debug("initial rescan rebuild");
+                    rebuild_indexes(loop_deadline);
                     load_session();
                     if (session_data.sd_save_time) {
                         std::string ago;
@@ -1547,8 +1560,16 @@ static void looper()
                 mlooper.get_port().process_for(0s);
             }
 
+            auto ui_now = ui_clock::now();
             if (initial_rescan_completed) {
-                rebuild_indexes(loop_deadline);
+                auto rebuild_diff = ui_now - last_rebuild_time;
+
+                if (rebuild_diff >= 333ms) {
+                    rebuild_indexes(loop_deadline);
+                    if (ui_clock::now() < loop_deadline) {
+                        last_rebuild_time = ui_clock::now();
+                    }
+                }
             } else {
                 lnav_data.ld_files_view.set_overlay_needs_update();
             }
@@ -1558,8 +1579,12 @@ static void looper()
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_preview_view.do_update();
-            for (auto &sc : lnav_data.ld_status) {
-                sc.do_update();
+            auto status_update_diff = ui_now - last_status_update_time;
+            if (status_update_diff >= 100ms) {
+                for (auto &sc : lnav_data.ld_status) {
+                    sc.do_update();
+                }
+                last_status_update_time = ui_now;
             }
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
@@ -1621,7 +1646,7 @@ static void looper()
             lnav_data.ld_filter_view.update_poll_set(pollfds);
             lnav_data.ld_files_view.update_poll_set(pollfds);
 
-            auto ui_now = ui_clock::now();
+            ui_now = ui_clock::now();
             auto poll_to =
                 (ui_now < loop_deadline && session_stage >= 1) ?
                 std::chrono::duration_cast<std::chrono::milliseconds>(loop_deadline - ui_now) :
@@ -1692,7 +1717,7 @@ static void looper()
                 };
             }
 
-            if (initial_rescan_completed &&
+            if (initial_rescan_completed && session_stage < 2 &&
                 (!initial_build || timer.fade_diff(index_counter) == 0)) {
                 if (lnav_data.ld_mode == LNM_PAGING) {
                     timer.start_fade(index_counter, 1);
@@ -1700,6 +1725,7 @@ static void looper()
                 else {
                     timer.start_fade(index_counter, 3);
                 }
+                log_debug("initial build rebuild");
                 rebuild_indexes(loop_deadline);
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
@@ -2872,14 +2898,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
         catch (line_buffer::error & e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));
-        }
-        catch (logfile::error & e) {
-            if (e.e_err != EINTR) {
-                fprintf(stderr,
-                        "error: %s -- '%s'\n",
-                        strerror(e.e_err),
-                        e.e_filename.c_str());
-            }
         }
 
         // When reading from stdin, tell the user where the capture file is
