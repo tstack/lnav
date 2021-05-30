@@ -449,6 +449,9 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
+                this->lf_options.loo_is_visible = false;
+                this->lf_notes.writeAccess()->emplace(
+                    note_type::not_utf, "hiding non-UTF-8 file");
                 if (this->lf_logfile_observer != nullptr) {
                     this->lf_logfile_observer->logfile_indexing(
                         this->shared_from_this(), 0, 0);
@@ -526,6 +529,9 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
             log_info("file has unknown format and is too large: %s",
                      this->lf_filename.c_str());
             this->lf_indexing = false;
+            this->lf_notes.writeAccess()->emplace(
+                note_type::indexing_disabled,
+                "not indexing large file with no discernible log format");
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(
                     this->shared_from_this(), 0, 0);

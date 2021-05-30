@@ -57,6 +57,7 @@ public:
 
     bool fss_editing{false};
     bool fss_filter_state{false};
+    size_t fss_last_line_len{0};
 };
 
 struct files_overlay_source : public list_overlay_source {

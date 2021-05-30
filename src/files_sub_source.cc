@@ -220,6 +220,8 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
         start_time,
         end_time,
         fmt::join(file_notes, "; "));
+    this->fss_last_line_len =
+        filename_width + 23 + strlen(start_time) + strlen(end_time);
 }
 
 void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
@@ -292,6 +294,11 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
         (int) filename_width + 3 + 10,
     };
     value_out.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
+
+    lr.lr_start = this->fss_last_line_len;
+    lr.lr_end = -1;
+    value_out.emplace_back(lr, &view_curses::VC_FOREGROUND,
+                           vcolors.ansi_to_theme_color(COLOR_YELLOW));
 }
 
 size_t files_sub_source::text_size_for_line(textview_curses &tc, int line,

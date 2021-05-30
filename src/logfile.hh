@@ -369,6 +369,7 @@ public:
     enum class note_type {
         indexing_disabled,
         duplicate,
+        not_utf,
     };
 
     using note_map = std::map<note_type, std::string>;
