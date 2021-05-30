@@ -309,11 +309,11 @@ public:
 
     Result<shared_buffer_ref, std::string> read_raw_message(const_iterator ll);
 
-    enum rebuild_result_t {
-        RR_INVALID,
-        RR_NO_NEW_LINES,
-        RR_NEW_LINES,
-        RR_NEW_ORDER,
+    enum class rebuild_result_t {
+        INVALID,
+        NO_NEW_LINES,
+        NEW_LINES,
+        NEW_ORDER,
     };
 
     /**

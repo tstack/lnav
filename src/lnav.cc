@@ -2610,8 +2610,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             do {
                 rebuild_result = lf->rebuild_index();
-            } while (rebuild_result == logfile::RR_NEW_LINES ||
-                     rebuild_result == logfile::RR_NEW_ORDER);
+            } while (rebuild_result == logfile::rebuild_result_t::NEW_LINES ||
+                     rebuild_result == logfile::rebuild_result_t::NEW_ORDER);
             auto fmt = lf->get_format();
             if (fmt == nullptr) {
                 fprintf(stderr, "error:%s:no format found for file\n",

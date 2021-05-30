@@ -577,7 +577,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
     bool full_sort = false;
     int file_count = 0;
     bool force = this->lss_force_rebuild;
-    rebuild_result retval = rebuild_result::rr_no_change;
+    auto retval = rebuild_result::rr_no_change;
     nonstd::optional<struct timeval> lowest_tv = nonstd::nullopt;
     vis_line_t search_start = 0_vl;
 
@@ -604,10 +604,10 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
         else {
             if (!this->tss_view->is_paused()) {
                 switch (lf->rebuild_index(deadline)) {
-                    case logfile::RR_NO_NEW_LINES:
+                    case logfile::rebuild_result_t::NO_NEW_LINES:
                         // No changes
                         break;
-                    case logfile::RR_NEW_LINES:
+                    case logfile::rebuild_result_t::NEW_LINES:
                         if (retval == rebuild_result::rr_no_change) {
                             retval = rebuild_result::rr_appended_lines;
                         }
@@ -641,8 +641,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                             }
                         }
                         break;
-                    case logfile::RR_INVALID:
-                    case logfile::RR_NEW_ORDER:
+                    case logfile::rebuild_result_t::INVALID:
+                    case logfile::rebuild_result_t::NEW_ORDER:
                         log_debug("%s: log file has a new order, full rebuild",
                                   lf->get_filename().c_str());
                         retval = rebuild_result::rr_full_rebuild;

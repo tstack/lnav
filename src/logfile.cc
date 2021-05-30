@@ -313,21 +313,21 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
     if (!this->lf_indexing) {
         if (this->lf_sort_needed) {
             this->lf_sort_needed = false;
-            return rebuild_result_t::RR_NEW_ORDER;
+            return rebuild_result_t::NEW_ORDER;
         }
-        return logfile::rebuild_result_t::RR_NO_NEW_LINES;
+        return rebuild_result_t::NO_NEW_LINES;
     }
 
-    rebuild_result_t retval = RR_NO_NEW_LINES;
+    auto retval = rebuild_result_t::NO_NEW_LINES;
     struct stat st;
 
     this->lf_activity.la_polls += 1;
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
         if (errno == EINTR) {
-            return logfile::rebuild_result_t::RR_NO_NEW_LINES;
+            return rebuild_result_t::NO_NEW_LINES;
         }
-        return logfile::rebuild_result_t::RR_INVALID;
+        return rebuild_result_t::INVALID;
     }
 
     // Check the previous stat against the last to see if things are wonky.
@@ -341,7 +341,7 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
                  st.st_size, st.st_mtime,
                  this->lf_stat.st_size, this->lf_stat.st_mtime);
         this->close();
-        return RR_NO_NEW_LINES;
+        return rebuild_result_t::NO_NEW_LINES;
     }
     else if (this->lf_line_buffer.is_data_available(this->lf_index_size, st.st_size)) {
         this->lf_activity.la_reads += 1;
@@ -394,7 +394,7 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
                              this->lf_filename.c_str(),
                              read_result.unwrapErr().c_str());
                     this->close();
-                    return RR_INVALID;
+                    return rebuild_result_t::INVALID;
                 }
             }
         }
@@ -435,7 +435,7 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
                           this->lf_filename.c_str(),
                           load_result.unwrapErr().c_str());
                 this->close();
-                return RR_INVALID;
+                return rebuild_result_t::INVALID;
             }
 
             auto li = load_result.unwrap();
@@ -477,7 +477,7 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
                           this->lf_filename.c_str(),
                           read_result.unwrapErr().c_str());
                 this->close();
-                return RR_INVALID;
+                return rebuild_result_t::INVALID;
             }
 
             auto sbr = read_result.unwrap().rtrim(is_line_ending);
@@ -557,13 +557,13 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
         this->lf_stat = st;
 
         if (sort_needed) {
-            retval = RR_NEW_ORDER;
+            retval = rebuild_result_t::NEW_ORDER;
         } else {
-            retval = RR_NEW_LINES;
+            retval = rebuild_result_t::NEW_LINES;
         }
     }
     else if (this->lf_sort_needed) {
-        retval = RR_NEW_ORDER;
+        retval = rebuild_result_t::NEW_ORDER;
         this->lf_sort_needed = false;
     }
 

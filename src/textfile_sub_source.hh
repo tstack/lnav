@@ -129,8 +129,8 @@ public:
                 }
 
                 switch (new_text_data) {
-                    case logfile::RR_NEW_LINES:
-                    case logfile::RR_NEW_ORDER:
+                    case logfile::rebuild_result_t::NEW_LINES:
+                    case logfile::rebuild_result_t::NEW_ORDER:
                         retval = true;
                         break;
                     default:
