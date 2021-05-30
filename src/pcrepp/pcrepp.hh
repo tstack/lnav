@@ -49,6 +49,7 @@
 
 #include <string.h>
 
+#include <cassert>
 #include <string>
 #include <memory>
 #include <utility>

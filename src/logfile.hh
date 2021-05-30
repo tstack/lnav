@@ -52,6 +52,7 @@
 #include "ghc/filesystem.hpp"
 #include "logfile_fwd.hh"
 #include "log_format_fwd.hh"
+#include "safe/safe.h"
 
 /**
  * Observer interface for logfile indexing progress.
@@ -209,10 +210,7 @@ public:
         this->adjust_content_time(-1, tv);
     };
 
-    void mark_as_duplicate() {
-        this->lf_indexing = false;
-        this->lf_options.loo_is_visible = false;
-    }
+    void mark_as_duplicate(const std::string& name);
 
     const logfile_open_options& get_open_options() const {
         return this->lf_options;
@@ -368,6 +366,18 @@ public:
 
     ghc::filesystem::path get_path() const override;
 
+    enum class note_type {
+        indexing_disabled,
+        duplicate,
+    };
+
+    using note_map = std::map<note_type, std::string>;
+    using safe_notes = safe::Safe<note_map>;
+
+    note_map get_notes() const {
+        return *this->lf_notes.readAccess();
+    }
+
 protected:
     /**
      * Process a line from the file.
@@ -408,6 +418,7 @@ private:
     size_t lf_longest_line{0};
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
+    safe_notes lf_notes;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };

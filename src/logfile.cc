@@ -740,3 +740,12 @@ logfile::find_from_time(const timeval &tv) const
 
     return retval;
 }
+
+void logfile::mark_as_duplicate(const string &name)
+{
+    this->lf_indexing = false;
+    this->lf_options.loo_is_visible = false;
+    this->lf_notes.writeAccess()->emplace(
+        note_type::duplicate,
+        fmt::format("hiding duplicate of {}", name));
+}

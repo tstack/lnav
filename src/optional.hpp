@@ -12,7 +12,7 @@
 #define NONSTD_OPTIONAL_LITE_HPP
 
 #define optional_lite_MAJOR  3
-#define optional_lite_MINOR  2
+#define optional_lite_MINOR  4
 #define optional_lite_PATCH  0
 
 #define optional_lite_VERSION  optional_STRINGIFY(optional_lite_MAJOR) "." optional_STRINGIFY(optional_lite_MINOR) "." optional_STRINGIFY(optional_lite_PATCH)
@@ -26,6 +26,20 @@
 #define optional_OPTIONAL_NONSTD   1
 #define optional_OPTIONAL_STD      2
 
+// tweak header support:
+
+#ifdef __has_include
+# if __has_include(<nonstd/optional.tweak.hpp>)
+#  include <nonstd/optional.tweak.hpp>
+# endif
+#define optional_HAVE_TWEAK_HEADER  1
+#else
+#define optional_HAVE_TWEAK_HEADER  0
+//# pragma message("optional.hpp: Note: Tweak header not supported.")
+#endif
+
+// optional selection and configuration:
+
 #if !defined( optional_CONFIG_SELECT_OPTIONAL )
 # define optional_CONFIG_SELECT_OPTIONAL  ( optional_HAVE_STD_OPTIONAL ? optional_OPTIONAL_STD : optional_OPTIONAL_NONSTD )
 #endif
@@ -33,7 +47,10 @@
 // Control presence of exception handling (try and auto discover):
 
 #ifndef optional_CONFIG_NO_EXCEPTIONS
-# if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+# if _MSC_VER
+# include <cstddef>     // for _HAS_EXCEPTIONS
+# endif
+# if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || (_HAS_EXCEPTIONS)
 #  define optional_CONFIG_NO_EXCEPTIONS  0
 # else
 #  define optional_CONFIG_NO_EXCEPTIONS  1
@@ -296,11 +313,11 @@ namespace nonstd {
 #define optional_CPP14_000  (optional_CPP14_OR_GREATER)
 #define optional_CPP17_000  (optional_CPP17_OR_GREATER)
 
-// gcc >= 4.9, msvc >= vc14.1 (vs17):
-#define optional_CPP11_140_G490     ((optional_CPP11_OR_GREATER_ && optional_COMPILER_GNUC_VERSION >= 490) || (optional_COMPILER_MSVC_VER >= 1910))
+// clang >= 2.9, gcc >= 4.9, msvc >= vc14.0/1900 (vs15):
+#define optional_CPP11_140_C290_G490    ((optional_CPP11_OR_GREATER_ && (optional_COMPILER_CLANG_VERSION >= 290 || optional_COMPILER_GNUC_VERSION >= 490)) || (optional_COMPILER_MSVC_VER >= 1900))
 
 // clang >= 3.5, msvc >= vc11 (vs12):
-#define optional_CPP11_110_C350     ( optional_CPP11_110 && !optional_BETWEEN( optional_COMPILER_CLANG_VERSION, 1, 350 ) )
+#define optional_CPP11_110_C350         ( optional_CPP11_110 && !optional_BETWEEN( optional_COMPILER_CLANG_VERSION, 1, 350 ) )
 
 // clang >= 3.5, gcc >= 5.0, msvc >= vc11 (vs12):
 #define optional_CPP11_110_C350_G500 \
@@ -314,7 +331,7 @@ namespace nonstd {
 #define optional_HAVE_IS_DEFAULT        optional_CPP11_140
 #define optional_HAVE_NOEXCEPT          optional_CPP11_140
 #define optional_HAVE_NULLPTR           optional_CPP11_100
-#define optional_HAVE_REF_QUALIFIER     optional_CPP11_140_G490
+#define optional_HAVE_REF_QUALIFIER     optional_CPP11_140_C290_G490
 #define optional_HAVE_INITIALIZER_LIST  optional_CPP11_140
 
 // Presence of C++14 language features:
@@ -762,6 +779,12 @@ union storage_t
     }
 
     template< class... Args >
+    storage_t( nonstd_lite_in_place_t(T), Args&&... args )
+    {
+        emplace( std::forward<Args>(args)... );
+    }
+
+    template< class... Args >
     void emplace( Args&&... args )
     {
         ::new( value_ptr() ) value_type( std::forward<Args>(args)... );
@@ -1092,7 +1115,7 @@ public:
     >
     optional_constexpr explicit optional( U && value )
     : has_value_( true )
-    , contained( T{ std::forward<U>( value ) } )
+    , contained( nonstd_lite_in_place(T), std::forward<U>( value ) )
     {}
 
     // 8b (C++11) - non-explicit move construct from value
@@ -1107,7 +1130,7 @@ public:
     // NOLINTNEXTLINE( google-explicit-constructor, hicpp-explicit-conversions )
     optional_constexpr /*non-explicit*/ optional( U && value )
     : has_value_( true )
-    , contained( std::forward<U>( value ) )
+    , contained( nonstd_lite_in_place(T), std::forward<U>( value ) )
     {}
 
 #else // optional_CPP11_OR_GREATER
@@ -1420,7 +1443,7 @@ public:
 
 #endif
 
-#if optional_CPP11_OR_GREATER
+#if optional_HAVE( REF_QUALIFIER )
 
     template< typename U >
     optional_constexpr value_type value_or( U && v ) const optional_ref_qual
@@ -1431,7 +1454,11 @@ public:
     template< typename U >
     optional_constexpr14 value_type value_or( U && v ) optional_refref_qual
     {
+#if optional_COMPILER_CLANG_VERSION
+        return has_value() ? /*std::move*/( contained.value() ) : static_cast<T>(std::forward<U>( v ) );
+#else
         return has_value() ? std::move( contained.value() ) : static_cast<T>(std::forward<U>( v ) );
+#endif
     }
 
 #else

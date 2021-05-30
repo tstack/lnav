@@ -11,6 +11,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <exception>
 #include <functional>
 #include <type_traits>
 

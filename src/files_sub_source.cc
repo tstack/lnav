@@ -202,19 +202,24 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
     const auto &lf = fc.fc_files[line];
     auto fn = lf->get_unique_path();
     char start_time[64] = "", end_time[64] = "";
+    std::vector<std::string> file_notes;
 
     if (lf->get_format() != nullptr) {
         sql_strftime(start_time, sizeof(start_time), lf->front().get_timeval());
         sql_strftime(end_time, sizeof(end_time), lf->back().get_timeval());
     }
     truncate_to(fn, filename_width);
+    for (const auto& pair : lf->get_notes()) {
+        file_notes.push_back(pair.second);
+    }
     value_out = fmt::format(
-        FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}"),
+        FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}  {}"),
         fn,
         filename_width,
         humanize::file_size(lf->get_index_size()),
         start_time,
-        end_time);
+        end_time,
+        fmt::join(file_notes, "; "));
 }
 
 void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,

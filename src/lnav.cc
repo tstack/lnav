@@ -690,13 +690,14 @@ void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                            left->get_stat().st_size;
                 });
 
+                auto dupe_name = pair.second.front()->get_unique_path();
                 pair.second.pop_front();
                 for_each(pair.second.begin(),
                          pair.second.end(),
-                         [](auto& lf) {
+                         [&dupe_name](auto& lf) {
                     log_info("Hiding duplicate file: %s",
                              lf->get_filename().c_str());
-                    lf->mark_as_duplicate();
+                    lf->mark_as_duplicate(dupe_name);
                     lnav_data.ld_log_source.find_data(lf) | [](auto ld) {
                         ld->set_visibility(false);
                     };
