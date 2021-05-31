@@ -92,3 +92,6 @@ TESTS = \
 DISTCLEANFILES = \
     tailerbin.h \
     tailerbin.cc
+
+distclean-local:
+	$(RM_V)rm -f foo

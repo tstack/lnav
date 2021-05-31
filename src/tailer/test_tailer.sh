@@ -34,3 +34,15 @@ complete path: {test_dir}/logfile_access_log.*
 complete glob path: {test_dir}/logfile_access_log.*
 info: exiting...
 EOF
+
+ln -sf bar foo
+
+run_test ./drive_tailer open foo
+
+check_output "open link not working?" <<EOF
+link value: foo -> bar
+all done!
+tailer stderr:
+info: monitoring path: foo
+info: exiting...
+EOF

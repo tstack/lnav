@@ -120,7 +120,13 @@ int main(int argc, char *const *argv)
     auto &from_child = out_pipe.read_end();
     auto cmd = std::string(argv[1]);
 
-    if (cmd == "preview") {
+    if (cmd == "open") {
+        send_packet(to_child.get(),
+                    TPT_OPEN_PATH,
+                    TPPT_STRING, argv[2],
+                    TPPT_DONE);
+    }
+    else if (cmd == "preview") {
         send_packet(to_child.get(),
                     TPT_LOAD_PREVIEW,
                     TPPT_STRING, argv[2],
@@ -249,7 +255,9 @@ int main(int argc, char *const *argv)
 
             },
             [&](const tailer::packet_link &pl) {
-
+                printf("link value: %s -> %s\n",
+                       pl.pl_path.c_str(),
+                       pl.pl_link_value.c_str());
             },
             [&](const tailer::packet_preview_error &ppe) {
                 fprintf(stderr,
