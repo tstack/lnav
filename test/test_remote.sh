@@ -20,6 +20,7 @@ cat > remote/ssh_config <<EOF
 Host *
 Port 2222
 IdentityFile ${PWD}/remote/id_rsa
+StrictHostKeyChecking no
 EOF
 
 SSHD_PATH=$(which sshd)
