@@ -1,5 +1,26 @@
 #! /bin/bash
 
+run_test ./drive_sql "select json_concat(NULL, 1.0, 2.0)"
+
+check_output "json_concat does not work" <<EOF
+Row 0:
+  Column json_concat(NULL, 1.0, 2.0): [1.0,2.0]
+EOF
+
+run_test ./drive_sql "select json_concat(NULL, NULL)"
+
+check_output "json_concat does not work" <<EOF
+Row 0:
+  Column json_concat(NULL, NULL): [null]
+EOF
+
+run_test ./drive_sql "select json_concat(NULL, json('{\"abc\": 1}'))"
+
+check_output "json_concat does not work" <<EOF
+Row 0:
+  Column json_concat(NULL, json('{"abc": 1}')): [{"abc":1}]
+EOF
+
 run_test ./drive_sql "select json_contains('4', 4)"
 
 check_output "json_contains does not work" <<EOF
@@ -76,6 +97,16 @@ Row 0:
   Column jget('[null, true, 20, 30, 40]', '/3'): 30
 EOF
 
+run_test ./drive_sql "select jget('[null, true, 20, 30, 40, {\"msg\": \"Hello\"}]', '/5')"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget null does not work" <<EOF
+Row 0:
+  Column jget('[null, true, 20, 30, 40, {"msg": "Hello"}]', '/5'): {"msg":"Hello"}
+EOF
+
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40, {\"msg\": \"Hello\"}]', '/5/msg')"
 
 check_error_output "" <<EOF
@@ -106,6 +137,16 @@ Row 0:
   Column jget('[null, true, 20, 30, 40]', '/abc', 1): 1
 EOF
 
+run_test ./drive_sql "select jget('[null, true, 20, 30, 40]', '/0')"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget for array does not work" <<EOF
+Row 0:
+  Column jget('[null, true, 20, 30, 40]', '/0'): (null)
+EOF
+
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40]', '/0/foo')"
 
 check_error_output "" <<EOF
@@ -116,6 +157,22 @@ Row 0:
   Column jget('[null, true, 20, 30, 40]', '/0/foo'): (null)
 EOF
 
+run_test ./drive_sql "select jget('[null, true, 20, 30, 4.0]', '/4')"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget for array does not work" <<EOF
+Row 0:
+  Column jget('[null, true, 20, 30, 4.0]', '/4'): 4.0
+EOF
+
+run_test ./drive_sql "select jget('[null, true, 20, 30, 40', '/0/foo')"
+
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- parse error: premature EOF
+
+EOF
 
 run_test ./drive_sql "select json_group_object(key) from (select 1 as key)"
 
