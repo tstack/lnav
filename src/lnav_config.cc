@@ -925,6 +925,18 @@ static struct json_path_container ssh_handlers = {
         .with_description("The SSH command to execute")
         .for_field(&_lnav_config::lc_tailer,
                    &tailer::config::c_ssh_cmd),
+    yajlpp::property_handler("transfer-command")
+        .with_synopsis("command")
+        .with_description(
+            "Command executed on the remote host when transferring the file")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_transfer_cmd),
+    yajlpp::property_handler("start-command")
+        .with_synopsis("command")
+        .with_description(
+            "Command executed on the remote host to start the tailer")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_start_cmd),
     yajlpp::property_handler("flags")
         .with_description("The flags to pass to the SSH command")
         .for_field(&_lnav_config::lc_tailer,

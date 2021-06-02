@@ -282,9 +282,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             std::vector<char *> args;
 
             arg_strs.emplace_back(fmt::format(
-                "cat > {} && chmod ugo+rx ./{}",
-                tailer_bin_name,
-                tailer_bin_name));
+                cfg.c_transfer_cmd, tailer_bin_name));
 
             fmt::print(stderr, "tailer({}): executing -- {}\n",
                        netloc,
@@ -361,8 +359,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         auto arg_strs = create_ssh_args_from_config(ssh_dest);
         std::vector<char *> args;
 
-        arg_strs.emplace_back(fmt::format(
-            "bash -c ./{}", tailer_bin_name, tailer_bin_name));
+        arg_strs.emplace_back(fmt::format(cfg.c_start_cmd, tailer_bin_name));
 
         fmt::print(stderr, "tailer({}): executing -- {}\n",
                    netloc,

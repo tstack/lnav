@@ -33,13 +33,14 @@
 namespace tailer {
 
 struct config {
+    std::string c_transfer_cmd{"cat > {0:} && chmod ugo+rx ./{0:}"};
+    std::string c_start_cmd{"bash -c ./{0:}"};
     std::string c_ssh_cmd{"ssh"};
     std::string c_ssh_flags{};
     std::map<std::string, std::string> c_ssh_options{};
     std::map<std::string, std::string> c_ssh_config{
         {"BatchMode", "yes"},
         {"ConnectTimeout", "10"},
-        {"StrictHostKeyChecking", "yes"},
     };
 };
 

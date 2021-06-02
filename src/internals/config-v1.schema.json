@@ -78,6 +78,16 @@
                                     "description": "The SSH command to execute",
                                     "type": "string"
                                 },
+                                "transfer-command": {
+                                    "title": "/tuning/remote/ssh/transfer-command",
+                                    "description": "Command executed on the remote host when transferring the file",
+                                    "type": "string"
+                                },
+                                "start-command": {
+                                    "title": "/tuning/remote/ssh/start-command",
+                                    "description": "Command executed on the remote host to start the tailer",
+                                    "type": "string"
+                                },
                                 "flags": {
                                     "title": "/tuning/remote/ssh/flags",
                                     "description": "The flags to pass to the SSH command",

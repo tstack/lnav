@@ -17,9 +17,10 @@
                 "command": "ssh",
                 "config": {
                     "BatchMode": "yes",
-                    "ConnectTimeout": "10",
-                    "StrictHostKeyChecking": "no"
-                }
+                    "ConnectTimeout": "10"
+                },
+                "start-command": "bash -c ./{0:}",
+                "transfer-command": "cat > {0:} && chmod ugo+rx ./{0:}"
             }
         }
     }
