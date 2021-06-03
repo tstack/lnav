@@ -7,7 +7,7 @@
         "regex": {
             "std": {
                 "module-format": true,
-                "pattern": "^(?<login>\\S+)\\s*: (?:(?<error_msg>[^;]+);)?\\s*TTY=(?<tty>[^;]+)\\s+;\\s*PWD=(?<pwd>[^;]+)\\s+;\\s*USER=(?<user>[^;]+)\\s+;\\s*COMMAND=(?<command>(\\n|.)*)$"
+                "pattern": "^(?<login>\\S+)\\s*: (?:(?<error_msg>[^;]+);)?\\s*TTY=(?<tty>[^;]+)\\s+;\\s*PWD=(?<pwd>[^;]+)\\s+;\\s*USER=(?<user>[^;]+)\\s+;\\s*COMMAND=(?<command>.*)$"
             }
         },
         "level-field": "error_msg",

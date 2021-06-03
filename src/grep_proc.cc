@@ -365,8 +365,9 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
 
                 this->gp_pipe_range = li.li_file_range;
                 this->gp_line_buffer.read_range(li.li_file_range).then([this](auto sbr) {
-                    char buf[1024];
+                    auto_mem<char> buf;
 
+                    buf = (char *) malloc(sbr.length() + 1);
                     sbr.rtrim(is_line_ending);
                     memcpy(buf, sbr.get_data(), sbr.length());
                     buf[sbr.length()] = '\0';

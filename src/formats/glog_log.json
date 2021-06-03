@@ -6,7 +6,7 @@
         "url": "https://code.google.com/p/google-glog/",
         "regex": {
             "std": {
-                "pattern": "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) +(?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
+                "pattern": "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) +(?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>.*)"
             }
         },
         "level-field": "level",

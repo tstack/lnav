@@ -5,10 +5,10 @@
         "description": "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>(?:.|\\n)*)$"
+                "pattern": "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>.*)$"
             },
             "sq-brackets": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,6})?)Z?\\](?<body>(?:.|\\n)*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,6})?)Z?\\](?<body>.*)$"
             }
         },
         "sample": [

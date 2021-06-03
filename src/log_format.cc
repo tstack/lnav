@@ -1548,7 +1548,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
 
         try {
-            pat.p_pcre = std::make_unique<pcrepp>(pat.p_string);
+            pat.p_pcre = std::make_unique<pcrepp>(pat.p_string, PCRE_DOTALL);
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
