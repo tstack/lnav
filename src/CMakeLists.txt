@@ -335,7 +335,6 @@ add_library(diag STATIC
         state-extension-functions.cc
         styling.cc
         string_attr_type.cc
-        strnatcmp.c
         text_format.cc
         textfile_highlighters.cc
         textfile_sub_source.cc

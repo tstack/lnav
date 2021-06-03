@@ -1,5 +1,15 @@
 #! /bin/bash
 
+run_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":hide-unmarked-lines" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "hide-lines-before does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+EOF
 
 run_test ${lnav_test} -n \
     -c ":unix-time" \
@@ -1104,6 +1114,35 @@ check_output "stdin with no line feed failed" <<EOF
 Hello, World!
 EOF
 
+
+run_test ${lnav_test} -Nnv \
+    -c ":hide-lines-before 2009-07-20T22:59:29" \
+    -c ":hide-lines-before"
+
+check_output "hide-lines-before with no args does not work?" <<EOF
+info: hiding lines before 2009-07-20 22:59:29.000
+info: hiding lines before 2009-07-20 22:59:29.000
+EOF
+
+run_test ${lnav_test} -Nnv \
+    -c ":hide-lines-after 2009-07-20T22:59:29" \
+    -c ":hide-lines-after"
+
+check_output "hide-lines-after with no args does not work?" <<EOF
+info: hiding lines after 2009-07-20 22:59:29.000
+info: hiding lines after 2009-07-20 22:59:29.000
+EOF
+
+run_test ${lnav_test} -Nnv \
+    -c ":hide-lines-before 2009-07-20T22:00:29" \
+    -c ":hide-lines-after 2009-07-20T22:59:29" \
+    -c ":hide-lines-before"
+
+check_output "hide-lines-after with no args does not work?" <<EOF
+info: hiding lines before 2009-07-20 22:00:29.000
+info: hiding lines after 2009-07-20 22:59:29.000
+info: hiding lines before 2009-07-20 22:00:29.000 and after 2009-07-20 22:59:29.000
+EOF
 
 run_test ${lnav_test} -n \
     -c ":hide-lines-before 2009-07-20T22:59:29" \

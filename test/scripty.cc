@@ -872,7 +872,7 @@ static void usage()
         "\n"
         "Examples:\n"
         "  To record a session for playback later:\n"
-        "    $ scripty -f output.0 -- myCursesApp\n"
+        "    $ scripty -a output.0 -- myCursesApp\n"
         "\n"
         "  To replay the recorded session:\n"
         "    $ scripty -e input.0 -- myCursesApp\n";

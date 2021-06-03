@@ -39,7 +39,7 @@
 #include <sys/socket.h>
 
 #include "log_level.hh"
-#include "strnatcmp.h"
+#include "base/strnatcmp.h"
 
 #define MAX_ADDR_LEN    128
 

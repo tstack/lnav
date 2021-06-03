@@ -29,62 +29,27 @@
 
 #include "config.h"
 
+#include <zlib.h>
 #include <iostream>
 
 #include "doctest.hh"
 
-#include "base/strnatcmp.h"
-#include "base/string_util.hh"
+#include "base/lnav.gzip.hh"
 
-TEST_CASE ("endswith")
-{
-    std::string hw("hello");
-
-    CHECK(endswith(hw, "f") == false);
-    CHECK(endswith(hw, "lo") == true);
-}
-
-TEST_CASE ("truncate_to")
-{
-    const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";
-    std::string str;
-
-    truncate_to(str, 10);
-    CHECK(str == "");
-    str = "abc";
-    truncate_to(str, 10);
-    CHECK(str == "abc");
-    str = orig;
-    truncate_to(str, 10);
-    CHECK(str == "01234\u22efwxyz");
-    str = orig;
-    truncate_to(str, 1);
-    CHECK(str == "\u22ef");
-    str = orig;
-    truncate_to(str, 2);
-    CHECK(str == "\u22ef");
-    str = orig;
-    truncate_to(str, 3);
-    CHECK(str == "0\u22efz");
-    str = orig;
-    truncate_to(str, 4);
-    CHECK(str == "01\u22efz");
-    str = orig;
-    truncate_to(str, 5);
-    CHECK(str == "01\u22efyz");
-}
-
-TEST_CASE("strnatcmp") {
+TEST_CASE("lnav::gzip::uncompress") {
     {
-        constexpr const char *n1 = "010";
-        constexpr const char *n2 = "020";
+        auto u_res = lnav::gzip::uncompress("empty", nullptr, 0);
 
-        CHECK(strnatcmp(strlen(n1), n1, strlen(n2), n2) < 0);
+        CHECK(u_res.isErr());
+        CHECK(u_res.unwrapErr() ==
+              "unable to uncompress: empty -- buffer error");
     }
-    {
-        constexpr const char *n1 = "2";
-        constexpr const char *n2 = "10";
 
-        CHECK(strnatcmp(strlen(n1), n1, strlen(n2), n2) < 0);
+    {
+        auto u_res = lnav::gzip::uncompress("garbage", "abc", 3);
+
+        CHECK(u_res.isErr());
+        CHECK(u_res.unwrapErr() ==
+              "unable to uncompress: garbage -- incorrect header check");
     }
 }

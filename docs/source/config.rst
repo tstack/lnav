@@ -210,4 +210,10 @@ The following configuration options can be used to tune the internals of
 **lnav** to your liking.  The options can be changed using the :code:`:config`
 command.
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/archive-manager
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/file-vtab
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/logfile
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/remote/properties/ssh

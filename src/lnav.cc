@@ -1765,6 +1765,9 @@ static void looper()
                     toggle_view(&lnav_data.ld_views[LNV_HELP]);
                     initial_build = true;
                 }
+                if (!initial_build && lnav_data.ld_flags & LNF_NO_DEFAULT) {
+                    initial_build = true;
+                }
                 if (lnav_data.ld_log_source.text_line_count() > 0 ||
                     lnav_data.ld_text_source.text_line_count() > 0 ||
                     !lnav_data.ld_active_files.fc_other_files.empty()) {

@@ -257,7 +257,6 @@ noinst_HEADERS = \
 	styling.hh \
 	statusview_curses.hh \
 	string_attr_type.hh \
-	strnatcmp.h \
 	strong_int.hh \
 	sysclip.hh \
 	termios_guard.hh \
@@ -381,7 +380,6 @@ libdiag_a_SOURCES = \
 	sql_commands.cc \
 	sql_util.cc \
 	state-extension-functions.cc \
-	strnatcmp.c \
 	sysclip.cc \
 	textfile_highlighters.cc \
 	textview_curses.cc \

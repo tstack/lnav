@@ -363,11 +363,6 @@ public:
         return strcmp(this->get(), rhs) != 0;
     }
 
-    intern_string_t &operator=(const intern_string_t &rhs) {
-        this->ist_interned_string = rhs.ist_interned_string;
-        return *this;
-    }
-
 private:
     const intern_string *ist_interned_string;
 };

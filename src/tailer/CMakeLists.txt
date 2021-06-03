@@ -61,4 +61,9 @@ target_include_directories(
         ../fmtlib
         ${CMAKE_CURRENT_BINARY_DIR}/..
 )
-target_link_libraries(drive_tailer base tailercommon tailerpp)
+target_link_libraries(drive_tailer
+        base
+        tailercommon
+        tailerpp
+        ZLIB::zlib
+        )

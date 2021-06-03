@@ -15,6 +15,7 @@ add_library(base STATIC
         network.tcp.cc
         paths.cc
         string_util.cc
+        strnatcmp.c
         time_util.cc
 
 
@@ -36,6 +37,7 @@ add_library(base STATIC
         network.tcp.hh
         paths.hh
         result.h
+        strnatcmp.h
         time_util.hh
         )
 
@@ -55,9 +57,10 @@ add_executable(test_base
         humanize.file_size.tests.cc
         humanize.network.tests.cc
         humanize.time.tests.cc
+        lnav.gzip.tests.cc
         string_util.tests.cc
         network.tcp.tests.cc
 
         test_base.cc)
-target_link_libraries(test_base base pcrepp)
+target_link_libraries(test_base base pcrepp ZLIB::zlib)
 add_test(NAME test_base COMMAND test_base)

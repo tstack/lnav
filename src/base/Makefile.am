@@ -42,6 +42,7 @@ noinst_HEADERS = \
     paths.hh \
     result.h \
     string_util.hh \
+    strnatcmp.h \
     time_util.hh
 
 libbase_a_SOURCES = \
@@ -58,6 +59,7 @@ libbase_a_SOURCES = \
     network.tcp.cc \
     paths.cc \
     string_util.cc \
+    strnatcmp.c \
     time_util.cc
 
 check_PROGRAMS = \
@@ -67,6 +69,7 @@ test_base_SOURCES = \
     humanize.file_size.tests.cc \
     humanize.network.tests.cc \
     humanize.time.tests.cc \
+    lnav.gzip.tests.cc \
     string_util.tests.cc \
     test_base.cc
 
