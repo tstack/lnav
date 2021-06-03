@@ -183,6 +183,9 @@ public:
     }
 
     void expand_by(size_t amount) {
+        if (amount == 0) {
+            return;
+        }
         auto new_size = this->ab_size + amount;
         auto new_buffer = (char *) realloc(this->ab_buffer, new_size);
 

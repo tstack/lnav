@@ -78,6 +78,7 @@ Result<auto_buffer, std::string> uncompress(const std::string& src,
         if (err == Z_STREAM_END) {
             done = true;
         } else if (err != Z_OK) {
+            inflateEnd(&strm);
             return Err(fmt::format("unable to uncompress: {} -- {}",
                                    src, strm.msg ? strm.msg : zError(err)));
         }
