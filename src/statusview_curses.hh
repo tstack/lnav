@@ -78,17 +78,7 @@ public:
         return *this;
     };
 
-    void set_stitch_value(view_colors::role_t left, view_colors::role_t right)
-    {
-        string_attrs_t &sa = this->sf_value.get_attrs();
-        struct line_range lr(0, 1);
-
-        this->sf_value.get_string() = "::";
-        sa.emplace_back(lr, &view_curses::VC_ROLE, left);
-        lr.lr_start = 1;
-        lr.lr_end   = 2;
-        sa.emplace_back(lr, &view_curses::VC_ROLE, right);
-    };
+    void set_stitch_value(view_colors::role_t left, view_colors::role_t right);
 
     void set_left_pad(size_t val) { this->sf_left_pad = val; };
     size_t get_left_pad() const { return this->sf_left_pad; };
