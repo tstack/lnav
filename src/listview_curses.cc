@@ -473,7 +473,6 @@ void listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 }
             }
         }
-        log_debug("invoke");
         this->invoke_scroll();
         this->set_needs_update();
     }
