@@ -75,7 +75,7 @@ add_executable(drive_vt52_curses drive_vt52_curses.cc)
 target_link_libraries(drive_vt52_curses diag PkgConfig::ncursesw)
 
 add_executable(drive_logfile drive_logfile.cc)
-target_link_libraries(drive_logfile diag PkgConfig::libpcre)
+target_link_libraries(drive_logfile diag testdummy PkgConfig::libpcre)
 
 add_executable(drive_sql_anno drive_sql_anno.cc)
 target_link_libraries(drive_sql_anno diag testdummy PkgConfig::libpcre)
