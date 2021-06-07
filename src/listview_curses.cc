@@ -445,3 +445,36 @@ bool listview_curses::handle_mouse(mouse_event &me)
 
     return true;
 }
+
+void listview_curses::set_top(vis_line_t top, bool suppress_flash)
+{
+    auto inner_height = this->get_inner_height();
+
+    if (inner_height > 0 && top >= inner_height) {
+        top = vis_line_t(inner_height - 1);
+    }
+    if (top < 0 || (top > 0 && top >= inner_height)) {
+        if (suppress_flash == false) {
+            alerter::singleton().chime();
+        }
+    }
+    else if (this->lv_top != top) {
+        this->lv_top = top;
+        if (this->lv_selectable) {
+            if (this->lv_selection < top) {
+                this->lv_selection = top;
+            } else {
+                auto bot = this->get_bottom();
+
+                if (bot != -1_vl) {
+                    if (this->lv_selection > bot) {
+                        this->lv_selection = bot;
+                    }
+                }
+            }
+        }
+        log_debug("invoke");
+        this->invoke_scroll();
+        this->set_needs_update();
+    }
+}

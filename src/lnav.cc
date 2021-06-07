@@ -1360,6 +1360,16 @@ static void looper()
 
         lnav_data.ld_view_stack.vs_views.push_back(&lnav_data.ld_views[LNV_LOG]);
 
+        sb.push_back(clear_last_user_mark);
+        sb.push_back(bind_mem(&top_status_source::update_filename, &lnav_data.ld_top_source));
+        vsb.push_back(bind_mem(&top_status_source::update_view_name, &lnav_data.ld_top_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_line_number, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_percent, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&bottom_status_source::update_marks, &lnav_data.ld_bottom_source));
+        sb.push_back(bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
+
+        vsb.push_back(sb);
+
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
             lnav_data.ld_views[lpc].set_y(1);
@@ -1411,16 +1421,6 @@ static void looper()
             &lnav_data.ld_doc_status_source);
         lnav_data.ld_status[LNS_PREVIEW].set_data_source(
             &lnav_data.ld_preview_status_source);
-
-        vsb.push_back(sb);
-
-        sb.push_back(clear_last_user_mark);
-        sb.push_back(bind_mem(&top_status_source::update_filename, &lnav_data.ld_top_source));
-        vsb.push_back(bind_mem(&top_status_source::update_view_name, &lnav_data.ld_top_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_line_number, &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_percent, &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_marks, &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
 
@@ -1685,6 +1685,9 @@ static void looper()
                 if (pollfd_ready(pollfds, STDIN_FILENO)) {
                     int ch;
 
+                    next_status_update_time = ui_clock::now();
+                    next_rescan_time = next_status_update_time + 1s;
+                    next_rebuild_time = next_rescan_time;
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 

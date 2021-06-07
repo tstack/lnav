@@ -321,37 +321,7 @@ public:
      * @param top The new value for top.
      * @param suppress_flash Don't call flash() if the top is out-of-bounds.
      */
-    void set_top(vis_line_t top, bool suppress_flash = false)
-    {
-        auto inner_height = this->get_inner_height();
-
-        if (inner_height > 0 && top >= inner_height) {
-            top = vis_line_t(inner_height - 1);
-        }
-        if (top < 0 || (top > 0 && top >= inner_height)) {
-            if (suppress_flash == false) {
-                alerter::singleton().chime();
-            }
-        }
-        else if (this->lv_top != top) {
-            this->lv_top = top;
-            if (this->lv_selectable) {
-                if (this->lv_selection < top) {
-                    this->lv_selection = top;
-                } else {
-                    auto bot = this->get_bottom();
-
-                    if (bot != -1_vl) {
-                        if (this->lv_selection > bot) {
-                            this->lv_selection = bot;
-                        }
-                    }
-                }
-            }
-            this->invoke_scroll();
-            this->set_needs_update();
-        }
-    };
+    void set_top(vis_line_t top, bool suppress_flash = false);
 
     /** @return The line number that is displayed at the top. */
     vis_line_t get_top() const { return this->lv_top; };
