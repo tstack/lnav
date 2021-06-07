@@ -91,7 +91,7 @@ run_test() {
 #     EOF
 #
 check_output() {
-    sed -i "" \
+    sed -ibak \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         ${test_file_base}_${test_num}.tmp
@@ -123,7 +123,7 @@ test_err_filename() {
 }
 
 check_error_output() {
-    sed -i "" \
+    sed -ibak \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         ${test_file_base}_${test_num}.err
