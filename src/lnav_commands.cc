@@ -2189,13 +2189,18 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 }
 #endif
             }
-            else if (is_glob(fn.c_str()) || fn.find(':') != string::npos) {
+            else if (is_glob(fn.c_str())) {
                 file_names.emplace(fn, logfile_open_options());
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
-                return ec.make_error("cannot stat file: {} -- {}", fn,
-                                     strerror(errno));
+                if (fn.find(':') != string::npos) {
+                    file_names.emplace(fn, logfile_open_options());
+                    retval = "info: watching -- " + fn;
+                } else {
+                    return ec.make_error("cannot stat file: {} -- {}", fn,
+                                         strerror(errno));
+                }
             }
             else if (is_dev_null(st)) {
                 return ec.make_error("cannot open /dev/null");

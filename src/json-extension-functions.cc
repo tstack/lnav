@@ -449,14 +449,15 @@ static void sql_json_group_object_step(sqlite3_context *context,
             context, sizeof(json_agg_context));
 
 
-    if (jac->jac_yajl_gen == NULL) {
-        jac->jac_yajl_gen = yajl_gen_alloc(NULL);
+    if (jac->jac_yajl_gen == nullptr) {
+        jac->jac_yajl_gen = yajl_gen_alloc(nullptr);
         yajl_gen_config(jac->jac_yajl_gen, yajl_gen_beautify, false);
 
         yajl_gen_map_open(jac->jac_yajl_gen);
     }
 
     for (int lpc = 0; (lpc + 1) < argc; lpc += 2) {
+        log_debug("arg type %d", sqlite3_value_type(argv[lpc]));
         if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
             continue;
         }

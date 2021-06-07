@@ -1,5 +1,22 @@
 #! /bin/bash
 
+echo "Hello, World!" > not:a:remote:file
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    not:a:remote:file
+
+check_output "a file with colons cannot be read?" <<EOF
+Hello, World!
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -Nn \
+    -c ':open not:a:remote:file'
+
+check_output "a file with colons cannot be read?" <<EOF
+Hello, World!
+EOF
+
+
 export HOME=${PWD}/remote
 
 rm -rf remote-tmp

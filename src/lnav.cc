@@ -2540,16 +2540,21 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 });
         }
 #endif
-        else if (is_glob(argv[lpc]) || strchr(argv[lpc], ':') != nullptr) {
+        else if (is_glob(argv[lpc])) {
             lnav_data.ld_active_files.fc_file_names[argv[lpc]]
                 .with_tail(!(lnav_data.ld_flags & LNF_HEADLESS));
         }
         else if (stat(argv[lpc], &st) == -1) {
-            fprintf(stderr,
-                    "Cannot stat file: %s -- %s\n",
-                    argv[lpc],
-                    strerror(errno));
-            retval = EXIT_FAILURE;
+            if (strchr(argv[lpc], ':') != nullptr) {
+                lnav_data.ld_active_files.fc_file_names[argv[lpc]]
+                    .with_tail(!(lnav_data.ld_flags & LNF_HEADLESS));
+            } else {
+                fprintf(stderr,
+                        "Cannot stat file: %s -- %s\n",
+                        argv[lpc],
+                        strerror(errno));
+                retval = EXIT_FAILURE;
+            }
         }
         else if (access(argv[lpc], R_OK) == -1) {
             fprintf(stderr,

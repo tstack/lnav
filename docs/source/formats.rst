@@ -150,6 +150,7 @@ should be another object with the following fields:
     :%L: Milliseconds as a decimal number (range 000 to 999).
     :%f: Microseconds as a decimal number (range 000000 to 999999).
     :%N: Nanoseconds as a decimal number (range 000000000 to 999999999).
+    :%q: Seconds from the epoch as a hexidecimal number.
     :%i: Milliseconds from the epoch.
     :%6: Microseconds from the epoch.
 

@@ -379,7 +379,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
     }
 
     auto rp_opt = humanize::network::path::from_str(path);
-    if (rp_opt) {
+    if (rp_opt && access(path.c_str(), R_OK) == -1) {
         auto iter = this->fc_other_files.find(path);
         auto rp = *rp_opt;
 

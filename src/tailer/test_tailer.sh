@@ -23,6 +23,19 @@ info: load preview request -- 1234
 info: exiting...
 EOF
 
+run_test ./drive_tailer preview ${test_dir}/remote-log-dir
+
+check_output "preview of file failed?" <<EOF
+preview of file: {test_dir}/remote-log-dir
+logfile_access_log.0
+logfile_access_log.1
+
+all done!
+tailer stderr:
+info: load preview request -- 1234
+info: exiting...
+EOF
+
 run_test ./drive_tailer possible "${test_dir}/logfile_access_log.*"
 
 check_output "possible path list failed?" <<EOF

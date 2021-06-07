@@ -1,10 +1,17 @@
 #! /bin/bash
 
-run_test ./drive_sql "select json_concat(NULL, 1.0, 2.0)"
+run_test ./drive_sql "select json_concat(json('[null, true, 0]'), 1.0, 2.0)"
 
 check_output "json_concat does not work" <<EOF
 Row 0:
-  Column json_concat(NULL, 1.0, 2.0): [1.0,2.0]
+  Column json_concat(json('[null, true, 0]'), 1.0, 2.0): [null,true,0,1.0,2.0]
+EOF
+
+run_test ./drive_sql "select json_concat(json('[\"tag0\"]'), 'tag1', 'tag2')"
+
+check_output "json_concat does not work with strings" <<EOF
+Row 0:
+  Column json_concat(json('["tag0"]'), 'tag1', 'tag2'): ["tag0","tag1","tag2"]
 EOF
 
 run_test ./drive_sql "select json_concat(NULL, NULL)"
