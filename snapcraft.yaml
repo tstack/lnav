@@ -43,6 +43,7 @@ parts:
       "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug --force-snapshot
     build-packages: 
       - build-essential
+      - libarchive-dev
       - libpcre3-dev
       - libsqlite3-dev
       - libncursesw5-dev
