@@ -56,3 +56,6 @@ parts:
       - libncursesw5
       - libpcre3
       - libgpm2
+      - libarchive13
+      - libicu60
+      - libxml2
