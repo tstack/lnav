@@ -429,7 +429,7 @@ DISTCLEANFILES = \
 all-local: remote/ssh_host_dsa_key remote/ssh_host_rsa_key remote/id_rsa
 
 distclean-local:
-	$(RM_V)rm -rf remote remote-tmp
+	$(RM_V)rm -rf remote remote-tmp not:a:remote:dir
 	$(RM_V)rm -rf sessions
 	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf rotmp

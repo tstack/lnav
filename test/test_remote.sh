@@ -16,6 +16,22 @@ check_output "a file with colons cannot be read?" <<EOF
 Hello, World!
 EOF
 
+mkdir not:a:remote:dir
+echo "Hello, World!" > not:a:remote:dir/file
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    not:a:remote:dir
+
+check_output "a file in a dir with colons cannot be read?" <<EOF
+Hello, World!
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
+    not:a:remote:dir/f*
+
+check_output "a wildcard in a dir with colons cannot be read?" <<EOF
+Hello, World!
+EOF
 
 export HOME=${PWD}/remote
 

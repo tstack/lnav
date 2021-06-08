@@ -378,30 +378,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
         return;
     }
 
-    auto rp_opt = humanize::network::path::from_str(path);
-    if (rp_opt && access(path.c_str(), R_OK) == -1) {
-        auto iter = this->fc_other_files.find(path);
-        auto rp = *rp_opt;
-
-        if (iter != this->fc_other_files.end()) {
-            return;
-        }
-
-        file_collection retval;
-
-        isc::to<tailer::looper &, services::remote_tailer_t>()
-            .send([=](auto &tlooper) {
-                tlooper.add_remote(rp, loo);
-            });
-        retval.fc_other_files[path] = file_format_t::FF_REMOTE;
-        {
-            this->fc_progress->writeAccess()->
-                sp_tailers[fmt::format("{}", rp.home())].tp_message =
-                "Initializing...";
-        }
-
-        fq.push_back(lnav::futures::make_ready_future(retval));
-    } else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+    if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -409,7 +386,33 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
              * yet, allow it through since we'll load it in
              * dynamically.
              */
-            if (access(path.c_str(), F_OK) == -1) {
+            if (access(gl->gl_pathv[0], F_OK) == -1) {
+                auto rp_opt = humanize::network::path::from_str(path);
+                if (rp_opt) {
+                    auto iter = this->fc_other_files.find(path);
+                    auto rp = *rp_opt;
+
+                    if (iter != this->fc_other_files.end()) {
+                        return;
+                    }
+
+                    file_collection retval;
+
+                    isc::to<tailer::looper &, services::remote_tailer_t>()
+                        .send([=](auto &tlooper) {
+                            tlooper.add_remote(rp, loo);
+                        });
+                    retval.fc_other_files[path] = file_format_t::FF_REMOTE;
+                    {
+                        this->fc_progress->writeAccess()->
+                            sp_tailers[fmt::format("{}", rp.home())].tp_message =
+                            "Initializing...";
+                    }
+
+                    fq.push_back(lnav::futures::make_ready_future(retval));
+                    return;
+                }
+
                 required = false;
             }
         }
