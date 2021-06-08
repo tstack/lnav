@@ -1682,12 +1682,10 @@ static void looper()
                 }
             }
             else {
+                bool got_user_input = false;
                 if (pollfd_ready(pollfds, STDIN_FILENO)) {
                     int ch;
 
-                    next_status_update_time = ui_clock::now();
-                    next_rescan_time = next_status_update_time + 1s;
-                    next_rebuild_time = next_rescan_time;
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
@@ -1704,6 +1702,27 @@ static void looper()
                             break;
                         }
                     }
+
+                    got_user_input = true;
+                    next_status_update_time = ui_clock::now();
+                    switch (lnav_data.ld_mode) {
+                        case LNM_PAGING:
+                        case LNM_FILTER:
+                        case LNM_FILES:
+                            next_rescan_time = next_status_update_time + 1s;
+                            break;
+                        case LNM_COMMAND:
+                        case LNM_SEARCH:
+                        case LNM_SEARCH_FILTERS:
+                        case LNM_SEARCH_FILES:
+                        case LNM_CAPTURE:
+                        case LNM_SQL:
+                        case LNM_EXEC:
+                        case LNM_USER:
+                            next_rescan_time = next_status_update_time + 1min;
+                            break;
+                    }
+                    next_rebuild_time = next_rescan_time;
                 }
 
                 for (auto &tc : lnav_data.ld_views) {
@@ -1714,10 +1733,24 @@ static void looper()
                     lnav_data.ld_bottom_source.update_hits(tc);
                 };
 
+                auto old_mode = lnav_data.ld_mode;
                 rlc.check_poll_set(pollfds);
                 lnav_data.ld_filter_source.fss_editor.check_poll_set(pollfds);
                 lnav_data.ld_filter_view.check_poll_set(pollfds);
                 lnav_data.ld_files_view.check_poll_set(pollfds);
+
+                if (lnav_data.ld_mode != old_mode) {
+                    switch (lnav_data.ld_mode) {
+                        case LNM_PAGING:
+                        case LNM_FILTER:
+                        case LNM_FILES:
+                            next_rescan_time = next_status_update_time + 1s;
+                            next_rebuild_time = next_rescan_time;
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
 
             if (timer.time_to_update(overlay_counter)) {
