@@ -619,7 +619,11 @@ Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_
 {
     string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
     auto _cleanup = finally([&ec] {
-        if (ec.is_read_write()) {
+        if (ec.is_read_write() &&
+            // only rebuild in a script or non-interactive mode so we don't
+            // block the UI.
+            (lnav_data.ld_flags & LNF_HEADLESS ||
+             ec.ec_path_stack.size() > 1)) {
             rescan_files();
             rebuild_indexes();
         }
