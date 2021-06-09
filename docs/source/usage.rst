@@ -94,6 +94,17 @@ file.
 
 .. note::
 
+  If lnav is installed from the `snap <https://snapcraft.io/lnav>`_, you will
+  need to connect it to the
+  `ssh-keys plug <https://snapcraft.io/docs/ssh-keys-interface>`_ using the
+  following command:
+
+  .. prompt:: bash
+
+    sudo snap connect lnav:ssh-keys
+
+.. note::
+
   Remote file access is implemented by transferring an
   `αcτµαlly pδrταblε εxεcµταblε <https://justine.lol/ape.html>`_ to the
   destination and invoking it.  An APE binary can run on most any x86_64
