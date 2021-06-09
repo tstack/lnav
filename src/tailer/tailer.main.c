@@ -597,7 +597,9 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                         strcmp(entry->d_name, "..") == 0) {
                         continue;
                     }
-                    if (entry->d_type != DT_REG) {
+
+                    if (entry->d_type != DT_REG &&
+                        entry->d_type != DT_LNK) {
                         continue;
                     }
 
