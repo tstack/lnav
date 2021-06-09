@@ -15,7 +15,8 @@ apps:
     plugs: 
       - home            # optional, allows to read log files from home directory
       - log-observe     # required, provide access to system logs in /var/log
-      - network         # required, lnav uses sendto() with UNIX domain socket 
+      - network         # required, lnav uses sendto() with UNIX domain socket
+      - ssh-keys
 
 parts:
   selective-checkout:
