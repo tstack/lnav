@@ -42,6 +42,7 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <sys/utsname.h>
+#include <sys/sysctl.h>
 #endif
 
 #include "sha-256.h"
@@ -862,11 +863,32 @@ int main(int argc, char *argv[])
         struct utsname un;
 
         if (uname(&un) != 0) {
-            strcpy(un.machine, "unknown");
-            strcpy(un.version, "unknown");
-            strcpy(un.release, "unknown");
-            strcpy(un.sysname, "unknown");
-            strcpy(un.nodename, "unknown");
+            size_t len;
+            int mib[2];
+
+            mib[0] = CTL_KERN;
+            mib[1] = KERN_OSTYPE;
+            len = sizeof(un.sysname);
+            if (sysctl(mib, 2, un.sysname, &len, NULL, 0) == -1) {
+                strcpy(un.sysname, "unknown OS");
+            }
+            mib[1] = KERN_VERSION;
+            len = sizeof(un.version);
+            if (sysctl(mib, 2, un.version, &len, NULL, 0) == -1) {
+                strcpy(un.version, "unknown Version");
+            }
+            mib[1] = KERN_OSRELEASE;
+            len = sizeof(un.release);
+            if (sysctl(mib, 2, un.release, &len, NULL, 0) == -1) {
+                strcpy(un.release, "unknown Release");
+            }
+            mib[0] = CTL_HW;
+            mib[1] = HW_MACHINE;
+            len = sizeof(un.machine);
+            if (sysctl(mib, 2, un.machine, &len, NULL, 0) == -1) {
+                strcpy(un.machine, "unknown Machine");
+            }
+            un.nodename[0] = '\0';
         }
         snprintf(buffer, sizeof(buffer),
                  "%s %s %s %s",
