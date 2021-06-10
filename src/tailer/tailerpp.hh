@@ -50,6 +50,10 @@ struct packet_error {
     std::string pe_msg;
 };
 
+struct packet_announce {
+    std::string pa_uname;
+};
+
 struct hash_frag {
     uint8_t thf_hash[SHA_256_HASH_SIZE];
 
@@ -107,9 +111,17 @@ struct packet_possible_path {
 };
 
 using packet = mapbox::util::variant<
-    packet_eof, packet_error, packet_offer_block, packet_tail_block,
-    packet_link, packet_preview_error, packet_preview_data,
-    packet_possible_path, packet_synced>;
+    packet_eof,
+    packet_announce,
+    packet_error,
+    packet_offer_block,
+    packet_tail_block,
+    packet_link,
+    packet_preview_error,
+    packet_preview_data,
+    packet_possible_path,
+    packet_synced
+>;
 
 struct recv_payload_type {};
 struct recv_payload_length {};

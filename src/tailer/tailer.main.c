@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
+#include <sys/utsname.h>
 #endif
 
 #include "sha-256.h"
@@ -855,6 +856,29 @@ int main(int argc, char *argv[])
     }
 
     list_init(&client_path_list);
+
+    {
+        char buffer[1024];
+        struct utsname un;
+
+        if (uname(&un) != 0) {
+            strcpy(un.machine, "unknown");
+            strcpy(un.version, "unknown");
+            strcpy(un.release, "unknown");
+            strcpy(un.sysname, "unknown");
+            strcpy(un.nodename, "unknown");
+        }
+        snprintf(buffer, sizeof(buffer),
+                 "%s %s %s %s",
+                 un.sysname,
+                 un.release,
+                 un.version,
+                 un.machine);
+        send_packet(STDOUT_FILENO,
+                    TPT_ANNOUNCE,
+                    TPPT_STRING, buffer,
+                    TPPT_DONE);
+    }
 
     while (!done) {
         struct pollfd pfds[1];

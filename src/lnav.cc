@@ -893,7 +893,7 @@ bool update_active_files(const file_collection& new_files)
         lnav_data.ld_text_source.push_back(lf);
     }
     for (const auto& other_pair : new_files.fc_other_files) {
-        switch (other_pair.second) {
+        switch (other_pair.second.ofd_format) {
             case file_format_t::FF_SQLITE_DB:
                 attach_sqlite_db(lnav_data.ld_db.in(), other_pair.first);
                 break;
@@ -925,7 +925,7 @@ bool rescan_files(bool req)
         mlooper.get_port().process_for(delay);
         if (lnav_data.ld_flags & LNF_HEADLESS) {
             for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
-                if (pair.second != file_format_t::FF_REMOTE) {
+                if (pair.second.ofd_format != file_format_t::FF_REMOTE) {
                     continue;
                 }
 
@@ -1792,7 +1792,8 @@ static void looper()
                     std::any_of(lnav_data.ld_active_files.fc_other_files.begin(),
                                 lnav_data.ld_active_files.fc_other_files.end(),
                                 [](const auto& pair) {
-                                    return pair.second == file_format_t::FF_SQLITE_DB;
+                                    return pair.second.ofd_format ==
+                                           file_format_t::FF_SQLITE_DB;
                                 })) {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }

@@ -251,7 +251,7 @@ file_collection::watch_logfile(const std::string &filename,
 
             switch (ff) {
                 case file_format_t::FF_SQLITE_DB:
-                    retval.fc_other_files[filename] = ff;
+                    retval.fc_other_files[filename].ofd_format = ff;
                     break;
 
                 case file_format_t::FF_ARCHIVE: {

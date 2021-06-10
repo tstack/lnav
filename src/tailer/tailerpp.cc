@@ -73,6 +73,12 @@ Result<packet, std::string> read_packet(int fd)
             TRY(read_payloads_into(fd, pe.pe_path, pe.pe_msg));
             return Ok(packet{pe});
         }
+        case TPT_ANNOUNCE: {
+            packet_announce pa;
+
+            TRY(read_payloads_into(fd, pa.pa_uname));
+            return Ok(packet{pa});
+        }
         case TPT_OFFER_BLOCK: {
             packet_offer_block pob;
 

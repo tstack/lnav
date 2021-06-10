@@ -162,6 +162,8 @@ int main(int argc, char *const *argv)
                 printf("all done!\n");
                 done = true;
             },
+            [&](const tailer::packet_announce &pa) {
+            },
             [&](const tailer::packet_log &te) {
                 printf("log: %s\n", te.pl_msg.c_str());
             },

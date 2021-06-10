@@ -534,6 +534,29 @@ void tailer::looper::host_tailer::loop_body()
 
                 return state_v{disconnected()};
             },
+            [&](const tailer::packet_announce &pa) {
+                std::vector<std::string> paths;
+
+                for (const auto& des_pair : conn.c_desired_paths) {
+                    paths.emplace_back(fmt::format(
+                        "{}{}", this->ht_netloc, des_pair.first));
+                }
+                isc::to<main_looper&, services::main_t>()
+                    .send([paths, pa](auto& mlooper) {
+                        auto& fc = lnav_data.ld_active_files;
+
+                        for (const auto& path : paths) {
+                            auto iter = fc.fc_other_files.find(path);
+
+                            if (iter == fc.fc_other_files.end()) {
+                                continue;
+                            }
+
+                            iter->second.ofd_description = pa.pa_uname;
+                        }
+                    });
+                return std::move(this->ht_state);
+            },
             [&](const tailer::packet_log &pl) {
                 log_debug("%s\n", pl.pl_msg.c_str());
                 return std::move(this->ht_state);

@@ -58,6 +58,7 @@ typedef enum {
     TPT_PREVIEW_DATA,
     TPT_COMPLETE_PATH,
     TPT_POSSIBLE_PATH,
+    TPT_ANNOUNCE,
 } tailer_packet_type_t;
 
 #ifdef __cplusplus

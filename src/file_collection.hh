@@ -36,6 +36,7 @@
 #include <set>
 #include <list>
 #include <string>
+#include <utility>
 
 #include "safe/safe.h"
 
@@ -56,6 +57,15 @@ struct scan_progress {
 
 using safe_scan_progress = safe::Safe<scan_progress>;
 
+struct other_file_descriptor {
+    file_format_t ofd_format;
+    std::string ofd_description;
+
+    other_file_descriptor(file_format_t format = file_format_t::FF_UNKNOWN,
+                          std::string description = "")
+        : ofd_format(format), ofd_description(std::move(description)) {}
+};
+
 struct file_collection {
     bool fc_recursive{false};
     bool fc_rotated{false};
@@ -67,7 +77,7 @@ struct file_collection {
     std::vector<std::pair<std::shared_ptr<logfile>, std::string>>
         fc_renamed_files;
     std::set<std::string> fc_closed_files;
-    std::map<std::string, file_format_t> fc_other_files;
+    std::map<std::string, other_file_descriptor> fc_other_files;
     std::set<std::string> fc_synced_files;
     std::shared_ptr<safe_scan_progress> fc_progress;
     std::vector<struct stat> fc_new_stats;
