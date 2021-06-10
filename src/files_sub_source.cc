@@ -192,7 +192,7 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
 
         truncate_to(fn, filename_width);
         value_out = fmt::format(
-            FMT_STRING("    {:<{}}   {: >16} {}"),
+            FMT_STRING("    {:<{}}   {: >16}  {}"),
             fn, filename_width, iter->second.ofd_format,
             iter->second.ofd_description);
         return;

@@ -42,7 +42,7 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <sys/utsname.h>
-#include <sys/sysctl.h>
+#include <ctype.h>
 #endif
 
 #include "sha-256.h"
@@ -859,26 +859,23 @@ int main(int argc, char *argv[])
     list_init(&client_path_list);
 
     {
-        char buffer[1024];
-        struct utsname un;
+        FILE *unameFile = popen("uname -mrsv", "r");
 
-        if (uname(&un) != 0) {
-            strcpy(un.sysname, "unknown OS");
-            strcpy(un.version, "unknown Version");
-            strcpy(un.release, "unknown Release");
-            strcpy(un.machine, "unknown Machine");
-            un.nodename[0] = '\0';
+        if (unameFile != NULL) {
+            char buffer[1024];
+
+            fgets(buffer, sizeof(buffer), unameFile);
+            char *bufend = buffer + strlen(buffer) - 1;
+            while (isspace(*bufend)) {
+                bufend -= 1;
+            }
+            *bufend = '\0';
+            send_packet(STDOUT_FILENO,
+                        TPT_ANNOUNCE,
+                        TPPT_STRING, buffer,
+                        TPPT_DONE);
+            pclose(unameFile);
         }
-        snprintf(buffer, sizeof(buffer),
-                 "%s %s %s %s",
-                 un.sysname,
-                 un.release,
-                 un.version,
-                 un.machine);
-        send_packet(STDOUT_FILENO,
-                    TPT_ANNOUNCE,
-                    TPPT_STRING, buffer,
-                    TPPT_DONE);
     }
 
     while (!done) {
