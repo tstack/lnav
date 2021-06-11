@@ -39,7 +39,7 @@
 #include <limits.h>
 #include <poll.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <ctype.h>

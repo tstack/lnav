@@ -46,8 +46,8 @@ if test x"${OS}" != x"FreeBSD"; then
         TARGET_FILE='/vagrant/lnav-musl.zip'
         ../lnav/configure \
             --with-libarchive=${FAKE_ROOT} \
-            CFLAGS='-static -g1 -no-pie -O2' \
-            CXXFLAGS='-static -g1 -U__unused -no-pie -O2' \
+            CFLAGS='-static -g1 -gz=zlib -no-pie -O2' \
+            CXXFLAGS='-static -g1 -gz=zlib -U__unused -no-pie -O2' \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
             CPPFLAGS="-I${FAKE_ROOT}/include" \
             LIBS="-L${FAKE_ROOT}/lib -lexecinfo -lssh2 -llzma -lssl -lcrypto -lz" \

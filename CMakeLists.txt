@@ -18,7 +18,7 @@ HunterGate(
 
 set(CMAKE_CXX_STANDARD 14)
 project(lnav
-        VERSION 0.9.1)
+        VERSION 0.10.0)
 
 # include(cmake/CodeCoverage.cmake)
 # append_coverage_compiler_flags()

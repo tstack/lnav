@@ -1,4 +1,4 @@
-lnav v0.9.1:
+lnav v0.10.0:
      Features:
      * Files on remote machines can be viewed/tailed if they are accessible
        via SSH.  The syntax for specifying the host and path is similar to

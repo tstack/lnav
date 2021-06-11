@@ -271,7 +271,7 @@ void layout_views()
                          lnav_data.ld_mode == LNM_SEARCH_FILES) &&
                         !preview_status_open &&
                         !doc_open;
-    int filter_height = filters_open ? 3 : 0;
+    int filter_height = filters_open ? 5 : 0;
 
     int bottom_height =
         (doc_open ? 1 : 0)

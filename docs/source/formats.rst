@@ -30,7 +30,7 @@ supported:
   the file.
 * The
   `W3C Extend Log File Format <https://www.w3.org/TR/WD-logfile.html>`_
-  is supported in lnav versions v0.9.1+.  The W3C log format is
+  is supported in lnav versions v0.10.0+.  The W3C log format is
   self-describing, so **lnav** will read the header to determine the shape of
   the file.
 
