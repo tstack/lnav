@@ -23,8 +23,8 @@ email: support@lnav.org
 description: >- # this means to ignore newlines until "baseurl:"
   The Logfile Navigator, lnav for short, is an advanced log file viewer
   for the small-scale.
-baseurl: /lnav
-url: "http://lnav.org" # the base hostname & protocol for your site, e.g. http://example.com
+# baseurl: /lnav
+# url: "http://lnav.org" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: lnavapp
 # github_username:  tstack
 
