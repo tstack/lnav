@@ -1,0 +1,36 @@
+---
+# Feel free to add content and custom Front Matter to this file.
+# To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
+
+layout: top
+---
+
+![Screenshot of lnav](/assets/images/lnav-front-page.png){: style="float: right"}
+
+## An advanced log file viewer for the small-scale
+
+Watch and analyze your log files from a terminal.
+
+No server. No setup. Still featureful.
+
+<dl>
+<dt>In Your Terminal</dt>
+<dd>
+Many logging tools, like Splunk, provide great features but are optimized for
+large-scale deployments.  They require installing and configuring servers
+before they can be effectively used.  There is still a need for a robust log
+file analyzer for the terminal.
+</dd>
+
+<dt>Easy to Use</dt>
+<dd>
+Just point lnav to a directory and it will take care of the rest.  File formats
+are automatically detected and compressed files are unpacked on the fly.
+</dd>
+
+<dt>Improved Presentation</dt>
+<dd>
+Log files are a wealth of information, lnav can help highlight the parts that
+are important and filter out the noise.
+</dd>
+</dl>

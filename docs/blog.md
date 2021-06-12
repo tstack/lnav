@@ -1,0 +1,5 @@
+---
+title: Blog
+layout: home
+---
+

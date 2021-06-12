@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+
+{%- include head.html -%}
+
+<style>
+    main {
+        margin: 0 50px;
+    }
+
+    dl {
+        display: grid;
+        grid-template-rows: auto auto;
+        grid-auto-flow: column;
+        width: 100%;
+    }
+    dl dt {
+        font-weight: normal;
+        font-size: x-large;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+        margin: 20px 30px;
+    }
+    dl dd {
+        margin: 0 30px 20px 30px;
+        min-height: 3em;
+        color: #828282;
+        font-size: medium;
+    }
+</style>
+
+<body>
+
+{%- include header.html -%}
+
+<main class="page-content" aria-label="Content">
+    {{ content }}
+</main>
+
+{%- include footer.html -%}
+
+</body>
+
+</html>
