@@ -7,11 +7,15 @@ layout: top
 
 ![Screenshot of lnav](/assets/images/lnav-front-page.png){: style="float: right"}
 
-## An advanced log file viewer for the small-scale
+<div id="top-description">
+An advanced log file viewer for the small-scale
+</div>
 
-Watch and analyze your log files from a terminal.
+<div id="intro">
+<p>Watch and analyze your log files from a terminal.</p>
 
-No server. No setup. Still featureful.
+<p>No server. No setup. Still featureful.</p>
+</div>
 
 <dl>
 <dt>In Your Terminal</dt>
