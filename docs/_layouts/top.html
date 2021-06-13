@@ -9,7 +9,7 @@
     }
 
     #top-description {
-        font-size: x-large;
+        font-size: xx-large;
         margin-top: 3em;
         margin-left: 1em;
     }
@@ -22,11 +22,24 @@
         margin-left: 2em;
     }
 
+    .dlrow {
+        display: grid;
+        align-items: start;
+        grid-template-columns: repeat(auto-fit, minmax(22em, 1fr));
+        width: 100%;
+    }
+
+    p:before, #top-description:before {
+        content: "";
+        width: 6em;
+        display: block;
+        overflow: hidden;
+    }
+
     dl {
         display: grid;
         grid-template-rows: auto auto;
         grid-auto-flow: column;
-        width: 100%;
     }
     dl dt {
         font-weight: normal;
@@ -34,6 +47,7 @@
         text-align: center;
         border-bottom: 1px solid #8d8;
         margin: 20px 30px;
+        height: 2em;
     }
     dl dd {
         margin: 0 30px 20px 30px;
