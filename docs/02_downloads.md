@@ -10,6 +10,7 @@ The following options are available for installing **lnav**:
 
 ## Linux
 
+<!-- markdown-link-check-disable-next-line -->
 Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-musl-64bit.zip). 
 
 Install from the [Snap Store](https://snapcraft.io/lnav):
@@ -28,6 +29,7 @@ Install using [Homebrew](https://formulae.brew.sh/formula/lnav):
 
 ## Source
 
+<!-- markdown-link-check-disable-next-line -->
 Download the [source](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}.tar.gz)
 and install any dependencies.  The following commands will unpack the source
 tar ball, configure the build for your system, build, and then install:
