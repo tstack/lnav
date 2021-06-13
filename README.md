@@ -17,7 +17,7 @@ no setup.
 The following screenshot shows a syslog file. Log lines are displayed with
 highlights. Errors are red and warnings are yellow.
 
-[![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
+[![Screenshot](docs/assets/images/lnav-syslog-thumb.png)](docs/assets/images/lnav-syslog.png)
 
 ## Features
 
