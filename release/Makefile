@@ -55,7 +55,16 @@ osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
 	cd ../ && ./autogen.sh
-	cd osx-build-dir && ../../configure --with-readline=/usr/local/opt/readline CXXFLAGS=-I/usr/local/opt/ncurses/include LDFLAGS=-L/usr/local/opt/ncurses/lib && make -j8 && make dist -j8 && make dist-bzip2
+	cd osx-build-dir && \
+	  ../../configure --enable-static \
+	  --with-readline=/usr/local/opt/readline \
+	  --with-sqlite3=/usr/local/opt/sqlite \
+	  --with-libarchive=/usr/local/opt/libarchive \
+	  "CXXFLAGS=-I/usr/local/opt/ncurses/include -g1 -O2" \
+	  "CFLAGS=-I/usr/local/opt/ncurses/include -g1 -O2" \
+	  "LDFLAGS=-L/usr/local/opt/ncurses/lib -L/usr/local/opt/xz/lib" \
+	  "LIBS=-llzma -lzstd -lbrotlidec-static -liconv -llz4" \
+	  && make -j8 && make dist -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}

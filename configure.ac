@@ -182,7 +182,7 @@ dnl esac
 
 AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
 
-AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
+AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LIBARCHIVE_LDFLAGS $LIBCURL $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
            ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
@@ -191,7 +191,11 @@ AS_VAR_SET(static_lib_list,
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 AS_VAR_SET(static_lib_list,
-           ["$static_lib_list libarchive.a"])
+           ["$static_lib_list libnghttp2.a liblzma.a libcrypto.a libzstd.a libldap.a"])
+AS_VAR_SET(static_lib_list,
+           ["$static_lib_list libarchive.a libidn2.a libgssapi_krb5.a libbrotlidec-static.a"])
+AS_VAR_SET(static_lib_list,
+           ["$static_lib_list librtmp.a libiconv.a liblz4.a liblber.a libunistring.a"])
 
 if test x"${enable_static}" = x"yes"; then
     case "$host_os" in
