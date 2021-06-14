@@ -542,6 +542,7 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                             TPT_OFFER_BLOCK,
                                             TPPT_STRING, root_cps->cps_path,
                                             TPPT_STRING, curr->cps_path,
+                                            TPPT_INT64, (int64_t) st.st_mtime,
                                             TPPT_INT64, file_offset,
                                             TPPT_INT64, bytes_read,
                                             TPPT_HASH, hash,
@@ -556,6 +557,7 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                             TPT_TAIL_BLOCK,
                                             TPPT_STRING, root_cps->cps_path,
                                             TPPT_STRING, curr->cps_path,
+                                            TPPT_INT64, (int64_t) st.st_mtime,
                                             TPPT_INT64, curr->cps_client_file_offset,
                                             TPPT_BITS, bytes_read, buffer,
                                             TPPT_DONE);

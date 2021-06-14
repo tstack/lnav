@@ -2,6 +2,7 @@
 layout: post
 title: "Competing with 'tail -f'"
 date:   2013-09-10 00:00:00
+excerpt: The standard utilities are tough competition.
 ---
 
 Probably the toughest competition for lnav is the standard Unix utilities like

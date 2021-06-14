@@ -819,59 +819,77 @@ readline_context::command_map_t lnav_commands;
 
 static void usage()
 {
-    const char *usage_msg =
-        "usage: %s [options] [logfile1 logfile2 ...]\n"
-        "\n"
-        "A curses-based log file viewer that indexes log messages by type\n"
-        "and time to make it easier to navigate through files quickly.\n"
-        "\n"
-        "Key bindings:\n"
-        "  ?     View/leave the online help text.\n"
-        "  q     Quit the program.\n"
-        "\n"
-        "Options:\n"
-        "  -h         Print this message, then exit.\n"
-        "  -H         Display the internal help text.\n"
-        "  -I path    An additional configuration directory.\n"
-        "  -i         Install the given format files and exit.  Pass 'extra'\n"
-        "             to install the default set of third-party formats.\n"
-        "  -u         Update formats installed from git repositories.\n"
-        "  -C         Check configuration and then exit.\n"
-        "  -d path    Write debug messages to the given file.\n"
-        "  -V         Print version information.\n"
-        "\n"
-        "  -a         Load all of the most recent log file types.\n"
-        "  -r         Recursively load files from the given directory hierarchies.\n"
-        "  -R         Load older rotated log files as well.\n"
-        "  -t         Prepend timestamps to the lines of data being read in\n"
-        "             on the standard input.\n"
-        "  -w file    Write the contents of the standard input to this file.\n"
-        "\n"
-        "  -c cmd     Execute a command after the files have been loaded.\n"
-        "  -f path    Execute the commands in the given file.\n"
-        "  -n         Run without the curses UI. (headless mode)\n"
-        "  -N         Do not open the default syslog file if no files are given\n"
-        "  -q         Do not print the log messages after executing all\n"
-        "             of the commands.\n"
-        "\n"
-        "Optional arguments:\n"
-        "  logfile1          The log files or directories to view.  If a\n"
-        "                    directory is given, all of the files in the\n"
-        "                    directory will be loaded.\n"
-        "\n"
-        "Examples:\n"
-        "  To load and follow the syslog file:\n"
-        "    $ lnav\n"
-        "\n"
-        "  To load all of the files in /var/log:\n"
-        "    $ lnav /var/log\n"
-        "\n"
-        "  To watch the output of make with timestamps prepended:\n"
-        "    $ make 2>&1 | lnav -t\n"
-        "\n"
-        "Version: " VCS_PACKAGE_STRING "\n";
+    const char *usage_msg = R"(usage: %s [options] [logfile1 logfile2 ...]
 
-    fprintf(stderr, usage_msg, lnav_data.ld_program_name);
+A curses-based log file viewer that indexes log messages by type
+and time to make it easier to navigate through files quickly.
+
+Key bindings:
+  ?     View/leave the online help text.
+  q     Quit the program.
+
+Options:
+  -h         Print this message, then exit.
+  -H         Display the internal help text.
+  -I path    An additional configuration directory.
+  -i         Install the given format files and exit.  Pass 'extra'
+             to install the default set of third-party formats.
+  -u         Update formats installed from git repositories.
+  -C         Check configuration and then exit.
+  -d path    Write debug messages to the given file.
+  -V         Print version information.
+
+  -a         Load all of the most recent log file types.
+  -r         Recursively load files from the given directory hierarchies.
+  -R         Load older rotated log files as well.
+  -t         Prepend timestamps to the lines of data being read in
+             on the standard input.
+  -w file    Write the contents of the standard input to this file.
+
+  -c cmd     Execute a command after the files have been loaded.
+  -f path    Execute the commands in the given file.
+  -n         Run without the curses UI. (headless mode)
+  -N         Do not open the default syslog file if no files are given.
+  -q         Do not print the log messages after executing all
+             of the commands.
+
+Optional arguments:
+  logfileN          The log files, directories, or remote paths to view.
+                    If a directory is given, all of the files in the
+                    directory will be loaded.
+
+Examples:
+  To load and follow the syslog file:
+    $ lnav
+
+  To load all of the files in /var/log:
+    $ lnav /var/log
+
+  To watch the output of make with timestamps prepended:
+    $ make 2>&1 | lnav -t
+
+Paths:
+  Configuration, session, and format files are stored in:
+    %s
+
+  Local copies of remote files and files extracted from
+  archives are stored in:
+    %s
+
+Documentation: https://docs.lnav.org
+Contact:
+  https://github.com/tstack/lnav/discussions
+  %s
+Version: %s
+)";
+
+    fprintf(stderr,
+            usage_msg,
+            lnav_data.ld_program_name,
+            lnav::paths::dotlnav().c_str(),
+            lnav::paths::workdir().c_str(),
+            PACKAGE_BUGREPORT,
+            VCS_PACKAGE_STRING);
 }
 
 static void clear_last_user_mark(listview_curses *lv)

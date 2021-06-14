@@ -2,6 +2,7 @@
 layout: post
 title: "Changes To The Scrollbar"
 date:   2014-02-22 00:00:00
+excerpt: Packing more information into the right scrollbar.
 ---
 
 I've made some changes to the scrollbar that is shown on the right side of the

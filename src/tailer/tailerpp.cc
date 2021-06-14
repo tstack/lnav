@@ -85,6 +85,7 @@ Result<packet, std::string> read_packet(int fd)
             TRY(read_payloads_into(fd,
                                    pob.pob_root_path,
                                    pob.pob_path,
+                                   pob.pob_mtime,
                                    pob.pob_offset,
                                    pob.pob_length,
                                    pob.pob_hash));
@@ -96,6 +97,7 @@ Result<packet, std::string> read_packet(int fd)
             TRY(read_payloads_into(fd,
                                    ptb.ptb_root_path,
                                    ptb.ptb_path,
+                                   ptb.ptb_mtime,
                                    ptb.ptb_offset,
                                    ptb.ptb_bits));
             return Ok(packet{ptb});

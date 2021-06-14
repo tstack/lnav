@@ -35,6 +35,8 @@ plugins:
   - jekyll-feed
   - jekyll-redirect-from
 
+show_excerpts: true
+
 exclude:
   - source
 

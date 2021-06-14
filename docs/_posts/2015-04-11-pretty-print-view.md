@@ -2,6 +2,7 @@
 layout: post
 title: "Pretty-print view in v0.7.3"
 date:   2015-04-11 00:00:00
+excerpt: Automatically reformat structured data with "SHIFT+P".
 ---
 
 I wanted to call out the pretty-print feature in the latest release of lnav.

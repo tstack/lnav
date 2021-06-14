@@ -21,6 +21,9 @@ Install from the [Snap Store](https://snapcraft.io/lnav):
 
 ## MacOS
 
+<!-- markdown-link-check-disable-next-line -->
+Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-0.9.0a-os-x.zip)
+
 Install using [Homebrew](https://formulae.brew.sh/formula/lnav):
 
 ```shell

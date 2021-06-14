@@ -71,6 +71,7 @@ struct packet_log {
 struct packet_offer_block {
     std::string pob_root_path;
     std::string pob_path;
+    int64_t pob_mtime;
     int64_t pob_offset;
     int64_t pob_length;
     hash_frag pob_hash;
@@ -79,6 +80,7 @@ struct packet_offer_block {
 struct packet_tail_block {
     std::string ptb_root_path;
     std::string ptb_path;
+    int64_t ptb_mtime;
     int64_t ptb_offset;
     std::vector<uint8_t> ptb_bits;
 };

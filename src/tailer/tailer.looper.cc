@@ -744,6 +744,10 @@ void tailer::looper::host_tailer::loop_body()
                     pwrite(fd,
                            ptb.ptb_bits.data(), ptb.ptb_bits.size(),
                            ptb.ptb_offset);
+                    auto mtime = ghc::filesystem::file_time_type{
+                        std::chrono::seconds{ptb.ptb_mtime}};
+                    // XXX This isn't atomic with the write...
+                    ghc::filesystem::last_write_time(local_path, mtime);
                 }
                 return std::move(this->ht_state);
             },

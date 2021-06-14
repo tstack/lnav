@@ -2,6 +2,7 @@
 layout: post
 title: "Support for JSON-encoded logs in v0.6.1"
 date:   2013-09-10 00:00:00
+excerpt: Turning JSON barf into something readable.
 ---
 
 Making logs easily digestible by machines is becoming a concern as tools like
