@@ -628,6 +628,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                                           ld.ld_lines_indexed,
                                           last_indexed_line,
                                           new_file_line.get_time_in_millis(),
+                                          last_indexed_line == nullptr ?
+                                          (uint64_t) -1 :
                                           last_indexed_line->get_time_in_millis());
                                 if (retval <= rebuild_result::rr_partial_rebuild) {
                                     retval = rebuild_result::rr_partial_rebuild;

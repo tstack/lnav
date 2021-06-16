@@ -668,7 +668,9 @@ void tailer::looper::host_tailer::loop_body()
                             fc.fc_file_names[lpath_str]
                                 .with_filename(custom_name)
                                 .with_source(logfile_name_source::REMOTE)
-                                .with_tail(loo.loo_tail);
+                                .with_tail(loo.loo_tail)
+                                .with_non_utf_visibility(false)
+                                .with_visible_size_limit(256 * 1024);
                             update_active_files(fc);
                         });
                 }
