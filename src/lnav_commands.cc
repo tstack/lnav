@@ -492,11 +492,21 @@ static Result<string, string> com_mark_expr(exec_context &ec, string cmdline, ve
 
         auto& lss = lnav_data.ld_log_source;
         if (ec.ec_dry_run) {
-            lss.set_preview_sql_filter(stmt.release());
+            auto set_res = lss.set_preview_sql_filter(stmt.release());
+
+            if (set_res.isErr()) {
+                return ec.make_error("mark expression failed with: {}",
+                                     set_res.unwrapErr());
+            }
             lnav_data.ld_preview_status_source.get_description()
                 .set_value("Matches are highlighted in the text view");
         } else {
-            lss.set_sql_marker(expr, stmt.release());
+            auto set_res = lss.set_sql_marker(expr, stmt.release());
+
+            if (set_res.isErr()) {
+                return ec.make_error("mark expression failed with: {}",
+                                     set_res.unwrapErr());
+            }
         }
     }
 
@@ -1748,12 +1758,22 @@ static Result<string, string> com_filter_expr(exec_context &ec, string cmdline, 
         }
 
         if (ec.ec_dry_run) {
-            lnav_data.ld_log_source.set_preview_sql_filter(stmt.release());
+            auto set_res = lnav_data.ld_log_source.set_preview_sql_filter(stmt.release());
+
+            if (set_res.isErr()) {
+                return ec.make_error("filter expression failed with: {}",
+                                     set_res.unwrapErr());
+            }
             lnav_data.ld_preview_status_source.get_description()
                 .set_value("Matches are highlighted in the text view");
         } else {
             lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
-            lnav_data.ld_log_source.set_sql_filter(expr, stmt.release());
+            auto set_res = lnav_data.ld_log_source.set_sql_filter(expr, stmt.release());
+
+            if (set_res.isErr()) {
+                return ec.make_error("filter expression failed with: {}",
+                                     set_res.unwrapErr());
+            }
         }
         lnav_data.ld_log_source.text_filters_changed();
         tc->reload_data();

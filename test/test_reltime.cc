@@ -78,6 +78,8 @@ static struct {
         { "ago", "Expecting a time unit" },
         { "minute", "Expecting a number before time unit" },
         { "1 2", "No time unit given for the previous number" },
+        { "blah", "Unrecognized input"},
+        { "before after", "Before/after ranges are not supported yet" },
 
         { nullptr, nullptr }
 };
@@ -90,6 +92,45 @@ TEST_CASE("reltime")
     struct timeval tv;
     struct exttm tm, tm2;
     time_t new_time;
+
+    {
+        auto rt_res = relative_time::from_str("after fri");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1438948860;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+            CHECK(!win_opt.has_value());
+    }
+
+    {
+        auto rt_res = relative_time::from_str("before fri");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1438948860;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+        CHECK(!win_opt.has_value());
+    }
+
+    {
+        auto rt_res = relative_time::from_str("before 12pm");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1438948860;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+            CHECK(!win_opt.has_value());
+    }
 
     {
         auto rt_res = relative_time::from_str("sun after 1pm");

@@ -66,32 +66,9 @@ public:
         this->bss_error.set_value(msg);
     };
 
-    size_t statusview_fields() override
-    {
-        size_t retval;
+    size_t statusview_fields() override;
 
-        if (this->bss_prompt.empty() && this->bss_error.empty()) {
-            retval = BSF__MAX;
-        }
-        else{
-            retval = 1;
-        }
-
-        return retval;
-    };
-
-    status_field &statusview_value_for_field(int field) override
-    {
-        if (!this->bss_error.empty()) {
-            return this->bss_error;
-        }
-        else if (!this->bss_prompt.empty()) {
-            return this->bss_prompt;
-        }
-        else {
-            return this->get_field((field_t)field);
-        }
-    };
+    status_field &statusview_value_for_field(int field) override;
 
     void update_line_number(listview_curses *lc);
 
@@ -108,6 +85,7 @@ public:
 private:
     status_field bss_prompt{1024, view_colors::VCR_STATUS};
     status_field bss_error{1024, view_colors::VCR_ALERT_STATUS};
+    status_field bss_line_error{1024, view_colors::VCR_ALERT_STATUS};
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner{0};
     int          bss_load_percent{0};

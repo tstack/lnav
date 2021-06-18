@@ -475,13 +475,11 @@ public:
         return retval;
     }
 
-    void set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt);
+    Result<void, std::string> set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt);
 
-    void set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt);
+    Result<void, std::string> set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt);
 
-    void set_preview_sql_filter(sqlite3_stmt *stmt) {
-        this->lss_preview_filter_stmt = stmt;
-    }
+    Result<void, std::string> set_preview_sql_filter(sqlite3_stmt *stmt);
 
     std::string get_sql_filter_text() {
         auto filt = this->get_sql_filter();
@@ -805,7 +803,8 @@ public:
         return &this->lss_location_history;
     };
 
-    bool eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll);
+    Result<bool, std::string> eval_sql_filter(
+        sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll);
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;

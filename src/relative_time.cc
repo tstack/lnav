@@ -249,7 +249,12 @@ relative_time::from_str(const char *str, size_t len)
                             std::chrono::minutes(retval.rt_field[RTF_MINUTES].value) +
                             std::chrono::seconds(retval.rt_field[RTF_SECONDS].value) +
                             std::chrono::microseconds(retval.rt_field[RTF_MICROSECONDS].value);
+                        retval.rt_field[RTF_HOURS].value = 0;
+                        retval.rt_field[RTF_MINUTES].value = 0;
+                        retval.rt_field[RTF_SECONDS].value = 0;
+                        retval.rt_field[RTF_MICROSECONDS].value = 0;
                     }
+                    base_token = RTT_INVALID;
                     break;
                 case RTT_A:
                 case RTT_AN:
@@ -404,6 +409,10 @@ relative_time::from_str(const char *str, size_t len)
                     break;
                 case RTT_BEFORE:
                 case RTT_AFTER:
+                    if (base_token != RTT_INVALID) {
+                        pe_out.pe_msg = "Before/after ranges are not supported yet";
+                        return Err(pe_out);
+                    }
                     base_token = token;
                     break;
                 case RTT_LATER:
@@ -443,9 +452,44 @@ relative_time::from_str(const char *str, size_t len)
                 case RTT_FRIDAY:
                 case RTT_SATURDAY:
                     if (retval.rt_duration == 0s) {
+                        switch (base_token) {
+                            case RTT_BEFORE:
+                                if (token == RTT_SUNDAY) {
+                                    pe_out.pe_msg =
+                                        "Sunday is the start of the week, so "
+                                        "there is nothing before it";
+                                    return Err(pe_out);
+                                }
+                                for (int wday = RTT_SUNDAY;
+                                     wday < token;
+                                     wday++) {
+                                    retval.rt_included_days.insert((token_t) wday);
+                                }
+                                break;
+                            case RTT_AFTER:
+                                if (token == RTT_SATURDAY) {
+                                    pe_out.pe_msg =
+                                        "Saturday is the end of the week, so "
+                                        "there is nothing after it";
+                                    return Err(pe_out);
+                                }
+                                for (int wday = RTT_SATURDAY;
+                                     wday > token;
+                                     wday--) {
+                                    retval.rt_included_days.insert((token_t) wday);
+                                }
+                                break;
+                            default:
+                                retval.rt_included_days.insert(token);
+                                break;
+                        }
+                        base_token = RTT_INVALID;
+                    } else {
+                        retval.rt_included_days.insert(token);
+                    }
+                    if (retval.rt_duration == 0s) {
                         retval.rt_duration = 24h;
                     }
-                    retval.rt_included_days.insert(token);
                     break;
 
                 case RTT__MAX:
@@ -768,8 +812,7 @@ nonstd::optional<exttm> relative_time::window_start(
         clear = true;
     }
 
-    if (this->rt_field[RTF_HOURS].is_set &&
-        this->rt_field[RTF_HOURS].value) {
+    if (this->rt_field[RTF_HOURS].is_set) {
         if (this->rt_field[RTF_HOURS].value > tm.et_tm.tm_hour) {
             return nonstd::nullopt;
         }

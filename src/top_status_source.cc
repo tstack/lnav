@@ -91,7 +91,7 @@ void top_status_source::update_filename(listview_curses *lc)
 
         lc->get_data_source()->
             listview_value_for_rows(*lc, lc->get_top(), rows);
-        string_attrs_t &sa = rows[0].get_attrs();
+        auto &sa = rows[0].get_attrs();
         line_attr = find_string_attr(sa, &logline::L_FILE);
         if (line_attr != sa.end()) {
             logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;

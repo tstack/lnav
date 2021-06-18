@@ -1,5 +1,46 @@
 #! /bin/bash
 
+run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'blah')"
+
+check_error_output "timeslice('blah')" <<EOF
+error: sqlite3_exec failed -- unable to parse time slice value: blah -- Unrecognized input
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'before fri')"
+
+check_output "before 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 12:01:00', 'before fri'): (null)
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 11:59:00', 'after fri')"
+
+check_output "not before 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 11:59:00', 'after fri'): (null)
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 11:59:00', 'fri')"
+
+check_output "not before 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 11:59:00', 'fri'): 2015-08-07 00:00:00.000
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'before 12pm')"
+
+check_output "before 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 12:01:00', 'before 12pm'): (null)
+EOF
+
+run_test ./drive_sql "select timeslice('2015-08-07 11:59:00', 'before 12pm')"
+
+check_output "not before 12pm" <<EOF
+Row 0:
+  Column timeslice('2015-08-07 11:59:00', 'before 12pm'): 2015-08-07 00:00:00.000
+EOF
+
 run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'after 12pm')"
 
 check_output "after 12pm" <<EOF

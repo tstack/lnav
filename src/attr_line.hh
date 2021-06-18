@@ -154,6 +154,12 @@ struct string_attr {
         this->sa_value.sav_ptr = val;
     };
 
+    string_attr(const struct line_range &lr, string_attr_type_t type, std::string val)
+        : sa_range(lr), sa_type(type), sa_str_value(std::move(val)) {
+        require(lr.is_valid());
+        require(type);
+    };
+
     string_attr(const struct line_range &lr, string_attr_type_t type, intern_string_t val)
         : sa_range(lr), sa_type(type) {
         require(lr.is_valid());
@@ -188,6 +194,7 @@ struct string_attr {
     struct line_range sa_range;
     string_attr_type_t sa_type;
     string_attr_value_t sa_value;
+    std::string sa_str_value;
 };
 
 /** A map of line ranges to attributes for that range. */

@@ -3314,8 +3314,8 @@ timeslice(*time*, *slice*)
 
       ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
                slice          count(1) 
-      <NULL>                         3 
-      2017-02-03 04:30:00.000        1 
+      <NULL>                         1 
+      2017-02-03 00:00:00.000        3 
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`

@@ -555,18 +555,49 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
     }
 
-    if (!this->lss_token_line->is_continued() &&
-        this->lss_preview_filter_stmt != nullptr) {
-        int color;
-        if (this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
-                                  this->lss_token_file_data,
-                                  this->lss_token_line)) {
-            color = COLOR_GREEN;
-        } else {
-            color = COLOR_RED;
-            value_out.emplace_back(line_range{0, 1}, &view_curses::VC_STYLE, A_BLINK);
+    if (!this->lss_token_line->is_continued()) {
+        if (this->lss_preview_filter_stmt != nullptr) {
+            int color;
+            auto eval_res = this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
+                                                  this->lss_token_file_data,
+                                                  this->lss_token_line);
+            if (eval_res.isErr()) {
+                color = COLOR_YELLOW;
+                value_out.emplace_back(line_range{0, -1},
+                                       &SA_ERROR,
+                                       eval_res.unwrapErr());
+            } else {
+                auto matched = eval_res.unwrap();
+
+                if (matched) {
+                    color = COLOR_GREEN;
+                } else {
+                    color = COLOR_RED;
+                    value_out.emplace_back(line_range{0, 1}, &view_curses::VC_STYLE,
+                                           A_BLINK);
+                }
+            }
+            value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
         }
-        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+
+        auto sql_filter_opt = this->get_sql_filter();
+        if (sql_filter_opt) {
+            auto sf = (sql_filter *) sql_filter_opt.value().get();
+            int color;
+            auto eval_res = this->eval_sql_filter(sf->sf_filter_stmt.in(),
+                                                  this->lss_token_file_data,
+                                                  this->lss_token_line);
+            if (eval_res.isErr()) {
+                auto msg = fmt::format(
+                    "filter expression evaluation failed with -- {}",
+                    eval_res.unwrapErr());
+                color = COLOR_YELLOW;
+                value_out.emplace_back(line_range{0, -1},
+                                       &SA_ERROR,
+                                       msg);
+                value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+            }
+        }
     }
 }
 
@@ -866,14 +897,21 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                 (!(*ld)->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                                                   line_number) &&
                  this->check_extra_filters(ld, line_iter))) {
-                if (this->eval_sql_filter(this->lss_marker_stmt.in(),
-                                          ld, line_iter)) {
-                    line_iter->set_expr_mark(true);
-                    vis_bm[&textview_curses::BM_USER_EXPR]
-                        .insert_once(vis_line_t(this->lss_filtered_index.size()));
-                }
-                else {
+                auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(),
+                                                      ld, line_iter);
+                if (eval_res.isErr()) {
                     line_iter->set_expr_mark(false);
+                } else {
+                    auto matched = eval_res.unwrap();
+
+                    if (matched) {
+                        line_iter->set_expr_mark(true);
+                        vis_bm[&textview_curses::BM_USER_EXPR]
+                            .insert_once(vis_line_t(this->lss_filtered_index.size()));
+                    }
+                    else {
+                        line_iter->set_expr_mark(false);
+                    }
                 }
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
@@ -1028,14 +1066,21 @@ void logfile_sub_source::text_filters_changed()
             (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
                                            line_number) &&
              this->check_extra_filters(ld, line_iter))) {
-            if (this->eval_sql_filter(this->lss_marker_stmt.in(),
-                                      ld, line_iter)) {
-                line_iter->set_expr_mark(true);
-                vis_bm[&textview_curses::BM_USER_EXPR]
-                    .insert_once(vis_line_t(this->lss_filtered_index.size()));
-            }
-            else {
+            auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(),
+                                                  ld, line_iter);
+            if (eval_res.isErr()) {
                 line_iter->set_expr_mark(false);
+            } else {
+                auto matched = eval_res.unwrap();
+
+                if (matched) {
+                    line_iter->set_expr_mark(true);
+                    vis_bm[&textview_curses::BM_USER_EXPR]
+                        .insert_once(vis_line_t(this->lss_filtered_index.size()));
+                }
+                else {
+                    line_iter->set_expr_mark(false);
+                }
             }
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
@@ -1116,8 +1161,19 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
     return true;
 }
 
-void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt)
+Result<void, std::string> logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt)
 {
+    if (stmt != nullptr && !this->lss_filtered_index.empty()) {
+        auto top_cl = this->at(0_vl);
+        auto ld = this->find_data(top_cl);
+        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+
+        if (eval_res.isErr()) {
+            sqlite3_finalize(stmt);
+            return Err(eval_res.unwrapErr());
+        }
+    }
+
     for (auto& ld : *this) {
         ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
     }
@@ -1137,11 +1193,24 @@ void logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt
     } else if (old_filter) {
         this->tss_filters.delete_filter(old_filter.value()->get_id());
     }
+
+    return Ok();
 }
 
-void
+Result<void, std::string>
 logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
 {
+    if (stmt != nullptr && !this->lss_filtered_index.empty()) {
+        auto top_cl = this->at(0_vl);
+        auto ld = this->find_data(top_cl);
+        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+
+        if (eval_res.isErr()) {
+            sqlite3_finalize(stmt);
+            return Err(eval_res.unwrapErr());
+        }
+    }
+
     auto& vis_bm = this->tss_view->get_bookmarks();
     auto& expr_marks_bv = vis_bm[&textview_curses::BM_USER_EXPR];
 
@@ -1155,12 +1224,19 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
         auto cl = this->at(row);
         auto ld = this->find_data(cl);
         auto ll = (*ld)->get_file()->begin() + cl;
+        auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(), ld, ll);
 
-        if (this->eval_sql_filter(this->lss_marker_stmt.in(), ld, ll)) {
-            ll->set_expr_mark(true);
-            expr_marks_bv.insert_once(row);
-        } else {
+        if (eval_res.isErr()) {
             ll->set_expr_mark(false);
+        } else {
+            auto matched = eval_res.unwrap();
+
+            if (matched) {
+                ll->set_expr_mark(true);
+                expr_marks_bv.insert_once(row);
+            } else {
+                ll->set_expr_mark(false);
+            }
         }
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_line(*this, (*ld)->get_file_ptr(), ll);
@@ -1169,12 +1245,34 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
     if (this->lss_index_delegate) {
         this->lss_index_delegate->index_complete(*this);
     }
+
+    return Ok();
 }
 
-bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
+Result<void, std::string>
+logfile_sub_source::set_preview_sql_filter(sqlite3_stmt *stmt)
+{
+    if (stmt != nullptr && !this->lss_filtered_index.empty()) {
+        auto top_cl = this->at(0_vl);
+        auto ld = this->find_data(top_cl);
+        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+
+        if (eval_res.isErr()) {
+            sqlite3_finalize(stmt);
+            return Err(eval_res.unwrapErr());
+        }
+    }
+
+    this->lss_preview_filter_stmt = stmt;
+
+    return Ok();
+}
+
+Result<bool, std::string>
+logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
 {
     if (stmt == nullptr) {
-        return false;
+        return Ok(false);
     }
 
     auto lf = (*ld)->get_file_ptr();
@@ -1344,10 +1442,14 @@ bool logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfil
     switch (step_res) {
         case SQLITE_OK:
         case SQLITE_DONE:
-            return false;
+            return Ok(false);
+        case SQLITE_ROW:
+            return Ok(true);
+        default:
+            return Err(std::string(sqlite3_errmsg(sqlite3_db_handle(stmt))));
     }
 
-    return true;
+    return Ok(true);
 }
 
 bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
@@ -1451,7 +1553,8 @@ bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
         return false;
     }
 
-    if (this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll)) {
+    auto eval_res = this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll);
+    if (eval_res.unwrapOr(true)) {
         return false;
     }
 

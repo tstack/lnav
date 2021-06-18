@@ -7,7 +7,7 @@ run_test ${lnav_test} -n \
     -c ":goto 0" \
     ${test_dir}/logfile_access_log.0
 
-check_output "hide-lines-before does not work?" <<EOF
+check_output "hide-unmarked-lines does not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 EOF
 
@@ -100,6 +100,15 @@ check_output "writing raw log does not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr timeslice(:log_time_msecs, 'bad') is not null" \
+    "${test_dir}/logfile_multiline.0"
+
+check_error_output "filter-expr with bad SQL works?" <<EOF
+command-option:1: error: filter expression failed with: unable to parse time slice value: bad -- Unrecognized input
 EOF
 
 

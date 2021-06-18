@@ -447,11 +447,18 @@ void filter_sub_source::rl_change(readline_curses *rc)
 #endif
             if (retcode != SQLITE_OK) {
                 lnav_data.ld_filter_help_status_source.fss_error
-                    .set_value("error2: %s", sqlite3_errmsg(lnav_data.ld_db));
+                    .set_value("error: %s", sqlite3_errmsg(lnav_data.ld_db));
             } else {
-                lnav_data.ld_log_source.set_preview_sql_filter(stmt.release());
-                top_view->set_needs_update();
-                lnav_data.ld_filter_help_status_source.fss_error.clear();
+                auto set_res = lnav_data.ld_log_source
+                    .set_preview_sql_filter(stmt.release());
+
+                if (set_res.isErr()) {
+                    lnav_data.ld_filter_help_status_source.fss_error
+                        .set_value("error: %s", set_res.unwrapErr().c_str());
+                } else {
+                    top_view->set_needs_update();
+                    lnav_data.ld_filter_help_status_source.fss_error.clear();
+                }
             }
             break;
         }
