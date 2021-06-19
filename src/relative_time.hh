@@ -209,19 +209,7 @@ public:
 
     nonstd::optional<exttm> window_start(const struct exttm &tm) const;
 
-    int64_t to_microseconds() const {
-        int64_t retval;
-
-        retval = this->rt_field[RTF_YEARS].value * 12;
-        retval = (retval + this->rt_field[RTF_MONTHS].value) * 30;
-        retval = (retval + this->rt_field[RTF_DAYS].value) * 24;
-        retval = (retval + this->rt_field[RTF_HOURS].value) * 60;
-        retval = (retval + this->rt_field[RTF_MINUTES].value) * 60;
-        retval = (retval + this->rt_field[RTF_SECONDS].value) * 1000 * 1000;
-        retval = (retval + this->rt_field[RTF_MICROSECONDS].value);
-
-        return retval;
-    };
+    int64_t to_microseconds() const;
 
     void to_timeval(struct timeval &tv_out) const {
         int64_t us = this->to_microseconds();

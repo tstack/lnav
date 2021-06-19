@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <assert.h>
+#include <unordered_set>
 
 #include "base/time_util.hh"
 #include "pcrepp/pcrepp.hh"
@@ -114,6 +115,7 @@ relative_time::from_str(const char *str, size_t len)
     rt_field_type last_field_type = RTF__MAX;
     relative_time retval;
     parse_error pe_out;
+    std::unordered_set<token_t> seen_tokens;
 
     pe_out.pe_column = -1;
     pe_out.pe_msg.clear();
@@ -123,7 +125,47 @@ relative_time::from_str(const char *str, size_t len)
 
         if (pi.pi_next_offset >= pi.pi_length) {
             if (number_set) {
+                if (number > 1970 && number < 2050) {
+                    retval.rt_field[RTF_YEARS] = number - 1900;
+                    retval.rt_absolute_field_end = RTF__MAX;
+
+                    switch (base_token) {
+                        case RTT_BEFORE: {
+                            auto epoch = retval.to_timeval();
+                            retval.rt_duration =
+                                std::chrono::duration_cast<std::chrono::microseconds>(
+                                    std::chrono::seconds(epoch.tv_sec)) +
+                                    std::chrono::microseconds(epoch.tv_usec);
+                            retval.rt_field[RTF_YEARS] = 70;
+                            break;
+                        }
+                        case RTT_AFTER:
+                            retval.rt_duration = std::chrono::duration_cast<
+                                std::chrono::microseconds>(
+                                    std::chrono::hours(24 * 365 * 200));
+                            break;
+                        default:
+                            break;
+                    }
+                    return Ok(retval);
+                }
+
                 pe_out.pe_msg = "Number given without a time unit";
+                return Err(pe_out);
+            }
+
+            if (base_token != RTT_INVALID) {
+                switch (base_token) {
+                    case RTT_BEFORE:
+                        pe_out.pe_msg = "'before' requires a point in time (e.g. before 10am)";
+                        break;
+                    case RTT_AFTER:
+                        pe_out.pe_msg = "'after' requires a point in time (e.g. after 10am)";
+                        break;
+                    default:
+                        ensure(false);
+                        break;
+                }
                 return Err(pe_out);
             }
 
@@ -159,6 +201,16 @@ relative_time::from_str(const char *str, size_t len)
                 case RTT_YESTERDAY:
                 case RTT_TODAY:
                 case RTT_NOW: {
+                    if (seen_tokens.count(token) > 0) {
+                        pe_out.pe_msg =
+                            "Current time reference has already been used";
+                        return Err(pe_out);
+                    }
+
+                    seen_tokens.insert(RTT_YESTERDAY);
+                    seen_tokens.insert(RTT_TODAY);
+                    seen_tokens.insert(RTT_NOW);
+
                     struct timeval tv;
                     struct exttm tm;
 
@@ -199,6 +251,12 @@ relative_time::from_str(const char *str, size_t len)
                     break;
                 case RTT_AM:
                 case RTT_PM:
+                    if (seen_tokens.count(token) > 0) {
+                        pe_out.pe_msg = "Time has already been set";
+                        return Err(pe_out);
+                    }
+                    seen_tokens.insert(RTT_AM);
+                    seen_tokens.insert(RTT_PM);
                     if (number_set) {
                         retval.rt_field[RTF_HOURS] = number;
                         retval.rt_field[RTF_MINUTES] = 0;
@@ -504,6 +562,7 @@ relative_time::from_str(const char *str, size_t len)
             }
 
             number_was_set = false;
+            seen_tokens.insert(token);
         }
 
         if (!found) {
@@ -779,15 +838,15 @@ nonstd::optional<exttm> relative_time::window_start(
         if (this->rt_field[RTF_YEARS].value > tm.et_tm.tm_year) {
             return nonstd::nullopt;
         }
-        retval.et_tm.tm_year = this->rt_field[RTF_YEARS].value - 1900;
+        retval.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
         clear = true;
     }
 
     if (this->rt_field[RTF_MONTHS].is_set) {
-        if (this->rt_field[RTF_MONTHS].value - 1 > tm.et_tm.tm_mon) {
+        if (this->rt_field[RTF_MONTHS].value > tm.et_tm.tm_mon) {
             return nonstd::nullopt;
         }
-        retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value - 1;
+        retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
         clear = true;
     } else if (clear) {
         retval.et_tm.tm_mon = 0;
@@ -859,6 +918,40 @@ nonstd::optional<exttm> relative_time::window_start(
 
     if (tv < start_time || end_time < tv) {
         return nonstd::nullopt;
+    }
+
+    return retval;
+}
+
+int64_t relative_time::to_microseconds() const
+{
+    int64_t retval;
+
+    if (this->is_absolute()) {
+        struct exttm etm;
+
+        memset(&etm, 0, sizeof(etm));
+        etm.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
+        etm.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
+        if (this->rt_field[RTF_DAYS].is_set) {
+            etm.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
+        } else {
+            etm.et_tm.tm_mday = 1;
+        }
+        etm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
+        etm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
+
+        auto epoch_secs = std::chrono::seconds(tm2sec(&etm.et_tm));
+        retval = std::chrono::duration_cast<std::chrono::microseconds>(epoch_secs).count();
+        retval += this->rt_field[RTF_MICROSECONDS].value;
+    } else {
+        retval = this->rt_field[RTF_YEARS].value * 12;
+        retval = (retval + this->rt_field[RTF_MONTHS].value) * 30;
+        retval = (retval + this->rt_field[RTF_DAYS].value) * 24;
+        retval = (retval + this->rt_field[RTF_HOURS].value) * 60;
+        retval = (retval + this->rt_field[RTF_MINUTES].value) * 60;
+        retval = (retval + this->rt_field[RTF_SECONDS].value) * 1000 * 1000;
+        retval = (retval + this->rt_field[RTF_MICROSECONDS].value);
     }
 
     return retval;

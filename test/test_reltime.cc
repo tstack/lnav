@@ -75,13 +75,18 @@ static struct {
     const char *reltime;
     const char *expected_error;
 } BAD_TEST_DATA[] = {
-        { "ago", "Expecting a time unit" },
-        { "minute", "Expecting a number before time unit" },
-        { "1 2", "No time unit given for the previous number" },
-        { "blah", "Unrecognized input"},
-        { "before after", "Before/after ranges are not supported yet" },
+    { "10am am", "Time has already been set" },
+    { "yesterday today", "Current time reference has already been used" },
+    { "10am 10am", "Time has already been set" },
+    { "ago", "Expecting a time unit" },
+    { "minute", "Expecting a number before time unit" },
+    { "1 2", "No time unit given for the previous number" },
+    { "blah", "Unrecognized input" },
+    { "before", "'before' requires a point in time (e.g. before 10am)" },
+    { "after", "'after' requires a point in time (e.g. after 10am)" },
+    { "before after", "Before/after ranges are not supported yet" },
 
-        { nullptr, nullptr }
+    { nullptr, nullptr }
 };
 
 TEST_CASE("reltime")
@@ -92,6 +97,32 @@ TEST_CASE("reltime")
     struct timeval tv;
     struct exttm tm, tm2;
     time_t new_time;
+
+    {
+        auto rt_res = relative_time::from_str("before 2014");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1438948860;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+            CHECK(!win_opt.has_value());
+    }
+
+    {
+        auto rt_res = relative_time::from_str("after 2014");
+
+            CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        time_t t_in = 1438948860;
+        memset(&tm, 0, sizeof(tm));
+        tm.et_tm = *gmtime(&t_in);
+        auto win_opt = rt.window_start(tm);
+            CHECK(win_opt.has_value());
+    }
 
     {
         auto rt_res = relative_time::from_str("after fri");
