@@ -308,6 +308,12 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     pCur->c_value_as_blob = (sqlite3_value_type(argv[1]) == SQLITE_BLOB);
     auto byte_count = sqlite3_value_bytes(argv[1]);
+
+    if (byte_count == 0) {
+        pCur->c_rowid = 0;
+        return SQLITE_OK;
+    }
+
     auto blob = (const char *) sqlite3_value_blob(argv[1]);
     pCur->c_value.assign(blob, byte_count);
     auto parse_res = pCur->c_doc.load_string(pCur->c_value.c_str());

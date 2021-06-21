@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <regex>
+
 #include "base/date_time_scanner.hh"
 #include "base/time_util.hh"
 
@@ -43,6 +45,13 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
                                           std::string &label_out,
                                           text_sub_source::line_flags_t flags)
 {
+    static const std::regex RE_TAB("\t");
+    static const std::string TAB_SYMBOL = "\u21e5";
+    static const std::regex RE_LF("\n");
+    static const std::string LF_SYMBOL = "\u240a";
+    static const std::regex RE_CR("\n");
+    static const std::string CR_SYMBOL = "\u240d";
+
     /*
      * start_value is the result rowid, each bucket type is a column value
      * label_out should be the raw text output.
@@ -57,6 +66,9 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
                                         this->dls_headers[lpc].hm_column_size);
         auto cell_str = std::string(this->dls_rows[row][lpc]);
 
+        cell_str = std::regex_replace(cell_str, RE_TAB, TAB_SYMBOL);
+        cell_str = std::regex_replace(cell_str, RE_LF, LF_SYMBOL);
+        cell_str = std::regex_replace(cell_str, RE_CR, CR_SYMBOL);
         truncate_to(cell_str, MAX_COLUMN_WIDTH);
 
         auto cell_length = utf8_string_length(cell_str)

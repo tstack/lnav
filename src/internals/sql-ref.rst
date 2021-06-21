@@ -3499,8 +3499,8 @@ xpath(*xpath*, *xmldoc*)
 
       ;SELECT * FROM xpath('/abc/def', '<abc><def a="b">Hello</def><def>Bye</def></abc>')
               result           node_path  node_attr node_text 
-      <def a="b">Hello</def>  /abc/def[1] {"a":"b"} Hello     
-      <def>Bye</def>          /abc/def[2] {}        Bye       
+      <def a="b">Hello</def>␊ /abc/def[1] {"a":"b"} Hello     
+      <def>Bye</def>␊         /abc/def[2] {}        Bye       
 
     To select all 'a' attributes on the path '/abc/def':
 
