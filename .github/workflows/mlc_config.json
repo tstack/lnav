@@ -1,0 +1,10 @@
+{
+    "ignorePatterns": [
+        {
+            "pattern": "^/assets"
+        },
+        {
+            "pattern": "^https://archive.org"
+        }
+    ]
+}

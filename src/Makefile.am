@@ -427,8 +427,10 @@ uncrusty:
 
 if !DISABLE_DOCUMENTATION
 all-local: lnav
-	env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile
-	mv $(srcdir)/internals/*.schema.json $(top_srcdir)/docs/schemas
+	if test -w $(srcdir)/internals; then \
+		env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile; \
+		mv $(srcdir)/internals/*.schema.json $(top_srcdir)/docs/schemas; \
+	fi
 endif
 
 install-exec-hook:
