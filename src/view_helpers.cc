@@ -313,7 +313,7 @@ void layout_views()
 
     if (!doc_open || doc_side_by_side) {
         lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
-        lnav_data.ld_example_view.set_x(90);
+        lnav_data.ld_example_view.set_x(doc_open ? 90 : 0);
         lnav_data.ld_example_view.set_y(height - bottom_height + 1);
     } else {
         lnav_data.ld_example_view.set_height(vis_line_t(lnav_data.ld_example_source.text_line_count()));
