@@ -9,4 +9,4 @@ jobs:
       - uses: actions/checkout@master
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          config-file: 'mlc_config.json'
+          config-file: '.github/mlc_config.json'
