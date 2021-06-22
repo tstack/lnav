@@ -61,7 +61,7 @@ The following screenshot shows an XML blob with no indentation:
 
 After pressing SHIFT+P, the XML is pretty-printed for easier viewing:
 
-![A pretty-printed blob of XML](/assets/images/lnav-before-pretty.png)
+![A pretty-printed blob of XML](/assets/images/lnav-after-pretty.png)
 
 ## Query Logs Using SQL
 
