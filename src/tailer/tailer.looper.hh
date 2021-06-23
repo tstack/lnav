@@ -122,6 +122,7 @@ private:
         using state_v = mapbox::util::variant<connected, disconnected, synced>;
 
         const std::string ht_netloc;
+        std::string ht_uname;
         const ghc::filesystem::path ht_local_path;
         std::set<ghc::filesystem::path> ht_active_files;
         std::vector<std::string> ht_error_queue;

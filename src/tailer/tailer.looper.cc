@@ -89,6 +89,34 @@ static void update_tailer_progress(const std::string& netloc, const std::string&
         sp_tailers[netloc].tp_message = msg;
 }
 
+static void update_tailer_description(
+    const std::string& netloc,
+    const std::map<std::string, logfile_open_options>& desired_paths,
+    const std::string& remote_uname)
+{
+    std::vector<std::string> paths;
+
+    for (const auto& des_pair : desired_paths) {
+        paths.emplace_back(fmt::format(
+            "{}{}", netloc, des_pair.first));
+    }
+    isc::to<main_looper&, services::main_t>()
+        .send([paths, remote_uname](auto& mlooper) {
+            auto& fc = lnav_data.ld_active_files;
+
+            for (const auto& path : paths) {
+                auto iter = fc.fc_other_files.find(path);
+
+                if (iter == fc.fc_other_files.end()) {
+                    continue;
+                }
+
+                iter->second.ofd_description = remote_uname;
+            }
+        });
+
+}
+
 void tailer::looper::loop_body()
 {
     auto now = std::chrono::steady_clock::now();
@@ -535,26 +563,9 @@ void tailer::looper::host_tailer::loop_body()
                 return state_v{disconnected()};
             },
             [&](const tailer::packet_announce &pa) {
-                std::vector<std::string> paths;
-
-                for (const auto& des_pair : conn.c_desired_paths) {
-                    paths.emplace_back(fmt::format(
-                        "{}{}", this->ht_netloc, des_pair.first));
-                }
-                isc::to<main_looper&, services::main_t>()
-                    .send([paths, pa](auto& mlooper) {
-                        auto& fc = lnav_data.ld_active_files;
-
-                        for (const auto& path : paths) {
-                            auto iter = fc.fc_other_files.find(path);
-
-                            if (iter == fc.fc_other_files.end()) {
-                                continue;
-                            }
-
-                            iter->second.ofd_description = pa.pa_uname;
-                        }
-                    });
+                update_tailer_description(
+                    this->ht_netloc, conn.c_desired_paths, pa.pa_uname);
+                this->ht_uname = pa.pa_uname;
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_log &pl) {
@@ -633,6 +644,9 @@ void tailer::looper::host_tailer::loop_body()
 
                     loo = std::move(child_iter->second);
                 }
+
+                update_tailer_description(
+                    this->ht_netloc, conn.c_desired_paths, this->ht_uname);
 
                 auto remote_path = ghc::filesystem::absolute(
                     ghc::filesystem::path(pob.pob_path)).relative_path();
