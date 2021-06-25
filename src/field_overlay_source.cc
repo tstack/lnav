@@ -65,11 +65,10 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             this->fos_summary_lines.clear();
         }
         else {
-            string last_time, time_span;
+            string time_span;
             double error_rate = 0.0;
 
             if (lv.get_inner_height() == 0) {
-                last_time = "No log messages";
                 time_span = "None";
             }
             else {
@@ -78,10 +77,6 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
                 first_line = lss.find_line(lss.at(vis_line_t(0)));
                 last_line = lss.find_line(lss.at(lv.get_bottom()));
-                last_time = "Last message: " ANSI_BOLD_START +
-                    humanize::time::point::from_tv(last_line->get_timeval())
-                    .with_convert_to_local(true)
-                    .as_precise_time_ago() + ANSI_NORM;
                 time_span = humanize::time::duration::from_tv(
                     last_line->get_timeval() - first_line->get_timeval())
                     .to_string();
@@ -142,25 +137,23 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             attr_line_t &sum_line = this->fos_summary_lines.back();
             if (tss.empty()) {
                 sum_line.with_ansi_string(
-                    "       %s; "
+                    "       "
                         "Files: " ANSI_BOLD("%'2d") "; "
                         ANSI_ROLE("Error rate") ": " ANSI_BOLD(
                         "%'.2lf") "/min; "
                         "Time span: " ANSI_BOLD("%s"),
-                    last_time.c_str(),
                     lss.file_count(),
                     view_colors::VCR_ERROR,
                     error_rate,
                     time_span.c_str());
             } else {
                 sum_line.with_ansi_string(
-                    "       %s; "
+                    "       "
                         "Log Files: " ANSI_BOLD("%'2d") "; "
                         "Text Files: " ANSI_BOLD("%'2d") "; "
                         ANSI_ROLE("Error rate") ": " ANSI_BOLD(
                         "%'.2lf") "/min; "
                         "Time span: " ANSI_BOLD("%s"),
-                    last_time.c_str(),
                     lss.file_count(),
                     tss.size(),
                     view_colors::VCR_ERROR,
