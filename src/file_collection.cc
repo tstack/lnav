@@ -116,8 +116,8 @@ void file_collection::regenerate_unique_file_names()
 
 void file_collection::merge(const file_collection &other)
 {
-    this->fc_recursive = other.fc_recursive;
-    this->fc_rotated = other.fc_rotated;
+    this->fc_recursive = this->fc_recursive || other.fc_recursive;
+    this->fc_rotated = this->fc_rotated || other.fc_rotated;
 
     this->fc_synced_files.insert(other.fc_synced_files.begin(),
                                  other.fc_synced_files.end());
