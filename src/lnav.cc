@@ -2019,7 +2019,7 @@ int main(int argc, char *argv[])
 
     (void)signal(SIGPIPE, SIG_IGN);
     setlocale(LC_ALL, "");
-    umask(077);
+    umask(027);
 
     /* Disable Lnav from being able to execute external commands if
      * "LNAVSECURE" environment variable is set by the user.
