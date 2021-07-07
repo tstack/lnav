@@ -41,15 +41,15 @@ Options
 The following configuration options can be used to customize **lnav** to
 your liking.  The options can be changed using the :code:`:config` command.
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/clock-format
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/clock-format
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/dim-text
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/dim-text
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/default-colors
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/default-colors
 
 
 .. _themes:
@@ -139,19 +139,19 @@ definition, see one of the definitions built into **lnav**, like
 Reference
 ^^^^^^^^^
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/vars
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/vars
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/styles
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/syntax-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/syntax-styles
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/status-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/status-styles
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/log-level-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/log-level-styles
 
 .. _theme_style:
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/definitions/style
+.. jsonschema:: ../schemas/config-v1.schema.json#/definitions/style
 
 
 .. _keymaps:
@@ -198,7 +198,7 @@ to the key.
 Reference
 ^^^^^^^^^
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
 
 
 .. _tuning:
@@ -210,10 +210,10 @@ The following configuration options can be used to tune the internals of
 **lnav** to your liking.  The options can be changed using the :code:`:config`
 command.
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/archive-manager
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/archive-manager
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/file-vtab
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/file-vtab
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/logfile
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/logfile
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/tuning/properties/remote/properties/ssh
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/remote/properties/ssh
