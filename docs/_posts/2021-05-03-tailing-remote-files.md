@@ -4,7 +4,7 @@ title: Tailing files on remote hosts
 excerpt: Native support for tailing logs on machines accessible via SSH
 ---
 
-*(This change is in v0.10.0+)*
+*(This change is in [**v0.10.0+**](https://github.com/tstack/lnav/releases/tag/v0.10.0-beta1))*
 
 One of the new features in the upcoming v0.10.0 release of lnav is support
 for tailing log files on remote hosts via SSH.  This feature allows you to

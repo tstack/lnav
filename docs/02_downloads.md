@@ -4,7 +4,9 @@ title: Downloads
 permalink: /downloads
 ---
 
-The latest release is [**v{{ site.version }}**](https://github.com/tstack/lnav/releases/latest).
+The current **beta** release is [**v0.10.0-beta1**](https://github.com/tstack/lnav/releases/tag/v0.10.0-beta1).
+
+The latest **stable** release is [**v{{ site.version }}**](https://github.com/tstack/lnav/releases/latest).
 
 The following options are available for installing **lnav**:
 
@@ -44,6 +46,8 @@ tar ball, configure the build for your system, build, and then install:
 % make
 % make install
 ```
+
+### GitHub
 
 If you would like to contribute to the development of lnav, visit our page on
 [GitHub](https://github.com/tstack/lnav).

@@ -27,7 +27,7 @@ description: >- # this means to ignore newlines until "baseurl:"
 # baseurl: /lnav
 # url: "http://lnav.org" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: lnavapp
-# github_username:  tstack
+github: tstack/lnav
 
 # Build settings
 theme: minima

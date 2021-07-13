@@ -4,7 +4,7 @@ title: Drilling down into XML snippets
 excerpt: The new "xpath()" table-valued SQL function.
 ---
 
-*(This change is in v0.10.0+)*
+*(This change is in [**v0.10.0+**](https://github.com/tstack/lnav/releases/tag/v0.10.0-beta1))*
 
 XML snippets in log messages can now be queried using the
 [`xpath()`](https://docs.lnav.org/en/latest/sqlext.html#xpath-xpath-xmldoc)
