@@ -96,6 +96,7 @@ readline_context *readline_context::loaded_context;
 set<string> *     readline_context::arg_possibilities;
 static string last_match_str;
 static bool last_match_str_valid;
+static bool arg_needs_shlex;
 static nonstd::optional<std::string> rewrite_line_start;
 
 static void sigalrm(int sig)
@@ -219,15 +220,25 @@ static ssize_t recvstring(int sock, char *buf, size_t len)
     return retval;
 }
 
-char *readline_context::completion_generator(const char *text, int state)
+char *readline_context::completion_generator(const char *text_in, int state)
 {
     static vector<string> matches;
-    vector<string> long_matches;
 
+    vector<string> long_matches;
     char *retval = nullptr;
 
     if (state == 0) {
-        auto len = strlen(text);
+        auto text_str = std::string(text_in);
+
+        if (arg_needs_shlex) {
+            shlex arg_lexer(text_str);
+            map<string, string> scope;
+            std::string result;
+
+            if (arg_lexer.eval(result, scope)) {
+                text_str = result;
+            }
+        }
 
         matches.clear();
         if (arg_possibilities != nullptr) {
@@ -237,16 +248,16 @@ char *readline_context::completion_generator(const char *text, int state)
                 auto poss_str = poss.c_str();
 
                 // Check for an exact match and for the quoted version.
-                if (cmpfunc(text, poss_str, len) == 0 ||
+                if (cmpfunc(text_str.c_str(), poss_str, text_str.length()) == 0 ||
                     ((strchr(loaded_context->rc_quote_chars, poss_str[0]) !=
                         nullptr) &&
-                     cmpfunc(text, &poss_str[1], len) == 0)) {
+                     cmpfunc(text_str.c_str(), &poss_str[1], text_str.length()) == 0)) {
                     auto poss_slash_count = std::count(poss.begin(), poss.end(), '/');
 
                     if (endswith(poss, "/")) {
                         poss_slash_count -= 1;
                     }
-                    if (std::count(&text[0], &text[len], '/') == poss_slash_count) {
+                    if (std::count(text_str.begin(), text_str.end(), '/') == poss_slash_count) {
                         matches.emplace_back(poss);
                     } else {
                         long_matches.emplace_back(poss);
@@ -266,7 +277,7 @@ char *readline_context::completion_generator(const char *text, int state)
                     string poss_str = tolower(poss);
                     int score;
 
-                    if (fts::fuzzy_match(text, poss_str.c_str(), score) && score > 0) {
+                    if (fts::fuzzy_match(text_str.c_str(), poss_str.c_str(), score) && score > 0) {
                         if (score <= 0) {
                             continue;
                         }
@@ -275,7 +286,7 @@ char *readline_context::completion_generator(const char *text, int state)
                         if (endswith(poss, "/")) {
                             poss_slash_count -= 1;
                         }
-                        if (std::count(&text[0], &text[len], '/') == poss_slash_count) {
+                        if (std::count(text_str.begin(), text_str.end(), '/') == poss_slash_count) {
                             fuzzy_matches.emplace_back(score, poss);
                         } else {
                             fuzzy_long_matches.emplace_back(score, poss);
@@ -305,7 +316,7 @@ char *readline_context::completion_generator(const char *text, int state)
         }
 
         if (matches.size() == 1) {
-            if (strcmp(text, matches[0].c_str()) == 0) {
+            if (text_str == matches[0]) {
                 matches.pop_back();
             }
 
@@ -336,6 +347,7 @@ char **readline_context::attempted_completion(const char *text,
     if (start == 0 && loaded_context->rc_possibilities.find("__command") !=
             loaded_context->rc_possibilities.end()) {
         arg_possibilities = &loaded_context->rc_possibilities["__command"];
+        arg_needs_shlex = false;
         rl_completion_append_character = loaded_context->rc_append_character;
     }
     else {
@@ -357,6 +369,7 @@ char **readline_context::attempted_completion(const char *text,
 
             if (prefix_iter != loaded_context->rc_prefixes.end()) {
                 arg_possibilities = &(loaded_context->rc_possibilities[prefix_iter->second]);
+                arg_needs_shlex = false;
             }
         }
 
@@ -373,6 +386,7 @@ char **readline_context::attempted_completion(const char *text,
                 if (loaded_context->rc_possibilities.find("*") !=
                     loaded_context->rc_possibilities.end()) {
                     arg_possibilities = &loaded_context->rc_possibilities["*"];
+                    arg_needs_shlex = false;
                     rl_completion_append_character = loaded_context->rc_append_character;
                 }
             } else {
@@ -400,6 +414,7 @@ char **readline_context::attempted_completion(const char *text,
                             }
                             if (found) {
                                 arg_possibilities = &rp_iter->second;
+                                arg_needs_shlex = false;
                             }
                         }
                         if (!found ||
@@ -434,9 +449,11 @@ char **readline_context::attempted_completion(const char *text,
                             fn_state += 1;
                         }
                         arg_possibilities = &file_name_set;
+                        arg_needs_shlex = true;
                     }
                 } else {
                     arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+                    arg_needs_shlex = false;
                 }
             }
         }
