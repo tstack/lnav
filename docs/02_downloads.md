@@ -4,8 +4,6 @@ title: Downloads
 permalink: /downloads
 ---
 
-The current **beta** release is [**v0.10.0-beta1**](https://github.com/tstack/lnav/releases/tag/v0.10.0-beta1).
-
 The latest **stable** release is [**v{{ site.version }}**](https://github.com/tstack/lnav/releases/latest).
 
 The following options are available for installing **lnav**:
