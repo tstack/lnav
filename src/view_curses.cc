@@ -101,9 +101,12 @@ struct utf_to_display_adjustment {
 
 void view_curses::awaiting_user_input()
 {
+    static const bool enabled = getenv("lnav_test") != nullptr;
     static const char OSC_INPUT[] = "\x1b]999;send-input\a";
 
-    write(STDOUT_FILENO, OSC_INPUT, sizeof(OSC_INPUT) - 1);
+    if (enabled) {
+        write(STDOUT_FILENO, OSC_INPUT, sizeof(OSC_INPUT) - 1);
+    }
 }
 
 void view_curses::mvwattrline(WINDOW *window,

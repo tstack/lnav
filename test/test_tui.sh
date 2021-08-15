@@ -4,6 +4,7 @@
 unset SSH_CONNECTION
 
 lnav_test="${top_builddir}/src/lnav-test"
+export lnav_test
 
 for fn in ${srcdir}/tui-captures/*; do
     base_fn=`basename $fn`
