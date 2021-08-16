@@ -1008,6 +1008,23 @@ private:
 
 static bool handle_config_ui_key(int ch)
 {
+    bool retval = false;
+
+    switch (lnav_data.ld_mode) {
+        case LNM_FILES:
+            retval = lnav_data.ld_files_view.handle_key(ch);
+            break;
+        case LNM_FILTER:
+            retval = lnav_data.ld_filter_view.handle_key(ch);
+            break;
+        default:
+            ensure(0);
+    }
+
+    if (retval) {
+        return retval;
+    }
+
     nonstd::optional<ln_mode_t> new_mode;
 
     lnav_data.ld_filter_help_status_source.fss_error.clear();
@@ -1015,40 +1032,26 @@ static bool handle_config_ui_key(int ch)
         new_mode = LNM_FILES;
     } else if (ch == 'T') {
         new_mode = LNM_FILTER;
-    }
-    if (!lnav_data.ld_filter_source.fss_editing &&
-        (ch == '\t' || ch == KEY_BTAB)) {
+    } else if (ch == '\t' || ch == KEY_BTAB) {
         if (lnav_data.ld_mode == LNM_FILES) {
             new_mode = LNM_FILTER;
         } else {
             new_mode = LNM_FILES;
         }
+    } else if (ch == 'q') {
+        new_mode = LNM_PAGING;
     }
 
-    if (ch == 'q') {
-        lnav_data.ld_mode = LNM_PAGING;
-    } else if (new_mode) {
+    if (new_mode) {
         lnav_data.ld_last_config_mode = new_mode.value();
         lnav_data.ld_mode = new_mode.value();
         lnav_data.ld_files_view.reload_data();
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
-        switch (lnav_data.ld_mode) {
-            case LNM_FILES:
-                if (!lnav_data.ld_files_view.handle_key(ch)) {
-                    return handle_paging_key(ch);
-                }
-                break;
-            case LNM_FILTER:
-                if (!lnav_data.ld_filter_view.handle_key(ch)) {
-                    return handle_paging_key(ch);
-                }
-                break;
-            default:
-                ensure(0);
-        }
+        return handle_paging_key(ch);
     }
+
     return true;
 }
 
