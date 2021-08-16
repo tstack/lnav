@@ -1075,14 +1075,14 @@ detect_config_file_type(const ghc::filesystem::path &path)
     }
 }
 
-static void load_config_from(const ghc::filesystem::path &path, vector<string> &errors)
+static void load_config_from(_lnav_config& lconfig, const ghc::filesystem::path &path, vector<string> &errors)
 {
     yajlpp_parse_context ypc(path.string(), &lnav_config_handlers);
     struct userdata ud(errors);
     auto_fd fd;
 
     ypc.ypc_locations = &lnav_config_locations;
-    ypc.with_obj(lnav_config);
+    ypc.with_obj(lconfig);
     ypc.ypc_userdata = &ud;
     ypc.with_error_reporter(config_error_reporter);
     if ((fd = openp(path, O_RDONLY)) == -1) {
@@ -1194,7 +1194,10 @@ void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string
 
             if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
                 for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                    load_config_from(gl->gl_pathv[lpc], errors);
+                    load_config_from(lnav_config, gl->gl_pathv[lpc], errors);
+                    if (errors.empty()) {
+                        load_config_from(lnav_default_config, gl->gl_pathv[lpc], errors);
+                    }
                 }
             }
         }
@@ -1204,12 +1207,15 @@ void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string
 
             if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
                 for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                    load_config_from(gl->gl_pathv[lpc], errors);
+                    load_config_from(lnav_config, gl->gl_pathv[lpc], errors);
+                    if (errors.empty()) {
+                        load_config_from(lnav_default_config, gl->gl_pathv[lpc], errors);
+                    }
                 }
             }
         }
 
-        load_config_from(user_config, errors);
+        load_config_from(lnav_config, user_config, errors);
     }
 
     reload_config(errors);
