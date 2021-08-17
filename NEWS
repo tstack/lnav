@@ -8,6 +8,7 @@ lnav v0.10.1:
        saved into the ~/.lnav/config.json user configuration file.
      * Key handling in the visual filter editor will no longer swallow
        certain key-presses when editing a filter.
+     * Scrolling performance restored in the SQL view.
 
 lnav v0.10.0:
      Features:

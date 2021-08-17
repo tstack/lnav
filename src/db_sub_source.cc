@@ -45,11 +45,8 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
                                           std::string &label_out,
                                           text_sub_source::line_flags_t flags)
 {
-    static const std::regex RE_TAB("\t");
     static const std::string TAB_SYMBOL = "\u21e5";
-    static const std::regex RE_LF("\n");
     static const std::string LF_SYMBOL = "\u240a";
-    static const std::regex RE_CR("\n");
     static const std::string CR_SYMBOL = "\u240d";
 
     /*
@@ -64,11 +61,26 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
     for (int lpc = 0; lpc < (int)this->dls_rows[row].size(); lpc++) {
         auto actual_col_size = std::min(MAX_COLUMN_WIDTH,
                                         this->dls_headers[lpc].hm_column_size);
-        auto cell_str = std::string(this->dls_rows[row][lpc]);
+        auto raw_cell_str = std::string(this->dls_rows[row][lpc]);
+        std::string cell_str;
 
-        cell_str = std::regex_replace(cell_str, RE_TAB, TAB_SYMBOL);
-        cell_str = std::regex_replace(cell_str, RE_LF, LF_SYMBOL);
-        cell_str = std::regex_replace(cell_str, RE_CR, CR_SYMBOL);
+        for (const auto ch : raw_cell_str) {
+            switch (ch) {
+                case '\t':
+                    cell_str.append(TAB_SYMBOL);
+                    break;
+                case '\n':
+                    cell_str.append(LF_SYMBOL);
+                    break;
+                case '\r':
+                    cell_str.append(CR_SYMBOL);
+                    break;
+                default:
+                    cell_str.append(1, ch);
+                    break;
+            }
+        }
+
         truncate_to(cell_str, MAX_COLUMN_WIDTH);
 
         auto cell_length = utf8_string_length(cell_str)
