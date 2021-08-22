@@ -9,6 +9,7 @@ lnav v0.10.1:
      * Key handling in the visual filter editor will no longer swallow
        certain key-presses when editing a filter.
      * Scrolling performance restored in the SQL view.
+     * The ':redirect-to' command now works with '/dev/clipboard'
 
 lnav v0.10.0:
      Features:

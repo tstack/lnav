@@ -57,6 +57,8 @@ struct exec_context {
         READ_ONLY,
     };
 
+    using output_t = std::pair<FILE *, int(*)(FILE *)>;
+
     exec_context(std::vector<logline_value> *line_values = nullptr,
                  sql_callback_t sql_callback = ::sql_callback,
                  pipe_callback_t pipe_callback = nullptr)
@@ -95,15 +97,15 @@ struct exec_context {
         for (auto iter = this->ec_output_stack.rbegin();
              iter != this->ec_output_stack.rend();
              ++iter) {
-            if (iter->second && *iter->second) {
-                return *iter->second;
+            if (iter->second && (*iter->second).first) {
+                return (*iter->second).first;
             }
         }
 
         return nonstd::nullopt;
     }
 
-    void set_output(const std::string& name, FILE *file);
+    void set_output(const std::string& name, FILE *file, int (*closer)(FILE *));
 
     void clear_output();
 
@@ -122,7 +124,7 @@ struct exec_context {
     struct output_guard {
         explicit output_guard(exec_context &context,
                               std::string name = "default",
-                              const nonstd::optional<FILE *>& file = nonstd::nullopt);
+                              const nonstd::optional<output_t>& file = nonstd::nullopt);
 
         ~output_guard();
 
@@ -151,7 +153,8 @@ struct exec_context {
     std::map<std::string, std::string> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
     std::stack<std::pair<std::string, int>> ec_source;
-    std::vector<std::pair<std::string, nonstd::optional<FILE *>>> ec_output_stack;
+
+    std::vector<std::pair<std::string, nonstd::optional<output_t>>> ec_output_stack;
 
     attr_line_t ec_accumulator;
 

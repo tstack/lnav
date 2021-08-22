@@ -1400,13 +1400,22 @@ static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, 
 
     if (split_args[0] == "-") {
         ec.clear_output();
+    } else if (split_args[0] == "/dev/clipboard") {
+        auto out = open_clipboard(CT_GENERAL);
+        if (!out) {
+            alerter::singleton().chime();
+            return ec.make_error("Unable to copy to clipboard.  "
+                                 "Make sure xclip or pbcopy is installed.");
+        }
+
+        ec.set_output(split_args[0], out, pclose);
     } else {
         FILE *file = fopen(split_args[0].c_str(), "w");
         if (file == nullptr) {
             return ec.make_error("unable to open file -- {}", split_args[0]);
         }
 
-        ec.set_output(split_args[0], file);
+        ec.set_output(split_args[0], file, fclose);
     }
 
     return Ok("info: redirecting output to file -- " + split_args[0]);

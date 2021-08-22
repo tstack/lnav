@@ -866,23 +866,23 @@ std::string exec_context::get_error_prefix()
     return fmt::format("{}:{}: error: ", source.first, source.second);
 }
 
-void exec_context::set_output(const string &name, FILE *file)
+void exec_context::set_output(const string &name, FILE *file, int (*closer)(FILE *))
 {
     log_info("redirecting command output to: %s", name.c_str());
-    this->ec_output_stack.back().second | [](auto file) {
-        if (file != stdout) {
-            fclose(file);
+    this->ec_output_stack.back().second | [](auto out) {
+        if (out.second != nullptr) {
+            out.second(out.first);
         }
     };
-    this->ec_output_stack.back() = std::make_pair(name, file);
+    this->ec_output_stack.back() = std::make_pair(name, std::make_pair(file, closer));
 }
 
 void exec_context::clear_output()
 {
     log_info("redirecting command output to screen");
-    this->ec_output_stack.back().second | [](auto file) {
-        if (file != stdout) {
-            fclose(file);
+    this->ec_output_stack.back().second | [](auto out) {
+        if (out.second != nullptr) {
+            out.second(out.first);
         }
     };
     this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
@@ -890,7 +890,7 @@ void exec_context::clear_output()
 
 exec_context::output_guard::output_guard(exec_context &context,
                                          std::string name,
-                                         const nonstd::optional<FILE *> &file)
+                                         const nonstd::optional<output_t> &file)
     : sg_context(context) {
     if (file) {
         log_info("redirecting command output to: %s", name.c_str());

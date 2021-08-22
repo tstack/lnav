@@ -677,7 +677,7 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
             string path_and_args = rc->get_value();
 
             {
-                exec_context::output_guard og(ec, "tmp", tmpout.release());
+                exec_context::output_guard og(ec, "tmp", std::make_pair(tmpout.release(), fclose));
 
                 string result = execute_file(ec, path_and_args)
                     .map(ok_prefix)

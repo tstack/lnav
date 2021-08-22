@@ -2835,7 +2835,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     return EXIT_FAILURE;
                 }
                 init_session();
-                lnav_data.ld_exec_context.set_output("stdout", stdout);
+                lnav_data.ld_exec_context.set_output("stdout", stdout, nullptr);
                 alerter::singleton().enabled(false);
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];
