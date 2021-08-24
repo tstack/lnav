@@ -40,6 +40,38 @@
 
 using namespace std;
 
+const char *lnav_view_strings[LNV__MAX + 1] = {
+    "log",
+    "text",
+    "help",
+    "histogram",
+    "db",
+    "schema",
+    "pretty",
+    "spectro",
+
+    nullptr
+};
+
+nonstd::optional<lnav_view_t> view_from_string(const char *name)
+{
+    if (name == nullptr) {
+        return nonstd::nullopt;
+    }
+
+    auto view_name_iter = find_if(
+        ::begin(lnav_view_strings), ::end(lnav_view_strings),
+        [&](const char *v) {
+            return v != nullptr && strcasecmp(v, name) == 0;
+        });
+
+    if (view_name_iter == ::end(lnav_view_strings)) {
+        return nonstd::nullopt;
+    }
+
+    return lnav_view_t(view_name_iter - lnav_view_strings);
+}
+
 static void open_schema_view()
 {
     textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];

@@ -1,4 +1,8 @@
 lnav v0.10.1:
+     Features:
+     * The ":write-raw-to" command now accepts a --view flag that specifies
+       the source view for the data to write.  For example, to write the
+       results of a SQL query, you would pass "--view=db" to the command.
      Bug Fixes:
      * The text "send-input" would show up on some terminals instead of
        ignoring the escape sequence.  This control sequence was only

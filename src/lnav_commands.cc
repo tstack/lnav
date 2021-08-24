@@ -87,6 +87,9 @@ static string remaining_args(const string &cmdline,
 
     require(index > 0);
 
+    if (index >= args.size()) {
+        return "";
+    }
     for (size_t lpc = 0; lpc < index; lpc++) {
         start_pos += args[lpc].length();
     }
@@ -96,6 +99,28 @@ static string remaining_args(const string &cmdline,
     require(index_in_cmdline != string::npos);
 
     return cmdline.substr(index_in_cmdline);
+}
+
+static nonstd::optional<string> find_arg(vector<string>& args, const string& flag)
+{
+    auto iter = find_if(args.begin(), args.end(), [&flag](const auto elem) {
+        return startswith(elem, flag);
+    });
+
+    if (iter == args.end()) {
+        return nonstd::nullopt;
+    }
+
+    auto index = iter->find('=');
+    if (index == string::npos) {
+        return "";
+    }
+
+    auto retval = iter->substr(index + 1);
+
+    args.erase(iter);
+
+    return retval;
 }
 
 static bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks &vb)
@@ -807,10 +832,6 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
-    if (args.size() < 2) {
-        return ec.make_error("expecting file name or '-' to write to the terminal");
-    }
-
     fn = trim(remaining_args(cmdline, args));
 
     vector<string> split_args;
@@ -819,6 +840,23 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
     if (!lexer.split(split_args, ec.create_resolver())) {
         return ec.make_error("unable to parse arguments");
     }
+
+    auto *tc = *lnav_data.ld_view_stack.top();
+    auto opt_view_name = find_arg(split_args, "--view");
+    if (opt_view_name) {
+        auto opt_view_index = view_from_string(opt_view_name->c_str());
+
+        if (!opt_view_index) {
+            return ec.make_error("invalid view name: {}", *opt_view_name);
+        }
+
+        tc = &lnav_data.ld_views[*opt_view_index];
+    }
+
+    if (split_args.empty()) {
+        return ec.make_error("expecting file name or '-' to write to the terminal");
+    }
+
     if (split_args.size() > 1) {
         return ec.make_error("more than one file name was matched");
     }
@@ -830,7 +868,6 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         mode = "w";
     }
 
-    auto *tc = *lnav_data.ld_view_stack.top();
     auto &dls = lnav_data.ld_db_row_source;
     bookmark_vector<vis_line_t> all_user_marks;
 
@@ -1198,7 +1235,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
                  .set_text_format(detect_text_format(al.get_string()))
                  .truncate_to(10);
         lnav_data.ld_preview_status_source.get_description()
-                 .set_value("First lines of file: %s", fn.c_str());
+                 .set_value("First lines of file: %s", split_args[0].c_str());
     } else {
         retval = "info: Wrote " + to_string(line_count) + " rows to " + split_args[0];
     }
@@ -5159,6 +5196,9 @@ readline_context::command_t STD_COMMANDS[] = {
                 "In the log view, write the original log file content "
                 "of the marked messages to the file.  In the DB view, "
                 "the contents of the cells are written to the output file.")
+            .with_parameter(help_text(
+                "--view={log,db}", "The view to use as the source of data")
+                .optional())
             .with_parameter(help_text("path", "The path to the file to write"))
             .with_tags({"io", "scripting", "sql"})
             .with_example({

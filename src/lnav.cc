@@ -176,19 +176,6 @@ const int ZOOM_LEVELS[] = {
 
 const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
-const char *lnav_view_strings[LNV__MAX + 1] = {
-    "log",
-    "text",
-    "help",
-    "histogram",
-    "db",
-    "schema",
-    "pretty",
-    "spectro",
-
-    nullptr
-};
-
 const char *lnav_zoom_strings[] = {
     "1-second",
     "30-second",

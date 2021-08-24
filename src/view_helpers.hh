@@ -55,6 +55,8 @@ typedef enum {
 
 extern const char *lnav_view_strings[LNV__MAX + 1];
 
+nonstd::optional<lnav_view_t> view_from_string(const char *name);
+
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 void layout_views();

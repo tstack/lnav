@@ -1482,12 +1482,13 @@
 
 .. _write_raw_to:
 
-:write-raw-to *path*
-^^^^^^^^^^^^^^^^^^^^
+:write-raw-to *\[--view={log,db}\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   In the log view, write the original log file content of the marked messages to the file.  In the DB view, the contents of the cells are written to the output file.
 
   **Parameters**
+    * **--view={log,db}** --- The view to use as the source of data
     * **path\*** --- The path to the file to write
 
   **Examples**

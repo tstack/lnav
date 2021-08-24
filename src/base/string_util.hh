@@ -56,6 +56,11 @@ inline bool startswith(const std::string &str, const char *prefix)
     return startswith(str.c_str(), prefix);
 }
 
+inline bool startswith(const std::string &str, const std::string& prefix)
+{
+    return startswith(str.c_str(), prefix.c_str());
+}
+
 inline bool endswith(const char *str, const char *suffix)
 {
     size_t len = strlen(str), suffix_len = strlen(suffix);

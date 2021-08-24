@@ -46,22 +46,13 @@ template<>
 struct from_sqlite<lnav_view_t> {
     inline lnav_view_t operator()(int argc, sqlite3_value **val, int argi) {
         const char *view_name = (const char *) sqlite3_value_text(val[argi]);
+        auto view_index_opt = view_from_string(view_name);
 
-        if (view_name == nullptr) {
+        if (!view_index_opt) {
             throw from_sqlite_conversion_error("lnav view name", argi);
         }
 
-        auto view_name_iter = find_if(
-            ::begin(lnav_view_strings), ::end(lnav_view_strings),
-            [&](const char *v) {
-                return v != nullptr && strcasecmp(v, view_name) == 0;
-            });
-
-        if (view_name_iter == ::end(lnav_view_strings)) {
-            throw from_sqlite_conversion_error("lnav view name", argi);
-        }
-
-        return lnav_view_t(view_name_iter - lnav_view_strings);
+        return view_index_opt.value();
     }
 };
 
