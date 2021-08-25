@@ -6,7 +6,7 @@ fpm --verbose \
     -s zip \
     -t rpm \
     -n "lnav" \
-    -v $VERSION \
+    -v "$VERSION" \
     -p /vagrant/ \
     -a native \
     --url https://lnav.org \
@@ -20,7 +20,7 @@ fpm --verbose \
     -s zip \
     -t deb \
     -n "lnav" \
-    -v $VERSION \
+    -v "$VERSION" \
     -p /vagrant/ \
     -a native \
     --url https://lnav.org \

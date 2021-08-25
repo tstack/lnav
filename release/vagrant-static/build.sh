@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
@@ -26,7 +26,7 @@ cd ~/github/lnav
 git pull
 
 if test -n "$SRC_VERSION"; then
-    git checkout $SRC_VERSION
+    git checkout "$SRC_VERSION"
 fi
 
 saved_PATH=${PATH}

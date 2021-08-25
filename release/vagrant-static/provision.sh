@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
@@ -50,7 +50,7 @@ xterm-256color\
 cd ~/extract
 
 for pkg in /vagrant/pkgs/*.tar.gz; do
-    tar xfz $pkg
+    tar xfz "$pkg"
 done
 
 (cd make-4.2.1 && ./configure --prefix=${FAKE_ROOT} && make && make install)
