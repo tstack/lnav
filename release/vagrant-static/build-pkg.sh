@@ -9,7 +9,7 @@ fpm --verbose \
     -v $VERSION \
     -p /vagrant/ \
     -a native \
-    --url http://lnav.org \
+    --url https://lnav.org \
     -m 'timothyshanestack@gmail.com' \
     --description 'A log file viewer and analyzer for the terminal' \
     --license BSD-2-Clause \
@@ -23,7 +23,7 @@ fpm --verbose \
     -v $VERSION \
     -p /vagrant/ \
     -a native \
-    --url http://lnav.org \
+    --url https://lnav.org \
     -m 'timothyshanestack@gmail.com' \
     --description 'A log file viewer and analyzer for the terminal' \
     --license BSD-2-Clause \
