@@ -14,6 +14,8 @@ lnav v0.10.1:
        certain key-presses when editing a filter.
      * Scrolling performance restored in the SQL view.
      * The ':redirect-to' command now works with '/dev/clipboard'
+     * The field overlay (opened by pressing 'p') now shows 'log_time'
+       for the timestamp field instead of the name defined in the format.
 
 lnav v0.10.0:
      Features:

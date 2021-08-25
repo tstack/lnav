@@ -73,6 +73,7 @@ struct log_cursor {
 };
 
 const std::string LOG_BODY = "log_body";
+const std::string LOG_TIME = "log_time";
 
 class log_vtab_impl {
 public:

@@ -429,6 +429,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         if (lv.lv_meta.lvm_struct_name.empty()) {
             if (curr_elf && curr_elf->elf_body_field == lv.lv_meta.lvm_name) {
                 field_name = LOG_BODY;
+            } else if (curr_elf && curr_elf->lf_timestamp_field == lv.lv_meta.lvm_name) {
+                field_name = LOG_TIME;
             } else {
                 field_name = lv.lv_meta.lvm_name.to_string();
             }
