@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 #
 # An example script that converts messages in a syslog file into a
@@ -8,7 +8,7 @@
 #
 # NOTE: lnav is going to save some state in $HOME; you might want to change
 # $HOME to something else...
-# 
+#
 # NOTE 2: Unfortunately, this is pretty inefficient right now since lnav
 # is going to store the entire log file in memory when processing the
 # result of the SQL SELECT.
@@ -20,28 +20,28 @@ if test $# -lt 1; then
     exit 1
 fi
 
-if test ! -f $1; then
+if test ! -f "$1"; then
     echo "error: expecting a log file as the first argument"
     exit 1
 fi
 
 # Figure out a unique file name.
-out_file_base="$(basename $1)"
+out_file_base=$(basename "$1")
 counter=0
 while test -e "${out_file_base}.${counter}.csv"; do
-    counter=`expr ${counter} + 1`
+    counter=$((counter + 1))
 done
 export OUT_FILE="${out_file_base}.${counter}.csv"
 
 # Here's a quick summary of what this is doing:
-# 
+#
 # 1. ':load-session' will load the session data which stores which lines
 #    are bookmarked in a file.  We're using bookmarks to keep track of the
 #    last line that we converted in a previous run of this script.
 # 2. ';CREATE TABLE helper' creates a temporary table that we use to store
 #    the range of messages that we'll be converting.
 # 3. ';INSERT INTO helper' will figure out the range of lines in syslog file
-#    to convert. 
+#    to convert.
 # 4. ';UPDATE syslog_log' will set a bookmark on the last line of the range
 #    we computed in the previous step.
 # 5. ';SELECT *' will pull all of the log messages in the computed range.
@@ -63,4 +63,4 @@ lnav -nq -d /tmp/lnav.err \
         SELECT start_line FROM helper) and (SELECT max_line FROM helper)" \
     -c ':write-csv-to $OUT_FILE' \
     -c ":save-session" \
-    $1
+    "$1"

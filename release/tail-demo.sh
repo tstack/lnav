@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 PAUSE_TIME=0.5
 

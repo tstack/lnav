@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then

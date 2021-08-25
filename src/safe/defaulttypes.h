@@ -1,12 +1,12 @@
 /**
  * @file defaulttypes.h
  * @author L.-C. C.
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2020-01-29
- * 
+ *
  * @copyright Copyright (c) 2020
- * 
+ *
  */
 
 #pragma once

@@ -1,12 +1,12 @@
 /**
  * @file safe.h
  * @author L.-C. C.
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2018-09-21
- * 
+ *
  * @copyright Copyright (c) 2018
- * 
+ *
  */
 
 #pragma once
@@ -34,10 +34,10 @@ namespace safe
 	 */
 	struct DefaultConstructMutex {};
 	static constexpr DefaultConstructMutex default_construct_mutex;
-	
+
 	/**
 	 * @brief Wraps a value together with a mutex.
-	 * 
+	 *
 	 * @tparam ValueType The type of the value to protect.
 	 * @tparam MutexType The type of the mutex.
 	 */
@@ -53,7 +53,7 @@ namespace safe
 		/**
 		 * @brief Manages a mutex and gives pointer-like access to a value
 		 * object.
-		 * 
+		 *
 		 * @tparam LockType The type of the lock object that manages the
 		 * mutex, example: std::lock_guard.
 		 * @tparam Mode Determines the access mode of the Access
@@ -83,7 +83,7 @@ namespace safe
 			 * @brief Construct an Access object from a possibly const
 			 * reference to the value object and any additionnal argument
 			 * needed to construct the Lock object.
-			 * 
+			 *
 			 * @tparam LockArgs Deduced from lockArgs.
 			 * @param value Reference to the value.
 			 * @param lockArgs Arguments needed to construct the lock object.
@@ -99,12 +99,12 @@ namespace safe
 			 * @brief Construct a read-only Access object from a const
 			 * safe::Safe object and any additionnal argument needed to
 			 * construct the Lock object.
-			 * 
+			 *
 			 * If needed, you can provide additionnal arguments to construct
 			 * the lock object (such as std::adopt_lock). The mutex from the
 			 * safe::Locakble object is already passed to the lock object's
 			 * constructor though, you must not provide it.
-			 * 
+			 *
 			 * @tparam OtherLockArgs Deduced from otherLockArgs.
 			 * @param safe The const Safe object to give protected access to.
 			 * @param otherLockArgs Other arguments needed to construct the lock
@@ -120,12 +120,12 @@ namespace safe
 			 * @brief Construct a read-write Access object from a
 			 * safe::Safe object and any additionnal argument needed to
 			 * construct the Lock object.
-			 * 
+			 *
 			 * If needed, you can provide additionnal arguments to construct
 			 * the lock object (such as std::adopt_lock). The mutex from the
 			 * safe object is already passed to the lock object's constructor
 			 * though, you must not provide it.
-			 * 
+			 *
 			 * @tparam OtherLockArgs Deduced from otherLockArgs.
 			 * @param safe The Safe object to give protected access to.
 			 * @param otherLockArgs Other arguments needed to construct the lock
@@ -141,7 +141,7 @@ namespace safe
 			 * @brief Construct an Access object from another one.
 			 * OtherLockType must implement release() like std::unique_lock
 			 * does.
-			 * 
+			 *
 			 * @tparam OtherLockType Deduced from otherAccess.
 			 * @tparam OtherMode Deduced from otherAccess.
 			 * @tparam OtherLockArgs Deduced from otherLockArgs.
@@ -215,7 +215,7 @@ namespace safe
 		using ReadAccess = Access<LockType, AccessMode::ReadOnly>;
 		template<template<typename> class LockType=DefaultReadWriteLock>
 		using WriteAccess = Access<LockType, AccessMode::ReadWrite>;
-		
+
 		/**
 		 * @brief Construct a Safe object
 		 */
@@ -225,7 +225,7 @@ namespace safe
 		 * @brief Construct a Safe object with default construction of
 		 * the mutex and perfect forwarding of the other arguments to
 		 * construct the value object.
-		 * 
+		 *
 		 * @tparam ValueArgs Deduced from valueArgs.
 		 * @param valueArgs Perfect forwarding arguments to construct the value object.
 		 * @param tag Indicates that the mutex should be default constructed.
@@ -239,7 +239,7 @@ namespace safe
 		 * @brief Construct a Safe object, forwarding the first
 		 * argument to construct the mutex and the other arguments to
 		 * construct the value object.
-		 * 
+		 *
 		 * @tparam MutexArg Deduced from mutexArg.
 		 * @tparam ValueArgs Deduced from valueArgs.
 		 * @param valueArgs Perfect forwarding arguments to construct the
@@ -296,7 +296,7 @@ namespace safe
 		/**
 		 * @brief Unsafe const accessor to the value. If you use this
 		 * function, you exit the realm of safe!
-		 * 
+		 *
 		 * @return ConstValueReferenceType Const reference to the value
 		 * object.
 		 */
@@ -307,7 +307,7 @@ namespace safe
 		/**
 		 * @brief Unsafe accessor to the value. If you use this function,
 		 * you exit the realm of safe!
-		 * 
+		 *
 		 * @return ValueReferenceType Reference to the value object.
 		 */
 		ValueReferenceType unsafe() noexcept
@@ -317,7 +317,7 @@ namespace safe
 
 		/**
 		 * @brief Accessor to the mutex.
-		 * 
+		 *
 		 * @return MutexReferenceType Reference to the mutex.
 		 */
 		MutexReferenceType mutex() const noexcept
@@ -334,7 +334,7 @@ namespace safe
 
 	/**
 	 * @brief Type alias for read-only Access.
-	 * 
+	 *
 	 * @tparam SafeType The type of Safe object to give read-only access to.
 	 * @tparam LockType=DefaultReadOnlyLock The type of lock.
 	 */
@@ -345,7 +345,7 @@ namespace safe
 
 	/**
 	 * @brief Type alias for read-write Access.
-	 * 
+	 *
 	 * @tparam SafeType The type of Safe object to give read-write access to.
 	 * @tparam LockType=DefaultReadWriteLock The type of lock.
 	 */

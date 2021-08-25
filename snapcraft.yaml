@@ -12,7 +12,7 @@ confinement: strict
 apps:
   lnav:
     command: lnav
-    plugs: 
+    plugs:
       - home            # optional, allows to read log files from home directory
       - log-observe     # required, provide access to system logs in /var/log
       - network         # required, lnav uses sendto() with UNIX domain socket
@@ -42,7 +42,7 @@ parts:
       snapcraftctl pull
 
       "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug --force-snapshot
-    build-packages: 
+    build-packages:
       - build-essential
       - libarchive-dev
       - libpcre3-dev

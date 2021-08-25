@@ -6,10 +6,10 @@ fpm --verbose \
     -s zip \
     -t rpm \
     -n "lnav" \
-    -v $VERSION \
+    -v "$VERSION" \
     -p /vagrant/ \
     -a native \
-    --url http://lnav.org \
+    --url https://lnav.org \
     -m 'timothyshanestack@gmail.com' \
     --description 'A log file viewer and analyzer for the terminal' \
     --license BSD-2-Clause \
@@ -20,10 +20,10 @@ fpm --verbose \
     -s zip \
     -t deb \
     -n "lnav" \
-    -v $VERSION \
+    -v "$VERSION" \
     -p /vagrant/ \
     -a native \
-    --url http://lnav.org \
+    --url https://lnav.org \
     -m 'timothyshanestack@gmail.com' \
     --description 'A log file viewer and analyzer for the terminal' \
     --license BSD-2-Clause \

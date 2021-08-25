@@ -83,7 +83,7 @@ Spatial Navigation
      - Next/previous file
    * - :kbd:`u`
      - :kbd:`Shift` + :kbd:`u`
-     - 
+     -
      - Next/previous bookmark
    * - :kbd:`o`
      - :kbd:`Shift` + :kbd:`o`
@@ -181,7 +181,7 @@ Display
    * - :kbd:`i`
      - Switch to/from the histogram view
    * - :kbd:`Shift` + :kbd:`i`
-     - Switch to/from the histogram view 
+     - Switch to/from the histogram view
    * - :kbd:`v`
      - Switch to/from the SQL result view
    * - :kbd:`Shift` + :kbd:`v`

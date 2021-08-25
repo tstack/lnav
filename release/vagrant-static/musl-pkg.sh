@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 sudo apk update && sudo apk upgrade
 sudo apk add \
