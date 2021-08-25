@@ -1,13 +1,13 @@
-#! /bin/sh
+#!/bin/sh
 # Wrapper for various clipboard I/O on Linux desktop environments and Windows emulations thereof
 
 if [ -z "$STDIN_COPY_COMMAND" ] || [ -z "$STDOUT_PASTE_COMMAND" ]
 then
-	if [ $WAYLAND_DISPLAY ]
+	if [ -n "$WAYLAND_DISPLAY" ]
 	then
 		STDIN_COPY_COMMAND="wl-copy --foreground --type text/plain"
 		STDOUT_PASTE_COMMAND="wl-paste --no-newline"
-	elif [ $DISPLAY ]
+	elif [ -n "$DISPLAY" ]
 	then
 		if command -v xclip
 		then
@@ -34,7 +34,7 @@ then
 	then
 		STDIN_COPY_COMMAND="clip.exe"
 		STDOUT_PASTE_COMMAND=":"
-	elif [ $TMUX ]
+	elif [ -n "$TMUX" ]
 	then
 		STDIN_COPY_COMMAND="tmux load-buffer -"
 		STDOUT_PASTE_COMMAND="tmux save-buffer -"
@@ -44,7 +44,7 @@ then
 	fi > /dev/null
 fi
 
-case "$1" in
+case $1 in
 	copy) exec $STDIN_COPY_COMMAND > /dev/null 2>/dev/null ;;
 	paste) exec $STDOUT_PASTE_COMMAND < /dev/null 2>/dev/null ;;
 	"") # Try to guess intention
