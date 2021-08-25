@@ -37,7 +37,7 @@ parser will also look for pairs separated by a colon.  If there are no clearly
 demarcated pairs, then the parser will extract anything that looks like data
 values and assign them keys of the form 'col_N'.  For example, two data values,
 an IPv4 address and a symbol, will be extracted from the following log
-messsage::
+message::
 
     Apr 29 08:13:43 sample-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.62 on eth0.
 
