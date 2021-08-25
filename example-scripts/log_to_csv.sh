@@ -20,13 +20,13 @@ if test $# -lt 1; then
     exit 1
 fi
 
-if test ! -f $1; then
+if test ! -f "$1"; then
     echo "error: expecting a log file as the first argument"
     exit 1
 fi
 
 # Figure out a unique file name.
-out_file_base="$(basename $1)"
+out_file_base=$(basename "$1")
 counter=0
 while test -e "${out_file_base}.${counter}.csv"; do
     counter=`expr ${counter} + 1`
@@ -63,4 +63,4 @@ lnav -nq -d /tmp/lnav.err \
         SELECT start_line FROM helper) and (SELECT max_line FROM helper)" \
     -c ':write-csv-to $OUT_FILE' \
     -c ":save-session" \
-    $1
+    "$1"
