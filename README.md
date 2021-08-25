@@ -3,7 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?branch=master)](https://coveralls.io/github/tstack/lnav?branch=master)
 [![lnav](https://snapcraft.io//lnav/badge.svg)](https://snapcraft.io/lnav)
 
-_This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
+_This is the source repository for **lnav**, visit [https://lnav.org](https://lnav.org) for a high level overview._
 
 # LNAV -- The Logfile Navigator
 
