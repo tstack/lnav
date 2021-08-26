@@ -467,7 +467,7 @@ static Result<string, string> com_mark(exec_context &ec, string cmdline, vector<
 {
     string retval;
 
-    if (args.empty() || lnav_data.ld_view_stack.vs_views.empty()) {
+    if (args.empty() || lnav_data.ld_view_stack.empty()) {
 
     } else if (!ec.ec_dry_run) {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
@@ -484,7 +484,7 @@ static Result<string, string> com_mark_expr(exec_context &ec, string cmdline, ve
 {
     string retval;
 
-    if (args.empty() || lnav_data.ld_view_stack.vs_views.empty()) {
+    if (args.empty() || lnav_data.ld_view_stack.empty()) {
         args.emplace_back("filter-expr-syms");
     } else if (args.size() < 2) {
         return ec.make_error("expecting an SQL expression");
@@ -2459,7 +2459,7 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
                 tss.current_file()->close();
 
                 if (tss.size() == 1) {
-                    lnav_data.ld_view_stack.vs_views.pop_back();
+                    lnav_data.ld_view_stack.pop_back();
                 }
             }
         }

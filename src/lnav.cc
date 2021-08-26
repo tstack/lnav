@@ -1366,7 +1366,7 @@ static void looper()
 
         (void)curs_set(0);
 
-        lnav_data.ld_view_stack.vs_views.push_back(&lnav_data.ld_views[LNV_LOG]);
+        lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         sb.push_back(clear_last_user_mark);
         sb.push_back(bind_mem(&top_status_source::update_filename, &lnav_data.ld_top_source));
@@ -1375,6 +1375,11 @@ static void looper()
         sb.push_back(bind_mem(&bottom_status_source::update_percent, &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&bottom_status_source::update_marks, &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
+        vsb.push_back([](listview_curses *lv) {
+            auto tc = static_cast<textview_curses *>(lv);
+
+            tc->tc_state_event_handler(*tc);
+        });
 
         vsb.push_back(sb);
 
@@ -1386,7 +1391,11 @@ static void looper()
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
             lnav_data.ld_views[lpc].tc_state_event_handler = [](auto &&tc) {
-                lnav_data.ld_bottom_source.update_search_term(tc);
+                auto top_view = lnav_data.ld_view_stack.top();
+
+                if (top_view && *top_view == &tc) {
+                    lnav_data.ld_bottom_source.update_search_term(tc);
+                }
             };
         }
 
@@ -1441,6 +1450,10 @@ static void looper()
 
         sb(*lnav_data.ld_view_stack.top());
         vsb(*lnav_data.ld_view_stack.top());
+
+        lnav_data.ld_view_stack.vs_change_handler = [](textview_curses *tc) {
+            lnav_data.ld_view_stack_broadcaster(tc);
+        };
 
         {
             input_dispatcher &id = lnav_data.ld_input_dispatcher;
@@ -1504,7 +1517,7 @@ static void looper()
                 (session_stage == 0 ? 3s : 50ms);
 
             vector<struct pollfd> pollfds;
-            size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
+            size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
             int rc;
 
             gettimeofday(&current_time, nullptr);
@@ -1791,7 +1804,8 @@ static void looper()
                     lnav_data.ld_text_source.empty() &&
                     lnav_data.ld_log_source.text_line_count() > 0) {
                     textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
-                    lnav_data.ld_view_stack.vs_views.pop_back();
+                    lnav_data.ld_view_stack.pop_back();
+
                     lnav_data.ld_views[LNV_LOG].set_top(tc_log->get_top_for_last_row());
                 }
                 if (!initial_build &&
@@ -1908,8 +1922,8 @@ static void looper()
                 lnav_data.ld_meta_search->start();
             }
 
-            if (lnav_data.ld_view_stack.vs_views.empty() ||
-                (lnav_data.ld_view_stack.vs_views.size() == 1 &&
+            if (lnav_data.ld_view_stack.empty() ||
+                (lnav_data.ld_view_stack.size() == 1 &&
                  starting_view_stack_size == 2 &&
                  lnav_data.ld_active_files.fc_file_names.size() ==
                  lnav_data.ld_text_source.size())) {
@@ -2827,7 +2841,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];
                 log_tc->set_height(24_vl);
-                lnav_data.ld_view_stack.vs_views.push_back(log_tc);
+                lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes();
@@ -2872,7 +2886,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 if (output_view &&
                     !(lnav_data.ld_flags & LNF_QUIET) &&
-                    !lnav_data.ld_view_stack.vs_views.empty() &&
+                    !lnav_data.ld_view_stack.empty() &&
                     !lnav_data.ld_stdout_used) {
                     bool suppress_empty_lines = false;
                     list_overlay_source *los;

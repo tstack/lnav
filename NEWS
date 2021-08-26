@@ -16,6 +16,8 @@ lnav v0.10.1:
      * The ':redirect-to' command now works with '/dev/clipboard'
      * The field overlay (opened by pressing 'p') now shows 'log_time'
        for the timestamp field instead of the name defined in the format.
+     * The search term in the bottom status bar will now update properly
+       when switching views.
 
 lnav v0.10.0:
      Features:

@@ -174,7 +174,7 @@ bool handle_keyseq(const char *keyseq)
 
 bool handle_paging_key(int ch)
 {
-    if (lnav_data.ld_view_stack.vs_views.empty()) {
+    if (lnav_data.ld_view_stack.empty()) {
         return false;
     }
 

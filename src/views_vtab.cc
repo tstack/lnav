@@ -270,11 +270,11 @@ CREATE TABLE lnav_view_stack (
 )";
 
     iterator begin() {
-        return lnav_data.ld_view_stack.vs_views.begin();
+        return lnav_data.ld_view_stack.begin();
     }
 
     iterator end() {
-        return lnav_data.ld_view_stack.vs_views.end();
+        return lnav_data.ld_view_stack.end();
     }
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
@@ -293,21 +293,14 @@ CREATE TABLE lnav_view_stack (
     };
 
     int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
-        if ((size_t)rowid != lnav_data.ld_view_stack.vs_views.size() - 1) {
+        if ((size_t)rowid != lnav_data.ld_view_stack.size() - 1) {
             tab->zErrMsg = sqlite3_mprintf(
                 "Only the top view in the stack can be deleted");
             return SQLITE_ERROR;
         }
 
         lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
-        lnav_data.ld_view_stack.vs_views.pop_back();
-        if (!lnav_data.ld_view_stack.vs_views.empty()) {
-            textview_curses *tc = *lnav_data.ld_view_stack.top();
-
-            tc->set_needs_update();
-            lnav_data.ld_view_stack_broadcaster(tc);
-        }
-
+        lnav_data.ld_view_stack.pop_back();
         return SQLITE_OK;
     };
 
@@ -317,7 +310,7 @@ CREATE TABLE lnav_view_stack (
         textview_curses *tc = &lnav_data.ld_views[view_index];
 
         ensure_view(tc);
-        rowid_out = lnav_data.ld_view_stack.vs_views.size() - 1;
+        rowid_out = lnav_data.ld_view_stack.size() - 1;
 
         return SQLITE_OK;
     };

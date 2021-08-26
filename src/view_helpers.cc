@@ -92,6 +92,7 @@ static void open_schema_view()
     pts->set_text_format(text_format_t::TF_SQL);
 
     schema_tc->set_sub_source(pts);
+    schema_tc->redo_search();
 }
 
 static void open_pretty_view()
@@ -242,6 +243,7 @@ static void build_all_help_text()
     }
 
     lnav_data.ld_help_source.replace_with(all_help_text);
+    lnav_data.ld_views[LNV_HELP].redo_search();
 }
 
 void layout_views()
@@ -467,11 +469,11 @@ bool toggle_view(textview_curses *toggle_tc)
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
     if (tc == toggle_tc) {
-        if (lnav_data.ld_view_stack.vs_views.size() == 1) {
+        if (lnav_data.ld_view_stack.size() == 1) {
             return false;
         }
         lnav_data.ld_last_view = tc;
-        lnav_data.ld_view_stack.vs_views.pop_back();
+        lnav_data.ld_view_stack.pop_back();
     }
     else {
         if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
@@ -488,12 +490,11 @@ bool toggle_view(textview_curses *toggle_tc)
             build_all_help_text();
         }
         lnav_data.ld_last_view = nullptr;
-        lnav_data.ld_view_stack.vs_views.push_back(toggle_tc);
+        lnav_data.ld_view_stack.push_back(toggle_tc);
         retval = true;
     }
     tc = *lnav_data.ld_view_stack.top();
     tc->set_needs_update();
-    lnav_data.ld_view_stack_broadcaster(tc);
 
     return retval;
 }

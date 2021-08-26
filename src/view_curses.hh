@@ -469,6 +469,8 @@ protected:
 template<class T>
 class view_stack : public view_curses {
 public:
+    using iterator = typename std::vector<T *>::iterator;
+
     nonstd::optional<T *> top() {
         if (this->vs_views.empty()) {
             return nonstd::nullopt;
@@ -495,8 +497,41 @@ public:
         this->vc_needs_update = false;
     }
 
-    std::vector<T *> vs_views;
+    void push_back(T *view) {
+        this->vs_views.push_back(view);
+        if (this->vs_change_handler) {
+            this->vs_change_handler(view);
+        }
+        view->set_needs_update();
+    }
 
+    void pop_back() {
+        this->vs_views.pop_back();
+        if (!this->vs_views.empty() && this->vs_change_handler) {
+            this->vs_change_handler(this->vs_views.back());
+        }
+    }
+
+    iterator begin() {
+        return this->vs_views.begin();
+    }
+
+    iterator end() {
+        return this->vs_views.end();
+    }
+
+    size_t size() {
+        return this->vs_views.size();
+    }
+
+    bool empty() {
+        return this->vs_views.empty();
+    }
+
+    std::function<void(T *)> vs_change_handler;
+
+private:
+    std::vector<T *> vs_views;
 };
 
 #endif
