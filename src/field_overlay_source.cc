@@ -218,7 +218,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         display = true;
     }
     if (!this->fos_contexts.empty()) {
-        display = this->fos_contexts.top().c_show;
+        display = display || this->fos_contexts.top().c_show;
     }
 
     this->build_meta_line(lv, this->fos_lines, lv.get_top());

@@ -18,6 +18,7 @@ lnav v0.10.1:
        for the timestamp field instead of the name defined in the format.
      * The search term in the bottom status bar will now update properly
        when switching views.
+     * The "Out-Of-Time-Order Message" overlay will be shown again.
 
 lnav v0.10.0:
      Features:
