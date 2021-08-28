@@ -365,6 +365,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/active",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "inactive-alert": {
+                                            "description": "Styling for inactive alert status bars",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/inactive-alert",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "inactive": {
                                             "description": "Styling for inactive status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/inactive",

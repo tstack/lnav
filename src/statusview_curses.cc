@@ -123,7 +123,11 @@ void statusview_curses::do_update()
                     if (sa.sa_type == &view_curses::VC_STYLE) {
                         sa.sa_value.sav_int &= ~(A_REVERSE | A_COLOR);
                     } else if (sa.sa_type == &view_curses::VC_ROLE) {
-                        sa.sa_value.sav_int = view_colors::VCR_NONE;
+                        if (sa.sa_value.sav_int == view_colors::VCR_ALERT_STATUS) {
+                            sa.sa_value.sav_int = view_colors::VCR_INACTIVE_ALERT_STATUS;
+                        } else {
+                            sa.sa_value.sav_int = view_colors::VCR_NONE;
+                        }
                     }
                 }
             } else if (sf.is_cylon()) {
@@ -158,11 +162,20 @@ void statusview_curses::do_update()
                 }
             }
 
+            auto default_role = sf.get_role();
+            if (!this->sc_enabled) {
+                if (default_role == view_colors::VCR_ALERT_STATUS) {
+                    default_role = view_colors::VCR_INACTIVE_ALERT_STATUS;
+                } else {
+                    default_role = view_colors::VCR_INACTIVE_STATUS;
+                }
+            }
+
             mvwattrline(this->sc_window,
                         top, x,
                         val,
                         lr,
-                        this->sc_enabled ? sf.get_role() : view_colors::VCR_INACTIVE_STATUS);
+                        default_role);
         }
     }
     wmove(this->sc_window, top + 1, 0);

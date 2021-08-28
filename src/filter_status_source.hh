@@ -60,6 +60,7 @@ public:
 
 private:
     status_field tss_fields[TSF__MAX];
+    status_field tss_error;
     int          bss_last_filtered_count{0};
     sig_atomic_t bss_filter_counter{0};
 };

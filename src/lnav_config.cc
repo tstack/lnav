@@ -682,6 +682,12 @@ static struct json_path_container theme_status_styles_handlers = {
             return &root->lt_style_active_status;
         })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("inactive-alert")
+        .with_description("Styling for inactive alert status bars")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_inactive_alert_status;
+        })
+        .with_children(style_config_handlers),
     yajlpp::property_handler("inactive")
         .with_description("Styling for inactive status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {

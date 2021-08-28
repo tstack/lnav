@@ -19,6 +19,8 @@ lnav v0.10.1:
      * The search term in the bottom status bar will now update properly
        when switching views.
      * The "Out-Of-Time-Order Message" overlay will be shown again.
+     * The tab for the "Files" panel will be highlighted in red if there
+       is an issue opening a file.
 
 lnav v0.10.0:
      Features:

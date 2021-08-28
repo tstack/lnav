@@ -431,9 +431,23 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
 
                 if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) ==
                     nullptr) {
+                    auto errmsg = strerror(errno);
+
                     if (required) {
                         fprintf(stderr, "Cannot find file: %s -- %s",
-                                gl->gl_pathv[lpc], strerror(errno));
+                                gl->gl_pathv[lpc], errmsg);
+                    } else if (loo.loo_source != logfile_name_source::REMOTE) {
+                        // XXX The remote code path adds the file name before
+                        // the file exists...  not sure checking for that here
+                        // is a good idea (prolly not)
+                        file_collection retval;
+
+                        if (gl->gl_pathc == 1) {
+                            retval.fc_name_to_errors[path] = errmsg;
+                        } else {
+                            retval.fc_name_to_errors[path_str] = errmsg;
+                        }
+                        fq.push_back(lnav::futures::make_ready_future(retval));
                     }
                     continue;
                 } else {

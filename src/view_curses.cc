@@ -827,6 +827,8 @@ void view_colors::init_roles(const lnav_theme &lt,
 
     this->vc_role_colors[VCR_INACTIVE_STATUS] = this->to_attrs(color_pair_base,
         lt, lt.lt_style_inactive_status, lt.lt_style_status, reporter);
+    this->vc_role_colors[VCR_INACTIVE_ALERT_STATUS] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_inactive_alert_status, lt.lt_style_alert_status, reporter);
 
     this->vc_role_colors[VCR_POPUP] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_popup, lt.lt_style_text, reporter);

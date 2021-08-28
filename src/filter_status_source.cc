@@ -31,6 +31,7 @@
 
 #include "lnav.hh"
 #include "filter_status_source.hh"
+#include "files_sub_source.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
 static auto EXIT_MSG = "Press " ANSI_BOLD("q") " to exit ";
@@ -42,6 +43,7 @@ static auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
 static auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
 static auto FILTERING_HELP = ANSI_BOLD("f") ": ";
 static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
+static auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
 
 filter_status_source::filter_status_source()
 {
@@ -80,6 +82,10 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_HELP].set_width(20);
     this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     this->tss_fields[TSF_HELP].set_left_pad(1);
+
+    this->tss_error.set_min_width(20);
+    this->tss_error.set_share(1);
+    this->tss_error.set_role(view_colors::VCR_ALERT_STATUS);
 }
 
 size_t filter_status_source::statusview_fields()
@@ -120,8 +126,22 @@ size_t filter_status_source::statusview_fields()
         this->tss_fields[TSF_FILES_TITLE].set_value(
             " " ANSI_ROLE("F") "iles ",
             view_colors::VCR_STATUS_HOTKEY);
-        this->tss_fields[TSF_FILES_TITLE]
-            .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+        if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+            this->tss_fields[TSF_FILES_TITLE]
+                .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+        } else {
+            this->tss_fields[TSF_FILES_TITLE]
+                .set_role(view_colors::VCR_ALERT_STATUS);
+
+            auto& fc = lnav_data.ld_active_files;
+            if (fc.fc_name_to_errors.size() == 1) {
+                this->tss_error.set_value(" error: a file cannot be opened ");
+            } else {
+                this->tss_error.set_value(
+                    " error: %u files cannot be opened ",
+                    lnav_data.ld_active_files.fc_name_to_errors.size());
+            }
+        }
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
             view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE,
             view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL);
@@ -167,6 +187,11 @@ size_t filter_status_source::statusview_fields()
 
 status_field &filter_status_source::statusview_value_for_field(int field)
 {
+    if (field == TSF_FILTERED &&
+        !lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+        return this->tss_error;
+    }
+
     return this->tss_fields[field];
 }
 
@@ -268,39 +293,31 @@ size_t filter_help_status_source::statusview_fields()
             }
         } else if (lnav_data.ld_mode == LNM_FILES &&
                    lnav_data.ld_session_loaded) {
-            const auto &fc = lnav_data.ld_active_files;
-
-            if (fc.fc_files.empty() && fc.fc_other_files.empty()) {
-                this->fss_help.clear();
-                return;
-            }
-
             auto &lv = lnav_data.ld_files_view;
-            auto sel = (int) lv.get_selection();
+            auto sel = files_model::from_selection(lv.get_selection());
 
-            if (sel < fc.fc_name_to_errors.size()) {
-                this->fss_help.clear();
-                return;
-            }
+            sel.match(
+                [this](files_model::no_selection) {
+                    this->fss_help.clear();
+                },
+                [this](files_model::error_selection) {
+                    this->fss_help.set_value("  %s", CLOSE_HELP);
+                },
+                [this](files_model::other_selection) {
+                    this->fss_help.clear();
+                },
+                [this](files_model::file_selection& fs) {
+                    auto &lss = lnav_data.ld_log_source;
+                    auto vis_help = "Hide";
+                    auto ld_opt = lss.find_data(*fs.sb_iter);
+                    if (ld_opt && !ld_opt.value()->ld_visible) {
+                        vis_help = "Show";
+                    }
 
-            sel -= fc.fc_name_to_errors.size();
-
-            if (sel < fc.fc_other_files.size()) {
-                this->fss_help.clear();
-                return;
-            }
-            sel -= fc.fc_other_files.size();
-
-            auto& lss = lnav_data.ld_log_source;
-            auto &lf = lnav_data.ld_active_files.fc_files[sel];
-            auto vis_help = "Hide";
-            auto ld_opt = lss.find_data(lf);
-            if (ld_opt && !ld_opt.value()->ld_visible) {
-                vis_help = "Show";
-            }
-
-            this->fss_help.set_value("  %s%s  %s",
-                                     ENABLE_HELP, vis_help, JUMP_HELP);
+                    this->fss_help.set_value("  %s%s  %s",
+                                             ENABLE_HELP, vis_help, JUMP_HELP);
+                }
+            );
         }
     };
 

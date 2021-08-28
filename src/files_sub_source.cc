@@ -30,11 +30,47 @@
 #include "config.h"
 
 #include "base/humanize.hh"
+#include "base/humanize.network.hh"
 #include "base/string_util.hh"
+#include "mapbox/variant.hpp"
 
 #include "lnav.hh"
 #include "files_sub_source.hh"
 
+namespace files_model {
+files_list_selection from_selection(vis_line_t sel_vis)
+{
+    auto &fc = lnav_data.ld_active_files;
+    int sel = (int) sel_vis;
+
+    if (sel < fc.fc_name_to_errors.size()) {
+        auto iter = fc.fc_name_to_errors.begin();
+
+        std::advance(iter, sel);
+        return error_selection::build(sel, iter);
+    }
+
+    sel -= fc.fc_name_to_errors.size();
+
+    if (sel < fc.fc_other_files.size()) {
+        auto iter = fc.fc_other_files.begin();
+
+        std::advance(iter, sel);
+        return other_selection::build(sel, iter);
+    }
+
+    sel -= fc.fc_other_files.size();
+
+    if (sel < fc.fc_files.size()) {
+        auto iter = fc.fc_files.begin();
+
+        std::advance(iter, sel);
+        return file_selection::build(sel, iter);
+    }
+
+    return no_selection{};
+}
+}
 
 files_sub_source::files_sub_source()
 {
@@ -46,80 +82,70 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
     switch (ch) {
         case KEY_ENTER:
         case '\r': {
-            auto &fc = lnav_data.ld_active_files;
+            auto sel = files_model::from_selection(lv.get_selection());
 
-            if (fc.fc_files.empty() && fc.fc_other_files.empty()) {
-                return true;
-            }
+            sel.match(
+                [](files_model::no_selection) {},
+                [](files_model::error_selection) {},
+                [](files_model::other_selection) {},
+                [&](files_model::file_selection& fs) {
+                    auto& lss = lnav_data.ld_log_source;
+                    auto lf = *fs.sb_iter;
 
-            auto sel = (int) lv.get_selection();
+                    lss.find_data(lf) | [](auto ld) {
+                        ld->set_visibility(true);
+                        lnav_data.ld_log_source.text_filters_changed();
+                    };
 
-            sel -= fc.fc_other_files.size();
-            if (sel < 0) {
-                return true;
-            }
-            if (sel >= fc.fc_files.size()) {
-                return true;
-            }
+                    if (lf->get_format() != nullptr) {
+                        auto& log_view = lnav_data.ld_views[LNV_LOG];
+                        auto row = lss.row_for_time(lf->front().get_timeval());
 
-            auto& lss = lnav_data.ld_log_source;
-            auto &lf = fc.fc_files[sel];
+                        log_view.set_top(vis_line_t(row));
+                        ensure_view(&log_view);
+                    } else {
+                        auto& tv = lnav_data.ld_views[LNV_TEXT];
+                        auto& tss = lnav_data.ld_text_source;
 
-            lss.find_data(lf) | [](auto ld) {
-                ld->set_visibility(true);
-                lnav_data.ld_log_source.text_filters_changed();
-            };
+                        tss.to_front(lf);
+                        tv.reload_data();
+                        ensure_view(&tv);
+                    }
 
-            if (lf->get_format() != nullptr) {
-                auto& log_view = lnav_data.ld_views[LNV_LOG];
-                auto row = lss.row_for_time(lf->front().get_timeval());
+                    lv.reload_data();
+                    lnav_data.ld_mode = LNM_PAGING;
+                }
+            );
 
-                log_view.set_top(vis_line_t(row));
-                ensure_view(&log_view);
-            } else {
-                auto& tv = lnav_data.ld_views[LNV_TEXT];
-                auto& tss = lnav_data.ld_text_source;
-
-                tss.to_front(lf);
-                tv.reload_data();
-                ensure_view(&tv);
-            }
-
-            lv.reload_data();
-            lnav_data.ld_mode = LNM_PAGING;
             return true;
         }
 
         case ' ': {
-            auto &fc = lnav_data.ld_active_files;
+            auto sel = files_model::from_selection(lv.get_selection());
 
-            if (fc.fc_files.empty() && fc.fc_other_files.empty()) {
-                return true;
-            }
+            sel.match(
+                [](files_model::no_selection) {},
+                [](files_model::error_selection) {},
+                [](files_model::other_selection) {},
+                [&](files_model::file_selection& fs) {
+                    auto& lss = lnav_data.ld_log_source;
+                    auto lf = *fs.sb_iter;
 
-            auto sel = (int) lv.get_selection();
+                    lss.find_data(lf) | [](auto ld) {
+                        ld->set_visibility(!ld->ld_visible);
+                    };
 
-            sel -= fc.fc_other_files.size();
-            if (sel < 0) {
-                return true;
-            }
+                    auto top_view = *lnav_data.ld_view_stack.top();
+                    auto tss = top_view->get_sub_source();
 
-            auto& lss = lnav_data.ld_log_source;
-            auto &lf = fc.fc_files[sel];
+                    if (tss != nullptr) {
+                        tss->text_filters_changed();
+                        top_view->reload_data();
+                    }
 
-            lss.find_data(lf) | [](auto ld) {
-                ld->set_visibility(!ld->ld_visible);
-            };
-
-            auto top_view = *lnav_data.ld_view_stack.top();
-            auto tss = top_view->get_sub_source();
-
-            if (tss != nullptr) {
-                tss->text_filters_changed();
-                top_view->reload_data();
-            }
-
-            lv.reload_data();
+                    lv.reload_data();
+                }
+            );
             return true;
         }
         case 'n': {
@@ -133,6 +159,46 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
         case '/': {
             execute_command(lnav_data.ld_exec_context,
                             "prompt search-files");
+            return true;
+        }
+        case 'X': {
+            auto sel = files_model::from_selection(lv.get_selection());
+
+            sel.match(
+                [](files_model::no_selection) {},
+                [&](files_model::error_selection& es) {
+                    auto &fc = lnav_data.ld_active_files;
+
+                    fc.fc_file_names.erase(es.sb_iter->first);
+
+                    auto name_iter = fc.fc_file_names.begin();
+                    while (name_iter != fc.fc_file_names.end()) {
+                        if (name_iter->first == es.sb_iter->first) {
+                            name_iter = fc.fc_file_names.erase(name_iter);
+                            continue;
+                        }
+
+                        auto rp_opt = humanize::network::path::from_str(name_iter->first);
+
+                        if (rp_opt) {
+                            auto rp = *rp_opt;
+
+                            if (fmt::format("{}", rp.home()) == es.sb_iter->first) {
+                                fc.fc_other_files.erase(name_iter->first);
+                                name_iter = fc.fc_file_names.erase(name_iter);
+                                continue;
+                            }
+                        }
+                        ++name_iter;
+                    }
+
+                    fc.fc_name_to_errors.erase(es.sb_iter);
+                    fc.fc_invalidate_merge = true;
+                    lv.reload_data();
+                },
+                [](files_model::other_selection) {},
+                [](files_model::file_selection) {}
+            );
             return true;
         }
     }

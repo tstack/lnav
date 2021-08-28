@@ -141,6 +141,10 @@
                         "color": "#f0f0f0",
                         "background-color": "#0F1F2B"
                     },
+                    "inactive-alert": {
+                        "color": "#ef5350",
+                        "background-color": "#0F1F2B"
+                    },
                     "hotkey": {
                         "color": "#2d5a80",
                         "background-color": "#162d40",

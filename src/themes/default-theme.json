@@ -134,6 +134,10 @@
                         "color": "Silver",
                         "background-color": "Grey37"
                     },
+                    "inactive-alert": {
+                        "color": "Red",
+                        "background-color": "Grey37"
+                    },
                     "title-hotkey": {
                         "color": "Teal",
                         "background-color": "Blue",

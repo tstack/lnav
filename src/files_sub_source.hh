@@ -31,6 +31,7 @@
 #define files_sub_source_hh
 
 #include "textview_curses.hh"
+#include "file_collection.hh"
 
 class files_sub_source
     : public text_sub_source, public list_input_delegate {
@@ -65,5 +66,42 @@ struct files_overlay_source : public list_overlay_source {
                                 vis_line_t line,
                                 attr_line_t &value_out) override;
 };
+
+namespace files_model {
+
+struct no_selection {};
+
+template<typename C, typename T>
+struct selection_base {
+    int sb_index{0};
+    T sb_iter;
+
+    static C build(int index, T iter) {
+        C retval;
+
+        retval.sb_index = index;
+        retval.sb_iter = iter;
+        return retval;
+    }
+};
+
+struct error_selection
+    : public selection_base<error_selection, std::map<std::string, std::string>::iterator> {
+};
+
+struct other_selection
+    : public selection_base<other_selection, std::map<std::string, other_file_descriptor>::iterator> {
+};
+
+struct file_selection
+    : public selection_base<file_selection, std::vector<std::shared_ptr<logfile>>::iterator> {
+};
+
+using files_list_selection = mapbox::util::variant<
+    no_selection, error_selection, other_selection, file_selection>;
+
+files_list_selection from_selection(vis_line_t sel_vis);
+
+}
 
 #endif

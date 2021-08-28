@@ -893,6 +893,12 @@ bool update_active_files(const file_collection& new_files)
 {
     static loading_observer obs;
 
+    if (lnav_data.ld_active_files.fc_invalidate_merge) {
+        lnav_data.ld_active_files.fc_invalidate_merge = false;
+
+        return true;
+    }
+
     for (const auto& lf : new_files.fc_files) {
         lf->set_logfile_observer(&obs);
         lnav_data.ld_text_source.push_back(lf);
@@ -1030,7 +1036,10 @@ static bool handle_config_ui_key(int ch)
     }
 
     if (new_mode) {
-        lnav_data.ld_last_config_mode = new_mode.value();
+        if (new_mode.value() == LNM_FILES ||
+            new_mode.value() == LNM_FILTER) {
+            lnav_data.ld_last_config_mode = new_mode.value();
+        }
         lnav_data.ld_mode = new_mode.value();
         lnav_data.ld_files_view.reload_data();
         lnav_data.ld_filter_view.reload_data();

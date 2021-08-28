@@ -147,6 +147,10 @@
                     "inactive": {
                         "color": "$base1",
                         "background-color": "$base02"
+                    },
+                    "inactive-alert": {
+                        "color": "$red",
+                        "background-color": "$base02"
                     }
                 },
                 "log-level-styles": {
