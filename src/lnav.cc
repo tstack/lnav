@@ -1712,7 +1712,6 @@ static void looper()
                 }
             }
             else {
-                bool got_user_input = false;
                 if (pollfd_ready(pollfds, STDIN_FILENO)) {
                     int ch;
 
@@ -1733,7 +1732,6 @@ static void looper()
                         }
                     }
 
-                    got_user_input = true;
                     next_status_update_time = ui_clock::now();
                     switch (lnav_data.ld_mode) {
                         case LNM_PAGING:
