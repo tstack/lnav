@@ -6,7 +6,7 @@ export HOME="./meta-sessions"
 rm -rf "./meta-sessions"
 mkdir -p $HOME/.config
 
-run_test ${lnav_test} -n \
+run_test ${lnav_test} -n -dln.dbg \
     -c ":comment Hello, World!" \
     -c ":tag foo" \
     -c ":save-session" \
@@ -23,6 +23,7 @@ EOF
 
 ls -lha meta-sessions
 find meta-sessions
+cat ln.dbg
 if test ! -d meta-sessions/.config/lnav; then
     echo "error: configuration not stored in .config/lnav?"
     exit 1
