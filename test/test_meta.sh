@@ -21,6 +21,8 @@ check_output ":tag did not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
+ls -lha meta-sessions
+find meta-sessions
 if test ! -d meta-sessions/.config/lnav; then
     echo "error: configuration not stored in .config/lnav?"
     exit 1
