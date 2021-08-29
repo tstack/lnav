@@ -34,6 +34,7 @@ Hello, World!
 EOF
 
 export HOME=${PWD}/remote
+unset XDG_CONFIG_HOME
 
 rm -rf remote-tmp
 mkdir -p remote-tmp

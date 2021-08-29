@@ -6,6 +6,7 @@ mkdir -p "${CONFIG_DIR}"
 rm -rf "${CONFIG_DIR}/.lnav/formats"
 
 HOME=${CONFIG_DIR}
+unset XDG_CONFIG_HOME
 export HOME
 
 ${lnav_test} -i ${srcdir}/formats/jsontest/format.json

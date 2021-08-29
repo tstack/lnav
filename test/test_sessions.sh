@@ -3,6 +3,7 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 export HOME="./sessions"
+unset XDG_CONFIG_HOME
 rm -rf "./sessions"
 mkdir -p $HOME
 
