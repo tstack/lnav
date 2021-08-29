@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export HOME="./test-config"
+export XDG_CONFIG_HOME="./test-config/.config"
 rm -rf ./test-config
 mkdir -p $HOME/.config
 

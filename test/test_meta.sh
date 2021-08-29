@@ -3,6 +3,7 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 export HOME="./meta-sessions"
+export XDG_CONFIG_HOME="./meta-sessions/.config"
 rm -rf "./meta-sessions"
 mkdir -p $HOME/.config
 
