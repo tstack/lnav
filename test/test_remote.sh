@@ -32,7 +32,9 @@ run_test ${lnav_test} -d /tmp/lnav.err -n \
 check_output "a wildcard in a dir with colons cannot be read?" <<EOF
 Hello, World!
 EOF
-
+if [ -d /home/runner ]; then
+ls -la /home/runner
+fi
 export HOME=${PWD}/remote
 unset XDG_CONFIG_HOME
 
