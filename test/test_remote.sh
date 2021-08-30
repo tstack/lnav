@@ -58,6 +58,7 @@ StrictHostKeyChecking no
 EOF
 
 SSHD_PATH=$(which sshd)
+echo "ssh path: ${SSHD_PATH}"
 
 trap 'kill $(cat remote/sshd.pid)' EXIT
 
@@ -80,6 +81,7 @@ EOF
 run_test ${lnav_test} -d /tmp/lnav.err -n \
     localhost:nonexistent-file
 
+cat remote/sshd.log
 check_error_output "no error for nonexistent-file?" <<EOF
 error: unable to open file: localhost:nonexistent-file -- unable to lstat -- ENOENT[2]
 EOF
