@@ -33,6 +33,7 @@ check_output "a wildcard in a dir with colons cannot be read?" <<EOF
 Hello, World!
 EOF
 if [ -d /home/runner ]; then
+chmod 755 /home/runner
 ls -la /home/runner
 fi
 export HOME=${PWD}/remote
