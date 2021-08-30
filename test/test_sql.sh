@@ -1,7 +1,7 @@
 #! /bin/bash
 
 lnav_test="${top_builddir}/src/lnav-test"
-
+unset XDG_CONFIG_HOME
 
 run_test ${lnav_test} -n \
     -c ";.read nonexistent-file" \
