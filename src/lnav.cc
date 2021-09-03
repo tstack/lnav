@@ -1861,7 +1861,10 @@ static void looper()
                     }
                 }
 
-                if (session_stage == 1) {
+                if (session_stage == 1 &&
+                    (lnav_data.ld_log_source.text_line_count() > 0 ||
+                     lnav_data.ld_text_source.text_line_count() > 0 ||
+                     !lnav_data.ld_active_files.fc_other_files.empty())) {
                     for (size_t view_index = 0;
                          view_index < LNV__MAX;
                          view_index++) {
@@ -2837,7 +2840,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         fprintf(stderr,
                                 "error: unable to open file: %s -- %s\n",
                                 pair.first.c_str(),
-                                pair.second.c_str());
+                                pair.second.fei_description.c_str());
                     }
 
                     return EXIT_FAILURE;

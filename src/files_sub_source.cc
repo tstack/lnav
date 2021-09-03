@@ -244,7 +244,7 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
         truncate_to(fn, filename_width);
         value_out = fmt::format(
             FMT_STRING("    {:<{}}   {}"),
-            fn, filename_width, iter->second);
+            fn, filename_width, iter->second.fei_description);
         return;
     }
 

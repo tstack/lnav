@@ -66,13 +66,18 @@ struct other_file_descriptor {
         : ofd_format(format), ofd_description(std::move(description)) {}
 };
 
+struct file_error_info {
+    const time_t fei_mtime;
+    const std::string fei_description;
+};
+
 struct file_collection {
     bool fc_invalidate_merge{false};
 
     bool fc_recursive{false};
     bool fc_rotated{false};
 
-    std::map<std::string, std::string> fc_name_to_errors;
+    std::map<std::string, file_error_info> fc_name_to_errors;
     std::map<std::string, logfile_open_options> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};

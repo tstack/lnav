@@ -209,10 +209,19 @@ file_collection::watch_logfile(const std::string &filename,
                 return lnav::futures::make_ready_future(retval);
             }
         }
+        auto err_iter = this->fc_name_to_errors.find(filename);
+        if (err_iter != this->fc_name_to_errors.end()) {
+            if (err_iter->second.fei_mtime != st.st_mtime) {
+                this->fc_name_to_errors.erase(err_iter);
+            }
+        }
     }
     if (rc == -1) {
         if (required) {
-            retval.fc_name_to_errors[filename] = strerror(errno);
+            retval.fc_name_to_errors.emplace(filename, file_error_info{
+                time(nullptr),
+                std::string(strerror(errno)),
+            });
         }
         return lnav::futures::make_ready_future(retval);
     }
@@ -239,7 +248,7 @@ file_collection::watch_logfile(const std::string &filename,
             return lnav::futures::make_ready_future(retval);
         }
 
-        auto func = [filename, loo, prog = this->fc_progress, errs = this->fc_name_to_errors]() mutable {
+        auto func = [filename, st, loo, prog = this->fc_progress, errs = this->fc_name_to_errors]() mutable {
             file_collection retval;
 
             if (errs.find(filename) != errs.end()) {
@@ -308,7 +317,12 @@ file_collection::watch_logfile(const std::string &filename,
                         log_error("archive extraction failed: %s",
                                   res.unwrapErr().c_str());
                         retval.clear();
-                        retval.fc_name_to_errors[filename] = res.unwrapErr();
+                        retval.fc_name_to_errors.emplace(
+                            filename,
+                            file_error_info{
+                                st.st_mtime,
+                                res.unwrapErr(),
+                            });
                     } else {
                         retval.fc_other_files[filename] = ff;
                     }
@@ -330,7 +344,11 @@ file_collection::watch_logfile(const std::string &filename,
                         retval.fc_files.push_back(open_res.unwrap());
                     }
                     else {
-                        retval.fc_name_to_errors[filename] = open_res.unwrapErr();
+                        retval.fc_name_to_errors.emplace(
+                            filename, file_error_info{
+                                st.st_mtime,
+                                open_res.unwrapErr(),
+                            });
                     }
                     break;
             }
@@ -443,9 +461,17 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                         file_collection retval;
 
                         if (gl->gl_pathc == 1) {
-                            retval.fc_name_to_errors[path] = errmsg;
+                            retval.fc_name_to_errors.emplace(
+                                path, file_error_info{
+                                    time(nullptr),
+                                    errmsg,
+                                });
                         } else {
-                            retval.fc_name_to_errors[path_str] = errmsg;
+                            retval.fc_name_to_errors.emplace(
+                                path_str, file_error_info{
+                                    time(nullptr),
+                                    errmsg,
+                                });
                         }
                         fq.push_back(lnav::futures::make_ready_future(retval));
                     }

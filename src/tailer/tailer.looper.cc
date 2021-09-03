@@ -984,7 +984,10 @@ void tailer::looper::report_error(std::string path, std::string msg)
         .send([=](auto& mlooper) {
             file_collection fc;
 
-            fc.fc_name_to_errors[path] = msg;
+            fc.fc_name_to_errors.emplace(path, file_error_info{
+                {},
+                msg,
+            });
             update_active_files(fc);
             lnav_data.ld_active_files.fc_progress->writeAccess()->
                 sp_tailers.erase(path);

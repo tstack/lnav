@@ -144,6 +144,14 @@ inline struct timeval current_timeval() {
     return retval;
 }
 
+inline struct timespec current_timespec() {
+    struct timespec retval;
+
+    clock_gettime(CLOCK_REALTIME, &retval);
+
+    return retval;
+}
+
 inline time_t day_num(time_t ti)
 {
     return ti / (24 * 60 * 60);

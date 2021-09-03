@@ -86,7 +86,7 @@ struct selection_base {
 };
 
 struct error_selection
-    : public selection_base<error_selection, std::map<std::string, std::string>::iterator> {
+    : public selection_base<error_selection, std::map<std::string, file_error_info>::iterator> {
 };
 
 struct other_selection
