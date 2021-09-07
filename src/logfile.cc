@@ -330,11 +330,15 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
         return rebuild_result_t::INVALID;
     }
 
+    const auto is_truncated = st.st_size < this->lf_stat.st_size;
+    const auto is_user_provided_and_rewritten = (
+        // files from other sources can have their mtimes monkeyed with
+        this->lf_options.loo_source == logfile_name_source::USER &&
+        this->lf_stat.st_size == st.st_size &&
+        this->lf_stat.st_mtime != st.st_mtime);
+
     // Check the previous stat against the last to see if things are wonky.
-    if (this->lf_named_file &&
-        (st.st_size < this->lf_stat.st_size ||
-         (this->lf_stat.st_size == st.st_size &&
-          this->lf_stat.st_mtime != st.st_mtime))) {
+    if (this->lf_named_file && (is_truncated || is_user_provided_and_rewritten)) {
         log_info("overwritten file detected, closing -- %s  new: %" PRId64
                      "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
                  this->lf_filename.c_str(),
