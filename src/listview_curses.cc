@@ -132,7 +132,11 @@ bool listview_curses::handle_key(int ch)
 
     case 'g':
     case KEY_HOME:
-        this->set_top(0_vl);
+        if (this->is_selectable()) {
+            this->set_selection(0_vl);
+        } else {
+            this->set_top(0_vl);
+        }
         break;
 
     case 'G':

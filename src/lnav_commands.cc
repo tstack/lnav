@@ -2519,10 +2519,20 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
 
 static Result<string, string> com_file_visibility(exec_context &ec, string cmdline, vector<string> &args)
 {
-    bool make_visible = args[0] == "show-file";
+    bool only_this_file = false;
+    bool make_visible;
     string retval;
 
-    if (args.size() == 1) {
+    if (args[0] == "show-file") {
+        make_visible = true;
+    } else if (args[0] == "show-only-this-file") {
+        make_visible = true;
+        only_this_file = true;
+    } else {
+        make_visible = false;
+    }
+
+    if (args.size() == 1 || only_this_file) {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
         shared_ptr<logfile> lf;
 
@@ -2549,6 +2559,11 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
         }
 
         if (!ec.ec_dry_run) {
+            if (only_this_file) {
+                for (const auto& ld : lnav_data.ld_log_source) {
+                    ld->set_visibility(false);
+                }
+            }
             lnav_data.ld_log_source.find_data(lf) | [make_visible](auto ld) {
                 ld->set_visibility(make_visible);
             };
@@ -2631,6 +2646,18 @@ static Result<string, string> com_show_file(exec_context &ec, string cmdline, ve
 
     if (args.empty()) {
         args.emplace_back("hidden-files");
+    } else {
+        return com_file_visibility(ec, cmdline, args);
+    }
+
+    return Ok(retval);
+}
+
+static Result<string, string> com_show_only_this_file(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
     } else {
         return com_file_visibility(ec, cmdline, args);
     }
@@ -5423,6 +5450,14 @@ readline_context::command_t STD_COMMANDS[] = {
                 "path",
                 "The path or glob pattern that specifies the files to show"}
                 .zero_or_more())
+            .with_opposites({"hide-file"})
+    },
+    {
+        "show-only-this-file",
+        com_show_only_this_file,
+
+        help_text(":show-only-this-file")
+            .with_summary("Show only the file for the top line in the view")
             .with_opposites({"hide-file"})
     },
     {

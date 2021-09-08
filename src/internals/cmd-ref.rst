@@ -1211,6 +1211,17 @@
 ----
 
 
+.. _show_only_this_file:
+
+:show-only-this-file
+^^^^^^^^^^^^^^^^^^^^
+
+  Show only the file for the top line in the view
+
+
+----
+
+
 .. _show_unmarked_lines:
 
 :show-unmarked-lines

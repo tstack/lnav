@@ -1,5 +1,7 @@
 lnav v0.10.1:
      Features:
+     * Added ":show-only-this-file" command that hides all files except the
+       one for the top line in the view.
      * The ":write-raw-to" command now accepts a --view flag that specifies
        the source view for the data to write.  For example, to write the
        results of a SQL query, you would pass "--view=db" to the command.
