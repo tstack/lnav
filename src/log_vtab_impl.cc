@@ -792,14 +792,14 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
                 date_time_scanner dts;
                 struct timeval tv;
                 struct exttm mytm;
-                vis_line_t vl;
 
                 dts.scan((const char *)datestr, strlen((const char *)datestr), NULL, &mytm, tv);
-                if ((vl = vt->lss->find_from_time(tv)) == -1) {
+                auto vl_opt = vt->lss->find_from_time(tv);
+                if (!vl_opt) {
                     p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
                 }
                 else {
-                    p_cur->log_cursor.update(index[lpc].op, vl, false);
+                    p_cur->log_cursor.update(index[lpc].op, vl_opt.value(), false);
                 }
             }
             break;

@@ -528,15 +528,15 @@ public:
         return retval;
     };
 
-    vis_line_t find_from_time(const struct timeval &start) const;
+    nonstd::optional<vis_line_t> find_from_time(const struct timeval &start) const;
 
-    vis_line_t find_from_time(time_t start) {
+    nonstd::optional<vis_line_t> find_from_time(time_t start) const {
         struct timeval tv = { start, 0 };
 
         return this->find_from_time(tv);
     };
 
-    vis_line_t find_from_time(const exttm &etm) const {
+    nonstd::optional<vis_line_t> find_from_time(const exttm &etm) const {
         return this->find_from_time(etm.to_timeval());
     };
 
@@ -547,7 +547,13 @@ public:
         if (lf != nullptr) {
             auto ll_iter = lf->begin() + line;
             auto &ll = *ll_iter;
-            vis_line_t vis_start = this->find_from_time(ll.get_timeval());
+            auto vis_start_opt = this->find_from_time(ll.get_timeval());
+
+            if (!vis_start_opt) {
+                return nonstd::nullopt;
+            }
+
+            auto vis_start = *vis_start_opt;
 
             while (vis_start < vis_line_t(this->text_line_count())) {
                 content_line_t guess_cl = this->at(vis_start);
@@ -569,11 +575,14 @@ public:
         return nonstd::nullopt;
     }
 
-    struct timeval time_for_row(int row) {
-        return this->find_line(this->at(vis_line_t(row)))->get_timeval();
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) {
+        if (row < this->text_line_count()) {
+            return this->find_line(this->at(row))->get_timeval();
+        }
+        return nonstd::nullopt;
     };
 
-    int row_for_time(struct timeval time_bucket) {
+    nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket) {
         return this->find_from_time(time_bucket);
     };
 

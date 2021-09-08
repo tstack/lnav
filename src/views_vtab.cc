@@ -156,11 +156,16 @@ CREATE TABLE lnav_views (
                 auto *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
 
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
-                    char timestamp[64];
+                    auto top_time_opt = time_source->time_for_row(tc.get_top());
 
-                    sql_strftime(timestamp, sizeof(timestamp), time_source->time_for_row(tc.get_top()), 'T');
+                    if (top_time_opt) {
+                        char timestamp[64];
 
-                    sqlite3_result_text(ctx, timestamp, -1, SQLITE_TRANSIENT);
+                        sql_strftime(timestamp, sizeof(timestamp), top_time_opt.value(), 'T');
+                        sqlite3_result_text(ctx, timestamp, -1, SQLITE_TRANSIENT);
+                    } else {
+                        sqlite3_result_null(ctx);
+                    }
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -231,12 +236,15 @@ CREATE TABLE lnav_views (
             struct timeval tv;
 
             if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                struct timeval last_time = time_source->time_for_row(tc.get_top());
+                auto last_time_opt = time_source->time_for_row(tc.get_top());
 
-                if (tv != last_time) {
-                    int row = time_source->row_for_time(tv);
-
-                    tc.set_top(vis_line_t(row));
+                if (last_time_opt) {
+                    auto last_time = last_time_opt.value();
+                    if (tv != last_time) {
+                        time_source->row_for_time(tv) | [&tc](auto row) {
+                            tc.set_top(row);
+                        };
+                    }
                 }
             } else {
                 tab->zErrMsg = sqlite3_mprintf("Invalid time: %s", top_time);

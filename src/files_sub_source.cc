@@ -99,9 +99,9 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
                     if (lf->get_format() != nullptr) {
                         auto& log_view = lnav_data.ld_views[LNV_LOG];
-                        auto row = lss.row_for_time(lf->front().get_timeval());
-
-                        log_view.set_top(vis_line_t(row));
+                        lss.row_for_time(lf->front().get_timeval()) | [](auto row) {
+                            log_view.set_top(row);
+                        };
                         ensure_view(&log_view);
                     } else {
                         auto& tv = lnav_data.ld_views[LNV_TEXT];

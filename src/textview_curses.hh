@@ -360,9 +360,9 @@ class text_time_translator {
 public:
     virtual ~text_time_translator() = default;
 
-    virtual int row_for_time(struct timeval time_bucket) = 0;
+    virtual nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket) = 0;
 
-    virtual struct timeval time_for_row(int row) = 0;
+    virtual nonstd::optional<struct timeval> time_for_row(vis_line_t row) = 0;
 
     void scroll_invoked(textview_curses *tc);
 

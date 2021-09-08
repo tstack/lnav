@@ -367,7 +367,6 @@ TESTS = \
 	test_log_accel \
 	test_logfile.sh \
 	test_reltime \
-	test_remote.sh \
 	test_scripts.sh \
 	test_sessions.sh \
 	test_shlexer.sh \
@@ -386,6 +385,7 @@ TESTS = \
 	test_vt52_curses.sh
 
 DISABLED_TESTS = \
+	test_remote.sh \
 	test_top_status \
 	test_line_buffer2 \
     test_line_buffer.sh

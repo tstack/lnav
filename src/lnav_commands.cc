@@ -348,47 +348,58 @@ static Result<string, string> com_goto(exec_context &ec, string cmdline, vector<
         auto parse_res = relative_time::from_str(all_args);
 
         if (parse_res.isOk()) {
-            if (ttt != nullptr) {
-                struct timeval tv = ttt->time_for_row(tc->get_top());
-                vis_line_t vl = tc->get_top(), new_vl;
-                bool done = false;
-                auto rt = parse_res.unwrap();
-
-                if (rt.is_relative()) {
-                    injector::get<relative_time&, last_relative_time_tag>() = rt;
-                }
-
-                do {
-                    auto tm = rt.adjust(tv);
-
-                    tv = tm.to_timeval();
-                    new_vl = vis_line_t(ttt->row_for_time(tv));
-
-                    if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
-                        vl = new_vl;
-                        done = true;
-                    }
-                } while (!done);
-
-                dst_vl = vl;
-
-                if (!ec.ec_dry_run && !rt.is_absolute() && lnav_data.ld_rl_view != nullptr) {
-                    lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_2(r, R,
-                                   "to move forward/backward the same amount of time"));
-                }
-            } else {
+            if (ttt == nullptr) {
                 return ec.make_error("relative time values only work in a time-indexed view");
+            }
+            if (tc->get_inner_height() == 0_vl) {
+                return ec.make_error("view is empty");
+            }
+            auto tv_opt = ttt->time_for_row(tc->get_top());
+            if (!tv_opt) {
+                return ec.make_error("cannot get time for the top row");
+            }
+            tv = tv_opt.value();
+
+            vis_line_t vl = tc->get_top(), new_vl;
+            bool done = false;
+            auto rt = parse_res.unwrap();
+
+            if (rt.is_relative()) {
+                injector::get<relative_time&, last_relative_time_tag>() = rt;
+            }
+
+            do {
+                auto tm = rt.adjust(tv);
+
+                tv = tm.to_timeval();
+                auto new_vl_opt = ttt->row_for_time(tv);
+                if (!new_vl_opt) {
+                    break;
+                }
+
+                new_vl = new_vl_opt.value();
+                if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
+                    vl = new_vl;
+                    done = true;
+                }
+            } while (!done);
+
+            dst_vl = vl;
+
+            if (!ec.ec_dry_run && !rt.is_absolute() && lnav_data.ld_rl_view != nullptr) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_2(r, R,
+                               "to move forward/backward the same amount of time"));
             }
         }
         else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv) !=
             nullptr) {
-            if (ttt != nullptr) {
-                dst_vl = vis_line_t(ttt->row_for_time(tv));
+            if (ttt == nullptr) {
+                return ec.make_error(
+                    "time values only work in a time-indexed view");
             }
-            else {
-                return ec.make_error("time values only work in a time-indexed view");
-            }
+
+            dst_vl = ttt->row_for_time(tv);
         }
         else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {
@@ -3342,24 +3353,30 @@ static Result<string, string> com_zoom_to(exec_context &ec, string cmdline, vect
                 textview_curses &hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
 
                 if (hist_view.get_inner_height() > 0) {
-                    old_time = lnav_data.ld_hist_source2.time_for_row(
+                    auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
                         lnav_data.ld_views[LNV_HISTOGRAM].get_top());
-                    rebuild_hist();
-                    lnav_data.ld_views[LNV_HISTOGRAM].set_top(
-                        vis_line_t(
-                            lnav_data.ld_hist_source2.row_for_time(old_time)));
+                    if (old_time_opt) {
+                        old_time = old_time_opt.value();
+                        rebuild_hist();
+                        lnav_data.ld_hist_source2.row_for_time(old_time) | [](auto new_top) {
+                            lnav_data.ld_views[LNV_HISTOGRAM].set_top(new_top);
+                        };
+                    }
                 }
 
                 textview_curses &spectro_view = lnav_data.ld_views[LNV_SPECTRO];
 
                 if (spectro_view.get_inner_height() > 0) {
-                    old_time = lnav_data.ld_spectro_source.time_for_row(
+                    auto old_time_opt = lnav_data.ld_spectro_source.time_for_row(
                         lnav_data.ld_views[LNV_SPECTRO].get_top());
                     ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
                     ss.invalidate();
-                    lnav_data.ld_views[LNV_SPECTRO].set_top(
-                        vis_line_t(lnav_data.ld_spectro_source.row_for_time(
-                            old_time)));
+                    if (old_time_opt) {
+                        lnav_data.ld_spectro_source.row_for_time(old_time_opt.value()) |
+                        [](auto new_top) {
+                            lnav_data.ld_views[LNV_SPECTRO].set_top(new_top);
+                        };
+                    }
                 }
 
                 lnav_data.ld_view_stack.set_needs_update();
@@ -4135,17 +4152,11 @@ public:
 
     void spectro_row(spectrogram_request &sr, spectrogram_row &row_out) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        vis_line_t begin_line = lss.find_from_time(sr.sr_begin_time);
-        vis_line_t end_line = lss.find_from_time(sr.sr_end_time);
+        vis_line_t begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
+        vis_line_t end_line = lss.find_from_time(sr.sr_end_time).value_or(lss.text_line_count());
         vector<logline_value> values;
         string_attrs_t sa;
 
-        if (begin_line == -1) {
-            begin_line = 0_vl;
-        }
-        if (end_line == -1) {
-            end_line = vis_line_t(lss.text_line_count());
-        }
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
             std::shared_ptr<logfile> lf = lss.find(cl);
@@ -4188,17 +4199,11 @@ public:
         // XXX need to refactor this and the above method
         textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        vis_line_t begin_line = lss.find_from_time(begin_time);
-        vis_line_t end_line = lss.find_from_time(end_time);
+        vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
+        vis_line_t end_line = lss.find_from_time(end_time).value_or(lss.text_line_count());
         vector<logline_value> values;
         string_attrs_t sa;
 
-        if (begin_line == -1) {
-            begin_line = 0_vl;
-        }
-        if (end_line == -1) {
-            end_line = vis_line_t(lss.text_line_count());
-        }
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
             std::shared_ptr<logfile> lf = lss.find(cl);
@@ -4317,17 +4322,10 @@ public:
 
     void spectro_row(spectrogram_request &sr, spectrogram_row &row_out) {
         db_label_source &dls = lnav_data.ld_db_row_source;
-        int begin_row = dls.row_for_time({ sr.sr_begin_time, 0 });
-        int end_row = dls.row_for_time({ sr.sr_end_time, 0 });
+        auto begin_row = dls.row_for_time({ sr.sr_begin_time, 0 }).value_or(0_vl);
+        auto end_row = dls.row_for_time({ sr.sr_end_time, 0 }).value_or(dls.dls_rows.size());
 
-        if (begin_row == -1) {
-            begin_row = 0;
-        }
-        if (end_row == -1) {
-            end_row = dls.dls_rows.size();
-        }
-
-        for (int lpc = begin_row; lpc < end_row; lpc++) {
+        for (auto lpc = begin_row; lpc < end_row; ++lpc) {
             double value = 0.0;
 
             sscanf(dls.dls_rows[lpc][this->dsvs_column_index], "%lf", &value);

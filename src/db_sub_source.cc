@@ -261,7 +261,7 @@ long db_label_source::column_name_to_index(const std::string &name) const
     return std::distance(this->dls_headers.begin(), iter);
 }
 
-int db_label_source::row_for_time(struct timeval time_bucket)
+nonstd::optional<vis_line_t> db_label_source::row_for_time(struct timeval time_bucket)
 {
     std::vector<struct timeval>::iterator iter;
 
@@ -269,9 +269,9 @@ int db_label_source::row_for_time(struct timeval time_bucket)
                             this->dls_time_column.end(),
                             time_bucket);
     if (iter != this->dls_time_column.end()) {
-        return std::distance(this->dls_time_column.begin(), iter);
+        return vis_line_t(std::distance(this->dls_time_column.begin(), iter));
     }
-    return -1;
+    return nonstd::nullopt;
 }
 
 size_t db_overlay_source::list_overlay_count(const listview_curses &lv)

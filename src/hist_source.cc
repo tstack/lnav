@@ -36,7 +36,7 @@ using namespace std;
 
 const char *hist_source2::LINE_FORMAT = " %8d normal  %8d errors  %8d warnings  %8d marks";
 
-int hist_source2::row_for_time(struct timeval tv_bucket)
+nonstd::optional<vis_line_t> hist_source2::row_for_time(struct timeval tv_bucket)
 {
     std::map<int64_t, struct bucket_block>::iterator iter;
     int retval = 0;
@@ -57,11 +57,11 @@ int hist_source2::row_for_time(struct timeval tv_bucket)
 
         for (unsigned int lpc = 0; lpc <= bb.bb_used; lpc++, retval++) {
             if (time_bucket <= bb.bb_buckets[lpc].b_time) {
-                return retval;
+                return vis_line_t(retval);
             }
         }
     }
-    return retval;
+    return vis_line_t(retval);
 }
 
 void hist_source2::text_value_for_line(textview_curses &tc, int row,

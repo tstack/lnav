@@ -137,19 +137,17 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
     return retval;
 }
 
-vis_line_t logfile_sub_source::find_from_time(const struct timeval &start) const
+nonstd::optional<vis_line_t> logfile_sub_source::find_from_time(const struct timeval &start) const
 {
-    vis_line_t retval(-1);
-
     auto lb = lower_bound(this->lss_filtered_index.begin(),
                           this->lss_filtered_index.end(),
                           start,
                           filtered_logline_cmp(*this));
     if (lb != this->lss_filtered_index.end()) {
-        retval = vis_line_t(lb - this->lss_filtered_index.begin());
+        return vis_line_t(lb - this->lss_filtered_index.begin());
     }
 
-    return retval;
+    return nonstd::nullopt;
 }
 
 void logfile_sub_source::text_value_for_line(textview_curses &tc,

@@ -730,25 +730,27 @@ textview_curses::toggle_user_mark(bookmark_type_t *bm, vis_line_t start_line,
 void text_time_translator::scroll_invoked(textview_curses *tc)
 {
     if (tc->get_inner_height() > 0) {
-        this->ttt_top_time = this->time_for_row((int) tc->get_top());
+        this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
+            this->ttt_top_time = new_top_time;
+        };
     }
 }
 
 void text_time_translator::data_reloaded(textview_curses *tc)
 {
     if (tc->get_inner_height() > 0) {
-        struct timeval top_time = this->time_for_row((int) tc->get_top());
-
-        if (top_time != this->ttt_top_time) {
-            if (this->ttt_top_time.tv_sec != 0) {
-                vis_line_t new_top(this->row_for_time(this->ttt_top_time));
-
-                if (new_top >= 0) {
-                    tc->set_top(new_top);
+        this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
+            if (top_time != this->ttt_top_time) {
+                if (this->ttt_top_time.tv_sec != 0) {
+                    this->row_for_time(this->ttt_top_time) | [tc](auto new_top) {
+                        tc->set_top(new_top);
+                    };
                 }
+                this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
+                    this->ttt_top_time = new_top_time;
+                };
             }
-            this->ttt_top_time = this->time_for_row((int) tc->get_top());
-        }
+        };
     }
 }
 

@@ -85,18 +85,18 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 time_t five_minutes_ago = local_now - (5 * 60 * 60);
                 time_t ten_secs_ago = local_now - 10;
 
-                vis_line_t from_five_min_ago = lss.find_from_time(five_minutes_ago);
-                vis_line_t from_ten_secs_ago = lss.find_from_time(ten_secs_ago);
+                auto from_five_min_ago_opt = lss.find_from_time(five_minutes_ago);
+                auto from_ten_secs_ago_opt = lss.find_from_time(ten_secs_ago);
                 auto &bm = tc.get_bookmarks();
                 auto error_bm_iter = bm.find(&logfile_sub_source::BM_ERRORS);
 
-                if (now > last_line->get_time() && from_five_min_ago != -1 &&
+                if (now > last_line->get_time() && from_five_min_ago_opt &&
                     error_bm_iter != bm.end()) {
                     auto& error_bookmarks = error_bm_iter->second;
                     auto five_min_lower =
                         lower_bound(error_bookmarks.begin(),
                                     error_bookmarks.end(),
-                                    from_five_min_ago);
+                                    from_five_min_ago_opt.value());
                     if (five_min_lower != error_bookmarks.end()) {
                         double error_count = distance(
                             five_min_lower, error_bookmarks.end());
@@ -108,11 +108,11 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                         }
                         error_rate = error_count / time_diff;
 
-                        if (from_ten_secs_ago != -1) {
+                        if (from_ten_secs_ago_opt) {
                             auto ten_sec_lower =
                                 lower_bound(error_bookmarks.begin(),
                                             error_bookmarks.end(),
-                                            from_ten_secs_ago);
+                                            from_ten_secs_ago_opt.value());
                             if (ten_sec_lower != error_bookmarks.end()) {
                                 double recent_error_count = distance(
                                     ten_sec_lower, error_bookmarks.end());

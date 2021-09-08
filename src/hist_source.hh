@@ -396,16 +396,17 @@ public:
         return 0;
     };
 
-    struct timeval time_for_row(int row) {
-        require(row >= 0);
-        require(row < this->hs_line_count);
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) {
+        if (row < 0 || row > this->hs_line_count) {
+            return nonstd::nullopt;
+        }
 
         bucket_t &bucket = this->find_bucket(row);
 
-        return { bucket.b_time, 0 };
+        return timeval{ bucket.b_time, 0 };
     };
 
-    int row_for_time(struct timeval tv_bucket);
+    nonstd::optional<vis_line_t> row_for_time(struct timeval tv_bucket);
 
 private:
     static const char *LINE_FORMAT;

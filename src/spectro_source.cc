@@ -52,7 +52,11 @@ bool spectrogram_source::list_input_handle_key(listview_curses &lv, int ch)
             lv.get_dimensions(height, width);
 
             spectrogram_bounds &sb = this->ss_cached_bounds;
-            struct timeval begin_time = this->time_for_row(this->ss_cursor_top);
+            auto begin_time_opt = this->time_for_row(this->ss_cursor_top);
+            if (!begin_time_opt) {
+                return true;
+            }
+            auto begin_time = begin_time_opt.value();
             struct timeval end_time = begin_time;
 
             end_time.tv_sec += this->ss_granularity;
@@ -207,7 +211,7 @@ size_t spectrogram_source::text_line_width(textview_curses &tc)
     return width;
 }
 
-struct timeval spectrogram_source::time_for_row(int row)
+nonstd::optional<struct timeval> spectrogram_source::time_for_row(vis_line_t row)
 {
     struct timeval retval { 0, 0 };
 
@@ -219,10 +223,10 @@ struct timeval spectrogram_source::time_for_row(int row)
     return retval;
 }
 
-int spectrogram_source::row_for_time(struct timeval time_bucket)
+nonstd::optional<vis_line_t> spectrogram_source::row_for_time(struct timeval time_bucket)
 {
     if (this->ss_value_source == nullptr) {
-        return 0;
+        return nonstd::nullopt;
     }
 
     time_t diff;
@@ -230,13 +234,13 @@ int spectrogram_source::row_for_time(struct timeval time_bucket)
 
     this->cache_bounds();
     if (time_bucket.tv_sec < this->ss_cached_bounds.sb_begin_time) {
-        return 0;
+        return 0_vl;
     }
 
     diff = time_bucket.tv_sec - this->ss_cached_bounds.sb_begin_time;
     retval = diff / this->ss_granularity;
 
-    return retval;
+    return vis_line_t(retval);
 }
 
 void spectrogram_source::text_value_for_line(textview_curses &tc, int row,
@@ -245,11 +249,15 @@ void spectrogram_source::text_value_for_line(textview_curses &tc, int row,
 {
     spectrogram_row &s_row = this->load_row(tc, row);
 
-    struct timeval row_time;
     char tm_buffer[128];
     struct tm tm;
 
-    row_time = this->time_for_row(row);
+    auto row_time_opt = this->time_for_row(vis_line_t(row));
+    if (!row_time_opt) {
+        value_out.clear();
+        return;
+    }
+    auto row_time = row_time_opt.value();
 
     gmtime_r(&row_time.tv_sec, &tm);
     strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S", &tm);

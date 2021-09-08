@@ -326,6 +326,14 @@ public:
     /** @return The line number that is displayed at the top. */
     vis_line_t get_top() const { return this->lv_top; };
 
+    nonstd::optional<vis_line_t> get_top_opt() const {
+        if (this->get_inner_height() == 0_vl) {
+            return nonstd::nullopt;
+        }
+
+        return this->lv_top;
+    }
+
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom() const
     {

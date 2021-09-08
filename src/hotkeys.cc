@@ -228,9 +228,11 @@ bool handle_paging_key(int ch)
 
                 lnav_data.ld_last_view = nullptr;
                 if (src_view != nullptr && dst_view != nullptr) {
-                    struct timeval top_time = src_view->time_for_row(top_tc->get_top());
-
-                    tc->set_top(vis_line_t(dst_view->row_for_time(top_time)));
+                    src_view->time_for_row(top_tc->get_top()) | [dst_view, tc](auto top_time) {
+                        dst_view->row_for_time(top_time) | [tc](auto row) {
+                            tc->set_top(row);
+                        };
+                    };
                 }
                 ensure_view(tc);
             }
@@ -516,23 +518,26 @@ bool handle_paging_key(int ch)
 
         case '0':
             if (lss) {
-                struct timeval first_time = lss->time_for_row(tc->get_top());
-                int        step       = 24 * 60 * 60;
-                vis_line_t line       =
-                        lss->find_from_time(roundup_size(first_time.tv_sec, step));
-
-                tc->set_top(line);
+                const int step = 24 * 60 * 60;
+                lss->time_for_row(tc->get_top()) | [lss, tc](auto first_time) {
+                    lss->find_from_time(roundup_size(first_time.tv_sec, step)) | [tc](auto line) {
+                        tc->set_top(line);
+                    };
+                };
             }
             break;
 
         case ')':
             if (lss) {
-                struct timeval first_time = lss->time_for_row(tc->get_top());
-                time_t     day  = rounddown(first_time.tv_sec, 24 * 60 * 60);
-                vis_line_t line = lss->find_from_time(day);
-
-                --line;
-                tc->set_top(line);
+                lss->time_for_row(tc->get_top()) | [lss, tc](auto first_time) {
+                    time_t day = rounddown(first_time.tv_sec, 24 * 60 * 60);
+                    lss->find_from_time(day) | [tc](auto line) {
+                        if (line != 0_vl) {
+                            --line;
+                        }
+                        tc->set_top(line);
+                    };
+                };
             }
             break;
 
@@ -541,15 +546,16 @@ bool handle_paging_key(int ch)
                 alerter::singleton().chime();
             }
             else if (lss) {
-                struct timeval first_time = lss->time_for_row(tc->get_top());
-                int        step     = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
-                time_t     top_time = first_time.tv_sec;
-                vis_line_t line     = lss->find_from_time(top_time - step);
-
-                if (line != 0) {
-                    --line;
-                }
-                tc->set_top(line);
+                lss->time_for_row(tc->get_top()) | [lss, ch, tc](auto first_time) {
+                    int step = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
+                    time_t     top_time = first_time.tv_sec;
+                    lss->find_from_time(top_time - step) | [tc](auto line) {
+                        if (line != 0_vl) {
+                            --line;
+                        }
+                        tc->set_top(line);
+                    };
+                };
 
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
             }
@@ -557,12 +563,12 @@ bool handle_paging_key(int ch)
 
         case 'd':
             if (lss) {
-                struct timeval first_time = lss->time_for_row(tc->get_top());
-                int        step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
-                vis_line_t line =
-                        lss->find_from_time(first_time.tv_sec + step);
-
-                tc->set_top(line);
+                lss->time_for_row(tc->get_top()) | [ch, lss, tc](auto first_time) {
+                    int step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
+                    lss->find_from_time(first_time.tv_sec + step) | [tc](auto line) {
+                        tc->set_top(line);
+                    };
+                };
 
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
             }
@@ -682,9 +688,11 @@ bool handle_paging_key(int ch)
                 auto *src_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
 
                 if (src_view != nullptr) {
-                    struct timeval log_top = src_view->time_for_row(tc->get_top());
-
-                    hist_tc.set_top(vis_line_t(hs.row_for_time(log_top)));
+                    src_view->time_for_row(tc->get_top()) | [&hs, &hist_tc](auto log_top) {
+                        hs.row_for_time(log_top) | [&hist_tc](auto row) {
+                            hist_tc.set_top(row);
+                        };
+                    };
                 }
             }
             else {
@@ -692,12 +700,15 @@ bool handle_paging_key(int ch)
                     auto *dst_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
                     if (dst_view != nullptr) {
-                        struct timeval hist_top_time = hs.time_for_row(hist_tc.get_top());
-                        struct timeval curr_top_time = dst_view->time_for_row(top_tc->get_top());
-                        if (hs.row_for_time(hist_top_time) != hs.row_for_time(curr_top_time)) {
-                            vis_line_t new_top = vis_line_t(dst_view->row_for_time(hist_top_time));
-                            top_tc->set_top(new_top);
-                            top_tc->set_needs_update();
+                        auto hist_top_time_opt = hs.time_for_row(hist_tc.get_top());
+                        auto curr_top_time_opt = dst_view->time_for_row(top_tc->get_top());
+                        if (hist_top_time_opt && curr_top_time_opt &&
+                            hs.row_for_time(hist_top_time_opt.value()) !=
+                            hs.row_for_time(curr_top_time_opt.value())) {
+                            dst_view->row_for_time(hist_top_time_opt.value()) | [top_tc](auto new_top) {
+                                top_tc->set_top(new_top);
+                                top_tc->set_needs_update();
+                            };
                         }
                     }
                 };
@@ -764,11 +775,10 @@ bool handle_paging_key(int ch)
                         size_t col_len = strlen(col_value);
 
                         if (dts.scan(col_value, col_len, nullptr, &tm, tv) != nullptr) {
-                            vis_line_t vl;
-
-                            vl = lnav_data.ld_log_source.find_from_time(tv);
-                            tc->set_top(vl);
-                            tc->set_needs_update();
+                            lnav_data.ld_log_source.find_from_time(tv) | [tc](auto vl) {
+                                tc->set_top(vl);
+                                tc->set_needs_update();
+                            };
                             break;
                         }
                     }
@@ -879,7 +889,11 @@ bool handle_paging_key(int ch)
                     ll->to_exttm(tm);
                     do {
                         tm = rt.adjust(tm);
-                        new_vl = lnav_data.ld_log_source.find_from_time(tm);
+                        auto new_vl_opt = lnav_data.ld_log_source.find_from_time(tm);
+                        if (!new_vl_opt) {
+                            break;
+                        }
+                        new_vl = new_vl_opt.value();
 
                         if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
                             vl = new_vl;

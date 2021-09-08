@@ -81,11 +81,11 @@ public:
 
     long column_name_to_index(const std::string &name) const;
 
-    int row_for_time(struct timeval time_bucket);
+    nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket);
 
-    struct timeval time_for_row(int row) {
-        if ((row < 0) || (((size_t) row) >= this->dls_time_column.size())) {
-            return { -1, 0 };
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) {
+        if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
+            return nonstd::nullopt;
         }
 
         return this->dls_time_column[row];

@@ -133,9 +133,9 @@ public:
         return 0;
     };
 
-    struct timeval time_for_row(int row) override;
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 
-    int row_for_time(struct timeval time_bucket) override;
+    nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
 
     void text_value_for_line(textview_curses &tc,
                              int row,
