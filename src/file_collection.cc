@@ -65,7 +65,6 @@ void file_collection::close_files(const std::vector<std::shared_ptr<logfile>> &f
                     ++iter;
                 }
             }
-
         } else {
             this->fc_file_names.erase(lf->get_filename());
         }
@@ -157,7 +156,8 @@ struct same_file {
      */
     bool operator()(const std::shared_ptr<logfile> &lf) const
     {
-        return this->sf_stat.st_dev == lf->get_stat().st_dev &&
+        return !lf->is_closed() &&
+               this->sf_stat.st_dev == lf->get_stat().st_dev &&
                this->sf_stat.st_ino == lf->get_stat().st_ino;
     };
 

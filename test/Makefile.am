@@ -412,6 +412,7 @@ DISTCLEANFILES = \
 	hw2.txt \
 	reload_test.0 \
 	truncfile.0 \
+	ln.dbg \
 	logfile_append.0 \
 	logfile_changed.0 \
 	logfile_rollover.1.live \
