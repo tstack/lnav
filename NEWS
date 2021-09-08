@@ -21,6 +21,7 @@ lnav v0.10.1:
      * The "Out-Of-Time-Order Message" overlay will be shown again.
      * The tab for the "Files" panel will be highlighted in red if there
        is an issue opening a file.
+     * Overwritten files should be reloaded again.
 
 lnav v0.10.0:
      Features:

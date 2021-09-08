@@ -11,14 +11,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.296.tar.gz"
-        SHA1 "232f5022ee1d45955a7e8d3e1720f31bac1bb534"
+        URL "https://github.com/cpp-pm/hunter/archive/v0.23.314.tar.gz"
+        SHA1 "95c47c92f68edb091b5d6d18924baabe02a6962a"
         LOCAL
 )
 
 set(CMAKE_CXX_STANDARD 14)
 project(lnav
-        VERSION 0.10.0)
+        VERSION 0.10.1)
 
 # include(cmake/CodeCoverage.cmake)
 # append_coverage_compiler_flags()
