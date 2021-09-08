@@ -100,7 +100,7 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
                     if (lf->get_format() != nullptr) {
                         auto& log_view = lnav_data.ld_views[LNV_LOG];
                         lss.row_for_time(lf->front().get_timeval()) | [](auto row) {
-                            log_view.set_top(row);
+                            lnav_data.ld_views[LNV_LOG].set_top(row);
                         };
                         ensure_view(&log_view);
                     } else {
