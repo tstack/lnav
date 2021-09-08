@@ -405,6 +405,8 @@ DISTCLEANFILES = \
 	*.tmp \
 	*.gz \
 	*.bz2 \
+	*.errbak \
+	*.tmpbak \
 	*.xz \
 	hw.txt \
 	hw2.txt \
@@ -440,5 +442,4 @@ distclean-local:
 	$(RM_V)rm -rf nested
 	$(RM_V)rm -rf test-config
 	$(RM_V)rm -rf .lnav
-	$(RM_V)rm *.tmpbak *.errbak
 	$(RM_V)rm -rf ../installer-test-home

@@ -72,5 +72,7 @@ DISTCLEANFILES = \
 	*.diff \
 	*.index \
 	*.tmp \
+	*.errbak \
+	*.tmpbak \
 	*.gz \
 	*.bz2

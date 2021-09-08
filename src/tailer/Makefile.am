@@ -90,6 +90,15 @@ TESTS = \
     test_tailer.sh
 
 DISTCLEANFILES = \
+	*.dat \
+	*.err \
+	*.db \
+	*.dpt \
+	*.diff \
+	*.index \
+	*.tmp \
+	*.errbak \
+	*.tmpbak \
     tailerbin.h \
     tailerbin.cc
 
