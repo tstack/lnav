@@ -503,7 +503,7 @@ public:
         if (this->vs_change_handler) {
             this->vs_change_handler(view);
         }
-        view->set_needs_update();
+        this->set_needs_update();
     }
 
     void pop_back() {
@@ -511,6 +511,7 @@ public:
         if (!this->vs_views.empty() && this->vs_change_handler) {
             this->vs_change_handler(this->vs_views.back());
         }
+        this->set_needs_update();
     }
 
     iterator begin() {
