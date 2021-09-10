@@ -24,6 +24,7 @@ lnav v0.10.1:
      * The tab for the "Files" panel will be highlighted in red if there
        is an issue opening a file.
      * Overwritten files should be reloaded again.
+     * The "jget()" SQL function now returns numbers with the correct type.
 
 lnav v0.10.0:
      Features:

@@ -43,6 +43,7 @@
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 
+#include "lnav_util.hh"
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"
 
@@ -53,11 +54,12 @@ using namespace mapbox;
 
 class sql_json_op : public json_op {
 public:
-    sql_json_op(json_ptr &ptr) : json_op(ptr), sjo_type(-1), sjo_int(0) { };
+    sql_json_op(json_ptr &ptr) : json_op(ptr) { };
 
-    int sjo_type;
+    int sjo_type{-1};
     string sjo_str;
-    int sjo_int;
+    int64_t sjo_int{0};
+    double sjo_float{0.0};
 };
 
 static void null_or_default(sqlite3_context *context, int argc, sqlite3_value **argv)
@@ -172,6 +174,28 @@ static int gen_handle_string(void *ctx, const unsigned char * stringVal, size_t 
     return sjo->jo_ptr_error_code == yajl_gen_status_ok;
 }
 
+static int gen_handle_number(void *ctx, const char *numval, size_t numlen)
+{
+    sql_json_op *sjo = (sql_json_op *)ctx;
+    yajl_gen gen = (yajl_gen)sjo->jo_ptr_data;
+
+    if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
+        if (strtonum(sjo->sjo_int, numval, numlen) == numlen) {
+            sjo->sjo_type = SQLITE_INTEGER;
+        } else {
+            auto numstr = std::string(numval, numlen);
+
+            sjo->sjo_float = std::stod(numstr);
+            sjo->sjo_type = SQLITE_FLOAT;
+        }
+    }
+    else {
+        sjo->jo_ptr_error_code = yajl_gen_number(gen, numval, numlen);
+    }
+
+    return sjo->jo_ptr_error_code == yajl_gen_status_ok;
+}
+
 static void sql_jget(sqlite3_context *context,
                      int argc, sqlite3_value **argv)
 {
@@ -205,6 +229,7 @@ static void sql_jget(sqlite3_context *context,
     jo.jo_ptr_callbacks.yajl_null = gen_handle_null;
     jo.jo_ptr_callbacks.yajl_boolean = gen_handle_boolean;
     jo.jo_ptr_callbacks.yajl_string = gen_handle_string;
+    jo.jo_ptr_callbacks.yajl_number = gen_handle_number;
     jo.jo_ptr_data = gen.get_handle();
 
     handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
@@ -258,6 +283,9 @@ static void sql_jget(sqlite3_context *context,
     case SQLITE_INTEGER:
         sqlite3_result_int(context, jo.sjo_int);
         return;
+    case SQLITE_FLOAT:
+        sqlite3_result_double(context, jo.sjo_float);
+        return;
     }
 
     string_fragment result = gen.to_string_fragment();
@@ -268,6 +296,9 @@ static void sql_jget(sqlite3_context *context,
     }
 
     sqlite3_result_text(context, result.data(), result.length(), SQLITE_TRANSIENT);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+    sqlite3_result_subtype(context, JSON_SUBTYPE);
+#endif
 }
 
 struct concat_context {

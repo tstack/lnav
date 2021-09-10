@@ -681,16 +681,15 @@ bool handle_paging_key(int ch)
 
         case 'I':
         {
-            auto &hs = lnav_data.ld_hist_source2;
             auto &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
 
             if (toggle_view(&hist_tc)) {
                 auto *src_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
 
                 if (src_view != nullptr) {
-                    src_view->time_for_row(tc->get_top()) | [&hs, &hist_tc](auto log_top) {
-                        hs.row_for_time(log_top) | [&hist_tc](auto row) {
-                            hist_tc.set_top(row);
+                    src_view->time_for_row(tc->get_top()) | [](auto log_top) {
+                        lnav_data.ld_hist_source2.row_for_time(log_top) | [](auto row) {
+                            lnav_data.ld_views[LNV_HISTOGRAM].set_top(row);
                         };
                     };
                 }
@@ -700,6 +699,7 @@ bool handle_paging_key(int ch)
                     auto *dst_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
                     if (dst_view != nullptr) {
+                        auto& hs = lnav_data.ld_hist_source2;
                         auto hist_top_time_opt = hs.time_for_row(hist_tc.get_top());
                         auto curr_top_time_opt = dst_view->time_for_row(top_tc->get_top());
                         if (hist_top_time_opt && curr_top_time_opt &&

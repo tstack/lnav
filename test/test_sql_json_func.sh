@@ -104,6 +104,16 @@ Row 0:
   Column jget('[null, true, 20, 30, 40]', '/3'): 30
 EOF
 
+run_test ./drive_sql "select typeof(jget('[null, true, 20, 30, 40]', '/3'))"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget null does not work" <<EOF
+Row 0:
+  Column typeof(jget('[null, true, 20, 30, 40]', '/3')): integer
+EOF
+
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40, {\"msg\": \"Hello\"}]', '/5')"
 
 check_error_output "" <<EOF
@@ -122,6 +132,16 @@ EOF
 check_output "jget null does not work" <<EOF
 Row 0:
   Column jget('[null, true, 20, 30, 40, {"msg": "Hello"}]', '/5/msg'): Hello
+EOF
+
+run_test ./drive_sql "select jget('[null, true, 20, 30, 40, {\"msg\": \"Hello\"}]', '')"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget null does not work" <<EOF
+Row 0:
+  Column jget('[null, true, 20, 30, 40, {"msg": "Hello"}]', ''): [null,true,20,30,40,{"msg":"Hello"}]
 EOF
 
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40]', '/abc')"
@@ -172,6 +192,16 @@ EOF
 check_output "jget for array does not work" <<EOF
 Row 0:
   Column jget('[null, true, 20, 30, 4.0]', '/4'): 4.0
+EOF
+
+run_test ./drive_sql "select typeof(jget('[null, true, 20, 30, 4.0]', '/4'))"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget for array does not work" <<EOF
+Row 0:
+  Column typeof(jget('[null, true, 20, 30, 4.0]', '/4')): real
 EOF
 
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40', '/0/foo')"
