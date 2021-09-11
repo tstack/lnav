@@ -957,6 +957,15 @@ static struct json_path_container ssh_handlers = {
 };
 
 static struct json_path_container remote_handlers = {
+    yajlpp::property_handler("cache-ttl")
+        .with_synopsis("<duration>")
+        .with_description(
+            "The time-to-live for files copied from remote hosts, expressed as a duration "
+            "(e.g. '3d' for three days)")
+        .with_example("3d")
+        .with_example("12h")
+        .for_field(&_lnav_config::lc_tailer,
+                   &tailer::config::c_cache_ttl),
     yajlpp::property_handler("ssh")
         .with_description(
             "Settings related to the ssh command used to contact remote "

@@ -25,6 +25,8 @@ lnav v0.10.1:
        is an issue opening a file.
      * Overwritten files should be reloaded again.
      * The "jget()" SQL function now returns numbers with the correct type.
+     * The local copies of remote files are now cleaned up after a couple
+       days of the host not being accessed.
 
 lnav v0.10.0:
      Features:

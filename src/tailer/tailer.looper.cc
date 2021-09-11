@@ -410,9 +410,15 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
     ));
 }
 
+static
+ghc::filesystem::path remote_cache_path()
+{
+    return lnav::paths::workdir() / "remotes";
+}
+
 ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
 {
-    auto local_path = lnav::paths::workdir() / "remotes";
+    auto local_path = remote_cache_path();
 
     ghc::filesystem::create_directories(local_path);
     auto_mem<char> resolved_path;
@@ -527,8 +533,17 @@ void tailer::looper::host_tailer::complete_path(const std::string &path)
 
 void tailer::looper::host_tailer::loop_body()
 {
+    const static uint64_t TOUCH_FREQ = 10000;
+
     if (!this->ht_state.is<connected>()) {
         return;
+    }
+
+    this->ht_cycle_count += 1;
+    if (this->ht_cycle_count % TOUCH_FREQ == 0) {
+        auto now = ghc::filesystem::file_time_type{
+            std::chrono::system_clock::now()};
+        ghc::filesystem::last_write_time(this->ht_local_path, now);
     }
 
     auto& conn = this->ht_state.get<connected>();
@@ -992,4 +1007,30 @@ void tailer::looper::report_error(std::string path, std::string msg)
             lnav_data.ld_active_files.fc_progress->writeAccess()->
                 sp_tailers.erase(path);
         });
+}
+
+void tailer::cleanup_cache()
+{
+    (void) std::async(std::launch::async, []() {
+        auto now = std::chrono::system_clock::now();
+        auto cache_path = remote_cache_path();
+        auto& cfg = injector::get<const config&>();
+        std::vector<ghc::filesystem::path> to_remove;
+
+        log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
+        for (const auto& entry : ghc::filesystem::directory_iterator(cache_path)) {
+            auto mtime = ghc::filesystem::last_write_time(entry.path());
+            auto exp_time = mtime + cfg.c_cache_ttl;
+            if (now < exp_time) {
+                continue;
+            }
+
+            to_remove.emplace_back(entry.path());
+        }
+
+        for (auto& entry : to_remove) {
+            log_debug("removing cached remote: %s", entry.c_str());
+            ghc::filesystem::remove_all(entry);
+        }
+    });
 }

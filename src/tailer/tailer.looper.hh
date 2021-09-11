@@ -128,6 +128,7 @@ private:
         std::vector<std::string> ht_error_queue;
         std::thread ht_error_reader;
         state_v ht_state{disconnected()};
+        uint64_t ht_cycle_count{0};
     };
 
     static void report_error(std::string path, std::string msg);
@@ -145,6 +146,8 @@ private:
     std::map<std::string, remote_path_queue> l_netlocs_to_paths;
     std::map<std::string, std::shared_ptr<host_tailer>> l_remotes;
 };
+
+void cleanup_cache();
 
 }
 

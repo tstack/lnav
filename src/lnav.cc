@@ -1857,6 +1857,7 @@ static void looper()
 
                     if (!ran_cleanup) {
                         archive_manager::cleanup_cache();
+                        tailer::cleanup_cache();
                         ran_cleanup = true;
                     }
                 }
@@ -2868,6 +2869,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
                 archive_manager::cleanup_cache();
+                tailer::cleanup_cache();
                 wait_for_pipers();
                 isc::to<curl_looper&, services::curl_streamer_t>()
                     .send_and_wait([](auto& clooper) {

@@ -30,9 +30,13 @@
 #ifndef lnav_tailer_looper_cfg_hh
 #define lnav_tailer_looper_cfg_hh
 
+#include <chrono>
+
 namespace tailer {
 
 struct config {
+    int64_t c_min_free_space{32 * 1024 * 1024};
+    std::chrono::seconds c_cache_ttl{std::chrono::hours(48)};
     std::string c_transfer_cmd{"cat > {0:} && chmod ugo+rx ./{0:}"};
     std::string c_start_cmd{"bash -c ./{0:}"};
     std::string c_ssh_cmd{"ssh"};
