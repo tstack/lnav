@@ -63,31 +63,37 @@ using namespace std;
 
 const char *RE_HELP =
     " "  ANSI_RE(".") "   Any character    "
-    " "     "a" ANSI_RE("|") "b  a or b        "
-    " "                 ANSI_RE("^") "       Start of string\n"
+    " "     "a" ANSI_RE("|") "b   a or b        "
+    " " ANSI_RE("(?-i)") "   Case-sensitive search\n"
 
     " " ANSI_CLS("\\w") "  Word character   "
-    " "     "a" ANSI_RE("?") "   0 or 1 a's    "
+    " "     "a" ANSI_RE("?") "    0 or 1 a's    "
     " "                 ANSI_RE("$") "       End of string\n"
 
     " " ANSI_CLS("\\d") "  Digit            "
-    " "     "a" ANSI_RE("*") "   0 or more a's "
+    " "     "a" ANSI_RE("*") "    0 or more a's "
     " " ANSI_RE("(") "..." ANSI_RE(")") "   Capture\n"
 
+    " " ANSI_CLS("\\s") "  White space      "
+    " "     "a" ANSI_RE("+") "    1 or more a's "
+    " "                 ANSI_RE("^") "       Start of string\n"
+
     " " ANSI_RE("\\") "   Escape character "
-    " "     "a" ANSI_RE("+") "   1 or more a's "
+    " " ANSI_RE("[^") "ab" ANSI_RE("]") " " ANSI_BOLD("Not") " a or b    "
     " " ANSI_RE("[") "ab" ANSI_RE("-") "d" ANSI_RE("]") "  Any of a, b, c, or d"
 ;
 
 const char *RE_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
-    "  abc" ANSI_RE("*") " matches "
+    "  abc" ANSI_RE("*") "       matches  "
     ANSI_STR("'ab'") ", " ANSI_STR("'abc'") ", " ANSI_STR("'abccc'") "\n"
 
     "  key=" ANSI_RE("(\\w+)")
-    " matches key=" ANSI_REV("123") ", key=" ANSI_REV("abc") " and captures 123 and abc\n"
+    "  matches  key=" ANSI_REV("123") ", key=" ANSI_REV("abc") " and captures 123 and abc\n"
 
-    "  " ANSI_RE("\\") "[abc" ANSI_RE("\\") "] matches " ANSI_STR("'[abc]'")
+    "  " ANSI_RE("\\") "[abc" ANSI_RE("\\") "]    matches  " ANSI_STR("'[abc]'") "\n"
+
+    "  " ANSI_RE("(?-i)") "ABC   matches  " ANSI_STR("'ABC'") " and " ANSI_UNDERLINE("not") " " ANSI_STR("'abc'")
 ;
 
 const char *SQL_HELP =
