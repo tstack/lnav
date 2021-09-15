@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <ctype.h>
+#include <stdint.h>
 #endif
 
 #include "sha-256.h"
