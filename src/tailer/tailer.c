@@ -62,7 +62,7 @@ ssize_t send_packet(int fd,
             case TPPT_HASH: {
                 const char *hash = va_arg(args, const char *);
 
-                write(fd, hash, SHA_256_HASH_SIZE);
+                write(fd, hash, SHA256_BLOCK_SIZE);
                 break;
             }
             case TPPT_INT64: {

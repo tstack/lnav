@@ -138,6 +138,7 @@ struct client_path_state {
     struct stat cps_last_stat;
     int64_t cps_client_file_offset;
     int64_t cps_client_file_read_length;
+    int64_t cps_client_file_size;
     client_state_t cps_client_state;
     struct list cps_children;
 };
@@ -151,6 +152,7 @@ struct client_path_state *create_client_path_state(const char *path)
     memset(&retval->cps_last_stat, 0, sizeof(retval->cps_last_stat));
     retval->cps_client_file_offset = -1;
     retval->cps_client_file_read_length = 0;
+    retval->cps_client_file_size = 0;
     retval->cps_client_state = CS_INIT;
     list_init(&retval->cps_children);
     return retval;
@@ -518,36 +520,77 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                         if (fd == -1) {
                             set_client_path_state_error(curr, "open");
                         } else {
-                            char buffer[64 * 1024];
+                            static unsigned char buffer[4 * 1024 * 1024];
+
                             int64_t file_offset =
                                 curr->cps_client_file_offset < 0 ?
                                 0 :
                                 curr->cps_client_file_offset;
-                            int32_t bytes_read = pread(
-                                fd,
-                                buffer, sizeof(buffer),
-                                file_offset);
+                            size_t nbytes = sizeof(buffer);
+                            if (curr->cps_client_state == CS_INIT) {
+                                nbytes = 32 * 1024;
+                            }
+                            if (curr->cps_client_file_size > file_offset &&
+                                curr->cps_client_file_size < file_offset + nbytes) {
+                                nbytes = curr->cps_client_file_size - file_offset;
+                            }
+                            int32_t bytes_read = pread(fd, buffer, nbytes, file_offset);
 
                             if (bytes_read == -1) {
                                 set_client_path_state_error(curr, "pread");
                             } else if (curr->cps_client_state == CS_INIT &&
                                        (curr->cps_client_file_offset < 0 ||
                                         bytes_read > 0)) {
-                                uint8_t hash[SHA_256_HASH_SIZE];
+                                static unsigned char HASH_BUFFER[4 * 1024 * 1024];
+                                uint8_t hash[SHA256_BLOCK_SIZE];
+                                size_t remaining = 0;
+                                int64_t remaining_offset = file_offset + bytes_read;
+                                SHA256_CTX shactx;
 
-                                calc_sha_256(hash, buffer, bytes_read);
+                                if (curr->cps_client_file_size > 0) {
+                                    remaining = curr->cps_client_file_size - file_offset - bytes_read;
+                                }
 
-                                curr->cps_client_file_read_length = bytes_read;
-                                send_packet(STDOUT_FILENO,
-                                            TPT_OFFER_BLOCK,
-                                            TPPT_STRING, root_cps->cps_path,
-                                            TPPT_STRING, curr->cps_path,
-                                            TPPT_INT64, (int64_t) st.st_mtime,
-                                            TPPT_INT64, file_offset,
-                                            TPPT_INT64, bytes_read,
-                                            TPPT_HASH, hash,
-                                            TPPT_DONE);
-                                curr->cps_client_state = CS_OFFERED;
+                                fprintf(stderr, "info: prepping initial offer: remaining=%zu\n", remaining);
+                                sha256_init(&shactx);
+                                sha256_update(&shactx, buffer, bytes_read);
+                                while (remaining > 0) {
+                                    nbytes = sizeof(HASH_BUFFER);
+                                    if (remaining < nbytes) {
+                                        nbytes = remaining;
+                                    }
+                                    ssize_t remaining_bytes_read = pread(
+                                        fd, HASH_BUFFER, nbytes, remaining_offset);
+                                    if (remaining_bytes_read < 0) {
+                                        set_client_path_state_error(curr, "pread");
+                                        break;
+                                    }
+                                    if (remaining_bytes_read == 0) {
+                                        remaining = 0;
+                                        break;
+                                    }
+                                    sha256_update(&shactx, HASH_BUFFER, remaining_bytes_read);
+                                    remaining -= remaining_bytes_read;
+                                    remaining_offset += remaining_bytes_read;
+                                    bytes_read += remaining_bytes_read;
+                                }
+
+                                if (remaining == 0) {
+                                    sha256_final(&shactx, hash);
+
+                                    curr->cps_client_file_read_length = bytes_read;
+                                    send_packet(STDOUT_FILENO,
+                                                TPT_OFFER_BLOCK,
+                                                TPPT_STRING, root_cps->cps_path,
+                                                TPPT_STRING, curr->cps_path,
+                                                TPPT_INT64,
+                                                (int64_t) st.st_mtime,
+                                                TPPT_INT64, file_offset,
+                                                TPPT_INT64, bytes_read,
+                                                TPPT_HASH, hash,
+                                                TPPT_DONE);
+                                    curr->cps_client_state = CS_OFFERED;
+                                }
                             } else {
                                 if (curr->cps_client_file_offset < 0) {
                                     curr->cps_client_file_offset = 0;
@@ -951,6 +994,13 @@ int main(int argc, char *argv[])
                     case TPT_ACK_BLOCK:
                     case TPT_NEED_BLOCK: {
                         char *path = readstr(&rstate, STDIN_FILENO);
+                        int64_t client_size = 0;
+
+                        if (type == TPT_ACK_BLOCK &&
+                            readint64(&rstate, STDIN_FILENO, &client_size) == -1) {
+                            done = 1;
+                            break;
+                        }
 
                         // fprintf(stderr, "info: block packet path: %s\n", path);
                         if (path == NULL) {
@@ -975,6 +1025,7 @@ int main(int argc, char *argv[])
                                     cps->cps_client_file_offset +=
                                         cps->cps_client_file_read_length;
                                     cps->cps_client_state = CS_INIT;
+                                    cps->cps_client_file_size = client_size;
                                 }
                             }
                             free(path);

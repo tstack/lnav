@@ -55,7 +55,7 @@ struct packet_announce {
 };
 
 struct hash_frag {
-    uint8_t thf_hash[SHA_256_HASH_SIZE];
+    uint8_t thf_hash[SHA256_BLOCK_SIZE];
 
     bool operator==(const hash_frag &other) const
     {

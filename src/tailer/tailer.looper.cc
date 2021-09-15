@@ -76,7 +76,15 @@ static void read_err_pipe(const std::string &netloc, auto_fd &err,
                     if (eq.size() < 10) {
                         eq.template emplace_back(line_str.to_string());
                     }
-                    log_debug("%.*s", line_str.length(), line_str.data());
+
+                    auto level =
+                        line_str.startswith("error:") ? lnav_log_level_t::ERROR :
+                        line_str.startswith("warning:") ? lnav_log_level_t::WARNING :
+                        line_str.startswith("info:") ? lnav_log_level_t::INFO :
+                        lnav_log_level_t::DEBUG;
+                    log_msg_wrapper(level, "tailer[%s] %.*s",
+                                    netloc.c_str(),
+                                    line_str.length(), line_str.data());
                 });
             }
         }
@@ -724,29 +732,55 @@ void tailer::looper::host_tailer::loop_body()
                                 TPPT_DONE);
                     return std::move(this->ht_state);
                 }
-                auto_mem<char> buffer;
 
-                buffer = (char *) malloc(pob.pob_length);
-                auto bytes_read = pread(fd, buffer, pob.pob_length,
-                                        pob.pob_offset);
+                if (st.st_size == pob.pob_offset) {
+                    log_debug("local file is synced, sending need block");
+                    send_packet(conn.ht_to_child.get(),
+                                TPT_NEED_BLOCK,
+                                TPPT_STRING, pob.pob_path.c_str(),
+                                TPPT_DONE);
+                    return std::move(this->ht_state);
+                }
 
-                if (bytes_read == pob.pob_length) {
-                    tailer::hash_frag thf;
-                    calc_sha_256(thf.thf_hash, buffer, bytes_read);
+                constexpr int64_t BUFFER_SIZE = 4 * 1024 * 1024;
+                auto_mem<unsigned char> buffer;
+
+                buffer = (unsigned char *) malloc(BUFFER_SIZE);
+                auto remaining = pob.pob_length;
+                auto remaining_offset = pob.pob_offset;
+                tailer::hash_frag thf;
+                SHA256_CTX shactx;
+                sha256_init(&shactx);
+
+                log_debug("checking offer %s[%lldd..+%lld]",
+                          local_path.c_str(), remaining_offset, remaining);
+                while (remaining > 0) {
+                    auto nbytes = std::min(remaining, BUFFER_SIZE);
+                    auto bytes_read = pread(fd, buffer, nbytes, remaining_offset);
+                    if (bytes_read == -1) {
+                        log_debug("unable to read file, sending need block -- %s",
+                                  strerror(errno));
+                        ghc::filesystem::remove_all(local_path);
+                        break;
+                    }
+                    sha256_update(&shactx, buffer.in(), bytes_read);
+                    remaining -= bytes_read;
+                    remaining_offset += bytes_read;
+                }
+
+                if (remaining == 0) {
+                    sha256_final(&shactx, thf.thf_hash);
 
                     if (thf == pob.pob_hash) {
                         log_debug("local file block is same, sending ack");
                         send_packet(conn.ht_to_child.get(),
                                     TPT_ACK_BLOCK,
                                     TPPT_STRING, pob.pob_path.c_str(),
+                                    TPPT_INT64, (int64_t) st.st_size,
                                     TPPT_DONE);
                         return std::move(this->ht_state);
                     }
                     log_debug("local file is different, sending need block");
-                } else if (bytes_read == -1) {
-                    log_debug("unable to read file, sending need block -- %s",
-                              strerror(errno));
-                    ghc::filesystem::remove_all(local_path);
                 }
                 send_packet(conn.ht_to_child.get(),
                             TPT_NEED_BLOCK,

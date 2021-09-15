@@ -9,6 +9,7 @@ lnav v0.10.1:
      * The text "send-input" would show up on some terminals instead of
        ignoring the escape sequence.  This control sequence was only
        intended to be used in the test suite.
+     * Remote file synchronization has been optimized a bit.
      * Configuration values loaded from the ~/.lnav/configs directory
        are now included in the default configuration, so they won't be
        saved into the ~/.lnav/config.json user configuration file.
