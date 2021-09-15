@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #endif
 
 #include "sha-256.h"
