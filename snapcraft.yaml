@@ -65,3 +65,4 @@ parts:
       - libarchive13
       - libicu60
       - libxml2
+      - xclip
