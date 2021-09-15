@@ -16,8 +16,9 @@
 #ifndef __COSMOPOLITAN__
 #include <stdlib.h>
 #include <memory.h>
-#include "sha-256.h"
 #endif
+
+#include "sha-256.h"
 
 /****************************** MACROS ******************************/
 #define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
