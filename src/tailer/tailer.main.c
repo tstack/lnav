@@ -542,7 +542,7 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                        (curr->cps_client_file_offset < 0 ||
                                         bytes_read > 0)) {
                                 static unsigned char HASH_BUFFER[4 * 1024 * 1024];
-                                uint8_t hash[SHA256_BLOCK_SIZE];
+                                BYTE hash[SHA256_BLOCK_SIZE];
                                 size_t remaining = 0;
                                 int64_t remaining_offset = file_offset + bytes_read;
                                 SHA256_CTX shactx;
