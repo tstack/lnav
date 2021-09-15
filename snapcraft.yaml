@@ -27,6 +27,10 @@ parts:
     build-packages:
     # Uncomment the VCS your main part is using
     - git
+    - curl
+    - jq
+    - sed
+
     #- mercurial
     #- subversion
     stage:
