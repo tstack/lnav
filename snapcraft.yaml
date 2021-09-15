@@ -17,6 +17,7 @@ apps:
       - log-observe     # required, provide access to system logs in /var/log
       - network         # required, lnav uses sendto() with UNIX domain socket
       - ssh-keys
+      - x11
 
 parts:
   selective-checkout:

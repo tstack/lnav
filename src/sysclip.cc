@@ -78,36 +78,37 @@ static clip_command *get_commands()
                     "xclip -o -b < /dev/null 2>/dev/null" } },
             { { nullptr, nullptr } },
     };
+
+    clip_command *retval = nullptr;
     if (system("command -v pbcopy > /dev/null 2>&1") == 0) {
-        return OSX_CMDS;
-    }
-    if (getenv("WAYLAND_DISPLAY") != nullptr) {
-        return WAYLAND_CMDS;
-    }
-    if (getenv("DISPLAY") != nullptr) {
-        if (system("command -v xclip > /dev/null 2>&1") == 0) {
-            return XCLIP_CMDS;
-        }
-	    if (system("command -v xsel > /dev/null 2>&1") == 0) {
-            return XSEL_CMDS;
-        }
-    }
-    if (getenv("TMUX") != nullptr) {
-	    return TMUX_CMDS;
+        retval = OSX_CMDS;
+    } else if (getenv("WAYLAND_DISPLAY") != nullptr) {
+        retval = WAYLAND_CMDS;
+    } else if (getenv("DISPLAY") != nullptr && system("command -v xclip > /dev/null 2>&1") == 0) {
+        retval = XCLIP_CMDS;
+    } else if (getenv("DISPLAY") != nullptr && system("command -v xsel > /dev/null 2>&1") == 0) {
+        retval = XSEL_CMDS;
+    } else if (getenv("TMUX") != nullptr) {
+	    retval = TMUX_CMDS;
+    } else if (system("command -v win32yank.exe > /dev/null 2>&1") == 0) {
+        /*
+         * NeoVim's win32yank command is bidirectional, whereas the system-supplied
+         * clip.exe is copy-only.
+         * xclip and clip.exe may coexist on Windows Subsystem for Linux
+         */
+        retval = NEOVIM_CMDS;
+    } else if (system("command -v clip.exe > /dev/null 2>&1") == 0) {
+        retval = WINDOWS_CMDS;
+    } else {
+        log_error("unable to detect clipboard commands");
     }
 
-    /*
-     * NeoVim's win32yank command is bidirectional, whereas the system-supplied
-     * clip.exe is copy-only.
-     * xclip and clip.exe may coexist on Windows Subsystem for Linux
-     */
-    if (system("command -v win32yank.exe > /dev/null 2>&1") == 0) {
-        return NEOVIM_CMDS;
+    if (retval != nullptr) {
+        log_info("detected clipboard copy command: %s", retval[0].cc_cmd[0]);
+        log_info("detected clipboard paste command: %s", retval[0].cc_cmd[1]);
     }
-    if (system("command -v clip.exe > /dev/null 2>&1") == 0) {
-        return WINDOWS_CMDS;
-    }
-    return nullptr;
+
+    return retval;
 }
 
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
@@ -117,7 +118,7 @@ static clip_command *get_commands()
 FILE *open_clipboard(clip_type_t type, clip_op_t op)
 {
     const char *mode = op == CO_WRITE ? "w" : "r";
-    clip_command *cc = get_commands();
+    static clip_command *cc = get_commands();
     FILE *pfile = nullptr;
 
     if (cc != nullptr && cc[type].cc_cmd[op] != nullptr) {
