@@ -257,6 +257,7 @@ noinst_HEADERS = \
 	string_attr_type.hh \
 	strong_int.hh \
 	sysclip.hh \
+	sysclip.cfg.hh \
 	termios_guard.hh \
 	term_extra.hh \
 	text_format.hh \

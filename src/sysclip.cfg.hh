@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2014, Timothy Stack
+* Copyright (c) 2021, Timothy Stack
 *
 * All rights reserved.
 *
@@ -26,27 +26,51 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* @file sysclip.hh
+* @file sysclip.cfg.hh
 */
 
-#ifndef sysclip_hh
-#define sysclip_hh
+#ifndef lnav_sysclip_cfg_hh
+#define lnav_sysclip_cfg_hh
 
-#include <cstdio>
+#include <map>
+#include <string>
+
+#include "sysclip.hh"
 
 namespace sysclip {
 
-enum class type_t {
-    GENERAL,
-    FIND,
+struct clip_commands {
+    std::string cc_write;
+    std::string cc_read;
+
+    std::string select(op_t op) const {
+        switch (op) {
+            case op_t::WRITE:
+                return this->cc_write;
+            case op_t::READ:
+                return this->cc_read;
+        }
+    }
 };
 
-enum class op_t {
-    WRITE,
-    READ,
+struct clipboard {
+    std::string c_test_command;
+    clip_commands c_general;
+    clip_commands c_find;
+
+    const clip_commands& select(type_t t) const {
+        switch (t) {
+            case type_t::GENERAL:
+                return this->c_general;
+            case type_t::FIND:
+                return this->c_find;
+        }
+    }
 };
 
-FILE *open(type_t type, op_t op = op_t::WRITE);
+struct config {
+    std::map<std::string, clipboard> c_clipboard_impls;
+};
 
 }
 

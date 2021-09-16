@@ -5,6 +5,11 @@ lnav v0.10.1:
      * The ":write-raw-to" command now accepts a --view flag that specifies
        the source view for the data to write.  For example, to write the
        results of a SQL query, you would pass "--view=db" to the command.
+     * The commands used to access the clipboard are now configured through
+       the "tuning" section of the configuration.
+     Interface changes:
+     * The xclip implementation for accessing the system clipboard now writes
+       to the "clipboard" selection instead of the "primary" selection.
      Bug Fixes:
      * The text "send-input" would show up on some terminals instead of
        ignoring the escape sequence.  This control sequence was only

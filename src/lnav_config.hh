@@ -50,6 +50,7 @@
 #include "file_vtab.cfg.hh"
 #include "logfile.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
+#include "sysclip.cfg.hh"
 
 /**
  * Check if an experimental feature should be enabled by
@@ -99,6 +100,7 @@ struct _lnav_config {
     file_vtab::config lc_file_vtab;
     lnav::logfile::config lc_logfile;
     tailer::config lc_tailer;
+    sysclip::config lc_sysclip;
 };
 
 extern struct _lnav_config lnav_config;

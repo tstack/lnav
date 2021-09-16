@@ -133,6 +133,48 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "clipboard": {
+                    "description": "Settings related to the clipboard",
+                    "title": "/tuning/clipboard",
+                    "type": "object",
+                    "properties": {
+                        "impls": {
+                            "description": "Clipboard implementations",
+                            "title": "/tuning/clipboard/impls",
+                            "type": "object",
+                            "patternProperties": {
+                                "([\\w\\-]+)": {
+                                    "description": "Clipboard implementation",
+                                    "title": "/tuning/clipboard/impls/<clipboard_impl_name>",
+                                    "type": "object",
+                                    "properties": {
+                                        "test": {
+                                            "title": "/tuning/clipboard/impls/<clipboard_impl_name>/test",
+                                            "description": "The command that checks",
+                                            "type": "string",
+                                            "examples": [
+                                                "command -v pbcopy"
+                                            ]
+                                        },
+                                        "general": {
+                                            "description": "Commands to work with the general clipboard",
+                                            "title": "/tuning/clipboard/impls/<clipboard_impl_name>/general",
+                                            "$ref": "#/definitions/clip-commands"
+                                        },
+                                        "find": {
+                                            "description": "Commands to work with the find clipboard",
+                                            "title": "/tuning/clipboard/impls/<clipboard_impl_name>/find",
+                                            "$ref": "#/definitions/clip-commands"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false
@@ -512,6 +554,30 @@
     },
     "additionalProperties": false,
     "definitions": {
+        "clip-commands": {
+            "title": "clip-commands",
+            "type": "object",
+            "$$target": "#/definitions/clip-commands",
+            "properties": {
+                "write": {
+                    "title": "/write",
+                    "description": "The command used to write to the clipboard",
+                    "type": "string",
+                    "examples": [
+                        "pbcopy"
+                    ]
+                },
+                "read": {
+                    "title": "/read",
+                    "description": "The command used to read from the clipboard",
+                    "type": "string",
+                    "examples": [
+                        "pbpaste"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "style": {
             "title": "style",
             "type": "object",

@@ -930,7 +930,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
         }
     }
     else if (split_args[0] == "/dev/clipboard") {
-        toclose = outfile = open_clipboard(CT_GENERAL);
+        toclose = outfile = sysclip::open(sysclip::type_t::GENERAL);
         closer = pclose;
         if (!outfile) {
             alerter::singleton().chime();
@@ -1449,7 +1449,7 @@ static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, 
     if (split_args[0] == "-") {
         ec.clear_output();
     } else if (split_args[0] == "/dev/clipboard") {
-        auto out = open_clipboard(CT_GENERAL);
+        auto out = sysclip::open(sysclip::type_t::GENERAL);
         if (!out) {
             alerter::singleton().chime();
             return ec.make_error("Unable to copy to clipboard.  "

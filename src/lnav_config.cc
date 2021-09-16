@@ -91,6 +91,10 @@ static auto tc = injector::bind<tailer::config>::to_instance(+[]() {
     return &lnav_config.lc_tailer;
 });
 
+static auto scc = injector::bind<sysclip::config>::to_instance(+[]() {
+    return &lnav_config.lc_sysclip;
+});
+
 bool check_experimental(const char *feature_name)
 {
     const char *env_value = getenv("LNAV_EXP");
@@ -973,6 +977,62 @@ static struct json_path_container remote_handlers = {
         .with_children(ssh_handlers),
 };
 
+static struct json_path_container sysclip_impl_cmd_handlers = json_path_container{
+    yajlpp::property_handler("write")
+        .with_synopsis("<command>")
+        .with_description("The command used to write to the clipboard")
+        .with_example("pbcopy")
+        .for_field(&sysclip::clip_commands::cc_write),
+    yajlpp::property_handler("read")
+        .with_synopsis("<command>")
+        .with_description("The command used to read from the clipboard")
+        .with_example("pbpaste")
+        .for_field(&sysclip::clip_commands::cc_read),
+}
+    .with_definition_id("clip-commands");
+
+static struct json_path_container sysclip_impl_handlers = {
+    yajlpp::property_handler("test")
+        .with_synopsis("<command>")
+        .with_description("The command that checks")
+        .with_example("command -v pbcopy")
+        .for_field(&sysclip::clipboard::c_test_command),
+    yajlpp::property_handler("general")
+        .with_description("Commands to work with the general clipboard")
+        .with_obj_provider<sysclip::clip_commands, sysclip::clipboard>([](const yajlpp_provider_context &ypc, sysclip::clipboard *root) {
+            return &root->c_general;
+        })
+        .with_children(sysclip_impl_cmd_handlers),
+    yajlpp::property_handler("find")
+        .with_description("Commands to work with the find clipboard")
+        .with_obj_provider<sysclip::clip_commands, sysclip::clipboard>([](const yajlpp_provider_context &ypc, sysclip::clipboard *root) {
+            return &root->c_find;
+        })
+        .with_children(sysclip_impl_cmd_handlers),
+};
+
+static struct json_path_container sysclip_impls_handlers = {
+    yajlpp::pattern_property_handler("(?<clipboard_impl_name>[\\w\\-]+)")
+        .with_synopsis("<name>")
+        .with_description("Clipboard implementation")
+        .with_obj_provider<sysclip::clipboard, _lnav_config>([](const yajlpp_provider_context &ypc, _lnav_config *root) {
+            auto &retval = root->lc_sysclip.c_clipboard_impls[ypc.ypc_extractor.get_substr("clipboard_impl_name")];
+            return &retval;
+        })
+        .with_path_provider<_lnav_config>([](struct _lnav_config *cfg, vector<string> &paths_out) {
+            for (const auto &iter : cfg->lc_sysclip.c_clipboard_impls) {
+                paths_out.emplace_back(iter.first);
+            }
+        })
+        .with_children(sysclip_impl_handlers),
+};
+
+static struct json_path_container sysclip_handlers = {
+    yajlpp::property_handler("impls")
+        .with_description("Clipboard implementations")
+        .with_children(sysclip_impls_handlers),
+};
+
 static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
@@ -986,6 +1046,9 @@ static struct json_path_container tuning_handlers = {
     yajlpp::property_handler("remote")
         .with_description("Settings related to remote file support")
         .with_children(remote_handlers),
+    yajlpp::property_handler("clipboard")
+        .with_description("Settings related to the clipboard")
+        .with_children(sysclip_handlers),
 };
 
 static set<string> SUPPORTED_CONFIG_SCHEMAS = {

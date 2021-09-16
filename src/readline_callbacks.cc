@@ -603,7 +603,7 @@ static void rl_callback_int(readline_curses *rc, bool is_alt)
             vis_line_t vl = is_alt ? bv.prev(tc->get_top()) :
                 bv.next(tc->get_top());
 
-            pfile = open_clipboard(CT_FIND);
+            pfile = sysclip::open(sysclip::type_t::FIND);
             if (pfile.in() != nullptr) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }

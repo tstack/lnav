@@ -444,6 +444,7 @@ add_library(diag STATIC
         strong_int.hh
         string_attr_type.hh
         sysclip.hh
+        sysclip.cfg.hh
         term_extra.hh
         termios_guard.hh
         text_format.hh

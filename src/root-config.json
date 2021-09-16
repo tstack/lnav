@@ -22,6 +22,55 @@
                 "start-command": "bash -c ./{0:}",
                 "transfer-command": "cat > {0:} && chmod ugo+rx ./{0:}"
             }
+        },
+        "clipboard": {
+            "impls": {
+                "MacOS": {
+                    "test": "command -v pbcopy",
+                    "general": {
+                        "write": "pbcopy",
+                        "read": "pbpaste -Prefer txt"
+                    },
+                    "find": {
+                        "write": "pbcopy -pboard find",
+                        "read": "pbpaste -pboard find -Prefer txt"
+                    }
+                },
+                "Wayland": {
+                    "test": "test -n \"$WAYLAND_DISPLAY\"",
+                    "general": {
+                        "write": "wl-copy --foreground --type text/plain",
+                        "read": "wl-paste --no-newline"
+                    }
+                },
+                "X11-xclip": {
+                    "test": "test -n \"$DISPLAY\" && command -v xclip",
+                    "general": {
+                        "write": "xclip -i -selection clipboard",
+                        "read": "xclip -o -selection clipboard"
+                    }
+                },
+                "tmux": {
+                    "test": "test -n \"$TMUX\"",
+                    "general": {
+                        "write": "tmux load-buffer -",
+                        "read": "tmux save-buffer -"
+                    }
+                },
+                "NeoVim": {
+                    "test": "command -v win32yank.exe",
+                    "general": {
+                        "write": "win32yank.exe -i --crlf",
+                        "read": "win32yank.exe -o --lf"
+                    }
+                },
+                "Windows": {
+                    "test": "command -v clip.exe",
+                    "general": {
+                        "write": "clip.exe"
+                    }
+                }
+            }
         }
     }
 }

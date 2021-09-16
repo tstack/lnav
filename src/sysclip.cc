@@ -33,97 +33,64 @@
 
 #include <stdio.h>
 
+#include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "fmt/format.h"
 #include "sysclip.hh"
+#include "sysclip.cfg.hh"
 
-struct clip_command {
-    const char *cc_cmd[2];
-};
+namespace sysclip {
 
-static clip_command *get_commands()
+static nonstd::optional<clipboard> get_commands()
 {
-    static clip_command NEOVIM_CMDS[] = {
-            { { "win32yank.exe -i --crlf > /dev/null 2>&1",
-                    "win32yank.exe -o --lf < /dev/null 2>/dev/null" } },
-            { { nullptr, nullptr } },
-    };
-    static clip_command OSX_CMDS[] = {
-            { { "pbcopy > /dev/null 2>&1",
-                    "pbpaste -Prefer txt 2>/dev/null", } },
-            { { "pbcopy -pboard find > /dev/null 2>&1",
-                    "pbpaste -pboard find -Prefer txt 2>/dev/null" } },
-    };
-    static clip_command TMUX_CMDS[] = {
-            { { "tmux load-buffer - > /dev/null 2>&1",
-                    "tmux save-buffer - < /dev/null 2>/dev/null" } },
-            { { nullptr, nullptr } },
-    };
-    static clip_command WAYLAND_CMDS[] = {
-            { { "wl-copy --foreground --type text/plain > /dev/null 2>&1",
-                    "wl-paste --no-newline < /dev/null 2>/dev/null" } },
-            { { nullptr, nullptr } },
-    };
-    static clip_command WINDOWS_CMDS[] = {
-            { { "clip.exe > /dev/null 2>&1",
-                    nullptr } },
-            { { nullptr, nullptr } },
-    };
-    static clip_command XCLIP_CMDS[] = {
-            { { "xclip -i > /dev/null 2>&1",
-                    "xclip -o < /dev/null 2>/dev/null" } },
-            { { nullptr, nullptr } },
-    };
-    static clip_command XSEL_CMDS[] = {
-            { { "xsel --nodetach -i -b > /dev/null 2>&1",
-                    "xclip -o -b < /dev/null 2>/dev/null" } },
-            { { nullptr, nullptr } },
-    };
+    auto& cfg = injector::get<const config&>();
 
-    clip_command *retval = nullptr;
-    if (system("command -v pbcopy > /dev/null 2>&1") == 0) {
-        retval = OSX_CMDS;
-    } else if (getenv("WAYLAND_DISPLAY") != nullptr) {
-        retval = WAYLAND_CMDS;
-    } else if (getenv("DISPLAY") != nullptr && system("command -v xclip > /dev/null 2>&1") == 0) {
-        retval = XCLIP_CMDS;
-    } else if (getenv("DISPLAY") != nullptr && system("command -v xsel > /dev/null 2>&1") == 0) {
-        retval = XSEL_CMDS;
-    } else if (getenv("TMUX") != nullptr) {
-	    retval = TMUX_CMDS;
-    } else if (system("command -v win32yank.exe > /dev/null 2>&1") == 0) {
-        /*
-         * NeoVim's win32yank command is bidirectional, whereas the system-supplied
-         * clip.exe is copy-only.
-         * xclip and clip.exe may coexist on Windows Subsystem for Linux
-         */
-        retval = NEOVIM_CMDS;
-    } else if (system("command -v clip.exe > /dev/null 2>&1") == 0) {
-        retval = WINDOWS_CMDS;
-    } else {
-        log_error("unable to detect clipboard commands");
+    for (const auto& pair : cfg.c_clipboard_impls) {
+        const auto full_cmd = fmt::format("{} > /dev/null 2>&1",
+                                          pair.second.c_test_command);
+
+        log_debug("testing clipboard impl %s using: %s",
+                  pair.first.c_str(), full_cmd.c_str());
+        if (system(full_cmd.c_str()) == 0) {
+            log_info("detected clipboard: %s", pair.first.c_str());
+            return pair.second;
+        }
     }
 
-    if (retval != nullptr) {
-        log_info("detected clipboard copy command: %s", retval[0].cc_cmd[0]);
-        log_info("detected clipboard paste command: %s", retval[0].cc_cmd[1]);
-    }
-
-    return retval;
+    return nonstd::nullopt;
 }
 
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
  * directly with X so we don't need to have xclip installed and it'll work if
  * we're ssh'd into a box.
  */
-FILE *open_clipboard(clip_type_t type, clip_op_t op)
+FILE *open(type_t type, op_t op)
 {
-    const char *mode = op == CO_WRITE ? "w" : "r";
-    static clip_command *cc = get_commands();
-    FILE *pfile = nullptr;
+    const char *mode = op == op_t::WRITE ? "w" : "r";
+    static const auto clip_opt = sysclip::get_commands();
 
-    if (cc != nullptr && cc[type].cc_cmd[op] != nullptr) {
-        pfile = popen(cc[type].cc_cmd[op], mode);
+    if (!clip_opt) {
+        log_error("unable to detect clipboard implementation");
+        return nullptr;
     }
 
-    return pfile;
+    auto cmd = clip_opt.value().select(type).select(op);
+
+    if (cmd.empty()) {
+        log_error("clipboard does not support type/op");
+        return nullptr;
+    }
+
+    switch (op) {
+        case op_t::WRITE:
+            cmd = fmt::format("{} > /dev/null 2>&1", cmd);
+            break;
+        case op_t::READ:
+            cmd = fmt::format("{} < /dev/null 2>/dev/null", cmd);
+            break;
+    }
+
+    return popen(cmd.c_str(), mode);
+}
+
 }
