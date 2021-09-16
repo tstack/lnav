@@ -9,6 +9,9 @@ base: core18
 grade: stable
 confinement: strict
 
+environment:
+  LOCPATH: $SNAP/usr/lib/locale
+
 apps:
   lnav:
     command: lnav
