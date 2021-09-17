@@ -532,7 +532,7 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                 if (curr->cps_client_file_size == 0) {
                                     // initial state, haven't heard from client yet.
                                     nbytes = 32 * 1024;
-                                } else {
+                                } else if (file_offset < curr->cps_client_file_size) {
                                     // heard from client, try to catch up
                                     nbytes = curr->cps_client_file_size - file_offset;
                                     if (nbytes > sizeof(buffer)) {
@@ -553,11 +553,11 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                 int64_t remaining_offset = file_offset + bytes_read;
                                 SHA256_CTX shactx;
 
-                                if (curr->cps_client_file_size > 0) {
+                                if (curr->cps_client_file_size > 0 && file_offset < curr->cps_client_file_size) {
                                     remaining = curr->cps_client_file_size - file_offset - bytes_read;
                                 }
 
-                                fprintf(stderr, "info: prepping initial offer: remaining=%zu\n", remaining);
+                                fprintf(stderr, "info: prepping offer: init=%ld; remaining=%zu; %s\n", bytes_read, remaining, curr->cps_path);
                                 sha256_init(&shactx);
                                 sha256_update(&shactx, buffer, bytes_read);
                                 while (remaining > 0) {
@@ -592,7 +592,7 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                                 TPPT_INT64,
                                                 (int64_t) st.st_mtime,
                                                 TPPT_INT64, file_offset,
-                                                TPPT_INT64, bytes_read,
+                                                TPPT_INT64, (int64_t) bytes_read,
                                                 TPPT_HASH, hash,
                                                 TPPT_DONE);
                                     curr->cps_client_state = CS_OFFERED;
@@ -1021,10 +1021,10 @@ int main(int argc, char *argv[])
                             if (cps == NULL) {
                                 fprintf(stderr, "warning: unknown path in block packet: %s\n", path);
                             } else if (type == TPT_NEED_BLOCK) {
-                                // fprintf(stderr, "info: client is tailing: %s\n", path);
+                                fprintf(stderr, "info: client is tailing: %s\n", path);
                                 cps->cps_client_state = CS_TAILING;
                             } else if (type == TPT_ACK_BLOCK) {
-                                // fprintf(stderr, "info: client acked: %s\n", path);
+                                fprintf(stderr, "info: client acked: %s %zu\n", path, client_size);
                                 if (cps->cps_client_file_read_length == 0) {
                                     cps->cps_client_state = CS_TAILING;
                                 } else {

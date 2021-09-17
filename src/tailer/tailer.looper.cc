@@ -752,7 +752,7 @@ void tailer::looper::host_tailer::loop_body()
                 SHA256_CTX shactx;
                 sha256_init(&shactx);
 
-                log_debug("checking offer %s[%lldd..+%lld]",
+                log_debug("checking offer %s[%lld..+%lld]",
                           local_path.c_str(), remaining_offset, remaining);
                 while (remaining > 0) {
                     auto nbytes = std::min(remaining, BUFFER_SIZE);
@@ -761,6 +761,9 @@ void tailer::looper::host_tailer::loop_body()
                         log_debug("unable to read file, sending need block -- %s",
                                   strerror(errno));
                         ghc::filesystem::remove_all(local_path);
+                        break;
+                    }
+                    if (bytes_read == 0) {
                         break;
                     }
                     sha256_update(&shactx, buffer.in(), bytes_read);
