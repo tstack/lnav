@@ -527,13 +527,18 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                 curr->cps_client_file_offset < 0 ?
                                 0 :
                                 curr->cps_client_file_offset;
-                            size_t nbytes = sizeof(buffer);
+                            int64_t nbytes = sizeof(buffer);
                             if (curr->cps_client_state == CS_INIT) {
-                                nbytes = 32 * 1024;
-                            }
-                            if (curr->cps_client_file_size > file_offset &&
-                                curr->cps_client_file_size < file_offset + nbytes) {
-                                nbytes = curr->cps_client_file_size - file_offset;
+                                if (curr->cps_client_file_size == 0) {
+                                    // initial state, haven't heard from client yet.
+                                    nbytes = 32 * 1024;
+                                } else {
+                                    // heard from client, try to catch up
+                                    nbytes = curr->cps_client_file_size - file_offset;
+                                    if (nbytes > sizeof(buffer)) {
+                                        nbytes = sizeof(buffer);
+                                    }
+                                }
                             }
                             int32_t bytes_read = pread(fd, buffer, nbytes, file_offset);
 
