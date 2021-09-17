@@ -138,7 +138,6 @@ struct client_path_state {
     path_state_t cps_last_path_state;
     struct stat cps_last_stat;
     int64_t cps_client_file_offset;
-    int64_t cps_client_file_read_length;
     int64_t cps_client_file_size;
     client_state_t cps_client_state;
     struct list cps_children;
@@ -152,7 +151,6 @@ struct client_path_state *create_client_path_state(const char *path)
     retval->cps_last_path_state = PS_UNKNOWN;
     memset(&retval->cps_last_stat, 0, sizeof(retval->cps_last_stat));
     retval->cps_client_file_offset = -1;
-    retval->cps_client_file_read_length = 0;
     retval->cps_client_file_size = 0;
     retval->cps_client_state = CS_INIT;
     list_init(&retval->cps_children);
@@ -584,7 +582,6 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                 if (remaining == 0) {
                                     sha256_final(&shactx, hash);
 
-                                    curr->cps_client_file_read_length = bytes_read;
                                     send_packet(STDOUT_FILENO,
                                                 TPT_OFFER_BLOCK,
                                                 TPPT_STRING, root_cps->cps_path,
@@ -1000,10 +997,12 @@ int main(int argc, char *argv[])
                     case TPT_ACK_BLOCK:
                     case TPT_NEED_BLOCK: {
                         char *path = readstr(&rstate, STDIN_FILENO);
-                        int64_t client_size = 0;
+                        int64_t ack_offset = 0, ack_len = 0, client_size = 0;
 
                         if (type == TPT_ACK_BLOCK &&
-                            readint64(&rstate, STDIN_FILENO, &client_size) == -1) {
+                            (readint64(&rstate, STDIN_FILENO, &ack_offset) == -1 ||
+                             readint64(&rstate, STDIN_FILENO, &ack_len) == -1 ||
+                             readint64(&rstate, STDIN_FILENO, &client_size) == -1)) {
                             done = 1;
                             break;
                         }
@@ -1025,11 +1024,10 @@ int main(int argc, char *argv[])
                                 cps->cps_client_state = CS_TAILING;
                             } else if (type == TPT_ACK_BLOCK) {
                                 fprintf(stderr, "info: client acked: %s %zu\n", path, client_size);
-                                if (cps->cps_client_file_read_length == 0) {
+                                if (ack_len == 0) {
                                     cps->cps_client_state = CS_TAILING;
                                 } else {
-                                    cps->cps_client_file_offset +=
-                                        cps->cps_client_file_read_length;
+                                    cps->cps_client_file_offset = ack_offset + ack_len;
                                     cps->cps_client_state = CS_INIT;
                                     cps->cps_client_file_size = client_size;
                                 }

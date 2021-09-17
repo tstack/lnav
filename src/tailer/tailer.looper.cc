@@ -779,6 +779,8 @@ void tailer::looper::host_tailer::loop_body()
                         send_packet(conn.ht_to_child.get(),
                                     TPT_ACK_BLOCK,
                                     TPPT_STRING, pob.pob_path.c_str(),
+                                    TPPT_INT64, pob.pob_offset,
+                                    TPPT_INT64, pob.pob_length,
                                     TPPT_INT64, (int64_t) st.st_size,
                                     TPPT_DONE);
                         return std::move(this->ht_state);
