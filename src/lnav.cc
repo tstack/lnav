@@ -857,24 +857,28 @@ Examples:
 
 Paths:
   Configuration, session, and format files are stored in:
-    %s
+    %s %s
 
   Local copies of remote files and files extracted from
   archives are stored in:
-    %s
+    %s %s
 
 Documentation: https://docs.lnav.org
 Contact:
-  https://github.com/tstack/lnav/discussions
-  %s
+  %s https://github.com/tstack/lnav/discussions
+  %s %s
 Version: %s
 )";
 
     fprintf(stderr,
             usage_msg,
             lnav_data.ld_program_name,
+            "\U0001F4C2",
             lnav::paths::dotlnav().c_str(),
+            "\U0001F4C2",
             lnav::paths::workdir().c_str(),
+            "\U0001F4AC",
+            "\U0001F4EB",
             PACKAGE_BUGREPORT,
             VCS_PACKAGE_STRING);
 }
