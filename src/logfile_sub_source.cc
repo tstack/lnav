@@ -532,16 +532,6 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                                    view_colors::VCR_ADJUSTED_TIME);
         }
     }
-    else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
-             !this->lss_token_line->is_continued()) {
-        struct line_range time_range = find_string_attr_range(
-            value_out, &logline::L_TIMESTAMP);
-
-        if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
-                                   view_colors::VCR_ALT_ROW);
-        }
-    }
 
     if (this->lss_token_line->is_time_skewed()) {
         struct line_range time_range = find_string_attr_range(
