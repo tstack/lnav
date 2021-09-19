@@ -151,6 +151,9 @@ dist_noinst_DATA = \
 	$(FORMAT_FILES) \
 	xterm-palette.json
 
+EXTRA_HEADERS = \
+	doctest_vendored.hh
+
 noinst_HEADERS = \
 	all_logs_vtab.hh \
 	ansi_scrubber.hh \
@@ -174,6 +177,7 @@ noinst_HEADERS = \
 	db_sub_source.hh \
 	doc_status_source.hh \
 	doctest.hh \
+	$(doctest_vendored_h) \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \

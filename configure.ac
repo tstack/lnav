@@ -153,6 +153,27 @@ AS_IF([test "x$enable_simd" = "xyes"], [
 ])
 
 
+AC_ARG_WITH([system_doctest],
+    AS_HELP_STRING(
+        [--with-system-doctest],
+        [Use the system provided doctest library rather than the bundled one]
+    ),
+    [], []
+)
+
+AS_IF([test "x$with_system_doctest" = "xyes"], [
+    AC_CHECK_HEADERS(doctest/doctest.h)
+    AS_IF([test "x$ac_cv_header_doctest_doctest_h" != "xyes"], [
+        AC_MSG_ERROR([system doctest not found])dnl
+    ])
+    AC_DEFINE([DOCTEST_HEADER], ["doctest/doctest.h"], [doctest include path])
+])
+AS_IF([test "x$with_system_doctest" != "xyes"], [
+    AC_DEFINE([DOCTEST_HEADER], ["doctest_vendored.hh"], [doctest include path])
+    AS_VAR_SET(doctest_vendored_h, "doctest_vendored.hh")
+    AC_SUBST(doctest_vendored_h)
+])
+
 
 LNAV_WITH_JEMALLOC
 
