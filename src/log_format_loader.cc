@@ -64,6 +64,7 @@ static void extract_metadata(const char *contents, size_t len, struct script_met
 
 typedef map<intern_string_t, std::shared_ptr<external_log_format>> log_formats_map_t;
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
 static log_formats_map_t LOG_FORMATS;
 
 struct userdata {

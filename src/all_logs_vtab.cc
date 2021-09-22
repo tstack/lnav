@@ -32,6 +32,8 @@
 #include "all_logs_vtab.hh"
 #include "string_attr_type.hh"
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
+
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
       alv_value_meta(intern_string::lookup("log_format"),

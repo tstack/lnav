@@ -67,6 +67,8 @@ using namespace std;
 static const int MAX_CRASH_LOG_COUNT = 16;
 static const auto STDIN_CAPTURE_RETENTION = 24h;
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
+
 struct _lnav_config lnav_config;
 struct _lnav_config rollback_lnav_config;
 static struct _lnav_config lnav_default_config;

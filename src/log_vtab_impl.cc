@@ -40,6 +40,8 @@
 
 using namespace std;
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
+
 static struct log_cursor log_cursor_latest;
 
 struct _log_vtab_data log_vtab_data;
@@ -1073,10 +1075,10 @@ string log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
 
 string log_vtab_manager::unregister_vtab(intern_string_t name)
 {
-    string retval = "";
+    string retval;
 
     if (this->vm_impls.find(name) == this->vm_impls.end()) {
-        retval = "unknown log line table -- " + name.to_string();
+        retval = fmt::format("unknown log line table -- {}", name);
     }
     else {
         auto_mem<char, sqlite3_free> sql;

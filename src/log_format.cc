@@ -49,6 +49,7 @@
 
 using namespace std;
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
 string_attr_type logline::L_PREFIX("prefix");
 string_attr_type logline::L_TIMESTAMP("timestamp");
 string_attr_type logline::L_FILE("file");

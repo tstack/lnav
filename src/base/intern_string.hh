@@ -136,7 +136,7 @@ struct string_fragment {
         return *prefix == '\0';
     }
 
-    string_fragment substr(int begin) {
+    string_fragment substr(int begin) const {
         return string_fragment{
             this->sf_string,
             this->sf_begin + begin,
@@ -162,7 +162,7 @@ struct string_fragment {
     };
 
     std::string to_string() const {
-        return std::string(this->data(), this->length());
+        return {this->data(), (size_t) this->length()};
     }
 
     void clear() {
@@ -213,18 +213,6 @@ struct string_fragment {
     int sf_end;
 };
 
-namespace fmt {
-template<>
-struct formatter<string_fragment> : formatter<string_view> {
-    template<typename FormatContext>
-    auto format(const string_fragment& sf, FormatContext &ctx)
-    {
-        return formatter<string_view>::format(
-            string_view{sf.data(), (size_t) sf.length()}, ctx);
-    }
-};
-}
-
 inline bool operator<(const char *left, const string_fragment &right) {
     int rc = strncmp(left, right.data(), right.length());
     return rc < 0;
@@ -244,23 +232,23 @@ public:
     static const intern_string *lookup(const std::string &str) noexcept;
 
     const char *get() const {
-        return this->is_str;
+        return this->is_str.c_str();
     };
 
     size_t size() const {
-        return this->is_len;
+        return this->is_str.size();
     }
 
     std::string to_string() const {
-        return std::string(this->is_str, this->is_len);
+        return this->is_str;
     }
 
     string_fragment to_string_fragment() const {
-        return string_fragment{this->is_str, 0, (int) this->is_len};
+        return string_fragment{this->is_str};
     }
 
     bool startswith(const char *prefix) const {
-        const char *curr = this->is_str;
+        const char *curr = this->is_str.data();
 
         while (*prefix != '\0' && *prefix == *curr) {
             prefix += 1;
@@ -270,16 +258,20 @@ public:
         return *prefix == '\0';
     }
 
+    struct intern_table;
+    static std::shared_ptr<intern_table> get_table_lifetime();
 private:
-    intern_string(const char *str, ssize_t len)
-            : is_next(nullptr), is_str(str), is_len(len) {
+    friend intern_table;
 
+    intern_string(const char *str, ssize_t len)
+            : is_next(nullptr), is_str(str, (size_t) len) {
     }
 
     intern_string *is_next;
-    const char *is_str;
-    ssize_t is_len;
+    std::string is_str;
 };
+
+using intern_table_lifetime = std::shared_ptr<intern_string::intern_table>;
 
 class intern_string_t {
 public:
@@ -324,7 +316,7 @@ public:
     }
 
     size_t hash() const {
-        uintptr_t ptr = (uintptr_t) this->ist_interned_string;
+        auto ptr = (uintptr_t) this->ist_interned_string;
 
         return ptr;
     }
@@ -369,6 +361,28 @@ private:
 
 unsigned long hash_str(const char *str, size_t len);
 
+namespace fmt {
+template<>
+struct formatter<string_fragment> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const string_fragment &sf, FormatContext &ctx)
+    {
+        return formatter<string_view>::format(
+            string_view{sf.data(), (size_t) sf.length()}, ctx);
+    }
+};
+
+template<>
+struct formatter<intern_string_t> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const intern_string_t& is, FormatContext &ctx)
+    {
+        return formatter<string_view>::format(
+            string_view{is.get(), (size_t) is.size()}, ctx);
+    }
+};
+}
+
 namespace std {
     template <>
     struct hash<const intern_string_t> {
@@ -399,7 +413,7 @@ inline bool operator==(const string_fragment &left, const intern_string_t &right
 
 namespace std {
     inline string to_string(const string_fragment &s) {
-        return string(s.data(), s.length());
+        return {s.data(), (size_t) s.length()};
     }
 
     inline string to_string(const intern_string_t &s) {

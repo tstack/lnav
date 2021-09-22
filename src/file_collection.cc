@@ -106,9 +106,22 @@ void file_collection::regenerate_unique_file_names()
         }
     }
     for (const auto &pair : this->fc_other_files) {
-        auto bn = ghc::filesystem::path(pair.first).filename().string();
-        if (bn.length() > this->fc_largest_path_length) {
-            this->fc_largest_path_length = bn.length();
+        switch (pair.second.ofd_format) {
+            case file_format_t::FF_UNKNOWN:
+            case file_format_t::FF_ARCHIVE:
+            case file_format_t::FF_SQLITE_DB: {
+                auto bn = ghc::filesystem::path(pair.first).filename().string();
+                if (bn.length() > this->fc_largest_path_length) {
+                    this->fc_largest_path_length = bn.length();
+                }
+                break;
+            }
+            case file_format_t::FF_REMOTE: {
+                if (pair.first.length() > this->fc_largest_path_length) {
+                    this->fc_largest_path_length = pair.first.length();
+                }
+                break;
+            }
         }
     }
 }

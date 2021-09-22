@@ -158,6 +158,7 @@ using namespace std::literals::chrono_literals;
 
 static bool initial_build = false;
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
+static auto intern_lifetime = intern_string::get_table_lifetime();
 
 struct lnav_data_t lnav_data;
 

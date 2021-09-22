@@ -33,10 +33,35 @@
 
 #include <string.h>
 
+#include <mutex>
+
 #include "intern_string.hh"
 
 const static int TABLE_SIZE = 4095;
-static intern_string *TABLE[TABLE_SIZE];
+
+struct intern_string::intern_table {
+    ~intern_table() {
+        for (auto is : this->it_table) {
+            auto curr = is;
+
+            while (curr != nullptr) {
+                auto next = curr->is_next;
+
+                delete curr;
+                curr = next;
+            }
+        }
+    }
+
+    intern_string *it_table[TABLE_SIZE];
+};
+
+intern_table_lifetime intern_string::get_table_lifetime()
+{
+    static intern_table_lifetime retval = std::make_shared<intern_table>();
+
+    return retval;
+}
 
 unsigned long
 hash_str(const char *str, size_t len)
@@ -61,22 +86,27 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len) noexcep
     }
     h = hash_str(str, len) % TABLE_SIZE;
 
-    curr = TABLE[h];
-    while (curr != nullptr) {
-        if (curr->is_len == len && strncmp(curr->is_str, str, len) == 0) {
-            return curr;
+    {
+        static std::mutex table_mutex;
+
+        std::lock_guard<std::mutex> lk(table_mutex);
+        auto tab = get_table_lifetime();
+
+        curr = tab->it_table[h];
+        while (curr != nullptr) {
+            if (curr->is_str.size() == len && strncmp(curr->is_str.c_str(), str, len) == 0) {
+                return curr;
+            }
+            curr = curr->is_next;
         }
-        curr = curr->is_next;
+
+        curr = new intern_string(str, len);
+        curr->is_next = tab->it_table[h];
+        tab->it_table[h] = curr;
+
+        return curr;
     }
 
-    char *strcp = new char[len + 1];
-    memcpy(strcp, str, len);
-    strcp[len] = '\0';
-    curr = new intern_string(strcp, len);
-    curr->is_next = TABLE[h];
-    TABLE[h] = curr;
-
-    return curr;
 }
 
 const intern_string *intern_string::lookup(const string_fragment &sf) noexcept

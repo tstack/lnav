@@ -40,7 +40,6 @@
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
-#include "lnav_util.hh"
 #include "base/opt_util.hh"
 
 using namespace std;

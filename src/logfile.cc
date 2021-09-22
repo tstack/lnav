@@ -53,6 +53,8 @@
 
 using namespace std;
 
+static auto intern_lifetime = intern_string::get_table_lifetime();
+
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 Result<std::shared_ptr<logfile>, std::string> logfile::open(
