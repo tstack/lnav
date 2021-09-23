@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+#include "base/opt_util.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "lnav_util.hh"
@@ -162,7 +163,7 @@ void grep_proc<LineType>::child_loop()
     if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
         perror("setvbuf");
     }
-    lnav_log_file = fopen("/tmp/lnav.grep.err", "a");
+    lnav_log_file = make_optional_from_nullable(fopen("/tmp/lnav.grep.err", "a"));
     line_value.reserve(BUFSIZ * 2);
     while (!this->gp_queue.empty()) {
         LineType start_line = this->gp_queue.front().first;

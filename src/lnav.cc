@@ -2201,7 +2201,7 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
+    lnav_log_file = make_optional_from_nullable(fopen(lnav_data.ld_debug_log_name, "a"));
     log_info("lnav started");
 
     load_config(lnav_data.ld_config_paths, config_errors);
