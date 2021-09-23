@@ -53,7 +53,7 @@ struct formatter<file_format_t> : formatter<string_view> {
         string_view name = "unknown";
         switch (ff) {
             case file_format_t::FF_SQLITE_DB:
-                name = "\U0001F5C2  SQLite Database";
+                name = "\U0001F5C2  SQLite DB";
                 break;
             case file_format_t::FF_ARCHIVE:
                 name = "\U0001F5C4  Archive";
