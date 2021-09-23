@@ -406,7 +406,7 @@ lnav_SOURCES = lnav.cc $(PLUGIN_SRCS)
 lnav_test_SOURCES = lnav.cc test_override.c $(PLUGIN_SRCS)
 
 ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $?
+	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $?
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc log_level_re.cc
