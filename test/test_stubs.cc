@@ -54,8 +54,9 @@ void wait_for_children()
 
 }
 
-void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
+    return 0;
 }
 
 textview_curses *get_textview_for_mode(ln_mode_t mode)

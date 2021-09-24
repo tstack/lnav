@@ -587,13 +587,14 @@ public:
     bool did_promotion{false};
 };
 
-void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     textview_curses &log_view  = lnav_data.ld_views[LNV_LOG];
     textview_curses &text_view = lnav_data.ld_views[LNV_TEXT];
     vis_line_t old_bottoms[LNV__MAX];
     bool scroll_downs[LNV__MAX];
+    size_t retval = 0;
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         old_bottoms[lpc] = lnav_data.ld_views[lpc].get_top_for_last_row();
@@ -608,6 +609,7 @@ void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 
         if (tss->rescan_files(cb, deadline)) {
             text_view.reload_data();
+            retval += 1;
         }
 
         if (cb.front_file != nullptr) {
@@ -697,6 +699,8 @@ void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 lss.text_filters_changed();
             }
         }
+
+        retval += 1;
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -711,6 +715,8 @@ void rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
         lnav_data.ld_filter_status_source.update_filtered(tc->get_sub_source());
         lnav_data.ld_scroll_broadcaster(tc);
     };
+
+    return retval;
 }
 
 static bool append_default_files(lnav_flags_t flag)
@@ -2860,7 +2866,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
-                rebuild_indexes();
+                while (rebuild_indexes() > 0) {
+                    log_info("continuing to rebuild indexes...");
+                }
 
                 log_tc->set_top(0_vl);
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
@@ -2880,7 +2888,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     .send_and_wait([](auto& clooper) {
                         clooper.process_all();
                     });
-                rebuild_indexes();
+                while (rebuild_indexes() > 0) {
+                    log_info("continuing to rebuild indexes...");
+                }
 
                 for (auto &pair : cmd_results) {
                     if (pair.first.isErr()) {
