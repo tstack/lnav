@@ -413,7 +413,7 @@ logfile::rebuild_result_t logfile::rebuild_index(nonstd::optional<ui_clock::time
 
         bool sort_needed = this->lf_sort_needed;
         this->lf_sort_needed = false;
-        size_t limit = SIZE_T_MAX;
+        size_t limit = SIZE_MAX;
 
         if (deadline) {
             if (ui_clock::now() > deadline.value()) {
