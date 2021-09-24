@@ -576,7 +576,7 @@ public:
     }
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) {
-        if (row < this->text_line_count()) {
+        if (row < (ssize_t) this->text_line_count()) {
             return this->find_line(this->at(row))->get_timeval();
         }
         return nonstd::nullopt;
