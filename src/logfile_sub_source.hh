@@ -820,6 +820,8 @@ public:
     static const uint64_t MAX_FILES          = (
         MAX_CONTENT_LINES / MAX_LINES_PER_FILE);
 
+    std::function<void(logfile_sub_source&, file_off_t, file_size_t)> lss_sorting_observer;
+
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
 

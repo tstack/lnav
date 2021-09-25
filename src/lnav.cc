@@ -64,7 +64,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <stack>
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -416,7 +415,6 @@ class loading_observer
 public:
     loading_observer()
         : lo_last_offset(0) {
-
     };
 
     indexing_result logfile_indexing(const shared_ptr<logfile>& lf,
@@ -437,7 +435,7 @@ public:
         if ((((size_t)off == total) && (this->lo_last_offset != off)) ||
             ui_periodic_timer::singleton().time_to_update(index_counter)) {
             lnav_data.ld_bottom_source.update_loading(off, total);
-            this->do_update(lf);
+            do_update(lf);
             this->lo_last_offset = off;
         }
 
@@ -447,14 +445,16 @@ public:
         return indexing_result::CONTINUE;
     };
 
-private:
-    void do_update(const shared_ptr<logfile>& lf)
+    static void do_update(const shared_ptr<logfile>& lf)
     {
+        if (isendwin()) {
+            return;
+        }
         lnav_data.ld_top_source.update_time();
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        if (lnav_data.ld_mode == LNM_FILES && !initial_build) {
+        if (lf && lnav_data.ld_mode == LNM_FILES && !initial_build) {
             auto &fc = lnav_data.ld_active_files;
             auto iter = std::find(fc.fc_files.begin(),
                                   fc.fc_files.end(), lf);
@@ -717,6 +717,13 @@ size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     };
 
     return retval;
+}
+
+void rebuild_indexes_repeatedly()
+{
+    for (size_t attempt = 0; attempt < 10 && rebuild_indexes() > 0; attempt++) {
+        log_info("continuing to rebuild indexes...");
+    }
 }
 
 static bool append_default_files(lnav_flags_t flag)
@@ -1260,8 +1267,8 @@ static void looper()
 
         command_context.set_highlighter(readline_command_highlighter);
         search_context
-                .set_append_character(0)
-                .set_highlighter(readline_regex_highlighter);
+            .set_append_character(0)
+            .set_highlighter(readline_regex_highlighter);
         search_filters_context
             .set_append_character(0)
             .set_highlighter(readline_regex_highlighter);
@@ -1269,11 +1276,16 @@ static void looper()
             .set_append_character(0)
             .set_highlighter(readline_regex_highlighter);
         sql_context
-                .set_highlighter(readline_sqlite_highlighter)
-                .set_quote_chars("\"")
-                .with_readline_var((char **)&rl_completer_word_break_characters,
-                                   " \t\n(),");
+            .set_highlighter(readline_sqlite_highlighter)
+            .set_quote_chars("\"")
+            .with_readline_var((char **)&rl_completer_word_break_characters,
+                               " \t\n(),");
         exec_context.set_highlighter(readline_shlex_highlighter);
+
+        lnav_data.ld_log_source.lss_sorting_observer = [](auto& lss, auto off, auto size) {
+            lnav_data.ld_bottom_source.update_loading(off, size);
+            loading_observer::do_update(nullptr);
+        };
 
         auto &sb = lnav_data.ld_scroll_broadcaster;
         auto &vsb = lnav_data.ld_view_stack_broadcaster;
@@ -2866,9 +2878,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
-                while (rebuild_indexes() > 0) {
-                    log_info("continuing to rebuild indexes...");
-                }
+                rebuild_indexes_repeatedly();
 
                 log_tc->set_top(0_vl);
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
@@ -2888,9 +2898,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     .send_and_wait([](auto& clooper) {
                         clooper.process_all();
                     });
-                while (rebuild_indexes() > 0) {
-                    log_info("continuing to rebuild indexes...");
-                }
+                rebuild_indexes_repeatedly();
 
                 for (auto &pair : cmd_results) {
                     if (pair.first.isErr()) {

@@ -59,6 +59,10 @@ size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     return 0;
 }
 
+void rebuild_indexes_repeatedly()
+{
+}
+
 textview_curses *get_textview_for_mode(ln_mode_t mode)
 {
     return nullptr;

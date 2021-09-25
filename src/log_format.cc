@@ -845,7 +845,8 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
 
-            log_debug("changing pattern lock %d -> %d", orig_lock, curr_fmt);
+            log_debug("%zu: changing pattern lock %d -> %d",
+                      dst.size() - 1, orig_lock, curr_fmt);
             if (this->lf_pattern_locks.empty()) {
                 lock_line = 0;
             } else {

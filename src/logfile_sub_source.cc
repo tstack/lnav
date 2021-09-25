@@ -606,10 +606,32 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
         retval = rebuild_result::rr_full_rebuild;
     }
 
-    for (iter = this->lss_files.begin();
-         iter != this->lss_files.end();
-         iter++) {
-        auto &ld = *(*iter);
+    std::vector<size_t> file_order(this->lss_files.size());
+
+    for (size_t lpc = 0; lpc < file_order.size(); lpc++) {
+        file_order[lpc] = lpc;
+    }
+    if (!this->lss_index.empty()) {
+        std::stable_sort(file_order.begin(), file_order.end(),
+                         [this](const auto &left, const auto &right) {
+                             const auto &left_ld = this->lss_files[left];
+                             const auto &right_ld = this->lss_files[right];
+
+                             if (left_ld->get_file_ptr() == nullptr) {
+                                 return true;
+                             }
+                             if (right_ld->get_file_ptr() == nullptr) {
+                                 return false;
+                             }
+
+                             return left_ld->get_file_ptr()->back() <
+                                    right_ld->get_file_ptr()->back();
+                         });
+    }
+
+    bool time_left = true;
+    for (const auto file_index : file_order) {
+        auto &ld = *(this->lss_files[file_index]);
         auto lf = ld.get_file_ptr();
 
         if (lf == nullptr) {
@@ -621,7 +643,12 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
             }
         }
         else {
-            if (!this->tss_view->is_paused()) {
+            if (time_left && deadline && ui_clock::now() > deadline.value()) {
+                log_debug("no time left, skipping %s", lf->get_filename().c_str());
+                time_left = false;
+            }
+
+            if (!this->tss_view->is_paused() && time_left) {
                 switch (lf->rebuild_index(deadline)) {
                     case logfile::rebuild_result_t::NO_NEW_LINES:
                         // No changes
@@ -630,6 +657,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                         if (retval == rebuild_result::rr_no_change) {
                             retval = rebuild_result::rr_appended_lines;
                         }
+                        log_debug("new lines for %s:%d", lf->get_filename().c_str(), lf->size());
                         if (!this->lss_index.empty() &&
                             lf->size() > ld.ld_lines_indexed) {
                             logline &new_file_line = (*lf)[ld.ld_lines_indexed];
@@ -668,12 +696,17 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                                   lf->get_filename().c_str());
                         retval = rebuild_result::rr_full_rebuild;
                         force = true;
+                        full_sort = true;
                         break;
                 }
             }
             file_count += 1;
             total_lines += lf->size();
         }
+    }
+
+    if (this->lss_index.empty() && !time_left) {
+        return rebuild_result::rr_appended_lines;
     }
 
     if (this->lss_index.reserve(total_lines)) {
@@ -684,7 +717,6 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
     auto& vis_bm = this->tss_view->get_bookmarks();
 
     if (force) {
-        full_sort = true;
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
@@ -801,7 +833,14 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
 
             // XXX get rid of this full sort on the initial run, it's not
             // needed unless the file is not in time-order
+            if (this->lss_sorting_observer) {
+                this->lss_sorting_observer(*this, 0, this->lss_index.size());
+            }
             sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
+            if (this->lss_sorting_observer) {
+                this->lss_sorting_observer(*this, this->lss_index.size(),
+                                           this->lss_index.size());
+            }
         } else {
             kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
                 file_count);
@@ -821,7 +860,11 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                 index_size += lf->size();
             }
 
+            file_off_t index_off = 0;
             merge.execute();
+            if (this->lss_sorting_observer) {
+                this->lss_sorting_observer(*this, index_off, index_size);
+            }
             for (;;) {
                 logfile::iterator lf_iter;
                 logfile_data *ld;
@@ -839,6 +882,13 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                 this->lss_index.push_back(con_line);
 
                 merge.next();
+                index_off += 1;
+                if (index_off % 10000 == 0 && this->lss_sorting_observer) {
+                    this->lss_sorting_observer(*this, index_off, index_size);
+                }
+            }
+            if (this->lss_sorting_observer) {
+                this->lss_sorting_observer(*this, index_size, index_size);
             }
         }
 

@@ -533,7 +533,7 @@ void load_time_bookmarks()
                         break;
                     }
 
-                    content_line_t cl = content_line_t(std::distance(lf->begin(), line_iter));
+                    auto cl = content_line_t(std::distance(lf->begin(), line_iter));
                     auto read_result = lf->read_line(line_iter);
 
                     if(read_result.isErr()) {
@@ -702,18 +702,7 @@ void load_time_bookmarks()
                         break;
                     }
 
-                    auto read_result = lf->read_line(line_iter);
-
-                    if (read_result.isErr()) {
-                        break;
-                    }
-
-                    auto sbr = read_result.unwrap();
-
-                    string line_hash = hasher()
-                        .update(sbr.get_data(), sbr.length())
-                        .to_string();
-                    if (line_hash == log_hash) {
+                    if (lf->get_content_id() == log_hash) {
                         int file_line = std::distance(lf->begin(), line_iter);
                         content_line_t line_cl = content_line_t(
                             base_content_line + file_line);
@@ -1174,17 +1163,18 @@ static void save_time_bookmarks()
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter) {
             shared_ptr<logfile> lf = (*file_iter)->get_file();
-            content_line_t base_content_line;
 
-            if (lf == nullptr)
+            if (lf == nullptr) {
                 continue;
+            }
 
+            content_line_t base_content_line;
             base_content_line = lss.get_file_base_content_line(file_iter);
             base_content_line = content_line_t(
                 base_content_line + lf->size() - 1);
 
             if (!bind_line(db.in(), stmt.in(), base_content_line,
-                lnav_data.ld_session_time)) {
+                           lnav_data.ld_session_time)) {
                 continue;
             }
 
@@ -1267,8 +1257,11 @@ static void save_time_bookmarks()
 
             base_content_line = lss.get_file_base_content_line(file_iter);
 
-            if (!bind_line(db.in(), stmt.in(), base_content_line,
-                lnav_data.ld_session_time)) {
+            if (!bind_values(stmt,
+                             lf->original_line_time(lf->begin()),
+                             lf->get_format()->get_name(),
+                             lf->get_content_id(),
+                             lnav_data.ld_session_time)) {
                 continue;
             }
 
@@ -1298,7 +1291,7 @@ static void save_time_bookmarks()
     for (auto &ls : lss) {
         logfile::iterator line_iter;
 
-        if (ls->get_file() == NULL)
+        if (ls->get_file() == nullptr)
             continue;
 
         shared_ptr<logfile> lf = ls->get_file();
@@ -1319,11 +1312,7 @@ static void save_time_bookmarks()
         bind_values(stmt.in(),
                     lf->original_line_time(line_iter),
                     lf->get_format()->get_name(),
-                    read_result.map([](auto sbr) {
-                        return hasher()
-                            .update(sbr.get_data(), sbr.length())
-                            .to_string();
-                    }).unwrap(),
+                    lf->get_content_id(),
                     lnav_data.ld_session_time,
                     offset.tv_sec,
                     offset.tv_usec);
@@ -1550,6 +1539,7 @@ static void save_session_with_id(const std::string session_id)
 
 void save_session()
 {
+    log_debug("BEGIN save_session");
     save_time_bookmarks();
 
     const auto opt_session_id = compute_session_id();
@@ -1562,6 +1552,7 @@ void save_session()
         }
         save_session_with_id(pair.first);
     }
+    log_debug("END save_session");
 }
 
 void reset_session()

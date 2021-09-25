@@ -309,6 +309,7 @@ extern const ssize_t ZOOM_COUNT;
 
 void rebuild_hist();
 size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
+void rebuild_indexes_repeatedly();
 
 bool setup_logline_table(exec_context &ec);
 

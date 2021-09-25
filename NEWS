@@ -33,6 +33,7 @@ lnav v0.10.1:
      * The "jget()" SQL function now returns numbers with the correct type.
      * The local copies of remote files are now cleaned up after a couple
        days of the host not being accessed.
+     * The initial loading and indexing phase has been optimized.
 
 lnav v0.10.0:
      Features:

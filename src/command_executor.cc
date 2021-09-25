@@ -625,7 +625,7 @@ Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_
             (lnav_data.ld_flags & LNF_HEADLESS ||
              ec.ec_path_stack.size() > 1)) {
             rescan_files();
-            rebuild_indexes();
+            rebuild_indexes_repeatedly();
         }
     });
 
@@ -689,7 +689,7 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
         }
 
         rescan_files();
-        rebuild_indexes();
+        rebuild_indexes_repeatedly();
 
         ec.ec_source.pop();
     }

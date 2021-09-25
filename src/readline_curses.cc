@@ -582,13 +582,14 @@ readline_curses::~readline_curses()
     else if (this->rc_child > 0) {
         int status;
 
-        log_debug("term child %d", this->rc_child);
+        log_debug("terminating readline child %d", this->rc_child);
         log_perror(kill(this->rc_child, SIGTERM));
         this->rc_child = -1;
 
         while (wait(&status) < 0 && (errno == EINTR)) {
             ;
         }
+        log_debug("  child %d has exited", this->rc_child);
     }
 }
 

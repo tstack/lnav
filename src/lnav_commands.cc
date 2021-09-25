@@ -3721,7 +3721,7 @@ static Result<string, string> com_rebuild(exec_context &ec, string cmdline, vect
 
     }
     else if (!ec.ec_dry_run) {
-        rebuild_indexes();
+        rebuild_indexes_repeatedly();
     }
 
     return Ok(string());
