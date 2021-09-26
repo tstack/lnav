@@ -62,6 +62,7 @@ parts:
       - libgpm-dev
     stage-packages:
       - zlib1g
+      - git
       - libncursesw5
       - libpcre3
       - libgpm2
@@ -69,4 +70,5 @@ parts:
       - libicu60
       - libxml2
       - locales-all
+      - ssh
       - xclip
