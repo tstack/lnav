@@ -19,6 +19,7 @@ apps:
       - home            # optional, allows to read log files from home directory
       - log-observe     # required, provide access to system logs in /var/log
       - network         # required, lnav uses sendto() with UNIX domain socket
+      - removable-media
       - ssh-keys
       - x11
 
@@ -63,6 +64,7 @@ parts:
     stage-packages:
       - zlib1g
       - git
+      - libcurl3-gnutls
       - libncursesw5
       - libpcre3
       - libgpm2
