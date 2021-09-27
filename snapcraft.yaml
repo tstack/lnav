@@ -11,6 +11,8 @@ confinement: strict
 
 environment:
   LOCPATH: $SNAP/usr/lib/locale
+  GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+  GIT_EXEC_PATH: $SNAP/usr/lib/git-core
 
 apps:
   lnav:
@@ -63,8 +65,7 @@ parts:
       - libgpm-dev
     stage-packages:
       - zlib1g
-      - git
-      - libcurl3-gnutls
+      - git-core
       - libncursesw5
       - libpcre3
       - libgpm2
