@@ -30,7 +30,7 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "doctest.hh"
+#include "doctest/doctest.h"
 
 #include "byte_array.hh"
 #include "lnav_config.hh"

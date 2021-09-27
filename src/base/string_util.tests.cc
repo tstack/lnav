@@ -31,7 +31,7 @@
 
 #include <iostream>
 
-#include "doctest.hh"
+#include "doctest/doctest.h"
 
 #include "base/strnatcmp.h"
 #include "base/string_util.hh"

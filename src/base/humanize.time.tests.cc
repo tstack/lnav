@@ -31,7 +31,7 @@
 
 #include <chrono>
 #include <iostream>
-#include "doctest.hh"
+#include "doctest/doctest.h"
 
 #include "humanize.time.hh"
 

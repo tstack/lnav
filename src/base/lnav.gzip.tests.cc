@@ -32,7 +32,7 @@
 #include <zlib.h>
 #include <iostream>
 
-#include "doctest.hh"
+#include "doctest/doctest.h"
 
 #include "base/lnav.gzip.hh"
 
