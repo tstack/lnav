@@ -1,16 +1,10 @@
-
 enable_testing()
 
 include_directories(
-        .
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/fmtlib
-        ${CMAKE_CURRENT_BINARY_DIR}/../src
-        ${CMAKE_CURRENT_BINARY_DIR}
-)
+  . ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/fmtlib
+  ${CMAKE_CURRENT_BINARY_DIR}/../src ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(testdummy STATIC
-        test_stubs.cc)
+add_library(testdummy STATIC test_stubs.cc)
 target_link_libraries(testdummy PkgConfig::libpcre)
 
 add_executable(test_abbrev test_abbrev.cc)
@@ -42,10 +36,7 @@ target_link_libraries(test_grep_proc2 diag PkgConfig::libpcre)
 add_test(NAME test_grep_proc2 COMMAND test_grep_proc2)
 
 add_executable(test_line_buffer2 test_line_buffer2.cc)
-target_link_libraries(test_line_buffer2
-        diag
-        BZip2::bz2
-        ZLIB::zlib)
+target_link_libraries(test_line_buffer2 diag BZip2::bz2 ZLIB::zlib)
 add_test(NAME test_line_buffer2 COMMAND test_line_buffer2)
 
 add_executable(test_log_accel test_log_accel.cc)
