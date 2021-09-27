@@ -7,6 +7,8 @@ lnav v0.10.1:
        results of a SQL query, you would pass "--view=db" to the command.
      * The commands used to access the clipboard are now configured through
        the "tuning" section of the configuration.
+     * Added an "lnav_version()" SQL function that returns the current
+       version string.
      Interface changes:
      * The xclip implementation for accessing the system clipboard now writes
        to the "clipboard" selection instead of the "primary" selection.
@@ -31,6 +33,8 @@ lnav v0.10.1:
        is an issue opening a file.
      * Overwritten files should be reloaded again.
      * The "jget()" SQL function now returns numbers with the correct type.
+     * The "json_contains()" SQL function now returns false if the first
+       argument is NULL instead of NULL.
      * The local copies of remote files are now cleaned up after a couple
        days of the host not being accessed.
      * The initial loading and indexing phase has been optimized.

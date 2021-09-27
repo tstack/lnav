@@ -69,6 +69,21 @@ struct sqlite_func_error : std::exception {
     const std::string e_what;
 };
 
+namespace vtab_types {
+
+template<typename T>
+struct nullable {
+    T *n_value{nullptr};
+};
+
+template<typename>
+struct is_nullable : std::false_type {};
+
+template<typename T>
+struct is_nullable<nullable<T>> : std::true_type {};
+
+}
+
 template<typename T>
 struct from_sqlite {
     using U = typename std::remove_reference<T>::type;
@@ -160,6 +175,13 @@ struct from_sqlite<const std::vector<T> &> {
         }
 
         return retval;
+    }
+};
+
+template<typename T>
+struct from_sqlite<vtab_types::nullable<T>> {
+    inline vtab_types::nullable<T> operator()(int argc, sqlite3_value **val, int argi) {
+        return {from_sqlite<T *>()(argc, val, argi)};
     }
 };
 
@@ -314,6 +336,10 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
     constexpr static size_t OPT_COUNT = optional_counter<Args...>::value;
     constexpr static size_t VAR_COUNT = variadic_counter<Args...>::value;
     constexpr static size_t REQ_COUNT = sizeof...(Args) - OPT_COUNT - VAR_COUNT;
+    constexpr static bool IS_NULLABLE[] = {vtab_types::is_nullable<Args>::value ... };
+    constexpr static bool IS_SQLITE3_VALUE[] = {
+        std::is_same<Args, sqlite3_value *>::value ...
+    };
 
     template<size_t ... Idx>
     static void func2(sqlite3_context *context,
@@ -362,7 +388,9 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
         }
 
         for (size_t lpc = 0; lpc < REQ_COUNT; lpc++) {
-            if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
+            if (!IS_NULLABLE[lpc] &&
+                !IS_SQLITE3_VALUE[lpc] &&
+                sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
                 sqlite3_result_null(context);
                 return;
             }

@@ -815,6 +815,16 @@ public:
     Result<bool, std::string> eval_sql_filter(
         sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll);
 
+    void invalidate_sql_filter();
+
+    void set_line_meta_changed() {
+        this->lss_line_meta_changed = true;
+    }
+
+    bool is_line_meta_changed() const {
+        return this->lss_line_meta_changed;
+    }
+
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
     static const uint64_t MAX_FILES          = (
@@ -1001,6 +1011,7 @@ private:
     log_location_history lss_location_history;
 
     bool lss_in_value_for_line{false};
+    bool lss_line_meta_changed{false};
 };
 
 #endif

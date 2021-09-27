@@ -31,7 +31,7 @@
 
 #include <iostream>
 
-#include "doctest.hh"
+#include "doctest/doctest.h"
 
 #include "network.tcp.hh"
 

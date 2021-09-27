@@ -28,6 +28,34 @@ Row 0:
   Column json_concat(NULL, json('{"abc": 1}')): [{"abc":1}]
 EOF
 
+run_test ./drive_sql "select json_contains(NULL, 4)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains(NULL, 4): 0
+EOF
+
+run_test ./drive_sql "select json_contains('', 4)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('', 4): 0
+EOF
+
+run_test ./drive_sql "select json_contains('null', NULL)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('null', NULL): 1
+EOF
+
+run_test ./drive_sql "select json_contains('[[0]]', 0)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('[[0]]', 0): 0
+EOF
+
 run_test ./drive_sql "select json_contains('4', 4)"
 
 check_output "json_contains does not work" <<EOF

@@ -88,6 +88,11 @@ static nonstd::optional<std::string> sql_lnav_top_file()
     });
 }
 
+static const char *sql_lnav_version()
+{
+    return PACKAGE_VERSION;
+}
+
 static int64_t sql_error(const char *str)
 {
     throw sqlite_func_error("{}", str);
@@ -112,6 +117,12 @@ int state_extension_functions(struct FuncDef **basic_funcs,
         sqlite_func_adapter<decltype(&sql_lnav_top_file), sql_lnav_top_file>::builder(
             help_text("lnav_top_file",
                       "Return the name of the file that the top line in the current view came from.")
+                .sql_function()
+        ),
+
+        sqlite_func_adapter<decltype(&sql_lnav_version), sql_lnav_version>::builder(
+            help_text("lnav_version",
+                      "Return the current version of lnav")
                 .sql_function()
         ),
 

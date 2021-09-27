@@ -8,6 +8,8 @@
 
 #cmakedefine VCS_PACKAGE_STRING "@VCS_PACKAGE_STRING@"
 
+#cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
+
 #cmakedefine HAVE_PTY_H
 
 #cmakedefine HAVE_UTIL_H

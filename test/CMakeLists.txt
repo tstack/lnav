@@ -53,6 +53,7 @@ target_link_libraries(test_log_accel diag PkgConfig::libpcre)
 add_test(NAME test_log_accel COMMAND test_log_accel)
 
 add_executable(lnav_doctests lnav_doctests.cc)
+target_include_directories(lnav_doctests PUBLIC ../src/third-party/doctest-root)
 target_link_libraries(lnav_doctests diag ${lnav_LIBS})
 add_test(NAME lnav_doctests COMMAND lnav_doctests)
 
@@ -61,6 +62,7 @@ target_link_libraries(test_pcrepp diag PkgConfig::libpcre)
 add_test(NAME test_pcrepp COMMAND test_pcrepp)
 
 add_executable(test_reltime test_reltime.cc)
+target_include_directories(test_reltime PUBLIC ../src/third-party/doctest-root)
 target_link_libraries(test_reltime diag PkgConfig::libpcre)
 add_test(NAME test_reltime COMMAND test_reltime)
 

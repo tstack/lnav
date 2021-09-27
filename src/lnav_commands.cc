@@ -2691,6 +2691,9 @@ static Result<string, string> com_comment(exec_context &ec, string cmdline, vect
         bookmark_metadata &line_meta = bm[lss.at(tc->get_top())];
 
         line_meta.bm_comment = args[1];
+        lss.set_line_meta_changed();
+        lss.text_filters_changed();
+        tc->reload_data();
 
         retval = "info: comment added to line";
     } else {
@@ -2747,6 +2750,10 @@ static Result<string, string> com_clear_comment(exec_context &ec, string cmdline
                 tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), false);
             }
 
+            lss.set_line_meta_changed();
+            lss.text_filters_changed();
+            tc->reload_data();
+
             retval = "info: cleared comment";
         }
         tc->search_new_data();
@@ -2787,6 +2794,9 @@ static Result<string, string> com_tag(exec_context &ec, string cmdline, vector<s
             line_meta.add_tag(tag);
         }
         tc->search_new_data();
+        lss.set_line_meta_changed();
+        lss.text_filters_changed();
+        tc->reload_data();
 
         retval = "info: tag(s) added to line";
     } else {
@@ -2833,6 +2843,9 @@ static Result<string, string> com_untag(exec_context &ec, string cmdline, vector
             }
         }
         tc->search_new_data();
+        lss.set_line_meta_changed();
+        lss.text_filters_changed();
+        tc->reload_data();
 
         retval = "info: tag(s) removed from line";
     } else {

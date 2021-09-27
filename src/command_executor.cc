@@ -332,6 +332,10 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
 
     gettimeofday(&end_tv, nullptr);
     if (retcode == SQLITE_DONE) {
+        if (lnav_data.ld_log_source.is_line_meta_changed()) {
+            lnav_data.ld_log_source.text_filters_changed();
+            lnav_data.ld_views[LNV_LOG].reload_data();
+        }
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_files_view.reload_data();
         lnav_data.ld_views[LNV_DB].reload_data();

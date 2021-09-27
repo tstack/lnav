@@ -1895,6 +1895,17 @@ lnav_top_file()
 ----
 
 
+.. _lnav_version:
+
+lnav_version()
+^^^^^^^^^^^^^^
+
+  Return the current version of lnav
+
+
+----
+
+
 .. _load_extension:
 
 load_extension(*path*, *\[entry-point\]*)

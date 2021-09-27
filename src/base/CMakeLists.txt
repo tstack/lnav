@@ -62,5 +62,10 @@ add_executable(test_base
         network.tcp.tests.cc
 
         test_base.cc)
+target_include_directories(
+        test_base
+        PUBLIC
+        ../third-party/doctest-root
+)
 target_link_libraries(test_base base pcrepp ZLIB::zlib)
 add_test(NAME test_base COMMAND test_base)

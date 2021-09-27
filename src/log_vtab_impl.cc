@@ -940,6 +940,7 @@ static int vt_update(sqlite3_vtab *tab,
         if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
             bm.erase(vt->lss->at(vrowid));
+            vt->lss->set_line_meta_changed();
         }
 
         if (has_meta) {
@@ -968,6 +969,8 @@ static int vt_update(sqlite3_vtab *tab,
             } else {
                 line_meta.bm_tags.clear();
             }
+
+            vt->lss->set_line_meta_changed();
         }
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vrowid, val);

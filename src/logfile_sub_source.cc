@@ -1068,6 +1068,11 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
 
 void logfile_sub_source::text_filters_changed()
 {
+    if (this->lss_line_meta_changed) {
+        this->invalidate_sql_filter();
+        this->lss_line_meta_changed = false;
+    }
+
     for (auto& ld : *this) {
         auto lf = ld->get_file_ptr();
 
@@ -1102,7 +1107,7 @@ void logfile_sub_source::text_filters_changed()
 
         if (!this->tss_apply_filters ||
             (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
-                                           line_number) &&
+                                              line_number) &&
              this->check_extra_filters(ld, line_iter))) {
             auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(),
                                                   ld, line_iter);
@@ -1509,6 +1514,13 @@ bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
     }
 
     return true;
+}
+
+void logfile_sub_source::invalidate_sql_filter()
+{
+    for (auto& ld : *this) {
+        ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
+    }
 }
 
 void log_location_history::loc_history_append(vis_line_t top)

@@ -9,7 +9,8 @@ check_type_size(off_t SIZEOF_OFF_T)
 check_include_file("pty.h" HAVE_PTY_H)
 check_include_file("util.h" HAVE_UTIL_H)
 
-set(VCS_PACKAGE_STRING "test")
+set(VCS_PACKAGE_STRING "lnav ${CMAKE_PROJECT_VERSION}")
+set(PACKAGE_VERSION "${CMAKE_PROJECT_VERSION}")
 
 configure_file(config.cmake.h.in config.h)
 

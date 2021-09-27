@@ -1919,7 +1919,11 @@ Synopsis
 
 
 Synopsis
-  load_extension(path, [entry-point]) -- Loads SQLite extensions out of the 
+  lnav_version() -- Return the current version of lnav
+
+
+Synopsis
+  load_extension(path, [entry-point]) -- Loads SQLite extensions out of the
     given shared library file using the given entry point.
 Parameters
   path          The path to the shared library containing the extension.

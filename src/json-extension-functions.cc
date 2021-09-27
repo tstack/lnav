@@ -74,6 +74,7 @@ static void null_or_default(sqlite3_context *context, int argc, sqlite3_value **
 
 struct contains_userdata {
     util::variant<const char *, sqlite3_int64, bool> cu_match_value{false};
+    size_t cu_depth{0};
     bool cu_result{false};
 };
 
@@ -81,7 +82,8 @@ static int contains_string(void *ctx, const unsigned char *str, size_t len)
 {
     auto &cu = *((contains_userdata *) ctx);
 
-    if (strncmp((const char *) str, cu.cu_match_value.get<const char *>(), len) == 0) {
+    if (cu.cu_depth <= 1 &&
+        strncmp((const char *) str, cu.cu_match_value.get<const char *>(), len) == 0) {
         cu.cu_result = true;
     }
 
@@ -92,21 +94,64 @@ static int contains_integer(void *ctx, long long value)
 {
     auto &cu = *((contains_userdata *) ctx);
 
-    if (cu.cu_match_value.get<sqlite3_int64>() == value) {
+    if (cu.cu_depth <= 1 && cu.cu_match_value.get<sqlite3_int64>() == value) {
         cu.cu_result = true;
     }
 
     return 1;
 }
 
-static bool json_contains(const char *json_in, sqlite3_value *value)
+static int contains_null(void *ctx)
 {
+    auto &cu = *((contains_userdata *) ctx);
+
+    cu.cu_result = true;
+
+    return 1;
+}
+
+static bool json_contains(vtab_types::nullable<const char> nullable_json_in, sqlite3_value *value)
+{
+    if (nullable_json_in.n_value == nullptr || nullable_json_in.n_value[0] == '\0') {
+        return false;
+    }
+
+    auto json_in = nullable_json_in.n_value;
     auto_mem<yajl_handle_t> handle(yajl_free);
     yajl_callbacks cb;
     contains_userdata cu;
 
     memset(&cb, 0, sizeof(cb));
     handle = yajl_alloc(&cb, nullptr, &cu);
+
+    cb.yajl_start_array = +[](void *ctx) {
+        auto &cu = *((contains_userdata *) ctx);
+
+        cu.cu_depth += 1;
+
+        return 1;
+    };
+    cb.yajl_end_array = +[](void *ctx) {
+        auto &cu = *((contains_userdata *) ctx);
+
+        cu.cu_depth -= 1;
+
+        return 1;
+    };
+    cb.yajl_start_map = +[](void *ctx) {
+        auto &cu = *((contains_userdata *) ctx);
+
+        cu.cu_depth += 2;
+
+        return 1;
+    };
+    cb.yajl_end_map = +[](void *ctx) {
+        auto &cu = *((contains_userdata *) ctx);
+
+        cu.cu_depth -= 2;
+
+        return 1;
+    };
 
     switch (sqlite3_value_type(value)) {
         case SQLITE3_TEXT:
@@ -116,6 +161,9 @@ static bool json_contains(const char *json_in, sqlite3_value *value)
         case SQLITE_INTEGER:
             cb.yajl_integer = contains_integer;
             cu.cu_match_value = sqlite3_value_int64(value);
+            break;
+        case SQLITE_NULL:
+            cb.yajl_null = contains_null;
             break;
     }
 
