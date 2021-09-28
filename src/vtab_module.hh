@@ -336,10 +336,6 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
     constexpr static size_t OPT_COUNT = optional_counter<Args...>::value;
     constexpr static size_t VAR_COUNT = variadic_counter<Args...>::value;
     constexpr static size_t REQ_COUNT = sizeof...(Args) - OPT_COUNT - VAR_COUNT;
-    constexpr static bool IS_NULLABLE[] = {vtab_types::is_nullable<Args>::value ... };
-    constexpr static bool IS_SQLITE3_VALUE[] = {
-        std::is_same<Args, sqlite3_value *>::value ...
-    };
 
     template<size_t ... Idx>
     static void func2(sqlite3_context *context,
@@ -366,6 +362,11 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
     static void func1(sqlite3_context *context,
                       int argc, sqlite3_value **argv) {
+        const static bool IS_NULLABLE[] = {vtab_types::is_nullable<Args>::value ... };
+        const static bool IS_SQLITE3_VALUE[] = {
+            std::is_same<Args, sqlite3_value *>::value ...
+        };
+
         if ((size_t) argc < REQ_COUNT && VAR_COUNT == 0) {
             const struct FuncDef *fd = (const FuncDef *) sqlite3_user_data(context);
             char buffer[128];
