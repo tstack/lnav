@@ -58,7 +58,7 @@ parts:
       - libarchive-dev
       - libpcre3-dev
       - libsqlite3-dev
-      - libncursesw5-dev
+      - libncursesw6
       - libreadline-dev
       - zlib1g-dev
       - libbz2-dev
@@ -66,7 +66,7 @@ parts:
     stage-packages:
       - zlib1g
       - git-core
-      - libncursesw5
+      - libncursesw6
       - libpcre3
       - libgpm2
       - libarchive13
