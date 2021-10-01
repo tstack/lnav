@@ -280,7 +280,7 @@ static void cleanup_session_data()
         else {
             if (remove(front.sfi_path.c_str()) != 0) {
                 log_error(
-                        "Unable to remove session file: %s -- %s\n",
+                        "Unable to remove session file: %s -- %s",
                         front.sfi_path.c_str(),
                         strerror(errno));
             }
@@ -296,7 +296,7 @@ static void cleanup_session_data()
 
         if (remove(front.sfi_path.c_str()) != 0) {
             log_error(
-                    "Unable to remove session file: %s -- %s\n",
+                    "Unable to remove session file: %s -- %s",
                     front.sfi_path.c_str(),
                     strerror(errno));
         }
@@ -382,7 +382,7 @@ nonstd::optional<session_pair_t> scan_sessions()
 
         if (remove(name.c_str()) != 0) {
             log_error(
-                    "Unable to remove session: %s -- %s\n",
+                    "Unable to remove session: %s -- %s",
                     name.c_str(),
                     strerror(errno));
         }
@@ -415,7 +415,7 @@ void load_time_bookmarks()
 
     for (const char *upgrade_stmt : UPGRADE_STMTS) {
         if (sqlite3_exec(db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-            log_error("unable to upgrade bookmark table -- %s\n", errmsg.in());
+            log_error("unable to upgrade bookmark table -- %s", errmsg.in());
         }
     }
 
@@ -604,7 +604,7 @@ void load_time_bookmarks()
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     log_error(
-                            "bookmark select error: code %d -- %s\n",
+                            "bookmark select error: code %d -- %s",
                             rc,
                             errmsg);
                     done = true;
@@ -624,7 +624,7 @@ void load_time_bookmarks()
                            stmt.out(),
                            nullptr) != SQLITE_OK) {
         log_error(
-                "could not prepare time_offset select statement -- %s\n",
+                "could not prepare time_offset select statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -727,7 +727,7 @@ void load_time_bookmarks()
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     log_error(
-                            "bookmark select error: code %d -- %s\n",
+                            "bookmark select error: code %d -- %s",
                             rc,
                             errmsg);
                     done = true;
@@ -980,7 +980,7 @@ static void save_user_bookmarks(
 
         if (meta_iter == bm_meta.end()) {
             if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -994,7 +994,7 @@ static void save_user_bookmarks(
                                   meta_iter->second.bm_name.c_str(),
                                   meta_iter->second.bm_name.length(),
                                   SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind part name -- %s\n",
+                log_error("could not bind part name -- %s",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -1004,7 +1004,7 @@ static void save_user_bookmarks(
                                   meta_iter->second.bm_comment.c_str(),
                                   meta_iter->second.bm_comment.length(),
                                   SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind comment -- %s\n",
+                log_error("could not bind comment -- %s",
                           sqlite3_errmsg(db));
                 return;
             }
@@ -1031,7 +1031,7 @@ static void save_user_bookmarks(
                                   tags.c_str(),
                                   tags.length(),
                                   SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind tags -- %s\n",
+                log_error("could not bind tags -- %s",
                           sqlite3_errmsg(db));
                 return;
             }
@@ -1039,7 +1039,7 @@ static void save_user_bookmarks(
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             log_error(
-                    "could not execute bookmark insert statement -- %s\n",
+                    "could not execute bookmark insert statement -- %s",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1059,17 +1059,17 @@ static void save_time_bookmarks()
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
-        log_error("unable to open bookmark DB -- %s\n", db_path.c_str());
+        log_error("unable to open bookmark DB -- %s", db_path.c_str());
         return;
     }
 
     if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-        log_error("unable to make bookmark table -- %s\n", errmsg.in());
+        log_error("unable to make bookmark table -- %s", errmsg.in());
         return;
     }
 
     if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-        log_error("unable to begin transaction -- %s\n", errmsg.in());
+        log_error("unable to begin transaction -- %s", errmsg.in());
         return;
     }
 
@@ -1151,7 +1151,7 @@ static void save_time_bookmarks()
                            stmt.out(),
                            nullptr) != SQLITE_OK) {
         log_error(
-                "could not prepare bookmark replace statement -- %s\n",
+                "could not prepare bookmark replace statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1179,14 +1179,14 @@ static void save_time_bookmarks()
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
-                log_error("could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
                 log_error(
-                        "could not execute bookmark insert statement -- %s\n",
+                        "could not execute bookmark insert statement -- %s",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -1206,7 +1206,7 @@ static void save_time_bookmarks()
                            stmt.out(),
                            NULL) != SQLITE_OK) {
         log_error(
-                "could not prepare time_offset delete statement -- %s\n",
+                "could not prepare time_offset delete statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1219,7 +1219,7 @@ static void save_time_bookmarks()
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             log_error(
-                    "could not execute bookmark insert statement -- %s\n",
+                    "could not execute bookmark insert statement -- %s",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1237,7 +1237,7 @@ static void save_time_bookmarks()
                            stmt.out(),
                            NULL) != SQLITE_OK) {
         log_error(
-                "could not prepare time_offset replace statement -- %s\n",
+                "could not prepare time_offset replace statement -- %s",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1266,20 +1266,20 @@ static void save_time_bookmarks()
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
-                log_error("could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_bind_null(stmt.in(), 6) != SQLITE_OK) {
-                log_error("could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
                 log_error(
-                        "could not execute bookmark insert statement -- %s\n",
+                        "could not execute bookmark insert statement -- %s",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -1319,7 +1319,7 @@ static void save_time_bookmarks()
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             log_error(
-                    "could not execute bookmark insert statement -- %s\n",
+                    "could not execute bookmark insert statement -- %s",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1328,17 +1328,17 @@ static void save_time_bookmarks()
     }
 
     if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-        log_error("unable to begin transaction -- %s\n", errmsg.in());
+        log_error("unable to begin transaction -- %s", errmsg.in());
         return;
     }
 
     if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-        log_error("unable to delete old bookmarks -- %s\n", errmsg.in());
+        log_error("unable to delete old bookmarks -- %s", errmsg.in());
         return;
     }
 
     if (sqlite3_exec(db.in(), NETLOC_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
-        log_error("unable to delete old netlocs -- %s\n", errmsg.in());
+        log_error("unable to delete old netlocs -- %s", errmsg.in());
         return;
     }
 }

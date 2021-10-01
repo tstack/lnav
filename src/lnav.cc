@@ -1735,7 +1735,12 @@ static void looper()
                 }
             }
             else {
-                if (pollfd_ready(pollfds, STDIN_FILENO)) {
+                auto in_revents = pollfd_revents(pollfds, STDIN_FILENO);
+
+                if (in_revents & (POLLHUP|POLLNVAL)) {
+                    log_info("stdin has been closed, exiting...");
+                    lnav_data.ld_looping = false;
+                } else if (in_revents & POLLIN) {
                     int ch;
 
                     while ((ch = getch()) != ERR) {
