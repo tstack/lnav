@@ -83,7 +83,20 @@ public:
         map<int, const char *>::const_iterator iter;
         const char *retval = nullptr;
 
-        if ((iter = this->vem_map.find(ch)) != this->vem_map.end()) {
+        if ((iter = this->vem_map.find(ch)) == this->vem_map.end()) {
+            if (ch > KEY_MAX) {
+                auto name = keyname(ch);
+
+                if (name != nullptr) {
+                    auto seq = tigetstr(name);
+
+                    if (seq != nullptr) {
+                        this->vem_map[ch] = seq;
+                        retval = seq;
+                    }
+                }
+            }
+        } else {
             retval = iter->second;
         }
 
@@ -151,7 +164,7 @@ private:
     };
 
     /** Map of ncurses keycodes to VT52 escape sequences. */
-    map<int, const char *>    vem_map;
+    mutable map<int, const char *>    vem_map;
     map<string, const char *> vem_input_map;
 };
 

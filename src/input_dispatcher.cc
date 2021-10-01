@@ -86,6 +86,7 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                 this->append_to_escape_buffer(ch);
 
                 if (strcmp("\x1b[", this->id_escape_buffer) == 0) {
+                } else if (strcmp("\x1b[<", this->id_escape_buffer) == 0) {
                     this->id_mouse_handler();
                     this->id_escape_index = 0;
                 } else if (this->id_escape_expected_size == -1 ||
