@@ -16,7 +16,7 @@ environment:
 
 apps:
   lnav:
-    command: bin/lnav
+    command: usr/bin/lnav
     plugs:
       - home            # optional, allows to read log files from home directory
       - log-observe     # required, provide access to system logs in /var/log
