@@ -43,61 +43,61 @@ TEST_CASE("time ago")
     auto t1_chrono = std::chrono::seconds(t1);
 
     auto p1 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({t1 + 5, 0});
+        .with_recent_point({(time_t) t1 + 5, 0});
 
     CHECK(p1.as_time_ago() == "just now");
     CHECK(p1.as_precise_time_ago() == " 5 seconds ago");
 
     auto p2 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({t1 + 65, 0});
+        .with_recent_point({(time_t) t1 + 65, 0});
 
     CHECK(p2.as_time_ago() == "one minute ago");
     CHECK(p2.as_precise_time_ago() == " 1 minute and  5 seconds ago");
 
     auto p3 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({t1 + (3 * 60 + 5), 0});
+        .with_recent_point({(time_t) t1 + (3 * 60 + 5), 0});
 
     CHECK(p3.as_time_ago() == "3 minutes ago");
     CHECK(p3.as_precise_time_ago() == " 3 minutes and  5 seconds ago");
 
     auto p4 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 65min).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 65min).count(), 0});
 
     CHECK(p4.as_time_ago() == "one hour ago");
     CHECK(p4.as_precise_time_ago() == "one hour ago");
 
     auto p5 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 3h).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 3h).count(), 0});
 
     CHECK(p5.as_time_ago() == "3 hours ago");
     CHECK(p5.as_precise_time_ago() == "3 hours ago");
 
     auto p6 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 25h).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 25h).count(), 0});
 
     CHECK(p6.as_time_ago() == "one day ago");
     CHECK(p6.as_precise_time_ago() == "one day ago");
 
     auto p7 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 50h).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 50h).count(), 0});
 
     CHECK(p7.as_time_ago() == "2 days ago");
     CHECK(p7.as_precise_time_ago() == "2 days ago");
 
     auto p8 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 370 * 24h).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 370 * 24h).count(), 0});
 
     CHECK(p8.as_time_ago() == "over a year ago");
     CHECK(p8.as_precise_time_ago() == "over a year ago");
 
     auto p9 = humanize::time::point::from_tv({t1, 0})
-        .with_recent_point({(t1_chrono + 800 * 24h).count(), 0});
+        .with_recent_point({(time_t) (t1_chrono + 800 * 24h).count(), 0});
 
     CHECK(p9.as_time_ago() == "over 2 years ago");
     CHECK(p9.as_precise_time_ago() == "over 2 years ago");
 
     CHECK(humanize::time::point::from_tv({1610000000, 0})
-              .with_recent_point({1612000000, 0})
+              .with_recent_point({(time_t) 1612000000, 0})
               .as_time_ago() == "23 days ago");
 }
 

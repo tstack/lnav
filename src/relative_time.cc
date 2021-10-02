@@ -115,7 +115,7 @@ relative_time::from_str(const char *str, size_t len)
     rt_field_type last_field_type = RTF__MAX;
     relative_time retval;
     parse_error pe_out;
-    std::unordered_set<token_t> seen_tokens;
+    std::unordered_set<int> seen_tokens;
 
     pe_out.pe_column = -1;
     pe_out.pe_msg.clear();
