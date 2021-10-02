@@ -124,6 +124,11 @@ textview_curses::textview_curses()
     this->set_data_source(this);
 }
 
+textview_curses::~textview_curses()
+{
+    this->tc_search_action = noop_func{};
+}
+
 void textview_curses::reload_config(error_reporter &reporter)
 {
     static auto DEFAULT_THEME_NAME = string("default");

@@ -617,6 +617,8 @@ public:
 
     textview_curses();
 
+    ~textview_curses();
+
     void reload_config(error_reporter &reporter);
 
     void set_paused(bool paused) {

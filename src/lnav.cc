@@ -1137,6 +1137,10 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *keyseq)
 
 void update_hits(textview_curses *tc)
 {
+    if (isendwin()) {
+        return;
+    }
+
     auto top_tc = lnav_data.ld_view_stack.top();
 
     if (top_tc && tc == *top_tc) {
@@ -2481,7 +2485,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             lf->close();
         }
-        rebuild_indexes();
+        rebuild_indexes(ui_clock::now());
 
         lnav_data.ld_vtab_manager = nullptr;
 
