@@ -10,7 +10,7 @@ export srcdir
 top_builddir=`dirname $0`
 export top_builddir
 
-builddir=`pwd`
+builddir=`pwd -P`
 export builddir
 
 test_dir="@abssrcdir@/test"
