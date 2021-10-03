@@ -159,7 +159,7 @@ run_test ${lnav_test} -n \
     -c ':write-raw-to -' \
     ${test_dir}/logfile_json.json
 
-check_output "log levels not working" < ${test_dir}logfile_json.json
+check_output "log levels not working" < ${test_dir}/logfile_json.json
 
 run_test ${lnav_test} -n \
     -I ${test_dir} \
