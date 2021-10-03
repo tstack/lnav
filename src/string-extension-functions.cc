@@ -19,7 +19,9 @@
 
 #include "base/humanize.hh"
 #include "base/string_util.hh"
+#include "formats/logfmt/logfmt.parser.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/json_op.hh"
 #include "column_namer.hh"
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"
@@ -179,6 +181,70 @@ json_string extract(const char *str)
     yajl_gen_config(gen, yajl_gen_beautify, false);
 
     elements_to_json(gen, dp, &dp.dp_pairs);
+
+    return json_string(gen);
+}
+
+json_string logfmt2json(string_fragment line)
+{
+    logfmt::parser p(line);
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    {
+        yajlpp_map root(gen);
+        bool done = false;
+
+        while (!done) {
+            auto pair = p.step();
+
+            done = pair.match(
+                [](const logfmt::parser::end_of_input& eoi) {
+                    return true;
+                },
+                [&root, &gen](const logfmt::parser::kvpair& kvp) {
+                    root.gen(kvp.first);
+
+                    kvp.second.match(
+                        [&root](const logfmt::parser::bool_value& bv) {
+                            root.gen(bv.bv_value);
+                        },
+                        [&root](const logfmt::parser::int_value& iv) {
+                            root.gen(iv.iv_value);
+                        },
+                        [&root](const logfmt::parser::float_value& fv) {
+                            root.gen(fv.fv_value);
+                        },
+                        [&root, &gen](const logfmt::parser::quoted_value& qv) {
+                            auto_mem<yajl_handle_t> parse_handle(yajl_free);
+                            json_ptr jp("");
+                            json_op jo(jp);
+
+                            jo.jo_ptr_callbacks = json_op::gen_callbacks;
+                            jo.jo_ptr_data = gen;
+                            parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+
+                            auto json_in = (const unsigned char *) qv.qv_value.data();
+                            auto json_len = qv.qv_value.length();
+
+                            if (yajl_parse(parse_handle.in(), json_in, json_len) != yajl_status_ok ||
+                                yajl_complete_parse(parse_handle.in()) != yajl_status_ok) {
+                                root.gen(qv.qv_value);
+                            }
+                        },
+                        [&root](const logfmt::parser::unquoted_value& uv) {
+                            root.gen(uv.uv_value);
+                        }
+                    );
+
+                    return false;
+                },
+                [](const logfmt::parser::error& e) -> bool {
+                    throw sqlite_func_error("Invalid logfmt: {}", e.e_msg);
+                }
+            );
+        }
+    }
 
     return json_string(gen);
 }
@@ -410,6 +476,18 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_example({
                     "To extract columnar data from a string",
                     "SELECT extract('1.0 abc 2.0')"
+                })
+        ),
+
+        sqlite_func_adapter<decltype(&logfmt2json), logfmt2json>::builder(
+            help_text("logfmt2json",
+                      "Convert a logfmt-encoded string into JSON")
+                .sql_function()
+                .with_parameter({"str", "The logfmt message to parse"})
+                .with_tags({"string"})
+                .with_example({
+                    "To extract key/value pairs from a log message",
+                    "SELECT logfmt2json('foo=1 bar=2 name=\"Rolo Tomassi\"')"
                 })
         ),
 

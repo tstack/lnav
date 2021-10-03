@@ -2231,6 +2231,16 @@ int main(int argc, char *argv[])
     lnav_log_file = make_optional_from_nullable(fopen(lnav_data.ld_debug_log_name, "a"));
     log_info("lnav started");
 
+    {
+        static auto builtin_formats =
+            injector::get<std::vector<std::shared_ptr<log_format>>>();
+        auto& root_formats = log_format::get_root_formats();
+
+        log_format::get_root_formats().insert(
+            root_formats.begin(), builtin_formats.begin(), builtin_formats.end());
+        builtin_formats.clear();
+    }
+
     load_config(lnav_data.ld_config_paths, config_errors);
     if (!config_errors.empty()) {
         print_errors(config_errors);

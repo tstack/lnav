@@ -177,6 +177,4 @@ void sql_progress_finished();
 
 void add_global_vars(exec_context &ec);
 
-extern bookmark_type_t BM_QUERY;
-
 #endif //LNAV_COMMAND_EXECUTOR_H

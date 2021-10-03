@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/aminclude_static.am
 
-SUBDIRS = tools fmtlib pcrepp base tailer pugixml yajl yajlpp .
+SUBDIRS = tools fmtlib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
 
 bin_PROGRAMS = lnav
 
@@ -128,6 +128,7 @@ AM_CPPFLAGS = \
 LDADD = \
 	libdiag.a \
 	base/libbase.a \
+	formats/logfmt/liblogfmt.a \
 	fmtlib/libcppfmt.a \
 	pcrepp/libpcrepp.a \
 	pugixml/libpugixml.a \

@@ -9,9 +9,18 @@ lnav v0.10.1:
        the "tuning" section of the configuration.
      * Added an "lnav_version()" SQL function that returns the current
        version string.
+     * Added basic support for the logfmt file format.  Currently, only files
+       whose lines are entirely logfmt-encoded are supported.  The lines
+       must also contain either a field named "time" or "ts" that contains
+       the timestamp.
+     * Added the "logfmt2json()" SQL function to convert a string containing
+       a logfmt-encoded message into a JSON object that can be operated on
+       more easily.
      Interface changes:
      * The xclip implementation for accessing the system clipboard now writes
        to the "clipboard" selection instead of the "primary" selection.
+     * The 'query' bookmark type and y/Y hotkeys have been removed due to
+       performance issues and the functionality is probably rarely used.
      Bug Fixes:
      * The text "send-input" would show up on some terminals instead of
        ignoring the escape sequence.  This control sequence was only

@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "base/injector.hh"
 #include "textview_curses.hh"
 #include "data_scanner.hh"
 #include "data_parser.hh"
@@ -54,6 +55,16 @@ int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
     bool prompt = false, is_log = false, pretty_print = false;
+
+    {
+        static auto builtin_formats =
+            injector::get<std::vector<std::shared_ptr<log_format>>>();
+        auto& root_formats = log_format::get_root_formats();
+
+        log_format::get_root_formats().insert(
+            root_formats.begin(), builtin_formats.begin(), builtin_formats.end());
+        builtin_formats.clear();
+    }
 
     {
         std::vector<ghc::filesystem::path> paths;

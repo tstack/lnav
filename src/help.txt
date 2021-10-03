@@ -234,9 +234,6 @@ Spatial Navigation
                     also jump to the start of any log partitions that have
                     been created with the 'partition-name' command.
 
-  y/Y               Move forward/backward through the log view based on the
-                    "log_line" column in the SQL result view.
-
   s/S               Move to the next/previous "slow down" in the log message
                     rate.  A slow down is detected by measuring how quickly
                     the message rate has changed over the previous several

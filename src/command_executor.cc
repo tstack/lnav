@@ -51,8 +51,6 @@ using namespace std;
 
 exec_context INIT_EXEC_CONTEXT;
 
-bookmark_type_t BM_QUERY("query");
-
 static const string MSG_FORMAT_STMT = R"(
 SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
     FROM all_logs
@@ -345,8 +343,6 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
             retval = ec.ec_accumulator.get_string();
         }
         else if (!dls.dls_rows.empty()) {
-            vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
-
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 if (ec.ec_local_vars.size() == 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
@@ -354,13 +350,6 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
 
                 retval = "";
                 alt_msg = "";
-            }
-            else if (dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
-                retval = "";
-                alt_msg = HELP_MSG_2(
-                  y, Y,
-                  "to move forward/backward through query results "
-                  "in the log view");
             }
             else if (dls.dls_rows.size() == 1) {
                 auto &row = dls.dls_rows[0];
@@ -727,7 +716,6 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
-        lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
 
         return 0;
     }
@@ -772,16 +760,6 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
                     hm.hm_column_type = SQLITE_TEXT;
                     hm.hm_sub_type = sqlite3_value_subtype(raw_value);
                     break;
-            }
-        }
-        if (value != nullptr &&
-            (dls.dls_headers[lpc].hm_name == "log_line" ||
-             strstr(dls.dls_headers[lpc].hm_name.c_str(), "log_line"))) {
-            int line_number = -1;
-
-            if (sscanf(value, "%d", &line_number) == 1) {
-                lnav_data.ld_views[LNV_LOG].toggle_user_mark(
-                    &BM_QUERY, vis_line_t(line_number));
             }
         }
     }

@@ -69,6 +69,7 @@ test_base_SOURCES = \
     humanize.file_size.tests.cc \
     humanize.network.tests.cc \
     humanize.time.tests.cc \
+    intern_string.tests.cc \
     lnav.gzip.tests.cc \
     string_util.tests.cc \
     test_base.cc

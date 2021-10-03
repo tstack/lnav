@@ -141,6 +141,17 @@ struct from_sqlite<const char *> {
 };
 
 template<>
+struct from_sqlite<string_fragment> {
+    inline string_fragment operator()(int argc, sqlite3_value **val, int argi) {
+        return string_fragment {
+            sqlite3_value_text(val[argi]),
+            0,
+            sqlite3_value_bytes(val[argi]),
+        };
+    }
+};
+
+template<>
 struct from_sqlite<std::string> {
     inline std::string operator()(int argc, sqlite3_value **val, int argi) {
         return std::string((const char *) sqlite3_value_text(val[argi]));

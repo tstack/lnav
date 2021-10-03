@@ -233,6 +233,12 @@ Row 0:
   Column     result: {"col_0":1}
 EOF
 
+run_test ./drive_sql "select logfmt2json('foo=1 bar=2 baz=2e1 msg=hello') as result"
+
+check_output "logfmt2json is not working?" <<EOF
+Row 0:
+  Column     result: {"foo":1,"bar":2,"baz":20.0,"msg":"hello"}
+EOF
 
 run_test ./drive_sql "SELECT substr('#foo', range_start) AS value FROM regexp_capture('#foo', '(\w+)') WHERE capture_index = 1"
 

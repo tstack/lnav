@@ -498,6 +498,26 @@ info 0x0
 error 0x0
 EOF
 
+run_test ./drive_logfile -t -f logfmt_log ${srcdir}/logfile_logfmt.0
+
+check_output "logfmt_log time interpreted incorrectly?" <<EOF
+Sep 15 21:17:10 2021 -- 220
+Sep 15 21:17:11 2021 -- 674
+Sep 15 21:17:11 2021 -- 678
+Sep 15 21:17:11 2021 -- 679
+Sep 15 21:18:20 2021 -- 335
+EOF
+
+run_test ./drive_logfile -v -f logfmt_log ${srcdir}/logfile_logfmt.0
+
+check_output "logfmt_log level interpreted incorrectly?" <<EOF
+error 0x0
+warning 0x0
+info 0x0
+info 0x0
+error 0x0
+EOF
+
 run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.log <<EOF
 Hi
 EOF

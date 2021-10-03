@@ -33,6 +33,7 @@
 #include "base/string_util.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
+#include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "vtab_module.hh"
 
@@ -624,6 +625,27 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                 case value_kind_t::VALUE_FLOAT:
                                     root.gen(lv_struct.lv_value.d);
                                     break;
+                                case value_kind_t::VALUE_JSON: {
+                                    auto_mem<yajl_handle_t> parse_handle(yajl_free);
+                                    json_ptr jp("");
+                                    json_op jo(jp);
+
+                                    jo.jo_ptr_callbacks = json_op::gen_callbacks;
+                                    jo.jo_ptr_data = gen;
+                                    parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+
+                                    auto json_in = (const unsigned char *) lv_struct.text_value();
+                                    auto json_len = lv_struct.text_length();
+
+                                    if (yajl_parse(parse_handle.in(), json_in, json_len) != yajl_status_ok ||
+                                        yajl_complete_parse(parse_handle.in()) != yajl_status_ok) {
+                                        log_error("failed to parse json value: %.*s",
+                                                  lv_struct.text_length(),
+                                                  lv_struct.text_value());
+                                        root.gen(lv_struct.to_string());
+                                    }
+                                    break;
+                                }
                                 default:
                                     root.gen(lv_struct.to_string());
                                     break;

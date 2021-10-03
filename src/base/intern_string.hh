@@ -44,7 +44,7 @@
 struct string_fragment {
     using iterator = const char *;
 
-    explicit string_fragment(const char *str, int begin = 0, int end = -1)
+    explicit string_fragment(const char *str = "", int begin = 0, int end = -1)
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
     };
 
@@ -80,7 +80,7 @@ struct string_fragment {
     }
 
     bool empty() const {
-        return length() == 0;
+        return !this->is_valid() || length() == 0;
     };
 
     char operator[](int index) const {
@@ -153,6 +153,111 @@ struct string_fragment {
 
         return nonstd::nullopt;
     }
+
+    template<typename P>
+    nonstd::optional<string_fragment> consume(P predicate) const {
+        int consumed = 0;
+        while (consumed < this->length()) {
+            if (!predicate(this->data()[consumed])) {
+                break;
+            }
+
+            consumed += 1;
+        }
+
+        if (consumed == 0) {
+            return nonstd::nullopt;
+        }
+
+        return string_fragment{
+            this->sf_string,
+            this->sf_begin + consumed,
+            this->sf_end,
+        };
+    }
+
+    nonstd::optional<string_fragment> consume_n(int amount) const {
+        if (amount > this->length()) {
+            return nonstd::nullopt;
+        }
+
+        return string_fragment{
+            this->sf_string,
+            this->sf_begin + amount,
+            this->sf_end,
+        };
+    }
+
+    template<typename P>
+    string_fragment skip(P predicate) const {
+        int offset = 0;
+        while (offset < this->length() && predicate(this->data()[offset])) {
+            offset += 1;
+        }
+
+        return string_fragment{
+            this->sf_string,
+            this->sf_begin + offset,
+            this->sf_end,
+        };
+    }
+
+    using split_result = nonstd::optional<std::pair<string_fragment, string_fragment>>;
+
+    template<typename P>
+    split_result split_while(P& predicate) const {
+        int consumed = 0;
+        while (consumed < this->length()) {
+            if (!predicate(this->data()[consumed])) {
+                break;
+            }
+
+            consumed += 1;
+        }
+
+        if (consumed == 0) {
+            return nonstd::nullopt;
+        }
+
+        return std::make_pair(
+            string_fragment{
+                this->sf_string,
+                this->sf_begin,
+                this->sf_begin + consumed,
+            },
+            string_fragment{
+                this->sf_string,
+                this->sf_begin + consumed,
+                this->sf_end,
+            }
+        );
+    }
+
+    struct tag1 {
+        const char t_value;
+
+        bool operator()(char ch) const {
+            return this->t_value == ch;
+        }
+    };
+
+    struct quoted_string_body {
+        bool qs_in_escape{false};
+
+        bool operator()(char ch) {
+            if (this->qs_in_escape) {
+                this->qs_in_escape = false;
+                return true;
+            } else if (ch == '\\') {
+                this->qs_in_escape = true;
+                return true;
+            } else if (ch == '"') {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    };
 
     const char *to_string(char *buf) const {
         memcpy(buf, this->data(), this->length());

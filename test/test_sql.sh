@@ -47,6 +47,55 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ";SELECT fields FROM logfmt_log" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_logfmt.0
+
+check_output "logfmt fields are not handled correctly?" <<EOF
+[
+    {
+        "fields": {
+            "namespace": "inc-1-enh-domain-c14-ns-2",
+            "pod": "hello-inc-1-enh-domain-c14-ns-2-3-d8f465685-k75gp",
+            "reason": "",
+            "status": "Pending"
+        }
+    },
+    {
+        "fields": {
+            "error": "pod inc-1-domain-c14-ns-6/fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b is not found: PodNotFound",
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-enh-domain-c14-ns-2",
+            "pod": "hello-inc-1-enh-domain-c14-ns-2-7-5ddd6bcd69-6rqct",
+            "reason": "",
+            "status": "Pending"
+        }
+    }
+]
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";SELECT sc_substatus FROM w3c_log" \
     -c ":write-json-to -" \
     ${test_dir}/logfile_w3c.3
@@ -713,18 +762,6 @@ run_test ${lnav_test} -n \
 check_output "loglevel collator is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
 1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
-EOF
-
-run_test ${lnav_test} -n \
-    -c ":goto 0" \
-    -c ";select log_line from access_log where log_level >= 'warning'" \
-    -c ":switch-to-view log" \
-    -c ":next-mark query" \
-    ${test_dir}/logfile_access_log.0
-
-check_output "query bookmark not working?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 

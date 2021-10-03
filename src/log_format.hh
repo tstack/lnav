@@ -306,18 +306,6 @@ public:
      */
     static std::vector<std::shared_ptr<log_format>> &get_root_formats();
 
-    /**
-     * Template used to register log formats during initialization.
-     */
-    template<class T>
-    class register_root_format {
-public:
-        register_root_format()
-        {
-            log_format::lf_root_formats.push_back(std::make_shared<T>());
-        };
-    };
-
     static std::shared_ptr<log_format> find_root_format(const char *name) {
         auto& fmts = get_root_formats();
         for (auto& lf : fmts) {

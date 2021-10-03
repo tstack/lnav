@@ -41,6 +41,9 @@
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 #include "base/opt_util.hh"
+#include "base/injector.bind.hh"
+#include "yajlpp/yajlpp.hh"
+#include "formats/logfmt/logfmt.parser.hh"
 
 using namespace std;
 
@@ -688,7 +691,7 @@ public:
 
         }
 
-        void get_columns(vector<vtab_column> &cols) const {
+        void get_columns(vector<vtab_column> &cols) const override {
             for (const auto &fd : this->blt_format.blf_field_defs) {
                 std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_meta.lvm_kind);
 
@@ -696,7 +699,7 @@ public:
             }
         };
 
-        void get_foreign_keys(std::vector<std::string> &keys_inout) const {
+        void get_foreign_keys(std::vector<std::string> &keys_inout) const override {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto &fd : this->blt_format.blf_field_defs) {
@@ -1404,6 +1407,247 @@ const std::vector<w3c_log_format::field_to_struct_t> w3c_log_format::KNOWN_STRUC
     {"sr(", "sr_headers"},
 };
 
-log_format::register_root_format<bro_log_format> bro_log_instance;
-log_format::register_root_format<w3c_log_format> w3c_log_instance;
-log_format::register_root_format<generic_log_format> generic_log_instance;
+struct logfmt_pair_handler {
+    explicit logfmt_pair_handler(date_time_scanner &dts) : lph_dt_scanner(dts)
+    {
+    }
+
+    bool process_value(const string_fragment& value_frag) {
+        if (this->lph_key_frag == "time" ||
+            this->lph_key_frag == "ts") {
+            if (!this->lph_dt_scanner.scan(value_frag.data(),
+                                           value_frag.length(),
+                                           nullptr,
+                                           &this->lph_time_tm,
+                                           this->lph_tv)) {
+                return false;
+            }
+            this->lph_found_time = true;
+        } else if (this->lph_key_frag == "level") {
+            this->lph_level = string2level(value_frag.data(), value_frag.length());
+        }
+        return true;
+    }
+
+    date_time_scanner &lph_dt_scanner;
+    bool lph_found_time{false};
+    struct exttm lph_time_tm{};
+    struct timeval lph_tv{0, 0};
+    log_level_t lph_level{log_level_t::LEVEL_INFO};
+    string_fragment lph_key_frag{""};
+};
+
+class logfmt_format : public log_format {
+public:
+    const intern_string_t get_name() const override
+    {
+        const static auto NAME = intern_string::lookup("logfmt_log");
+
+        return NAME;
+    }
+
+    class logfmt_log_table : public log_format_vtab_impl {
+    public:
+        logfmt_log_table(const log_format &format) : log_format_vtab_impl(format) {}
+
+        void get_columns(vector<vtab_column> &cols) const override {
+            static const auto FIELDS = std::string("fields");
+
+            cols.emplace_back(FIELDS);
+        };
+    };
+
+    shared_ptr<log_vtab_impl> get_vtab_impl() const override
+    {
+        static auto retval = std::make_shared<logfmt_log_table>(*this);
+
+        return retval;
+    }
+
+    scan_result_t scan(logfile &lf, vector<logline> &dst, const line_info &li,
+                       shared_buffer_ref &sbr) override
+    {
+        auto p = logfmt::parser(string_fragment{sbr.get_data(), 0, (int) sbr.length()});
+        scan_result_t retval = scan_result_t::SCAN_NO_MATCH;
+        bool done = false;
+        logfmt_pair_handler lph(this->lf_date_time);
+
+        while (!done) {
+            auto parse_result = p.step();
+
+            done = parse_result.match(
+                [](const logfmt::parser::end_of_input &) {
+                    return true;
+                },
+                [&lph](const logfmt::parser::kvpair &kvp) {
+                    lph.lph_key_frag = kvp.first;
+
+                    return kvp.second.match(
+                        [](const logfmt::parser::bool_value& bv) {
+                            return false;
+                        },
+                        [&lph](const logfmt::parser::float_value& fv) {
+                            return lph.process_value(fv.fv_str_value);
+                        },
+                        [&lph](const logfmt::parser::int_value& iv) {
+                            return lph.process_value(iv.iv_str_value);
+                        },
+                        [&lph](const logfmt::parser::quoted_value &qv) {
+                            auto_mem<yajl_handle_t> handle(yajl_free);
+                            yajl_callbacks cb;
+
+                            handle = yajl_alloc(&cb, nullptr, &lph);
+                            memset(&cb, 0, sizeof(cb));
+                            cb.yajl_string = +[](void *ctx, const unsigned char* str, size_t len) -> int {
+                                auto& lph = *((logfmt_pair_handler *)ctx);
+                                string_fragment value_frag{str, 0, (int) len};
+
+                                return lph.process_value(value_frag);
+                            };
+
+                            if (yajl_parse(handle,
+                                           (const unsigned char *) qv.qv_value.data(),
+                                           qv.qv_value.length()) != yajl_status_ok ||
+                                yajl_complete_parse(handle) != yajl_status_ok) {
+                                log_debug("json parsing failed");
+                                string_fragment unq_frag{
+                                    qv.qv_value.sf_string,
+                                    qv.qv_value.sf_begin + 1,
+                                    qv.qv_value.sf_end - 1,
+                                };
+
+                                return lph.process_value(unq_frag);
+                            }
+
+                            return false;
+                        },
+                        [&lph](const logfmt::parser::unquoted_value &uv) {
+                            return lph.process_value(uv.uv_value);
+                        }
+                    );
+                },
+                [](const logfmt::parser::error &err) {
+                    log_error("logfmt parse error: %s", err.e_msg.c_str());
+                    return true;
+                }
+            );
+        }
+
+        if (lph.lph_found_time) {
+            dst.emplace_back(li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
+            retval = scan_result_t::SCAN_MATCH;
+        }
+
+        return retval;
+    }
+
+    void
+    annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
+             vector<logline_value> &values, bool annotate_module) const override
+    {
+        static const auto FIELDS_NAME = intern_string::lookup("fields");
+
+        auto p = logfmt::parser(
+            string_fragment{sbr.get_data(), 0, (int) sbr.length()});
+        bool done = false;
+
+        while (!done) {
+            auto parse_result = p.step();
+
+            done = parse_result.match(
+                [](const logfmt::parser::end_of_input &) {
+                    return true;
+                },
+                [this, &sa, &values, &sbr](const logfmt::parser::kvpair &kvp) {
+                    auto value_frag = kvp.second.match(
+                        [this, &kvp, &values](const logfmt::parser::bool_value& bv) {
+                            auto lvm = logline_value_meta{
+                                intern_string::lookup(kvp.first),
+                                value_kind_t::VALUE_INTEGER,
+                                0,
+                                (log_format *) this
+                            }
+                                .with_struct_name(FIELDS_NAME);
+                            values.emplace_back(lvm, bv.bv_value);
+
+                            return bv.bv_str_value;
+                        },
+                        [this, &kvp, &values](const logfmt::parser::int_value& iv) {
+                            auto lvm = logline_value_meta{
+                                intern_string::lookup(kvp.first),
+                                value_kind_t::VALUE_INTEGER,
+                                0,
+                                (log_format *) this
+                            }
+                                .with_struct_name(FIELDS_NAME);
+                            values.emplace_back(lvm, iv.iv_value);
+
+                            return iv.iv_str_value;
+                        },
+                        [this, &kvp, &values](const logfmt::parser::float_value& fv) {
+                            auto lvm = logline_value_meta{
+                                intern_string::lookup(kvp.first),
+                                value_kind_t::VALUE_INTEGER,
+                                0,
+                                (log_format *) this
+                            }
+                                .with_struct_name(FIELDS_NAME);
+                            values.emplace_back(lvm, fv.fv_value);
+
+                            return fv.fv_str_value;
+                        },
+                        [](const logfmt::parser::quoted_value &qv) {
+                            return qv.qv_value;
+                        },
+                        [](const logfmt::parser::unquoted_value &uv) {
+                            return uv.uv_value;
+                        }
+                    );
+                    auto value_lr = line_range{
+                        value_frag.sf_begin, value_frag.sf_end
+                    };
+
+                    if (kvp.first == "time" || kvp.first == "ts") {
+                        sa.emplace_back(value_lr, &logline::L_TIMESTAMP);
+                    } else if (kvp.first == "level") {
+                    } else if (kvp.first == "msg") {
+                        sa.emplace_back(value_lr, &SA_BODY);
+                    } else if (!kvp.second.is<logfmt::parser::int_value>() &&
+                               !kvp.second.is<logfmt::parser::bool_value>()) {
+                        auto lvm = logline_value_meta{
+                            intern_string::lookup(kvp.first),
+                            value_frag.startswith("\"") ?
+                            value_kind_t::VALUE_JSON :
+                            value_kind_t::VALUE_TEXT,
+                            0,
+                            (log_format *) this
+                        }
+                            .with_struct_name(FIELDS_NAME);
+                        shared_buffer_ref value_sbr;
+
+                        value_sbr.subset(sbr, value_frag.sf_begin, value_frag.length());
+                        values.emplace_back(lvm, value_sbr);
+                    }
+
+                    return false;
+                },
+                [line_number, &sbr](const logfmt::parser::error &err) {
+                    log_error("bad line %.*s", sbr.length(), sbr.get_data());
+                    log_error("%lld:logfmt parse error: %s", line_number, err.e_msg.c_str());
+                    return true;
+                }
+            );
+        }
+    }
+
+    shared_ptr<log_format> specialized(int fmt_lock) override
+    {
+        return std::make_shared<logfmt_format>(*this);
+    };
+};
+
+static auto format_binder = injector::bind_multiple<log_format>()
+    .add<logfmt_format>()
+    .add<bro_log_format>()
+    .add<w3c_log_format>()
+    .add<generic_log_format>();

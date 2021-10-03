@@ -48,9 +48,6 @@ public:
         next = bm[&textview_curses::BM_SEARCH].next(vis_line_t(start));
         search_hit = (next != -1 && next <= end);
 
-        next = bm[&BM_QUERY].next(vis_line_t(start));
-        search_hit = search_hit || (next != -1 && next <= end);
-
         next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
         if (next == -1) {
             next = bm[&textview_curses::BM_META].next(vis_line_t(start));

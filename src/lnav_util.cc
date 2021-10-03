@@ -65,37 +65,6 @@ bool change_to_parent_dir()
     return retval;
 }
 
-template<typename T>
-size_t strtonum(T &num_out, const char *string, size_t len)
-{
-    size_t retval = 0;
-    T sign = 1;
-
-    num_out = 0;
-    
-    for (; retval < len && isspace(string[retval]); retval++);
-    for (; retval < len && string[retval] == '-'; retval++) {
-        sign *= -1;
-    }
-    for (; retval < len && string[retval] == '+'; retval++);
-    for (; retval < len && isdigit(string[retval]); retval++) {
-        num_out *= 10;
-        num_out += string[retval] - '0';
-    }
-    num_out *= sign;
-
-    return retval;
-}
-
-template
-size_t strtonum<long long>(long long &num_out, const char *string, size_t len);
-
-template
-size_t strtonum<long>(long &num_out, const char *string, size_t len);
-
-template
-size_t strtonum<int>(int &num_out, const char *string, size_t len);
-
 string build_path(const vector<ghc::filesystem::path> &paths)
 {
     string retval;

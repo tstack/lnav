@@ -101,6 +101,7 @@ LDADD = \
     $(TEXT2C_OBJS) \
     $(DUMMY_OBJS) \
     $(top_builddir)/src/libdiag.a \
+    $(top_builddir)/src/formats/logfmt/liblogfmt.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
     $(top_builddir)/src/yajl/libyajl.a \
@@ -277,6 +278,7 @@ dist_noinst_DATA = \
 	logfile_json2.json \
 	logfile_json3.json \
 	logfile_leveltest.0 \
+	logfile_logfmt.0 \
 	logfile_multiline.0 \
 	logfile_nested_json.json \
 	logfile_openam.0 \

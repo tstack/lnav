@@ -89,10 +89,6 @@ Spatial Navigation
      - :kbd:`Shift` + :kbd:`o`
      -
      - Forward/backward through log messages with a matching "opid" field
-   * - :kbd:`y`
-     - :kbd:`Shift` + :kbd:`y`
-     -
-     - Next/previous SQL result
    * - :kbd:`s`
      - :kbd:`Shift` + :kbd:`s`
      -

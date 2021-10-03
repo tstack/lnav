@@ -34,6 +34,14 @@ supported:
   self-describing, so **lnav** will read the header to determine the shape of
   the file.
 
+There is also basic support for the `logfmt <https://brandur.org/logfmt>`_
+convention for formatting log messages.  Files that use this format must
+have the entire line be key/value pairs and the timestamp contained in a
+field named :code:`time` or :code:`ts`.  If the file you're using does not
+quite follow this formatting, but wraps logfmt data with another recognized
+format, you can use the :ref:`logfmt2json` SQL function to convert the data
+into JSON for further analysis.
+
 
 Defining a New Format
 ---------------------

@@ -58,7 +58,7 @@ target_link_libraries(test_reltime diag PkgConfig::libpcre)
 add_test(NAME test_reltime COMMAND test_reltime)
 
 add_executable(test_top_status test_top_status.cc)
-target_link_libraries(test_top_status diag testdummy PkgConfig::libpcre)
+target_link_libraries(test_top_status diag testdummy PkgConfig::libpcre logfmt)
 add_test(NAME test_top_status COMMAND test_top_status)
 
 add_executable(drive_view_colors drive_view_colors.cc)
@@ -74,7 +74,7 @@ add_executable(drive_sql_anno drive_sql_anno.cc)
 target_link_libraries(drive_sql_anno diag testdummy PkgConfig::libpcre)
 
 add_executable(drive_data_scanner drive_data_scanner.cc)
-target_link_libraries(drive_data_scanner diag testdummy PkgConfig::libpcre)
+target_link_libraries(drive_data_scanner diag testdummy PkgConfig::libpcre logfmt)
 
 add_executable(scripty scripty.cc)
 target_link_libraries(scripty diag PkgConfig::ncursesw)

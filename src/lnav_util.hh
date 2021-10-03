@@ -127,9 +127,6 @@ std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 
 Result<std::string, std::string> read_file(const ghc::filesystem::path &path);
 
-template<typename T>
-size_t strtonum(T &num_out, const char *data, size_t len);
-
 inline short pollfd_revents(const std::vector<struct pollfd> &pollfds, int fd) {
     auto iter = std::find_if(pollfds.begin(), pollfds.end(), [fd](const auto& entry) {
         return entry.fd == fd;

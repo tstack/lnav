@@ -176,4 +176,7 @@ std::string repeat(const std::string& input, size_t num);
 
 std::string center_str(const std::string& subject, size_t width);
 
+template<typename T>
+size_t strtonum(T &num_out, const char *data, size_t len);
+
 #endif

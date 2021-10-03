@@ -17,6 +17,7 @@ add_subdirectory(base)
 add_subdirectory(pcrepp)
 add_subdirectory(remote)
 add_subdirectory(tailer)
+add_subdirectory(formats/logfmt)
 
 add_executable(bin2c bin2c.hh tools/bin2c.c)
 target_link_libraries(bin2c ZLIB::zlib)
@@ -460,6 +461,7 @@ target_link_libraries(
   tailerservice
   tailerpp
   tailercommon
+  logfmt
   ${lnav_LIBS})
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 

@@ -103,12 +103,6 @@
                     "command": ":next-mark warning",
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
                 },
-                "x59": {
-                    "command": ":prev-mark query"
-                },
-                "x79": {
-                    "command": ":next-mark query"
-                },
                 "x63": {
                     "command": ":write-to /dev/clipboard",
                     "alt-msg": "${keymap_def_clear}"

@@ -39,6 +39,8 @@
 
 #include <algorithm>
 
+#include "base/injector.hh"
+#include "base/opt_util.hh"
 #include "logfile.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
@@ -65,12 +67,22 @@ int main(int argc, char *argv[])
     string expected_format;
 
     {
+        static auto builtin_formats =
+            injector::get<std::vector<std::shared_ptr<log_format>>>();
+        auto& root_formats = log_format::get_root_formats();
+
+        log_format::get_root_formats().insert(
+            root_formats.begin(), builtin_formats.begin(), builtin_formats.end());
+        builtin_formats.clear();
+    }
+
+    {
         std::vector<std::string> errors;
         vector<ghc::filesystem::path> paths;
 
-        if (getenv("test_dir") != NULL) {
-            paths.push_back(getenv("test_dir"));
-        }
+        getenv_opt("test_dir") | [&paths](auto value) {
+            paths.template emplace_back(value);
+        };
         load_formats(paths, errors);
     }
 

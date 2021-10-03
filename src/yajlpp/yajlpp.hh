@@ -424,6 +424,11 @@ public:
         return yajl_gen_string(this->yg_handle, (const unsigned char *)str.get(), str.size());
     };
 
+    yajl_gen_status operator()(const string_fragment &str)
+    {
+        return yajl_gen_string(this->yg_handle, (const unsigned char *)str.data(), str.length());
+    };
+
     yajl_gen_status operator()(bool value)
     {
         return yajl_gen_bool(this->yg_handle, value);
