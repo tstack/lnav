@@ -31,8 +31,8 @@ logfmt_parser_test_SOURCES = \
     logfmt.parser.test.cc
 
 logfmt_parser_test_LDADD = \
-    $(top_builddir)/src/base/libbase.a \
-    liblogfmt.a
+    liblogfmt.a \
+    $(top_builddir)/src/base/libbase.a
 
 TESTS = \
     logfmt.parser.test
