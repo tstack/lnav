@@ -1554,6 +1554,7 @@ static void looper()
 
             vector<struct pollfd> pollfds;
             size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
+            size_t changes = 0;
             int rc;
 
             gettimeofday(&current_time, nullptr);
@@ -1576,7 +1577,7 @@ static void looper()
                     initial_rescan_completed = true;
 
                     log_debug("initial rescan rebuild");
-                    rebuild_indexes(loop_deadline);
+                    changes += rebuild_indexes(loop_deadline);
                     load_session();
                     if (session_data.sd_save_time) {
                         std::string ago;
@@ -1629,8 +1630,8 @@ static void looper()
             auto ui_now = ui_clock::now();
             if (initial_rescan_completed) {
                 if (ui_now >= next_rebuild_time) {
-                    rebuild_indexes(loop_deadline);
-                    if (ui_clock::now() < loop_deadline) {
+                    changes += rebuild_indexes(loop_deadline);
+                    if (!changes && ui_clock::now() < loop_deadline) {
                         next_rebuild_time = ui_clock::now() + 333ms;
                     }
                 }
@@ -1711,7 +1712,7 @@ static void looper()
 
             ui_now = ui_clock::now();
             auto poll_to =
-                (ui_now < loop_deadline && session_stage >= 1) ?
+                (!changes && ui_now < loop_deadline && session_stage >= 1) ?
                 std::chrono::duration_cast<std::chrono::milliseconds>(loop_deadline - ui_now) :
                 0ms;
 
@@ -1720,7 +1721,7 @@ static void looper()
                 poll_to > 15ms) {
                 poll_to = 15ms;
             }
-            // log_debug("poll %d", poll_to.count());
+            // log_debug("poll %d %d", changes, poll_to.count());
             rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
             gettimeofday(&current_time, nullptr);
@@ -1828,7 +1829,7 @@ static void looper()
                     timer.start_fade(index_counter, 3);
                 }
                 log_debug("initial build rebuild");
-                rebuild_indexes(loop_deadline);
+                changes += rebuild_indexes(loop_deadline);
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
                     lnav_data.ld_text_source.text_line_count() > 0) {
