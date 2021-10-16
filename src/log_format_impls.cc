@@ -1527,7 +1527,7 @@ public:
                     );
                 },
                 [](const logfmt::parser::error &err) {
-                    log_error("logfmt parse error: %s", err.e_msg.c_str());
+                    // log_error("logfmt parse error: %s", err.e_msg.c_str());
                     return true;
                 }
             );
