@@ -212,6 +212,10 @@ command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/archive-manager
 
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/clipboard
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/definitions/clip-commands
+
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/file-vtab
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/logfile

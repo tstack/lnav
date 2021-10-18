@@ -923,6 +923,10 @@ void yajlpp_gen_context::gen_schema(const json_path_container *handlers)
 
                 def.gen("title");
                 def.gen(container.first);
+                if (!container.second->jpc_description.empty()) {
+                    def.gen("description");
+                    def.gen(container.second->jpc_description);
+                }
                 def.gen("type");
                 def.gen("object");
                 def.gen("$$target");

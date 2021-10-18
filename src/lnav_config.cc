@@ -991,6 +991,7 @@ static struct json_path_container sysclip_impl_cmd_handlers = json_path_containe
         .with_example("pbpaste")
         .for_field(&sysclip::clip_commands::cc_read),
 }
+    .with_description("Container for the commands used to read from and write to the system clipboard")
     .with_definition_id("clip-commands");
 
 static struct json_path_container sysclip_impl_handlers = {

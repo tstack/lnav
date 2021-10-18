@@ -811,12 +811,18 @@ struct json_path_container {
         return *this;
     }
 
+    json_path_container &with_description(std::string desc) {
+        this->jpc_description = std::move(desc);
+        return *this;
+    }
+
     void gen_schema(yajlpp_gen_context &ygc) const;
 
     void gen_properties(yajlpp_gen_context &ygc) const;
 
     std::string jpc_schema_id;
     std::string jpc_definition_id;
+    std::string jpc_description;
     std::vector<json_path_handler> jpc_children;
 };
 

@@ -556,6 +556,7 @@
     "definitions": {
         "clip-commands": {
             "title": "clip-commands",
+            "description": "Container for the commands used to read from and write to the system clipboard",
             "type": "object",
             "$$target": "#/definitions/clip-commands",
             "properties": {
