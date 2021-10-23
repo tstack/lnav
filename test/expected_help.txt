@@ -175,8 +175,8 @@ view off of the stack and return you to the previous view.  Note
 that you can always use 'q' to pop the top view off of the stack.
 
 
-KEY BINDINGS
-============
+DEFAULT KEY BINDINGS
+====================
 
 Views
 -----
