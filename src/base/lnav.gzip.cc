@@ -44,6 +44,34 @@ bool is_gzipped(const char *buffer, size_t len)
     return len > 2 && buffer[0] == '\037' && buffer[1] == '\213';
 }
 
+Result<auto_buffer, std::string> compress(const void* input, size_t len)
+{
+    auto retval = auto_buffer::alloc(len + 4096);
+
+    z_stream zs;
+    zs.zalloc = Z_NULL;
+    zs.zfree = Z_NULL;
+    zs.opaque = Z_NULL;
+    zs.avail_in = (uInt)len;
+    zs.next_in = (Bytef *)input;
+    zs.avail_out = (uInt)retval.size();
+    zs.next_out = (Bytef *)retval.in();
+
+    auto rc = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
+    if (rc != Z_OK) {
+        return Err(fmt::format("unable to initialize compressor -- {}", zError(rc)));
+    }
+    rc = deflate(&zs, Z_FINISH);
+    if (rc != Z_STREAM_END) {
+        return Err(fmt::format("unable to compress data -- {}", zError(rc)));
+    }
+    rc = deflateEnd(&zs);
+    if (rc != Z_OK) {
+        return Err(fmt::format("unable to finalize compression -- {}", zError(rc)));
+    }
+    return Ok(std::move(retval.shrink_to(zs.total_out)));
+}
+
 Result<auto_buffer, std::string> uncompress(const std::string& src,
                                             const void *buffer,
                                             size_t size)

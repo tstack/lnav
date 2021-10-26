@@ -18,6 +18,7 @@
 #include "pcrepp/pcrepp.hh"
 
 #include "base/humanize.hh"
+#include "base/lnav.gzip.hh"
 #include "base/string_util.hh"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "yajlpp/yajlpp.hh"
@@ -371,6 +372,75 @@ static void sparkline_final(sqlite3_context *context)
     sc->~sparkline_context();
 }
 
+nonstd::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
+sql_gunzip(sqlite3_value *val)
+{
+    switch (sqlite3_value_type(val)) {
+        case SQLITE3_TEXT:
+        case SQLITE_BLOB: {
+            auto buffer = sqlite3_value_blob(val);
+            auto len = sqlite3_value_bytes(val);
+
+            if (!lnav::gzip::is_gzipped((const char *) buffer, len)) {
+                auto retval = auto_buffer::alloc(len);
+
+                memcpy(retval.in(), buffer, len);
+                return blob_auto_buffer{ std::move(retval) };
+            }
+
+            auto res = lnav::gzip::uncompress("", buffer, len);
+
+            if (res.isErr()) {
+                throw sqlite_func_error("unable to uncompress -- {}",
+                                        res.unwrapErr());
+            }
+
+            return blob_auto_buffer{ res.unwrap() };
+        }
+        case SQLITE_INTEGER:
+            return sqlite3_value_int64(val);
+        case SQLITE_FLOAT:
+            return sqlite3_value_double(val);
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<blob_auto_buffer>
+sql_gzip(sqlite3_value *val)
+{
+    switch (sqlite3_value_type(val)) {
+        case SQLITE3_TEXT:
+        case SQLITE_BLOB: {
+            auto buffer = sqlite3_value_blob(val);
+            auto len = sqlite3_value_bytes(val);
+            auto res = lnav::gzip::compress(buffer, len);
+
+            if (res.isErr()) {
+                throw sqlite_func_error("unable to compress -- {}",
+                                        res.unwrapErr());
+            }
+
+            return blob_auto_buffer{ res.unwrap() };
+        }
+        case SQLITE_INTEGER:
+        case SQLITE_FLOAT: {
+            auto buffer = sqlite3_value_text(val);
+            log_debug("buf %s", buffer);
+            auto res = lnav::gzip::compress(buffer, strlen((const char *) buffer));
+
+            if (res.isErr()) {
+                throw sqlite_func_error("unable to compress -- {}",
+                                        res.unwrapErr());
+            }
+
+            return blob_auto_buffer{ res.unwrap() };
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
 int string_extension_functions(struct FuncDef **basic_funcs,
                                struct FuncDefAgg **agg_funcs)
 {
@@ -552,6 +622,22 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                     "To produce a hash for the parameters where one is a number",
                     "SELECT spooky_hash('Hello, World!', 123)"
                 })
+        ),
+
+        sqlite_func_adapter<decltype(&sql_gunzip), sql_gunzip>::builder(
+            help_text("gunzip", "Decompress a gzip file")
+                .sql_function()
+                .with_parameter(help_text("b", "The blob to decompress")
+                                    .one_or_more())
+                .with_tags({"string"})
+        ),
+
+        sqlite_func_adapter<decltype(&sql_gzip), sql_gzip>::builder(
+            help_text("gzip", "Compress a string into a gzip file")
+                .sql_function()
+                .with_parameter(help_text("value", "The value to compress")
+                                    .one_or_more())
+                .with_tags({"string"})
         ),
 
         {nullptr}

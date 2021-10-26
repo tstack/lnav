@@ -1233,11 +1233,11 @@ Parameter
   X   The unicode code point values
 See Also
   charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  trim(), unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To get a string with the code points 0x48 and 0x49:
    ;SELECT char(0x48, 0x49)
@@ -1253,9 +1253,9 @@ Parameters
   haystack   The string to search within
   start      The one-based index within the haystack to start the search
 See Also
-  char(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), gunzip(), 
+  gzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
   rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
   trim(), unicode(), upper(), xpath()
@@ -1404,9 +1404,9 @@ Parameters
   str      The string to test
   suffix   The suffix to check in the string
 See Also
-  char(), charindex(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  char(), charindex(), extract(), group_concat(), group_spooky_hash(), gunzip(), 
+  gzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
   rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
   trim(), unicode(), upper(), xpath()
@@ -1439,9 +1439,9 @@ Synopsis
 Parameter
   str   The string to parse
 See Also
-  char(), charindex(), endswith(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  char(), charindex(), endswith(), group_concat(), group_spooky_hash(), gunzip(), 
+  gzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
   rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
   trim(), unicode(), upper(), xpath()
@@ -1546,9 +1546,9 @@ Parameters
   X     The value to concatenate.
   sep   The separator to place between the values.
 See Also
-  char(), charindex(), endswith(), extract(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  char(), charindex(), endswith(), extract(), group_spooky_hash(), gunzip(), 
+  gzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
   rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
   trim(), unicode(), upper(), xpath()
@@ -1574,7 +1574,7 @@ Synopsis
 Parameter
   str   The string to hash
 See Also
-  char(), charindex(), endswith(), extract(), group_concat(), 
+  char(), charindex(), endswith(), extract(), group_concat(), gunzip(), gzip(), 
   humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
   ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
@@ -1585,6 +1585,30 @@ Example
    ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
    
 
+
+Synopsis
+  gunzip(b, ...) -- Decompress a gzip file
+Parameter
+  b   The blob to decompress
+See Also
+  char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
+  gzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
+
+Synopsis
+  gzip(value, ...) -- Compress a string into a gzip file
+Parameter
+  value   The value to compress
+See Also
+  char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
+  gunzip(), humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 
 Synopsis
   hex(X) -- Returns a string which is the upper-case hexadecimal rendering of 
@@ -1605,11 +1629,11 @@ Parameter
   value   The file size to format
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  instr(), leftstr(), length(), logfmt2json(), lower(), ltrim(), padc(), padl(), 
-  padr(), printf(), proper(), regexp_capture(), regexp_match(), regexp_replace(), 
-  replace(), replicate(), reverse(), rightstr(), rtrim(), sparkline(), 
-  spooky_hash(), startswith(), strfilter(), substr(), trim(), unicode(), upper(), 
-  xpath()
+  gunzip(), gzip(), instr(), leftstr(), length(), logfmt2json(), lower(), ltrim(), 
+  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
+  unicode(), upper(), xpath()
 Example
 #1 To format an amount:
    ;SELECT humanize_file_size(10 * 1024 * 1024)
@@ -1638,11 +1662,11 @@ Parameters
   needle     The string to look for in the haystack
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), leftstr(), length(), logfmt2json(), lower(), ltrim(), 
-  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), leftstr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 Example
 #1 To test get the position of 'b' in the string 'abc':
    ;SELECT instr('abc', 'b')
@@ -1844,11 +1868,11 @@ Parameters
   N     The number of characters from the left side of the string to return.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), length(), logfmt2json(), lower(), ltrim(), 
-  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), length(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the first character of the string 'abc':
    ;SELECT leftstr('abc', 1)
@@ -1866,11 +1890,11 @@ Parameter
   str   The string to determine the length of
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), logfmt2json(), lower(), ltrim(), 
-  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), logfmt2json(), 
+  lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 Example
 #1 To get the length of the string 'abc':
    ;SELECT length('abc')
@@ -1970,11 +1994,11 @@ Parameter
   str   The logfmt message to parse
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), lower(), ltrim(), padc(), 
-  padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), lower(), 
+  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 Example
 #1 To extract key/value pairs from a log message:
    ;SELECT logfmt2json('foo=1 bar=2 name="Rolo Tomassi"')
@@ -1988,11 +2012,11 @@ Parameter
   str   The string to convert.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), ltrim(), 
-  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To lowercase the string 'AbC':
    ;SELECT lower('AbC')
@@ -2008,11 +2032,11 @@ Parameters
   chars   The characters to trim.  Defaults to spaces.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  padc(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To trim the leading whitespace from the string '   abc':
    ;SELECT ltrim('   abc')
@@ -2107,11 +2131,11 @@ Parameters
   len   The minimum desired length of the output string
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padl(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padc('abc', 6) || 'def'
@@ -2130,11 +2154,11 @@ Parameters
   len   The minimum desired length of the output string
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padr(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padl('abc', 6)
@@ -2153,11 +2177,11 @@ Parameters
   len   The minimum desired length of the output string
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), printf(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To pad the string 'abc' to a length of six characters:
    ;SELECT padr('abc', 6) || 'def'
@@ -2210,11 +2234,11 @@ Parameters
   X        The argument to substitute at a given position in the format.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), proper(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To substitute 'World' into the string 'Hello, %s!':
    ;SELECT printf('Hello, %s!', 'World')
@@ -2235,11 +2259,11 @@ Parameter
   str   The string to capitalize.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), regexp_capture(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To capitalize the words in the string 'hello, world!':
    ;SELECT proper('hello, world!')
@@ -2340,11 +2364,11 @@ Results
   content         The captured value from the string.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_match(), 
-  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
+  trim(), unicode(), upper(), xpath()
 Example
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
@@ -2359,11 +2383,11 @@ Parameters
   str   The string to test against the regular expression
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_replace(), regexp_replace(), replace(), replicate(), reverse(), 
-  rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), 
-  substr(), trim(), unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_replace(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To capture the digits from the string '123':
    ;SELECT regexp_match('(\d+)', '123')
@@ -2390,11 +2414,11 @@ Parameters
          backslash followed by the number of the group, starting with 1.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_match(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  trim(), unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_match(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
    ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
@@ -2415,11 +2439,11 @@ Parameters
   replacement   The string to replace any occurrences of the old string with.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replicate(), reverse(), 
+  rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To replace the string 'x' with 'z' in 'abc':
    ;SELECT replace('abc', 'x', 'z')
@@ -2437,11 +2461,11 @@ Parameters
   N     The number of times to replicate the string.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), reverse(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), reverse(), 
+  rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To repeat the string 'abc' three times:
    ;SELECT replicate('abc', 3)
@@ -2454,11 +2478,11 @@ Parameter
   str   The string to reverse.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), rightstr(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To reverse the string 'abc':
    ;SELECT reverse('abc')
@@ -2473,11 +2497,11 @@ Parameters
   N     The number of characters from the right side of the string to return.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rtrim(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the last character of the string 'abc':
    ;SELECT rightstr('abc', 1)
@@ -2534,11 +2558,11 @@ Parameters
   chars   The characters to trim.  Defaults to spaces.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  sparkline(), spooky_hash(), startswith(), strfilter(), substr(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), sparkline(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To trim the whitespace from the end of the string 'abc   ':
    ;SELECT rtrim('abc   ')
@@ -2583,11 +2607,11 @@ Parameters
           inputs.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), startswith(), strfilter(), substr(), trim(), unicode(), 
-  upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the unicode block element for the value 32 in the range of 0-128:
    ;SELECT sparkline(32, 128)
@@ -2604,11 +2628,11 @@ Parameter
   str   The string to hash
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), startswith(), strfilter(), substr(), trim(), unicode(), 
-  upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), startswith(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To produce a hash for the string 'Hello, World!':
    ;SELECT spooky_hash('Hello, World!')
@@ -2677,11 +2701,11 @@ Parameters
   prefix   The prefix to check in the string
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), strfilter(), substr(), trim(), unicode(), 
-  upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), strfilter(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To test if the string 'foobar' starts with 'foo':
    ;SELECT startswith('foobar', 'foo')
@@ -2700,11 +2724,11 @@ Parameters
   include   The characters to include in the result
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), substr(), trim(), unicode(), 
-  upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  substr(), trim(), unicode(), upper(), xpath()
 Example
 #1 To get the 'b', 'c', and 'd' characters from the string 'abcabc':
    ;SELECT strfilter('abcabc', 'bcd')
@@ -2749,11 +2773,11 @@ Parameters
           the characters before the start are returned.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), trim(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), trim(), unicode(), upper(), xpath()
 Examples
 #1 To get the substring starting at the second character until the end of the string 'abc'
    :
@@ -2882,11 +2906,11 @@ Parameters
   chars   The characters to trim.  Defaults to spaces.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  unicode(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), unicode(), upper(), xpath()
 Examples
 #1 To trim whitespace from the start and end of the string '    abc   ':
    ;SELECT trim('    abc   ')
@@ -2920,11 +2944,11 @@ Parameter
   X   The string to examine.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  trim(), upper(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), upper(), xpath()
 Example
 #1 To get the unicode code point for the first character of 'abc':
    ;SELECT unicode('abc')
@@ -2944,11 +2968,11 @@ Parameter
   str   The string to convert.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  trim(), unicode(), xpath()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), xpath()
 Example
 #1 To uppercase the string 'aBc':
    ;SELECT upper('aBc')
@@ -2968,11 +2992,11 @@ Results
   node_text   The node's text value.
 See Also
   char(), charindex(), endswith(), extract(), group_concat(), group_spooky_hash(), 
-  humanize_file_size(), instr(), leftstr(), length(), logfmt2json(), lower(), 
-  ltrim(), padc(), padl(), padr(), printf(), proper(), regexp_capture(), 
-  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), sparkline(), spooky_hash(), startswith(), strfilter(), substr(), 
-  trim(), unicode(), upper()
+  gunzip(), gzip(), humanize_file_size(), instr(), leftstr(), length(), 
+  logfmt2json(), lower(), ltrim(), padc(), padl(), padr(), printf(), proper(), 
+  regexp_capture(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), sparkline(), spooky_hash(), startswith(), 
+  strfilter(), substr(), trim(), unicode(), upper()
 Examples
 #1 To select the XML nodes on the path '/abc/def':
    ;SELECT * FROM xpath('/abc/def', '<abc><def a="b">Hello</def><def>Bye</def></abc>')

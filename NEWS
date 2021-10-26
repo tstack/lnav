@@ -16,6 +16,8 @@ lnav v0.10.1:
      * Added the "logfmt2json()" SQL function to convert a string containing
        a logfmt-encoded message into a JSON object that can be operated on
        more easily.
+     * Added the "gzip()" and "gunzip()" SQL functions to compress values
+       into a blob and decompress a blob into a string.
      Interface changes:
      * The xclip implementation for accessing the system clipboard now writes
        to the "clipboard" selection instead of the "primary" selection.

@@ -144,7 +144,7 @@ template<>
 struct from_sqlite<string_fragment> {
     inline string_fragment operator()(int argc, sqlite3_value **val, int argi) {
         return string_fragment {
-            sqlite3_value_text(val[argi]),
+            (const unsigned char *) sqlite3_value_blob(val[argi]),
             0,
             sqlite3_value_bytes(val[argi]),
         };
@@ -154,7 +154,10 @@ struct from_sqlite<string_fragment> {
 template<>
 struct from_sqlite<std::string> {
     inline std::string operator()(int argc, sqlite3_value **val, int argi) {
-        return std::string((const char *) sqlite3_value_text(val[argi]));
+        return {
+            (const char *) sqlite3_value_blob(val[argi]),
+            (size_t) sqlite3_value_bytes(val[argi]),
+        };
     }
 };
 
@@ -205,10 +208,16 @@ inline void to_sqlite(sqlite3_context *ctx, const char *str)
     }
 }
 
-inline void to_sqlite(sqlite3_context *ctx, auto_buffer& buf)
+inline void to_sqlite(sqlite3_context *ctx, text_auto_buffer& buf)
 {
-    auto pair = buf.release();
+    auto pair = buf.inner.release();
     sqlite3_result_text(ctx, pair.first, pair.second, free);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, blob_auto_buffer& buf)
+{
+    auto pair = buf.inner.release();
+    sqlite3_result_blob(ctx, pair.first, pair.second, free);
 }
 
 inline void to_sqlite(sqlite3_context *ctx, const std::string &str)

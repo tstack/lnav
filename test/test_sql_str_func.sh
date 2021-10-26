@@ -1,5 +1,19 @@
 #! /bin/bash
 
+run_test ./drive_sql "select length(gzip(1))"
+
+check_output "gzip is not compressing correctly?" <<EOF
+Row 0:
+  Column length(gzip(1)): 21
+EOF
+
+run_test ./drive_sql "select gunzip(gzip(1))"
+
+check_output "gzip is not compressing correctly?" <<EOF
+Row 0:
+  Column gunzip(gzip(1)): 1
+EOF
+
 run_test ./drive_sql "select humanize_file_size()"
 
 check_error_output "" <<EOF

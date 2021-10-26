@@ -209,4 +209,12 @@ private:
     size_t ab_size;
 };
 
+struct text_auto_buffer {
+    auto_buffer inner;
+};
+
+struct blob_auto_buffer {
+    auto_buffer inner;
+};
+
 #endif

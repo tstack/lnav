@@ -42,6 +42,8 @@ namespace gzip {
 
 bool is_gzipped(const char *buffer, size_t len);
 
+Result<auto_buffer, std::string> compress(const void *input, size_t len);
+
 Result<auto_buffer, std::string> uncompress(const std::string& src,
                                             const void *buffer,
                                             size_t size);

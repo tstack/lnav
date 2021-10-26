@@ -84,7 +84,7 @@ void db_label_source::text_value_for_line(textview_curses &tc, int row,
         truncate_to(cell_str, MAX_COLUMN_WIDTH);
 
         auto cell_length = utf8_string_length(cell_str)
-            .unwrapOr(MAX_COLUMN_WIDTH);
+            .unwrapOr(actual_col_size);
         auto padding = actual_col_size - cell_length;
         this->dls_cell_width[lpc] = cell_str.length() + padding;
         if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
