@@ -74,9 +74,25 @@
                     "description": "A regular expression that restricts this format to log files with a matching name",
                     "type": "string"
                 },
+                "mime-types": {
+                    "title": "/<format_name>/mime-types",
+                    "description": "A list of mime-types this format should be used for",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "application/vnd.tcpdump.pcap"
+                        ]
+                    }
+                },
                 "level-field": {
                     "title": "/<format_name>/level-field",
                     "description": "The name of the level field in the log message pattern",
+                    "type": "string"
+                },
+                "level-pointer": {
+                    "title": "/<format_name>/level-pointer",
+                    "description": "A regular-expression that matches the JSON-pointer of the level property",
                     "type": "string"
                 },
                 "timestamp-field": {

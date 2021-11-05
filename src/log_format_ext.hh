@@ -116,7 +116,6 @@ public:
           elf_timestamp_divisor(1.0),
           elf_level_field(intern_string::lookup("level", -1)),
           elf_body_field(intern_string::lookup("body", -1)),
-          elf_multiline(true),
           elf_container(false),
           elf_has_module_format(false),
           elf_builtin_format(false),
@@ -133,6 +132,8 @@ public:
     };
 
     bool match_name(const std::string &filename);
+
+    bool match_mime_type(const file_format_t ff) const;
 
     scan_result_t scan(logfile &lf,
                        std::vector<logline> &dst,
@@ -349,6 +350,7 @@ public:
     std::set<std::string> elf_source_path;
     std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
+    std::set<file_format_t> elf_mime_types;
     std::shared_ptr<pcrepp> elf_filename_pcre;
     std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
     std::vector<std::shared_ptr<pattern>> elf_pattern_order;
@@ -360,12 +362,12 @@ public:
     int elf_column_count;
     double elf_timestamp_divisor;
     intern_string_t elf_level_field;
+    pcrepp elf_level_pointer;
     intern_string_t elf_body_field;
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;
     std::vector<std::pair<int64_t, log_level_t> > elf_level_pairs;
-    bool elf_multiline;
     bool elf_container;
     bool elf_has_module_format;
     bool elf_builtin_format;

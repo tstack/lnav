@@ -1,3 +1,7 @@
+lnav v0.11.0:
+     Features:
+     * Add support for pcap(3) files using tshark(1).
+
 lnav v0.10.1:
      Features:
      * Added ":show-only-this-file" command that hides all files except the

@@ -63,7 +63,7 @@ public:
     /**
      * @param processor The function to execute with the result of a future.
      */
-    explicit future_queue(std::function<void(const T&)> processor)
+    explicit future_queue(std::function<void(T&)> processor)
         : fq_processor(processor) {};
 
     ~future_queue() {
@@ -90,12 +90,13 @@ public:
      */
     void pop_to(size_t size = 0) {
         while (this->fq_deque.size() > size) {
-            this->fq_processor(this->fq_deque.front().get());
+            auto v = this->fq_deque.front().get();
+            this->fq_processor(v);
             this->fq_deque.pop_front();
         }
     }
 
-    std::function<void(const T&)> fq_processor;
+    std::function<void(T&)> fq_processor;
     std::deque<std::future<T>> fq_deque;
 };
 

@@ -533,3 +533,19 @@ parse error: premature EOF
 2013-09-06T22:00:59.222 DEBUG4 Details...
   @fields: { "lvl": "DEBUG4", "msg": "Details..."}
 EOF
+
+run_test ${lnav_test} -n \
+    -d /tmp/lnav.err \
+    -I ${test_dir} \
+    ${test_dir}/logfile_invalid_json2.json
+
+check_output "json log format is not working" <<EOF
+2013-09-06T20:00:48.124 TRACE trace test
+  @fields: { "lvl": "TRACE", "msg": "trace test"}
+2013-09-06T20:00:49.124 INFO Starting up service
+  @fields: { "lvl": "INFO", "msg": "Starting up service"}
+[offset: 186] {"ts": "2013-09-06T22:00:49.124817Z", "@fields": { "lvl": "INFO", "msg":
+parse error: premature EOF
+                                       {"ts": "2013-09-06T22:00:49.124
+                     (right here) ------^
+EOF

@@ -76,7 +76,7 @@ struct line_range logline_value::origin_in_full_msg(const char *msg, ssize_t len
 
     for (int lpc = 0; lpc < this->lv_sub_offset; lpc++) {
         const auto *next = (const char *) memchr(last, '\n', msg_end - last);
-        require(next != NULL);
+        require(next != nullptr);
 
         next += 1;
         int amount = (next - last);
@@ -172,7 +172,7 @@ std::string logline_value::to_string() const
             if (this->lv_sbr.empty()) {
                 return this->lv_intern_string.to_string();
             }
-            return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+            return {this->lv_sbr.get_data(), this->lv_sbr.length()};
 
         case value_kind_t::VALUE_QUOTED:
         case value_kind_t::VALUE_W3C_QUOTED:
@@ -190,10 +190,10 @@ std::string logline_value::to_string() const
                         unquoted_len = unquote_func(unquoted_str,
                                                     this->lv_sbr.get_data(),
                                                     this->lv_sbr.length());
-                        return std::string(unquoted_str, unquoted_len);
+                        return {unquoted_str, unquoted_len};
                     }
                     default:
-                        return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+                        return {this->lv_sbr.get_data(), this->lv_sbr.length()};
                 }
             }
             break;
@@ -220,7 +220,7 @@ std::string logline_value::to_string() const
             break;
     }
 
-    return std::string(buffer);
+    return {buffer};
 }
 
 vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
@@ -258,7 +258,7 @@ bool log_format::next_format(pcre_format *fmt, int &index, int &locked_index)
 
     if (locked_index == -1) {
         index += 1;
-        if (fmt[index].name == NULL) {
+        if (fmt[index].name == nullptr) {
             retval = false;
         }
     }
@@ -282,7 +282,7 @@ const char *log_format::log_scanf(uint32_t line_number,
                                   ...)
 {
     int curr_fmt = -1;
-    const char *retval = NULL;
+    const char *retval = nullptr;
     bool done = false;
     pcre_input pi(line, 0, len);
     pcre_context_static<128> pc;
@@ -294,7 +294,7 @@ const char *log_format::log_scanf(uint32_t line_number,
 
         pi.reset(line, 0, len);
         if (!fmt[curr_fmt].pcre.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
-            retval = NULL;
+            retval = nullptr;
         }
         else {
             pcre_context::capture_t *ts = pc[fmt[curr_fmt].pf_timestamp_index];
@@ -307,7 +307,7 @@ const char *log_format::log_scanf(uint32_t line_number,
             }
 
             retval = this->lf_date_time.scan(
-                    pi.get_substr_start(ts), ts->length(), NULL, tm_out, *tv_out);
+                    pi.get_substr_start(ts), ts->length(), nullptr, tm_out, *tv_out);
 
             if (retval) {
                 if (curr_fmt != pat_index) {
@@ -385,20 +385,18 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
  */
 struct json_log_userdata {
     json_log_userdata(shared_buffer_ref &sbr)
-            : jlu_format(NULL), jlu_line(NULL), jlu_base_line(NULL),
-              jlu_sub_line_count(1), jlu_handle(NULL), jlu_line_value(NULL),
-              jlu_line_size(0), jlu_sub_start(0), jlu_shared_buffer(sbr) {
+            : jlu_shared_buffer(sbr) {
 
     };
 
-    external_log_format *jlu_format;
-    const logline *jlu_line;
-    logline *jlu_base_line;
-    int jlu_sub_line_count;
-    yajl_handle jlu_handle;
-    const char *jlu_line_value;
-    size_t jlu_line_size;
-    size_t jlu_sub_start;
+    external_log_format *jlu_format{nullptr};
+    const logline *jlu_line{nullptr};
+    logline *jlu_base_line{nullptr};
+    int jlu_sub_line_count{1};
+    yajl_handle jlu_handle{nullptr};
+    const char *jlu_line_value{nullptr};
+    size_t jlu_line_size{0};
+    size_t jlu_sub_start{0};
     shared_buffer_ref &jlu_shared_buffer;
 };
 
@@ -609,7 +607,7 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
     auto pat = this->elf_pattern_order[this->last_pattern_index()];
     pcre_input pi(sbr.get_data(), 0, sbr.length());
 
-    if (!this->elf_multiline) {
+    if (!this->lf_multiline) {
         len_out = pat->p_pcre->match_partial(pi);
         return true;
     }
@@ -640,6 +638,10 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
 
         if (li.li_partial) {
             log_debug("skipping partial line at offset %d", li.li_file_range.fr_offset);
+            if (this->lf_specialized) {
+                ll.set_level(LEVEL_INVALID);
+                dst.emplace_back(ll);
+            }
             return log_format::SCAN_INCOMPLETE;
         }
 
@@ -661,7 +663,14 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok &&
             yajl_complete_parse(handle) == yajl_status_ok) {
             if (ll.get_time() == 0) {
-                return log_format::SCAN_NO_MATCH;
+                if (this->lf_specialized) {
+                    ll.set_ignore(true);
+                    dst.emplace_back(ll);
+                    return log_format::SCAN_MATCH;
+                } else {
+                    log_debug("no match! %.*s", sbr.length(), line_data);
+                    return log_format::SCAN_NO_MATCH;
+                }
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -857,7 +866,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         return log_format::SCAN_MATCH;
     }
 
-    if (this->lf_specialized && !this->elf_multiline) {
+    if (this->lf_specialized && !this->lf_multiline) {
         auto& last_line = dst.back();
 
         dst.emplace_back(li.li_file_range.fr_offset,
@@ -940,7 +949,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         lr.lr_start = 0;
         lr.lr_end = line.length();
         sa.emplace_back(lr, &SA_BODY);
-        if (!this->elf_multiline) {
+        if (!this->lf_multiline) {
             auto len = pat.p_pcre->match_partial(pi);
             sa.emplace_back(line_range{(int) len, -1},
                             &SA_INVALID,
@@ -1111,6 +1120,17 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         // Leave off the machine oriented flag since we convert it anyhow
         jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags & ~ETF_MACHINE_ORIENTED;
         jlu->jlu_base_line->set_time(tv_out);
+    }
+    else if (!jlu->jlu_format->elf_level_pointer.empty()) {
+        pcre_context_static<30> pc;
+        pcre_input pi(field_name);
+
+        if (jlu->jlu_format->elf_level_pointer.match(pc, pi)) {
+            pcre_input pi_level((const char *) str, 0, len);
+            pcre_context::capture_t level_cap = {0, (int) len};
+
+            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(pi_level, &level_cap));
+        }
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {
         pcre_input pi((const char *) str, 0, len);
@@ -1767,7 +1787,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 }
                 found = true;
                 if (ts_len == -1 ||
-                    dts.scan(ts, ts_len, custom_formats, &tm, tv) == NULL) {
+                    dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr) {
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
                                      ":invalid sample -- " +
@@ -1776,9 +1796,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                      this->elf_name.to_string() +
                                      ":unrecognized timestamp format -- " + ts);
 
-                    if (custom_formats == NULL) {
+                    if (custom_formats == nullptr) {
                         for (int lpc = 0;
-                             PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
+                             PTIMEC_FORMATS[lpc].pf_fmt != nullptr; lpc++) {
                             off_t off = 0;
 
                             PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
@@ -1789,7 +1809,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                         }
                     }
                     else {
-                        for (int lpc = 0; custom_formats[lpc] != NULL; lpc++) {
+                        for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++) {
                             off_t off = 0;
 
                             ptime_fmt(custom_formats[lpc], &tm, ts, off,
@@ -2236,6 +2256,15 @@ bool external_log_format::match_name(const string &filename)
     pcre_input pi(filename);
 
     return this->elf_filename_pcre->match(pc, pi);
+}
+
+bool external_log_format::match_mime_type(const file_format_t ff) const
+{
+    if (ff == file_format_t::FF_UNKNOWN && this->elf_mime_types.empty()) {
+        return true;
+    }
+
+    return this->elf_mime_types.count(ff) == 1;
 }
 
 int log_format::pattern_index_for_line(uint64_t line_number) const

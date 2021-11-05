@@ -74,4 +74,5 @@ parts:
       - libxml2
       - locales-all
       - ssh
+      - tshark
       - xclip

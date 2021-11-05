@@ -41,6 +41,7 @@
 #include <string>
 
 #include "fmt/format.h"
+#include "file_format.hh"
 
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -174,7 +175,7 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
     else if (field_name == "hide-extra")
         elf->jlf_hide_extra = val;
     else if (field_name == "multiline")
-        elf->elf_multiline = val;
+        elf->lf_multiline = val;
 
     return 1;
 }
@@ -229,6 +230,21 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
     else if (field_name == "level-field") {
         elf->elf_level_field = intern_string::lookup(value);
     }
+    else if (field_name == "level-pointer") {
+        auto pcre_res = pcrepp::from_str(value);
+
+        if (pcre_res.isErr()) {
+            ypc->ypc_error_reporter(
+                *ypc,
+                lnav_log_level_t::ERROR,
+                fmt::format("error:{}:{}:invalid regular expression for level-pointer -- {}",
+                            ypc->ypc_source,
+                            ypc->get_line_number(),
+                            pcre_res.unwrapErr().ce_msg).c_str());
+        } else {
+            elf->elf_level_pointer = pcre_res.unwrap();
+        }
+    }
     else if (field_name == "timestamp-field") {
         elf->lf_timestamp_field = intern_string::lookup(value);
     }
@@ -244,6 +260,12 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
     }
     else if (field_name == "opid-field") {
         elf->elf_opid_field = intern_string::lookup(value);
+    }
+    else if (field_name == "mime-types") {
+        auto value_opt = ypc->ypc_current_handler->to_enum_value(value);
+        if (value_opt) {
+            elf->elf_mime_types.insert((file_format_t) *value_opt);
+        }
     }
 
     return 1;
@@ -655,6 +677,12 @@ static struct json_path_container search_table_handlers = {
         .with_children(search_table_def_handlers)
 };
 
+static const json_path_handler_base::enum_value_t MIME_TYPE_ENUM[] = {
+    { "application/vnd.tcpdump.pcap", file_format_t::FF_PCAP, },
+
+    json_path_handler_base::ENUM_TERMINATOR
+};
+
 struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
         .with_description("The set of regular expressions used to match log messages")
@@ -674,8 +702,13 @@ struct json_path_container format_handlers = {
         .with_description("The value to divide a numeric timestamp by in a JSON log."),
     json_path_handler("file-pattern", read_format_field)
         .with_description("A regular expression that restricts this format to log files with a matching name"),
+    json_path_handler("mime-types#", read_format_field)
+        .with_description("A list of mime-types this format should be used for")
+        .with_enum_values(MIME_TYPE_ENUM),
     json_path_handler("level-field", read_format_field)
         .with_description("The name of the level field in the log message pattern"),
+    json_path_handler("level-pointer", read_format_field)
+        .with_description("A regular-expression that matches the JSON-pointer of the level property"),
     json_path_handler("timestamp-field", read_format_field)
         .with_description("The name of the timestamp field in the log message pattern"),
     json_path_handler("body-field", read_format_field)

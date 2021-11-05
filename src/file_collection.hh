@@ -37,6 +37,7 @@
 #include <list>
 #include <string>
 #include <utility>
+#include <forward_list>
 
 #include "safe/safe.h"
 
@@ -71,6 +72,39 @@ struct file_error_info {
     const std::string fei_description;
 };
 
+struct file_collection;
+
+enum class child_poll_result_t {
+    ALIVE,
+    FINISHED,
+};
+
+class child_poller {
+public:
+    explicit child_poller(auto_pid<process_state::RUNNING> child,
+                          std::function<void(file_collection&, auto_pid<process_state::FINISHED>&)> finalizer)
+        : cp_child(std::move(child)), cp_finalizer(std::move(finalizer)) {
+    }
+
+    child_poller(child_poller&& other) noexcept
+        : cp_child(std::move(other.cp_child)),
+          cp_finalizer(std::move(other.cp_finalizer)) {}
+
+    child_poller& operator=(child_poller&& other) noexcept {
+        this->cp_child = std::move(other.cp_child);
+        this->cp_finalizer = std::move(other.cp_finalizer);
+
+        return *this;
+    }
+
+    ~child_poller() noexcept = default;
+
+    child_poll_result_t poll(file_collection& fc);
+private:
+    nonstd::optional<auto_pid<process_state::RUNNING>> cp_child;
+    std::function<void(file_collection&, auto_pid<process_state::FINISHED>&)> cp_finalizer;
+};
+
 struct file_collection {
     bool fc_invalidate_merge{false};
 
@@ -88,6 +122,7 @@ struct file_collection {
     std::set<std::string> fc_synced_files;
     std::shared_ptr<safe_scan_progress> fc_progress;
     std::vector<struct stat> fc_new_stats;
+    std::list<child_poller> fc_child_pollers;
     size_t fc_largest_path_length{0};
 
     file_collection()
@@ -116,7 +151,7 @@ struct file_collection {
     watch_logfile(const std::string &filename, logfile_open_options &loo,
                   bool required);
 
-    void merge(const file_collection &other);
+    void merge(file_collection &other);
 
     void close_files(const std::vector<std::shared_ptr<logfile>> &files);
 

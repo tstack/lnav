@@ -124,6 +124,7 @@ The following software packages are required to build lnav:
 - bz2        - The bzip2 compression library.
 - libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
 - libarchive - The libarchive library for opening archive files, like zip/tgz.
+- wireshark  - The 'tshark' program is used to interpret pcap files.
 
 #### Build
 

@@ -39,6 +39,7 @@
 
 #include "base/result.h"
 #include "base/lnav_log.hh"
+#include "mapbox/variant.hpp"
 
 enum class process_state {
     RUNNING,
@@ -54,10 +55,12 @@ public:
 
     auto_pid(const auto_pid &other) = delete;
 
-    auto_pid(auto_pid &&other) noexcept: ap_child(std::move(other).release())
+    auto_pid(auto_pid &&other) noexcept
+        : ap_child(std::move(other).release()),
+          ap_status(other.ap_status)
     {};
 
-    ~auto_pid()
+    ~auto_pid() noexcept
     { this->reset(); };
 
     auto_pid &operator=(auto_pid &&other) noexcept
@@ -103,6 +106,24 @@ public:
         return WEXITSTATUS(this->ap_status);
     }
 
+    using poll_result = mapbox::util::variant<
+        auto_pid<process_state::RUNNING>,
+        auto_pid<process_state::FINISHED>
+    >;
+
+    poll_result poll() && {
+        if (this->ap_child != -1) {
+            auto rc = waitpid(this->ap_child, &this->ap_status, WNOHANG);
+
+            if (rc <= 0) {
+                return std::move(*this);
+            }
+        }
+
+        return auto_pid<process_state::FINISHED>(
+            std::exchange(this->ap_child, -1), this->ap_status);
+    }
+
     auto_pid<process_state::FINISHED> wait_for_child(int options = 0) &&
     {
         if (this->ap_child != -1) {
@@ -116,11 +137,11 @@ public:
             std::exchange(this->ap_child, -1), this->ap_status);
     }
 
-    void reset(pid_t child = -1)
+    void reset(pid_t child = -1) noexcept
     {
         if (this->ap_child != child) {
             this->ap_status = 0;
-            if (this->ap_child != -1) {
+            if (ProcState == process_state::RUNNING && this->ap_child != -1) {
                 log_debug("sending SIGTERM to child: %d", this->ap_child);
                 kill(this->ap_child, SIGTERM);
             }

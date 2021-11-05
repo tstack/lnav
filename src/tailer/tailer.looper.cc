@@ -329,7 +329,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             args.push_back(nullptr);
 
             execvp(cfg.c_ssh_cmd.c_str(), args.data());
-            exit(EXIT_FAILURE);
+            _exit(EXIT_FAILURE);
         }
 
         std::vector<std::string> error_queue;
@@ -406,7 +406,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         args.push_back(nullptr);
 
         execvp(cfg.c_ssh_cmd.c_str(), args.data());
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     }
 
     return Ok(std::make_shared<host_tailer>(
@@ -568,7 +568,7 @@ void tailer::looper::host_tailer::loop_body()
 
         if (read_res.isErr()) {
             log_error("read error: %s", read_res.unwrapErr().c_str());
-            exit(EXIT_FAILURE);
+            return;
         }
 
         auto packet = read_res.unwrap();

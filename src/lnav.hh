@@ -207,6 +207,7 @@ struct lnav_data_t {
     bool                                    ld_session_loaded;
     std::vector<ghc::filesystem::path>      ld_config_paths;
     file_collection                         ld_active_files;
+    std::list<child_poller>                 ld_child_pollers;
     std::list<std::pair<std::string, int> > ld_files_to_front;
     std::string                             ld_pt_search;
     time_t                                  ld_pt_min_time;
@@ -314,7 +315,7 @@ void rebuild_indexes_repeatedly();
 bool setup_logline_table(exec_context &ec);
 
 bool rescan_files(bool required = false);
-bool update_active_files(const file_collection& new_files);
+bool update_active_files(file_collection& new_files);
 
 void wait_for_children();
 

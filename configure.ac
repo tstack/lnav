@@ -52,7 +52,7 @@ dnl you are building it)
 AS_CASE([x$srcdir],
     [x/*],
     AS_VAR_SET(abssrcdir, $srcdir),
-    AS_VAR_SET(abssrcdir, `pwd`/$srcdir)
+    AS_VAR_SET(abssrcdir, `cd $srcdir; pwd`)
 )
 
 AC_SUBST(abssrcdir)
@@ -83,6 +83,7 @@ AC_PATH_PROG(BZIP2_CMD, [bzip2])
 AC_PATH_PROG(RE2C_CMD, [re2c])
 AM_CONDITIONAL(HAVE_RE2C, test x"$RE2C_CMD" != x"")
 AC_PATH_PROG(XZ_CMD, [xz])
+AC_PATH_PROG(TSHARK_CMD, [tshark])
 
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)

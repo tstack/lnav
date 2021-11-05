@@ -60,6 +60,7 @@
 #include "log_level.hh"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
+#include "file_format.hh"
 
 struct sqlite3;
 class logfile;
@@ -346,6 +347,13 @@ public:
 
     virtual bool match_name(const std::string &filename) { return true; };
 
+    virtual bool match_mime_type(const file_format_t ff) const {
+        if (ff == file_format_t::FF_UNKNOWN) {
+            return true;
+        }
+        return false;
+    };
+
     enum scan_result_t {
         SCAN_MATCH,
         SCAN_NO_MATCH,
@@ -456,6 +464,7 @@ public:
     int pattern_index_for_line(uint64_t line_number) const;
 
     uint8_t lf_mod_index{0};
+    bool lf_multiline{true};
     date_time_scanner lf_date_time;
     std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2021, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,51 +26,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file file_format.hh
+ * @file pcap_manager.hh
  */
 
-#ifndef lnav_file_format_hh
-#define lnav_file_format_hh
+#ifndef lnav_pcap_manager_hh
+#define lnav_pcap_manager_hh
 
-#include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <string>
+#include <vector>
 
-enum class file_format_t : int {
-    FF_UNKNOWN,
-    FF_SQLITE_DB,
-    FF_ARCHIVE,
-    FF_PCAP,
-    FF_REMOTE,
+#include "base/result.h"
+#include "base/auto_pid.hh"
+#include "auto_fd.hh"
+
+namespace pcap_manager {
+
+struct convert_result {
+    auto_pid<process_state::RUNNING> cr_child;
+    auto_fd cr_destination;
+    std::shared_ptr<std::vector<std::string>> cr_error_queue;
 };
 
-file_format_t detect_file_format(const ghc::filesystem::path& filename);
+Result<convert_result, std::string>
+convert(const std::string& filename);
 
-namespace fmt {
-template<>
-struct formatter<file_format_t> : formatter<string_view> {
-    template<typename FormatContext>
-    auto format(file_format_t ff, FormatContext &ctx)
-    {
-        string_view name = "unknown";
-        switch (ff) {
-            case file_format_t::FF_SQLITE_DB:
-                name = "\U0001F5C2  SQLite DB";
-                break;
-            case file_format_t::FF_ARCHIVE:
-                name = "\U0001F5C4  Archive";
-                break;
-            case file_format_t::FF_PCAP:
-                name = "\U0001F5A5  Pcap";
-                break;
-            case file_format_t::FF_REMOTE:
-                name = "\U0001F5A5  Remote";
-                break;
-            default:
-                break;
-        }
-        return formatter<string_view>::format(name, ctx);
-    }
-};
 }
 
 #endif

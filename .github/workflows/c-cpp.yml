@@ -65,6 +65,7 @@ jobs:
           libbz2-dev
           libcurl4-openssl-dev
           libreadline-dev
+          tshark
           zlib1g-dev
       - name: autogen
         run: ./autogen.sh

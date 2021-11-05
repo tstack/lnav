@@ -1,0 +1,76 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "pcap_log": {
+        "json": true,
+        "description": "pcap log format",
+        "mime-types": [
+            "application/vnd.tcpdump.pcap"
+        ],
+        "multiline": false,
+        "line-format": [
+            { "field": "time" },
+            " ",
+            {
+                "field": "source",
+                "min-width": 15,
+                "align": "right"
+            },
+            " → ",
+            {
+                "field": "destination",
+                "min-width": 15,
+                "align": "left"
+            },
+            " ",
+            {
+                "field": "protocol",
+                "min-width": 7,
+                "align": "left"
+            },
+            " ",
+            {
+                "field": "length",
+                "min-width": 4,
+                "align": "right"
+            },
+            " ",
+            { "field": "info" }
+        ],
+        "level": {
+            "warning": "^6291456$",
+            "error": "^8388608$"
+        },
+        "timestamp-field": "time",
+        "level-pointer": "/_ws_expert__ws_expert_severity$",
+        "body-field": "info",
+        "hide-extra": true,
+        "value": {
+            "source": {
+                "kind": "string",
+                "foreign-key": true,
+                "collate": "ipaddress",
+                "identifier": true
+            },
+            "destination": {
+                "kind": "string",
+                "foreign-key": true,
+                "collate": "ipaddress",
+                "identifier": true
+            },
+            "protocol": {
+                "kind": "string",
+                "identifier": true
+            },
+            "length": {
+                "kind": "integer"
+            },
+            "info": {
+                "kind": "string"
+            },
+            "layers": {
+                "kind": "json",
+                "hidden": true
+            }
+        }
+    }
+}

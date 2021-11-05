@@ -15,7 +15,7 @@ efficiently zero in on problems.
 PREREQUISITES
 -------------
 
-The following software packages are required to build lnav:
+The following software packages are required to build/run lnav:
 
   gcc/clang - A C++14-compatible compiler.
   libpcre   - The Perl Compatible Regular Expression (PCRE) library.
@@ -28,6 +28,7 @@ The following software packages are required to build lnav:
   libcurl   - The cURL library for downloading files from URLs.  Version
               7.23.0 or higher is required.
   libarchive - The libarchive library for opening archive files, like zip/tgz.
+  wireshark - The 'tshark' program is used to interpret pcap files.
 
 
 INSTALLATION

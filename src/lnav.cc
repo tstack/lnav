@@ -907,7 +907,7 @@ static void clear_last_user_mark(listview_curses *lv)
     }
 }
 
-bool update_active_files(const file_collection& new_files)
+bool update_active_files(file_collection& new_files)
 {
     static loading_observer obs;
 
@@ -936,6 +936,10 @@ bool update_active_files(const file_collection& new_files)
         !new_files.fc_name_to_errors.empty()) {
         lnav_data.ld_active_files.regenerate_unique_file_names();
     }
+    lnav_data.ld_child_pollers.insert(
+        lnav_data.ld_child_pollers.begin(),
+        std::make_move_iterator(lnav_data.ld_active_files.fc_child_pollers.begin()),
+        std::make_move_iterator(lnav_data.ld_active_files.fc_child_pollers.end()));
 
     return true;
 }
@@ -1230,13 +1234,22 @@ static void gather_pipers()
             ++iter;
         }
     }
+
+    for (auto iter = lnav_data.ld_child_pollers.begin();
+         iter != lnav_data.ld_child_pollers.end();) {
+        if (iter->poll(lnav_data.ld_active_files) == child_poll_result_t::FINISHED) {
+            iter = lnav_data.ld_child_pollers.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
 }
 
 static void wait_for_pipers()
 {
     for (;;) {
         gather_pipers();
-        if (lnav_data.ld_pipers.empty()) {
+        if (lnav_data.ld_pipers.empty() && lnav_data.ld_child_pollers.empty()) {
             log_debug("all pipers finished");
             break;
         }
@@ -1244,8 +1257,9 @@ static void wait_for_pipers()
             usleep(10000);
             rebuild_indexes();
         }
-        log_debug("%d pipers still active",
-                lnav_data.ld_pipers.size());
+        log_debug("%d pipers and %d children still active",
+                lnav_data.ld_pipers.size(),
+                lnav_data.ld_child_pollers.size());
     }
 }
 
@@ -1537,7 +1551,7 @@ static void looper()
         future<file_collection> rescan_future =
             std::async(std::launch::async,
                        &file_collection::rescan_files,
-                       active_copy,
+                       std::move(active_copy),
                        false);
         bool initial_rescan_completed = false;
         int session_stage = 0;
@@ -1617,7 +1631,7 @@ static void looper()
                 (session_stage < 2 || ui_clock::now() >= next_rescan_time)) {
                 rescan_future = std::async(std::launch::async,
                                            &file_collection::rescan_files,
-                                           active_copy,
+                                           std::move(active_copy),
                                            false);
             }
 
@@ -1828,7 +1842,7 @@ static void looper()
                 else {
                     timer.start_fade(index_counter, 3);
                 }
-                log_debug("initial build rebuild");
+                // log_debug("initial build rebuild");
                 changes += rebuild_indexes(loop_deadline);
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
@@ -1947,6 +1961,7 @@ static void looper()
             if (lnav_data.ld_child_terminated) {
                 lnav_data.ld_child_terminated = false;
 
+                log_info("checking for terminated child processes");
                 for (auto iter = lnav_data.ld_children.begin();
                     iter != lnav_data.ld_children.end();
                     ++iter) {
@@ -2352,7 +2367,7 @@ int main(int argc, char *argv[])
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         if ((sqlite3_set_authorizer(lnav_data.ld_db.in(),
-                                    sqlite_authorizer, NULL)) != SQLITE_OK) {
+                                    sqlite_authorizer, nullptr)) != SQLITE_OK) {
             fprintf(stderr, "error: unable to attach sqlite authorizer\n");
             exit(EXIT_FAILURE);
         }
@@ -2483,11 +2498,6 @@ int main(int argc, char *argv[])
 
     load_format_extra(lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
-    if (!loader_errors.empty()) {
-        print_errors(loader_errors);
-        return EXIT_FAILURE;
-    }
-
     auto _vtab_cleanup = finally([] {
         static const char *VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
@@ -2532,6 +2542,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                          nullptr);
         }
     });
+
+    if (!loader_errors.empty()) {
+        print_errors(loader_errors);
+        return EXIT_FAILURE;
+    }
 
     if (!(lnav_data.ld_flags & LNF_CHECK_CONFIG)) {
         DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
@@ -2919,6 +2934,16 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         clooper.process_all();
                     });
                 rebuild_indexes_repeatedly();
+                if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+                    for (const auto& pair : lnav_data.ld_active_files.fc_name_to_errors) {
+                        fprintf(stderr,
+                                "error: unable to open file: %s -- %s\n",
+                                pair.first.c_str(),
+                                pair.second.fei_description.c_str());
+                    }
+
+                    return EXIT_FAILURE;
+                }
 
                 for (auto &pair : cmd_results) {
                     if (pair.first.isErr()) {

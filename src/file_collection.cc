@@ -44,9 +44,30 @@
 #include "tailer/tailer.looper.hh"
 #include "service_tags.hh"
 #include "lnav_util.hh"
+#include "pcap_manager.hh"
 
 static std::mutex REALPATH_CACHE_MUTEX;
 static std::unordered_map<std::string, std::string> REALPATH_CACHE;
+
+child_poll_result_t child_poller::poll(file_collection& fc)
+{
+    if (!this->cp_child) {
+        return child_poll_result_t::FINISHED;
+    }
+
+    auto poll_res = std::move(this->cp_child.value()).poll();
+    this->cp_child = nonstd::nullopt;
+    return poll_res.match(
+        [this](auto_pid<process_state::RUNNING>& alive) {
+            this->cp_child = std::move(alive);
+            return child_poll_result_t::ALIVE;
+        },
+        [this, &fc](auto_pid<process_state::FINISHED>& finished) {
+            this->cp_finalizer(fc, finished);
+            return child_poll_result_t::FINISHED;
+        }
+    );
+}
 
 void file_collection::close_files(const std::vector<std::shared_ptr<logfile>> &files)
 {
@@ -109,6 +130,7 @@ void file_collection::regenerate_unique_file_names()
         switch (pair.second.ofd_format) {
             case file_format_t::FF_UNKNOWN:
             case file_format_t::FF_ARCHIVE:
+            case file_format_t::FF_PCAP:
             case file_format_t::FF_SQLITE_DB: {
                 auto bn = ghc::filesystem::path(pair.first).filename().string();
                 if (bn.length() > this->fc_largest_path_length) {
@@ -126,7 +148,7 @@ void file_collection::regenerate_unique_file_names()
     }
 }
 
-void file_collection::merge(const file_collection &other)
+void file_collection::merge(file_collection &other)
 {
     this->fc_recursive = this->fc_recursive || other.fc_recursive;
     this->fc_rotated = this->fc_rotated || other.fc_rotated;
@@ -153,6 +175,13 @@ void file_collection::merge(const file_collection &other)
                                  other.fc_closed_files.end());
     this->fc_other_files.insert(other.fc_other_files.begin(),
                                 other.fc_other_files.end());
+    if (!other.fc_child_pollers.empty()) {
+        this->fc_child_pollers.insert(
+            this->fc_child_pollers.begin(),
+            std::make_move_iterator(other.fc_child_pollers.begin()),
+            std::make_move_iterator(other.fc_child_pollers.end()));
+        other.fc_child_pollers.clear();
+    }
 }
 
 /**
@@ -195,7 +224,7 @@ file_collection::watch_logfile(const std::string &filename,
     int rc;
 
     if (this->fc_closed_files.count(filename)) {
-        return lnav::futures::make_ready_future(retval);
+        return lnav::futures::make_ready_future(std::move(retval));
     }
 
     if (loo.loo_fd != -1) {
@@ -212,14 +241,14 @@ file_collection::watch_logfile(const std::string &filename,
                 this->fc_file_names.end()) {
                 retval.fc_file_names.emplace(wilddir, logfile_open_options());
             }
-            return lnav::futures::make_ready_future(retval);
+            return lnav::futures::make_ready_future(std::move(retval));
         }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
                 rc = -1;
                 errno = EINVAL;
             } else {
-                return lnav::futures::make_ready_future(retval);
+                return lnav::futures::make_ready_future(std::move(retval));
             }
         }
         auto err_iter = this->fc_name_to_errors.find(filename);
@@ -236,7 +265,7 @@ file_collection::watch_logfile(const std::string &filename,
                 std::string(strerror(errno)),
             });
         }
-        return lnav::futures::make_ready_future(retval);
+        return lnav::futures::make_ready_future(std::move(retval));
     }
 
     auto stat_iter = find_if(this->fc_new_stats.begin(),
@@ -248,7 +277,7 @@ file_collection::watch_logfile(const std::string &filename,
     if (stat_iter != this->fc_new_stats.end()) {
         // this file is probably a link that we have already scanned in this
         // pass.
-        return lnav::futures::make_ready_future(retval);
+        return lnav::futures::make_ready_future(std::move(retval));
     }
 
     this->fc_new_stats.emplace_back(st);
@@ -258,7 +287,7 @@ file_collection::watch_logfile(const std::string &filename,
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
-            return lnav::futures::make_ready_future(retval);
+            return lnav::futures::make_ready_future(std::move(retval));
         }
 
         auto func = [filename, st, loo, prog = this->fc_progress, errs = this->fc_name_to_errors]() mutable {
@@ -271,10 +300,51 @@ file_collection::watch_logfile(const std::string &filename,
 
             auto ff = detect_file_format(filename);
 
+            loo.loo_file_format = ff;
             switch (ff) {
                 case file_format_t::FF_SQLITE_DB:
                     retval.fc_other_files[filename].ofd_format = ff;
                     break;
+
+                case file_format_t::FF_PCAP: {
+                    auto res = pcap_manager::convert(filename);
+
+                    if (res.isOk()) {
+                        auto convert_res = res.unwrap();
+
+                        loo.loo_fd = std::move(convert_res.cr_destination);
+                        retval.fc_child_pollers.emplace_back(child_poller{
+                            std::move(convert_res.cr_child),
+                            [filename, st, error_queue = convert_res.cr_error_queue](auto& fc, auto& child) {
+                                if (child.was_normal_exit() && child.exit_status() == EXIT_SUCCESS) {
+                                    log_info("pcap[%d] exited normally", child.in());
+                                    return;
+                                }
+                                log_error("pcap[%d] exited with %d", child.in(), child.status());
+                                fc.fc_name_to_errors.emplace(filename, file_error_info{
+                                    st.st_mtime,
+                                    fmt::format("{}", fmt::join(*error_queue, "\n")),
+                                });
+                            },
+                        });
+                        auto open_res = logfile::open(filename, loo);
+                        if (open_res.isOk()) {
+                            retval.fc_files.push_back(open_res.unwrap());
+                        } else {
+                            retval.fc_name_to_errors.emplace(
+                                filename, file_error_info{
+                                    st.st_mtime,
+                                    open_res.unwrapErr(),
+                                });
+                        }
+                    } else {
+                        retval.fc_name_to_errors.emplace(filename, file_error_info{
+                            st.st_mtime,
+                            res.unwrapErr(),
+                        });
+                    }
+                    break;
+                }
 
                 case file_format_t::FF_ARCHIVE: {
                     nonstd::optional<std::list<archive_manager::extract_progress>::iterator>
@@ -381,7 +451,7 @@ file_collection::watch_logfile(const std::string &filename,
         }
     }
 
-    return lnav::futures::make_ready_future(retval);
+    return lnav::futures::make_ready_future(std::move(retval));
 }
 
 /**
@@ -440,7 +510,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                             "Initializing...";
                     }
 
-                    fq.push_back(lnav::futures::make_ready_future(retval));
+                    fq.push_back(lnav::futures::make_ready_future(std::move(retval)));
                     return;
                 }
 
@@ -486,7 +556,7 @@ void file_collection::expand_filename(lnav::futures::future_queue<file_collectio
                                     errmsg,
                                 });
                         }
-                        fq.push_back(lnav::futures::make_ready_future(retval));
+                        fq.push_back(lnav::futures::make_ready_future(std::move(retval)));
                     }
                     continue;
                 } else {

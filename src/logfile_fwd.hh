@@ -36,6 +36,7 @@
 #include <string>
 
 #include "auto_fd.hh"
+#include "file_format.hh"
 
 using ui_clock = std::chrono::steady_clock;
 
@@ -103,6 +104,12 @@ struct logfile_open_options {
         return *this;
     }
 
+    logfile_open_options &with_file_format(file_format_t ff) {
+        this->loo_file_format = ff;
+
+        return *this;
+    }
+
     std::string loo_filename;
     auto_fd loo_fd;
     logfile_name_source loo_source{logfile_name_source::USER};
@@ -112,6 +119,7 @@ struct logfile_open_options {
     bool loo_non_utf_is_visible{true};
     ssize_t loo_visible_size_limit{-1};
     bool loo_tail{true};
+    file_format_t loo_file_format{file_format_t::FF_UNKNOWN};
 };
 
 #endif

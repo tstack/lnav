@@ -31,11 +31,69 @@
 
 #include "config.h"
 
+#include <unordered_map>
+
 #include "base/intern_string.hh"
+#include "base/lnav_log.hh"
 #include "auto_fd.hh"
 #include "lnav_util.hh"
 #include "file_format.hh"
 #include "archive_manager.hh"
+
+static bool is_pcap_header(uint8_t *buffer)
+{
+    size_t offset = 0;
+    if (buffer[0] == 0x0a &&
+        buffer[1] == 0x0d &&
+        buffer[2] == 0x0d &&
+        buffer[3] == 0x0a) {
+        offset += sizeof(uint32_t) * 2;
+        if (buffer[offset + 0] == 0x1a &&
+            buffer[offset + 1] == 0x2b &&
+            buffer[offset + 2] == 0x3c &&
+            buffer[offset + 3] == 0x4d) {
+            return true;
+        }
+
+        if (buffer[offset + 0] == 0x4d &&
+            buffer[offset + 1] == 0x3c &&
+            buffer[offset + 2] == 0x2b &&
+            buffer[offset + 3] == 0x1a) {
+            return true;
+        }
+        return false;
+    }
+
+    if (buffer[0] == 0xa1 &&
+        buffer[1] == 0xb2 &&
+        buffer[2] == 0xc3 &&
+        buffer[3] == 0xd4) {
+        return true;
+    }
+
+    if (buffer[0] == 0xd4 &&
+        buffer[1] == 0xc3 &&
+        buffer[2] == 0xb2 &&
+        buffer[3] == 0xa1) {
+        return true;
+    }
+
+    if (buffer[0] == 0xa1 &&
+        buffer[1] == 0xb2 &&
+        buffer[2] == 0x3c &&
+        buffer[3] == 0x4d) {
+        return true;
+    }
+
+    if (buffer[0] == 0x4d &&
+        buffer[1] == 0x3c &&
+        buffer[2] == 0xb2 &&
+        buffer[3] == 0xa1) {
+        return true;
+    }
+
+    return false;
+}
 
 file_format_t detect_file_format(const ghc::filesystem::path &filename)
 {
@@ -47,7 +105,7 @@ file_format_t detect_file_format(const ghc::filesystem::path &filename)
     auto_fd       fd;
 
     if ((fd = openp(filename, O_RDONLY)) != -1) {
-        char buffer[32];
+        uint8_t buffer[32];
         ssize_t rc;
 
         if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
@@ -56,6 +114,8 @@ file_format_t detect_file_format(const ghc::filesystem::path &filename)
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
                 retval = file_format_t::FF_SQLITE_DB;
+            } else if (rc > 24 && is_pcap_header(buffer)) {
+                retval = file_format_t::FF_PCAP;
             }
         }
     }

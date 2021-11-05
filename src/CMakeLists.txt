@@ -280,6 +280,7 @@ add_library(
   data_scanner_re.cc
   data_parser.cc
   papertrail_proc.cc
+  pcap_manager.cc
   ptimec_rt.cc
   pretty_printer.cc
   pugixml/pugixml.cpp
@@ -387,6 +388,7 @@ add_library(
   logfile_stats.hh
   optional.hpp
   papertrail_proc.hh
+  pcap_manager.hh
   plain_text_source.hh
   pretty_printer.hh
   preview_status_source.hh

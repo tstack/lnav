@@ -583,10 +583,12 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
         break;
     }
 
-    log_msg(level, __FILE__, __LINE__, "%s", msg);
+    log_msg(level, __FILE__, __LINE__, "(%d) %s", code, msg);
+
+    ensure(code != 21);
 }
 
-void sql_install_logger(void)
+void sql_install_logger()
 {
 #ifdef SQLITE_CONFIG_LOG
     sqlite3_config(SQLITE_CONFIG_LOG, sqlite_logger, NULL);
@@ -869,7 +871,7 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
     return SQLITE_OK;
 }
 
-string sql_keyword_re(void)
+string sql_keyword_re()
 {
     string retval = "(?:";
     bool first = true;

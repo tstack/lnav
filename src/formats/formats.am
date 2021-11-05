@@ -22,6 +22,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/openstack_log.json \
     $(srcdir)/%reldir%/page_log.json \
     $(srcdir)/%reldir%/papertrail_log.json \
+    $(srcdir)/%reldir%/pcap_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
     $(srcdir)/%reldir%/strace_log.json \

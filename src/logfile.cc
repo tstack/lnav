@@ -200,6 +200,15 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
              iter != root_formats.end() && (found != log_format::SCAN_MATCH);
              ++iter) {
             if (!(*iter)->match_name(this->lf_filename)) {
+                log_debug("(%s) does not match file name: %s",
+                          (*iter)->get_name().get(),
+                          this->lf_filename.c_str());
+                continue;
+            }
+            if (!(*iter)->match_mime_type(this->lf_options.loo_file_format)) {
+                log_debug("(%s) does not match file format: %d",
+                          (*iter)->get_name().get(),
+                          this->lf_options.loo_file_format);
                 continue;
             }
 
@@ -232,8 +241,12 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
                 logline &last_line = this->lf_index[this->lf_index.size() - 1];
 
                 for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
-                    this->lf_index[lpc].set_time(last_line.get_time());
-                    this->lf_index[lpc].set_millis(last_line.get_millis());
+                    if (this->lf_format->lf_multiline) {
+                        this->lf_index[lpc].set_time(last_line.get_time());
+                        this->lf_index[lpc].set_millis(last_line.get_millis());
+                    } else {
+                        this->lf_index[lpc].set_ignore(true);
+                    }
                 }
                 break;
             }
@@ -254,7 +267,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
                 logline &second_to_last = this->lf_index[prescan_size - 1];
                 logline &latest = this->lf_index[prescan_size];
 
-                if (latest < second_to_last) {
+                if (!second_to_last.is_ignored() && latest < second_to_last) {
                     if (this->lf_format->lf_time_ordered) {
                         this->lf_out_of_time_order_count += 1;
                         for (size_t lpc = prescan_size;

@@ -240,6 +240,8 @@ dist_noinst_DATA = \
 	datafile_simple.19 \
 	datafile_simple.20 \
 	datafile_xml.0 \
+	dhcp.pcapng \
+	dhcp-trunc.pcapng \
 	expected_help.txt \
 	listview_output.0 \
 	listview_output.1 \
@@ -273,6 +275,7 @@ dist_noinst_DATA = \
 	logfile_glog.0 \
 	logfile_haproxy.0 \
 	logfile_invalid_json.json \
+	logfile_invalid_json2.json \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \

@@ -1,0 +1,3 @@
+{"ts": "2013-09-06T20:00:48.124817Z", "@fields": { "lvl": "TRACE", "msg": "trace test"}}
+{"ts": "2013-09-06T20:00:49.124817Z", "@fields": { "lvl": "INFO", "msg": "Starting up service"}}
+{"ts": "2013-09-06T22:00:49.124817Z", "@fields": { "lvl": "INFO", "msg":

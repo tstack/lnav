@@ -2,7 +2,7 @@
     "ntest_log" : {
         "title" : "Test JSON Log",
         "json" : true,
-        "file-pattern" : "logfile_(nested|invalid)_json\\.json",
+        "file-pattern" : "logfile_(nested|invalid)_json\\d*\\.json",
         "description" : "Test config",
         "line-format" : [
             { "field" : "ts" },

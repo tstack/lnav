@@ -824,6 +824,10 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                 }
 
                 for (size_t line_index = 0; line_index < lf->size(); line_index++) {
+                    if ((*lf)[line_index].is_ignored()) {
+                        continue;
+                    }
+
                     content_line_t con_line(ld->ld_file_index * MAX_LINES_PER_FILE +
                                             line_index);
 
@@ -873,13 +877,15 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                     break;
                 }
 
-                int file_index = ld->ld_file_index;
-                int line_index = lf_iter - ld->get_file_ptr()->begin();
+                if (!lf_iter->is_ignored()) {
+                    int file_index = ld->ld_file_index;
+                    int line_index = lf_iter - ld->get_file_ptr()->begin();
 
-                content_line_t con_line(file_index * MAX_LINES_PER_FILE +
-                                        line_index);
+                    content_line_t con_line(file_index * MAX_LINES_PER_FILE +
+                                            line_index);
 
-                this->lss_index.push_back(con_line);
+                    this->lss_index.push_back(con_line);
+                }
 
                 merge.next();
                 index_off += 1;

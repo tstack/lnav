@@ -3,6 +3,23 @@
 echo ${top_srcdir}
 echo ${top_builddir}
 
+if test x"${TSHARK_CMD}" != x""; then
+  run_test ${lnav_test} -n ${test_dir}/dhcp.pcapng
+
+  check_output "pcap file is not recognized" <<EOF
+2004-12-05T11:16:24.317 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
+2004-12-05T11:16:24.317 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
+2004-12-05T11:16:24.387 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
+2004-12-05T11:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
+EOF
+
+  run_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
+
+  check_error_output "truncated pcap file is not recognized" <<EOF
+error: unable to open file: {test_dir}/dhcp-trunc.pcapng -- tshark: The file "{test_dir}/dhcp-trunc.pcapng" appears to have been cut short in the middle of a packet.
+EOF
+fi
+
 run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
     -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log' <<EOF
 2013-06-06T19:13:20.123  Hi
