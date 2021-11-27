@@ -1,0 +1,46 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "rabbitmq_log": {
+        "regex": {
+            "connection": {
+                "pattern" : "^=(?<level>[A-Z]+) REPORT==== (?<timestamp>\\d\\d?-\\w{3}-\\d{4}::\\d{2}:\\d{2}:\\d{2}) ===(\\n(?<body>(closing AMQP connection <(?<stuff>.+)> \\((?<sourceIP>\\d[\\d.]+\\d?):(?<sourcePort>\\d+) -> (?<destIP>\\d[\\d.]+\\d?):(?<destPort>\\d+)\\))?(.*\\n)*))?$"
+            }
+        },
+        "timestamp-format" : ["%e-%b-%Y::%H:%M:%S"],
+        "level": {
+            "error": "ERROR",
+            "warning": "WARNING|SUPERVISOR",
+            "info": "INFO|PROGRESS",
+            "fatal": "CRASH"
+        },
+        "value" : {
+            "body" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "sourceIP" : {
+                "kind" : "string",
+                "identifier" : true,
+                "collate" : "ipaddress"
+            },
+            "sourcePort" : {
+                "kind" : "integer",
+                "identifier" : true
+            },
+            "destIP" : {
+                "kind" : "string",
+                "identifier" : true,
+                "collate" : "ipaddress"
+            },
+            "destPort" : {
+                "kind" : "integer",
+                "identifier" : true
+            }
+        },
+        "sample": [
+            {
+                "line": "=ERROR REPORT==== 21-Apr-2016::21:19:01 ===\n** Node 'rabbit@red-hound-01' not responding **\n** Removing (timedout) connection **\n\n"
+            }
+        ]
+    }
+}
