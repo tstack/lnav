@@ -111,6 +111,9 @@ file.
   machine and OS (i.e. MacOS, Linux, FreeBSD, Windows).  The binary is
   baked into the lnav executable itself, so there is no extra setup that
   needs to be done on the remote machine.
+  
+  The binary file is named ``tailer.bin.XXXXXX`` where *XXXXXX* is 6 random digits.
+  The file is, under normal circumstancies, deleted immediately.
 
 Searching
 ---------
