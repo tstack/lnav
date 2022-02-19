@@ -37,7 +37,11 @@ namespace paths {
 
 ghc::filesystem::path dotlnav()
 {
+#ifdef __CYGWIN__
+    auto home_env = getenv("APPDATA");
+#else
     auto home_env = getenv("HOME");
+#endif
     auto xdg_config_home = getenv("XDG_CONFIG_HOME");
 
     if (home_env != nullptr) {

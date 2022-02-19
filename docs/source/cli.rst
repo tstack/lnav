@@ -98,6 +98,11 @@ Environment Variables
    If :envvar:`XDG_CONFIG_HOME` is not set, lnav will use this directory
    to store its configuration in a sub-directory named :file:`.lnav`.
 
+.. envvar:: APPDATA
+
+   On Windows, lnav will use this directory instead of HOME
+   to store its configuration in a sub-directory named :file:`.lnav`.
+
 .. envvar:: TZ
 
    The timezone setting is used in some log formats to convert UTC timestamps

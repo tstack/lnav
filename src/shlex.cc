@@ -29,6 +29,10 @@
  * @file shlex.cc
  */
 
+#ifdef __CYGWIN__
+#include <alloca.h>
+#endif
+
 #include "config.h"
 
 #include "shlex.hh"
