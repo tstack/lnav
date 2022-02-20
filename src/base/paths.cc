@@ -29,16 +29,51 @@
 
 #include "config.h"
 
+#ifdef __CYGWIN__
+#include <sstream>
+#include <iostream>
+#endif
+
 #include "paths.hh"
 #include "fmt/format.h"
 
 namespace lnav {
 namespace paths {
 
+#ifdef __CYGWIN__
+char* windows_to_unix_file_path(char* input) {
+    if (input == nullptr) {
+      return nullptr;
+    }
+    std::string file_path;
+    file_path.assign(input);
+
+    // Replace the slashes
+    std::replace(file_path.begin(), file_path.end(), WINDOWS_FILE_PATH_SEPARATOR, UNIX_FILE_PATH_SEPARATOR);
+
+    // Convert the drive letter to lowercase
+    std::transform(file_path.begin(), file_path.begin() + 1, file_path.begin(),
+                   [](unsigned char character) {
+                       return std::tolower(character);
+                   });
+
+    // Remove the colon
+    const auto drive_letter = file_path.substr(0, 1);
+    const auto remaining_path = file_path.substr(2, file_path.size() - 2);
+    file_path = drive_letter + remaining_path;
+
+    std::stringstream stringstream;
+    stringstream << "/cygdrive/";
+    stringstream << file_path;
+
+    return const_cast<char*>(stringstream.str().c_str());
+}
+#endif
+
 ghc::filesystem::path dotlnav()
 {
 #ifdef __CYGWIN__
-    auto home_env = getenv("APPDATA");
+    auto home_env = windows_to_unix_file_path(getenv("APPDATA"));
 #else
     auto home_env = getenv("HOME");
 #endif
