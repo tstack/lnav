@@ -39,7 +39,7 @@ namespace paths {
 static const char WINDOWS_FILE_PATH_SEPARATOR = '\\';
 static const char UNIX_FILE_PATH_SEPARATOR = '/';
 
-char* windows_to_unix_file_path(std::string file_path);
+char* windows_to_unix_file_path(char* input);
 #endif
 
 /**
