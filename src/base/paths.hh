@@ -35,6 +35,13 @@
 namespace lnav {
 namespace paths {
 
+#ifdef __CYGWIN__
+static const char WINDOWS_FILE_PATH_SEPARATOR = '\\';
+static const char UNIX_FILE_PATH_SEPARATOR = '/';
+
+char* windows_to_unix_file_path(char* input);
+#endif
+
 /**
  * Compute the path to a file in the user's '.lnav' directory.
  *

@@ -29,6 +29,10 @@
  * @file json_ptr.cc
  */
 
+#ifdef __CYGWIN__
+#include <alloca.h>
+#endif
+
 #include "config.h"
 
 #include "yajl/api/yajl_gen.h"

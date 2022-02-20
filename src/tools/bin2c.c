@@ -7,6 +7,10 @@
 // whatever you want with this stuff.  If we meet some day, and you think this stuff is
 // worth it, you can buy me a beer in return.  Sandro Sigala
 
+#ifdef __CYGWIN__
+#include <alloca.h>
+#endif
+
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>

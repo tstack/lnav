@@ -33,6 +33,7 @@
 
 #include <vector>
 #include <thread>
+#include <memory>
 
 #include <unistd.h>
 

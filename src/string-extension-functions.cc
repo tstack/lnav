@@ -7,6 +7,10 @@
  * commercial or non-commercial, and by any means.
  */
 
+#ifdef __CYGWIN__
+#include <alloca.h>
+#endif
+
 #include "config.h"
 
 #include <stdlib.h>

@@ -29,6 +29,10 @@
  * @file view_curses.cc
  */
 
+#ifdef __CYGWIN__
+#include <alloca.h>
+#endif
+
 #include "config.h"
 
 #include <cmath>
