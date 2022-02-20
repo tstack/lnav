@@ -3,6 +3,7 @@ name: ci-build
 on:
   push:
     branches: [ master ]
+    tags: ['*']
   pull_request:
     branches: [ master ]
 
@@ -82,3 +83,105 @@ jobs:
           name: lnav-tot-linux-64bit.zip
           # A file, directory or wildcard pattern that describes what to upload
           path: src/lnav
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { icon: '🟦', sys: MSYS }
+    name: ${{ matrix.icon }} ${{ matrix.sys }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: '${{ matrix.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{matrix.sys}}
+        update: true
+        install: >-
+          autoconf
+          automake
+          gcc
+          git
+          make
+          zip
+          msys/libarchive-devel
+          msys/libbz2-devel
+          msys/libcurl-devel
+          msys/liblzma-devel
+          msys/libreadline-devel
+          msys/libsqlite-devel
+          msys/ncurses-devel
+          msys/pcre-devel
+          msys/zlib-devel
+    - name: '🔧 Generate and configure'
+      run: |
+        set -x
+        ./autogen.sh
+        mkdir -p ../lnav-build
+        cd ../lnav-build
+        export PREFIX=$PWD/lnav
+        ../lnav/configure \
+                    --enable-static \
+                    LDFLAGS="-static" \
+                    CPPFLAGS="-I../src -I../../lnav/src -I../../lnav/src/fmtlib -O2" \
+                    CXXFLAGS="-fPIC" \
+                    CFLAGS="-fPIC" \
+                    LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv" \
+                    --sysconfdir=/etc \
+                    --prefix=$PREFIX
+    - name: '🚧 Make (do not use -j)'
+      run: |
+        set -x
+        cd ../lnav-build
+        make CFLAGS="-c"
+        strip -s src/lnav.exe
+    - name: '📦 Package for distribution'
+      run: |
+        set -x
+        cd ../lnav-build
+        export PREFIX=$PWD/lnav
+        make install
+        ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
+        mkdir -p lib/terminfo/78
+        cp -r /usr/lib/terminfo/78/xterm-256color lib/terminfo/78/
+        zip -r ../lnav/lnav-${{ github.ref_name }}-windows-amd64.zip lnav lib
+    - name: '💉 Basic test'
+      run: |
+        set -x
+        cd ../lnav-build
+        export PREFIX=$PWD/lnav
+        $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
+    - name: '⬆️ Upload a Build Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: lnav-${{ github.ref_name }}-windows-amd64.zip
+        path: lnav-${{ github.ref_name }}-windows-amd64.zip
+        if-no-files-found: error
+#    - name: '🎁 Create Release'
+#      id: create_release
+#      uses: actions/create-release@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        tag_name: ${{ github.ref_name }}
+#        release_name: Release ${{ github.ref_name }}
+#        draft: false
+#        prerelease: false
+#    - name: '⬆️ Upload Release Asset'
+#      id: upload-release-asset
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+#        asset_path: ./lnav-${{ github.ref_name }}-windows-amd64.zip
+#        asset_name: lnav-${{ github.ref_name }}-windows-amd64.zip
+#        asset_content_type: application/zip
