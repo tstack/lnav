@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include <iterator>
 #include <regex>
 #include <sstream>
 
