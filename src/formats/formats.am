@@ -31,6 +31,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/s3_log.json \
     $(srcdir)/%reldir%/tcf_log.json \
     $(srcdir)/%reldir%/tcsh_history.json \
+    $(srcdir)/%reldir%/unifi_log.json \
     $(srcdir)/%reldir%/uwsgi_log.json \
     $(srcdir)/%reldir%/vdsm_log.json \
     $(srcdir)/%reldir%/vmk_log.json \

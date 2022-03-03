@@ -1,0 +1,140 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "unifi_log": {
+        "title": "UniFi log",
+        "description": "The UniFi gateway logger format.",
+        "url": "https://www.halolinux.us/firewalls/firewall-log-messages-what-do-they-mean.html",
+        "regex": {
+            "udp": {
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>[^:]+): \\[(?<ellapsed>\\d+\\.\\d+)\\]\\s\\[(?<rule_name>[^\\]]+)\\]\\s*IN=(?<IN>(?:\\d|\\w)*) OUT=(?<OUT>(?:\\d|\\w)*) MAC=(?<MAC>([0-9a-f]{2}:)+[0-9a-f]{2}) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>(?:\\w+)) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) LEN=(?<LEN_UDP>\\d+)\\s*(?<body>.*)$"
+            },
+            "tcp": {
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>[^:]+): \\[(?<ellapsed>\\d+\\.\\d+)\\]\\s\\[(?<rule_name>[^\\]]+)\\]\\s*IN=(?<IN>(?:\\d|\\w)*) OUT=(?<OUT>(?:\\d|\\w)*) MAC=(?<MAC>([0-9a-f]{2}:)+[0-9a-f]{2}) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>(?:\\w+)) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) WINDOW=(?<WINDOW>\\d+) RES=(?<RES>0x(?:[0-9A-F])+) (?<body>.*)$"
+            },
+            "other": {
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>[A-Za-z0-9\\-\\[\\]]+): (?<body>[^\\[].*)$"
+            }
+        },
+        "level-field": "level",
+        "level": {
+            "error": "(?:(?i)err)",
+            "warning": "(?:(?i)warn)",
+            "info": "(?:(?i)notice)"
+        },
+        "opid-field": "ID",
+        "multiline": false,
+        "module-field": "module",
+        "timestamp-format": [
+          "%b %d %H:%M:%S"
+        ],
+        "value": {
+          "level" : {
+            "kind": "string",
+            "identifier": true
+          },
+          "facility" : {
+            "kind": "string",
+            "identifier": false
+          },
+          "module" : {
+            "kind": "string",
+            "identifier": false
+          },
+          "ellapsed" : {
+            "kind": "float",
+            "identifier": false,
+            "hidden": true
+          },
+          "rule_name" : {
+            "kind": "string",
+            "identifier": true
+          },
+          "host" : {
+            "kind": "string",
+            "identifier": true,
+            "hidden": true
+          },
+          "IN" : {
+            "kind": "string",
+            "identifier": false
+          },
+          "OUT" : {
+            "kind": "string",
+            "identifier": false
+          },
+          "MAC" : {
+            "kind": "string",
+            "identifier": true,
+            "hidden": true
+          },
+          "SRC" : {
+            "kind": "string",
+            "collate": "ipaddress",
+            "identifier": true
+          },
+          "SPT" : {
+            "kind": "integer",
+            "identifier": true
+          },
+          "DST" : {
+            "kind": "string",
+            "collate": "ipaddress",
+            "identifier": true
+          },
+          "DPT" : {
+            "kind": "integer",
+            "identifier": true
+          },
+          "LEN" : {
+            "kind": "integer"
+          },
+          "TOS" : {
+            "kind": "string",
+            "hidden": true
+          },
+          "PREC" : {
+            "kind": "string",
+            "hidden": true
+          },
+          "TTL" : {
+            "kind": "integer",
+            "hidden": true
+          },
+          "PROTO" : {
+            "kind": "string",
+            "identifier": true
+          },
+          "LEN_UDP" : {
+            "kind": "integer"
+          },
+          "WINDOW" : {
+            "kind": "integer",
+            "hidden": true
+          },
+          "RES" : {
+            "kind": "string",
+            "hidden": true
+          },
+          "body" : {
+            "kind": "string"
+          }
+        },
+        "sample": [
+            {
+                "line": "Mar  2 23:24:28 UDM-Pro user.warn kernel: [1294979.679369] [DNAT-br46-udp]IN=br46 OUT= MAC=24:5a:4c:a2:b1:0b:74:7a:90:9f:e4:ff:08:00 SRC=192.168.46.5 DST=8.8.8.8 LEN=68 TOS=0x00 PREC=0x00 TTL=255 ID=34103 DF PROTO=UDP SPT=65450 DPT=53 LEN=48"
+            },
+            {
+                "line": "Mar  2 23:00:01 UDM-Pro user.warn kernel: [1293512.217894] [FW-A-LAN_LOCAL_U-2013]IN=br96 OUT= MAC=24:5a:4c:a2:b1:0b:24:5e:be:46:df:c8:08:00 SRC=192.168.96.10 DST=192.168.16.1 LEN=40 TOS=0x00 PREC=0x20 TTL=64 ID=44654 DF PROTO=TCP SPT=55144 DPT=22 WINDOW=837 RES=0x00 ACK URGP=0"
+            },
+            {
+                "line": "Mar  2 23:27:40 UDM-Pro authpriv.notice dropbear[29787]: Pubkey auth succeeded for 'root' with key sha1!! 0e:16:76:2b:89:b3:c0:c7:14:a4:00:be:8f:9b:38:9a:12:fd:20:48 from 192.168.96.27:56718"
+            },
+            {
+                "line": "Feb 27 23:59:39 UDM-Pro user.notice dpi-flow-stats: ubnt-dpi-util: fingerprint_overrides API failed with HTTP -1"
+            },
+            {
+                "line": "Feb 28 14:25:54 UDM-Pro daemon.err mcad: mcad[2910]: ace_reporter.reporter_fail(): initial contact failed #6, url=http://localhost:8080/inform, rc=7"
+            }
+        ]
+    }
+}
