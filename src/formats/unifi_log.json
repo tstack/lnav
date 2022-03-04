@@ -15,10 +15,10 @@
               "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): (?:\\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s)?(?<body>[^\\[].*)$"
             },
             "dnsmasq-dhcp": {
-              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>dnsmasq-dhcp[A-Za-z0-9\\.\\-\\[\\]]*): (?<dhcp_op>DHCP[^(]+)(?:\\((?<dhcp_iface>[^)]*)\\)) (?:(?<dhcp_ip>(?:\\d{1,3}\\.){3}\\d{1,3}) )?(?<dhcp_mac>(?:[0-9a-f]{2}:)+[0-9a-f]{2})(?: (?<body>.*))?$"
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>dnsmasq-dhcp[A-Za-z0-9\\.\\-]*)(?:\\[(?<ID>\\d+)\\])?: (?<dhcp_op>DHCP[^(]+)(?:\\((?<dhcp_iface>[^)]*)\\)) (?:(?<dhcp_ip>(?:\\d{1,3}\\.){3}\\d{1,3}) )?(?<dhcp_mac>(?:[0-9a-f]{2}:)+[0-9a-f]{2})(?: (?<body>.*))?$"
             },
             "other": {
-              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>(?!kernel|dnsmasq-dhcp)[A-Za-z0-9\\.\\-\\[\\]]*): (?:\\[apply-config\\])?(?:\\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s)?(?<body>.*)$"
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>(?!kernel|dnsmasq-dhcp)[A-Za-z0-9\\.\\-]*)(?:\\[(?<ID>\\d+)\\])?: (?:\\[apply-config\\])?(?:\\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s)?(?<body>.*)$"
             }
         },
         "level-field": "level",
@@ -75,6 +75,10 @@
           "dhcp_ip" : {
             "kind": "string",
             "collate": "ipaddress",
+            "identifier": true
+          },
+          "ID" : {
+            "kind": "integer",
             "identifier": true
           },
           "IP_IN" : {
