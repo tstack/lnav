@@ -4,13 +4,13 @@ echo ${top_srcdir}
 echo ${top_builddir}
 
 if test x"${TSHARK_CMD}" != x""; then
-  run_test ${lnav_test} -n ${test_dir}/dhcp.pcapng
+  run_test env TZ=UTC ${lnav_test} -n ${test_dir}/dhcp.pcapng
 
   check_output "pcap file is not recognized" <<EOF
-2004-12-05T11:16:24.317 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
-2004-12-05T11:16:24.317 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
-2004-12-05T11:16:24.387 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
-2004-12-05T11:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
+2004-12-05T19:16:24.317 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
+2004-12-05T19:16:24.317 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
+2004-12-05T19:16:24.387 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
+2004-12-05T19:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
 EOF
 
   run_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
