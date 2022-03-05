@@ -1,6 +1,7 @@
-lnav v0.11.0:
+lnav v0.10.2:
      Features:
-     * Add support for pcap(3) files using tshark(1).
+     * Add initial support for pcap(3) files using tshark(1).
+     * Add format for UniFi gateway.
 
 lnav v0.10.1:
      Features:

@@ -13,7 +13,7 @@ huntergate(URL "https://github.com/cpp-pm/hunter/archive/v0.23.314.tar.gz" SHA1
            "95c47c92f68edb091b5d6d18924baabe02a6962a" LOCAL)
 
 set(CMAKE_CXX_STANDARD 14)
-project(lnav VERSION 0.10.1)
+project(lnav VERSION 0.10.2)
 
 # include(cmake/CodeCoverage.cmake) append_coverage_compiler_flags()
 

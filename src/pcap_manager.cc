@@ -60,6 +60,7 @@ convert(const std::string &filename)
 
         dup2(dev_null, STDIN_FILENO);
         dup2(outfile.second, STDOUT_FILENO);
+        setenv("TZ", "UTC", 1);
 
         const char *args[] = {
             "tshark",
