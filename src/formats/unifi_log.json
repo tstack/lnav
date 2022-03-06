@@ -6,10 +6,13 @@
         "url": "https://www.halolinux.us/firewalls/firewall-log-messages-what-do-they-mean.html",
         "regex": {
             "kernel-udp": {
-              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): \\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?IN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+))) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>(?:\\w+)) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) LEN=(?<LEN_UDP>\\d+)\\s*(?<body>.*)$"
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): \\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?IN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+)))? SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>UDP) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) LEN=(?<LEN_UDP>\\d+)\\s*(?<body>.*)$"
             },
             "kernel-tcp": {
-              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): \\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?IN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+))) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>(?:\\w+)) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) WINDOW=(?<WINDOW>\\d+) RES=(?<RES>0x(?:[0-9A-F])+) (?<SYN>(?:SYN) )?(?:URGP=(?<URGP>\\d+)\\s*)?(?<body>.*)$"
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): \\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?IN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+))) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>TCP) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) WINDOW=(?<WINDOW>\\d+) RES=(?<RES>0x(?:[0-9A-F])+) (?<SYN>(?:SYN) )?(?:URGP=(?<URGP>\\d+)\\s*)?(?<body>.*)$"
+            },
+            "kernel-other-proto": {
+              "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): \\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?IN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+)))? SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>0x(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) (?<DF>(?:DF) )?PROTO=(?<PROTO>(?!TCP|UDP)(?:\\w+))(?<body>.*)$"
             },
             "kernel-other": {
               "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+) (?<facility>\\w+)\\.(?<level>\\w+) (?<module>kernel): (?:\\[(?:\\s*(?<ellapsed>\\d+\\.\\d+))\\]\\s)?(?<body>[^\\[].*)$"
@@ -189,6 +192,9 @@
             },
             {
                 "line": "Mar  4 19:22:19 UDM-Pro daemon.info dnsmasq-dhcp[7431]: DHCPREQUEST(br96) 192.168.96.31 a0:57:e3:00:78:9e"
+            },
+            {
+                "line": "Mar  6 22:38:20 UDM-Pro user.warn kernel: [ 6509.503966] [FW-A-LAN_LOCAL_U-2147483647]IN=br96 OUT= MAC= SRC=192.168.96.1 DST=233.89.188.1 LEN=32 TOS=0x00 PREC=0xC0 TTL=1 ID=0 DF PROTO=2"
             },
             {
                 "line": "Feb 28 14:25:54 UDM-Pro daemon.err mcad: mcad[2910]: ace_reporter.reporter_fail(): initial contact failed #6, url=http://localhost:8080/inform, rc=7"
