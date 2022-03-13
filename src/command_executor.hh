@@ -38,12 +38,12 @@
 #include "fmt/format.h"
 #include "optional.hpp"
 #include "auto_fd.hh"
-#include "attr_line.hh"
-#include "shlex.hh"
-#include "log_format.hh"
 #include "bookmarks.hh"
+#include "shlex.resolver.hh"
 
 struct exec_context;
+class attr_line_t;
+class logline_value;
 
 typedef int (*sql_callback_t)(exec_context &ec, sqlite3_stmt *stmt);
 int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
@@ -61,15 +61,7 @@ struct exec_context {
 
     exec_context(std::vector<logline_value> *line_values = nullptr,
                  sql_callback_t sql_callback = ::sql_callback,
-                 pipe_callback_t pipe_callback = nullptr)
-        : ec_line_values(line_values),
-          ec_sql_callback(sql_callback),
-          ec_pipe_callback(pipe_callback) {
-        this->ec_local_vars.push(std::map<std::string, std::string>());
-        this->ec_path_stack.emplace_back(".");
-        this->ec_source.emplace("command", 1);
-        this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
-    }
+                 pipe_callback_t pipe_callback = nullptr);
 
     bool is_read_write() const {
         return this->ec_perms == perm_t::READ_WRITE;
@@ -133,7 +125,7 @@ struct exec_context {
 
     source_guard enter_source(const std::string& path, int line_number) {
         this->ec_source.emplace(path, line_number);
-        return source_guard(*this);
+        return {*this};
     }
 
     scoped_resolver create_resolver() {
@@ -156,7 +148,7 @@ struct exec_context {
 
     std::vector<std::pair<std::string, nonstd::optional<output_t>>> ec_output_stack;
 
-    attr_line_t ec_accumulator;
+    std::unique_ptr<attr_line_t> ec_accumulator;
 
     sql_callback_t ec_sql_callback;
     pipe_callback_t ec_pipe_callback;

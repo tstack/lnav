@@ -33,6 +33,7 @@
 
 #include "base/string_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "shlex.hh"
 

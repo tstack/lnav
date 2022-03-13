@@ -55,7 +55,6 @@
 #include "base/result.h"
 #include "base/intern_string.hh"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
 
 #if SIZEOF_OFF_T == 8
 #define FORMAT_OFF_T    "%lld"
@@ -123,10 +122,6 @@ inline bool is_glob(const char *fn)
             strchr(fn, '[') != nullptr);
 };
 
-std::string build_path(const std::vector<ghc::filesystem::path> &paths);
-
-Result<std::string, std::string> read_file(const ghc::filesystem::path &path);
-
 inline short pollfd_revents(const std::vector<struct pollfd> &pollfds, int fd) {
     auto iter = std::find_if(pollfds.begin(), pollfds.end(), [fd](const auto& entry) {
         return entry.fd == fd;
@@ -185,21 +180,6 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nvcsw = left.ru_nvcsw + right.ru_nvcsw;
     diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
 }
-
-inline int statp(const ghc::filesystem::path &path, struct stat *buf) {
-    return stat(path.c_str(), buf);
-}
-
-inline int openp(const ghc::filesystem::path &path, int flags) {
-    return open(path.c_str(), flags);
-}
-
-inline int openp(const ghc::filesystem::path &path, int flags, mode_t mode) {
-    return open(path.c_str(), flags, mode);
-}
-
-Result<std::pair<ghc::filesystem::path, int>, std::string>
-open_temp_file(const ghc::filesystem::path &pattern);
 
 bool is_dev_null(const struct stat &st);
 bool is_dev_null(int fd);

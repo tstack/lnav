@@ -40,6 +40,7 @@
 
 #include "base/opt_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "shlex.resolver.hh"
 
 enum class shlex_token_t {
     ST_ERROR,
@@ -52,33 +53,6 @@ enum class shlex_token_t {
     ST_VARIABLE_REF,
     ST_QUOTED_VARIABLE_REF,
     ST_TILDE,
-};
-
-class scoped_resolver {
-public:
-    scoped_resolver(std::initializer_list<std::map<std::string, std::string> *> l) {
-        this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
-    };
-
-    typedef std::map<std::string, std::string>::const_iterator const_iterator;
-
-    const_iterator find(const std::string &str) const {
-        const_iterator retval;
-
-        for (auto scope : this->sr_stack) {
-            if ((retval = scope->find(str)) != scope->end()) {
-                return retval;
-            }
-        }
-
-        return this->end();
-    };
-
-    const_iterator end() const {
-        return this->sr_stack.back()->end();
-    }
-
-    std::vector<const std::map<std::string, std::string> *> sr_stack;
 };
 
 class shlex {

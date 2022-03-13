@@ -31,12 +31,10 @@
 
 #include "config.h"
 
-#include <assert.h>
-
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "auto_mem.hh"
-#include "sql_util.hh"
+#include "sql_help.hh"
 
 #include "sqlite-extension-func.hh"
 
@@ -68,8 +66,8 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
 {
     int lpc;
 
-    assert(db != nullptr);
-    assert(reg_funcs != nullptr);
+    require(db != nullptr);
+    require(reg_funcs != nullptr);
 
     {
         auto_mem<char> errmsg(sqlite3_free);

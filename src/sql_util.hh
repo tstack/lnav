@@ -41,9 +41,9 @@
 #include <string>
 #include <vector>
 
+#include "base/intern_string.hh"
 #include "base/time_util.hh"
-#include "attr_line.hh"
-#include "help_text.hh"
+#include "sqlitepp.hh"
 
 extern const char *sql_keywords[145];
 extern const char *sql_function_names[];
@@ -102,27 +102,8 @@ void sql_execute_script(sqlite3 *db,
 
 int guess_type_from_pcre(const std::string &pattern, std::string &collator);
 
-/* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void *mem);
-
 int sqlite_authorizer(void* pUserData, int action_code, const char *detail1,
                       const char *detail2, const char *detail3,
                       const char *detail4);
-
-extern string_attr_type SQL_COMMAND_ATTR;
-extern string_attr_type SQL_KEYWORD_ATTR;
-extern string_attr_type SQL_IDENTIFIER_ATTR;
-extern string_attr_type SQL_FUNCTION_ATTR;
-extern string_attr_type SQL_STRING_ATTR;
-extern string_attr_type SQL_OPERATOR_ATTR;
-extern string_attr_type SQL_PAREN_ATTR;
-extern string_attr_type SQL_GARBAGE_ATTR;
-
-void annotate_sql_statement(attr_line_t &al_inout);
-
-extern std::multimap<std::string, help_text *> sqlite_function_help;
-
-std::string sql_keyword_re();
-std::vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x);
 
 #endif

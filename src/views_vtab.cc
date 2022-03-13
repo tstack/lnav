@@ -29,13 +29,13 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <unistd.h>
 #include <string.h>
 
 #include "lnav.hh"
 #include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
+#include "base/opt_util.hh"
 #include "sql_util.hh"
 #include "views_vtab.hh"
 #include "view_curses.hh"

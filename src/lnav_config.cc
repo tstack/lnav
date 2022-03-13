@@ -47,12 +47,12 @@
 #include <fmt/format.h>
 
 #include "auto_fd.hh"
+#include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/injector.bind.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
-#include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "base/auto_pid.hh"
 #include "lnav_config.hh"
@@ -339,7 +339,7 @@ void install_extra_formats()
     }
 
     auto config_json = config_root / "remote-config.json";
-    if ((fd = openp(config_json, O_RDONLY)) == -1) {
+    if ((fd = lnav::filesystem::openp(config_json, O_RDONLY)) == -1) {
         perror("Unable to open remote-config.json");
     }
     else {
@@ -1120,7 +1120,7 @@ detect_config_file_type(const ghc::filesystem::path &path)
 {
     static const char *id_path[] = {"$schema", nullptr};
 
-    auto read_res = read_file(path);
+    auto read_res = lnav::filesystem::read_file(path);
 
     if (read_res.isErr()) {
         return Err(fmt::format("unable to open file: {} -- {}",
@@ -1166,7 +1166,7 @@ static void load_config_from(_lnav_config& lconfig, const ghc::filesystem::path 
     ypc.with_obj(lconfig);
     ypc.ypc_userdata = &ud;
     ypc.with_error_reporter(config_error_reporter);
-    if ((fd = openp(path, O_RDONLY)) == -1) {
+    if ((fd = lnav::filesystem::openp(path, O_RDONLY)) == -1) {
         if (errno != ENOENT) {
             char errmsg[1024];
 
@@ -1255,7 +1255,7 @@ void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string
                            "default" /
                            fmt::format("{}.sample", bsf.get_name());
 
-        auto fd = auto_fd(openp(sample_path, O_WRONLY|O_TRUNC|O_CREAT, 0644));
+        auto fd = auto_fd(lnav::filesystem::openp(sample_path, O_WRONLY|O_TRUNC|O_CREAT, 0644));
         auto sf = bsf.to_string_fragment();
         if (fd == -1 || write(fd.get(), sf.data(), sf.length()) == -1) {
             fprintf(stderr,
@@ -1335,7 +1335,7 @@ string save_config()
     {
         auto_fd fd;
 
-        if ((fd = openp(user_config_tmp,
+        if ((fd = lnav::filesystem::openp(user_config_tmp,
                         O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
             return "error: unable to save configuration -- " +
                    string(strerror(errno));

@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <unordered_set>
 
 #include "base/time_util.hh"
@@ -551,7 +550,7 @@ relative_time::from_str(const char *str, size_t len)
                     break;
 
                 case RTT__MAX:
-                    assert(false);
+                    ensure(false);
                     break;
             }
 

@@ -33,6 +33,7 @@
 
 #include <algorithm>
 
+#include "base/string_util.hh"
 #include "sql_util.hh"
 
 #include "base/lnav_log.hh"
@@ -93,7 +94,7 @@ std::string column_namer::add_column(const std::string &in_name)
         num += 1;
     }
 
-    this->cn_names.push_back(retval);
+    this->cn_names.emplace_back(retval);
 
     return retval;
 }

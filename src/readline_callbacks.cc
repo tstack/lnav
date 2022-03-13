@@ -34,6 +34,7 @@
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "lnav_config.hh"
+#include "sql_help.hh"
 #include "sysclip.hh"
 #include "vtab_module.hh"
 #include "plain_text_source.hh"
@@ -47,6 +48,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "tailer/tailer.looper.hh"
 #include "service_tags.hh"
+#include "view_helpers.examples.hh"
 
 using namespace std;
 

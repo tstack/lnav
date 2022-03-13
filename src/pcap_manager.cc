@@ -37,8 +37,8 @@
 
 #include <unistd.h>
 
+#include "base/fs_util.hh"
 #include "pcap_manager.hh"
-#include "lnav_util.hh"
 #include "line_buffer.hh"
 
 namespace pcap_manager {
@@ -48,7 +48,7 @@ convert(const std::string &filename)
 {
     log_info("attempting to convert pcap file -- %s", filename.c_str());
 
-    auto outfile = TRY(open_temp_file(
+    auto outfile = TRY(lnav::filesystem::open_temp_file(
         ghc::filesystem::temp_directory_path() / "lnav.pcap.XXXXXX"));
     ghc::filesystem::remove(outfile.first);
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));

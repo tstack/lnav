@@ -38,6 +38,7 @@
 #include "data_parser.hh"
 #include "ansi_scrubber.hh"
 #include "log_format.hh"
+#include "logfile.hh"
 #include "textview_curses.hh"
 #include "view_curses.hh"
 #include "lnav_config.hh"

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,39 +27,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef log_actions_hh
-#define log_actions_hh
+#ifndef lnav_fs_util_hh
+#define lnav_fs_util_hh
 
-#include <functional>
-#include <utility>
+#include <string>
+#include <vector>
 
-#include "logfile_sub_source.hh"
-#include "log_data_helper.hh"
+#include "result.h"
+#include "ghc/filesystem.hpp"
 
-class piper_proc;
+namespace lnav {
+namespace filesystem {
 
-class action_delegate : public text_delegate {
-public:
-    explicit action_delegate(logfile_sub_source &lss,
-                             std::function<void(pid_t)>  child_cb,
-                             std::function<void(const std::string&,
-                                                std::shared_ptr<piper_proc>)> piper_cb)
-        : ad_log_helper(lss), ad_child_cb(std::move(child_cb)), ad_piper_cb(std::move(piper_cb)) {
+inline int statp(const ghc::filesystem::path &path, struct stat *buf) {
+    return stat(path.c_str(), buf);
+}
 
-    };
+inline int openp(const ghc::filesystem::path &path, int flags) {
+    return open(path.c_str(), flags);
+}
 
-    bool text_handle_mouse(textview_curses &tc, mouse_event &me) override;
+inline int openp(const ghc::filesystem::path &path, int flags, mode_t mode) {
+    return open(path.c_str(), flags, mode);
+}
 
-private:
-    std::string execute_action(const std::string &action_name);
+Result<std::pair<ghc::filesystem::path, int>, std::string>
+open_temp_file(const ghc::filesystem::path &pattern);
 
-    log_data_helper ad_log_helper;
-    std::function<void(pid_t)> ad_child_cb;
-    std::function<void(const std::string&,
-                       std::shared_ptr<piper_proc>)> ad_piper_cb;
-    vis_line_t ad_press_line{-1};
-    int ad_press_value{-1};
-    size_t ad_line_index{0};
-};
+Result<std::string, std::string> read_file(const ghc::filesystem::path &path);
+
+std::string build_path(const std::vector<ghc::filesystem::path> &paths);
+
+}
+}
 
 #endif

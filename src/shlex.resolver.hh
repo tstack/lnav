@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,41 +25,42 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file shlex.resolver.hh
  */
 
-#ifndef log_actions_hh
-#define log_actions_hh
+#ifndef lnav_shlex_resolver_hh
+#define lnav_shlex_resolver_hh
 
-#include <functional>
-#include <utility>
+#include <map>
+#include <string>
+#include <vector>
 
-#include "logfile_sub_source.hh"
-#include "log_data_helper.hh"
-
-class piper_proc;
-
-class action_delegate : public text_delegate {
+class scoped_resolver {
 public:
-    explicit action_delegate(logfile_sub_source &lss,
-                             std::function<void(pid_t)>  child_cb,
-                             std::function<void(const std::string&,
-                                                std::shared_ptr<piper_proc>)> piper_cb)
-        : ad_log_helper(lss), ad_child_cb(std::move(child_cb)), ad_piper_cb(std::move(piper_cb)) {
-
+    scoped_resolver(std::initializer_list<std::map<std::string, std::string> *> l) {
+        this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
     };
 
-    bool text_handle_mouse(textview_curses &tc, mouse_event &me) override;
+    typedef std::map<std::string, std::string>::const_iterator const_iterator;
 
-private:
-    std::string execute_action(const std::string &action_name);
+    const_iterator find(const std::string &str) const {
+        const_iterator retval;
 
-    log_data_helper ad_log_helper;
-    std::function<void(pid_t)> ad_child_cb;
-    std::function<void(const std::string&,
-                       std::shared_ptr<piper_proc>)> ad_piper_cb;
-    vis_line_t ad_press_line{-1};
-    int ad_press_value{-1};
-    size_t ad_line_index{0};
+        for (auto scope : this->sr_stack) {
+            if ((retval = scope->find(str)) != scope->end()) {
+                return retval;
+            }
+        }
+
+        return this->end();
+    };
+
+    const_iterator end() const {
+        return this->sr_stack.back()->end();
+    }
+
+    std::vector<const std::map<std::string, std::string> *> sr_stack;
 };
 
 #endif

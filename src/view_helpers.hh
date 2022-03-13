@@ -33,7 +33,6 @@
 #define lnav_view_helpers_hh
 
 #include "help_text.hh"
-#include "attr_line.hh"
 #include "vis_line.hh"
 #include "bookmarks.hh"
 
@@ -58,11 +57,9 @@ extern const char *lnav_view_strings[LNV__MAX + 1];
 nonstd::optional<lnav_view_t> view_from_string(const char *name);
 
 bool ensure_view(textview_curses *expected_tc);
+bool ensure_view(lnav_view_t expected);
 bool toggle_view(textview_curses *toggle_tc);
 void layout_views();
-
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
 
 nonstd::optional<vis_line_t> next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,

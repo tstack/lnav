@@ -34,12 +34,13 @@
 #include <paths.h>
 #include <curl/curl.h>
 
+#include "base/fs_util.hh"
 #include "curl_looper.hh"
 
 class url_loader : public curl_request {
 public:
     url_loader(const std::string &url) : curl_request(url), ul_resume_offset(0) {
-        auto tmp_res = open_temp_file(ghc::filesystem::temp_directory_path() /
+        auto tmp_res = lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
                                       "lnav.url.XXXXXX");
         if (tmp_res.isErr()) {
             return;

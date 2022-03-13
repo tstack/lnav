@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "lnav.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "pretty_printer.hh"
 #include "environ_vtab.hh"
@@ -37,6 +38,7 @@
 #include "shlex.hh"
 #include "help-txt.h"
 #include "view_helpers.hh"
+#include "view_helpers.examples.hh"
 
 using namespace std;
 
@@ -513,6 +515,11 @@ bool ensure_view(textview_curses *expected_tc)
         retval = false;
     }
     return retval;
+}
+
+bool ensure_view(lnav_view_t expected)
+{
+    return ensure_view(&lnav_data.ld_views[expected]);
 }
 
 nonstd::optional<vis_line_t> next_cluster(

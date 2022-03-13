@@ -34,6 +34,7 @@
 
 #include "base/lnav_log.hh"
 #include "pugixml/pugixml.hpp"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "xml_util.hh"
 #include "vtab_module.hh"

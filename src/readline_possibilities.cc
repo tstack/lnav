@@ -33,8 +33,10 @@
 #include <string>
 
 #include "base/isc.hh"
+#include "base/opt_util.hh"
 #include "tailer/tailer.looper.hh"
 #include "lnav.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "data_parser.hh"
 #include "sysclip.hh"

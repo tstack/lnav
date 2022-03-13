@@ -41,6 +41,7 @@
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "fmt/format.h"
+#include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/humanize.hh"
@@ -83,7 +84,7 @@ public:
         auto lock_path = archive_path;
 
         lock_path += ".lck";
-        this->lh_fd = openp(lock_path, O_CREAT | O_RDWR, 0600);
+        this->lh_fd = lnav::filesystem::openp(lock_path, O_CREAT | O_RDWR, 0600);
         log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
     };
 
@@ -176,7 +177,7 @@ filename_to_tmp_path(const std::string &filename)
     hasher h;
 
     h.update(basename);
-    auto fd = auto_fd(openp(filename, O_RDONLY));
+    auto fd = auto_fd(lnav::filesystem::openp(filename, O_RDONLY));
     if (fd != -1) {
         char buffer[1024];
         int rc;

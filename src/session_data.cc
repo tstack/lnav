@@ -40,7 +40,9 @@
 #include <utility>
 #include <yajl/api/yajl_tree.h>
 
+#include "base/fs_util.hh"
 #include "base/isc.hh"
+#include "base/opt_util.hh"
 #include "base/paths.hh"
 #include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp.hh"
@@ -905,7 +907,7 @@ void load_session()
 
         load_time_bookmarks();
 
-        if ((fd = openp(view_info_path, O_RDONLY)) < 0) {
+        if ((fd = lnav::filesystem::openp(view_info_path, O_RDONLY)) < 0) {
             perror("cannot open session file");
         }
         else {

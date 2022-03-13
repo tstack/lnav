@@ -33,10 +33,10 @@
 
 #include <unordered_map>
 
+#include "base/fs_util.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "auto_fd.hh"
-#include "lnav_util.hh"
 #include "file_format.hh"
 #include "archive_manager.hh"
 
@@ -104,7 +104,7 @@ file_format_t detect_file_format(const ghc::filesystem::path &filename)
     file_format_t retval = file_format_t::FF_UNKNOWN;
     auto_fd       fd;
 
-    if ((fd = openp(filename, O_RDONLY)) != -1) {
+    if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) != -1) {
         uint8_t buffer[32];
         ssize_t rc;
 

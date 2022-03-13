@@ -176,17 +176,7 @@ struct string_fragment {
         };
     }
 
-    nonstd::optional<string_fragment> consume_n(int amount) const {
-        if (amount > this->length()) {
-            return nonstd::nullopt;
-        }
-
-        return string_fragment{
-            this->sf_string,
-            this->sf_begin + amount,
-            this->sf_end,
-        };
-    }
+    nonstd::optional<string_fragment> consume_n(int amount) const;
 
     template<typename P>
     string_fragment skip(P predicate) const {
@@ -280,38 +270,7 @@ struct string_fragment {
         this->sf_end = -1;
     };
 
-    void trim(const char *tokens) {
-        while (this->sf_begin < this->sf_end) {
-            bool found = false;
-
-            for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
-                if (this->sf_string[this->sf_begin] == tokens[lpc]) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                break;
-            }
-
-            this->sf_begin += 1;
-        }
-        while (this->sf_begin < this->sf_end) {
-            bool found = false;
-
-            for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
-                if (this->sf_string[this->sf_end - 1] == tokens[lpc]) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                break;
-            }
-
-            this->sf_end -= 1;
-        }
-    }
+    void trim(const char *tokens);
 
     const char *sf_string;
     int sf_begin;
@@ -352,16 +311,7 @@ public:
         return string_fragment{this->is_str};
     }
 
-    bool startswith(const char *prefix) const {
-        const char *curr = this->is_str.data();
-
-        while (*prefix != '\0' && *prefix == *curr) {
-            prefix += 1;
-            curr += 1;
-        }
-
-        return *prefix == '\0';
-    }
+    bool startswith(const char *prefix) const;
 
     struct intern_table;
     static std::shared_ptr<intern_table> get_table_lifetime();

@@ -9,8 +9,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include("cmake/HunterGate.cmake")
-huntergate(URL "https://github.com/cpp-pm/hunter/archive/v0.23.314.tar.gz" SHA1
-           "95c47c92f68edb091b5d6d18924baabe02a6962a" LOCAL)
+huntergate(URL "https://github.com/cpp-pm/hunter/archive/v0.24.0.tar.gz"
+           SHA1 "a3d7f4372b1dcd52faa6ff4a3bd5358e1d0e5efd"
+           LOCAL)
 
 set(CMAKE_CXX_STANDARD 14)
 project(lnav VERSION 0.10.2)

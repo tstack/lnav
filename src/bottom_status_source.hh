@@ -34,7 +34,6 @@
 
 #include "grep_proc.hh"
 #include "textview_curses.hh"
-#include "logfile_sub_source.hh"
 #include "statusview_curses.hh"
 
 class bottom_status_source

@@ -37,6 +37,7 @@
 
 #include "sqlite3.h"
 
+#include "base/opt_util.hh"
 #include "lnav.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"

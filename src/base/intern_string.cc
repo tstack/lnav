@@ -118,3 +118,62 @@ const intern_string *intern_string::lookup(const std::string &str) noexcept
 {
     return lookup(str.c_str(), str.size());
 }
+
+bool intern_string::startswith(const char *prefix) const
+{
+    const char *curr = this->is_str.data();
+
+    while (*prefix != '\0' && *prefix == *curr) {
+        prefix += 1;
+        curr += 1;
+    }
+
+    return *prefix == '\0';
+}
+
+void string_fragment::trim(const char *tokens)
+{
+    while (this->sf_begin < this->sf_end) {
+        bool found = false;
+
+        for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+            if (this->sf_string[this->sf_begin] == tokens[lpc]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            break;
+        }
+
+        this->sf_begin += 1;
+    }
+    while (this->sf_begin < this->sf_end) {
+        bool found = false;
+
+        for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+            if (this->sf_string[this->sf_end - 1] == tokens[lpc]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            break;
+        }
+
+        this->sf_end -= 1;
+    }
+}
+
+nonstd::optional<string_fragment> string_fragment::consume_n(int amount) const
+{
+    if (amount > this->length()) {
+        return nonstd::nullopt;
+    }
+
+    return string_fragment{
+        this->sf_string,
+        this->sf_begin + amount,
+        this->sf_end,
+    };
+}

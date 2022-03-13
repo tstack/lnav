@@ -31,6 +31,7 @@
 
 #include "base/lnav_log.hh"
 #include "pcrepp/pcrepp.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 

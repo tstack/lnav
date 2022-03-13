@@ -23,6 +23,7 @@ noinst_HEADERS = \
     date_time_scanner.hh \
     enum_util.hh \
     file_range.hh \
+    fs_util.hh \
     func_util.hh \
     future_util.hh \
 	humanize.hh \
@@ -48,6 +49,7 @@ noinst_HEADERS = \
 libbase_a_SOURCES = \
     auto_pid.cc \
     date_time_scanner.cc \
+    fs_util.cc \
 	humanize.cc \
 	humanize.network.cc \
 	humanize.time.cc \

@@ -3,6 +3,7 @@ add_library(
   ../config.h
   auto_pid.cc
   date_time_scanner.cc
+  fs_util.cc
   humanize.cc
   humanize.network.cc
   humanize.time.cc
@@ -19,6 +20,7 @@ add_library(
   auto_pid.hh
   date_time_scanner.hh
   enum_util.hh
+  fs_util.hh
   func_util.hh
   future_util.hh
   humanize.hh

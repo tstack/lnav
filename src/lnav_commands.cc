@@ -44,6 +44,7 @@
 #include <yajl/api/yajl_tree.h>
 
 #include "bound_tags.hh"
+#include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
@@ -1341,7 +1342,7 @@ static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vect
                 }
             }
 
-            setenv("PATH", build_path(path_v).c_str(), 1);
+            setenv("PATH", lnav::filesystem::build_path(path_v).c_str(), 1);
             execvp(args[0], (char *const *) args);
             _exit(1);
             break;
@@ -2294,7 +2295,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                     auto fifo_piper = make_shared<piper_proc>(
                         fifo_fd.release(),
                         false,
-                        open_temp_file(ghc::filesystem::temp_directory_path() /
+                        lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
                                        "lnav.fifo.XXXXXX")
                             .map([](auto pair) {
                                 ghc::filesystem::remove(pair.first);

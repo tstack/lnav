@@ -41,12 +41,13 @@
 
 #include "auto_mem.hh"
 #include "sql_util.hh"
+#include "sql_help.hh"
 #include "base/injector.hh"
 #include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "pcrepp/pcrepp.hh"
-#include "readline_curses.hh"
+#include "readline_context.hh"
 #include "bound_tags.hh"
 #include "sqlite-extension-func.hh"
 

@@ -38,7 +38,7 @@
 #include <string>
 #include <map>
 
-#include "help_text_formatter.hh"
+#include "help_text.hh"
 
 struct FuncDef {
     const char *zName{nullptr};

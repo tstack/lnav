@@ -44,6 +44,7 @@
 
 #include <utility>
 
+#include "base/fs_util.hh"
 #include "base/string_util.hh"
 #include "base/injector.hh"
 #include "logfile.hh"
@@ -144,7 +145,7 @@ bool logfile::exists() const
         return true;
     }
 
-    if (statp(this->lf_actual_path.value(), &st) == -1) {
+    if (lnav::filesystem::statp(this->lf_actual_path.value(), &st) == -1) {
         log_error("%s: stat failed -- %s",
                   this->lf_actual_path.value().c_str(),
                   strerror(errno));

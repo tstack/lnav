@@ -31,6 +31,7 @@
 
 #include <vector>
 
+#include "base/fs_util.hh"
 #include "base/string_util.hh"
 #include "base/injector.hh"
 #include "yajlpp/json_ptr.hh"
@@ -155,7 +156,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         stmt_str = MSG_FORMAT_STMT;
     }
 
-    ec.ec_accumulator.clear();
+    ec.ec_accumulator->clear();
 
     pair<string, int> source = ec.ec_source.top();
     sql_progress_guard progress_guard(sql_progress,
@@ -339,8 +340,8 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
 
-        if (!ec.ec_accumulator.empty()) {
-            retval = ec.ec_accumulator.get_string();
+        if (!ec.ec_accumulator->empty()) {
+            retval = ec.ec_accumulator->get_string();
         }
         else if (!dls.dls_rows.empty()) {
             if (lnav_data.ld_flags & LNF_HEADLESS) {
@@ -790,7 +791,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         });
     } else {
         auto pp = make_shared<piper_proc>(
-            fd, false, open_temp_file(ghc::filesystem::temp_directory_path() /
+            fd, false, lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
             "lnav.out.XXXXXX")
                 .map([](auto pair) {
                     ghc::filesystem::remove(pair.first);
@@ -868,6 +869,19 @@ void exec_context::clear_output()
         }
     };
     this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
+}
+
+exec_context::exec_context(std::vector<logline_value> *line_values,
+                           sql_callback_t sql_callback,
+                           pipe_callback_t pipe_callback)
+    : ec_line_values(line_values),
+      ec_accumulator(std::make_unique<attr_line_t>()),
+      ec_sql_callback(sql_callback),
+      ec_pipe_callback(pipe_callback) {
+    this->ec_local_vars.push(std::map<std::string, std::string>());
+    this->ec_path_stack.emplace_back(".");
+    this->ec_source.emplace("command", 1);
+    this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
 }
 
 exec_context::output_guard::output_guard(exec_context &context,

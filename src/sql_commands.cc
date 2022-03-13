@@ -30,17 +30,24 @@
 #include "config.h"
 
 #include "base/lnav_log.hh"
-#include "lnav.hh"
-#include "lnav_util.hh"
+#include "base/fs_util.hh"
+#include "view_helpers.hh"
 #include "bound_tags.hh"
 #include "base/injector.bind.hh"
-#include "readline_curses.hh"
+#include "readline_context.hh"
 #include "sqlite-extension-func.hh"
+#include "command_executor.hh"
+#include "sqlitepp.hh"
+#include "auto_mem.hh"
+#include "shlex.hh"
 
 static
 Result<std::string, std::string> sql_cmd_dump(
     exec_context &ec, std::string cmdline, std::vector<std::string> &args)
 {
+    static auto& lnav_db =
+        injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&, sqlite_db_tag>();
+
     std::string retval;
 
     if (args.empty()) {
@@ -61,7 +68,7 @@ Result<std::string, std::string> sql_cmd_dump(
     }
 
     for (size_t lpc = 2; lpc < args.size(); lpc++) {
-        sqlite3_db_dump(lnav_data.ld_db.in(),
+        sqlite3_db_dump(lnav_db.in(),
                         "main",
                         args[lpc].c_str(),
                         (int (*)(const char *, void*)) fputs,
@@ -76,6 +83,8 @@ static
 Result<std::string, std::string> sql_cmd_read(
     exec_context &ec, std::string cmdline, std::vector<std::string> &args)
 {
+    static auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&, sqlite_db_tag>();
+
     std::string retval;
 
     if (args.empty()) {
@@ -91,7 +100,7 @@ Result<std::string, std::string> sql_cmd_read(
     }
 
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
-        auto read_res = read_file(split_args[lpc]);
+        auto read_res = lnav::filesystem::read_file(split_args[lpc]);
 
         if (read_res.isErr()) {
             return ec.make_error("unable to read script file: {} -- {}",
@@ -105,14 +114,14 @@ Result<std::string, std::string> sql_cmd_read(
 
         do {
             const char *tail;
-            auto rc = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+            auto rc = sqlite3_prepare_v2(lnav_db.in(),
                                          start,
                                          -1,
                                          stmt.out(),
                                          &tail);
 
             if (rc != SQLITE_OK) {
-                const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                const char *errmsg = sqlite3_errmsg(lnav_db.in());
 
                 return ec.make_error("{}", errmsg);
             }
@@ -131,13 +140,6 @@ Result<std::string, std::string> sql_cmd_read(
         } while (start[0]);
     }
 
-    if (lnav_data.ld_flags & LNF_HEADLESS) {
-        if (ec.ec_local_vars.size() == 1) {
-            ensure_view(&lnav_data.ld_views[LNV_DB]);
-        }
-    } else if (lnav_data.ld_db_row_source.dls_rows.size() > 1) {
-        ensure_view(&lnav_data.ld_views[LNV_DB]);
-    }
     return Ok(retval);
 }
 
@@ -151,7 +153,7 @@ Result<std::string, std::string> sql_cmd_schema(
         return Ok(retval);
     }
 
-    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
+    ensure_view(LNV_SCHEMA);
 
     return Ok(retval);
 }
@@ -190,9 +192,10 @@ static readline_context::command_t sql_commands[] = {
         ".read",
         sql_cmd_read,
         help_text(".read",
-                  "Switch to the SCHEMA view that contains a dump of the "
-                  "current database schema")
-            .sql_command(),
+                  "Execute the SQLite statements in the given file")
+            .sql_command()
+            .with_parameter({"path", "The path to the file to write"})
+            .with_tags({"io",}),
     },
     {
         ".schema",

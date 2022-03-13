@@ -31,6 +31,7 @@
 
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
+#include "base/opt_util.hh"
 #include "base/string_util.hh"
 #include "mapbox/variant.hpp"
 

@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -305,7 +304,7 @@ int register_environ_vtab(sqlite3 *db)
     int rc;
 
     rc = sqlite3_create_module(db, "environ_vtab_impl", &vtab_module, NULL);
-    assert(rc == SQLITE_OK);
+    ensure(rc == SQLITE_OK);
     if ((rc = sqlite3_exec(db,
              "CREATE VIRTUAL TABLE environ USING environ_vtab_impl()",
              NULL, NULL, errmsg.out())) != SQLITE_OK) {

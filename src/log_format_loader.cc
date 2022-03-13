@@ -43,6 +43,7 @@
 #include "fmt/format.h"
 #include "file_format.hh"
 
+#include "base/fs_util.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -800,7 +801,7 @@ static void write_sample_file()
         auto sf = bsf.to_string_fragment();
         auto_fd sample_fd;
 
-        if ((sample_fd = openp(sample_path,
+        if ((sample_fd = lnav::filesystem::openp(sample_path,
                                O_WRONLY | O_TRUNC | O_CREAT,
                                0644)) == -1 ||
             (write(sample_fd.get(), sf.data(), sf.length()) == -1)) {
@@ -816,7 +817,7 @@ static void write_sample_file()
         auto sf = bsf.to_string_fragment();
         auto_fd sh_fd;
 
-        if ((sh_fd = openp(sh_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+        if ((sh_fd = lnav::filesystem::openp(sh_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(sh_fd.get(), sf.data(), sf.length()) == -1) {
             fprintf(stderr,
                     "error:unable to write default text file: %s -- %s\n",
@@ -835,11 +836,11 @@ static void write_sample_file()
         extract_metadata(sf.data(), sf.length(), meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
         auto script_path = lnav::paths::dotlnav() / path;
-        if (statp(script_path, &st) == 0 && st.st_size == sf.length()) {
+        if (lnav::filesystem::statp(script_path, &st) == 0 && st.st_size == sf.length()) {
             // Assume it's the right contents and move on...
             continue;
         }
-        if ((script_fd = openp(script_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+        if ((script_fd = lnav::filesystem::openp(script_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(script_fd.get(), sf.data(), sf.length()) == -1) {
             fprintf(stderr,
                     "error:unable to write default text file: %s -- %s\n",
@@ -877,7 +878,7 @@ load_format_file(const ghc::filesystem::path &filename,
     yajlpp_parse_context ypc(filename, &root_format_handler);
     ypc.ypc_userdata = &ud;
     ypc.with_obj(ud);
-    if ((fd = openp(filename, O_RDONLY)) == -1) {
+    if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
         errors.emplace_back(fmt::format(
             "error: unable to open format file '{}' -- {}",
             filename.string(), strerror(errno)));
@@ -1096,7 +1097,7 @@ static void exec_sql_in_path(sqlite3 *db, const ghc::filesystem::path &path, std
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             auto filename = ghc::filesystem::path(gl->gl_pathv[lpc]);
-            auto read_res = read_file(filename);
+            auto read_res = lnav::filesystem::read_file(filename);
 
             if (read_res.isOk()) {
                 log_info("Executing SQL file: %s", filename.c_str());
@@ -1155,7 +1156,7 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
     auto_mem<FILE> fp(fclose);
     struct stat st;
 
-    if (statp(meta_inout.sm_path, &st) == -1) {
+    if (lnav::filesystem::statp(meta_inout.sm_path, &st) == -1) {
         log_warning("unable to open script -- %s", meta_inout.sm_path.c_str());
     } else if (!S_ISREG(st.st_mode)) {
         log_warning("not a regular file -- %s", meta_inout.sm_path.c_str());

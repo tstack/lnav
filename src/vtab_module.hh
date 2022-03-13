@@ -38,6 +38,7 @@
 
 #include "optional.hpp"
 #include "base/lnav_log.hh"
+#include "base/intern_string.hh"
 #include "base/string_util.hh"
 #include "auto_mem.hh"
 #include "mapbox/variant.hpp"

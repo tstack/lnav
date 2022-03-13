@@ -43,7 +43,6 @@
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 
-#include "lnav_util.hh"
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"
 

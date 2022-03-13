@@ -53,7 +53,6 @@ check_PROGRAMS = \
 	drive_listview \
 	drive_logfile \
 	drive_mvwattrline \
-	drive_sequencer \
 	drive_shlexer \
 	drive_sql \
 	drive_sql_anno \
@@ -148,8 +147,6 @@ drive_grep_proc_SOURCES = drive_grep_proc.cc
 drive_listview_SOURCES = drive_listview.cc
 
 drive_logfile_SOURCES = drive_logfile.cc
-
-drive_sequencer_SOURCES = drive_sequencer.cc
 
 drive_shlexer_SOURCES = drive_shlexer.cc
 

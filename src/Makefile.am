@@ -233,6 +233,7 @@ noinst_HEADERS = \
 	preview_status_source.hh \
 	ptimec.hh \
 	readline_callbacks.hh \
+	readline_context.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	readline_possibilities.hh \
@@ -243,14 +244,15 @@ noinst_HEADERS = \
 	safe/defaulttypes.h \
 	safe/mutableref.h \
 	safe/safe.h \
-	sequence_matcher.hh \
-	sequence_sink.hh \
 	service_tags.hh \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
+	shlex.resolver.hh \
 	simdutf8check.h \
 	spectro_source.hh \
+	sqlitepp.hh \
+	sql_help.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
 	styling.hh \
@@ -273,6 +275,7 @@ noinst_HEADERS = \
 	url_loader.hh \
 	view_curses.hh \
 	view_helpers.hh \
+	view_helpers.examples.hh \
 	views_vtab.hh \
 	vis_line.hh \
 	vt52_curses.hh \
@@ -366,7 +369,6 @@ libdiag_a_SOURCES = \
 	regexp_vtab.cc \
 	relative_time.cc \
 	session_data.cc \
-	sequence_matcher.cc \
 	shared_buffer.cc \
 	shlex.cc \
 	spectro_source.cc \

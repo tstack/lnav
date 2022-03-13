@@ -32,6 +32,7 @@
 #include "lnav.hh"
 #include "base/injector.hh"
 #include "service_tags.hh"
+#include "bound_tags.hh"
 
 struct lnav_data_t lnav_data;
 
@@ -71,6 +72,11 @@ textview_curses *get_textview_for_mode(ln_mode_t mode)
 readline_context::command_map_t lnav_commands;
 
 namespace injector {
+template<>
+void force_linking(sqlite_db_tag anno)
+{
+}
+
 template<>
 void force_linking(services::curl_streamer_t anno)
 {

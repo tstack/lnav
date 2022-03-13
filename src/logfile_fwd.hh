@@ -41,7 +41,10 @@
 using ui_clock = std::chrono::steady_clock;
 
 class logfile;
+class logline;
 class logline_observer;
+
+using logfile_const_iterator = std::vector<logline>::const_iterator;
 
 enum class logfile_name_source {
     USER,

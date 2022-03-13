@@ -42,12 +42,11 @@
 #include "listview_curses.hh"
 #include "base/lnav_log.hh"
 #include "text_format.hh"
-#include "logfile.hh"
+#include "logfile_fwd.hh"
 #include "highlighter.hh"
 #include "lnav_config_fwd.hh"
 #include "textview_curses_fwd.hh"
 
-class logline;
 class textview_curses;
 
 using vis_bookmarks = bookmarks<vis_line_t>::type;
@@ -164,11 +163,11 @@ public:
 
     void revert_to_last(logfile_filter_state &lfs, size_t rollback_size);
 
-    void add_line(logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line);
+    void add_line(logfile_filter_state &lfs, logfile_const_iterator ll, shared_buffer_ref &line);
 
     void end_of_message(logfile_filter_state &lfs);
 
-    virtual bool matches(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &line) = 0;
+    virtual bool matches(const logfile &lf, logfile_const_iterator ll, shared_buffer_ref &line) = 0;
 
     virtual std::string to_command() = 0;
 
@@ -192,7 +191,7 @@ public:
         : text_filter(type, filter_lang_t::REGEX, "", index) {
     }
 
-    bool matches(const logfile &lf, logfile::const_iterator ll,
+    bool matches(const logfile &lf, logfile_const_iterator ll,
                  shared_buffer_ref &line) override;
 
     std::string to_command() override;
@@ -653,13 +652,13 @@ public:
 
     text_sub_source *get_sub_source() const { return this->tc_sub_source; };
 
-    textview_curses &set_delegate(text_delegate *del) {
+    textview_curses &set_delegate(std::shared_ptr<text_delegate> del) {
         this->tc_delegate = del;
 
         return *this;
     };
 
-    text_delegate *get_delegate() const { return this->tc_delegate; };
+    std::shared_ptr<text_delegate> get_delegate() const { return this->tc_delegate; };
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
@@ -883,7 +882,7 @@ protected:
     };
 
     text_sub_source *tc_sub_source{nullptr};
-    text_delegate *tc_delegate{nullptr};
+    std::shared_ptr<text_delegate> tc_delegate;
 
     vis_bookmarks tc_bookmarks;
 

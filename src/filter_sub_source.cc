@@ -31,6 +31,7 @@
 
 #include "base/enum_util.hh"
 #include "base/func_util.hh"
+#include "base/opt_util.hh"
 
 #include "lnav.hh"
 

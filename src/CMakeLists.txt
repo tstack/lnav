@@ -396,6 +396,7 @@ add_library(
   pugixml/pugiconfig.hpp
   pugixml/pugixml.hpp
   readline_callbacks.hh
+  readline_context.hh
   readline_possibilities.hh
   regexp_vtab.hh
   relative_time.hh
@@ -407,8 +408,11 @@ add_library(
   safe/safe.h
   sequence_sink.hh
   shlex.hh
+  shlex.resolver.hh
   simdutf8check.h
   spectro_source.hh
+  sqlitepp.hh
+  sql_help.hh
   sql_util.hh
   strong_int.hh
   string_attr_type.hh
@@ -426,6 +430,7 @@ add_library(
   top_status_source.hh
   url_loader.hh
   view_helpers.hh
+  view_helpers.examples.hh
   views_vtab.hh
   vis_line.hh
   vtab_module.hh

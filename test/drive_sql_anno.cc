@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "lnav.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 

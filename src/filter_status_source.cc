@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "lnav.hh"
+#include "base/opt_util.hh"
 #include "filter_status_source.hh"
 #include "files_sub_source.hh"
 

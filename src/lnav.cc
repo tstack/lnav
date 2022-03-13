@@ -82,6 +82,7 @@
 #include "help-txt.h"
 #include "init-sql.h"
 #include "logfile.hh"
+#include "base/fs_util.hh"
 #include "base/func_util.hh"
 #include "base/humanize.network.hh"
 #include "base/humanize.time.hh"
@@ -130,6 +131,8 @@
 #include "base/future_util.hh"
 #include "tailer/tailer.looper.hh"
 #include "service_tags.hh"
+#include "view_helpers.examples.hh"
+#include "sql_help.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -231,6 +234,9 @@ static auto bound_active_files =
         return &lnav_data.ld_active_files;
     });
 
+static auto bound_sqlite_db =
+    injector::bind<auto_mem<sqlite3, sqlite_close_wrapper>, sqlite_db_tag>::to_instance(&lnav_data.ld_db);
+
 static auto bound_last_rel_time =
     injector::bind<relative_time, last_relative_time_tag>::to_singleton();
 
@@ -258,6 +264,11 @@ static auto bound_main =
 namespace injector {
 template<>
 void force_linking(last_relative_time_tag anno)
+{
+}
+
+template<>
+void force_linking(sqlite_db_tag anno)
 {
 }
 
@@ -2332,7 +2343,7 @@ int main(int argc, char *argv[])
             if ((in_fd = open(argv[lpc], O_RDONLY)) == -1) {
                 perror("unable to open file to install");
             }
-            else if ((out_fd = openp(dst_path,
+            else if ((out_fd = lnav::filesystem::openp(dst_path,
                                      O_WRONLY | O_CREAT | O_TRUNC,
                                      0644)) == -1) {
                 fprintf(stderr, "error: unable to open destination: %s -- %s\n",
@@ -2421,7 +2432,16 @@ int main(int argc, char *argv[])
     log_fos->fos_contexts.emplace("", false, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
-        .set_delegate(new action_delegate(lnav_data.ld_log_source))
+        .set_delegate(std::make_shared<action_delegate>(
+            lnav_data.ld_log_source,
+            [](auto child_pid) {
+                lnav_data.ld_children.push_back(child_pid);
+            }, [](const auto &desc, auto pp) {
+                lnav_data.ld_pipers.push_back(pp);
+                lnav_data.ld_active_files.fc_file_names[desc]
+                    .with_fd(pp->get_fd());
+                lnav_data.ld_files_to_front.template emplace_back(desc, 0);
+            }))
         .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(2_vl)
         .set_overlay_source(log_fos);
@@ -2705,7 +2725,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto fifo_piper = make_shared<piper_proc>(
                     fifo_fd.release(),
                     false,
-                    open_temp_file(ghc::filesystem::temp_directory_path() /
+                    lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
                                    "lnav.fifo.XXXXXX")
                         .map([](auto pair) {
                             ghc::filesystem::remove(pair.first);
@@ -2812,7 +2832,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         if (stdin_out == nullptr) {
             auto pattern = lnav::paths::dotlnav() / "stdin-captures/stdin.XXXXXX";
 
-            auto open_result = open_temp_file(pattern);
+            auto open_result = lnav::filesystem::open_temp_file(pattern);
             if (open_result.isErr()) {
                 fprintf(stderr,
                         "Unable to open temporary file for stdin: %s",

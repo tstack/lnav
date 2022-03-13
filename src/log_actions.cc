@@ -29,24 +29,23 @@
 
 #include "config.h"
 
-#include "lnav.hh"
-#include "lnav_util.hh"
+#include "base/fs_util.hh"
 #include "log_actions.hh"
+#include "piper_proc.hh"
 
 using namespace std;
 
-static string execute_action(log_data_helper &ldh,
-                             int value_index,
-                             const string &action_name)
+string action_delegate::execute_action(const string &action_name)
 {
-    std::map<string, log_format::action_def>::const_iterator iter;
+    auto& ldh = this->ad_log_helper;
+    auto value_index = this->ad_press_value;
     logline_value &lv = ldh.ldh_line_values[value_index];
     shared_ptr<logfile> lf = ldh.ldh_file;
     const auto format = lf->get_format();
     pid_t child_pid;
     string retval;
 
-    iter = format->lf_action_defs.find(action_name);
+    auto iter = format->lf_action_defs.find(action_name);
 
     const log_format::action_def &action = iter->second;
 
@@ -112,7 +111,7 @@ static string execute_action(log_data_helper &ldh,
 
             string value = lv.to_string();
 
-            lnav_data.ld_children.push_back(child_pid);
+            this->ad_child_cb(child_pid);
 
             if (write(in_pipe.write_end(), value.c_str(), value.size()) == -1) {
                 perror("execute_action write");
@@ -123,7 +122,7 @@ static string execute_action(log_data_helper &ldh,
                 auto pp = make_shared<piper_proc>(
                     out_pipe.read_end(),
                     false,
-                    open_temp_file(ghc::filesystem::temp_directory_path() /
+                    lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
                                    "lnav.action.XXXXXX")
                         .map([](auto pair) {
                             ghc::filesystem::remove(pair.first);
@@ -132,16 +131,10 @@ static string execute_action(log_data_helper &ldh,
                         })
                         .expect("Cannot create temporary file for action")
                         .second);
-                char desc[128];
+                auto desc = fmt::format("[{}] Output of {}", exec_count++,
+                                        action.ad_cmdline[0]);
 
-                lnav_data.ld_pipers.push_back(pp);
-                snprintf(desc,
-                         sizeof(desc), "[%d] Output of %s",
-                         exec_count++,
-                         action.ad_cmdline[0].c_str());
-                lnav_data.ld_active_files.fc_file_names[desc]
-                    .with_fd(pp->get_fd());
-                lnav_data.ld_files_to_front.emplace_back( desc, 0 );
+                this->ad_piper_cb(desc, pp);
             }
 
             return "";
@@ -212,10 +205,9 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
 
                     actions = lf->get_format()->get_actions(lv);
                     if (actions != nullptr && !actions->empty()) {
-                        string rc = execute_action(
-                            this->ad_log_helper, this->ad_press_value, actions->at(0));
+                        const auto rc = execute_action(actions->at(0));
 
-                        lnav_data.ld_rl_view->set_value(rc);
+                        // lnav_data.ld_rl_view->set_value(rc);
                     }
                 }
                 retval = true;

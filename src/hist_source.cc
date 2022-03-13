@@ -129,3 +129,61 @@ void hist_source2::add_value(time_t row, hist_source2::hist_type_t htype,
     bucket.b_time = row;
     bucket.b_values[htype].hv_value += value;
 }
+
+void hist_source2::init()
+{
+    view_colors &vc = view_colors::singleton();
+
+    this->hs_chart
+        .with_attrs_for_ident(HT_NORMAL,
+                              vc.attrs_for_role(view_colors::VCR_TEXT))
+        .with_attrs_for_ident(HT_WARNING,
+                              vc.attrs_for_role(view_colors::VCR_WARNING))
+        .with_attrs_for_ident(HT_ERROR,
+                              vc.attrs_for_role(view_colors::VCR_ERROR))
+        .with_attrs_for_ident(HT_MARK,
+                              vc.attrs_for_role(view_colors::VCR_KEYWORD));
+}
+
+void hist_source2::clear()
+{
+    this->hs_line_count = 0;
+    this->hs_last_bucket = -1;
+    this->hs_last_row = -1;
+    this->hs_blocks.clear();
+    this->hs_chart.clear();
+    this->init();
+}
+
+void hist_source2::end_of_row()
+{
+    if (this->hs_last_bucket >= 0) {
+        bucket_t &last_bucket = this->find_bucket(this->hs_last_bucket);
+
+        for (int lpc = 0; lpc < HT__MAX; lpc++) {
+            this->hs_chart.add_value(
+                (const hist_type_t) lpc,
+                last_bucket.b_values[lpc].hv_value);
+        }
+    }
+}
+
+nonstd::optional<struct timeval> hist_source2::time_for_row(vis_line_t row)
+{
+    if (row < 0 || row > this->hs_line_count) {
+        return nonstd::nullopt;
+    }
+
+    bucket_t &bucket = this->find_bucket(row);
+
+    return timeval{ bucket.b_time, 0 };
+}
+
+hist_source2::bucket_t &hist_source2::find_bucket(int64_t index)
+{
+    struct bucket_block &bb = this->hs_blocks[index / BLOCK_SIZE];
+    unsigned int intra_block_index = index % BLOCK_SIZE;
+    bb.bb_used = std::max(intra_block_index, bb.bb_used);
+    this->hs_line_count = std::max(this->hs_line_count, index + 1);
+    return bb.bb_buckets[intra_block_index];
+}

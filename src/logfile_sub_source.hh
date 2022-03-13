@@ -343,98 +343,13 @@ public:
         return this->lss_line_size_cache[index].second;
     };
 
-    void text_mark(bookmark_type_t *bm, vis_line_t line, bool added)
-    {
-        if (line >= (int) this->lss_index.size()) {
-            return;
-        }
+    void text_mark(bookmark_type_t *bm, vis_line_t line, bool added);
 
-        content_line_t cl = this->at(line);
-        std::vector<content_line_t>::iterator lb;
-
-        if (bm == &textview_curses::BM_USER) {
-            logline *ll = this->find_line(cl);
-
-            ll->set_mark(added);
-        }
-        lb = std::lower_bound(this->lss_user_marks[bm].begin(),
-                              this->lss_user_marks[bm].end(),
-                              cl);
-        if (added) {
-            if (lb == this->lss_user_marks[bm].end() || *lb != cl) {
-                this->lss_user_marks[bm].insert(lb, cl);
-            }
-        }
-        else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
-            require(lb != this->lss_user_marks[bm].end());
-
-            this->lss_user_marks[bm].erase(lb);
-        }
-        if (bm == &textview_curses::BM_META &&
-            this->lss_meta_grepper.gps_proc != nullptr) {
-            this->tss_view->search_range(line, line + 1_vl);
-            this->tss_view->search_new_data();
-        }
-    };
-
-    void text_clear_marks(bookmark_type_t *bm)
-    {
-        std::vector<content_line_t>::iterator iter;
-
-        if (bm == &textview_curses::BM_USER) {
-            for (iter = this->lss_user_marks[bm].begin();
-                 iter != this->lss_user_marks[bm].end();) {
-                auto bm_iter = this->lss_user_mark_metadata.find(*iter);
-                if (bm_iter != this->lss_user_mark_metadata.end()) {
-                    ++iter;
-                    continue;
-                }
-                this->find_line(*iter)->set_mark(false);
-                iter = this->lss_user_marks[bm].erase(iter);
-            }
-        } else {
-            this->lss_user_marks[bm].clear();
-        }
-    };
+    void text_clear_marks(bookmark_type_t *bm);
 
     bool insert_file(const std::shared_ptr<logfile>& lf);
 
-    void remove_file(std::shared_ptr<logfile> lf)
-    {
-        iterator iter;
-
-        iter = std::find_if(this->lss_files.begin(),
-                            this->lss_files.end(),
-                            logfile_data_eq(lf));
-        if (iter != this->lss_files.end()) {
-            bookmarks<content_line_t>::type::iterator mark_iter;
-            int file_index = iter - this->lss_files.begin();
-
-            (*iter)->clear();
-            for (mark_iter = this->lss_user_marks.begin();
-                 mark_iter != this->lss_user_marks.end();
-                 ++mark_iter) {
-                content_line_t mark_curr = content_line_t(
-                    file_index * MAX_LINES_PER_FILE);
-                content_line_t mark_end = content_line_t(
-                    (file_index + 1) * MAX_LINES_PER_FILE);
-                bookmark_vector<content_line_t>::iterator bv_iter;
-                bookmark_vector<content_line_t> &         bv =
-                    mark_iter->second;
-
-                while ((bv_iter =
-                            std::lower_bound(bv.begin(), bv.end(),
-                                             mark_curr)) != bv.end()) {
-                    if (*bv_iter >= mark_end) {
-                        break;
-                    }
-                    mark_iter->second.erase(bv_iter);
-                }
-            }
-
-            this->lss_force_rebuild = true;
-        }
-    };
+    void remove_file(std::shared_ptr<logfile> lf);
 
     enum class rebuild_result {
         rr_no_change,
@@ -540,40 +455,7 @@ public:
         return this->find_from_time(etm.to_timeval());
     };
 
-    nonstd::optional<vis_line_t> find_from_content(content_line_t cl) {
-        content_line_t line = cl;
-        std::shared_ptr<logfile> lf = this->find(line);
-
-        if (lf != nullptr) {
-            auto ll_iter = lf->begin() + line;
-            auto &ll = *ll_iter;
-            auto vis_start_opt = this->find_from_time(ll.get_timeval());
-
-            if (!vis_start_opt) {
-                return nonstd::nullopt;
-            }
-
-            auto vis_start = *vis_start_opt;
-
-            while (vis_start < vis_line_t(this->text_line_count())) {
-                content_line_t guess_cl = this->at(vis_start);
-
-                if (cl == guess_cl) {
-                    return vis_start;
-                }
-
-                auto guess_line = this->find_line(guess_cl);
-
-                if (!guess_line || ll < *guess_line) {
-                    return nonstd::nullopt;
-                }
-
-                ++vis_start;
-            }
-        }
-
-        return nonstd::nullopt;
-    }
+    nonstd::optional<vis_line_t> find_from_content(content_line_t cl);
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) {
         if (row < (ssize_t) this->text_line_count()) {
@@ -721,22 +603,7 @@ public:
         return this->lss_index_delegate;
     };
 
-    void reload_index_delegate() {
-        if (this->lss_index_delegate == nullptr) {
-            return;
-        }
-
-        this->lss_index_delegate->index_start(*this);
-        for (unsigned int index : this->lss_filtered_index) {
-            content_line_t cl = (content_line_t) this->lss_index[index];
-            uint64_t line_number;
-            auto ld = this->find_data(cl, line_number);
-            std::shared_ptr<logfile> lf = (*ld)->get_file();
-
-            this->lss_index_delegate->index_line(*this, lf.get(), lf->begin() + line_number);
-        }
-        this->lss_index_delegate->index_complete(*this);
-    };
+    void reload_index_delegate();
 
     class meta_grepper
         : public grep_proc_source<vis_line_t>,
@@ -746,60 +613,20 @@ public:
             : lmg_source(source) {
         };
 
-        bool grep_value_for_line(vis_line_t line, std::string &value_out) override {
-            content_line_t cl = this->lmg_source.at(vis_line_t(line));
-            std::map<content_line_t, bookmark_metadata> &user_mark_meta =
-                lmg_source.get_user_bookmark_metadata();
-            auto meta_iter = user_mark_meta.find(cl);
+        bool grep_value_for_line(vis_line_t line, std::string &value_out) override;
 
-            if (meta_iter == user_mark_meta.end()) {
-                value_out.clear();
-            } else {
-                bookmark_metadata &bm = meta_iter->second;
+        vis_line_t grep_initial_line(vis_line_t start, vis_line_t highest) override;
 
-                value_out.append(bm.bm_comment);
-                for (const auto &tag : bm.bm_tags) {
-                    value_out.append(tag);
-                }
-            }
+        void grep_next_line(vis_line_t &line) override;
 
-            return !this->lmg_done;
-        };
+        void grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop) override;
 
-        vis_line_t grep_initial_line(vis_line_t start, vis_line_t highest) override {
-            vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
-            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
-
-            if (bv.empty()) {
-                return -1_vl;
-            }
-            return *bv.begin();
-        };
-
-        void grep_next_line(vis_line_t &line) override {
-            vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
-            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
-
-            line = bv.next(vis_line_t(line));
-            if (line == -1) {
-                this->lmg_done = true;
-            }
-        };
-
-        void grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop) override {
-            this->lmg_source.tss_view->grep_begin(gp, start, stop);
-        };
-
-        void grep_end(grep_proc<vis_line_t> &gp) override {
-            this->lmg_source.tss_view->grep_end(gp);
-        };
+        void grep_end(grep_proc<vis_line_t> &gp) override;
 
         void grep_match(grep_proc<vis_line_t> &gp,
                         vis_line_t line,
                         int start,
-                        int end) override {
-            this->lmg_source.tss_view->grep_match(gp, line, start, end);
-        };
+                        int end) override;
 
         logfile_sub_source &lmg_source;
         bool lmg_done{false};
@@ -960,18 +787,7 @@ private:
         this->lss_line_size_cache[0].first = -1;
     };
 
-    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter() {
-        auto iter = std::find_if(this->tss_filters.begin(),
-                                 this->tss_filters.end(),
-                                 [](const auto& filt) {
-                                     return filt->get_index() == 0;
-                                 });
-
-        if (iter != this->tss_filters.end()) {
-            return *iter;
-        }
-        return nonstd::nullopt;
-    }
+    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter();
 
     bool check_extra_filters(iterator ld, logfile::iterator ll);
 

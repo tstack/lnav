@@ -61,6 +61,7 @@
 
 #include "base/lnav_log.hh"
 #include "base/lrucache.hpp"
+#include "base/opt_util.hh"
 #include "attr_line.hh"
 #include "optional.hpp"
 #include "styling.hh"
