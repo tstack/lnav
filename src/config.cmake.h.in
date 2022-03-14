@@ -1,6 +1,8 @@
 
 #define HAVE_PCRE_H
 #define HAVE_NCURSESW_CURSES_H
+#define HAVE_ARCHIVE_H 1
+#define HAVE_BZLIB_H 1
 
 #define HAVE_LIBCURL
 
@@ -13,6 +15,8 @@
 #cmakedefine HAVE_PTY_H
 
 #cmakedefine HAVE_UTIL_H
+
+#cmakedefine HAVE_EXECINFO_H
 
 #define HAVE_SQLITE3_STMT_READONLY
 

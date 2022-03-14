@@ -1,60 +1,57 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.14)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-include("cmake/HunterGate.cmake")
-huntergate(URL "https://github.com/cpp-pm/hunter/archive/v0.24.0.tar.gz"
-           SHA1 "a3d7f4372b1dcd52faa6ff4a3bd5358e1d0e5efd"
-           LOCAL)
+include(cmake/prelude.cmake)
 
 set(CMAKE_CXX_STANDARD 14)
-project(lnav VERSION 0.10.2)
+project(
+    lnav
+    VERSION 0.10.2
+    DESCRIPTION "An advanced log file viewer for the small-scale."
+    HOMEPAGE_URL "https://lnav.org/"
+    LANGUAGES CXX C
+)
 
-# include(cmake/CodeCoverage.cmake) append_coverage_compiler_flags()
+include(cmake/project-is-top-level.cmake)
+include(cmake/variables.cmake)
 
-include(CTest)
-include(GNUInstallDirs)
-
-hunter_add_package(libpcre)
-find_package(libpcre CONFIG REQUIRED)
-
-hunter_add_package(BZip2)
-find_package(BZip2 CONFIG REQUIRED)
-
-hunter_add_package(sqlite3)
-find_package(sqlite3 CONFIG REQUIRED)
-
-hunter_add_package(ZLIB)
+find_package(SQLite3 REQUIRED)
+find_package(BZip2 REQUIRED)
+find_package(LibArchive REQUIRED)
 find_package(ZLIB REQUIRED)
-
-hunter_add_package(CURL)
-find_package(CURL CONFIG REQUIRED)
-
-hunter_add_package(ncursesw)
-find_package(ncursesw CONFIG REQUIRED)
-
-hunter_add_package(readline)
+find_package(pcre REQUIRED)
 find_package(readline REQUIRED)
-
-hunter_add_package(libarchive)
-find_package(libarchive CONFIG REQUIRED)
+find_package(ncurses REQUIRED)
+find_package(CURL REQUIRED)
 
 set(lnav_LIBS
-    ZLIB::zlib
-    BZip2::bz2
-    sqlite3::sqlite3
-    PkgConfig::libpcre
-    CURL::libcurl
-    readline::readline
-    readline::history
-    PkgConfig::ncursesw
-    PkgConfig::libarchive)
+        CURL::libcurl
+        SQLite::SQLite3
+        BZip2::BZip2
+        ncurses::libcurses
+        pcre::libpcre
+        readline::readline
+        LibArchive::LibArchive
+        ZLIB::ZLIB
+        )
 
 add_subdirectory(src)
 add_subdirectory(test)
+
+# ---- Install rules ----
+
+if(NOT CMAKE_SKIP_INSTALL_RULES)
+  include(cmake/install-rules.cmake)
+endif()
+
+# ---- Developer mode ----
+
+if(NOT lnav_DEVELOPER_MODE)
+  return()
+elseif(NOT PROJECT_IS_TOP_LEVEL)
+  message(
+      AUTHOR_WARNING
+      "Developer mode is intended for developers of lnav"
+  )
+endif()
+
+include(cmake/dev-mode.cmake)

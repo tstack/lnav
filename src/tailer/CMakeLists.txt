@@ -21,4 +21,4 @@ add_executable(drive_tailer drive_tailer.cc)
 
 target_include_directories(drive_tailer PUBLIC . .. ../fmtlib
                                                ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(drive_tailer base tailercommon tailerpp ZLIB::zlib)
+target_link_libraries(drive_tailer base tailercommon tailerpp ZLIB::ZLIB)

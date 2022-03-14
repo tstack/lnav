@@ -1,0 +1,31 @@
+# Example file to run OpenCppCoverage on Windows
+
+include(ProcessorCount)
+ProcessorCount(N)
+
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/opencppcoverage")
+
+# Convert delimiters to Windows ones
+string(REPLACE "/" "\\" binary_dir "${PROJECT_BINARY_DIR}")
+string(REPLACE "/" "\\" source_dir "${PROJECT_SOURCE_DIR}")
+string(REPLACE "/" "\\" ctest "${CMAKE_CTEST_COMMAND}")
+
+add_custom_target(
+    win-cov
+    COMMAND OpenCppCoverage -q
+    # We want coverage from the child processes of CTest
+    --cover_children
+    # Subdirectory where the tests reside in the binary directory
+    --modules "${binary_dir}\\test"
+    # This command is for the developer, so export as html instead of cobertura
+    --export_type "html:${binary_dir}\\opencppcoverage"
+    # Source (not header) file locations
+    --sources "${source_dir}\\source"
+    --sources "${source_dir}\\test\\source"
+    # Working directory for CTest, which should be the binary directory
+    --working_dir "${binary_dir}"
+    # OpenCppCoverage should be run only with the Debug configuration tests
+    -- "${ctest}" -C Debug --output-on-failure -j "${N}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+    VERBATIM
+)

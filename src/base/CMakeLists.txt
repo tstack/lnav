@@ -1,6 +1,6 @@
 add_library(
   base STATIC
-  ../config.h
+  ../config.h.in
   auto_pid.cc
   date_time_scanner.cc
   fs_util.cc
@@ -41,7 +41,7 @@ add_library(
 
 target_include_directories(base PUBLIC . .. ../fmtlib ../third-party
                                        ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(base cppfmt PkgConfig::libpcre)
+target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses)
 
 add_executable(
   test_base
@@ -54,5 +54,5 @@ add_executable(
   network.tcp.tests.cc
   test_base.cc)
 target_include_directories(test_base PUBLIC ../third-party/doctest-root)
-target_link_libraries(test_base base pcrepp ZLIB::zlib)
+target_link_libraries(test_base base pcrepp ZLIB::ZLIB)
 add_test(NAME test_base COMMAND test_base)
