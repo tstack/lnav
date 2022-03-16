@@ -21,21 +21,19 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <iostream>
 
+#include "config.h"
 #include "doctest/doctest.h"
-
 #include "network.tcp.hh"
 
-TEST_CASE ("bad hostname")
+TEST_CASE("bad hostname")
 {
     auto connect_res = network::tcp::connect("foobar.bazzer", "http");
     CHECK(connect_res.unwrapErr() ==
@@ -43,7 +41,7 @@ TEST_CASE ("bad hostname")
           "provided, or not known");
 }
 
-TEST_CASE ("bad servname")
+TEST_CASE("bad servname")
 {
     auto connect_res = network::tcp::connect("www.cnn.com", "non-existent");
     CHECK(connect_res.unwrapErr() ==

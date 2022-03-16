@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,17 +41,20 @@
  * @param step The granularity.
  */
 template<typename Size, typename Step>
-inline int rounddown(Size size, Step step)
+inline int
+rounddown(Size size, Step step)
 {
     return size - (size % step);
 }
 
-inline int rounddown_offset(size_t size, int step, int offset)
+inline int
+rounddown_offset(size_t size, int step, int offset)
 {
     return size - ((size - offset) % step);
 }
 
-inline size_t roundup_size(size_t size, int step)
+inline size_t
+roundup_size(size_t size, int step)
 {
     size_t retval = size + step;
 

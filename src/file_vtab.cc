@@ -21,34 +21,33 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "base/injector.bind.hh"
 #include "base/lnav.gzip.hh"
 #include "base/lnav_log.hh"
+#include "config.h"
 #include "file_collection.hh"
+#include "file_vtab.cfg.hh"
+#include "log_format.hh"
 #include "logfile.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"
-#include "log_format.hh"
-#include "file_vtab.cfg.hh"
 
 using namespace std;
 
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     using iterator = vector<shared_ptr<logfile>>::iterator;
 
-    static constexpr const char *NAME = "lnav_file";
-    static constexpr const char *CREATE_STMT = R"(
+    static constexpr const char* NAME = "lnav_file";
+    static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
 CREATE TABLE lnav_file (
     device integer,       -- The device the file is stored on.
@@ -63,24 +62,26 @@ CREATE TABLE lnav_file (
 );
 )";
 
-    explicit lnav_file(file_collection& fc) : lf_collection(fc) {
-    }
+    explicit lnav_file(file_collection& fc) : lf_collection(fc) {}
 
-    iterator begin() {
+    iterator begin()
+    {
         return this->lf_collection.fc_files.begin();
     }
 
-    iterator end() {
+    iterator end()
+    {
         return this->lf_collection.fc_files.end();
     }
 
-    int get_column(const cursor &vc, sqlite3_context *ctx, int col) {
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
         auto lf = *vc.iter;
-        const struct stat &st = lf->get_stat();
-        const string &name = lf->get_filename();
+        const struct stat& st = lf->get_stat();
+        const string& name = lf->get_filename();
         auto format = lf->get_format();
-        const char *format_name =
-            format != nullptr ? format->get_name().get() : nullptr;
+        const char* format_name = format != nullptr ? format->get_name().get()
+                                                    : nullptr;
 
         switch (col) {
             case 0:
@@ -117,35 +118,32 @@ CREATE TABLE lnav_file (
                 } else {
                     auto fd = lf->get_fd();
                     auto_mem<char> buf;
-                    buf = (char *) malloc(lf_stat.st_size);
+                    buf = (char*) malloc(lf_stat.st_size);
                     auto rc = pread(fd, buf, lf_stat.st_size, 0);
 
                     if (rc == -1) {
                         auto errmsg = fmt::format("unable to read file: {}",
                                                   strerror(errno));
 
-                        sqlite3_result_error(ctx, errmsg.c_str(),
-                                             errmsg.length());
+                        sqlite3_result_error(
+                            ctx, errmsg.c_str(), errmsg.length());
                     } else if (rc != lf_stat.st_size) {
-                        auto errmsg = fmt::format("short read of file: {} < {}",
-                                                  rc, lf_stat.st_size);
+                        auto errmsg = fmt::format(
+                            "short read of file: {} < {}", rc, lf_stat.st_size);
 
-                        sqlite3_result_error(ctx, errmsg.c_str(),
-                                             errmsg.length());
+                        sqlite3_result_error(
+                            ctx, errmsg.c_str(), errmsg.length());
                     } else if (lnav::gzip::is_gzipped(buf, rc)) {
                         lnav::gzip::uncompress(lf->get_unique_path(), buf, rc)
                             .then([ctx](auto uncomp) {
                                 auto pair = uncomp.release();
 
-                                sqlite3_result_blob64(ctx,
-                                                      pair.first,
-                                                      pair.second,
-                                                      free);
+                                sqlite3_result_blob64(
+                                    ctx, pair.first, pair.second, free);
                             })
                             .otherwise([ctx](auto msg) {
-                                sqlite3_result_error(ctx,
-                                                     msg.c_str(),
-                                                     msg.size());
+                                sqlite3_result_error(
+                                    ctx, msg.c_str(), msg.size());
                             });
                     } else {
                         sqlite3_result_blob64(ctx, buf.release(), rc, free);
@@ -161,28 +159,30 @@ CREATE TABLE lnav_file (
         return SQLITE_OK;
     }
 
-    int delete_row(sqlite3_vtab *vt, sqlite3_int64 rowid) {
-        vt->zErrMsg = sqlite3_mprintf(
-            "Rows cannot be deleted from this table");
+    int delete_row(sqlite3_vtab* vt, sqlite3_int64 rowid)
+    {
+        vt->zErrMsg = sqlite3_mprintf("Rows cannot be deleted from this table");
         return SQLITE_ERROR;
     };
 
-    int insert_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
-        tab->zErrMsg = sqlite3_mprintf(
-            "Rows cannot be inserted into this table");
+    int insert_row(sqlite3_vtab* tab, sqlite3_int64& rowid_out)
+    {
+        tab->zErrMsg
+            = sqlite3_mprintf("Rows cannot be inserted into this table");
         return SQLITE_ERROR;
     };
 
-    int update_row(sqlite3_vtab *tab,
-                   sqlite3_int64 &rowid,
+    int update_row(sqlite3_vtab* tab,
+                   sqlite3_int64& rowid,
                    int64_t device,
                    int64_t inode,
                    std::string path,
-                   const char *text_format,
-                   const char *format,
+                   const char* text_format,
+                   const char* format,
                    int64_t lines,
                    int64_t time_offset,
-                   const char *content) {
+                   const char* content)
+    {
         auto lf = this->lf_collection.fc_files[rowid];
         struct timeval tv = {
             (int) (time_offset / 1000LL),
@@ -197,7 +197,8 @@ CREATE TABLE lnav_file (
                     "real file paths cannot be updated, only symbolic ones");
             }
 
-            auto iter = this->lf_collection.fc_file_names.find(lf->get_filename());
+            auto iter
+                = this->lf_collection.fc_file_names.find(lf->get_filename());
 
             if (iter != this->lf_collection.fc_file_names.end()) {
                 auto loo = std::move(iter->second);
@@ -216,7 +217,7 @@ CREATE TABLE lnav_file (
         return SQLITE_OK;
     };
 
-    file_collection &lf_collection;
+    file_collection& lf_collection;
 };
 
 struct injectable_lnav_file : vtab_module<lnav_file> {
@@ -224,5 +225,5 @@ struct injectable_lnav_file : vtab_module<lnav_file> {
     using injectable = injectable_lnav_file(file_collection&);
 };
 
-static auto file_binder = injector::bind_multiple<vtab_module_base>()
-     .add<injectable_lnav_file>();
+static auto file_binder
+    = injector::bind_multiple<vtab_module_base>().add<injectable_lnav_file>();

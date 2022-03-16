@@ -21,64 +21,63 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file test_yajlpp.cc
  */
 
-#include "config.h"
-
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
-#include "yajlpp/yajlpp.hh"
-#include "yajlpp/yajlpp_def.hh"
+#include "yajlpp.hh"
+#include "yajlpp_def.hh"
 
-const char *TEST_DATA = R"([{ "foo": 0 }, 2, { "foo": 1 }])";
+const char* TEST_DATA = R"([{ "foo": 0 }, 2, { "foo": 1 }])";
 
-const char *TEST_OBJ_DATA = "{ \"foo\": 0 }";
+const char* TEST_OBJ_DATA = "{ \"foo\": 0 }";
 
 static int FOO_COUNT = 0;
 static int CONST_COUNT = 0;
 
-static int read_foo(yajlpp_parse_context *ypc, long long value)
+static int
+read_foo(yajlpp_parse_context* ypc, long long value)
 {
     assert(value == FOO_COUNT);
-    assert(ypc->ypc_array_index.empty() ||
-           ypc->ypc_array_index.back() == FOO_COUNT);
+    assert(ypc->ypc_array_index.empty()
+           || ypc->ypc_array_index.back() == FOO_COUNT);
 
     FOO_COUNT += 1;
 
     return 1;
 }
 
-static int read_const(yajlpp_parse_context *ypc, long long value)
+static int
+read_const(yajlpp_parse_context* ypc, long long value)
 {
     CONST_COUNT += 1;
 
     return 1;
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-    struct json_path_container test_obj_handler = {
-        json_path_handler("foo", read_foo)
-    };
+    struct json_path_container test_obj_handler
+        = {json_path_handler("foo", read_foo)};
 
     {
-        struct json_path_container test_array_handlers = {
-            json_path_handler("#")
-                .add_cb(read_const)
-                .with_children(test_obj_handler)
-        };
+        struct json_path_container test_array_handlers
+            = {json_path_handler("#")
+                   .add_cb(read_const)
+                   .with_children(test_obj_handler)};
 
         yajlpp_parse_context ypc("test_data", &test_array_handlers);
         auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
         ypc.with_handle(handle);
-        ypc.parse((const unsigned char *) TEST_DATA, strlen(TEST_DATA));
+        ypc.parse((const unsigned char*) TEST_DATA, strlen(TEST_DATA));
         yajl_free(handle);
 
         assert(FOO_COUNT == 2);
@@ -92,7 +91,7 @@ int main(int argc, char *argv[])
         auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
         ypc.with_handle(handle);
 
-        ypc.parse(reinterpret_cast<const unsigned char *>(TEST_OBJ_DATA),
+        ypc.parse(reinterpret_cast<const unsigned char*>(TEST_OBJ_DATA),
                   strlen(TEST_OBJ_DATA));
         yajl_free(handle);
 

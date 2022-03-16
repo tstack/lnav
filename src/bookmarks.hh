@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,11 +32,11 @@
 #ifndef bookmarks_hh
 #define bookmarks_hh
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "base/lnav_log.hh"
 
@@ -47,18 +47,18 @@ struct bookmark_metadata {
     std::string bm_comment;
     std::vector<std::string> bm_tags;
 
-    void add_tag(const std::string &tag) {
-        if (std::find(this->bm_tags.begin(),
-                      this->bm_tags.end(),
-                      tag) == this->bm_tags.end()) {
+    void add_tag(const std::string& tag)
+    {
+        if (std::find(this->bm_tags.begin(), this->bm_tags.end(), tag)
+            == this->bm_tags.end())
+        {
             this->bm_tags.push_back(tag);
         }
     };
 
-    bool remove_tag(const std::string &tag) {
-        auto iter = std::find(this->bm_tags.begin(),
-                              this->bm_tags.end(),
-                              tag);
+    bool remove_tag(const std::string& tag)
+    {
+        auto iter = std::find(this->bm_tags.begin(), this->bm_tags.end(), tag);
         bool retval = false;
 
         if (iter != this->bm_tags.end()) {
@@ -68,13 +68,14 @@ struct bookmark_metadata {
         return retval;
     };
 
-    bool empty() const {
-        return this->bm_name.empty() &&
-               this->bm_comment.empty() &&
-               this->bm_tags.empty();
+    bool empty() const
+    {
+        return this->bm_name.empty() && this->bm_comment.empty()
+            && this->bm_tags.empty();
     };
 
-    void clear() {
+    void clear()
+    {
         this->bm_comment.clear();
         this->bm_tags.clear();
     };
@@ -98,9 +99,9 @@ class bookmark_vector : public std::vector<LineType> {
     typedef std::vector<LineType> base_vector;
 
 public:
-    typedef typename base_vector::size_type       size_type;
-    typedef typename base_vector::iterator        iterator;
-    typedef typename base_vector::const_iterator  const_iterator;
+    typedef typename base_vector::size_type size_type;
+    typedef typename base_vector::iterator iterator;
+    typedef typename base_vector::const_iterator const_iterator;
 
     /**
      * Insert a bookmark into this vector, but only if it is not already in the
@@ -118,15 +119,15 @@ public:
         if (lb == this->end() || *lb != vl) {
             this->insert(lb, vl);
             retval = this->end();
-        }
-        else {
+        } else {
             retval = lb;
         }
 
         return retval;
     };
 
-    std::pair<iterator, iterator> equal_range(LineType start, LineType stop) {
+    std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
+    {
         auto lb = std::lower_bound(this->begin(), this->end(), start);
 
         if (stop == LineType(-1)) {
@@ -163,19 +164,22 @@ public:
  */
 class bookmark_type_t {
 public:
-    typedef std::vector<bookmark_type_t *>::iterator type_iterator;
+    typedef std::vector<bookmark_type_t*>::iterator type_iterator;
 
-    static type_iterator type_begin() {
+    static type_iterator type_begin()
+    {
         return get_all_types().begin();
     };
 
-    static type_iterator type_end() {
+    static type_iterator type_end()
+    {
         return get_all_types().end();
     };
 
-    static bookmark_type_t *find_type(const std::string &name) {
+    static bookmark_type_t* find_type(const std::string& name)
+    {
         auto iter = find_if(type_begin(), type_end(), mark_eq(name));
-        bookmark_type_t *retval = nullptr;
+        bookmark_type_t* retval = nullptr;
 
         if (iter != type_end()) {
             retval = (*iter);
@@ -183,36 +187,41 @@ public:
         return retval;
     };
 
-    static std::vector<bookmark_type_t *> &get_all_types() {
-        static std::vector<bookmark_type_t *> all_types;
+    static std::vector<bookmark_type_t*>& get_all_types()
+    {
+        static std::vector<bookmark_type_t*> all_types;
 
         return all_types;
     };
 
-    explicit bookmark_type_t(std::string name) : bt_name(std::move(name)) {
+    explicit bookmark_type_t(std::string name) : bt_name(std::move(name))
+    {
         get_all_types().push_back(this);
     };
 
-    const std::string &get_name() const {
+    const std::string& get_name() const
+    {
         return this->bt_name;
     };
 
 private:
     struct mark_eq {
-        explicit mark_eq(const std::string &name) : me_name(name) { };
+        explicit mark_eq(const std::string& name) : me_name(name){};
 
-        bool operator()(bookmark_type_t *bt) {
+        bool operator()(bookmark_type_t* bt)
+        {
             return bt->bt_name == this->me_name;
         };
 
-        const std::string &me_name;
+        const std::string& me_name;
     };
 
     const std::string bt_name;
 };
 
 template<typename LineType>
-LineType bookmark_vector<LineType>::next(LineType start) const
+LineType
+bookmark_vector<LineType>::next(LineType start) const
 {
     LineType retval(-1);
 
@@ -229,7 +238,8 @@ LineType bookmark_vector<LineType>::next(LineType start) const
 }
 
 template<typename LineType>
-LineType bookmark_vector<LineType>::prev(LineType start) const
+LineType
+bookmark_vector<LineType>::prev(LineType start) const
 {
     LineType retval(-1);
 
@@ -237,7 +247,7 @@ LineType bookmark_vector<LineType>::prev(LineType start) const
 
     auto lb = lower_bound(this->cbegin(), this->cend(), start);
     if (lb != this->cbegin()) {
-        lb    -= 1;
+        lb -= 1;
         retval = *lb;
     }
 
@@ -251,7 +261,7 @@ LineType bookmark_vector<LineType>::prev(LineType start) const
  */
 template<typename LineType>
 struct bookmarks {
-    typedef std::map<bookmark_type_t *, bookmark_vector<LineType> > type;
+    typedef std::map<const bookmark_type_t*, bookmark_vector<LineType> > type;
 };
 
 #endif

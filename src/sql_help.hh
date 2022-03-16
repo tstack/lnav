@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -34,8 +34,8 @@
 
 #include <map>
 
-#include "help_text.hh"
 #include "attr_line.hh"
+#include "help_text.hh"
 
 extern string_attr_type SQL_COMMAND_ATTR;
 extern string_attr_type SQL_KEYWORD_ATTR;
@@ -46,11 +46,12 @@ extern string_attr_type SQL_OPERATOR_ATTR;
 extern string_attr_type SQL_PAREN_ATTR;
 extern string_attr_type SQL_GARBAGE_ATTR;
 
-void annotate_sql_statement(attr_line_t &al_inout);
+void annotate_sql_statement(attr_line_t& al_inout);
 
-extern std::multimap<std::string, help_text *> sqlite_function_help;
+extern std::multimap<std::string, help_text*> sqlite_function_help;
 
 std::string sql_keyword_re();
-std::vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x);
+std::vector<const help_text*> find_sql_help_for_line(const attr_line_t& al,
+                                                     size_t x);
 
 #endif

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,15 +33,15 @@
 #include <sys/time.h>
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
-#include <set>
 #include <array>
 #include <chrono>
+#include <set>
 #include <string>
 
-#include "ptimec.hh"
+#include <inttypes.h>
+
 #include "base/result.h"
+#include "ptimec.hh"
 
 class relative_time {
 public:
@@ -109,11 +109,11 @@ public:
         std::string pe_msg;
     };
 
-    static Result<relative_time, parse_error>
-    from_str(const char *str, size_t len);
+    static Result<relative_time, parse_error> from_str(const char* str,
+                                                       size_t len);
 
-    static Result<relative_time, parse_error>
-    from_str(const std::string &str) {
+    static Result<relative_time, parse_error> from_str(const std::string& str)
+    {
         return from_str(str.c_str(), str.length());
     }
 
@@ -121,18 +121,21 @@ public:
 
     static relative_time from_usecs(std::chrono::microseconds usecs);
 
-    relative_time() {
+    relative_time()
+    {
         this->clear();
     };
 
-    void clear() {
+    void clear()
+    {
         this->rt_field.fill({});
         this->rt_next = false;
         this->rt_previous = false;
         this->rt_absolute_field_end = 0;
     };
 
-    void negate() {
+    void negate()
+    {
         if (this->is_absolute()) {
             if (this->rt_next) {
                 this->rt_next = false;
@@ -150,7 +153,8 @@ public:
         }
     };
 
-    bool is_negative() const {
+    bool is_negative() const
+    {
         if (this->rt_previous) {
             return true;
         }
@@ -162,19 +166,24 @@ public:
         return false;
     };
 
-    bool is_absolute() const {
-        return !this->rt_included_days.empty() || this->rt_absolute_field_end > 0;
+    bool is_absolute() const
+    {
+        return !this->rt_included_days.empty()
+            || this->rt_absolute_field_end > 0;
     };
 
-    bool is_absolute(rt_field_type rft) const {
+    bool is_absolute(rt_field_type rft) const
+    {
         return rft < this->rt_absolute_field_end;
     };
 
-    bool is_relative() const {
+    bool is_relative() const
+    {
         return !this->is_absolute() || this->rt_next || this->rt_previous;
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         if (!this->rt_included_days.empty()) {
             return false;
         }
@@ -186,7 +195,8 @@ public:
         return true;
     };
 
-    struct exttm adjust_now() const {
+    struct exttm adjust_now() const
+    {
         struct exttm tm;
         time_t now;
 
@@ -196,7 +206,8 @@ public:
         return this->adjust(tm);
     };
 
-    struct exttm adjust(const struct timeval &tv) const {
+    struct exttm adjust(const struct timeval& tv) const
+    {
         struct exttm tm;
 
         memset(&tm, 0, sizeof(tm));
@@ -205,20 +216,22 @@ public:
         return this->adjust(tm);
     }
 
-    struct exttm adjust(const struct exttm &tm) const;
+    struct exttm adjust(const struct exttm& tm) const;
 
-    nonstd::optional<exttm> window_start(const struct exttm &tm) const;
+    nonstd::optional<exttm> window_start(const struct exttm& tm) const;
 
     int64_t to_microseconds() const;
 
-    void to_timeval(struct timeval &tv_out) const {
+    void to_timeval(struct timeval& tv_out) const
+    {
         int64_t us = this->to_microseconds();
 
         tv_out.tv_sec = us / (1000 * 1000);
         tv_out.tv_usec = us % (1000 * 1000);
     };
 
-    struct timeval to_timeval() const {
+    struct timeval to_timeval() const
+    {
         int64_t us = this->to_microseconds();
         struct timeval retval;
 
@@ -234,13 +247,12 @@ public:
     static const char FIELD_CHARS[RTF__MAX];
 
     struct _rt_field {
-        _rt_field(int64_t value) : value(value), is_set(true) {
-        };
+        _rt_field(int64_t value) : value(value), is_set(true){};
 
-        _rt_field() : value(0), is_set(false) {
-        };
+        _rt_field() : value(0), is_set(false){};
 
-        void clear() {
+        void clear()
+        {
             this->value = 0;
             this->is_set = false;
         }
@@ -258,4 +270,4 @@ public:
     int rt_absolute_field_end;
 };
 
-#endif //LNAV_RELATIVE_TIME_HH
+#endif  // LNAV_RELATIVE_TIME_HH

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -30,20 +30,19 @@
  */
 
 #ifdef __CYGWIN__
-#include <alloca.h>
+#    include <alloca.h>
 #endif
 
 #include "config.h"
-
 #include "yajl/api/yajl_gen.h"
-
 #include "yajlpp/json_ptr.hh"
 
 using namespace std;
 
-static int handle_null(void *ctx)
+static int
+handle_null(void* ctx)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_null, "null");
     jpw->inc_array_index();
@@ -51,9 +50,10 @@ static int handle_null(void *ctx)
     return 1;
 }
 
-static int handle_boolean(void *ctx, int boolVal)
+static int
+handle_boolean(void* ctx, int boolVal)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(jpw->current_ptr(),
                                  boolVal ? yajl_t_true : yajl_t_false,
@@ -63,28 +63,30 @@ static int handle_boolean(void *ctx, int boolVal)
     return 1;
 }
 
-static int handle_number(void *ctx, const char *numberVal, size_t numberLen)
+static int
+handle_number(void* ctx, const char* numberVal, size_t numberLen)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_values.emplace_back(jpw->current_ptr(),
-                                 yajl_t_number,
-                                 string(numberVal, numberLen));
+    jpw->jpw_values.emplace_back(
+        jpw->current_ptr(), yajl_t_number, string(numberVal, numberLen));
     jpw->inc_array_index();
 
     return 1;
 }
 
-static void appender(void *ctx, const char *strVal, size_t strLen)
+static void
+appender(void* ctx, const char* strVal, size_t strLen)
 {
-    string &str = *(string *)ctx;
+    string& str = *(string*) ctx;
 
     str.append(strVal, strLen);
 }
 
-static int handle_string(void *ctx, const unsigned char * stringVal, size_t len)
+static int
+handle_string(void* ctx, const unsigned char* stringVal, size_t len)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
     string str;
 
@@ -97,9 +99,10 @@ static int handle_string(void *ctx, const unsigned char * stringVal, size_t len)
     return 1;
 }
 
-static int handle_start_map(void *ctx)
+static int
+handle_start_map(void* ctx)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(-1);
@@ -107,33 +110,38 @@ static int handle_start_map(void *ctx)
     return 1;
 }
 
-static int handle_map_key(void *ctx, const unsigned char * key, size_t len)
+static int
+handle_map_key(void* ctx, const unsigned char* key, size_t len)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
     char partially_encoded_key[len + 32];
     size_t required_len;
 
     jpw->jpw_keys.pop_back();
 
-    required_len = json_ptr::encode(partially_encoded_key, sizeof(partially_encoded_key),
-        (const char *)key, len);
+    required_len = json_ptr::encode(partially_encoded_key,
+                                    sizeof(partially_encoded_key),
+                                    (const char*) key,
+                                    len);
     if (required_len < sizeof(partially_encoded_key)) {
         jpw->jpw_keys.emplace_back(&partially_encoded_key[0], required_len);
-    }
-    else {
-        auto fully_encoded_key = (char *) alloca(required_len);
+    } else {
+        auto fully_encoded_key = (char*) alloca(required_len);
 
-        json_ptr::encode(fully_encoded_key, sizeof(fully_encoded_key),
-            (const char *)key, len);
+        json_ptr::encode(fully_encoded_key,
+                         sizeof(fully_encoded_key),
+                         (const char*) key,
+                         len);
         jpw->jpw_keys.emplace_back(&fully_encoded_key[0], required_len);
     }
 
     return 1;
 }
 
-static int handle_end_map(void *ctx)
+static int
+handle_end_map(void* ctx)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.pop_back();
     jpw->jpw_array_indexes.pop_back();
@@ -143,9 +151,10 @@ static int handle_end_map(void *ctx)
     return 1;
 }
 
-static int handle_start_array(void *ctx)
+static int
+handle_start_array(void* ctx)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(0);
@@ -153,9 +162,10 @@ static int handle_start_array(void *ctx)
     return 1;
 }
 
-static int handle_end_array(void *ctx)
+static int
+handle_end_array(void* ctx)
 {
-    json_ptr_walk *jpw = (json_ptr_walk *)ctx;
+    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.pop_back();
     jpw->jpw_array_indexes.pop_back();
@@ -164,26 +174,24 @@ static int handle_end_array(void *ctx)
     return 1;
 }
 
-const yajl_callbacks json_ptr_walk::callbacks = {
-    handle_null,
-    handle_boolean,
-    nullptr,
-    nullptr,
-    handle_number,
-    handle_string,
-    handle_start_map,
-    handle_map_key,
-    handle_end_map,
-    handle_start_array,
-    handle_end_array
-};
+const yajl_callbacks json_ptr_walk::callbacks = {handle_null,
+                                                 handle_boolean,
+                                                 nullptr,
+                                                 nullptr,
+                                                 handle_number,
+                                                 handle_string,
+                                                 handle_start_map,
+                                                 handle_map_key,
+                                                 handle_end_map,
+                                                 handle_start_array,
+                                                 handle_end_array};
 
 size_t
-json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
+json_ptr::encode(char* dst, size_t dst_len, const char* src, size_t src_len)
 {
     size_t retval = 0;
 
-    if (src_len == (size_t)-1) {
+    if (src_len == (size_t) -1) {
         src_len = strlen(src);
     }
 
@@ -197,15 +205,12 @@ json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
                     retval += 1;
                     if (src[lpc] == '~') {
                         dst[retval] = '0';
-                    }
-                    else if (src[lpc] == '#') {
+                    } else if (src[lpc] == '#') {
                         dst[retval] = '2';
-                    }
-                    else {
+                    } else {
                         dst[retval] = '1';
                     }
-                }
-                else {
+                } else {
                     retval += 1;
                 }
                 break;
@@ -224,7 +229,8 @@ json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
     return retval;
 }
 
-size_t json_ptr::decode(char *dst, const char *src, ssize_t src_len)
+size_t
+json_ptr::decode(char* dst, const char* src, ssize_t src_len)
 {
     size_t retval = 0;
 
@@ -265,22 +271,21 @@ size_t json_ptr::decode(char *dst, const char *src, ssize_t src_len)
     return retval;
 }
 
-bool json_ptr::expect_map(int32_t &depth, int32_t &index)
+bool
+json_ptr::expect_map(int32_t& depth, int32_t& index)
 {
     bool retval;
 
     if (this->jp_state == MS_DONE) {
         retval = true;
-    }
-    else if (depth != this->jp_depth) {
+    } else if (depth != this->jp_depth) {
         retval = true;
-    }
-    else if (this->reached_end()) {
+    } else if (this->reached_end()) {
         retval = true;
-    }
-    else if (this->jp_state == MS_VALUE &&
-             (this->jp_array_index == -1 ||
-                 ((index - 1) == this->jp_array_index))) {
+    } else if (this->jp_state == MS_VALUE
+               && (this->jp_array_index == -1
+                   || ((index - 1) == this->jp_array_index)))
+    {
         if (this->jp_pos[0] == '/') {
             this->jp_pos += 1;
             this->jp_depth += 1;
@@ -289,8 +294,7 @@ bool json_ptr::expect_map(int32_t &depth, int32_t &index)
             index = -1;
         }
         retval = true;
-    }
-    else {
+    } else {
         retval = true;
     }
     depth += 1;
@@ -298,9 +302,10 @@ bool json_ptr::expect_map(int32_t &depth, int32_t &index)
     return retval;
 }
 
-bool json_ptr::at_key(int32_t depth, const char *component, ssize_t len)
+bool
+json_ptr::at_key(int32_t depth, const char* component, ssize_t len)
 {
-    const char *component_end;
+    const char* component_end;
     int lpc;
 
     if (this->jp_state == MS_DONE || depth != this->jp_depth) {
@@ -328,8 +333,7 @@ bool json_ptr::at_key(int32_t depth, const char *component, ssize_t len)
                     return false;
             }
             lpc += 1;
-        }
-        else if (this->jp_pos[lpc] == '/') {
+        } else if (this->jp_pos[lpc] == '/') {
             ch = '\0';
         }
 
@@ -344,52 +348,50 @@ bool json_ptr::at_key(int32_t depth, const char *component, ssize_t len)
     return true;
 }
 
-void json_ptr::exit_container(int32_t &depth, int32_t &index)
+void
+json_ptr::exit_container(int32_t& depth, int32_t& index)
 {
     depth -= 1;
-    if (this->jp_state == MS_VALUE &&
-        depth == this->jp_depth &&
-        (index == -1 || (index - 1 == this->jp_array_index)) &&
-        this->reached_end()) {
+    if (this->jp_state == MS_VALUE && depth == this->jp_depth
+        && (index == -1 || (index - 1 == this->jp_array_index))
+        && this->reached_end())
+    {
         this->jp_state = MS_DONE;
         index = -1;
     }
 }
 
-bool json_ptr::expect_array(int32_t &depth, int32_t &index)
+bool
+json_ptr::expect_array(int32_t& depth, int32_t& index)
 {
     bool retval;
 
     if (this->jp_state == MS_DONE) {
         retval = true;
-    }
-    else if (depth != this->jp_depth) {
+    } else if (depth != this->jp_depth) {
         retval = true;
-    }
-    else if (this->reached_end()) {
+    } else if (this->reached_end()) {
         retval = true;
-    }
-    else if (this->jp_pos[0] == '/' && index == this->jp_array_index) {
+    } else if (this->jp_pos[0] == '/' && index == this->jp_array_index) {
         int offset;
 
         this->jp_depth += 1;
 
-        if (sscanf(this->jp_pos, "/%d%n", &this->jp_array_index, &offset) != 1) {
+        if (sscanf(this->jp_pos, "/%d%n", &this->jp_array_index, &offset) != 1)
+        {
             this->jp_state = MS_ERR_INVALID_INDEX;
             retval = true;
-        }
-        else if (this->jp_pos[offset] != '\0' && this->jp_pos[offset] != '/') {
+        } else if (this->jp_pos[offset] != '\0' && this->jp_pos[offset] != '/')
+        {
             this->jp_state = MS_ERR_INVALID_INDEX;
             retval = true;
-        }
-        else {
+        } else {
             index = 0;
             this->jp_pos += offset;
             this->jp_state = MS_VALUE;
             retval = true;
         }
-    }
-    else {
+    } else {
         this->jp_state = MS_ERR_NO_SLASH;
         retval = true;
     }
@@ -399,52 +401,47 @@ bool json_ptr::expect_array(int32_t &depth, int32_t &index)
     return retval;
 }
 
-bool json_ptr::at_index(int32_t &depth, int32_t &index, bool primitive)
+bool
+json_ptr::at_index(int32_t& depth, int32_t& index, bool primitive)
 {
     bool retval;
 
     if (this->jp_state == MS_DONE) {
         retval = false;
-    }
-    else if (depth < this->jp_depth) {
+    } else if (depth < this->jp_depth) {
         retval = false;
-    }
-    else if (depth == this->jp_depth) {
+    } else if (depth == this->jp_depth) {
         if (index == -1) {
             if (this->jp_array_index == -1) {
                 retval = this->reached_end();
                 if (primitive && retval) {
                     this->jp_state = MS_DONE;
                 }
-            }
-            else {
+            } else {
                 retval = false;
             }
-        }
-        else if (index == this->jp_array_index) {
+        } else if (index == this->jp_array_index) {
             retval = this->reached_end();
             this->jp_array_index = -1;
             index = -1;
             if (primitive && retval) {
                 this->jp_state = MS_DONE;
             }
-        }
-        else {
+        } else {
             index += 1;
             retval = false;
         }
-    }
-    else if (index == -1) {
+    } else if (index == -1) {
         retval = this->reached_end();
-    }
-    else {
+    } else {
         retval = false;
     }
 
     return retval;
 }
 
-std::string json_ptr_walk::current_ptr()
+std::string
+json_ptr_walk::current_ptr()
 {
     std::string retval;
 
@@ -452,8 +449,7 @@ std::string json_ptr_walk::current_ptr()
         retval.append("/");
         if (this->jpw_array_indexes[lpc] == -1) {
             retval.append(this->jpw_keys[lpc]);
-        }
-        else {
+        } else {
             char num[64];
 
             snprintf(num, sizeof(num), "%d", this->jpw_array_indexes[lpc]);

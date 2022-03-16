@@ -21,72 +21,67 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <string>
 
+#include "styling.hh"
+
+#include "ansi-palette-json.h"
+#include "config.h"
 #include "fmt/format.h"
+#include "xterm-palette-json.h"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-#include "styling.hh"
-#include "ansi-palette-json.h"
-#include "xterm-palette-json.h"
 
 using namespace std;
 
-static struct json_path_container term_color_rgb_handler = {
-    yajlpp::property_handler("r")
-        .FOR_FIELD(rgb_color, rc_r),
-    yajlpp::property_handler("g")
-        .FOR_FIELD(rgb_color, rc_g),
-    yajlpp::property_handler("b")
-        .FOR_FIELD(rgb_color, rc_b)
-};
+static struct json_path_container term_color_rgb_handler
+    = {yajlpp::property_handler("r").FOR_FIELD(rgb_color, rc_r),
+       yajlpp::property_handler("g").FOR_FIELD(rgb_color, rc_g),
+       yajlpp::property_handler("b").FOR_FIELD(rgb_color, rc_b)};
 
-static struct json_path_container term_color_handler = {
-    yajlpp::property_handler("colorId")
-        .FOR_FIELD(term_color, xc_id),
-    yajlpp::property_handler("name")
-        .FOR_FIELD(term_color, xc_name),
-    yajlpp::property_handler("hexString")
-        .FOR_FIELD(term_color, xc_hex),
-    yajlpp::property_handler("rgb")
-        .with_obj_provider<rgb_color, term_color>(
-            [](const auto &pc, term_color *xc) { return &xc->xc_color; })
-        .with_children(term_color_rgb_handler)
-};
+static struct json_path_container term_color_handler
+    = {yajlpp::property_handler("colorId").FOR_FIELD(term_color, xc_id),
+       yajlpp::property_handler("name").FOR_FIELD(term_color, xc_name),
+       yajlpp::property_handler("hexString").FOR_FIELD(term_color, xc_hex),
+       yajlpp::property_handler("rgb")
+           .with_obj_provider<rgb_color, term_color>(
+               [](const auto& pc, term_color* xc) { return &xc->xc_color; })
+           .with_children(term_color_rgb_handler)};
 
-static struct json_path_container root_color_handler = {
-    yajlpp::property_handler("#")
-        .with_obj_provider<term_color, vector<term_color>>(
-        [](const yajlpp_provider_context &ypc, vector<term_color> *palette) {
-            palette->resize(ypc.ypc_index + 1);
-            return &((*palette)[ypc.ypc_index]);
-        })
-        .with_children(term_color_handler)
-};
+static struct json_path_container root_color_handler
+    = {yajlpp::property_handler("#")
+           .with_obj_provider<term_color, vector<term_color>>(
+               [](const yajlpp_provider_context& ypc,
+                  vector<term_color>* palette) {
+                   palette->resize(ypc.ypc_index + 1);
+                   return &((*palette)[ypc.ypc_index]);
+               })
+           .with_children(term_color_handler)};
 
-term_color_palette *xterm_colors()
+term_color_palette*
+xterm_colors()
 {
     static term_color_palette retval(xterm_palette_json.to_string_fragment());
 
     return &retval;
 }
 
-term_color_palette *ansi_colors()
+term_color_palette*
+ansi_colors()
 {
     static term_color_palette retval(ansi_palette_json.to_string_fragment());
 
     return &retval;
 }
 
-Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
+Result<rgb_color, std::string>
+rgb_color::from_str(const string_fragment& sf)
 {
     if (sf.empty()) {
         return Ok(rgb_color());
@@ -97,8 +92,13 @@ Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
     if (sf[0] == '#') {
         switch (sf.length()) {
             case 4:
-                if (sscanf(sf.data(), "#%1hx%1hx%1hx",
-                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
+                if (sscanf(sf.data(),
+                           "#%1hx%1hx%1hx",
+                           &rgb_out.rc_r,
+                           &rgb_out.rc_g,
+                           &rgb_out.rc_b)
+                    == 3)
+                {
                     rgb_out.rc_r |= rgb_out.rc_r << 4;
                     rgb_out.rc_g |= rgb_out.rc_g << 4;
                     rgb_out.rc_b |= rgb_out.rc_b << 4;
@@ -106,8 +106,13 @@ Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
                 }
                 break;
             case 7:
-                if (sscanf(sf.data(), "#%2hx%2hx%2hx",
-                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
+                if (sscanf(sf.data(),
+                           "#%2hx%2hx%2hx",
+                           &rgb_out.rc_r,
+                           &rgb_out.rc_g,
+                           &rgb_out.rc_b)
+                    == 3)
+                {
                     return Ok(rgb_out);
                 }
                 break;
@@ -116,7 +121,7 @@ Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
         return Err(fmt::format("Could not parse color: {}", sf));
     }
 
-    for (const auto &xc : xterm_colors()->tc_palette) {
+    for (const auto& xc : xterm_colors()->tc_palette) {
         if (sf.iequal(xc.xc_name)) {
             return Ok(xc.xc_color);
         }
@@ -125,10 +130,12 @@ Result<rgb_color, std::string> rgb_color::from_str(const string_fragment &sf)
     return Err(fmt::format(
         "Unknown color: '{}'.  "
         "See https://jonasjacek.github.io/colors/ for a list of supported "
-        "color names", sf));
+        "color names",
+        sf));
 }
 
-bool rgb_color::operator<(const rgb_color &rhs) const
+bool
+rgb_color::operator<(const rgb_color& rhs) const
 {
     if (rc_r < rhs.rc_r)
         return true;
@@ -141,29 +148,32 @@ bool rgb_color::operator<(const rgb_color &rhs) const
     return rc_b < rhs.rc_b;
 }
 
-bool rgb_color::operator>(const rgb_color &rhs) const
+bool
+rgb_color::operator>(const rgb_color& rhs) const
 {
     return rhs < *this;
 }
 
-bool rgb_color::operator<=(const rgb_color &rhs) const
+bool
+rgb_color::operator<=(const rgb_color& rhs) const
 {
     return !(rhs < *this);
 }
 
-bool rgb_color::operator>=(const rgb_color &rhs) const
+bool
+rgb_color::operator>=(const rgb_color& rhs) const
 {
     return !(*this < rhs);
 }
 
-bool rgb_color::operator==(const rgb_color &rhs) const
+bool
+rgb_color::operator==(const rgb_color& rhs) const
 {
-    return rc_r == rhs.rc_r &&
-           rc_g == rhs.rc_g &&
-           rc_b == rhs.rc_b;
+    return rc_r == rhs.rc_r && rc_g == rhs.rc_g && rc_b == rhs.rc_b;
 }
 
-bool rgb_color::operator!=(const rgb_color &rhs) const
+bool
+rgb_color::operator!=(const rgb_color& rhs) const
 {
     return !(rhs == *this);
 }
@@ -174,8 +184,7 @@ term_color_palette::term_color_palette(const string_fragment& json)
     yajl_handle handle;
 
     handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);
-    ypc_xterm
-        .with_ignore_unused(true)
+    ypc_xterm.with_ignore_unused(true)
         .with_obj(this->tc_palette)
         .with_handle(handle);
     yajl_status st = ypc_xterm.parse(json);
@@ -184,17 +193,18 @@ term_color_palette::term_color_palette(const string_fragment& json)
     ensure(st == yajl_status_ok);
     yajl_free(handle);
 
-    for (auto &xc : this->tc_palette) {
+    for (auto& xc : this->tc_palette) {
         xc.xc_lab_color = lab_color(xc.xc_color);
     }
 }
 
-short term_color_palette::match_color(const lab_color &to_match)
+short
+term_color_palette::match_color(const lab_color& to_match)
 {
     double lowest = 1000.0;
     short lowest_id = -1;
 
-    for (auto &xc : this->tc_palette) {
+    for (auto& xc : this->tc_palette) {
         double xc_delta = xc.xc_lab_color.deltaE(to_match);
 
         if (lowest_id == -1) {
@@ -214,15 +224,16 @@ short term_color_palette::match_color(const lab_color &to_match)
 
 namespace styling {
 
-Result<color_unit, std::string> color_unit::from_str(const string_fragment &sf)
+Result<color_unit, std::string>
+color_unit::from_str(const string_fragment& sf)
 {
     if (sf == "semantic()") {
-        return Ok(color_unit{ semantic{} });
+        return Ok(color_unit{semantic{}});
     }
 
     auto retval = TRY(rgb_color::from_str(sf));
 
-    return Ok(color_unit{ retval });
+    return Ok(color_unit{retval});
 }
 
-}
+}  // namespace styling

@@ -35,7 +35,7 @@ set(lnav_LIBS
         )
 
 add_subdirectory(src)
-add_subdirectory(test)
+# add_subdirectory(test)
 
 # ---- Install rules ----
 

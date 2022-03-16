@@ -21,120 +21,129 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file drive_json_op.cc
  */
 
-#include "config.h"
-
 #include <errno.h>
 #include <stdlib.h>
 
-#include "yajl/api/yajl_gen.h"
-
-#include "yajlpp/json_op.hh"
 #include "base/lnav_log.hh"
+#include "config.h"
+#include "yajl/api/yajl_gen.h"
+#include "yajlpp/json_op.hh"
 
-static void printer(void *ctx, const char *numberVal, size_t numberLen)
+static void
+printer(void* ctx, const char* numberVal, size_t numberLen)
 {
     log_perror(write(STDOUT_FILENO, numberVal, numberLen));
 }
 
-static int handle_start_map(void *ctx)
+static int
+handle_start_map(void* ctx)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_map_open(gen);
 
     return 1;
 }
 
-static int handle_map_key(void *ctx, const unsigned char * key, size_t len)
+static int
+handle_map_key(void* ctx, const unsigned char* key, size_t len)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_string(gen, key, len);
 
     return 1;
 }
 
-static int handle_end_map(void *ctx)
+static int
+handle_end_map(void* ctx)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_map_close(gen);
 
     return 1;
 }
 
-static int handle_null(void *ctx)
+static int
+handle_null(void* ctx)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_null(gen);
 
     return 1;
 }
 
-static int handle_boolean(void *ctx, int boolVal)
+static int
+handle_boolean(void* ctx, int boolVal)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_bool(gen, boolVal);
 
     return 1;
 }
 
-static int handle_number(void *ctx, const char *numberVal, size_t numberLen)
+static int
+handle_number(void* ctx, const char* numberVal, size_t numberLen)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_number(gen, numberVal, numberLen);
 
     return 1;
 }
 
-static int handle_string(void *ctx, const unsigned char * stringVal, size_t len)
+static int
+handle_string(void* ctx, const unsigned char* stringVal, size_t len)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_string(gen, stringVal, len);
 
     return 1;
 }
 
-static int handle_start_array(void *ctx)
+static int
+handle_start_array(void* ctx)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_array_open(gen);
 
     return 1;
 }
 
-static int handle_end_array(void *ctx)
+static int
+handle_end_array(void* ctx)
 {
-    json_op *jo = (json_op *)ctx;
-    yajl_gen gen = (yajl_gen)jo->jo_ptr_data;
+    json_op* jo = (json_op*) ctx;
+    yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
 
     yajl_gen_array_close(gen);
 
     return 1;
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
 
@@ -143,8 +152,7 @@ int main(int argc, char *argv[])
     if (argc != 3) {
         fprintf(stderr, "error: expecting operation and json-pointer\n");
         retval = EXIT_FAILURE;
-    }
-    else if (strcmp(argv[1], "get") == 0) {
+    } else if (strcmp(argv[1], "get") == 0) {
         unsigned char buffer[1024];
         json_ptr jptr(argv[2]);
         json_op jo(jptr);
@@ -174,14 +182,11 @@ int main(int argc, char *argv[])
             if (status == yajl_status_error) {
                 auto msg = yajl_get_error(handle, 1, buffer, rc);
 
-                fprintf(stderr,
-                        "error:cannot parse JSON input -- %s\n",
-                        msg);
+                fprintf(stderr, "error:cannot parse JSON input -- %s\n", msg);
                 retval = EXIT_FAILURE;
                 yajl_free_error(handle, msg);
                 break;
-            }
-            else if (status == yajl_status_client_canceled) {
+            } else if (status == yajl_status_client_canceled) {
                 fprintf(stderr, "client cancel\n");
                 break;
             }
@@ -189,18 +194,14 @@ int main(int argc, char *argv[])
         status = yajl_complete_parse(handle);
         if (status == yajl_status_error) {
             auto msg = yajl_get_error(handle, 1, buffer, rc);
-            fprintf(stderr,
-                    "error:cannot parse JSON input -- %s\n",
-                    msg);
+            fprintf(stderr, "error:cannot parse JSON input -- %s\n", msg);
             yajl_free_error(handle, msg);
             retval = EXIT_FAILURE;
-        }
-        else if (status == yajl_status_client_canceled) {
+        } else if (status == yajl_status_client_canceled) {
             fprintf(stderr, "client cancel\n");
         }
         yajl_free(handle);
-    }
-    else {
+    } else {
         fprintf(stderr, "error: unknown operation -- %s\n", argv[1]);
         retval = EXIT_FAILURE;
     }

@@ -21,24 +21,25 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <unistd.h>
 #include <thread>
 
-#include "ghc/filesystem.hpp"
-#include "base/auto_pid.hh"
-#include "auto_fd.hh"
-#include "tailerpp.hh"
-#include "line_buffer.hh"
+#include <unistd.h>
 
-static void read_err_pipe(auto_fd &err, std::string& eq)
+#include "auto_fd.hh"
+#include "base/auto_pid.hh"
+#include "config.h"
+#include "ghc/filesystem.hpp"
+#include "line_buffer.hh"
+#include "tailerpp.hh"
+
+static void
+read_err_pipe(auto_fd& err, std::string& eq)
 {
     while (true) {
         char buffer[1024];
@@ -52,12 +53,11 @@ static void read_err_pipe(auto_fd &err, std::string& eq)
     }
 }
 
-int main(int argc, char *const *argv)
+int
+main(int argc, char* const* argv)
 {
     if (argc != 3) {
-        fprintf(stderr,
-                "usage: %s <cmd> <path>\n",
-                argv[0]);
+        fprintf(stderr, "usage: %s <cmd> <path>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -87,9 +87,8 @@ int main(int argc, char *const *argv)
 
     auto fork_res = lnav::pid::from_fork();
     if (fork_res.isErr()) {
-        fprintf(stderr,
-                "cannot start tailer: %s\n",
-                fork_res.unwrapErr().c_str());
+        fprintf(
+            stderr, "cannot start tailer: %s\n", fork_res.unwrapErr().c_str());
         exit(EXIT_FAILURE);
     }
 
@@ -112,36 +111,31 @@ int main(int argc, char *const *argv)
     }
 
     std::string error_queue;
-    std::thread err_reader([err = std::move(err_pipe.read_end()), &error_queue]() mutable {
-        read_err_pipe(err, error_queue);
-    });
+    std::thread err_reader(
+        [err = std::move(err_pipe.read_end()), &error_queue]() mutable {
+            read_err_pipe(err, error_queue);
+        });
 
-    auto &to_child = in_pipe.write_end();
-    auto &from_child = out_pipe.read_end();
+    auto& to_child = in_pipe.write_end();
+    auto& from_child = out_pipe.read_end();
     auto cmd = std::string(argv[1]);
 
     if (cmd == "open") {
-        send_packet(to_child.get(),
-                    TPT_OPEN_PATH,
-                    TPPT_STRING, argv[2],
-                    TPPT_DONE);
-    }
-    else if (cmd == "preview") {
+        send_packet(
+            to_child.get(), TPT_OPEN_PATH, TPPT_STRING, argv[2], TPPT_DONE);
+    } else if (cmd == "preview") {
         send_packet(to_child.get(),
                     TPT_LOAD_PREVIEW,
-                    TPPT_STRING, argv[2],
-                    TPPT_INT64, int64_t{1234},
+                    TPPT_STRING,
+                    argv[2],
+                    TPPT_INT64,
+                    int64_t{1234},
                     TPPT_DONE);
-    }
-    else if (cmd == "possible") {
-        send_packet(to_child.get(),
-                    TPT_COMPLETE_PATH,
-                    TPPT_STRING, argv[2],
-                    TPPT_DONE);
-    }
-    else {
-        fprintf(stderr,
-                "error: unknown command -- %s\n", cmd.c_str());
+    } else if (cmd == "possible") {
+        send_packet(
+            to_child.get(), TPT_COMPLETE_PATH, TPPT_STRING, argv[2], TPPT_DONE);
+    } else {
+        fprintf(stderr, "error: unknown command -- %s\n", cmd.c_str());
         exit(EXIT_FAILURE);
     }
 
@@ -158,30 +152,34 @@ int main(int argc, char *const *argv)
 
         auto packet = read_res.unwrap();
         packet.match(
-            [&](const tailer::packet_eof &te) {
+            [&](const tailer::packet_eof& te) {
                 printf("all done!\n");
                 done = true;
             },
-            [&](const tailer::packet_announce &pa) {
-            },
-            [&](const tailer::packet_log &te) {
+            [&](const tailer::packet_announce& pa) {},
+            [&](const tailer::packet_log& te) {
                 printf("log: %s\n", te.pl_msg.c_str());
             },
-            [&](const tailer::packet_error &pe) {
-                printf("Got an error: %s -- %s\n", pe.pe_path.c_str(),
+            [&](const tailer::packet_error& pe) {
+                printf("Got an error: %s -- %s\n",
+                       pe.pe_path.c_str(),
                        pe.pe_msg.c_str());
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(pe.pe_path)).relative_path();
+                                       ghc::filesystem::path(pe.pe_path))
+                                       .relative_path();
 
                 printf("removing %s\n", remote_path.c_str());
             },
-            [&](const tailer::packet_offer_block &pob) {
-                printf("Got an offer: %s  %lld - %lld\n", pob.pob_path.c_str(),
-                       pob.pob_offset, pob.pob_length);
+            [&](const tailer::packet_offer_block& pob) {
+                printf("Got an offer: %s  %lld - %lld\n",
+                       pob.pob_path.c_str(),
+                       pob.pob_offset,
+                       pob.pob_length);
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(pob.pob_path)).relative_path();
+                                       ghc::filesystem::path(pob.pob_path))
+                                       .relative_path();
 #if 0
                 auto local_path = tmppath / remote_path;
                 auto fd = auto_fd(open(local_path.c_str(), O_RDONLY));
@@ -232,7 +230,7 @@ int main(int argc, char *const *argv)
                             TPPT_DONE);
 #endif
             },
-            [&](const tailer::packet_tail_block &ptb) {
+            [&](const tailer::packet_tail_block& ptb) {
 #if 0
                 //printf("got a tail: %s %lld %ld\n", ptb.ptb_path.c_str(),
                 //       ptb.ptb_offset, ptb.ptb_bits.size());
@@ -253,30 +251,29 @@ int main(int argc, char *const *argv)
                 }
 #endif
             },
-            [&](const tailer::packet_synced &ps) {
+            [&](const tailer::packet_synced& ps) {
 
             },
-            [&](const tailer::packet_link &pl) {
+            [&](const tailer::packet_link& pl) {
                 printf("link value: %s -> %s\n",
                        pl.pl_path.c_str(),
                        pl.pl_link_value.c_str());
             },
-            [&](const tailer::packet_preview_error &ppe) {
+            [&](const tailer::packet_preview_error& ppe) {
                 fprintf(stderr,
                         "preview error: %s -- %s\n",
                         ppe.ppe_path.c_str(),
                         ppe.ppe_msg.c_str());
             },
-            [&](const tailer::packet_preview_data &ppd) {
+            [&](const tailer::packet_preview_data& ppd) {
                 printf("preview of file: %s\n%.*s\n",
                        ppd.ppd_path.c_str(),
                        (int) ppd.ppd_bits.size(),
                        ppd.ppd_bits.data());
             },
-            [&](const tailer::packet_possible_path &ppp) {
+            [&](const tailer::packet_possible_path& ppp) {
                 printf("possible path: %s\n", ppp.ppp_path.c_str());
-            }
-        );
+            });
     }
 
     auto finished_child = std::move(child).wait_for_child();

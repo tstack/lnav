@@ -21,26 +21,27 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file intern_string.cc
  */
 
-#include "config.h"
-
-#include <string.h>
-
 #include <mutex>
 
 #include "intern_string.hh"
 
+#include <string.h>
+
+#include "config.h"
+
 const static int TABLE_SIZE = 4095;
 
 struct intern_string::intern_table {
-    ~intern_table() {
+    ~intern_table()
+    {
         for (auto is : this->it_table) {
             auto curr = is;
 
@@ -53,10 +54,11 @@ struct intern_string::intern_table {
         }
     }
 
-    intern_string *it_table[TABLE_SIZE];
+    intern_string* it_table[TABLE_SIZE];
 };
 
-intern_table_lifetime intern_string::get_table_lifetime()
+intern_table_lifetime
+intern_string::get_table_lifetime()
 {
     static intern_table_lifetime retval = std::make_shared<intern_table>();
 
@@ -64,22 +66,23 @@ intern_table_lifetime intern_string::get_table_lifetime()
 }
 
 unsigned long
-hash_str(const char *str, size_t len)
+hash_str(const char* str, size_t len)
 {
     unsigned long retval = 5381;
 
     for (size_t lpc = 0; lpc < len; lpc++) {
         /* retval * 33 + c */
-        retval = ((retval << 5) + retval) + (unsigned char)str[lpc];
+        retval = ((retval << 5) + retval) + (unsigned char) str[lpc];
     }
 
     return retval;
 }
 
-const intern_string *intern_string::lookup(const char *str, ssize_t len) noexcept
+const intern_string*
+intern_string::lookup(const char* str, ssize_t len) noexcept
 {
     unsigned long h;
-    intern_string *curr;
+    intern_string* curr;
 
     if (len == -1) {
         len = strlen(str);
@@ -94,7 +97,8 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len) noexcep
 
         curr = tab->it_table[h];
         while (curr != nullptr) {
-            if (curr->is_str.size() == len && strncmp(curr->is_str.c_str(), str, len) == 0) {
+            if (curr->is_str.size() == len
+                && strncmp(curr->is_str.c_str(), str, len) == 0) {
                 return curr;
             }
             curr = curr->is_next;
@@ -106,22 +110,24 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len) noexcep
 
         return curr;
     }
-
 }
 
-const intern_string *intern_string::lookup(const string_fragment &sf) noexcept
+const intern_string*
+intern_string::lookup(const string_fragment& sf) noexcept
 {
     return lookup(sf.data(), sf.length());
 }
 
-const intern_string *intern_string::lookup(const std::string &str) noexcept
+const intern_string*
+intern_string::lookup(const std::string& str) noexcept
 {
     return lookup(str.c_str(), str.size());
 }
 
-bool intern_string::startswith(const char *prefix) const
+bool
+intern_string::startswith(const char* prefix) const
 {
-    const char *curr = this->is_str.data();
+    const char* curr = this->is_str.data();
 
     while (*prefix != '\0' && *prefix == *curr) {
         prefix += 1;
@@ -131,7 +137,8 @@ bool intern_string::startswith(const char *prefix) const
     return *prefix == '\0';
 }
 
-void string_fragment::trim(const char *tokens)
+void
+string_fragment::trim(const char* tokens)
 {
     while (this->sf_begin < this->sf_end) {
         bool found = false;
@@ -165,7 +172,8 @@ void string_fragment::trim(const char *tokens)
     }
 }
 
-nonstd::optional<string_fragment> string_fragment::consume_n(int amount) const
+nonstd::optional<string_fragment>
+string_fragment::consume_n(int amount) const
 {
     if (amount > this->length()) {
         return nonstd::nullopt;

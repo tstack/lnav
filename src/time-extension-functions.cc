@@ -21,33 +21,30 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file time-extension-functions.cc
  */
 
-#include "config.h"
-
-#include <string.h>
-#include <sys/types.h>
-#include <stdint.h>
-
 #include <string>
 #include <unordered_map>
 
+#include <string.h>
+
 #include "base/date_time_scanner.hh"
 #include "base/lrucache.hpp"
-#include "sql_util.hh"
+#include "config.h"
 #include "relative_time.hh"
-
+#include "sql_util.hh"
 #include "vtab_module.hh"
 
 using namespace std;
 
-static nonstd::optional<text_auto_buffer> timeslice(sqlite3_value *time_in, nonstd::optional<const char *> slice_in_opt)
+static nonstd::optional<text_auto_buffer>
+timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
 {
     thread_local date_time_scanner dts;
     thread_local struct {
@@ -63,8 +60,10 @@ static nonstd::optional<text_auto_buffer> timeslice(sqlite3_value *time_in, nons
     if (slice_in != cache.c_slice_str.c_str()) {
         auto parse_res = relative_time::from_str(slice_in.data());
         if (parse_res.isErr()) {
-            throw sqlite_func_error("unable to parse time slice value: {} -- {}",
-                                    slice_in, parse_res.unwrapErr().pe_msg);
+            throw sqlite_func_error(
+                "unable to parse time slice value: {} -- {}",
+                slice_in,
+                parse_res.unwrapErr().pe_msg);
         }
 
         cache.c_rel_time = parse_res.unwrap();
@@ -82,12 +81,22 @@ static nonstd::optional<text_auto_buffer> timeslice(sqlite3_value *time_in, nons
     switch (sqlite3_value_type(time_in)) {
         case SQLITE_BLOB:
         case SQLITE3_TEXT: {
-            const char *time_in_str = reinterpret_cast<const char *>(sqlite3_value_text(
-                time_in));
+            const char* time_in_str
+                = reinterpret_cast<const char*>(sqlite3_value_text(time_in));
 
-            if (dts.scan(time_in_str, strlen(time_in_str), nullptr, &tm, tv, false) == nullptr) {
+            if (dts.scan(
+                    time_in_str, strlen(time_in_str), nullptr, &tm, tv, false)
+                == nullptr)
+            {
                 dts.unlock();
-                if (dts.scan(time_in_str, strlen(time_in_str), nullptr, &tm, tv, false) == nullptr) {
+                if (dts.scan(time_in_str,
+                             strlen(time_in_str),
+                             nullptr,
+                             &tm,
+                             tv,
+                             false)
+                    == nullptr)
+                {
                     throw sqlite_func_error("unable to parse time value -- {}",
                                             time_in_str);
                 }
@@ -95,13 +104,15 @@ static nonstd::optional<text_auto_buffer> timeslice(sqlite3_value *time_in, nons
             break;
         }
         case SQLITE_INTEGER: {
-            auto msecs = std::chrono::milliseconds(sqlite3_value_int64(time_in));
+            auto msecs
+                = std::chrono::milliseconds(sqlite3_value_int64(time_in));
 
             tv.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(msecs)
-                .count();
+                            .count();
             tm.et_tm = *gmtime(&tv.tv_sec);
             tm.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                msecs % 1000).count();
+                             msecs % 1000)
+                             .count();
             break;
         }
         case SQLITE_FLOAT: {
@@ -127,14 +138,15 @@ static nonstd::optional<text_auto_buffer> timeslice(sqlite3_value *time_in, nons
 
     auto win_start = *win_start_opt;
     auto ts = auto_buffer::alloc(64);
-    auto actual_length = sql_strftime(ts.in(), ts.size(), win_start.to_timeval());
+    auto actual_length
+        = sql_strftime(ts.in(), ts.size(), win_start.to_timeval());
 
     ts.shrink_to(actual_length);
-    return text_auto_buffer{ std::move(ts) };
+    return text_auto_buffer{std::move(ts)};
 }
 
-static
-nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
+static nonstd::optional<double>
+sql_timediff(const char* time1, const char* time2)
 {
     struct timeval tv1, tv2, retval;
     date_time_scanner dts1, dts2;
@@ -158,54 +170,63 @@ nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
     return (double) retval.tv_sec + (double) retval.tv_usec / 1000000.0;
 }
 
-int time_extension_functions(struct FuncDef **basic_funcs,
-                             struct FuncDefAgg **agg_funcs)
+int
+time_extension_functions(struct FuncDef** basic_funcs,
+                         struct FuncDefAgg** agg_funcs)
 {
     static struct FuncDef time_funcs[] = {
         sqlite_func_adapter<decltype(&timeslice), timeslice>::builder(
-            help_text("timeslice",
-                      "Return the start of the slice of time that the given timestamp falls in.  "
-                      "If the time falls outside of the slice, NULL is returned.")
+            help_text(
+                "timeslice",
+                "Return the start of the slice of time that the given "
+                "timestamp falls in.  "
+                "If the time falls outside of the slice, NULL is returned.")
                 .sql_function()
-                .with_parameter({"time", "The timestamp to get the time slice for."})
+                .with_parameter(
+                    {"time", "The timestamp to get the time slice for."})
                 .with_parameter({"slice", "The size of the time slices"})
                 .with_tags({"datetime"})
                 .with_example({
-                    "To get the timestamp rounded down to the start of the ten minute slice",
-                    "SELECT timeslice('2017-01-01T05:05:00', '10m')"
+                    "To get the timestamp rounded down to the start of the "
+                    "ten minute slice",
+                    "SELECT timeslice('2017-01-01T05:05:00', '10m')",
                 })
                 .with_example({
-                    "To group log messages into five minute buckets and count them",
-                    "SELECT timeslice(log_time_msecs, '5m') AS slice, count(1) FROM lnav_example_log GROUP BY slice"
+                    "To group log messages into five minute buckets and count "
+                    "them",
+                    "SELECT timeslice(log_time_msecs, '5m') AS slice, "
+                    "count(1) FROM lnav_example_log GROUP BY slice",
                 })
                 .with_example({
                     "To group log messages by those before 4:30am and after",
-                    "SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice"
-                })
-        ),
+                    "SELECT timeslice(log_time_msecs, 'before 4:30am') AS "
+                    "slice, count(1) FROM lnav_example_log GROUP BY slice",
+                })),
 
         sqlite_func_adapter<decltype(&sql_timediff), sql_timediff>::builder(
-            help_text("timediff",
-                      "Compute the difference between two timestamps in seconds")
+            help_text(
+                "timediff",
+                "Compute the difference between two timestamps in seconds")
                 .sql_function()
                 .with_parameter({"time1", "The first timestamp"})
-                .with_parameter({"time2", "The timestamp to subtract from the first"})
+                .with_parameter(
+                    {"time2", "The timestamp to subtract from the first"})
                 .with_tags({"datetime"})
                 .with_example({
                     "To get the difference between two timestamps",
-                    "SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')"
+                    "SELECT timediff('2017-02-03T04:05:06', "
+                    "'2017-02-03T04:05:00')",
                 })
                 .with_example({
                     "To get the difference between relative timestamps",
-                    "SELECT timediff('today', 'yesterday')"
-                })
-        ),
+                    "SELECT timediff('today', 'yesterday')",
+                })),
 
-        { nullptr }
+        {nullptr},
     };
 
     *basic_funcs = time_funcs;
-    *agg_funcs   = nullptr;
+    *agg_funcs = nullptr;
 
     return SQLITE_OK;
 }

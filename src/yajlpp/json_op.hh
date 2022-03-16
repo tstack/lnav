@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,36 +32,39 @@
 #ifndef json_op_hh
 #define json_op_hh
 
-#include <sys/types.h>
-
 #include <string>
 
-#include "yajlpp/json_ptr.hh"
+#include <sys/types.h>
+
 #include "yajl/api/yajl_parse.h"
+#include "yajlpp/json_ptr.hh"
 
 class json_op {
-    static int handle_null(void *ctx);
-    static int handle_boolean(void *ctx, int boolVal);
-    static int handle_number(void *ctx, const char *numberVal, size_t numberLen);
-    static int handle_string(void *ctx, const unsigned char * stringVal, size_t len);
-    static int handle_start_map(void *ctx);
-    static int handle_map_key(void *ctx, const unsigned char * key, size_t len);
-    static int handle_end_map(void *ctx);
-    static int handle_start_array(void *ctx);
-    static int handle_end_array(void *ctx);
+    static int handle_null(void* ctx);
+    static int handle_boolean(void* ctx, int boolVal);
+    static int handle_number(void* ctx,
+                             const char* numberVal,
+                             size_t numberLen);
+    static int handle_string(void* ctx,
+                             const unsigned char* stringVal,
+                             size_t len);
+    static int handle_start_map(void* ctx);
+    static int handle_map_key(void* ctx, const unsigned char* key, size_t len);
+    static int handle_end_map(void* ctx);
+    static int handle_start_array(void* ctx);
+    static int handle_end_array(void* ctx);
 
 public:
-
     const static yajl_callbacks gen_callbacks;
     const static yajl_callbacks ptr_callbacks;
 
-    explicit json_op(const json_ptr &ptr)
-        : jo_ptr(ptr),
-          jo_ptr_callbacks(gen_callbacks) {
-    };
+    explicit json_op(const json_ptr& ptr)
+        : jo_ptr(ptr), jo_ptr_callbacks(gen_callbacks){};
 
-    bool check_index(bool primitive = true) {
-        return this->jo_ptr.at_index(this->jo_depth, this->jo_array_index, primitive);
+    bool check_index(bool primitive = true)
+    {
+        return this->jo_ptr.at_index(
+            this->jo_depth, this->jo_array_index, primitive);
     };
 
     int jo_depth{0};
@@ -69,7 +72,7 @@ public:
 
     json_ptr jo_ptr;
     yajl_callbacks jo_ptr_callbacks;
-    void *jo_ptr_data{nullptr};
+    void* jo_ptr_data{nullptr};
     std::string jo_ptr_error;
     int jo_ptr_error_code{0};
 };

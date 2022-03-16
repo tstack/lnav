@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,13 +32,14 @@
 #ifndef lnav_log_hh
 #define lnav_log_hh
 
+#include <string>
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <string>
 
 #ifndef lnav_dead2
-#define lnav_dead2 __attribute__((noreturn))
+#    define lnav_dead2 __attribute__((noreturn))
 #endif
 
 #include "optional.hpp"
@@ -53,12 +54,18 @@ enum class lnav_log_level_t : uint32_t {
     ERROR,
 };
 
-void log_argv(int argc, char *argv[]);
+void log_argv(int argc, char* argv[]);
 void log_host_info();
-void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru);
-void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
-    const char *fmt, ...);
-void log_msg_extra(const char *fmt, ...);
+void log_rusage_raw(enum lnav_log_level_t level,
+                    const char* src_file,
+                    int line_number,
+                    const struct rusage& ru);
+void log_msg(enum lnav_log_level_t level,
+             const char* src_file,
+             int line_number,
+             const char* fmt,
+             ...);
+void log_msg_extra(const char* fmt, ...);
 void log_msg_extra_complete();
 void log_install_handlers();
 void log_abort() lnav_dead2;
@@ -71,7 +78,7 @@ public:
 
     virtual ~log_state_dumper();
 
-    virtual void log_state() {
+    virtual void log_state(){
 
     };
 
@@ -88,9 +95,9 @@ public:
     virtual void log_crash_recover() = 0;
 };
 
-extern nonstd::optional<FILE *> lnav_log_file;
-extern const char *lnav_log_crash_dir;
-extern nonstd::optional<const struct termios *> lnav_log_orig_termios;
+extern nonstd::optional<FILE*> lnav_log_file;
+extern const char* lnav_log_crash_dir;
+extern nonstd::optional<const struct termios*> lnav_log_orig_termios;
 extern enum lnav_log_level_t lnav_log_level;
 
 #define log_msg_wrapper(level, fmt...) \
@@ -98,40 +105,43 @@ extern enum lnav_log_level_t lnav_log_level;
         if (lnav_log_level <= level) { \
             log_msg(level, __FILE__, __LINE__, fmt); \
         } \
-    } \
-    while (false)
+    } while (false)
 
-#define log_rusage(level, ru) \
-    log_rusage_raw(level, __FILE__, __LINE__, ru);
+#define log_rusage(level, ru) log_rusage_raw(level, __FILE__, __LINE__, ru);
 
-#define log_error(fmt...) \
-    log_msg_wrapper(lnav_log_level_t::ERROR, fmt);
+#define log_error(fmt...) log_msg_wrapper(lnav_log_level_t::ERROR, fmt);
 
-#define log_warning(fmt...) \
-    log_msg_wrapper(lnav_log_level_t::WARNING, fmt);
+#define log_warning(fmt...) log_msg_wrapper(lnav_log_level_t::WARNING, fmt);
 
-#define log_info(fmt...) \
-    log_msg_wrapper(lnav_log_level_t::INFO, fmt);
+#define log_info(fmt...) log_msg_wrapper(lnav_log_level_t::INFO, fmt);
 
-#define log_debug(fmt...) \
-    log_msg_wrapper(lnav_log_level_t::DEBUG, fmt);
+#define log_debug(fmt...) log_msg_wrapper(lnav_log_level_t::DEBUG, fmt);
 
-#define log_trace(fmt...) \
-    log_msg_wrapper(lnav_log_level_t::TRACE, fmt);
+#define log_trace(fmt...) log_msg_wrapper(lnav_log_level_t::TRACE, fmt);
 
-#define require(e)  \
-    ((void) ((e) ? 0 : lnav_require (#e, __FILE__, __LINE__)))
+#define require(e) ((void) ((e) ? 0 : lnav_require(#e, __FILE__, __LINE__)))
 #define lnav_require(e, file, line) \
-    (log_msg(lnav_log_level_t::ERROR, file, line, "failed precondition `%s'", e), log_abort(), 1)
+    (log_msg( \
+         lnav_log_level_t::ERROR, file, line, "failed precondition `%s'", e), \
+     log_abort(), \
+     1)
 
-#define ensure(e)  \
-    ((void) ((e) ? 0 : lnav_ensure (#e, __FILE__, __LINE__)))
+#define ensure(e) ((void) ((e) ? 0 : lnav_ensure(#e, __FILE__, __LINE__)))
 #define lnav_ensure(e, file, line) \
-    (log_msg(lnav_log_level_t::ERROR, file, line, "failed postcondition `%s'", e), log_abort(), 1)
+    (log_msg( \
+         lnav_log_level_t::ERROR, file, line, "failed postcondition `%s'", e), \
+     log_abort(), \
+     1)
 
-#define log_perror(e)  \
-    ((void) ((e != -1) ? 0 : lnav_log_perror (#e, __FILE__, __LINE__)))
+#define log_perror(e) \
+    ((void) ((e != -1) ? 0 : lnav_log_perror(#e, __FILE__, __LINE__)))
 #define lnav_log_perror(e, file, line) \
-    (log_msg(lnav_log_level_t::ERROR, file, line, "syscall failed `%s' -- %s", e, strerror(errno)), 1)
+    (log_msg(lnav_log_level_t::ERROR, \
+             file, \
+             line, \
+             "syscall failed `%s' -- %s", \
+             e, \
+             strerror(errno)), \
+     1)
 
 #endif

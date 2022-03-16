@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,9 +32,9 @@
 #ifndef text_format_hh
 #define text_format_hh
 
-#include <sys/types.h>
-
 #include <string>
+
+#include <sys/types.h>
 
 #include "fmt/format.h"
 
@@ -50,12 +50,11 @@ enum class text_format_t {
     TF_JSON,
 };
 
-
 namespace fmt {
 template<>
 struct formatter<text_format_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(text_format_t tf, FormatContext &ctx)
+    auto format(text_format_t tf, FormatContext& ctx)
     {
         string_view name = "unknown";
         switch (tf) {
@@ -90,7 +89,7 @@ struct formatter<text_format_t> : formatter<string_view> {
         return formatter<string_view>::format(name, ctx);
     }
 };
-}
+}  // namespace fmt
 
 /**
  * Try to detect the format of the given text file fragment.
@@ -99,9 +98,11 @@ struct formatter<text_format_t> : formatter<string_view> {
  * @param len The length of the 'str' buffer.
  * @return The detected format.
  */
-text_format_t detect_text_format(const char *str, size_t len);
+text_format_t detect_text_format(const char* str, size_t len);
 
-inline text_format_t detect_text_format(const std::string &str) {
+inline text_format_t
+detect_text_format(const std::string& str)
+{
     return detect_text_format(str.c_str(), str.length());
 }
 

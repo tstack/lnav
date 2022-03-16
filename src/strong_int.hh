@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -44,45 +44,61 @@
 template<typename T, class DISTINCT>
 class strong_int {
 public:
-    explicit constexpr strong_int(T v = 0) noexcept : value(v) { };
-    operator const T &() const { return this->value; };
-    strong_int operator+(const strong_int &rhs) const
+    explicit constexpr strong_int(T v = 0) noexcept : value(v){};
+    operator const T&() const
+    {
+        return this->value;
+    };
+    strong_int operator+(const strong_int& rhs) const
     {
         return strong_int(this->value + rhs.value);
     };
-    strong_int operator-(const strong_int &rhs) const
+    strong_int operator-(const strong_int& rhs) const
     {
         return strong_int(this->value - rhs.value);
     };
-    strong_int operator/(const strong_int &rhs) const
+    strong_int operator/(const strong_int& rhs) const
     {
         return strong_int(this->value / rhs.value);
     };
-    bool operator<(const strong_int &rhs) const
+    bool operator<(const strong_int& rhs) const
     {
         return this->value < rhs.value;
     };
-    strong_int &operator+=(const strong_int &rhs)
+    strong_int& operator+=(const strong_int& rhs)
     {
         this->value += rhs.value;
         return *this;
     };
-    strong_int &operator-=(const strong_int &rhs)
+    strong_int& operator-=(const strong_int& rhs)
     {
         this->value -= rhs.value;
         return *this;
     };
-    strong_int &operator-()
+    strong_int& operator-()
     {
         this->value = -this->value;
         return *this;
     };
-    strong_int &operator++() { this->value++; return *this; };
-    strong_int &operator--() { this->value--; return *this; };
-    bool operator==(const strong_int &rhs) const {
+    strong_int& operator++()
+    {
+        this->value++;
+        return *this;
+    };
+    strong_int& operator--()
+    {
+        this->value--;
+        return *this;
+    };
+    bool operator==(const strong_int& rhs) const
+    {
         return this->value == rhs.value;
     };
-    T *out() { return &this->value; };
+    T* out()
+    {
+        return &this->value;
+    };
+
 private:
     T value;
 };
@@ -94,7 +110,7 @@ private:
  * @param T The integer type.
  * @param name The name of the strongly-typed integer.
  */
-#define STRONG_INT_TYPE(T, name)   \
-    class __ ## name ## _distinct; \
-    typedef strong_int<T, __ ## name ## _distinct> name ## _t
+#define STRONG_INT_TYPE(T, name) \
+    class __##name##_distinct; \
+    typedef strong_int<T, __##name##_distinct> name##_t
 #endif

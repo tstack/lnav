@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,7 +32,7 @@
 #include "config.h"
 
 #ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
+#    include <execinfo.h>
 #endif
 
 #include <algorithm>
@@ -41,11 +41,12 @@
 
 static const bool DEBUG_TRACE = false;
 
-void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
+void
+shared_buffer_ref::share(shared_buffer& sb, char* data, size_t len)
 {
 #ifdef HAVE_EXECINFO_H
     if (DEBUG_TRACE) {
-        void *frames[128];
+        void* frames[128];
         int rc;
 
         rc = backtrace(frames, 128);
@@ -63,7 +64,8 @@ void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
     ensure(this->sb_length < (5 * 1024 * 1024));
 }
 
-bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t len)
+bool
+shared_buffer_ref::subset(shared_buffer_ref& other, off_t offset, size_t len)
 {
     this->disown();
 
@@ -71,7 +73,7 @@ bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t le
         this->sb_owner = other.sb_owner;
         this->sb_length = len;
         if (this->sb_owner == nullptr) {
-            if ((this->sb_data = (char *)malloc(this->sb_length)) == nullptr) {
+            if ((this->sb_data = (char*) malloc(this->sb_length)) == nullptr) {
                 return false;
             }
 
@@ -84,7 +86,7 @@ bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t le
     return true;
 }
 
-shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other) noexcept
+shared_buffer_ref::shared_buffer_ref(shared_buffer_ref&& other) noexcept
 {
     if (other.sb_data == nullptr) {
         this->sb_owner = nullptr;
@@ -105,12 +107,13 @@ shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other) noexcept
     }
 }
 
-bool shared_buffer_ref::take_ownership()
+bool
+shared_buffer_ref::take_ownership()
 {
     if (this->sb_owner != nullptr && this->sb_data != nullptr) {
-        char *new_data;
+        char* new_data;
 
-        if ((new_data = (char *)malloc(this->sb_length)) == nullptr) {
+        if ((new_data = (char*) malloc(this->sb_length)) == nullptr) {
             return false;
         }
 
@@ -124,7 +127,8 @@ bool shared_buffer_ref::take_ownership()
     return true;
 }
 
-void shared_buffer_ref::disown()
+void
+shared_buffer_ref::disown()
 {
     if (this->sb_owner == nullptr) {
         if (this->sb_data != nullptr) {
@@ -140,18 +144,18 @@ void shared_buffer_ref::disown()
     this->sb_length = 0;
 }
 
-void shared_buffer_ref::copy_ref(const shared_buffer_ref &other)
+void
+shared_buffer_ref::copy_ref(const shared_buffer_ref& other)
 {
     if (other.sb_data == nullptr) {
         this->sb_owner = nullptr;
         this->sb_data = nullptr;
         this->sb_length = 0;
-    }
-    else if (other.sb_owner != nullptr) {
+    } else if (other.sb_owner != nullptr) {
         this->share(*other.sb_owner, other.sb_data, other.sb_length);
     } else {
         this->sb_owner = nullptr;
-        this->sb_data = (char *)malloc(other.sb_length);
+        this->sb_data = (char*) malloc(other.sb_length);
         memcpy(this->sb_data, other.sb_data, other.sb_length);
         this->sb_length = other.sb_length;
     }

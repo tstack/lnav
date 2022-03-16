@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,30 +32,22 @@
 #ifndef grep_proc_hh
 #define grep_proc_hh
 
-#include "config.h"
-
+#include <poll.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <poll.h>
-
-#ifdef HAVE_PCRE_H
-#include <pcre.h>
-#elif HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#endif
 
 #include <deque>
+#include <exception>
 #include <string>
 #include <vector>
-#include <exception>
 
-#include "pcrepp/pcrepp.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
-#include "strong_int.hh"
 #include "line_buffer.hh"
+#include "pcrepp/pcrepp.hh"
+#include "strong_int.hh"
 
 template<typename LineType>
 class grep_proc;
@@ -68,7 +60,8 @@ class grep_proc_source {
 public:
     virtual ~grep_proc_source() = default;
 
-    virtual void register_proc(grep_proc<LineType> *proc) {
+    virtual void register_proc(grep_proc<LineType>* proc)
+    {
         this->gps_proc = proc;
     }
 
@@ -78,20 +71,22 @@ public:
      * @param line The line to retrieve.
      * @param value_out The destination for the line value.
      */
-    virtual bool grep_value_for_line(LineType line, std::string &value_out) = 0;
+    virtual bool grep_value_for_line(LineType line, std::string& value_out) = 0;
 
-    virtual LineType grep_initial_line(LineType start, LineType highest) {
+    virtual LineType grep_initial_line(LineType start, LineType highest)
+    {
         if (start == -1) {
             return highest;
         }
         return start;
     };
 
-    virtual void grep_next_line(LineType &line) {
+    virtual void grep_next_line(LineType& line)
+    {
         line = line + LineType(1);
     };
 
-    grep_proc<LineType> *gps_proc;
+    grep_proc<LineType>* gps_proc;
 };
 
 /**
@@ -99,11 +94,10 @@ public:
  */
 class grep_proc_control {
 public:
-
     virtual ~grep_proc_control() = default;
 
     /** @param msg The error encountered while attempting the grep. */
-    virtual void grep_error(const std::string& msg) { };
+    virtual void grep_error(const std::string& msg){};
 };
 
 /**
@@ -115,13 +109,15 @@ public:
     virtual ~grep_proc_sink() = default;
 
     /** Called at the start of a new grep run. */
-    virtual void grep_begin(grep_proc<LineType> &gp, LineType start, LineType stop) { };
+    virtual void grep_begin(grep_proc<LineType>& gp,
+                            LineType start,
+                            LineType stop){};
 
     /** Called periodically between grep_begin and grep_end. */
-    virtual void grep_end_batch(grep_proc<LineType> &gp) { };
+    virtual void grep_end_batch(grep_proc<LineType>& gp){};
 
     /** Called at the end of a grep run. */
-    virtual void grep_end(grep_proc<LineType> &gp) { };
+    virtual void grep_end(grep_proc<LineType>& gp){};
 
     /**
      * Called when a match is found on 'line' and between [start, end).
@@ -131,10 +127,11 @@ public:
      * @param end The offset of the character after the last character in the
      * match.
      */
-    virtual void grep_match(grep_proc<LineType> &gp,
+    virtual void grep_match(grep_proc<LineType>& gp,
                             LineType line,
                             int start,
-                            int end) = 0;
+                            int end)
+        = 0;
 
     /**
      * Called for each captured substring in the line.
@@ -145,13 +142,13 @@ public:
      * capture.
      * @param capture The captured substring itself.
      */
-    virtual void grep_capture(grep_proc<LineType> &gp,
+    virtual void grep_capture(grep_proc<LineType>& gp,
                               LineType line,
                               int start,
                               int end,
-                              char *capture) { };
+                              char* capture){};
 
-    virtual void grep_match_end(grep_proc<LineType> &gp, LineType line) { };
+    virtual void grep_match_end(grep_proc<LineType>& gp, LineType line){};
 };
 
 /**
@@ -167,11 +164,9 @@ public:
 template<typename LineType>
 class grep_proc {
 public:
-    class error
-        : public std::exception {
-public:
-        error(int err)
-            : e_err(err) { };
+    class error : public std::exception {
+    public:
+        error(int err) : e_err(err){};
 
         int e_err;
     };
@@ -183,26 +178,29 @@ public:
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.
      */
-    grep_proc(pcre *code, grep_proc_source<LineType> &gps);
+    grep_proc(pcre* code, grep_proc_source<LineType>& gps);
 
     virtual ~grep_proc();
 
     /** @param gpd The sink to send resuls to. */
-    void set_sink(grep_proc_sink<LineType> *gpd)
+    void set_sink(grep_proc_sink<LineType>* gpd)
     {
         this->gp_sink = gpd;
     };
 
-    grep_proc &invalidate();
+    grep_proc& invalidate();
 
     /** @param gpd The sink to send results to. */
-    void set_control(grep_proc_control *gpc)
+    void set_control(grep_proc_control* gpc)
     {
         this->gp_control = gpc;
     };
 
     /** @return The sink to send results to. */
-    grep_proc_sink<LineType> *get_sink() { return this->gp_sink; };
+    grep_proc_sink<LineType>* get_sink()
+    {
+        return this->gp_sink;
+    };
 
     /**
      * Queue a request to search the input between the given line numbers.
@@ -211,7 +209,7 @@ public:
      * @param stop The line number to stop the search at (exclusive) or -1 to
      * read until the end-of-file.
      */
-    grep_proc &queue_request(LineType start = LineType(0),
+    grep_proc& queue_request(LineType start = LineType(0),
                              LineType stop = LineType(-1))
     {
         require(start != -1 || stop == -1);
@@ -230,21 +228,14 @@ public:
      */
     void start();
 
-    void update_poll_set(std::vector<struct pollfd> &pollfds)
+    void update_poll_set(std::vector<struct pollfd>& pollfds)
     {
         if (this->gp_line_buffer.get_fd() != -1) {
-            pollfds.push_back((struct pollfd) {
-                    this->gp_line_buffer.get_fd(),
-                    POLLIN,
-                    0
-            });
+            pollfds.push_back(
+                (struct pollfd){this->gp_line_buffer.get_fd(), POLLIN, 0});
         }
         if (this->gp_err_pipe != -1) {
-            pollfds.push_back((struct pollfd) {
-                    this->gp_err_pipe,
-                    POLLIN,
-                    0
-            });
+            pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
         }
     };
 
@@ -253,7 +244,7 @@ public:
      *
      * @param ready_rfds The set of ready-to-read file descriptors.
      */
-    void check_poll_set(const std::vector<struct pollfd> &pollfds);
+    void check_poll_set(const std::vector<struct pollfd>& pollfds);
 
     /** Check the invariants for this object. */
     bool invariant()
@@ -261,9 +252,9 @@ public:
         if (this->gp_child_started) {
             require(this->gp_child > 0);
             require(this->gp_line_buffer.get_fd() != -1);
-        }
-        else {
-            /* require(this->gp_child == -1); XXX doesnt work with static destr */
+        } else {
+            /* require(this->gp_child == -1); XXX doesnt work with static destr
+             */
             require(this->gp_line_buffer.get_fd() == -1);
         }
 
@@ -271,11 +262,10 @@ public:
     };
 
 protected:
-
     /**
      * Dispatch a line received from the child.
      */
-    void dispatch_line(char *line);
+    void dispatch_line(char* line);
 
     /**
      * Free any resources used by the object and make sure the child has been
@@ -285,45 +275,48 @@ protected:
 
     void child_loop();
 
-    virtual void child_init() { };
+    virtual void child_init(){};
 
-    virtual void child_batch() { fflush(stdout); };
+    virtual void child_batch()
+    {
+        fflush(stdout);
+    };
 
-    virtual void child_term() { fflush(stdout); };
+    virtual void child_term()
+    {
+        fflush(stdout);
+    };
 
-    virtual void handle_match(int line,
-                              std::string &line_value,
-                              int off,
-                              int *matches,
-                              int count);
+    virtual void handle_match(
+        int line, std::string& line_value, int off, int* matches, int count);
 
-    pcrepp             gp_pcre;
-    grep_proc_source<LineType> &gp_source;        /*< The data source delegate. */
+    pcrepp gp_pcre;
+    grep_proc_source<LineType>& gp_source; /*< The data source delegate. */
 
-    auto_fd     gp_err_pipe;             /*< Standard error from the child. */
-    line_buffer gp_line_buffer;          /*< Standard out from the child. */
-    file_range  gp_pipe_range;
+    auto_fd gp_err_pipe; /*< Standard error from the child. */
+    line_buffer gp_line_buffer; /*< Standard out from the child. */
+    file_range gp_pipe_range;
 
-    pid_t gp_child{-1};                     /*<
-                                         * The child's pid or zero in the
-                                         * child.
-                                         */
-    bool     gp_child_started{false};          /*< True if the child was start()'d. */
+    pid_t gp_child{-1}; /*<
+                         * The child's pid or zero in the
+                         * child.
+                         */
+    bool gp_child_started{false}; /*< True if the child was start()'d. */
     size_t gp_child_queue_size{0};
 
     /** The queue of search requests. */
     std::deque<std::pair<LineType, LineType> > gp_queue;
-    LineType gp_last_line{0};           /*<
-                                         * The last line number received from
-                                         * the child.  For multiple matches,
-                                         * the line number is only sent once.
-                                         */
-    LineType gp_highest_line;        /*< The highest numbered line processed
-                                         * by the grep child process.  This
-                                         * value is used when the start line
-                                         * for a queued request is -1.
-                                         */
-    grep_proc_sink<LineType> *gp_sink{nullptr};         /*< The sink delegate. */
-    grep_proc_control *gp_control{nullptr};      /*< The control delegate. */
+    LineType gp_last_line{0}; /*<
+                               * The last line number received from
+                               * the child.  For multiple matches,
+                               * the line number is only sent once.
+                               */
+    LineType gp_highest_line; /*< The highest numbered line processed
+                               * by the grep child process.  This
+                               * value is used when the start line
+                               * for a queued request is -1.
+                               */
+    grep_proc_sink<LineType>* gp_sink{nullptr}; /*< The sink delegate. */
+    grep_proc_control* gp_control{nullptr}; /*< The control delegate. */
 };
 #endif

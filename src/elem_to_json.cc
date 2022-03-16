@@ -21,26 +21,26 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <algorithm>
 
 #include "elem_to_json.hh"
+
+#include "config.h"
 #include "yajlpp/yajlpp.hh"
 
 using namespace std;
 
-static
-void element_to_json(yajl_gen gen, data_parser &dp, const data_parser::element &elem)
+static void
+element_to_json(yajl_gen gen, data_parser& dp, const data_parser::element& elem)
 {
     size_t value_len;
-    const char *value_str = dp.get_element_string(elem, value_len);
+    const char* value_str = dp.get_element_string(elem, value_len);
 
     switch (elem.value_token()) {
         case DT_NUMBER: {
@@ -48,20 +48,21 @@ void element_to_json(yajl_gen gen, data_parser &dp, const data_parser::element &
             break;
         }
         case DNT_GROUP: {
-            elements_to_json(gen, dp, elem.get_value_elem().e_sub_elements, false);
+            elements_to_json(
+                gen, dp, elem.get_value_elem().e_sub_elements, false);
             break;
         }
         case DNT_PAIR: {
-            const data_parser::element &pair_elem = elem.get_pair_elem();
-            string key_str = dp.get_element_string(pair_elem.e_sub_elements->front());
+            const data_parser::element& pair_elem = elem.get_pair_elem();
+            string key_str
+                = dp.get_element_string(pair_elem.e_sub_elements->front());
 
             if (!key_str.empty()) {
                 yajlpp_map singleton_map(gen);
 
                 singleton_map.gen(key_str);
                 element_to_json(gen, dp, pair_elem.get_pair_value());
-            }
-            else {
+            } else {
                 element_to_json(gen, dp, pair_elem.get_pair_value());
             }
             break;
@@ -69,11 +70,9 @@ void element_to_json(yajl_gen gen, data_parser &dp, const data_parser::element &
         case DT_CONSTANT: {
             if (strncasecmp("true", value_str, value_len) == 0) {
                 yajl_gen_bool(gen, true);
-            }
-            else if (strncasecmp("false", value_str, value_len) == 0) {
+            } else if (strncasecmp("false", value_str, value_len) == 0) {
                 yajl_gen_bool(gen, false);
-            }
-            else {
+            } else {
                 yajl_gen_null(gen);
             }
             break;
@@ -84,22 +83,24 @@ void element_to_json(yajl_gen gen, data_parser &dp, const data_parser::element &
     }
 }
 
-static
-void map_elements_to_json2(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
+static void
+map_elements_to_json2(yajl_gen gen,
+                      data_parser& dp,
+                      data_parser::element_list_t* el)
 {
     yajlpp_map root_map(gen);
     int col = 0;
 
-    for (auto &iter : *el) {
-        const data_parser::element &pvalue = iter.get_pair_value();
+    for (auto& iter : *el) {
+        const data_parser::element& pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
             log_debug("invalid!!");
             // continue;
         }
 
-        std::string key_str = dp.get_element_string(
-            iter.e_sub_elements->front());
+        std::string key_str
+            = dp.get_element_string(iter.e_sub_elements->front());
 
         if (key_str.empty()) {
             char buffer[32];
@@ -113,46 +114,51 @@ void map_elements_to_json2(yajl_gen gen, data_parser &dp, data_parser::element_l
     }
 }
 
-static
-void list_body_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
+static void
+list_body_elements_to_json(yajl_gen gen,
+                           data_parser& dp,
+                           data_parser::element_list_t* el)
 {
-    for (auto &iter : *el) {
+    for (auto& iter : *el) {
         element_to_json(gen, dp, iter);
     }
 }
 
-static
-void list_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
+static void
+list_elements_to_json(yajl_gen gen,
+                      data_parser& dp,
+                      data_parser::element_list_t* el)
 {
     yajlpp_array root_array(gen);
 
     list_body_elements_to_json(gen, dp, el);
 }
 
-static
-void map_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
+static void
+map_elements_to_json(yajl_gen gen,
+                     data_parser& dp,
+                     data_parser::element_list_t* el)
 {
     bool unique_names = el->size() > 1;
     vector<string> names;
 
-    for (auto &iter : *el) {
-        const data_parser::element &pvalue = iter.get_pair_value();
+    for (auto& iter : *el) {
+        const data_parser::element& pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
             log_debug("invalid!!");
             // continue;
         }
 
-        std::string key_str = dp.get_element_string(
-            iter.e_sub_elements->front());
+        std::string key_str
+            = dp.get_element_string(iter.e_sub_elements->front());
         if (key_str.empty()) {
             continue;
         }
         if (find(names.begin(), names.end(), key_str) != names.end()) {
             unique_names = false;
             break;
-        }
-        else {
+        } else {
             names.push_back(key_str);
         }
     }
@@ -161,30 +167,33 @@ void map_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_li
 
     if (unique_names) {
         map_elements_to_json2(gen, dp, el);
-    }
-    else {
+    } else {
         list_elements_to_json(gen, dp, el);
     }
 }
 
-void elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el, bool root)
+void
+elements_to_json(yajl_gen gen,
+                 data_parser& dp,
+                 data_parser::element_list_t* el,
+                 bool root)
 {
     if (el->empty()) {
         yajl_gen_null(gen);
-    }
-    else {
+    } else {
         switch (el->front().e_token) {
             case DNT_PAIR: {
                 if (root && el->size() == 1) {
-                    const data_parser::element &pair_elem = el->front().get_pair_elem();
+                    const data_parser::element& pair_elem
+                        = el->front().get_pair_elem();
                     std::string key_str = dp.get_element_string(
                         pair_elem.e_sub_elements->front());
 
-                    if (key_str.empty() &&
-                        el->front().get_pair_value().value_token() == DNT_GROUP) {
+                    if (key_str.empty()
+                        && el->front().get_pair_value().value_token()
+                            == DNT_GROUP) {
                         element_to_json(gen, dp, el->front().get_pair_value());
-                    }
-                    else {
+                    } else {
                         yajlpp_map singleton_map(gen);
 
                         if (key_str.empty()) {
@@ -193,8 +202,7 @@ void elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t
                         singleton_map.gen(key_str);
                         element_to_json(gen, dp, pair_elem.get_pair_value());
                     }
-                }
-                else {
+                } else {
                     map_elements_to_json(gen, dp, el);
                 }
                 break;

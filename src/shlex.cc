@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -30,14 +30,14 @@
  */
 
 #ifdef __CYGWIN__
-#include <alloca.h>
+#    include <alloca.h>
 #endif
 
 #include "config.h"
-
 #include "shlex.hh"
 
-bool shlex::tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out)
+bool
+shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
 {
     while (this->s_index < this->s_len) {
         switch (this->s_str[this->s_index]) {
@@ -47,8 +47,7 @@ bool shlex::tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out)
                     token_out = shlex_token_t::ST_ESCAPE;
                     this->s_index += 2;
                     cap_out.c_end = this->s_index;
-                }
-                else {
+                } else {
                     this->s_index += 1;
                     cap_out.c_end = this->s_index;
                     token_out = shlex_token_t::ST_ERROR;
@@ -113,10 +112,11 @@ bool shlex::tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out)
                     case state_t::STATE_NORMAL:
                         cap_out.c_begin = this->s_index;
                         this->s_index += 1;
-                        while (this->s_index < this->s_len &&
-                               (isalnum(this->s_str[this->s_index]) ||
-                                this->s_str[this->s_index] == '_' ||
-                                this->s_str[this->s_index] == '-')) {
+                        while (this->s_index < this->s_len
+                               && (isalnum(this->s_str[this->s_index])
+                                   || this->s_str[this->s_index] == '_'
+                                   || this->s_str[this->s_index] == '-'))
+                        {
                             this->s_index += 1;
                         }
                         cap_out.c_end = this->s_index;
@@ -151,8 +151,9 @@ bool shlex::tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out)
     return false;
 }
 
-void shlex::scan_variable_ref(pcre_context::capture_t &cap_out,
-                              shlex_token_t &token_out)
+void
+shlex::scan_variable_ref(pcre_context::capture_t& cap_out,
+                         shlex_token_t& token_out)
 {
     cap_out.c_begin = this->s_index;
     this->s_index += 1;
@@ -171,16 +172,15 @@ void shlex::scan_variable_ref(pcre_context::capture_t &cap_out,
 
     while (this->s_index < this->s_len) {
         if (token_out == shlex_token_t::ST_VARIABLE_REF) {
-            if (isalnum(this->s_str[this->s_index]) ||
-                this->s_str[this->s_index] == '#' ||
-                this->s_str[this->s_index] == '_') {
+            if (isalnum(this->s_str[this->s_index])
+                || this->s_str[this->s_index] == '#'
+                || this->s_str[this->s_index] == '_')
+            {
                 this->s_index += 1;
-            }
-            else {
+            } else {
                 break;
             }
-        }
-        else {
+        } else {
             if (this->s_str[this->s_index] == '}') {
                 this->s_index += 1;
                 break;
@@ -190,21 +190,23 @@ void shlex::scan_variable_ref(pcre_context::capture_t &cap_out,
     }
 
     cap_out.c_end = this->s_index;
-    if (token_out == shlex_token_t::ST_QUOTED_VARIABLE_REF &&
-        this->s_str[this->s_index - 1] != '}') {
+    if (token_out == shlex_token_t::ST_QUOTED_VARIABLE_REF
+        && this->s_str[this->s_index - 1] != '}')
+    {
         cap_out.c_begin += 1;
         cap_out.c_end = cap_out.c_begin + 1;
         token_out = shlex_token_t::ST_ERROR;
     }
 }
 
-void shlex::resolve_home_dir(std::string &result,
-                             const pcre_context::capture_t cap) const
+void
+shlex::resolve_home_dir(std::string& result,
+                        const pcre_context::capture_t cap) const
 {
     if (cap.length() == 1) {
         result.append(getenv_opt("HOME").value_or("~"));
     } else {
-        auto username = (char *) alloca(cap.length());
+        auto username = (char*) alloca(cap.length());
 
         memcpy(username, &this->s_str[cap.c_begin + 1], cap.length() - 1);
         username[cap.length() - 1] = '\0';

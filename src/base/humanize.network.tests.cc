@@ -21,21 +21,20 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <iostream>
 
+#include "base/humanize.network.hh"
+#include "config.h"
 #include "doctest/doctest.h"
 
-#include "base/humanize.network.hh"
-
-TEST_CASE("humanize::network::path") {
+TEST_CASE("humanize::network::path")
+{
     {
         auto rp_opt = humanize::network::path::from_str("foobar");
         CHECK(!rp_opt);
@@ -70,8 +69,8 @@ TEST_CASE("humanize::network::path") {
         CHECK(!rp.p_locality.l_service.has_value());
         CHECK(rp.p_path == "/var/log");
 
-        CHECK(fmt::format("{}", rp.p_locality) ==
-              "dean@[fe80::184f:c67:baf1:fe02%en0]");
+        CHECK(fmt::format("{}", rp.p_locality)
+              == "dean@[fe80::184f:c67:baf1:fe02%en0]");
     }
 
     {
@@ -85,13 +84,13 @@ TEST_CASE("humanize::network::path") {
         CHECK(!rp.p_locality.l_service.has_value());
         CHECK(rp.p_path == "/var/log");
 
-        CHECK(fmt::format("{}", rp.p_locality) ==
-              "[fe80::184f:c67:baf1:fe02%en0]");
+        CHECK(fmt::format("{}", rp.p_locality)
+              == "[fe80::184f:c67:baf1:fe02%en0]");
     }
 
     {
-        auto rp_opt = humanize::network::path::from_str(
-            "host1.example.com:/var/log");
+        auto rp_opt
+            = humanize::network::path::from_str("host1.example.com:/var/log");
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;

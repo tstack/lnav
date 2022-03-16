@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -35,32 +35,34 @@
 #include <string>
 #include <vector>
 
+#include "log_vtab_impl.hh"
 #include "pcrepp/pcrepp.hh"
 #include "shared_buffer.hh"
-#include "log_vtab_impl.hh"
 
 class log_search_table : public log_vtab_impl {
 public:
-    static int pattern_options() {
+    static int pattern_options()
+    {
         return PCRE_CASELESS;
     }
 
     log_search_table(pcrepp pattern, intern_string_t table_name);
 
-    void get_columns_int(std::vector<vtab_column> &cols);
+    void get_columns_int(std::vector<vtab_column>& cols);
 
-    void get_columns(std::vector<vtab_column> &cols) const override {
+    void get_columns(std::vector<vtab_column>& cols) const override
+    {
         cols = this->lst_cols;
     }
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout) const override;
+    void get_foreign_keys(std::vector<std::string>& keys_inout) const override;
 
-    bool next(log_cursor &lc, logfile_sub_source &lss) override;
+    bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
     void extract(std::shared_ptr<logfile> lf,
                  uint64_t line_number,
-                 shared_buffer_ref &line,
-                 std::vector<logline_value> &values) override;
+                 shared_buffer_ref& line,
+                 std::vector<logline_value>& values) override;
 
     pcrepp lst_regex;
     shared_buffer_ref lst_current_line;

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,11 +30,11 @@
 #ifndef vtab_impl_hh
 #define vtab_impl_hh
 
-#include <sqlite3.h>
-
 #include <map>
 #include <string>
 #include <vector>
+
+#include <sqlite3.h>
 
 #include "logfile_sub_source.hh"
 
@@ -58,16 +58,18 @@ class logfile_sub_source;
 
 struct log_cursor {
     vis_line_t lc_curr_line;
-    int        lc_sub_index;
+    int lc_sub_index;
     vis_line_t lc_end_line;
 
     void update(unsigned char op, vis_line_t vl, bool exact = true);
 
-    void set_eof() {
+    void set_eof()
+    {
         this->lc_curr_line = this->lc_end_line = vis_line_t(0);
     };
 
-    bool is_eof() const {
+    bool is_eof() const
+    {
         return this->lc_curr_line >= this->lc_end_line;
     };
 };
@@ -84,30 +86,29 @@ public:
                     bool hidden = false,
                     const std::string comment = "",
                     unsigned int subtype = 0)
-            : vc_name(name),
-              vc_type(type),
-              vc_collator(collator),
-              vc_hidden(hidden),
-              vc_comment(comment),
-              vc_subtype(subtype) {
-        };
+            : vc_name(name), vc_type(type), vc_collator(collator),
+              vc_hidden(hidden), vc_comment(comment), vc_subtype(subtype){};
 
-        vtab_column& with_comment(const std::string comment) {
+        vtab_column& with_comment(const std::string comment)
+        {
             this->vc_comment = comment;
             return *this;
         }
 
         std::string vc_name;
-        int         vc_type;
+        int vc_type;
         std::string vc_collator;
         bool vc_hidden;
         std::string vc_comment;
         int vc_subtype;
     };
 
-    static std::pair<int, unsigned int> logline_value_to_sqlite_type(value_kind_t kind);
+    static std::pair<int, unsigned int> logline_value_to_sqlite_type(
+        value_kind_t kind);
 
-    log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
+    log_vtab_impl(const intern_string_t name)
+        : vi_supports_indexes(true), vi_name(name)
+    {
         this->vi_attrs.resize(128);
     };
     virtual ~log_vtab_impl() = default;
@@ -119,8 +120,9 @@ public:
 
     std::string get_table_statement();
 
-    virtual bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
-        content_line_t    cl(lss.at(lc.lc_curr_line));
+    virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss)
+    {
+        content_line_t cl(lss.at(lc.lc_curr_line));
         std::shared_ptr<logfile> lf = lss.find(cl);
         auto lf_iter = lf->begin() + cl;
 
@@ -131,11 +133,11 @@ public:
         return true;
     };
 
-    virtual bool next(log_cursor &lc, logfile_sub_source &lss) = 0;
+    virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
-    virtual void get_columns(std::vector<vtab_column> &cols) const { };
+    virtual void get_columns(std::vector<vtab_column>& cols) const {};
 
-    virtual void get_foreign_keys(std::vector<std::string> &keys_inout) const
+    virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const
     {
         keys_inout.emplace_back("log_line");
         keys_inout.emplace_back("min(log_line)");
@@ -145,8 +147,8 @@ public:
 
     virtual void extract(std::shared_ptr<logfile> lf,
                          uint64_t line_number,
-                         shared_buffer_ref &line,
-                         std::vector<logline_value> &values)
+                         shared_buffer_ref& line,
+                         std::vector<logline_value>& values)
     {
         auto format = lf->get_format();
 
@@ -157,19 +159,19 @@ public:
     bool vi_supports_indexes;
     int vi_column_count;
     string_attrs_t vi_attrs;
+
 protected:
     const intern_string_t vi_name;
 };
 
 class log_format_vtab_impl : public log_vtab_impl {
-
 public:
-    log_format_vtab_impl(const log_format &format) :
-            log_vtab_impl(format.get_name()), lfvi_format(format) {
-
+    log_format_vtab_impl(const log_format& format)
+        : log_vtab_impl(format.get_name()), lfvi_format(format)
+    {
     }
 
-    virtual bool next(log_cursor &lc, logfile_sub_source &lss)
+    virtual bool next(log_cursor& lc, logfile_sub_source& lss)
     {
         lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
         lc.lc_sub_index = 0;
@@ -199,11 +201,10 @@ public:
     };
 
 protected:
-    const log_format &lfvi_format;
-
+    const log_format& lfvi_format;
 };
 
-typedef int (*sql_progress_callback_t)(const log_cursor &lc);
+typedef int (*sql_progress_callback_t)(const log_cursor& lc);
 typedef void (*sql_progress_finished_callback_t)();
 
 extern struct _log_vtab_data {
@@ -217,15 +218,17 @@ class sql_progress_guard {
 public:
     sql_progress_guard(sql_progress_callback_t cb,
                        sql_progress_finished_callback_t fcb,
-                       const std::string &source,
-                       int line_number) {
+                       const std::string& source,
+                       int line_number)
+    {
         log_vtab_data.lvd_progress = cb;
         log_vtab_data.lvd_finished = fcb;
         log_vtab_data.lvd_source = source;
         log_vtab_data.lvd_line_number = line_number;
     };
 
-    ~sql_progress_guard() {
+    ~sql_progress_guard()
+    {
         if (log_vtab_data.lvd_finished) {
             log_vtab_data.lvd_finished();
         }
@@ -238,16 +241,21 @@ public:
 
 class log_vtab_manager {
 public:
-    typedef std::map<intern_string_t, std::shared_ptr<log_vtab_impl>>::const_iterator iterator;
+    typedef std::map<intern_string_t,
+                     std::shared_ptr<log_vtab_impl>>::const_iterator iterator;
 
-    log_vtab_manager(sqlite3 *db,
-                     textview_curses &tc,
-                     logfile_sub_source &lss);
+    log_vtab_manager(sqlite3* db, textview_curses& tc, logfile_sub_source& lss);
     ~log_vtab_manager();
 
-    textview_curses *get_view() const { return &this->vm_textview; };
+    textview_curses* get_view() const
+    {
+        return &this->vm_textview;
+    };
 
-    logfile_sub_source *get_source() { return &this->vm_source; };
+    logfile_sub_source* get_source()
+    {
+        return &this->vm_source;
+    };
 
     std::string register_vtab(std::shared_ptr<log_vtab_impl> vi);
     std::string unregister_vtab(intern_string_t name);
@@ -273,9 +281,9 @@ public:
     };
 
 private:
-    sqlite3 *           vm_db;
-    textview_curses &vm_textview;
-    logfile_sub_source &vm_source;
+    sqlite3* vm_db;
+    textview_curses& vm_textview;
+    logfile_sub_source& vm_source;
     std::map<intern_string_t, std::shared_ptr<log_vtab_impl>> vm_impls;
 };
 #endif

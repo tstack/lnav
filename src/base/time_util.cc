@@ -21,27 +21,29 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file time_util.cc
  */
 
-#include "config.h"
-
 #include <chrono>
+
 #include "time_util.hh"
+
+#include "config.h"
 
 static time_t BAD_DATE = -1;
 
-time_t tm2sec(const struct tm *t)
+time_t
+tm2sec(const struct tm* t)
 {
-    int       year;
-    time_t    days, secs;
-    const int dayoffset[12] =
-        { 306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275 };
+    int year;
+    time_t days, secs;
+    const int dayoffset[12]
+        = {306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275};
 
     year = t->tm_year;
 
@@ -57,7 +59,7 @@ time_t tm2sec(const struct tm *t)
 
     /* Find number of days since 1st March 1900 (in the Gregorian calendar). */
 
-    days  = year * 365 + year / 4 - year / 100 + (year / 100 + 3) / 4;
+    days = year * 365 + year / 4 - year / 100 + (year / 100 + 3) / 4;
     days += dayoffset[t->tm_mon] + t->tm_mday - 1;
     days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
 
@@ -65,15 +67,16 @@ time_t tm2sec(const struct tm *t)
 
     if (secs < 0) {
         return BAD_DATE;
-    }                          /* must have overflowed */
-    else {
+    } /* must have overflowed */
+    else
+    {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         if (t->tm_zone) {
             secs -= t->tm_gmtoff;
         }
 #endif
         return secs;
-    }                          /* must be a valid time */
+    } /* must be a valid time */
 }
 
 static const int SECSPERMIN = 60;
@@ -86,19 +89,16 @@ static const int EPOCH_YEAR = 1970;
 
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-static const int year_lengths[2] = {
-    365,
-    366
-};
+static const int year_lengths[2] = {365, 366};
 
 const unsigned short int mon_yday[2][13] = {
     /* Normal years.  */
-    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+    {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
     /* Leap years.  */
-    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
-};
+    {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
 
-void secs2wday(const struct timeval &tv, struct tm *res)
+void
+secs2wday(const struct timeval& tv, struct tm* res)
 {
     long days, rem;
     time_t lcltime;
@@ -118,21 +118,21 @@ void secs2wday(const struct timeval &tv, struct tm *res)
         res->tm_wday += DAYSPERWEEK;
 }
 
-struct tm *secs2tm(lnav::time64_t tim, struct tm *res)
+struct tm*
+secs2tm(lnav::time64_t tim, struct tm* res)
 {
     long days, rem;
     lnav::time64_t lcltime;
     int y;
     int yleap;
-    const unsigned short int *ip;
+    const unsigned short int* ip;
 
     /* base decision about std/dst time on current time */
     lcltime = tim;
 
-    days = ((long)lcltime) / SECSPERDAY;
-    rem = ((long)lcltime) % SECSPERDAY;
-    while (rem < 0)
-    {
+    days = ((long) lcltime) / SECSPERDAY;
+    rem = ((long) lcltime) % SECSPERDAY;
+    while (rem < 0) {
         rem += SECSPERDAY;
         --days;
     }
@@ -149,21 +149,16 @@ struct tm *secs2tm(lnav::time64_t tim, struct tm *res)
 
     /* compute year & day of year */
     y = EPOCH_YEAR;
-    if (days >= 0)
-    {
-        for (;;)
-        {
+    if (days >= 0) {
+        for (;;) {
             yleap = isleap(y);
             if (days < year_lengths[yleap])
                 break;
             y++;
             days -= year_lengths[yleap];
         }
-    }
-    else
-    {
-        do
-        {
+    } else {
+        do {
             --y;
             yleap = isleap(y);
             days += year_lengths[yleap];
@@ -184,14 +179,15 @@ struct tm *secs2tm(lnav::time64_t tim, struct tm *res)
     return (res);
 }
 
-struct timeval exttm::to_timeval() const
+struct timeval
+exttm::to_timeval() const
 {
     struct timeval retval;
 
     retval.tv_sec = tm2sec(&this->et_tm);
-    retval.tv_usec =
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::nanoseconds(this->et_nsec)).count();
+    retval.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::nanoseconds(this->et_nsec))
+                         .count();
 
     return retval;
 }

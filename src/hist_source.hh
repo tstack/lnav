@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,15 +32,14 @@
 #ifndef hist_source_hh
 #define hist_source_hh
 
-#include <map>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <string>
 #include <vector>
 
-#include "mapbox/variant.hpp"
-
 #include "base/lnav_log.hh"
+#include "mapbox/variant.hpp"
 #include "strong_int.hh"
 #include "textview_curses.hh"
 
@@ -53,14 +52,14 @@ STRONG_INT_TYPE(int, bucket_type);
 struct stacked_bar_chart_base {
     virtual ~stacked_bar_chart_base() = default;
 
-    struct show_none {};
-    struct show_all {};
+    struct show_none {
+    };
+    struct show_all {
+    };
     struct show_one {
         size_t so_index;
 
-        explicit show_one(int so_index) : so_index(so_index) {
-
-        }
+        explicit show_one(int so_index) : so_index(so_index) {}
     };
 
     typedef mapbox::util::variant<show_none, show_all, show_one> show_state;
@@ -73,31 +72,35 @@ struct stacked_bar_chart_base {
 
 template<typename T>
 class stacked_bar_chart : public stacked_bar_chart_base {
-
 public:
     stacked_bar_chart()
-            : sbc_do_stacking(true), sbc_left(0), sbc_right(0), sbc_show_state(show_all()) {
+        : sbc_do_stacking(true), sbc_left(0), sbc_right(0),
+          sbc_show_state(show_all()){
 
-    };
+          };
 
-    stacked_bar_chart &with_stacking_enabled(bool enabled) {
+    stacked_bar_chart& with_stacking_enabled(bool enabled)
+    {
         this->sbc_do_stacking = enabled;
         return *this;
     };
 
-    stacked_bar_chart &with_attrs_for_ident(const T &ident, int attrs) {
-        struct chart_ident &ci = this->find_ident(ident);
+    stacked_bar_chart& with_attrs_for_ident(const T& ident, int attrs)
+    {
+        struct chart_ident& ci = this->find_ident(ident);
         ci.ci_attrs = attrs;
         return *this;
     };
 
-    stacked_bar_chart &with_margins(unsigned long left, unsigned long right) {
+    stacked_bar_chart& with_margins(unsigned long left, unsigned long right)
+    {
         this->sbc_left = left;
         this->sbc_right = right;
         return *this;
     };
 
-    show_state show_next_ident(direction dir) {
+    show_state show_next_ident(direction dir)
+    {
         bool single_ident = this->sbc_idents.size() == 1;
 
         if (this->sbc_idents.empty()) {
@@ -105,7 +108,7 @@ public:
         }
 
         this->sbc_show_state = this->sbc_show_state.match(
-            [&] (show_none) -> show_state {
+            [&](show_none) -> show_state {
                 switch (dir) {
                     case direction::forward:
                         if (single_ident) {
@@ -118,7 +121,7 @@ public:
 
                 return show_all();
             },
-            [&] (show_one &one) -> show_state {
+            [&](show_one& one) -> show_state {
                 switch (dir) {
                     case direction::forward:
                         if (one.so_index + 1 == this->sbc_idents.size()) {
@@ -134,7 +137,7 @@ public:
 
                 return show_all();
             },
-            [&] (show_all) -> show_state {
+            [&](show_all) -> show_state {
                 switch (dir) {
                     case direction::forward:
                         return show_none();
@@ -146,27 +149,26 @@ public:
                 }
 
                 return show_all();
-            }
-        );
+            });
 
         return this->sbc_show_state;
     };
 
-    void get_ident_to_show(T &ident_out) const {
+    void get_ident_to_show(T& ident_out) const
+    {
         this->sbc_show_state.match(
-            [] (const show_none) {},
-            [] (const show_all) {},
-            [&] (const show_one &one) {
+            [](const show_none) {},
+            [](const show_all) {},
+            [&](const show_one& one) {
                 ident_out = this->sbc_idents[one.so_index].ci_ident;
-            }
-        );
+            });
     };
 
-    void chart_attrs_for_value(const listview_curses &lc,
-                               int &left,
-                               const T &ident,
+    void chart_attrs_for_value(const listview_curses& lc,
+                               int& left,
+                               const T& ident,
                                double value,
-                               string_attrs_t &value_out) const
+                               string_attrs_t& value_out) const
     {
         auto ident_iter = this->sbc_ident_lookup.find(ident);
 
@@ -179,16 +181,9 @@ public:
         vis_line_t height;
 
         size_t ident_to_show = this->sbc_show_state.match(
-            [] (const show_none) {
-                return -1;
-            },
-            [ident_index] (const show_all) {
-                return ident_index;
-            },
-            [] (const show_one &one) {
-                return one.so_index;
-            }
-        );
+            [](const show_none) { return -1; },
+            [ident_index](const show_all) { return ident_index; },
+            [](const show_one& one) { return one.so_index; });
 
         if (ident_to_show != ident_index) {
             return;
@@ -197,34 +192,35 @@ public:
         lc.get_dimensions(height, width);
 
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
-            if (this->sbc_show_state.template is<show_all>() || lpc == (size_t) ident_to_show) {
-                overall_stats.merge(this->sbc_idents[lpc].ci_stats, this->sbc_do_stacking);
+            if (this->sbc_show_state.template is<show_all>()
+                || lpc == (size_t) ident_to_show)
+            {
+                overall_stats.merge(this->sbc_idents[lpc].ci_stats,
+                                    this->sbc_do_stacking);
             }
         }
 
         if (this->sbc_show_state.template is<show_all>()) {
             avail_width = width - this->sbc_idents.size();
-        }
-        else {
+        } else {
             avail_width = width - 1;
         }
         avail_width -= this->sbc_left + this->sbc_right;
 
         lr.lr_start = left;
 
-        const struct chart_ident &ci = this->sbc_idents[ident_index];
+        const struct chart_ident& ci = this->sbc_idents[ident_index];
         int amount;
 
         if (value == 0.0) {
             amount = 0;
-        }
-        else if ((overall_stats.bs_max_value - 0.01) <= value &&
-                 value <= (overall_stats.bs_max_value + 0.01)) {
+        } else if ((overall_stats.bs_max_value - 0.01) <= value
+                   && value <= (overall_stats.bs_max_value + 0.01))
+        {
             amount = avail_width;
-        }
-        else {
-            double percent = (value - overall_stats.bs_min_value) /
-                             overall_stats.width();
+        } else {
+            double percent
+                = (value - overall_stats.bs_min_value) / overall_stats.width();
             amount = (int) rint(percent * avail_width);
             amount = std::max(1, amount);
         }
@@ -236,39 +232,42 @@ public:
         }
     };
 
-    void clear() {
+    void clear()
+    {
         this->sbc_idents.clear();
         this->sbc_ident_lookup.clear();
         this->sbc_show_state = show_all();
     };
 
-    void add_value(const T &ident, double amount = 1.0) {
-        struct chart_ident &ci = this->find_ident(ident);
+    void add_value(const T& ident, double amount = 1.0)
+    {
+        struct chart_ident& ci = this->find_ident(ident);
         ci.ci_stats.update(amount);
     };
 
     struct bucket_stats_t {
-        bucket_stats_t() :
-            bs_min_value(std::numeric_limits<double>::max()),
-            bs_max_value(0)
-        {
-        };
+        bucket_stats_t()
+            : bs_min_value(std::numeric_limits<double>::max()),
+              bs_max_value(0){};
 
-        void merge(const bucket_stats_t &rhs, bool do_stacking) {
+        void merge(const bucket_stats_t& rhs, bool do_stacking)
+        {
             this->bs_min_value = std::min(this->bs_min_value, rhs.bs_min_value);
             if (do_stacking) {
                 this->bs_max_value += rhs.bs_max_value;
-            }
-            else {
-                this->bs_max_value = std::max(this->bs_max_value, rhs.bs_max_value);
+            } else {
+                this->bs_max_value
+                    = std::max(this->bs_max_value, rhs.bs_max_value);
             }
         };
 
-        double width() const {
+        double width() const
+        {
             return std::fabs(this->bs_max_value - this->bs_min_value);
         };
 
-        void update(double value) {
+        void update(double value)
+        {
             this->bs_max_value = std::max(this->bs_max_value, value);
             this->bs_min_value = std::min(this->bs_min_value, value);
         };
@@ -277,23 +276,24 @@ public:
         double bs_max_value;
     };
 
-    const bucket_stats_t &get_stats_for(const T &ident) {
-        const chart_ident &ci = this->find_ident(ident);
+    const bucket_stats_t& get_stats_for(const T& ident)
+    {
+        const chart_ident& ci = this->find_ident(ident);
 
         return ci.ci_stats;
     };
 
 protected:
-
     struct chart_ident {
-        chart_ident(const T &ident) : ci_ident(ident) { };
+        chart_ident(const T& ident) : ci_ident(ident){};
 
         T ci_ident;
         int ci_attrs{0};
         bucket_stats_t ci_stats;
     };
 
-    struct chart_ident &find_ident(const T &ident) {
+    struct chart_ident& find_ident(const T& ident)
+    {
         typename std::map<T, unsigned int>::iterator iter;
 
         iter = this->sbc_ident_lookup.find(ident);
@@ -313,10 +313,9 @@ protected:
 };
 
 class hist_source2
-    : public text_sub_source,
-      public text_time_translator {
+    : public text_sub_source
+    , public text_time_translator {
 public:
-
     typedef enum {
         HT_NORMAL,
         HT_WARNING,
@@ -326,25 +325,30 @@ public:
         HT__MAX
     } hist_type_t;
 
-    hist_source2() {
+    hist_source2()
+    {
         this->clear();
     };
 
     void init();
 
-    void set_time_slice(int64_t slice) {
+    void set_time_slice(int64_t slice)
+    {
         this->hs_time_slice = slice;
     };
 
-    int64_t get_time_slice() const {
+    int64_t get_time_slice() const
+    {
         return this->hs_time_slice;
     };
 
-    size_t text_line_count() override {
+    size_t text_line_count() override
+    {
         return this->hs_line_count;
     };
 
-    size_t text_line_width(textview_curses &curses) override {
+    size_t text_line_width(textview_curses& curses) override
+    {
         return strlen(LINE_FORMAT) + 8 * 4;
     };
 
@@ -354,25 +358,29 @@ public:
 
     void end_of_row();
 
-    void text_value_for_line(textview_curses &tc,
+    void text_value_for_line(textview_curses& tc,
                              int row,
-                             std::string &value_out,
+                             std::string& value_out,
                              line_flags_t flags) override;
 
-    void text_attrs_for_line(textview_curses &tc,
+    void text_attrs_for_line(textview_curses& tc,
                              int row,
-                             string_attrs_t &value_out) override;
+                             string_attrs_t& value_out) override;
 
-    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) override {
+    size_t text_size_for_line(textview_curses& tc,
+                              int row,
+                              line_flags_t flags) override
+    {
         return 0;
     };
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 
-    nonstd::optional<vis_line_t> row_for_time(struct timeval tv_bucket) override;
+    nonstd::optional<vis_line_t> row_for_time(
+        struct timeval tv_bucket) override;
 
 private:
-    static const char *LINE_FORMAT;
+    static const char* LINE_FORMAT;
 
     struct hist_value {
         double hv_value;
@@ -386,7 +394,8 @@ private:
     static const int64_t BLOCK_SIZE = 100;
 
     struct bucket_block {
-        bucket_block() {
+        bucket_block()
+        {
             memset(this->bb_buckets, 0, sizeof(this->bb_buckets));
         };
 
@@ -394,7 +403,7 @@ private:
         bucket_t bb_buckets[BLOCK_SIZE];
     };
 
-    bucket_t &find_bucket(int64_t index);
+    bucket_t& find_bucket(int64_t index);
 
     int64_t hs_time_slice{10 * 60};
     int64_t hs_line_count;

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -38,13 +38,16 @@
 
 class scoped_resolver {
 public:
-    scoped_resolver(std::initializer_list<std::map<std::string, std::string> *> l) {
+    scoped_resolver(
+        std::initializer_list<std::map<std::string, std::string>*> l)
+    {
         this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
     };
 
     typedef std::map<std::string, std::string>::const_iterator const_iterator;
 
-    const_iterator find(const std::string &str) const {
+    const_iterator find(const std::string& str) const
+    {
         const_iterator retval;
 
         for (auto scope : this->sr_stack) {
@@ -56,11 +59,12 @@ public:
         return this->end();
     };
 
-    const_iterator end() const {
+    const_iterator end() const
+    {
         return this->sr_stack.back()->end();
     }
 
-    std::vector<const std::map<std::string, std::string> *> sr_stack;
+    std::vector<const std::map<std::string, std::string>*> sr_stack;
 };
 
 #endif

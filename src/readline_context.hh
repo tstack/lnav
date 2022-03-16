@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,8 +32,9 @@
 #ifndef readline_context_hh
 #define readline_context_hh
 
-#include <string>
 #include <set>
+#include <string>
+
 #include <readline/history.h>
 
 #include "base/result.h"
@@ -42,7 +43,7 @@
 class attr_line_t;
 struct exec_context;
 
-typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
+typedef void (*readline_highlighter_t)(attr_line_t& line, int x);
 
 /**
  * Container for information related to different readline contexts.  Since
@@ -51,33 +52,37 @@ typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
  */
 class readline_context {
 public:
-    typedef Result<std::string, std::string> (*command_func_t)(exec_context &ec,
-                                                               std::string cmdline, std::vector<std::string> &args);
-    typedef std::string (*prompt_func_t)(exec_context &ec,
-                                         const std::string &cmdline);
+    typedef Result<std::string, std::string> (*command_func_t)(
+        exec_context& ec, std::string cmdline, std::vector<std::string>& args);
+    typedef std::string (*prompt_func_t)(exec_context& ec,
+                                         const std::string& cmdline);
     typedef struct _command_t {
-        const char *c_name;
+        const char* c_name;
         command_func_t c_func;
 
         struct help_text c_help;
         prompt_func_t c_prompt{nullptr};
 
-        _command_t(const char *name,
+        _command_t(const char* name,
                    command_func_t func,
                    help_text help = {},
                    prompt_func_t prompt = nullptr) noexcept
-            : c_name(name), c_func(func), c_help(std::move(help)), c_prompt(prompt) {};
+            : c_name(name), c_func(func), c_help(std::move(help)),
+              c_prompt(prompt){};
 
         _command_t(command_func_t func) noexcept
-            : c_name("anon"), c_func(func) {};
+            : c_name("anon"), c_func(func){};
     } command_t;
-    typedef std::map<std::string, command_t *> command_map_t;
+    typedef std::map<std::string, command_t*> command_map_t;
 
     readline_context(std::string name,
-                     command_map_t *commands = nullptr,
+                     command_map_t* commands = nullptr,
                      bool case_sensitive = true);
 
-    const std::string &get_name() const { return this->rc_name; };
+    const std::string& get_name() const
+    {
+        return this->rc_name;
+    };
 
     void load();
 
@@ -103,68 +108,76 @@ public:
         return this->rc_case_sensitive;
     };
 
-    readline_context &set_append_character(int ch) {
+    readline_context& set_append_character(int ch)
+    {
         this->rc_append_character = ch;
 
         return *this;
     };
 
-    int get_append_character() const {
+    int get_append_character() const
+    {
         return this->rc_append_character;
     }
 
-    readline_context &set_highlighter(readline_highlighter_t hl) {
+    readline_context& set_highlighter(readline_highlighter_t hl)
+    {
         this->rc_highlighter = hl;
         return *this;
     };
 
-    readline_context &set_quote_chars(const char *qc) {
+    readline_context& set_quote_chars(const char* qc)
+    {
         this->rc_quote_chars = qc;
 
         return *this;
     };
 
-    readline_context &with_readline_var(char **var, const char *val) {
+    readline_context& with_readline_var(char** var, const char* val)
+    {
         this->rc_vars.emplace_back(var, val);
 
         return *this;
     };
 
-    readline_highlighter_t get_highlighter() const {
+    readline_highlighter_t get_highlighter() const
+    {
         return this->rc_highlighter;
     };
 
     static int command_complete(int, int);
 
     std::map<std::string, std::string> rc_prefixes;
-private:
-    static char **attempted_completion(const char *text, int start, int end);
-    static char *completion_generator(const char *text, int state);
 
-    static readline_context *     loaded_context;
-    static std::set<std::string> *arg_possibilities;
+private:
+    static char** attempted_completion(const char* text, int start, int end);
+    static char* completion_generator(const char* text, int state);
+
+    static readline_context* loaded_context;
+    static std::set<std::string>* arg_possibilities;
 
     struct readline_var {
-        readline_var(char **dst, const char *val) {
+        readline_var(char** dst, const char* val)
+        {
             this->rv_dst.ch = dst;
             this->rv_val.ch = val;
         }
 
         union {
-            char **ch;
+            char** ch;
         } rv_dst;
         union {
-            const char *ch;
+            const char* ch;
         } rv_val;
     };
 
-    std::string   rc_name;
+    std::string rc_name;
     HISTORY_STATE rc_history;
-    std::map<std::string, std::set<std::string>>    rc_possibilities;
+    std::map<std::string, std::set<std::string>> rc_possibilities;
     std::map<std::string, std::vector<std::string>> rc_prototypes;
     bool rc_case_sensitive;
     int rc_append_character;
-    const char *rc_quote_chars;
+    const char* rc_quote_chars;
     readline_highlighter_t rc_highlighter;
     std::vector<readline_var> rc_vars;
 };

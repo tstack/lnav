@@ -21,30 +21,32 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file isc.cc
  */
 
-#include "config.h"
-
 #include <algorithm>
 
 #include "isc.hh"
 
+#include "config.h"
+
 namespace isc {
 
-void service_base::start()
+void
+service_base::start()
 {
     log_debug("starting service thread for: %s", this->s_name.c_str());
     this->s_thread = std::thread(&service_base::run, this);
     this->s_started = true;
 }
 
-void *service_base::run()
+void*
+service_base::run()
 {
     log_info("BEGIN isc thread: %s", this->s_name.c_str());
     while (this->s_looping) {
@@ -66,7 +68,8 @@ void *service_base::run()
     return nullptr;
 }
 
-void service_base::stop()
+void
+service_base::stop()
 {
     if (this->s_started) {
         log_debug("stopping service thread: %s", this->s_name.c_str());
@@ -81,8 +84,9 @@ void service_base::stop()
     }
 }
 
-supervisor::supervisor(service_list servs, service_base *parent)
-    : s_service_list(std::move(servs)), s_parent(parent) {
+supervisor::supervisor(service_list servs, service_base* parent)
+    : s_service_list(std::move(servs)), s_parent(parent)
+{
     for (auto& serv : this->s_service_list) {
         serv->start();
     }
@@ -93,7 +97,8 @@ supervisor::~supervisor()
     this->stop_children();
 }
 
-void supervisor::stop_children()
+void
+supervisor::stop_children()
 {
     for (auto& serv : this->s_service_list) {
         serv->stop();
@@ -101,29 +106,31 @@ void supervisor::stop_children()
     this->cleanup_children();
 }
 
-void supervisor::cleanup_children()
+void
+supervisor::cleanup_children()
 {
     this->s_service_list.erase(
-        std::remove_if(
-            this->s_service_list.begin(), this->s_service_list.end(),
-            [this](auto &child) {
-                if (child->is_looping()) {
-                    return false;
-                }
+        std::remove_if(this->s_service_list.begin(),
+                       this->s_service_list.end(),
+                       [this](auto& child) {
+                           if (child->is_looping()) {
+                               return false;
+                           }
 
-                child->stop();
-                if (this->s_parent != nullptr) {
-                    this->s_parent->child_finished(child);
-                }
-                return true;
-            }),
+                           child->stop();
+                           if (this->s_parent != nullptr) {
+                               this->s_parent->child_finished(child);
+                           }
+                           return true;
+                       }),
         this->s_service_list.end());
 }
 
-void supervisor::add_child_service(std::shared_ptr<service_base> new_service)
+void
+supervisor::add_child_service(std::shared_ptr<service_base> new_service)
 {
     this->s_service_list.emplace_back(new_service);
     new_service->start();
 }
 
-}
+}  // namespace isc

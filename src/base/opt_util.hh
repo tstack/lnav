@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,36 +37,47 @@
 
 namespace detail {
 
-    template <class T>
-    typename std::enable_if<std::is_void<T>::value, T>::type
-    void_or_nullopt()
-    {
-        return;
-    }
-
-    template <class T>
-    typename std::enable_if<not std::is_void<T>::value, T>::type
-    void_or_nullopt()
-    {
-        return nonstd::nullopt;
-    }
-
-    template <class T>
-    struct is_optional : std::false_type {};
-
-    template <class T>
-    struct is_optional<nonstd::optional<T>> : std::true_type {};
+template<class T>
+typename std::enable_if<std::is_void<T>::value, T>::type
+void_or_nullopt()
+{
+    return;
 }
 
-template <class T, class F, std::enable_if_t<detail::is_optional<std::decay_t<T>>::value, int> = 0>
-auto operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(std::forward<T>(t).operator*()))>()) {
+template<class T>
+typename std::enable_if<not std::is_void<T>::value, T>::type
+void_or_nullopt()
+{
+    return nonstd::nullopt;
+}
+
+template<class T>
+struct is_optional : std::false_type {
+};
+
+template<class T>
+struct is_optional<nonstd::optional<T>> : std::true_type {
+};
+}  // namespace detail
+
+template<class T,
+         class F,
+         std::enable_if_t<detail::is_optional<std::decay_t<T>>::value, int> = 0>
+auto
+operator|(T&& t, F f)
+    -> decltype(detail::void_or_nullopt<decltype(f(std::forward<T>(t).
+                                                   operator*()))>())
+{
     using return_type = decltype(f(std::forward<T>(t).operator*()));
-    if (t) return f(std::forward<T>(t).operator*());
-    else return detail::void_or_nullopt<return_type>();
+    if (t)
+        return f(std::forward<T>(t).operator*());
+    else
+        return detail::void_or_nullopt<return_type>();
 }
 
-template< class T >
-optional_constexpr nonstd::optional< typename std::decay<T>::type > make_optional_from_nullable( T && v )
+template<class T>
+optional_constexpr nonstd::optional<typename std::decay<T>::type>
+make_optional_from_nullable(T&& v)
 {
     if (v != nullptr) {
         return nonstd::optional<typename std::decay<T>::type>(
@@ -75,8 +86,9 @@ optional_constexpr nonstd::optional< typename std::decay<T>::type > make_optiona
     return nonstd::nullopt;
 }
 
-template<template <typename, typename...> class C, typename T>
-nonstd::optional<T> cget(const C<T> &container, size_t index)
+template<template<typename, typename...> class C, typename T>
+nonstd::optional<T>
+cget(const C<T>& container, size_t index)
 {
     if (index < container.size()) {
         return container[index];
@@ -85,7 +97,9 @@ nonstd::optional<T> cget(const C<T> &container, size_t index)
     return nonstd::nullopt;
 }
 
-inline nonstd::optional<const char *> getenv_opt(const char *name) {
+inline nonstd::optional<const char*>
+getenv_opt(const char* name)
+{
     return make_optional_from_nullable(getenv(name));
 }
 

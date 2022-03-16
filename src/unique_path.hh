@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -46,23 +46,28 @@ class unique_path_source {
 public:
     virtual ~unique_path_source() = default;
 
-    void set_unique_path(const std::string &path) {
+    void set_unique_path(const std::string& path)
+    {
         this->ups_unique_path = path;
     }
 
-    std::string get_unique_path() const {
+    std::string get_unique_path() const
+    {
         return this->ups_unique_path;
     }
 
     virtual ghc::filesystem::path get_path() const = 0;
 
-    ghc::filesystem::path& get_path_prefix() {
+    ghc::filesystem::path& get_path_prefix()
+    {
         return this->ups_prefix;
     }
 
-    void set_path_prefix(const ghc::filesystem::path &prefix) {
+    void set_path_prefix(const ghc::filesystem::path& prefix)
+    {
         this->ups_prefix = prefix;
     }
+
 private:
     ghc::filesystem::path ups_prefix;
     std::string ups_unique_path;
@@ -78,8 +83,9 @@ public:
 
     void generate();
 
-    std::map<std::string, std::vector<std::shared_ptr<unique_path_source>>> upg_unique_paths;
+    std::map<std::string, std::vector<std::shared_ptr<unique_path_source>>>
+        upg_unique_paths;
     size_t upg_max_len{0};
 };
 
-#endif //LNAV_UNIQUE_PATH_HH
+#endif  // LNAV_UNIQUE_PATH_HH

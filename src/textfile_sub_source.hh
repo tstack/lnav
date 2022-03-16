@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,43 +32,52 @@
 
 #include <deque>
 
+#include "filter_observer.hh"
 #include "logfile.hh"
 #include "textview_curses.hh"
-#include "filter_observer.hh"
 
 class textfile_sub_source
-    : public text_sub_source, public vis_location_history {
+    : public text_sub_source
+    , public vis_location_history {
 public:
     typedef std::deque<std::shared_ptr<logfile>>::iterator file_iterator;
 
-    textfile_sub_source() {
+    textfile_sub_source()
+    {
         this->tss_supports_filtering = true;
     };
 
-    bool empty() const {
+    bool empty() const
+    {
         return this->tss_files.empty();
     }
 
-    size_t size() const {
+    size_t size() const
+    {
         return this->tss_files.size();
     }
 
     size_t text_line_count();
 
-    size_t text_line_width(textview_curses &curses) {
-        return this->tss_files.empty() ? 0 : this->current_file()->get_longest_line_length();
+    size_t text_line_width(textview_curses& curses)
+    {
+        return this->tss_files.empty()
+            ? 0
+            : this->current_file()->get_longest_line_length();
     };
 
-    void text_value_for_line(textview_curses &tc,
+    void text_value_for_line(textview_curses& tc,
                              int line,
-                             std::string &value_out,
+                             std::string& value_out,
                              line_flags_t flags);
 
-    void text_attrs_for_line(textview_curses &tc,
+    void text_attrs_for_line(textview_curses& tc,
                              int row,
-                             string_attrs_t &value_out);
+                             string_attrs_t& value_out);
 
-    size_t text_size_for_line(textview_curses &tc, int line, line_flags_t flags);
+    size_t text_size_for_line(textview_curses& tc,
+                              int line,
+                              line_flags_t flags);
 
     std::shared_ptr<logfile> current_file() const
     {
@@ -79,7 +88,8 @@ public:
         return this->tss_files.front();
     };
 
-    std::string text_source_name(const textview_curses &tv) {
+    std::string text_source_name(const textview_curses& tv)
+    {
         if (this->tss_files.empty()) {
             return "";
         }
@@ -98,7 +108,10 @@ public:
     void push_back(const std::shared_ptr<logfile>& lf);
 
     template<class T>
-    bool rescan_files(T &callback, nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt) {
+    bool rescan_files(T& callback,
+                      nonstd::optional<ui_clock::time_point> deadline
+                      = nonstd::nullopt)
+    {
         file_iterator iter;
         bool retval = false;
 
@@ -119,7 +132,8 @@ public:
 
             try {
                 uint32_t old_size = lf->size();
-                logfile::rebuild_result_t new_text_data = lf->rebuild_index(deadline);
+                logfile::rebuild_result_t new_text_data
+                    = lf->rebuild_index(deadline);
 
                 if (lf->get_format() != nullptr) {
                     iter = this->tss_files.erase(iter);
@@ -140,17 +154,18 @@ public:
 
                 uint32_t filter_in_mask, filter_out_mask;
 
-                this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
-                auto *lfo = (line_filter_observer *) lf->get_logline_observer();
+                this->get_filters().get_enabled_mask(filter_in_mask,
+                                                     filter_out_mask);
+                auto* lfo = (line_filter_observer*) lf->get_logline_observer();
                 for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
-                    if (this->tss_apply_filters &&
-                        lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+                    if (this->tss_apply_filters
+                        && lfo->excluded(filter_in_mask, filter_out_mask, lpc))
+                    {
                         continue;
                     }
                     lfo->lfo_filter_state.tfs_index.push_back(lpc);
                 }
-            }
-            catch (const line_buffer::error &e) {
+            } catch (const line_buffer::error& e) {
                 iter = this->tss_files.erase(iter);
                 lf->close();
                 this->detach_observer(lf);
@@ -179,14 +194,15 @@ public:
 
     text_format_t get_text_format() const;
 
-    nonstd::optional<location_history *> get_location_history()
+    nonstd::optional<location_history*> get_location_history()
     {
         return this;
     }
 
 private:
-    void detach_observer(std::shared_ptr<logfile> lf) {
-        auto *lfo = (line_filter_observer *) lf->get_logline_observer();
+    void detach_observer(std::shared_ptr<logfile> lf)
+    {
+        auto* lfo = (line_filter_observer*) lf->get_logline_observer();
         lf->set_logline_observer(nullptr);
         delete lfo;
     };

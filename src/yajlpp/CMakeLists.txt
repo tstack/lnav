@@ -1,0 +1,23 @@
+add_library(
+        yajlpp STATIC
+        ../config.h.in
+        json_op.hh
+        json_ptr.hh
+        yajlpp.hh
+        yajlpp_def.hh
+
+        json_op.cc
+        json_ptr.cc
+        yajlpp.cc
+)
+
+target_include_directories(yajlpp PUBLIC . .. ../fmtlib
+        ${CMAKE_CURRENT_BINARY_DIR}/..)
+target_link_libraries(yajlpp pcrepp yajl)
+
+add_executable(test_yajlpp test_yajlpp.cc)
+target_link_libraries(test_yajlpp base yajlpp ${lnav_LIBS})
+add_test(NAME test_yajlpp COMMAND test_yajlpp)
+
+add_executable(drive_json_op drive_json_op.cc)
+target_link_libraries(drive_json_op base yajlpp ${lnav_LIBS})

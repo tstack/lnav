@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,11 +30,13 @@
 #ifndef lnav_time_util_hh
 #define lnav_time_util_hh
 
-#include <time.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <inttypes.h>
 #include <string.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <time.h>
+
+#include "config.h"
 
 namespace lnav {
 
@@ -42,18 +44,19 @@ using time64_t = uint64_t;
 
 }
 
-struct tm *secs2tm(lnav::time64_t tim, struct tm *res);
+struct tm* secs2tm(lnav::time64_t tim, struct tm* res);
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
  *
  * @param t The 'tm' structure to convert to epoch time.
  * @return The given time in seconds since the epoch.
  */
-time_t tm2sec(const struct tm *t);
-void secs2wday(const struct timeval &tv, struct tm *res);
+time_t tm2sec(const struct tm* t);
+void secs2wday(const struct timeval& tv, struct tm* res);
 
-inline
-time_t convert_log_time_to_local(time_t value) {
+inline time_t
+convert_log_time_to_local(time_t value)
+{
     struct tm tm;
 
     localtime_r(&value, &tm);
@@ -88,37 +91,41 @@ struct exttm {
     unsigned int et_flags;
     long et_gmtoff;
 
-    bool operator==(const exttm &other) const {
+    bool operator==(const exttm& other) const
+    {
         return memcmp(this, &other, sizeof(exttm)) == 0;
     };
 
     struct timeval to_timeval() const;
 };
 
-inline
-bool operator<(const struct timeval &left, time_t right) {
+inline bool
+operator<(const struct timeval& left, time_t right)
+{
     return left.tv_sec < right;
 }
 
-inline
-bool operator<(time_t left, const struct timeval &right) {
+inline bool
+operator<(time_t left, const struct timeval& right)
+{
     return left < right.tv_sec;
 }
 
-inline
-bool operator<(const struct timeval &left, const struct timeval &right) {
-    return left.tv_sec < right.tv_sec ||
-           ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
+inline bool
+operator<(const struct timeval& left, const struct timeval& right)
+{
+    return left.tv_sec < right.tv_sec
+        || ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
 }
 
-inline
-bool operator!=(const struct timeval &left, const struct timeval &right) {
-    return left.tv_sec != right.tv_sec ||
-           left.tv_usec != right.tv_usec;
+inline bool
+operator!=(const struct timeval& left, const struct timeval& right)
+{
+    return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec;
 }
 
-inline
-struct timeval operator-(const struct timeval& lhs, const struct timeval& rhs)
+inline struct timeval
+operator-(const struct timeval& lhs, const struct timeval& rhs)
 {
     struct timeval diff;
 
@@ -128,7 +135,9 @@ struct timeval operator-(const struct timeval& lhs, const struct timeval& rhs)
 
 typedef int64_t mstime_t;
 
-inline mstime_t getmstime() {
+inline mstime_t
+getmstime()
+{
     struct timeval tv;
 
     gettimeofday(&tv, nullptr);
@@ -136,7 +145,9 @@ inline mstime_t getmstime() {
     return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
 }
 
-inline struct timeval current_timeval() {
+inline struct timeval
+current_timeval()
+{
     struct timeval retval;
 
     gettimeofday(&retval, nullptr);
@@ -144,7 +155,9 @@ inline struct timeval current_timeval() {
     return retval;
 }
 
-inline struct timespec current_timespec() {
+inline struct timespec
+current_timespec()
+{
     struct timespec retval;
 
     clock_gettime(CLOCK_REALTIME, &retval);
@@ -152,12 +165,14 @@ inline struct timespec current_timespec() {
     return retval;
 }
 
-inline time_t day_num(time_t ti)
+inline time_t
+day_num(time_t ti)
 {
     return ti / (24 * 60 * 60);
 }
 
-inline time_t hour_num(time_t ti)
+inline time_t
+hour_num(time_t ti)
 {
     return ti / (60 * 60);
 }

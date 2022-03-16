@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,47 +32,47 @@
 #ifndef view_curses_hh
 #define view_curses_hh
 
-#include "config.h"
-
-#include <zlib.h>
-#include <stdint.h>
 #include <limits.h>
 #include <signal.h>
+#include <stdint.h>
 #include <sys/time.h>
+#include <zlib.h>
+
+#include "config.h"
 
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/curses.h>
+#    include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
-#  include <ncursesw.h>
+#    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/curses.h>
+#    include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
-#  include <ncurses.h>
+#    include <ncurses.h>
 #elif defined HAVE_CURSES_H
-#  include <curses.h>
+#    include <curses.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
-#include <functional>
 
+#include "attr_line.hh"
 #include "base/lnav_log.hh"
 #include "base/lrucache.hpp"
 #include "base/opt_util.hh"
-#include "attr_line.hh"
+#include "lnav_config_fwd.hh"
+#include "log_level.hh"
 #include "optional.hpp"
 #include "styling.hh"
-#include "log_level.hh"
-#include "lnav_config_fwd.hh"
 
-#define KEY_CTRL_G    7
-#define KEY_CTRL_L    12
-#define KEY_CTRL_P    16
-#define KEY_CTRL_R    18
-#define KEY_CTRL_W    23
+#define KEY_CTRL_G 7
+#define KEY_CTRL_L 12
+#define KEY_CTRL_P 16
+#define KEY_CTRL_R 18
+#define KEY_CTRL_W 23
 
 class view_curses;
 
@@ -81,29 +81,32 @@ class view_curses;
  */
 class screen_curses : public log_crash_recoverer {
 public:
-    void log_crash_recover() override {
+    void log_crash_recover() override
+    {
         endwin();
     };
 
-    screen_curses()
-        : sc_main_window(initscr()) {
-    };
+    screen_curses() : sc_main_window(initscr()){};
 
     virtual ~screen_curses()
     {
         endwin();
     };
 
-    WINDOW *get_window() { return this->sc_main_window; };
+    WINDOW* get_window()
+    {
+        return this->sc_main_window;
+    };
 
 private:
-    WINDOW *sc_main_window;
+    WINDOW* sc_main_window;
 };
 
 template<typename T>
-class action_broadcaster : public std::vector<std::function<void(T *)>> {
+class action_broadcaster : public std::vector<std::function<void(T*)>> {
 public:
-    void operator()(T *t) {
+    void operator()(T* t)
+    {
         for (auto& func : *this) {
             func(t);
         }
@@ -114,9 +117,10 @@ class ui_periodic_timer {
 public:
     static const struct itimerval INTERVAL;
 
-    static ui_periodic_timer &singleton();
+    static ui_periodic_timer& singleton();
 
-    bool time_to_update(sig_atomic_t &counter) const {
+    bool time_to_update(sig_atomic_t& counter) const
+    {
         if (this->upt_counter != counter) {
             counter = this->upt_counter;
             return true;
@@ -124,11 +128,13 @@ public:
         return false;
     };
 
-    void start_fade(sig_atomic_t &counter, size_t decay) const {
+    void start_fade(sig_atomic_t& counter, size_t decay) const
+    {
         counter = this->upt_counter + decay;
     };
 
-    int fade_diff(sig_atomic_t &counter) const {
+    int fade_diff(sig_atomic_t& counter) const
+    {
         if (this->upt_counter >= counter) {
             return 0;
         }
@@ -144,13 +150,16 @@ private:
 };
 
 class alerter {
-
 public:
-    static alerter &singleton();
+    static alerter& singleton();
 
-    void enabled(bool enable) { this->a_enabled = enable; };
+    void enabled(bool enable)
+    {
+        this->a_enabled = enable;
+    };
 
-    bool chime() {
+    bool chime()
+    {
         if (!this->a_enabled) {
             return true;
         }
@@ -163,7 +172,8 @@ public:
         return retval;
     };
 
-    void new_input(int ch) {
+    void new_input(int ch)
+    {
         if (this->a_last_input != ch) {
             this->a_do_flash = true;
         }
@@ -187,23 +197,23 @@ public:
     typedef enum {
         VCR_NONE = -1,
 
-        VCR_TEXT,               /*< Raw text. */
+        VCR_TEXT, /*< Raw text. */
         VCR_IDENTIFIER,
-        VCR_SEARCH,             /*< A search hit. */
+        VCR_SEARCH, /*< A search hit. */
         VCR_OK,
-        VCR_ERROR,              /*< An error message. */
-        VCR_WARNING,            /*< A warning message. */
-        VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
+        VCR_ERROR, /*< An error message. */
+        VCR_WARNING, /*< A warning message. */
+        VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
         VCR_HIDDEN,
         VCR_ADJUSTED_TIME,
         VCR_SKEWED_TIME,
         VCR_OFFSET_TIME,
         VCR_INVALID_MSG,
-        VCR_STATUS,             /*< Normal status line text. */
+        VCR_STATUS, /*< Normal status line text. */
         VCR_WARN_STATUS,
-        VCR_ALERT_STATUS,       /*< Alert status line text. */
-        VCR_ACTIVE_STATUS,      /*< */
-        VCR_ACTIVE_STATUS2,     /*< */
+        VCR_ALERT_STATUS, /*< Alert status line text. */
+        VCR_ACTIVE_STATUS, /*< */
+        VCR_ACTIVE_STATUS2, /*< */
         VCR_STATUS_TITLE,
         VCR_STATUS_SUBTITLE,
         VCR_STATUS_STITCH_TITLE_TO_SUB,
@@ -236,9 +246,9 @@ public:
         VCR_RE_REPEAT,
         VCR_FILE,
 
-        VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
-        VCR_DIFF_ADD,           /*< Added line in a diff. */
-        VCR_DIFF_SECTION,       /*< Section marker in a diff. */
+        VCR_DIFF_DELETE, /*< Deleted line in a diff. */
+        VCR_DIFF_ADD, /*< Added line in a diff. */
+        VCR_DIFF_SECTION, /*< Section marker in a diff. */
 
         VCR_LOW_THRESHOLD,
         VCR_MED_THRESHOLD,
@@ -248,7 +258,7 @@ public:
     } role_t;
 
     /** @return A reference to the singleton. */
-    static view_colors &singleton();
+    static view_colors& singleton();
 
     /**
      * Performs curses-specific initialization.  The other methods can be
@@ -257,7 +267,8 @@ public:
      */
     static void init();
 
-    void init_roles(const lnav_theme &lt, lnav_config_listener::error_reporter &reporter);
+    void init_roles(const lnav_theme& lt,
+                    lnav_config_listener::error_reporter& reporter);
 
     /**
      * @param role The role to retrieve character attributes for.
@@ -272,8 +283,8 @@ public:
         require(role >= 0);
         require(role < VCR__MAX);
 
-        return selected ? this->vc_role_colors[role].second :
-               this->vc_role_colors[role].first;
+        return selected ? this->vc_role_colors[role].second
+                        : this->vc_role_colors[role].first;
     };
 
     attr_t reverse_attrs_for_role(role_t role) const
@@ -284,27 +295,29 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    int color_for_ident(const char *str, size_t len) const;
+    int color_for_ident(const char* str, size_t len) const;
 
-    attr_t attrs_for_ident(const char *str, size_t len);
+    attr_t attrs_for_ident(const char* str, size_t len);
 
-    attr_t attrs_for_ident(intern_string_t str) {
+    attr_t attrs_for_ident(intern_string_t str)
+    {
         return this->attrs_for_ident(str.get(), str.size());
     }
 
-    attr_t attrs_for_ident(const std::string &str) {
+    attr_t attrs_for_ident(const std::string& str)
+    {
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
     int ensure_color_pair(short fg, short bg);
 
-    int ensure_color_pair(const styling::color_unit &fg,
-                          const styling::color_unit &bg);
+    int ensure_color_pair(const styling::color_unit& fg,
+                          const styling::color_unit& bg);
 
     static constexpr short MATCH_COLOR_DEFAULT = -1;
     static constexpr short MATCH_COLOR_SEMANTIC = -10;
 
-    short match_color(const styling::color_unit &color) const;
+    short match_color(const styling::color_unit& color) const;
 
     static inline int ansi_color_pair_index(int fg, int bg)
     {
@@ -320,20 +333,23 @@ public:
     static const int VC_ANSI_END = VC_ANSI_START + (8 * 8);
 
     std::pair<attr_t, attr_t> to_attrs(
-        int &pair_base,
-        const lnav_theme &lt, const style_config &sc, const style_config &fallback_sc,
-        lnav_config_listener::error_reporter &reporter);
+        int& pair_base,
+        const lnav_theme& lt,
+        const style_config& sc,
+        const style_config& fallback_sc,
+        lnav_config_listener::error_reporter& reporter);
 
     std::pair<attr_t, attr_t> vc_level_attrs[LEVEL__MAX];
 
-    short ansi_to_theme_color(short ansi_fg) const {
+    short ansi_to_theme_color(short ansi_fg) const
+    {
         return this->vc_ansi_to_theme[ansi_fg];
     }
 
     static bool initialized;
 
 private:
-    static term_color_palette *vc_active_palette;
+    static term_color_palette* vc_active_palette;
 
     /** Private constructor that initializes the member fields. */
     view_colors();
@@ -369,13 +385,12 @@ enum class mouse_button_state_t {
 
 struct mouse_event {
     mouse_event(mouse_button_t button = mouse_button_t::BUTTON_LEFT,
-                mouse_button_state_t state = mouse_button_state_t::BUTTON_STATE_PRESSED,
+                mouse_button_state_t state
+                = mouse_button_state_t::BUTTON_STATE_PRESSED,
                 int x = -1,
                 int y = -1)
-            : me_button(button),
-              me_state(state),
-              me_x(x),
-              me_y(y) {
+        : me_button(button), me_state(state), me_x(x), me_y(y)
+    {
         memset(&this->me_time, 0, sizeof(this->me_time));
     };
 
@@ -396,7 +411,8 @@ public:
     /**
      * Update the curses display.
      */
-    virtual void do_update() {
+    virtual void do_update()
+    {
         if (!this->vc_visible) {
             return;
         }
@@ -406,38 +422,48 @@ public:
         }
     };
 
-    virtual bool handle_mouse(mouse_event &me) { return false; };
+    virtual bool handle_mouse(mouse_event& me)
+    {
+        return false;
+    };
 
-    void set_needs_update() {
+    void set_needs_update()
+    {
         this->vc_needs_update = true;
         for (auto child : this->vc_children) {
             child->set_needs_update();
         }
     };
 
-    view_curses &add_child_view(view_curses *child) {
+    view_curses& add_child_view(view_curses* child)
+    {
         this->vc_children.push_back(child);
 
         return *this;
     }
 
-    void set_default_role(view_colors::role_t role) {
+    void set_default_role(view_colors::role_t role)
+    {
         this->vc_default_role = role;
     }
 
-    void set_visible(bool value) {
+    void set_visible(bool value)
+    {
         this->vc_visible = value;
     }
 
-    bool is_visible() const {
+    bool is_visible() const
+    {
         return this->vc_visible;
     }
 
-    void set_width(long width) {
+    void set_width(long width)
+    {
         this->vc_width = width;
     }
 
-    long get_width() const {
+    long get_width() const
+    {
         return this->vc_width;
     }
 
@@ -451,29 +477,30 @@ public:
 
     static void awaiting_user_input();
 
-    static void mvwattrline(WINDOW *window,
+    static void mvwattrline(WINDOW* window,
                             int y,
                             int x,
-                            attr_line_t &al,
-                            const struct line_range &lr,
-                            view_colors::role_t base_role =
-                                view_colors::VCR_TEXT);
+                            attr_line_t& al,
+                            const struct line_range& lr,
+                            view_colors::role_t base_role
+                            = view_colors::VCR_TEXT);
 
 protected:
     bool vc_visible{true};
     /** Flag to indicate if a display update is needed. */
     bool vc_needs_update{true};
     long vc_width;
-    std::vector<view_curses *> vc_children;
+    std::vector<view_curses*> vc_children;
     view_colors::role_t vc_default_role{view_colors::VCR_TEXT};
 };
 
 template<class T>
 class view_stack : public view_curses {
 public:
-    using iterator = typename std::vector<T *>::iterator;
+    using iterator = typename std::vector<T*>::iterator;
 
-    nonstd::optional<T *> top() {
+    nonstd::optional<T*> top()
+    {
         if (this->vs_views.empty()) {
             return nonstd::nullopt;
         } else {
@@ -487,7 +514,7 @@ public:
             return;
         }
 
-        this->top() | [this] (T *vc) {
+        this->top() | [this](T* vc) {
             if (this->vc_needs_update) {
                 vc->set_needs_update();
             }
@@ -499,7 +526,8 @@ public:
         this->vc_needs_update = false;
     }
 
-    void push_back(T *view) {
+    void push_back(T* view)
+    {
         this->vs_views.push_back(view);
         if (this->vs_change_handler) {
             this->vs_change_handler(view);
@@ -507,7 +535,8 @@ public:
         this->set_needs_update();
     }
 
-    void pop_back() {
+    void pop_back()
+    {
         this->vs_views.pop_back();
         if (!this->vs_views.empty() && this->vs_change_handler) {
             this->vs_change_handler(this->vs_views.back());
@@ -515,26 +544,30 @@ public:
         this->set_needs_update();
     }
 
-    iterator begin() {
+    iterator begin()
+    {
         return this->vs_views.begin();
     }
 
-    iterator end() {
+    iterator end()
+    {
         return this->vs_views.end();
     }
 
-    size_t size() {
+    size_t size()
+    {
         return this->vs_views.size();
     }
 
-    bool empty() {
+    bool empty()
+    {
         return this->vs_views.empty();
     }
 
-    std::function<void(T *)> vs_change_handler;
+    std::function<void(T*)> vs_change_handler;
 
 private:
-    std::vector<T *> vs_views;
+    std::vector<T*> vs_views;
 };
 
 #endif

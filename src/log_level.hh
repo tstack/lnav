@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -56,27 +56,24 @@ enum log_level_t : int {
 
     LEVEL__MAX,
 
-    LEVEL_IGNORE    = 0x10,  /*< Ignore */
-    LEVEL_TIME_SKEW = 0x20,  /*< Received after timestamp. */
-    LEVEL_MARK      = 0x40,  /*< Bookmarked line. */
-    LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
+    LEVEL_IGNORE = 0x10, /*< Ignore */
+    LEVEL_TIME_SKEW = 0x20, /*< Received after timestamp. */
+    LEVEL_MARK = 0x40, /*< Bookmarked line. */
+    LEVEL_CONTINUED = 0x80, /*< Continuation of multiline entry. */
 
     /** Mask of flags for the level field. */
-        LEVEL__FLAGS    = (
-        LEVEL_IGNORE |
-        LEVEL_TIME_SKEW |
-        LEVEL_MARK |
-        LEVEL_CONTINUED
-    )
+    LEVEL__FLAGS
+        = (LEVEL_IGNORE | LEVEL_TIME_SKEW | LEVEL_MARK | LEVEL_CONTINUED)
 };
 
-extern const char *level_names[LEVEL__MAX + 1];
+extern const char* level_names[LEVEL__MAX + 1];
 
-log_level_t string2level(const char *levelstr, ssize_t len = -1, bool exact = false);
+log_level_t string2level(const char* levelstr,
+                         ssize_t len = -1,
+                         bool exact = false);
 
-log_level_t abbrev2level(const char *levelstr, ssize_t len = -1);
+log_level_t abbrev2level(const char* levelstr, ssize_t len = -1);
 
-int levelcmp(const char *l1, ssize_t l1_len,
-             const char *l2, ssize_t l2_len);
+int levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len);
 
 #endif

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,15 +32,16 @@
 
 #include <string>
 
-#include "optional.hpp"
-#include "network.tcp.hh"
 #include "fmt/format.h"
+#include "network.tcp.hh"
+#include "optional.hpp"
 
 namespace fmt {
 
 template<>
 struct formatter<network::locality> {
-    constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto parse(format_parse_context& ctx)
+    {
         auto it = ctx.begin(), end = ctx.end();
 
         // Check if reached the end of the range:
@@ -51,24 +52,25 @@ struct formatter<network::locality> {
         return it;
     }
 
-    template <typename FormatContext>
-    auto format(const network::locality& l, FormatContext& ctx) {
+    template<typename FormatContext>
+    auto format(const network::locality& l, FormatContext& ctx)
+    {
         bool is_ipv6 = l.l_hostname.find(':') != std::string::npos;
 
-        return format_to(
-            ctx.out(),
-            "{}{}{}{}{}",
-            l.l_username.value_or(std::string()),
-            l.l_username ? "@" : "",
-            is_ipv6 ? "[" : "",
-            l.l_hostname,
-            is_ipv6 ? "]" : "");
+        return format_to(ctx.out(),
+                         "{}{}{}{}{}",
+                         l.l_username.value_or(std::string()),
+                         l.l_username ? "@" : "",
+                         is_ipv6 ? "[" : "",
+                         l.l_hostname,
+                         is_ipv6 ? "]" : "");
     }
 };
 
 template<>
 struct formatter<network::path> {
-    constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto parse(format_parse_context& ctx)
+    {
         auto it = ctx.begin(), end = ctx.end();
 
         // Check if reached the end of the range:
@@ -79,32 +81,30 @@ struct formatter<network::path> {
         return it;
     }
 
-    template <typename FormatContext>
-    auto format(const network::path& p, FormatContext& ctx) {
+    template<typename FormatContext>
+    auto format(const network::path& p, FormatContext& ctx)
+    {
         return format_to(
-            ctx.out(),
-            "{}:{}",
-            p.p_locality,
-            p.p_path == "." ? "" : p.p_path);
+            ctx.out(), "{}:{}", p.p_locality, p.p_path == "." ? "" : p.p_path);
     }
 };
 
-}
+}  // namespace fmt
 
 namespace humanize {
 namespace network {
 namespace path {
 
-nonstd::optional<::network::path> from_str(const char *str);
+nonstd::optional<::network::path> from_str(const char* str);
 
-inline nonstd::optional<::network::path> from_str(const std::string &str)
+inline nonstd::optional<::network::path>
+from_str(const std::string& str)
 {
     return from_str(str.c_str());
 }
 
-}
-}
-}
-
+}  // namespace path
+}  // namespace network
+}  // namespace humanize
 
 #endif

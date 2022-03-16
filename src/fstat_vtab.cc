@@ -21,25 +21,25 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "fstat_vtab.hh"
 
-#include <string.h>
-#include <sys/stat.h>
 #include <glob.h>
 #include <grp.h>
 #include <pwd.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "config.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
-#include "fstat_vtab.hh"
 
 using namespace std;
 
@@ -66,8 +66,8 @@ enum {
 };
 
 struct fstat_table {
-    static constexpr const char *NAME = "fstat";
-    static constexpr const char *CREATE_STMT = R"(
+    static constexpr const char* NAME = "fstat";
+    static constexpr const char* CREATE_STMT = R"(
 CREATE TABLE fstat (
     st_parent TEXT,
     st_name TEXT,
@@ -98,19 +98,24 @@ CREATE TABLE fstat (
         size_t c_path_index{0};
         struct stat c_stat;
 
-        cursor(sqlite3_vtab *vt) : base({vt}) {
+        cursor(sqlite3_vtab* vt) : base({vt})
+        {
             memset(&this->c_stat, 0, sizeof(this->c_stat));
         };
 
-        void load_stat() {
-            while ((this->c_path_index < this->c_glob->gl_pathc) &&
-                   lstat(this->c_glob->gl_pathv[this->c_path_index],
-                         &this->c_stat) == -1) {
+        void load_stat()
+        {
+            while ((this->c_path_index < this->c_glob->gl_pathc)
+                   && lstat(this->c_glob->gl_pathv[this->c_path_index],
+                            &this->c_stat)
+                       == -1)
+            {
                 this->c_path_index += 1;
             }
         };
 
-        int next() {
+        int next()
+        {
             if (this->c_path_index < this->c_glob->gl_pathc) {
                 this->c_path_index += 1;
                 this->load_stat();
@@ -119,40 +124,45 @@ CREATE TABLE fstat (
             return SQLITE_OK;
         };
 
-        int reset() {
+        int reset()
+        {
             return SQLITE_OK;
         }
 
-        int eof() {
+        int eof()
+        {
             return this->c_path_index >= this->c_glob->gl_pathc;
         };
 
-        int get_rowid(sqlite3_int64 &rowid_out) {
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
             rowid_out = this->c_path_index;
 
             return SQLITE_OK;
         };
     };
 
-    int get_column(const cursor &vc, sqlite3_context *ctx, int col) {
-        const char *path = vc.c_glob->gl_pathv[vc.c_path_index];
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const char* path = vc.c_glob->gl_pathv[vc.c_path_index];
         char time_buf[32];
 
         switch (col) {
             case FSTAT_COL_PARENT: {
-                const char *slash = strrchr(path, '/');
+                const char* slash = strrchr(path, '/');
 
                 if (slash == nullptr) {
                     sqlite3_result_text(ctx, ".", 1, SQLITE_STATIC);
                 } else if (path[1] == '\0') {
                     sqlite3_result_text(ctx, "", 0, SQLITE_STATIC);
                 } else {
-                    sqlite3_result_text(ctx, path, slash - path + 1, SQLITE_TRANSIENT);
+                    sqlite3_result_text(
+                        ctx, path, slash - path + 1, SQLITE_TRANSIENT);
                 }
                 break;
             }
             case FSTAT_COL_NAME: {
-                const char *slash = strrchr(path, '/');
+                const char* slash = strrchr(path, '/');
 
                 if (slash == nullptr) {
                     sqlite3_result_text(ctx, path, -1, SQLITE_TRANSIENT);
@@ -194,7 +204,7 @@ CREATE TABLE fstat (
                 sqlite3_result_int(ctx, vc.c_stat.st_uid);
                 break;
             case FSTAT_COL_USER: {
-                struct passwd *pw = getpwuid(vc.c_stat.st_uid);
+                struct passwd* pw = getpwuid(vc.c_stat.st_uid);
 
                 if (pw != nullptr) {
                     sqlite3_result_text(ctx, pw->pw_name, -1, SQLITE_TRANSIENT);
@@ -207,7 +217,7 @@ CREATE TABLE fstat (
                 sqlite3_result_int(ctx, vc.c_stat.st_gid);
                 break;
             case FSTAT_COL_GROUP: {
-                struct group *gr = getgrgid(vc.c_stat.st_gid);
+                struct group* gr = getgrgid(vc.c_stat.st_gid);
 
                 if (gr != nullptr) {
                     sqlite3_result_text(ctx, gr->gr_name, -1, SQLITE_TRANSIENT);
@@ -278,7 +288,8 @@ CREATE TABLE fstat (
 #endif
 };
 
-static int rcBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo)
+static int
+rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
 {
     vtab_index_constraints vic(pIdxInfo);
     vtab_index_usage viu(pIdxInfo);
@@ -299,29 +310,33 @@ static int rcBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo)
     return SQLITE_OK;
 }
 
-static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
-                    int idxNum, const char *idxStr,
-                    int argc, sqlite3_value **argv)
+static int
+rcFilter(sqlite3_vtab_cursor* pVtabCursor,
+         int idxNum,
+         const char* idxStr,
+         int argc,
+         sqlite3_value** argv)
 {
-    fstat_table::cursor *pCur = (fstat_table::cursor *)pVtabCursor;
+    fstat_table::cursor* pCur = (fstat_table::cursor*) pVtabCursor;
 
     if (argc != 1) {
         pCur->c_pattern.clear();
         return SQLITE_OK;
     }
 
-    const char *pattern = (const char *) sqlite3_value_text(argv[0]);
+    const char* pattern = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_pattern = pattern;
     switch (glob(pattern,
 #ifdef GLOB_TILDE
-                 GLOB_TILDE|
+                 GLOB_TILDE |
 #endif
-                 GLOB_ERR,
+                     GLOB_ERR,
                  nullptr,
-                 pCur->c_glob.inout())) {
+                 pCur->c_glob.inout()))
+    {
         case GLOB_NOSPACE:
-            pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-                "No space to perform glob()");
+            pVtabCursor->pVtab->zErrMsg
+                = sqlite3_mprintf("No space to perform glob()");
             return SQLITE_ERROR;
         case GLOB_NOMATCH:
             return SQLITE_OK;
@@ -332,7 +347,8 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
     return SQLITE_OK;
 }
 
-int register_fstat_vtab(sqlite3 *db)
+int
+register_fstat_vtab(sqlite3* db)
 {
     static vtab_module<tvt_no_update<fstat_table>> FSTAT_MODULE;
 

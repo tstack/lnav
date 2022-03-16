@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -33,8 +33,8 @@
 #define lnav_archive_manager_hh
 
 #include <atomic>
-#include <string>
 #include <functional>
+#include <string>
 #include <utility>
 
 #include "base/result.h"
@@ -43,34 +43,33 @@
 namespace archive_manager {
 
 struct extract_progress {
-    extract_progress(ghc::filesystem::path path,
-                     ssize_t total) : ep_path(std::move(path)),
-                                      ep_total_size(total)
-    {}
+    extract_progress(ghc::filesystem::path path, ssize_t total)
+        : ep_path(std::move(path)), ep_total_size(total)
+    {
+    }
 
     const ghc::filesystem::path ep_path;
     const ssize_t ep_total_size;
     std::atomic<size_t> ep_out_size{0};
 };
 
-using extract_cb = std::function<extract_progress *(
-    const ghc::filesystem::path &, ssize_t)>;
+using extract_cb
+    = std::function<extract_progress*(const ghc::filesystem::path&, ssize_t)>;
 
 bool is_archive(const ghc::filesystem::path& filename);
 
-ghc::filesystem::path filename_to_tmp_path(const std::string &filename);
+ghc::filesystem::path filename_to_tmp_path(const std::string& filename);
 
 using walk_result_t = Result<void, std::string>;
 
 walk_result_t walk_archive_files(
-    const std::string &filename,
-    const extract_cb &cb,
-    const std::function<void(
-        const ghc::filesystem::path &,
-        const ghc::filesystem::directory_entry &)> &);
+    const std::string& filename,
+    const extract_cb& cb,
+    const std::function<void(const ghc::filesystem::path&,
+                             const ghc::filesystem::directory_entry&)>&);
 
 void cleanup_cache();
 
-}
+}  // namespace archive_manager
 
 #endif

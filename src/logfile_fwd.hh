@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -53,61 +53,71 @@ enum class logfile_name_source {
 };
 
 struct logfile_open_options {
-    logfile_open_options &with_filename(const std::string& val) {
+    logfile_open_options& with_filename(const std::string& val)
+    {
         this->loo_filename = val;
 
         return *this;
     };
 
-    logfile_open_options &with_fd(auto_fd fd) {
+    logfile_open_options& with_fd(auto_fd fd)
+    {
         this->loo_fd = std::move(fd);
 
         return *this;
     };
 
-    logfile_open_options &with_source(logfile_name_source src) {
+    logfile_open_options& with_source(logfile_name_source src)
+    {
         this->loo_source = src;
 
         return *this;
     }
 
-    logfile_open_options &with_detect_format(bool val) {
+    logfile_open_options& with_detect_format(bool val)
+    {
         this->loo_detect_format = val;
 
         return *this;
     };
 
-    logfile_open_options &with_include_in_session(bool val) {
+    logfile_open_options& with_include_in_session(bool val)
+    {
         this->loo_include_in_session = val;
 
         return *this;
     };
 
-    logfile_open_options &with_visibility(bool val) {
+    logfile_open_options& with_visibility(bool val)
+    {
         this->loo_is_visible = val;
 
         return *this;
     }
 
-    logfile_open_options &with_non_utf_visibility(bool val) {
+    logfile_open_options& with_non_utf_visibility(bool val)
+    {
         this->loo_non_utf_is_visible = val;
 
         return *this;
     };
 
-    logfile_open_options &with_visible_size_limit(ssize_t val) {
+    logfile_open_options& with_visible_size_limit(ssize_t val)
+    {
         this->loo_visible_size_limit = val;
 
         return *this;
     }
 
-    logfile_open_options &with_tail(bool val) {
+    logfile_open_options& with_tail(bool val)
+    {
         this->loo_tail = val;
 
         return *this;
     }
 
-    logfile_open_options &with_file_format(file_format_t ff) {
+    logfile_open_options& with_file_format(file_format_t ff)
+    {
         this->loo_file_format = ff;
 
         return *this;

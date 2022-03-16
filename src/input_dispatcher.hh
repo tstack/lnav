@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,20 +32,21 @@
 #ifndef INPUT_DISPATCHER_HH
 #define INPUT_DISPATCHER_HH
 
-#include <sys/types.h>
-
 #include <functional>
 
-#define KEY_ESCAPE    0x1b
+#include <sys/types.h>
+
+#define KEY_ESCAPE        0x1b
 #define KEY_CTRL_RBRACKET 0x1d
 
 class input_dispatcher {
 public:
-    void new_input(const struct timeval &current_time, int ch);
+    void new_input(const struct timeval& current_time, int ch);
 
-    void poll(const struct timeval &current_time);
+    void poll(const struct timeval& current_time);
 
-    bool in_escape() const {
+    bool in_escape() const
+    {
         return this->id_escape_index > 0;
     }
 
@@ -55,21 +56,24 @@ public:
         FULL,
     };
 
-    std::function<escape_match_t(const char *)> id_escape_matcher;
+    std::function<escape_match_t(const char*)> id_escape_matcher;
     std::function<bool(int)> id_key_handler;
-    std::function<void(const char *)> id_escape_handler;
+    std::function<void(const char*)> id_escape_handler;
     std::function<void()> id_mouse_handler;
-    std::function<void(const char *)> id_unhandled_handler;
+    std::function<void(const char*)> id_unhandled_handler;
+
 private:
     void reset_escape_buffer(int ch,
-                             const struct timeval &current_time,
+                             const struct timeval& current_time,
                              ssize_t expected_size = -1);
     void append_to_escape_buffer(int ch);
 
     char id_escape_buffer[32];
     ssize_t id_escape_index{0};
     ssize_t id_escape_expected_size{-1};
-    struct timeval id_escape_start_time{0, 0};
+    struct timeval id_escape_start_time {
+        0, 0
+    };
 };
 
 #endif

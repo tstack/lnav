@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -51,20 +51,27 @@
  * insertion point and then sends a code to insert the character and relying
  * on the terminal to shift the rest of the line to the right a character.
  */
-class vt52_curses
-    : public view_curses {
+class vt52_curses : public view_curses {
 public:
     /** @param win The curses window this view is attached to. */
-    void set_window(WINDOW *win) { this->vc_window = win; };
+    void set_window(WINDOW* win)
+    {
+        this->vc_window = win;
+    };
 
     /** @return The curses window this view is attached to. */
-    WINDOW *get_window() { return this->vc_window; };
+    WINDOW* get_window()
+    {
+        return this->vc_window;
+    };
 
-    void set_left(int left) {
+    void set_left(int left)
+    {
         this->vc_left = left;
     };
 
-    int get_left() const {
+    int get_left() const
+    {
         return this->vc_left;
     }
 
@@ -75,16 +82,28 @@ public:
      *
      * @param y The Y position of the cursor on the curses display.
      */
-    void set_y(int y) { this->vc_y = y; };
+    void set_y(int y)
+    {
+        this->vc_y = y;
+    };
 
     /** @return The abs/rel Y position of the cursor on the curses display. */
-    int get_y() const { return this->vc_y; };
+    int get_y() const
+    {
+        return this->vc_y;
+    };
 
     /** @param x The X position of the cursor on the curses display. */
-    void set_x(int x) { this->vc_x = x; };
+    void set_x(int x)
+    {
+        this->vc_x = x;
+    };
 
     /** @return The X position of the cursor on the curses display. */
-    int get_x() const { return this->vc_x; };
+    int get_x() const
+    {
+        return this->vc_x;
+    };
 
     /**
      * @return The height of this view, which consists of a single line for
@@ -92,10 +111,19 @@ public:
      * position for this view.
      * @todo Kinda hardwired to the way readline works.
      */
-    int get_height() { return 1; };
+    int get_height()
+    {
+        return 1;
+    };
 
-    void set_max_height(int mh) { this->vc_max_height = mh; };
-    int get_max_height() const { return this->vc_max_height; };
+    void set_max_height(int mh)
+    {
+        this->vc_max_height = mh;
+    };
+    int get_max_height() const
+    {
+        return this->vc_max_height;
+    };
 
     /**
      * Map an ncurses input keycode to a vt52 sequence.
@@ -104,7 +132,7 @@ public:
      * @param len_out The length of the returned sequence.
      * @return The vt52 sequence to send to the child.
      */
-    const char *map_input(int ch, int &len_out);
+    const char* map_input(int ch, int& len_out);
 
     /**
      * Map VT52 output to ncurses calls.
@@ -112,49 +140,47 @@ public:
      * @param output VT52 encoded output from the child process.
      * @param len The length of the output array.
      */
-    void map_output(const char *output, int len);
+    void map_output(const char* output, int len);
 
     /**
      * Paints any past lines and moves the cursor to the current X position.
      */
     void do_update();
 
-    const static char ESCAPE    = 27;   /*< VT52 Escape key value. */
-    const static char BACKSPACE = 8;    /*< VT52 Backspace key value. */
-    const static char BELL      = 7;    /*< VT52 Bell value. */
-    const static char STX       = 2;    /*< VT52 Start-of-text value. */
+    const static char ESCAPE = 27; /*< VT52 Escape key value. */
+    const static char BACKSPACE = 8; /*< VT52 Backspace key value. */
+    const static char BELL = 7; /*< VT52 Bell value. */
+    const static char STX = 2; /*< VT52 Start-of-text value. */
 
 protected:
-
     /** @return The absolute Y position of this view. */
     int get_actual_y()
     {
         unsigned long width, height;
-        int           retval;
+        int retval;
 
         getmaxyx(this->vc_window, height, width);
         if (this->vc_y < 0) {
             retval = height + this->vc_y;
-        }
-        else {
+        } else {
             retval = this->vc_y;
         }
 
         return retval;
     };
 
-    WINDOW *vc_window{nullptr}; /*< The window that contains this view. */
-    int     vc_left{0};
-    int     vc_x{0};             /*< The X position of the cursor. */
-    int     vc_y{0};             /*< The Y position of the cursor. */
-    int     vc_max_height{0};
-    char    vc_escape[16];    /*< Storage for escape sequences. */
-    int     vc_escape_len{0};    /*< The number of chars in vc_escape. */
-    int     vc_expected_escape_len{-1};
-    char    vc_map_buffer{0};    /*<
-                               * Buffer returned by map_input for trivial
-                               * translations (one-to-one).
-                               */
+    WINDOW* vc_window{nullptr}; /*< The window that contains this view. */
+    int vc_left{0};
+    int vc_x{0}; /*< The X position of the cursor. */
+    int vc_y{0}; /*< The Y position of the cursor. */
+    int vc_max_height{0};
+    char vc_escape[16]; /*< Storage for escape sequences. */
+    int vc_escape_len{0}; /*< The number of chars in vc_escape. */
+    int vc_expected_escape_len{-1};
+    char vc_map_buffer{0}; /*<
+                            * Buffer returned by map_input for trivial
+                            * translations (one-to-one).
+                            */
     attr_line_t vc_line;
 };
 

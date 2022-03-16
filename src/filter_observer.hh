@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,50 +37,57 @@
 
 class line_filter_observer : public logline_observer {
 public:
-    line_filter_observer(filter_stack &fs, std::shared_ptr<logfile> lf)
-            : lfo_filter_stack(fs), lfo_filter_state(lf) {
+    line_filter_observer(filter_stack& fs, std::shared_ptr<logfile> lf)
+        : lfo_filter_stack(fs), lfo_filter_state(lf){
 
-    };
+                                };
 
-    void logline_restart(const logfile &lf, file_size_t rollback_size) {
-        for (auto &filter : this->lfo_filter_stack) {
+    void logline_restart(const logfile& lf, file_size_t rollback_size)
+    {
+        for (auto& filter : this->lfo_filter_stack) {
             filter->revert_to_last(this->lfo_filter_state, rollback_size);
         }
     };
 
-    void logline_new_lines(const logfile &lf,
+    void logline_new_lines(const logfile& lf,
                            logfile::const_iterator ll_begin,
                            logfile::const_iterator ll_end,
-                           shared_buffer_ref &sbr);
+                           shared_buffer_ref& sbr);
 
-    void logline_eof(const logfile &lf);
+    void logline_eof(const logfile& lf);
 
-    bool excluded(uint32_t filter_in_mask, uint32_t filter_out_mask,
-            size_t offset) const {
-        bool filtered_in = (filter_in_mask == 0) || (
-                this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
-        bool filtered_out = (
-                this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
+    bool excluded(uint32_t filter_in_mask,
+                  uint32_t filter_out_mask,
+                  size_t offset) const
+    {
+        bool filtered_in = (filter_in_mask == 0)
+            || (this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
+        bool filtered_out
+            = (this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
         return !filtered_in || filtered_out;
     };
 
-    size_t get_min_count(size_t max) const {
+    size_t get_min_count(size_t max) const
+    {
         size_t retval = max;
 
-        for (auto &filter : this->lfo_filter_stack) {
+        for (auto& filter : this->lfo_filter_stack) {
             if (filter->lf_deleted) {
                 continue;
             }
-            retval = std::min(retval, this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
+            retval = std::min(
+                retval,
+                this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
         }
 
         return retval;
     };
 
-    void clear_deleted_filter_state() {
+    void clear_deleted_filter_state()
+    {
         uint32_t used_mask = 0;
 
-        for (auto &filter : this->lfo_filter_stack) {
+        for (auto& filter : this->lfo_filter_stack) {
             if (filter->lf_deleted) {
                 log_debug("skipping deleted %d", filter->get_index());
                 continue;
@@ -90,7 +97,7 @@ public:
         this->lfo_filter_state.clear_deleted_filter_state(used_mask);
     };
 
-    filter_stack &lfo_filter_stack;
+    filter_stack& lfo_filter_stack;
     logfile_filter_state lfo_filter_state;
 };
 

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -35,21 +35,20 @@
 #include <string>
 #include <vector>
 
-#include "base/result.h"
-#include "base/auto_pid.hh"
 #include "auto_fd.hh"
+#include "base/auto_pid.hh"
+#include "base/result.h"
 
 namespace pcap_manager {
 
 struct convert_result {
-    auto_pid<process_state::RUNNING> cr_child;
+    auto_pid<process_state::running> cr_child;
     auto_fd cr_destination;
     std::shared_ptr<std::vector<std::string>> cr_error_queue;
 };
 
-Result<convert_result, std::string>
-convert(const std::string& filename);
+Result<convert_result, std::string> convert(const std::string& filename);
 
-}
+}  // namespace pcap_manager
 
 #endif

@@ -21,52 +21,53 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifdef __CYGWIN__
-#include <alloca.h>
+#    include <alloca.h>
 #endif
-
-#include "config.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <fstream>
 #include <iostream>
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "../src/data_parser.hh"
+#include "../src/view_curses.hh"
 #include "base/injector.hh"
-#include "textview_curses.hh"
-#include "data_scanner.hh"
+#include "config.h"
 #include "data_parser.hh"
+#include "data_scanner.hh"
+#include "elem_to_json.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
-#include "elem_to_json.hh"
-#include "../src/data_parser.hh"
-#include "../src/view_curses.hh"
+#include "textview_curses.hh"
 
 using namespace std;
 
-const char *TMP_NAME = "scanned.tmp";
+const char* TMP_NAME = "scanned.tmp";
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-    int  c, retval = EXIT_SUCCESS;
+    int c, retval = EXIT_SUCCESS;
     bool prompt = false, is_log = false, pretty_print = false;
 
     {
-        static auto builtin_formats =
-            injector::get<std::vector<std::shared_ptr<log_format>>>();
+        static auto builtin_formats
+            = injector::get<std::vector<std::shared_ptr<log_format>>>();
         auto& root_formats = log_format::get_root_formats();
 
-        log_format::get_root_formats().insert(
-            root_formats.begin(), builtin_formats.begin(), builtin_formats.end());
+        log_format::get_root_formats().insert(root_formats.begin(),
+                                              builtin_formats.begin(),
+                                              builtin_formats.end());
         builtin_formats.clear();
     }
 
@@ -79,81 +80,79 @@ int main(int argc, char *argv[])
 
     while ((c = getopt(argc, argv, "pPl")) != -1) {
         switch (c) {
-        case 'p':
-            prompt = true;
-            break;
+            case 'p':
+                prompt = true;
+                break;
 
-        case 'P':
-            pretty_print = true;
-            break;
+            case 'P':
+                pretty_print = true;
+                break;
 
-        case 'l':
-            is_log = true;
-            break;
+            case 'l':
+                is_log = true;
+                break;
 
-        default:
-            retval = EXIT_FAILURE;
-            break;
+            default:
+                retval = EXIT_FAILURE;
+                break;
         }
     }
 
     argc -= optind;
     argv += optind;
 
-    if (retval != EXIT_SUCCESS) {}
-    else if (argc < 1) {
+    if (retval != EXIT_SUCCESS) {
+    } else if (argc < 1) {
         fprintf(stderr, "error: expecting file name argument(s)\n");
         retval = EXIT_FAILURE;
-    }
-    else {
+    } else {
         for (int lpc = 0; lpc < argc; lpc++) {
             std::unique_ptr<ifstream> in_ptr;
-            istream *in;
-            FILE *out;
+            istream* in;
+            FILE* out;
 
             if (strcmp(argv[lpc], "-") == 0) {
                 in = &cin;
-            }
-            else {
+            } else {
                 auto ifs = std::make_unique<ifstream>(argv[lpc]);
 
                 if (!ifs->is_open()) {
                     fprintf(stderr, "error: unable to open file\n");
                     retval = EXIT_FAILURE;
-                }
-                else {
+                } else {
                     in_ptr = std::move(ifs);
                     in = in_ptr.get();
                 }
             }
 
             if ((out = fopen(TMP_NAME, "w")) == nullptr) {
-                fprintf(stderr, "error: unable to temporary file for writing\n");
+                fprintf(stderr,
+                        "error: unable to temporary file for writing\n");
                 retval = EXIT_FAILURE;
-            }
-            else {
+            } else {
                 shared_ptr<log_format> format;
-                char *log_line;
+                char* log_line;
                 bool found = false;
-                char   cmd[2048];
+                char cmd[2048];
                 string line;
-                int    rc;
+                int rc;
 
                 getline(*in, line);
                 if (strcmp(argv[lpc], "-") == 0) {
                     line = "             " + line;
                 }
 
-                log_line = (char *)alloca(line.length());
+                log_line = (char*) alloca(line.length());
                 strcpy(log_line, &line[13]);
                 string sub_line = line.substr(13);
                 struct line_range body(0, sub_line.length());
                 shared_buffer share_manager;
                 shared_buffer_ref sbr;
 
-                sbr.share(share_manager, (char *)sub_line.c_str(), sub_line.size());
+                sbr.share(
+                    share_manager, (char*) sub_line.c_str(), sub_line.size());
 
-                auto &root_formats = log_format::get_root_formats();
+                auto& root_formats = log_format::get_root_formats();
                 vector<std::shared_ptr<log_format>>::iterator iter;
                 vector<logline> index;
 
@@ -161,11 +160,12 @@ int main(int argc, char *argv[])
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
                          ++iter) {
-                        line_info li = { {13}};
-                        logfile *lf = nullptr; // XXX
+                        line_info li = {{13}};
+                        logfile* lf = nullptr;  // XXX
 
                         (*iter)->clear();
-                        if ((*iter)->scan(*lf, index, li, sbr) == log_format::SCAN_MATCH) {
+                        if ((*iter)->scan(*lf, index, li, sbr)
+                            == log_format::SCAN_MATCH) {
                             format = (*iter)->specialized();
                             found = true;
                         }
@@ -188,17 +188,19 @@ int main(int argc, char *argv[])
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");
 
                 data_scanner ds(sub_line, body.lr_start, sub_line.length());
-                data_parser  dp(&ds);
+                data_parser dp(&ds);
                 string msg_format;
 
                 dp.dp_msg_format = &msg_format;
                 dp.parse();
                 dp.print(out, dp.dp_pairs);
-                fprintf(out, "msg         :%s\n", sub_line.c_str() + body.lr_start);
+                fprintf(
+                    out, "msg         :%s\n", sub_line.c_str() + body.lr_start);
                 fprintf(out, "format      :%s\n", msg_format.c_str());
 
                 if (pretty_print) {
-                    data_scanner ds2(sub_line, body.lr_start, sub_line.length());
+                    data_scanner ds2(
+                        sub_line, body.lr_start, sub_line.length());
                     pretty_printer pp(&ds2, sa);
                     attr_line_t pretty_out;
 
@@ -213,7 +215,7 @@ int main(int argc, char *argv[])
 
                 elements_to_json(gen, dp, &dp.dp_pairs);
 
-                const unsigned char *buf;
+                const unsigned char* buf;
                 size_t len;
 
                 yajl_gen_get_buf(gen, &buf, &len);
@@ -227,18 +229,19 @@ int main(int argc, char *argv[])
                     if (prompt) {
                         char resp[4];
 
-                        printf("\nOriginal line:\n%s\n", sub_line.c_str() + body.lr_start);
-                        printf("Would you like to update the original file? (y/N) ");
+                        printf("\nOriginal line:\n%s\n",
+                               sub_line.c_str() + body.lr_start);
+                        printf(
+                            "Would you like to update the original file? "
+                            "(y/N) ");
                         fflush(stdout);
                         log_perror(scanf("%3s", resp));
                         if (strcasecmp(resp, "y") == 0) {
                             rename(TMP_NAME, argv[lpc]);
-                        }
-                        else{
+                        } else {
                             retval = EXIT_FAILURE;
                         }
-                    }
-                    else {
+                    } else {
                         fprintf(stderr, "error: mismatch\n");
                         retval = EXIT_FAILURE;
                     }

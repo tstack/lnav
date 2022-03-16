@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,13 +35,13 @@
 #include <utility>
 #include <vector>
 
-#include "log_level.hh"
-#include "base/result.h"
 #include "base/intern_string.hh"
+#include "base/result.h"
+#include "log_level.hh"
 #include "mapbox/variant.hpp"
 
 struct rgb_color {
-    static Result<rgb_color, std::string> from_str(const string_fragment &sf);
+    static Result<rgb_color, std::string> from_str(const string_fragment& sf);
 
     explicit rgb_color(short r = -1, short g = -1, short b = -1)
         : rc_r(r), rc_g(g), rc_b(b)
@@ -50,22 +50,20 @@ struct rgb_color {
 
     bool empty() const
     {
-        return this->rc_r == -1 &&
-               this->rc_g == -1 &&
-               this->rc_b == -1;
+        return this->rc_r == -1 && this->rc_g == -1 && this->rc_b == -1;
     }
 
-    bool operator==(const rgb_color &rhs) const;
+    bool operator==(const rgb_color& rhs) const;
 
-    bool operator!=(const rgb_color &rhs) const;
+    bool operator!=(const rgb_color& rhs) const;
 
-    bool operator<(const rgb_color &rhs) const;
+    bool operator<(const rgb_color& rhs) const;
 
-    bool operator>(const rgb_color &rhs) const;
+    bool operator>(const rgb_color& rhs) const;
 
-    bool operator<=(const rgb_color &rhs) const;
+    bool operator<=(const rgb_color& rhs) const;
 
-    bool operator>=(const rgb_color &rhs) const;
+    bool operator>=(const rgb_color& rhs) const;
 
     short rc_r;
     short rc_g;
@@ -73,14 +71,14 @@ struct rgb_color {
 };
 
 struct lab_color {
-    lab_color() : lc_l(0), lc_a(0), lc_b(0) {
-    };
+    lab_color() : lc_l(0), lc_a(0), lc_b(0){};
 
-    explicit lab_color(const rgb_color &rgb);
+    explicit lab_color(const rgb_color& rgb);
 
-    double deltaE(const lab_color &other) const;
+    double deltaE(const lab_color& other) const;
 
-    lab_color& operator=(const lab_color &other) {
+    lab_color& operator=(const lab_color& other)
+    {
         this->lc_l = other.lc_l;
         this->lc_a = other.lc_a;
         this->lc_b = other.lc_b;
@@ -88,17 +86,17 @@ struct lab_color {
         return *this;
     };
 
-    bool operator==(const lab_color &rhs) const;
+    bool operator==(const lab_color& rhs) const;
 
-    bool operator!=(const lab_color &rhs) const;
+    bool operator!=(const lab_color& rhs) const;
 
-    bool operator<(const lab_color &rhs) const;
+    bool operator<(const lab_color& rhs) const;
 
-    bool operator>(const lab_color &rhs) const;
+    bool operator>(const lab_color& rhs) const;
 
-    bool operator<=(const lab_color &rhs) const;
+    bool operator<=(const lab_color& rhs) const;
 
-    bool operator>=(const lab_color &rhs) const;
+    bool operator>=(const lab_color& rhs) const;
 
     double lc_l;
     double lc_a;
@@ -116,28 +114,30 @@ struct term_color {
 struct term_color_palette {
     explicit term_color_palette(const string_fragment& json);
 
-    short match_color(const lab_color &to_match);
+    short match_color(const lab_color& to_match);
 
     std::vector<term_color> tc_palette;
 };
 
 namespace styling {
 
-struct semantic {};
+struct semantic {
+};
 
 class color_unit {
 public:
     static Result<color_unit, std::string> from_str(const string_fragment& sf);
 
-    static color_unit make_empty() {
-        return { rgb_color{} };
+    static color_unit make_empty()
+    {
+        return {rgb_color{}};
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return this->cu_value.match(
             [](semantic) { return false; },
-            [](const rgb_color& rc) { return rc.empty(); }
-        );
+            [](const rgb_color& rc) { return rc.empty(); });
     }
 
     using variants_t = mapbox::util::variant<semantic, rgb_color>;
@@ -148,7 +148,7 @@ private:
     color_unit(variants_t value) : cu_value(std::move(value)) {}
 };
 
-}
+}  // namespace styling
 
 struct style_config {
     std::string sc_color;
@@ -210,7 +210,7 @@ struct lnav_theme {
     std::map<std::string, highlighter_config> lt_highlights;
 };
 
-extern term_color_palette *xterm_colors();
-extern term_color_palette *ansi_colors();
+extern term_color_palette* xterm_colors();
+extern term_color_palette* ansi_colors();
 
 #endif

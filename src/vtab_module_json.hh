@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -35,12 +35,11 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
-inline void to_sqlite(sqlite3_context *ctx, json_string &val)
+inline void
+to_sqlite(sqlite3_context* ctx, json_string& val)
 {
-    sqlite3_result_text(ctx,
-                        (const char *) val.js_content.release(),
-                        val.js_len,
-                        free);
+    sqlite3_result_text(
+        ctx, (const char*) val.js_content.release(), val.js_len, free);
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 

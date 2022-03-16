@@ -21,30 +21,31 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "config.h"
 
 #include <iterator>
 #include <regex>
 #include <sstream>
 
-#include "lnav_log.hh"
-#include "is_utf8.hh"
 #include "string_util.hh"
 
-void scrub_to_utf8(char *buffer, size_t length)
+#include "config.h"
+#include "is_utf8.hh"
+#include "lnav_log.hh"
+
+void
+scrub_to_utf8(char* buffer, size_t length)
 {
-    const char *msg;
+    const char* msg;
     int faulty_bytes;
 
     while (true) {
-        ssize_t utf8_end = is_utf8(
-            (unsigned char *) buffer, length, &msg, &faulty_bytes);
+        ssize_t utf8_end
+            = is_utf8((unsigned char*) buffer, length, &msg, &faulty_bytes);
 
         if (msg == nullptr) {
             break;
@@ -55,7 +56,8 @@ void scrub_to_utf8(char *buffer, size_t length)
     }
 }
 
-size_t unquote(char *dst, const char *str, size_t len)
+size_t
+unquote(char* dst, const char* str, size_t len)
 {
     if (str[0] == 'r' || str[0] == 'u') {
         str += 1;
@@ -70,8 +72,7 @@ size_t unquote(char *dst, const char *str, size_t len)
         dst[index] = str[lpc];
         if (str[lpc] == quote_char) {
             lpc += 1;
-        }
-        else if (str[lpc] == '\\' && (lpc + 1) < len) {
+        } else if (str[lpc] == '\\' && (lpc + 1) < len) {
             switch (str[lpc + 1]) {
                 case 'n':
                     dst[index] = '\n';
@@ -94,7 +95,8 @@ size_t unquote(char *dst, const char *str, size_t len)
     return index;
 }
 
-size_t unquote_w3c(char *dst, const char *str, size_t len)
+size_t
+unquote_w3c(char* dst, const char* str, size_t len)
 {
     size_t index = 0;
 
@@ -111,7 +113,8 @@ size_t unquote_w3c(char *dst, const char *str, size_t len)
     return index;
 }
 
-void truncate_to(std::string &str, size_t max_char_len)
+void
+truncate_to(std::string& str, size_t max_char_len)
 {
     static const std::string ELLIPSIS = "\u22ef";
 
@@ -139,23 +142,25 @@ void truncate_to(std::string &str, size_t max_char_len)
     auto chars_to_remove = (str_char_len - max_char_len) + 1;
     auto midpoint = str_char_len / 2;
     auto chars_to_keep_at_front = midpoint - (chars_to_remove / 2);
-    auto bytes_to_keep_at_front =
-        utf8_char_to_byte_index(str, chars_to_keep_at_front);
-    auto remove_up_to_bytes =
-        utf8_char_to_byte_index(str, chars_to_keep_at_front + chars_to_remove);
+    auto bytes_to_keep_at_front
+        = utf8_char_to_byte_index(str, chars_to_keep_at_front);
+    auto remove_up_to_bytes = utf8_char_to_byte_index(
+        str, chars_to_keep_at_front + chars_to_remove);
     auto bytes_to_remove = remove_up_to_bytes - bytes_to_keep_at_front;
     str.erase(bytes_to_keep_at_front, bytes_to_remove);
     str.insert(bytes_to_keep_at_front, ELLIPSIS);
 }
 
-bool is_url(const char *fn)
+bool
+is_url(const char* fn)
 {
     static const auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
 
     return std::regex_match(fn, url_re);
 }
 
-size_t abbreviate_str(char *str, size_t len, size_t max_len)
+size_t
+abbreviate_str(char* str, size_t len, size_t max_len)
 {
     size_t last_start = 1;
 
@@ -184,7 +189,8 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len)
     return len;
 }
 
-void split_ws(const std::string &str, std::vector<std::string> &toks_out)
+void
+split_ws(const std::string& str, std::vector<std::string>& toks_out)
 {
     std::stringstream ss(str);
     std::string buf;
@@ -194,14 +200,16 @@ void split_ws(const std::string &str, std::vector<std::string> &toks_out)
     }
 }
 
-std::string repeat(const std::string& input, size_t num)
+std::string
+repeat(const std::string& input, size_t num)
 {
     std::ostringstream os;
     std::fill_n(std::ostream_iterator<std::string>(os), num, input);
     return os.str();
 }
 
-std::string center_str(const std::string &subject, size_t width)
+std::string
+center_str(const std::string& subject, size_t width)
 {
     std::string retval = subject;
 
@@ -219,18 +227,23 @@ std::string center_str(const std::string &subject, size_t width)
 }
 
 template<typename T>
-size_t strtonum(T &num_out, const char *string, size_t len)
+size_t
+strtonum(T& num_out, const char* string, size_t len)
 {
     size_t retval = 0;
     T sign = 1;
 
     num_out = 0;
 
-    for (; retval < len && isspace(string[retval]); retval++);
+    for (; retval < len && isspace(string[retval]); retval++) {
+        ;
+    }
     for (; retval < len && string[retval] == '-'; retval++) {
         sign *= -1;
     }
-    for (; retval < len && string[retval] == '+'; retval++);
+    for (; retval < len && string[retval] == '+'; retval++) {
+        ;
+    }
     for (; retval < len && isdigit(string[retval]); retval++) {
         num_out *= 10;
         num_out += string[retval] - '0';
@@ -240,11 +253,10 @@ size_t strtonum(T &num_out, const char *string, size_t len)
     return retval;
 }
 
-template
-size_t strtonum<long long>(long long &num_out, const char *string, size_t len);
+template size_t strtonum<long long>(long long& num_out,
+                                    const char* string,
+                                    size_t len);
 
-template
-size_t strtonum<long>(long &num_out, const char *string, size_t len);
+template size_t strtonum<long>(long& num_out, const char* string, size_t len);
 
-template
-size_t strtonum<int>(int &num_out, const char *string, size_t len);
+template size_t strtonum<int>(int& num_out, const char* string, size_t len);

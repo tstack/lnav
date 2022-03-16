@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -35,42 +35,42 @@
 #include <string>
 #include <vector>
 
+#include "column_namer.hh"
+#include "data_parser.hh"
+#include "log_vtab_impl.hh"
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
-#include "data_parser.hh"
-#include "column_namer.hh"
-#include "log_vtab_impl.hh"
 
 class log_data_table : public log_vtab_impl {
 public:
-
-    log_data_table(logfile_sub_source &lss,
-                   log_vtab_manager &lvm,
+    log_data_table(logfile_sub_source& lss,
+                   log_vtab_manager& lvm,
                    content_line_t template_line,
                    intern_string_t table_name);
 
     void get_columns_int();
 
-    void get_columns(std::vector<vtab_column> &cols) const override {
+    void get_columns(std::vector<vtab_column>& cols) const override
+    {
         cols = this->ldt_cols;
     };
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout) const override
+    void get_foreign_keys(std::vector<std::string>& keys_inout) const override
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
         keys_inout.emplace_back("log_msg_instance");
     };
 
-    bool next(log_cursor &lc, logfile_sub_source &lss) override;
+    bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
     void extract(std::shared_ptr<logfile> lf,
                  uint64_t line_number,
-                 shared_buffer_ref &line,
-                 std::vector<logline_value> &values) override;
+                 shared_buffer_ref& line,
+                 std::vector<logline_value>& values) override;
 
 private:
-    logfile_sub_source &ldt_log_source;
-    const content_line_t     ldt_template_line;
+    logfile_sub_source& ldt_log_source;
+    const content_line_t ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
     shared_buffer_ref ldt_current_line;
     data_parser::element_list_t ldt_pairs;

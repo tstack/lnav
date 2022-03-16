@@ -21,22 +21,21 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <iostream>
 
-#include "doctest/doctest.h"
-
-#include "base/strnatcmp.h"
 #include "base/string_util.hh"
 
-TEST_CASE ("endswith")
+#include "base/strnatcmp.h"
+#include "config.h"
+#include "doctest/doctest.h"
+
+TEST_CASE("endswith")
 {
     std::string hw("hello");
 
@@ -44,7 +43,7 @@ TEST_CASE ("endswith")
     CHECK(endswith(hw, "lo") == true);
 }
 
-TEST_CASE ("truncate_to")
+TEST_CASE("truncate_to")
 {
     const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";
     std::string str;
@@ -74,16 +73,17 @@ TEST_CASE ("truncate_to")
     CHECK(str == "01\u22efyz");
 }
 
-TEST_CASE("strnatcmp") {
+TEST_CASE("strnatcmp")
+{
     {
-        constexpr const char *n1 = "010";
-        constexpr const char *n2 = "020";
+        constexpr const char* n1 = "010";
+        constexpr const char* n2 = "020";
 
         CHECK(strnatcmp(strlen(n1), n1, strlen(n2), n2) < 0);
     }
     {
-        constexpr const char *n1 = "2";
-        constexpr const char *n2 = "10";
+        constexpr const char* n1 = "2";
+        constexpr const char* n2 = "10";
 
         CHECK(strnatcmp(strlen(n1), n1, strlen(n2), n2) < 0);
     }

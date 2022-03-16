@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,11 +40,11 @@ namespace network {
 struct locality {
     locality(nonstd::optional<std::string> username,
              std::string hostname,
-             nonstd::optional<std::string> service) :
-        l_username(std::move(username)),
-        l_hostname(std::move(hostname)),
-        l_service(std::move(service))
-    {}
+             nonstd::optional<std::string> service)
+        : l_username(std::move(username)), l_hostname(std::move(hostname)),
+          l_service(std::move(service))
+    {
+    }
 
     nonstd::optional<std::string> l_username;
     std::string l_hostname;
@@ -55,11 +55,13 @@ struct path {
     locality p_locality;
     std::string p_path;
 
-    path(locality l, std::string path) : p_locality(std::move(l)),
-                                         p_path(std::move(path))
-    {}
+    path(locality l, std::string path)
+        : p_locality(std::move(l)), p_path(std::move(path))
+    {
+    }
 
-    path home() const {
+    path home() const
+    {
         return {
             this->p_locality,
             ".",
@@ -69,10 +71,10 @@ struct path {
 
 namespace tcp {
 
-Result<auto_fd, std::string> connect(const char *hostname,
-                                     const char *servname);
+Result<auto_fd, std::string> connect(const char* hostname,
+                                     const char* servname);
 
 }
-}
+}  // namespace network
 
 #endif

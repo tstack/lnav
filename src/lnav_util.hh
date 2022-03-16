@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -34,98 +34,116 @@
 #ifndef lnav_util_hh
 #define lnav_util_hh
 
-#include <time.h>
-#include <sys/time.h>
-#include <poll.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <sys/resource.h>
+#include <future>
+#include <numeric>
+#include <string>
+#include <type_traits>
+#include <vector>
 
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <time.h>
+
+#include "base/intern_string.hh"
+#include "base/result.h"
+#include "byte_array.hh"
+#include "config.h"
+#include "fmt/format.h"
+#include "optional.hpp"
+#include "ptimec.hh"
 #include "spookyhash/SpookyV2.h"
 
-#include <future>
-#include <string>
-#include <vector>
-#include <numeric>
-#include <type_traits>
-
-#include "ptimec.hh"
-#include "byte_array.hh"
-#include "optional.hpp"
-#include "base/result.h"
-#include "base/intern_string.hh"
-#include "fmt/format.h"
-
 #if SIZEOF_OFF_T == 8
-#define FORMAT_OFF_T    "%lld"
+#    define FORMAT_OFF_T "%lld"
 #elif SIZEOF_OFF_T == 4
-#define FORMAT_OFF_T    "%ld"
+#    define FORMAT_OFF_T "%ld"
 #else
-#error "off_t has unhandled size..."
+#    error "off_t has unhandled size..."
 #endif
 
 class hasher {
 public:
-    hasher() {
+    hasher()
+    {
         this->h_context.Init(0, 0);
     }
 
-    hasher &update(const std::string &str) {
+    hasher& update(const std::string& str)
+    {
         this->h_context.Update(str.data(), str.length());
 
         return *this;
     }
 
-    hasher &update(const string_fragment &str) {
+    hasher& update(const string_fragment& str)
+    {
         this->h_context.Update(str.data(), str.length());
 
         return *this;
     }
 
-    hasher &update(const char *bits, size_t len) {
+    hasher& update(const char* bits, size_t len)
+    {
         this->h_context.Update(bits, len);
 
         return *this;
     }
 
     template<typename T,
-    typename = std::enable_if<std::is_arithmetic<T>::value>>
-    hasher &update(T value) {
+             typename = std::enable_if<std::is_arithmetic<T>::value>>
+    hasher& update(T value)
+    {
         this->h_context.Update(&value, sizeof(value));
 
         return *this;
     }
 
-    std::string to_string() {
+    std::string to_string()
+    {
         byte_array<2, uint64> bits;
 
         this->h_context.Final(bits.out(0), bits.out(1));
         return bits.to_string();
     }
+
 private:
     SpookyHash h_context;
 };
 
 bool change_to_parent_dir();
 
-bool next_format(const char * const fmt[], int &index, int &locked_index);
+bool next_format(const char* const fmt[], int& index, int& locked_index);
 
 namespace std {
-    inline string to_string(const string &s) { return s; }
-    inline string to_string(const char *s) { return s; }
-}
-
-inline bool is_glob(const char *fn)
+inline string
+to_string(const string& s)
 {
-    return (strchr(fn, '*') != nullptr ||
-            strchr(fn, '?') != nullptr ||
-            strchr(fn, '[') != nullptr);
+    return s;
+}
+inline string
+to_string(const char* s)
+{
+    return s;
+}
+}  // namespace std
+
+inline bool
+is_glob(const char* fn)
+{
+    return (strchr(fn, '*') != nullptr || strchr(fn, '?') != nullptr
+            || strchr(fn, '[') != nullptr);
 };
 
-inline short pollfd_revents(const std::vector<struct pollfd> &pollfds, int fd) {
-    auto iter = std::find_if(pollfds.begin(), pollfds.end(), [fd](const auto& entry) {
-        return entry.fd == fd;
-    });
+inline short
+pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
+{
+    auto iter
+        = std::find_if(pollfds.begin(), pollfds.end(), [fd](const auto& entry) {
+              return entry.fd == fd;
+          });
 
     if (iter == pollfds.end()) {
         return 0;
@@ -134,16 +152,21 @@ inline short pollfd_revents(const std::vector<struct pollfd> &pollfds, int fd) {
     return iter->revents;
 }
 
-inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd,
-                         short events = POLLIN | POLLHUP)
+inline bool
+pollfd_ready(const std::vector<struct pollfd>& pollfds,
+             int fd,
+             short events = POLLIN | POLLHUP)
 {
-    return std::any_of(pollfds.begin(), pollfds.end(),
-                       [fd, events](const auto &entry) {
-                           return entry.fd == fd && entry.revents & events;
-                       });
+    return std::any_of(
+        pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {
+            return entry.fd == fd && entry.revents & events;
+        });
 };
 
-inline void rusagesub(const struct rusage &left, const struct rusage &right, struct rusage &diff_out)
+inline void
+rusagesub(const struct rusage& left,
+          const struct rusage& right,
+          struct rusage& diff_out)
 {
     timersub(&left.ru_utime, &right.ru_utime, &diff_out.ru_utime);
     timersub(&left.ru_stime, &right.ru_stime, &diff_out.ru_stime);
@@ -162,7 +185,10 @@ inline void rusagesub(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nivcsw = left.ru_nivcsw - right.ru_nivcsw;
 }
 
-inline void rusageadd(const struct rusage &left, const struct rusage &right, struct rusage &diff_out)
+inline void
+rusageadd(const struct rusage& left,
+          const struct rusage& right,
+          struct rusage& diff_out)
 {
     timeradd(&left.ru_utime, &right.ru_utime, &diff_out.ru_utime);
     timeradd(&left.ru_stime, &right.ru_stime, &diff_out.ru_stime);
@@ -181,18 +207,22 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
 }
 
-bool is_dev_null(const struct stat &st);
+bool is_dev_null(const struct stat& st);
 bool is_dev_null(int fd);
 
 template<typename A>
-struct final_action {   // slightly simplified
+struct final_action {  // slightly simplified
     A act;
-    final_action(A a) :act{a} {}
-    ~final_action() { act(); }
+    final_action(A a) : act{a} {}
+    ~final_action()
+    {
+        act();
+    }
 };
 
 template<typename A>
-final_action<A> finally(A act)   // deduce action type
+final_action<A>
+finally(A act)  // deduce action type
 {
     return final_action<A>{act};
 }

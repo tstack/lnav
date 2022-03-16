@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,7 +36,7 @@
 #include "shared_buffer.hh"
 
 enum data_token_t {
-    DT_INVALID       = -1,
+    DT_INVALID = -1,
 
     DT_QUOTED_STRING = 0,
     DT_URL,
@@ -91,7 +91,7 @@ enum data_token_t {
 
     DT_TERMINAL_MAX = DT_GARBAGE + 1,
 
-    DNT_KEY         = 50,
+    DNT_KEY = 50,
     DNT_PAIR,
     DNT_VALUE,
     DNT_ROW,
@@ -109,19 +109,24 @@ enum data_token_t {
 
 class data_scanner {
 public:
-    static const char *token2name(data_token_t token);
+    static const char* token2name(data_token_t token);
 
-    data_scanner(const std::string &line, size_t off = 0, size_t len = (size_t) -1)
-        : ds_line(line),
-          ds_pcre_input(ds_line.c_str(), off, len)
+    data_scanner(const std::string& line,
+                 size_t off = 0,
+                 size_t len = (size_t) -1)
+        : ds_line(line), ds_pcre_input(ds_line.c_str(), off, len)
     {
         if (!line.empty() && line[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;
         }
     };
 
-    data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = (size_t) -1)
-        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len == (size_t) -1 ? line.length() : len)
+    data_scanner(shared_buffer_ref& line,
+                 size_t off = 0,
+                 size_t len = (size_t) -1)
+        : ds_sbr(line),
+          ds_pcre_input(
+              line.get_data(), off, len == (size_t) -1 ? line.length() : len)
     {
         require(len == (size_t) -1 || len <= line.length());
         if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
@@ -129,12 +134,16 @@ public:
         }
     };
 
-    bool tokenize(pcre_context &pc, data_token_t &token_out);
-    bool tokenize2(pcre_context &pc, data_token_t &token_out);
+    bool tokenize(pcre_context& pc, data_token_t& token_out);
+    bool tokenize2(pcre_context& pc, data_token_t& token_out);
 
-    pcre_input &get_input() { return this->ds_pcre_input; };
+    pcre_input& get_input()
+    {
+        return this->ds_pcre_input;
+    };
 
-    void reset() {
+    void reset()
+    {
         this->ds_pcre_input.reset_next_offset();
     };
 

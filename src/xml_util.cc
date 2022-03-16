@@ -21,22 +21,22 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "fmtlib/fmt/format.h"
-
 #include "xml_util.hh"
+
+#include "config.h"
+#include "fmtlib/fmt/format.h"
 
 namespace lnav {
 namespace pugixml {
 
-std::string get_actual_path(const pugi::xml_node &node)
+std::string
+get_actual_path(const pugi::xml_node& node)
 {
     std::string retval;
     auto curr = node;
@@ -51,8 +51,8 @@ std::string get_actual_path(const pugi::xml_node &node)
             default: {
                 auto name = std::string(curr.name());
 
-                if (curr.previous_sibling(curr.name()) ||
-                    curr.next_sibling(curr.name())) {
+                if (curr.previous_sibling(curr.name())
+                    || curr.next_sibling(curr.name())) {
                     auto sibling = curr;
                     int index = 0;
 
@@ -77,5 +77,5 @@ std::string get_actual_path(const pugi::xml_node &node)
     return retval;
 }
 
-}
-}
+}  // namespace pugixml
+}  // namespace lnav

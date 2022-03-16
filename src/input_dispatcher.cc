@@ -21,44 +21,46 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file input_dispatcher.cc
  */
 
-#include "config.h"
+#include <array>
 
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <array>
+
+#include "config.h"
 
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/curses.h>
+#    include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
-#  include <ncursesw.h>
+#    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/curses.h>
+#    include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
-#  include <ncurses.h>
+#    include <ncurses.h>
 #elif defined HAVE_CURSES_H
-#  include <curses.h>
+#    include <curses.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
 #include "base/lnav_log.hh"
 #include "base/time_util.hh"
-#include "ww898/cp_utf8.hpp"
 #include "input_dispatcher.hh"
+#include "ww898/cp_utf8.hpp"
 
 using namespace ww898;
 
 template<typename A>
-static void to_key_seq(A &dst, const char *src)
+static void
+to_key_seq(A& dst, const char* src)
 {
     dst[0] = '\0';
     for (size_t lpc = 0; src[lpc]; lpc++) {
@@ -69,7 +71,8 @@ static void to_key_seq(A &dst, const char *src)
     }
 }
 
-void input_dispatcher::new_input(const struct timeval &current_time, int ch)
+void
+input_dispatcher::new_input(const struct timeval& current_time, int ch)
 {
     nonstd::optional<bool> handled = nonstd::nullopt;
     std::array<char, 32 * 3 + 1> keyseq{0};
@@ -89,13 +92,15 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                 } else if (strcmp("\x1b[<", this->id_escape_buffer) == 0) {
                     this->id_mouse_handler();
                     this->id_escape_index = 0;
-                } else if (this->id_escape_expected_size == -1 ||
-                           this->id_escape_index ==
-                           this->id_escape_expected_size) {
+                } else if (this->id_escape_expected_size == -1
+                           || this->id_escape_index
+                               == this->id_escape_expected_size)
+                {
                     to_key_seq(keyseq, this->id_escape_buffer);
                     switch (this->id_escape_matcher(keyseq.data())) {
                         case escape_match_t::NONE: {
-                            for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
+                            for (int lpc = 0; this->id_escape_buffer[lpc];
+                                 lpc++) {
                                 handled = this->id_key_handler(
                                     this->id_escape_buffer[lpc]);
                             }
@@ -110,15 +115,15 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                             break;
                     }
                 }
-                if (this->id_escape_expected_size != -1 &&
-                    this->id_escape_index == this->id_escape_expected_size) {
+                if (this->id_escape_expected_size != -1
+                    && this->id_escape_index == this->id_escape_expected_size)
+                {
                     this->id_escape_index = 0;
                 }
             } else {
                 auto seq_size = utf::utf8::char_size([ch]() {
-                    return std::make_pair(ch, 16);
-                })
-                    .unwrapOr(size_t{1});
+                                    return std::make_pair(ch, 16);
+                                }).unwrapOr(size_t{1});
 
                 if (seq_size == 1) {
                     snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);
@@ -135,10 +140,11 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
     }
 }
 
-void input_dispatcher::poll(const struct timeval &current_time)
+void
+input_dispatcher::poll(const struct timeval& current_time)
 {
     if (this->id_escape_index == 1) {
-        static const struct timeval escape_threshold = { 0, 10000 };
+        static const struct timeval escape_threshold = {0, 10000};
         struct timeval diff;
 
         timersub(&current_time, &this->id_escape_start_time, &diff);
@@ -149,8 +155,10 @@ void input_dispatcher::poll(const struct timeval &current_time)
     }
 }
 
-void input_dispatcher::reset_escape_buffer(int ch, const timeval &current_time,
-                                           ssize_t expected_size)
+void
+input_dispatcher::reset_escape_buffer(int ch,
+                                      const timeval& current_time,
+                                      ssize_t expected_size)
 {
     this->id_escape_index = 0;
     this->append_to_escape_buffer(ch);
@@ -158,7 +166,8 @@ void input_dispatcher::reset_escape_buffer(int ch, const timeval &current_time,
     this->id_escape_start_time = current_time;
 }
 
-void input_dispatcher::append_to_escape_buffer(int ch)
+void
+input_dispatcher::append_to_escape_buffer(int ch)
 {
     if (this->id_escape_index < (sizeof(this->id_escape_buffer) - 1)) {
         this->id_escape_buffer[this->id_escape_index++] = static_cast<char>(ch);

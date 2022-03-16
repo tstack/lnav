@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,9 +32,9 @@
 #ifndef log_accel_h
 #define log_accel_h
 
-#include <stdint.h>
-
 #include <cmath>
+
+#include <stdint.h>
 
 #include "base/lnav_log.hh"
 
@@ -42,9 +42,9 @@
  * Helper class for figuring out changes in the log message rate.
  */
 class log_accel {
-
 public:
-    /*< The direction of the message rate: steady, accelerating, or decelerating */
+    /*< The direction of the message rate: steady, accelerating, or decelerating
+     */
     enum direction_t {
         A_STEADY,
         A_DECEL,
@@ -55,7 +55,7 @@ public:
      * Add a time point that will be used to compute velocity and then
      * acceleration.  Points should be added in reverse order, from most
      * recent to oldest.
-     * 
+     *
      * @param  point The point in time.
      * @return       True if more points can be added.
      */
@@ -63,7 +63,7 @@ public:
 
     /**
      * Get the average acceleration based on the time points we've received.
-     * 
+     *
      * @return The average message acceleration.
      */
     double get_avg_accel() const;
@@ -78,7 +78,7 @@ public:
     direction_t get_direction() const;
 
 private:
-    /** 
+    /**
      * The amount of historical data to include in the average acceleration
      * computation.
      */

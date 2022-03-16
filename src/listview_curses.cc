@@ -21,40 +21,37 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file listview_curses.cc
  */
 
-#include "config.h"
-
-#include <time.h>
-#include <sys/time.h>
-
 #include <cmath>
 
-#include "base/lnav_log.hh"
 #include "listview_curses.hh"
+
+#include <sys/time.h>
+#include <time.h>
+
+#include "base/lnav_log.hh"
+#include "config.h"
 
 using namespace std;
 
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
-listview_curses::listview_curses()
-    : lv_scroll(noop_func{})
-{
-}
+listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 
-void listview_curses::reload_data()
+void
+listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
-        this->lv_top  = 0_vl;
+        this->lv_top = 0_vl;
         this->lv_left = 0;
-    }
-    else {
+    } else {
         if (this->lv_top >= this->get_inner_height()) {
             this->lv_top = max(0_vl, vis_line_t(this->get_inner_height() - 1));
         }
@@ -67,9 +64,10 @@ void listview_curses::reload_data()
     this->vc_needs_update = true;
 }
 
-bool listview_curses::handle_key(int ch)
+bool
+listview_curses::handle_key(int ch)
 {
-    for (auto &lv_input_delegate : this->lv_input_delegates) {
+    for (auto& lv_input_delegate : this->lv_input_delegates) {
         if (lv_input_delegate->list_input_handle_key(*this, ch)) {
             return true;
         }
@@ -78,69 +76,70 @@ bool listview_curses::handle_key(int ch)
     auto height = 0_vl;
 
     unsigned long width;
-    bool          retval = true;
+    bool retval = true;
 
     this->get_dimensions(height, width);
     switch (ch) {
-    case 'l':
-    case KEY_RIGHT:
-        this->shift_left(width / 2);
-        break;
+        case 'l':
+        case KEY_RIGHT:
+            this->shift_left(width / 2);
+            break;
 
-    case 'h':
-    case KEY_LEFT:
-        this->shift_left(-(width / 2));
-        break;
-    case 'L':
-    case KEY_SRIGHT:
-        this->shift_left(10);
-        break;
-    case 'H':
-    case KEY_SLEFT:
-        this->shift_left(-10);
-        break;
+        case 'h':
+        case KEY_LEFT:
+            this->shift_left(-(width / 2));
+            break;
+        case 'L':
+        case KEY_SRIGHT:
+            this->shift_left(10);
+            break;
+        case 'H':
+        case KEY_SLEFT:
+            this->shift_left(-10);
+            break;
 
-    case '\r':
-    case 'j':
-    case KEY_DOWN:
-        if (this->is_selectable()) {
-            this->shift_selection(1);
-        } else {
-            this->shift_top(1_vl);
-        }
-        break;
+        case '\r':
+        case 'j':
+        case KEY_DOWN:
+            if (this->is_selectable()) {
+                this->shift_selection(1);
+            } else {
+                this->shift_top(1_vl);
+            }
+            break;
 
-    case 'k':
-    case KEY_UP:
-        if (this->is_selectable()) {
-            this->shift_selection(-1);
-        } else {
-            this->shift_top(-1_vl);
-        }
-        break;
+        case 'k':
+        case KEY_UP:
+            if (this->is_selectable()) {
+                this->shift_selection(-1);
+            } else {
+                this->shift_top(-1_vl);
+            }
+            break;
 
-    case 'b':
-    case KEY_BACKSPACE:
-    case KEY_PPAGE:
-        this->shift_top(-(this->rows_available(this->lv_top, RD_UP) - 1_vl));
-        break;
+        case 'b':
+        case KEY_BACKSPACE:
+        case KEY_PPAGE:
+            this->shift_top(
+                -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+            break;
 
-    case ' ':
-    case KEY_NPAGE:
-        this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - 1_vl);
-        break;
+        case ' ':
+        case KEY_NPAGE:
+            this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - 1_vl);
+            break;
 
-    case 'g':
-    case KEY_HOME:
-        if (this->is_selectable()) {
-            this->set_selection(0_vl);
-        } else {
-            this->set_top(0_vl);
-        }
-        break;
+        case 'g':
+        case KEY_HOME:
+            if (this->is_selectable()) {
+                this->set_selection(0_vl);
+            } else {
+                this->set_top(0_vl);
+            }
+            break;
 
-    case 'G':
-    case KEY_END: {
+        case 'G':
+        case KEY_END: {
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());
 
@@ -148,42 +147,36 @@ bool listview_curses::handle_key(int ch)
                 this->set_selection(last_line);
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
-            }
-            else if (tail_bottom <= this->get_top()) {
+            } else if (tail_bottom <= this->get_top()) {
                 this->set_top(last_line);
-            }
-            else {
+            } else {
                 this->set_top(tail_bottom);
             }
-        }
-        break;
+        } break;
 
-    case ']':
-        {
-            double tenth = ((double)this->get_inner_height()) / 10.0;
+        case ']': {
+            double tenth = ((double) this->get_inner_height()) / 10.0;
 
-            this->shift_top(vis_line_t((int)tenth));
-        }
-        break;
+            this->shift_top(vis_line_t((int) tenth));
+        } break;
 
-    case '[':
-    case 'B':
-        {
-            double tenth = ((double)this->get_inner_height()) / 10.0;
+        case '[':
+        case 'B': {
+            double tenth = ((double) this->get_inner_height()) / 10.0;
 
-            this->shift_top(vis_line_t((int)-tenth));
-        }
-        break;
+            this->shift_top(vis_line_t((int) -tenth));
+        } break;
 
-    default:
-        retval = false;
-        break;
+        default:
+            retval = false;
+            break;
     }
 
     return retval;
 }
 
-void listview_curses::do_update()
+void
+listview_curses::do_update()
 {
     if (this->lv_window == nullptr || this->lv_height == 0) {
         view_curses::do_update();
@@ -191,12 +184,12 @@ void listview_curses::do_update()
     }
 
     if (this->vc_needs_update) {
-        view_colors &vc = view_colors::singleton();
-        vis_line_t        height, row;
-        attr_line_t       overlay_line;
+        view_colors& vc = view_colors::singleton();
+        vis_line_t height, row;
+        attr_line_t overlay_line;
         struct line_range lr;
-        unsigned long     width, wrap_width;
-        size_t            row_count;
+        unsigned long width, wrap_width;
+        size_t row_count;
         int y = this->lv_y, bottom;
         attr_t role_attrs = vc.attrs_for_role(this->vc_default_role);
 
@@ -206,42 +199,55 @@ void listview_curses::do_update()
             width = std::min((unsigned long) this->vc_width, width);
         }
 
-        wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
+        wrap_width = width
+            - (this->lv_word_wrap            ? 1
+                   : this->lv_show_scrollbar ? 1
+                                             : 0);
 
         row_count = this->get_inner_height();
-        row   = this->lv_top;
+        row = this->lv_top;
         bottom = y + height;
-        vector<attr_line_t> rows(min((size_t) height, row_count - (int) this->lv_top));
+        vector<attr_line_t> rows(
+            min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
         while (y < bottom) {
             lr.lr_start = this->lv_left;
-            lr.lr_end   = this->lv_left + wrap_width;
-            if (this->lv_overlay_source != nullptr &&
-                this->lv_overlay_source->list_value_for_overlay(
+            lr.lr_end = this->lv_left + wrap_width;
+            if (this->lv_overlay_source != nullptr
+                && this->lv_overlay_source->list_value_for_overlay(
                     *this,
-                    y - this->lv_y, bottom - this->lv_y,
+                    y - this->lv_y,
+                    bottom - this->lv_y,
                     row,
-                    overlay_line)) {
+                    overlay_line))
+            {
                 mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
-            }
-            else if (row < (int)row_count) {
-                attr_line_t &al = rows[row - this->lv_top];
+            } else if (row < (int) row_count) {
+                attr_line_t& al = rows[row - this->lv_top];
 
                 do {
-                    mvwattrline(this->lv_window, y, this->lv_x, al, lr,
+                    mvwattrline(this->lv_window,
+                                y,
+                                this->lv_x,
+                                al,
+                                lr,
                                 this->vc_default_role);
                     if (this->lv_word_wrap) {
-                        mvwhline(this->lv_window, y, this->lv_x + wrap_width, ' ', width - wrap_width);
+                        mvwhline(this->lv_window,
+                                 y,
+                                 this->lv_x + wrap_width,
+                                 ' ',
+                                 width - wrap_width);
                     }
                     lr.lr_start += wrap_width;
                     lr.lr_end += wrap_width;
                     ++y;
-                } while (this->lv_word_wrap && y < bottom && lr.lr_start < (int)al.length());
+                } while (this->lv_word_wrap && y < bottom
+                         && lr.lr_start < (int) al.length());
                 ++row;
-            }
-            else {
+            } else {
                 wattron(this->lv_window, role_attrs);
                 mvwhline(this->lv_window, y, this->lv_x, ' ', width);
                 wattroff(this->lv_window, role_attrs);
@@ -252,20 +258,22 @@ void listview_curses::do_update()
         if (this->lv_show_scrollbar) {
             double progress = 1.0;
             double coverage = 1.0;
-            double adjusted_height = (double)row_count / (double)height;
+            double adjusted_height = (double) row_count / (double) height;
             vis_line_t lines;
 
             if (row_count > 0) {
-                progress = (double)this->lv_top / (double)row_count;
-                coverage = (double)height / (double)row_count;
+                progress = (double) this->lv_top / (double) row_count;
+                coverage = (double) height / (double) row_count;
             }
 
-            y = this->lv_y + (int)(progress * (double)height);
-            lines = vis_line_t(y + min((int) height, (int)(coverage * (double)height)));
+            y = this->lv_y + (int) (progress * (double) height);
+            lines = vis_line_t(
+                y + min((int) height, (int) (coverage * (double) height)));
 
             for (unsigned int gutter_y = this->lv_y;
                  gutter_y < (this->lv_y + height);
-                 gutter_y++) {
+                 gutter_y++)
+            {
                 int range_start = 0, range_end;
                 view_colors::role_t role = this->vc_default_role;
                 view_colors::role_t bar_role = view_colors::VCR_SCROLLBAR;
@@ -273,13 +281,15 @@ void listview_curses::do_update()
                 chtype ch = ACS_VLINE;
 
                 if (row_count > 0) {
-                    range_start = (double)(gutter_y - this->lv_y) * adjusted_height;
+                    range_start
+                        = (double) (gutter_y - this->lv_y) * adjusted_height;
                 }
                 range_end = range_start + adjusted_height;
 
                 this->lv_gutter_source->listview_gutter_value_for_range(
                     *this, range_start, range_end, ch, role, bar_role);
-                if (gutter_y >= (unsigned int)y && gutter_y <= (unsigned int)lines) {
+                if (gutter_y >= (unsigned int) y
+                    && gutter_y <= (unsigned int) lines) {
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
@@ -335,12 +345,12 @@ void listview_curses::do_update()
 #endif
 }
 
-void listview_curses::shift_selection(int offset)
+void
+listview_curses::shift_selection(int offset)
 {
     vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
 
-    if (new_selection >= 0_vl &&
-        new_selection < this->get_inner_height()) {
+    if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
         this->set_selection(new_selection);
         this->scroll_selection_into_view();
     } else if (!alerter::singleton().chime()) {
@@ -349,12 +359,14 @@ void listview_curses::shift_selection(int offset)
     }
 }
 
-static int scroll_polarity(mouse_button_t button)
+static int
+scroll_polarity(mouse_button_t button)
 {
     return button == mouse_button_t::BUTTON_SCROLL_UP ? -1 : 1;
 }
 
-bool listview_curses::handle_mouse(mouse_event &me)
+bool
+listview_curses::handle_mouse(mouse_event& me)
 {
     vis_line_t inner_height, height;
     struct timeval diff;
@@ -370,14 +382,13 @@ bool listview_curses::handle_mouse(mouse_event &me)
             if (diff.tv_sec > 0 || diff.tv_usec > 80000) {
                 this->lv_scroll_accel = 1;
                 this->lv_scroll_velo = 0;
-            }
-            else {
+            } else {
                 this->lv_scroll_accel += 2;
             }
             this->lv_scroll_velo += this->lv_scroll_accel;
 
-            this->shift_top(vis_line_t(scroll_polarity(me.me_button) *
-                                       this->lv_scroll_velo),
+            this->shift_top(vis_line_t(scroll_polarity(me.me_button)
+                                       * this->lv_scroll_velo),
                             true);
             break;
         default:
@@ -385,9 +396,9 @@ bool listview_curses::handle_mouse(mouse_event &me)
     }
     this->lv_mouse_time = me.me_time;
 
-    if (me.me_button != mouse_button_t::BUTTON_LEFT ||
-        inner_height == 0 ||
-        (this->lv_mouse_mode != LV_MODE_DRAG && me.me_x < (int)(width - 2))) {
+    if (me.me_button != mouse_button_t::BUTTON_LEFT || inner_height == 0
+        || (this->lv_mouse_mode != LV_MODE_DRAG && me.me_x < (int) (width - 2)))
+    {
         return false;
     }
 
@@ -400,47 +411,45 @@ bool listview_curses::handle_mouse(mouse_event &me)
     int scroll_top, scroll_bottom, shift_amount = 0, new_top = 0;
     double top_pct, bot_pct, pct;
 
-    top_pct = (double)this->get_top() / (double)inner_height;
-    bot_pct = (double)this->get_bottom() / (double)inner_height;
-    scroll_top = (this->get_y() + (int)(top_pct * (double)height));
-    scroll_bottom = (this->get_y() + (int)(bot_pct * (double)height));
+    top_pct = (double) this->get_top() / (double) inner_height;
+    bot_pct = (double) this->get_bottom() / (double) inner_height;
+    scroll_top = (this->get_y() + (int) (top_pct * (double) height));
+    scroll_bottom = (this->get_y() + (int) (bot_pct * (double) height));
 
     if (this->lv_mouse_mode == LV_MODE_NONE) {
         if ((scroll_top - 1) <= me.me_y && me.me_y <= (scroll_bottom + 1)) {
-            this->lv_mouse_mode        = LV_MODE_DRAG;
+            this->lv_mouse_mode = LV_MODE_DRAG;
             this->lv_mouse_y = me.me_y - scroll_top;
-        }
-        else if (me.me_y < scroll_top) {
+        } else if (me.me_y < scroll_top) {
             this->lv_mouse_mode = LV_MODE_UP;
-        }
-        else {
+        } else {
             this->lv_mouse_mode = LV_MODE_DOWN;
         }
     }
 
     switch (this->lv_mouse_mode) {
-    case LV_MODE_NONE:
-        require(0);
-        break;
+        case LV_MODE_NONE:
+            require(0);
+            break;
 
-    case LV_MODE_UP:
-        if (me.me_y < scroll_top) {
-            shift_amount = -1 * height;
-        }
-        break;
+        case LV_MODE_UP:
+            if (me.me_y < scroll_top) {
+                shift_amount = -1 * height;
+            }
+            break;
 
-    case LV_MODE_DOWN:
-        if (me.me_y > scroll_bottom) {
-            shift_amount = height;
-        }
-        break;
+        case LV_MODE_DOWN:
+            if (me.me_y > scroll_bottom) {
+                shift_amount = height;
+            }
+            break;
 
-    case LV_MODE_DRAG:
-        pct     = (double)inner_height / (double)height;
-        new_top = me.me_y - this->get_y() - this->lv_mouse_y;
-        new_top = (int)floor(((double)new_top * pct) + 0.5);
-        this->set_top(vis_line_t(new_top));
-        break;
+        case LV_MODE_DRAG:
+            pct = (double) inner_height / (double) height;
+            new_top = me.me_y - this->get_y() - this->lv_mouse_y;
+            new_top = (int) floor(((double) new_top * pct) + 0.5);
+            this->set_top(vis_line_t(new_top));
+            break;
     }
 
     if (shift_amount != 0) {
@@ -450,7 +459,8 @@ bool listview_curses::handle_mouse(mouse_event &me)
     return true;
 }
 
-void listview_curses::set_top(vis_line_t top, bool suppress_flash)
+void
+listview_curses::set_top(vis_line_t top, bool suppress_flash)
 {
     auto inner_height = this->get_inner_height();
 
@@ -461,8 +471,7 @@ void listview_curses::set_top(vis_line_t top, bool suppress_flash)
         if (suppress_flash == false) {
             alerter::singleton().chime();
         }
-    }
-    else if (this->lv_top != top) {
+    } else if (this->lv_top != top) {
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < top) {

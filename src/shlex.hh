@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,11 +32,11 @@
 #ifndef LNAV_SHLEX_HH_H
 #define LNAV_SHLEX_HH_H
 
-#include <pwd.h>
-
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include <pwd.h>
 
 #include "base/opt_util.hh"
 #include "pcrepp/pcrepp.hh"
@@ -57,29 +57,27 @@ enum class shlex_token_t {
 
 class shlex {
 public:
-    shlex(const char *str, size_t len)
-            : s_str(str),
-              s_len(len) {
-    };
+    shlex(const char* str, size_t len) : s_str(str), s_len(len){};
 
-    explicit shlex(const string_fragment &sf)
-        : s_str(sf.data()), s_len(sf.length()) {
+    explicit shlex(const string_fragment& sf)
+        : s_str(sf.data()), s_len(sf.length())
+    {
     }
 
-    explicit shlex(const std::string &str)
-            : s_str(str.c_str()),
-              s_len(str.size()) {
-    };
+    explicit shlex(const std::string& str)
+        : s_str(str.c_str()), s_len(str.size()){};
 
-    shlex &with_ignore_quotes(bool val) {
+    shlex& with_ignore_quotes(bool val)
+    {
         this->s_ignore_quotes = val;
         return *this;
     }
 
-    bool tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out);
+    bool tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out);
 
-    template <typename Resolver = scoped_resolver>
-    bool eval(std::string &result, const Resolver &vars) {
+    template<typename Resolver = scoped_resolver>
+    bool eval(std::string& result, const Resolver& vars)
+    {
         result.clear();
 
         pcre_context::capture_t cap;
@@ -100,14 +98,15 @@ public:
                 case shlex_token_t::ST_VARIABLE_REF:
                 case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra], cap.length() - 1 - extra * 2);
-                    std::map<std::string, std::string>::const_iterator local_var;
-                    const char *var_value = getenv(var_name.c_str());
+                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
+                                         cap.length() - 1 - extra * 2);
+                    std::map<std::string, std::string>::const_iterator
+                        local_var;
+                    const char* var_value = getenv(var_name.c_str());
 
                     if ((local_var = vars.find(var_name)) != vars.end()) {
                         result.append(local_var->second);
-                    }
-                    else if (var_value != nullptr) {
+                    } else if (var_value != nullptr) {
                         result.append(var_value);
                     }
                     break;
@@ -134,8 +133,9 @@ public:
         return true;
     };
 
-    template <typename Resolver>
-    bool split(std::vector<std::string> &result, const Resolver &vars) {
+    template<typename Resolver>
+    bool split(std::vector<std::string>& result, const Resolver& vars)
+    {
         result.clear();
 
         pcre_context::capture_t cap;
@@ -151,7 +151,8 @@ public:
                 result.emplace_back("");
                 start_new = false;
             }
-            result.back().append(&this->s_str[last_index], cap.c_begin - last_index);
+            result.back().append(&this->s_str[last_index],
+                                 cap.c_begin - last_index);
             switch (token) {
                 case shlex_token_t::ST_ERROR:
                     return false;
@@ -164,14 +165,15 @@ public:
                 case shlex_token_t::ST_VARIABLE_REF:
                 case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra], cap.length() - 1 - extra * 2);
-                    std::map<std::string, std::string>::const_iterator local_var;
-                    const char *var_value = getenv(var_name.c_str());
+                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
+                                         cap.length() - 1 - extra * 2);
+                    std::map<std::string, std::string>::const_iterator
+                        local_var;
+                    const char* var_value = getenv(var_name.c_str());
 
                     if ((local_var = vars.find(var_name)) != vars.end()) {
                         result.back().append(local_var->second);
-                    }
-                    else if (var_value != nullptr) {
+                    } else if (var_value != nullptr) {
                         result.back().append(var_value);
                     }
                     break;
@@ -189,20 +191,24 @@ public:
             if (start_new || result.empty()) {
                 result.emplace_back("");
             }
-            result.back().append(&this->s_str[last_index], this->s_len - last_index);
+            result.back().append(&this->s_str[last_index],
+                                 this->s_len - last_index);
         }
 
         return true;
     }
 
-    void reset() {
+    void reset()
+    {
         this->s_index = 0;
         this->s_state = state_t::STATE_NORMAL;
     };
 
-    void scan_variable_ref(pcre_context::capture_t &cap_out, shlex_token_t &token_out);
+    void scan_variable_ref(pcre_context::capture_t& cap_out,
+                           shlex_token_t& token_out);
 
-    void resolve_home_dir(std::string& result, const pcre_context::capture_t cap) const;
+    void resolve_home_dir(std::string& result,
+                          const pcre_context::capture_t cap) const;
 
     enum class state_t {
         STATE_NORMAL,
@@ -210,11 +216,11 @@ public:
         STATE_IN_SINGLE_QUOTE,
     };
 
-    const char *s_str;
+    const char* s_str;
     ssize_t s_len;
     bool s_ignore_quotes{false};
     ssize_t s_index{0};
     state_t s_state{state_t::STATE_NORMAL};
 };
 
-#endif //LNAV_SHLEX_HH_H
+#endif  // LNAV_SHLEX_HH_H

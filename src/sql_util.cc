@@ -21,34 +21,34 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file sql_util.cc
  */
 
-#include "config.h"
+#include <algorithm>
+#include <regex>
+#include <vector>
+
+#include "sql_util.hh"
 
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <regex>
-#include <algorithm>
-#include <vector>
-
 #include "auto_mem.hh"
-#include "sql_util.hh"
-#include "sql_help.hh"
 #include "base/injector.hh"
-#include "base/string_util.hh"
 #include "base/lnav_log.hh"
+#include "base/string_util.hh"
 #include "base/time_util.hh"
+#include "bound_tags.hh"
+#include "config.h"
 #include "pcrepp/pcrepp.hh"
 #include "readline_context.hh"
-#include "bound_tags.hh"
+#include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 
 using namespace std;
@@ -56,7 +56,7 @@ using namespace std;
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
  */
-const char *sql_keywords[] = {
+const char* sql_keywords[] = {
     "ABORT",
     "ACTION",
     "ADD",
@@ -204,7 +204,7 @@ const char *sql_keywords[] = {
     "WITHOUT",
 };
 
-const char *sql_function_names[] = {
+const char* sql_function_names[] = {
     /* http://www.sqlite.org/lang_aggfunc.html */
     "avg(",
     "count(",
@@ -257,19 +257,16 @@ const char *sql_function_names[] = {
     "julianday(",
     "strftime(",
 
-    nullptr
-};
+    nullptr};
 
-multimap<std::string, help_text *> sqlite_function_help;
+multimap<std::string, help_text*> sqlite_function_help;
 
-static int handle_db_list(void *ptr,
-                          int ncols,
-                          char **colvalues,
-                          char **colnames)
+static int
+handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks *smc;
+    struct sqlite_metadata_callbacks* smc;
 
-    smc = (struct sqlite_metadata_callbacks *)ptr;
+    smc = (struct sqlite_metadata_callbacks*) ptr;
 
     smc->smc_db_list[colvalues[1]] = std::vector<std::string>();
     if (!smc->smc_database_list) {
@@ -280,29 +277,26 @@ static int handle_db_list(void *ptr,
 }
 
 struct table_list_data {
-    struct sqlite_metadata_callbacks *tld_callbacks;
-    db_table_map_t::iterator *        tld_iter;
+    struct sqlite_metadata_callbacks* tld_callbacks;
+    db_table_map_t::iterator* tld_iter;
 };
 
-static int handle_table_list(void *ptr,
-                             int ncols,
-                             char **colvalues,
-                             char **colnames)
+static int
+handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct table_list_data *tld = (struct table_list_data *)ptr;
+    struct table_list_data* tld = (struct table_list_data*) ptr;
 
     (*tld->tld_iter)->second.emplace_back(colvalues[0]);
     if (!tld->tld_callbacks->smc_table_list) {
         return 0;
     }
 
-    return tld->tld_callbacks->smc_table_list(tld->tld_callbacks,
-                                              ncols,
-                                              colvalues,
-                                              colnames);
+    return tld->tld_callbacks->smc_table_list(
+        tld->tld_callbacks, ncols, colvalues, colnames);
 }
 
-int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
+int
+walk_sqlite_metadata(sqlite3* db, struct sqlite_metadata_callbacks& smc)
 {
     auto_mem<char, sqlite3_free> errmsg;
     int retval;
@@ -319,31 +313,24 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
         }
     }
 
-    retval = sqlite3_exec(db,
-                          "pragma database_list",
-                          handle_db_list,
-                          &smc,
-                          errmsg.out());
+    retval = sqlite3_exec(
+        db, "pragma database_list", handle_db_list, &smc, errmsg.out());
     if (retval != SQLITE_OK) {
         log_error("could not get DB list -- %s", errmsg.in());
         return retval;
     }
 
-    for (auto iter = smc.smc_db_list.begin();
-         iter != smc.smc_db_list.end();
+    for (auto iter = smc.smc_db_list.begin(); iter != smc.smc_db_list.end();
          ++iter) {
-        struct table_list_data       tld = { &smc, &iter };
+        struct table_list_data tld = {&smc, &iter};
         auto_mem<char, sqlite3_free> query;
 
-        query = sqlite3_mprintf("SELECT name,sql FROM %Q.sqlite_master "
-                                "WHERE type in ('table', 'view')",
-                                iter->first.c_str());
+        query = sqlite3_mprintf(
+            "SELECT name,sql FROM %Q.sqlite_master "
+            "WHERE type in ('table', 'view')",
+            iter->first.c_str());
 
-        retval = sqlite3_exec(db,
-                              query,
-                              handle_table_list,
-                              &tld,
-                              errmsg.out());
+        retval = sqlite3_exec(db, query, handle_table_list, &tld, errmsg.out());
         if (retval != SQLITE_OK) {
             log_error("could not get table list -- %s", errmsg.in());
             return retval;
@@ -351,34 +338,30 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
 
         for (auto table_iter = iter->second.begin();
              table_iter != iter->second.end();
-             ++table_iter) {
+             ++table_iter)
+        {
             auto_mem<char, sqlite3_free> table_query;
-            std::string &table_name = *table_iter;
+            std::string& table_name = *table_iter;
 
-            table_query = sqlite3_mprintf(
-                "pragma %Q.table_xinfo(%Q)",
-                iter->first.c_str(),
-                table_name.c_str());
+            table_query = sqlite3_mprintf("pragma %Q.table_xinfo(%Q)",
+                                          iter->first.c_str(),
+                                          table_name.c_str());
             if (table_query == nullptr) {
                 return SQLITE_NOMEM;
             }
 
             if (smc.smc_table_info) {
-                retval = sqlite3_exec(db,
-                                      table_query,
-                                      smc.smc_table_info,
-                                      &smc,
-                                      errmsg.out());
+                retval = sqlite3_exec(
+                    db, table_query, smc.smc_table_info, &smc, errmsg.out());
                 if (retval != SQLITE_OK) {
                     log_error("could not get table info -- %s", errmsg.in());
                     return retval;
                 }
             }
 
-            table_query = sqlite3_mprintf(
-                "pragma %Q.foreign_key_list(%Q)",
-                iter->first.c_str(),
-                table_name.c_str());
+            table_query = sqlite3_mprintf("pragma %Q.foreign_key_list(%Q)",
+                                          iter->first.c_str(),
+                                          table_name.c_str());
             if (table_query == nullptr) {
                 return SQLITE_NOMEM;
             }
@@ -401,38 +384,32 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
     return retval;
 }
 
-static int schema_collation_list(void *ptr,
-                                 int ncols,
-                                 char **colvalues,
-                                 char **colnames)
+static int
+schema_collation_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     return 0;
 }
 
-static int schema_db_list(void *ptr,
-                          int ncols,
-                          char **colvalues,
-                          char **colnames)
+static int
+schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks *smc = (sqlite_metadata_callbacks *)ptr;
-    string &schema_out = *((string *)smc->smc_userdata);
+    struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
+    string& schema_out = *((string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> attach_sql;
 
-    attach_sql = sqlite3_mprintf("ATTACH DATABASE %Q AS %Q;\n",
-        colvalues[2], colvalues[1]);
+    attach_sql = sqlite3_mprintf(
+        "ATTACH DATABASE %Q AS %Q;\n", colvalues[2], colvalues[1]);
 
     schema_out += attach_sql;
 
     return 0;
 }
 
-static int schema_table_list(void *ptr,
-                             int ncols,
-                             char **colvalues,
-                             char **colnames)
+static int
+schema_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks *smc = (sqlite_metadata_callbacks *)ptr;
-    string &schema_out = *((string *)smc->smc_userdata);
+    struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
+    string& schema_out = *((string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> create_sql;
 
     create_sql = sqlite3_mprintf("%s;\n", colvalues[1]);
@@ -442,58 +419,54 @@ static int schema_table_list(void *ptr,
     return 0;
 }
 
-static int schema_table_info(void *ptr,
-                             int ncols,
-                             char **colvalues,
-                             char **colnames)
+static int
+schema_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     return 0;
 }
 
-static int schema_foreign_key_list(void *ptr,
-                                   int ncols,
-                                   char **colvalues,
-                                   char **colnames)
+static int
+schema_foreign_key_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     return 0;
 }
 
-void dump_sqlite_schema(sqlite3 *db, std::string &schema_out)
+void
+dump_sqlite_schema(sqlite3* db, std::string& schema_out)
 {
-    struct sqlite_metadata_callbacks schema_sql_meta_callbacks = {
-        schema_collation_list,
-        schema_db_list,
-        schema_table_list,
-        schema_table_info,
-        schema_foreign_key_list,
-        &schema_out,
-        {}
-    };
+    struct sqlite_metadata_callbacks schema_sql_meta_callbacks
+        = {schema_collation_list,
+           schema_db_list,
+           schema_table_list,
+           schema_table_info,
+           schema_foreign_key_list,
+           &schema_out,
+           {}};
 
     walk_sqlite_metadata(db, schema_sql_meta_callbacks);
 }
 
-void attach_sqlite_db(sqlite3 *db, const std::string &filename)
+void
+attach_sqlite_db(sqlite3* db, const std::string& filename)
 {
     static const std::regex db_name_converter("[^\\w]");
 
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
-    if (sqlite3_prepare_v2(db,
-                           "ATTACH DATABASE ? as ?",
-                           -1,
-                           stmt.out(),
-                           NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, "ATTACH DATABASE ? as ?", -1, stmt.out(), NULL)
+        != SQLITE_OK)
+    {
         log_error("could not prepare DB attach statement -- %s",
-            sqlite3_errmsg(db));
+                  sqlite3_errmsg(db));
         return;
     }
 
-    if (sqlite3_bind_text(stmt.in(), 1,
-                          filename.c_str(), filename.length(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(
+            stmt.in(), 1, filename.c_str(), filename.length(), SQLITE_TRANSIENT)
+        != SQLITE_OK)
+    {
         log_error("could not bind DB attach statement -- %s",
-            sqlite3_errmsg(db));
+                  sqlite3_errmsg(db));
         return;
     }
 
@@ -502,30 +475,31 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
 
     if (base_start == string::npos) {
         db_name = filename;
-    }
-    else {
+    } else {
         db_name = filename.substr(base_start + 1);
     }
 
     db_name = std::regex_replace(db_name, db_name_converter, "_");
 
-    if (sqlite3_bind_text(stmt.in(), 2,
-                          db_name.c_str(), db_name.length(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(
+            stmt.in(), 2, db_name.c_str(), db_name.length(), SQLITE_TRANSIENT)
+        != SQLITE_OK)
+    {
         log_error("could not bind DB attach statement -- %s",
-            sqlite3_errmsg(db));
+                  sqlite3_errmsg(db));
         return;
     }
 
     if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
         log_error("could not execute DB attach statement -- %s",
-            sqlite3_errmsg(db));
+                  sqlite3_errmsg(db));
         return;
     }
 }
 
-ssize_t sql_strftime(char *buffer, size_t buffer_size, lnav::time64_t tim, int millis,
-    char sep)
+ssize_t
+sql_strftime(
+    char* buffer, size_t buffer_size, lnav::time64_t tim, int millis, char sep)
 {
     struct tm gmtm;
     int year, month, index = 0;
@@ -534,54 +508,55 @@ ssize_t sql_strftime(char *buffer, size_t buffer_size, lnav::time64_t tim, int m
     year = gmtm.tm_year + 1900;
     month = gmtm.tm_mon + 1;
     buffer[index++] = '0' + ((year / 1000) % 10);
-    buffer[index++] = '0' + ((year /  100) % 10);
-    buffer[index++] = '0' + ((year /   10) % 10);
-    buffer[index++] = '0' + ((year /    1) % 10);
+    buffer[index++] = '0' + ((year / 100) % 10);
+    buffer[index++] = '0' + ((year / 10) % 10);
+    buffer[index++] = '0' + ((year / 1) % 10);
     buffer[index++] = '-';
     buffer[index++] = '0' + ((month / 10) % 10);
-    buffer[index++] = '0' + ((month /  1) % 10);
+    buffer[index++] = '0' + ((month / 1) % 10);
     buffer[index++] = '-';
     buffer[index++] = '0' + ((gmtm.tm_mday / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_mday /  1) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_mday / 1) % 10);
     buffer[index++] = sep;
     buffer[index++] = '0' + ((gmtm.tm_hour / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_hour /  1) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_hour / 1) % 10);
     buffer[index++] = ':';
     buffer[index++] = '0' + ((gmtm.tm_min / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_min /  1) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_min / 1) % 10);
     buffer[index++] = ':';
     buffer[index++] = '0' + ((gmtm.tm_sec / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_sec /  1) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_sec / 1) % 10);
     buffer[index++] = '.';
     buffer[index++] = '0' + ((millis / 100) % 10);
-    buffer[index++] = '0' + ((millis /  10) % 10);
-    buffer[index++] = '0' + ((millis /   1) % 10);
+    buffer[index++] = '0' + ((millis / 10) % 10);
+    buffer[index++] = '0' + ((millis / 1) % 10);
     buffer[index] = '\0';
 
     return index;
 }
 
-static void sqlite_logger(void *dummy, int code, const char *msg)
+static void
+sqlite_logger(void* dummy, int code, const char* msg)
 {
     lnav_log_level_t level;
 
     switch (code) {
-    case SQLITE_OK:
-        level = lnav_log_level_t::DEBUG;
-        break;
+        case SQLITE_OK:
+            level = lnav_log_level_t::DEBUG;
+            break;
 #ifdef SQLITE_NOTICE
-    case SQLITE_NOTICE:
-        level = lnav_log_level_t::INFO;
-        break;
+        case SQLITE_NOTICE:
+            level = lnav_log_level_t::INFO;
+            break;
 #endif
 #ifdef SQLITE_WARNING
-    case SQLITE_WARNING:
-        level = lnav_log_level_t::WARNING;
-        break;
+        case SQLITE_WARNING:
+            level = lnav_log_level_t::WARNING;
+            break;
 #endif
-    default:
-        level = lnav_log_level_t::ERROR;
-        break;
+        default:
+            level = lnav_log_level_t::ERROR;
+            break;
     }
 
     log_msg(level, __FILE__, __LINE__, "(%d) %s", code, msg);
@@ -589,14 +564,16 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
     ensure(code != 21);
 }
 
-void sql_install_logger()
+void
+sql_install_logger()
 {
 #ifdef SQLITE_CONFIG_LOG
     sqlite3_config(SQLITE_CONFIG_LOG, sqlite_logger, NULL);
 #endif
 }
 
-bool sql_ident_needs_quote(const char *ident)
+bool
+sql_ident_needs_quote(const char* ident)
 {
     for (int lpc = 0; ident[lpc]; lpc++) {
         if (!isalnum(ident[lpc]) && ident[lpc] != '_') {
@@ -607,15 +584,17 @@ bool sql_ident_needs_quote(const char *ident)
     return false;
 }
 
-char *sql_quote_ident(const char *ident)
+char*
+sql_quote_ident(const char* ident)
 {
     bool needs_quote = false;
     size_t quote_count = 0, alloc_size;
-    char *retval;
+    char* retval;
 
     for (int lpc = 0; ident[lpc]; lpc++) {
-        if ((lpc == 0 && isdigit(ident[lpc])) ||
-                (!isalnum(ident[lpc]) && ident[lpc] != '_')) {
+        if ((lpc == 0 && isdigit(ident[lpc]))
+            || (!isalnum(ident[lpc]) && ident[lpc] != '_'))
+        {
             needs_quote = true;
         }
         if (ident[lpc] == '"') {
@@ -623,12 +602,11 @@ char *sql_quote_ident(const char *ident)
         }
     }
 
-    alloc_size = strlen(ident) + quote_count * 2 + (needs_quote ? 2: 0) + 1;
-    if ((retval = (char *)sqlite3_malloc(alloc_size)) == NULL) {
+    alloc_size = strlen(ident) + quote_count * 2 + (needs_quote ? 2 : 0) + 1;
+    if ((retval = (char*) sqlite3_malloc(alloc_size)) == NULL) {
         retval = NULL;
-    }
-    else {
-        char *curr = retval;
+    } else {
+        char* curr = retval;
 
         if (needs_quote) {
             curr[0] = '"';
@@ -636,12 +614,12 @@ char *sql_quote_ident(const char *ident)
         }
         for (size_t lpc = 0; ident[lpc] != '\0'; lpc++) {
             switch (ident[lpc]) {
-            case '"':
-                curr[0] = '"';
-                curr += 1;
-            default:
-                curr[0] = ident[lpc];
-                break;
+                case '"':
+                    curr[0] = '"';
+                    curr += 1;
+                default:
+                    curr[0] = ident[lpc];
+                    break;
             }
             curr += 1;
         }
@@ -656,7 +634,8 @@ char *sql_quote_ident(const char *ident)
     return retval;
 }
 
-string sql_safe_ident(const string_fragment &ident)
+string
+sql_safe_ident(const string_fragment& ident)
 {
     string retval = to_string(ident);
 
@@ -673,40 +652,43 @@ string sql_safe_ident(const string_fragment &ident)
     return retval;
 }
 
-void sql_compile_script(sqlite3 *db,
-                        const char *src_name,
-                        const char *script_orig,
-                        std::vector<sqlite3_stmt *> &stmts,
-                        std::vector<std::string> &errors) {
-    const char *script = script_orig;
+void
+sql_compile_script(sqlite3* db,
+                   const char* src_name,
+                   const char* script_orig,
+                   std::vector<sqlite3_stmt*>& stmts,
+                   std::vector<std::string>& errors)
+{
+    const char* script = script_orig;
 
     while (script != NULL && script[0]) {
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int line_number = 1;
-        const char *tail;
+        const char* tail;
         int retcode;
 
         while (isspace(*script) && script[0]) {
             script += 1;
         }
-        for (const char *ch = script_orig; ch < script && ch[0]; ch++) {
+        for (const char* ch = script_orig; ch < script && ch[0]; ch++) {
             if (*ch == '\n') {
                 line_number += 1;
             }
         }
 
-        retcode = sqlite3_prepare_v2(db,
-                                     script,
-                                     -1,
-                                     stmt.out(),
-                                     &tail);
+        retcode = sqlite3_prepare_v2(db, script, -1, stmt.out(), &tail);
         log_debug("retcode %d  %p %p", retcode, script, tail);
         if (retcode != SQLITE_OK) {
-            const char *errmsg = sqlite3_errmsg(db);
+            const char* errmsg = sqlite3_errmsg(db);
             auto_mem<char> full_msg;
 
-            if (asprintf(full_msg.out(), "error:%s:%d:%s", src_name,
-                         line_number, errmsg) == -1) {
+            if (asprintf(full_msg.out(),
+                         "error:%s:%d:%s",
+                         src_name,
+                         line_number,
+                         errmsg)
+                == -1)
+            {
                 log_error("unable to allocate error message");
                 break;
             }
@@ -715,7 +697,6 @@ void sql_compile_script(sqlite3 *db,
         } else if (script == tail) {
             break;
         } else if (stmt == NULL) {
-
         } else {
             stmts.push_back(stmt.release());
         }
@@ -724,13 +705,14 @@ void sql_compile_script(sqlite3 *db,
     }
 }
 
-void sql_execute_script(sqlite3 *db,
-                        const std::vector<sqlite3_stmt *> &stmts,
-                        std::vector<std::string> &errors)
+void
+sql_execute_script(sqlite3* db,
+                   const std::vector<sqlite3_stmt*>& stmts,
+                   std::vector<std::string>& errors)
 {
     map<string, string> lvars;
 
-    for (sqlite3_stmt *stmt : stmts) {
+    for (sqlite3_stmt* stmt : stmts) {
         bool done = false;
         int param_count;
 
@@ -738,21 +720,22 @@ void sql_execute_script(sqlite3 *db,
 
         param_count = sqlite3_bind_parameter_count(stmt);
         for (int lpc = 0; lpc < param_count; lpc++) {
-            const char *name;
+            const char* name;
 
             name = sqlite3_bind_parameter_name(stmt, lpc + 1);
             if (name[0] == '$') {
                 map<string, string>::iterator iter;
-                const char *env_value;
+                const char* env_value;
 
                 if ((iter = lvars.find(&name[1])) != lvars.end()) {
-                    sqlite3_bind_text(stmt, lpc + 1,
-                                      iter->second.c_str(), -1,
+                    sqlite3_bind_text(stmt,
+                                      lpc + 1,
+                                      iter->second.c_str(),
+                                      -1,
                                       SQLITE_TRANSIENT);
                 } else if ((env_value = getenv(&name[1])) != nullptr) {
-                    sqlite3_bind_text(stmt, lpc + 1,
-                                      env_value, -1,
-                                      SQLITE_TRANSIENT);
+                    sqlite3_bind_text(
+                        stmt, lpc + 1, env_value, -1, SQLITE_TRANSIENT);
                 } else {
                     sqlite3_bind_null(stmt, lpc + 1);
                 }
@@ -772,9 +755,9 @@ void sql_execute_script(sqlite3 *db,
                     int ncols = sqlite3_column_count(stmt);
 
                     for (int lpc = 0; lpc < ncols; lpc++) {
-                        const char *name = sqlite3_column_name(stmt, lpc);
-                        const char *value = (const char *)
-                                sqlite3_column_text(stmt, lpc);
+                        const char* name = sqlite3_column_name(stmt, lpc);
+                        const char* value
+                            = (const char*) sqlite3_column_text(stmt, lpc);
 
                         lvars[name] = value;
                     }
@@ -782,7 +765,7 @@ void sql_execute_script(sqlite3 *db,
                 }
 
                 default: {
-                    const char *errmsg;
+                    const char* errmsg;
 
                     errmsg = sqlite3_errmsg(db);
                     errors.emplace_back(errmsg);
@@ -795,35 +778,37 @@ void sql_execute_script(sqlite3 *db,
     }
 }
 
-void sql_execute_script(sqlite3 *db,
-                        const char *src_name,
-                        const char *script,
-                        std::vector<std::string> &errors)
+void
+sql_execute_script(sqlite3* db,
+                   const char* src_name,
+                   const char* script,
+                   std::vector<std::string>& errors)
 {
-    vector<sqlite3_stmt *> stmts;
+    vector<sqlite3_stmt*> stmts;
 
     sql_compile_script(db, src_name, script, stmts, errors);
     if (errors.empty()) {
         sql_execute_script(db, stmts, errors);
     }
 
-    for (sqlite3_stmt *stmt : stmts) {
+    for (sqlite3_stmt* stmt : stmts) {
         sqlite3_finalize(stmt);
     }
 }
 
 static struct {
     int sqlite_type;
-    const char *collator;
-    const char *sample;
+    const char* collator;
+    const char* sample;
 } TYPE_TEST_VALUE[] = {
-        { SQLITE3_TEXT, "", "foobar" },
-        { SQLITE_INTEGER, "", "123" },
-        { SQLITE_FLOAT, "", "123.0" },
-        { SQLITE_TEXT, "ipaddress", "127.0.0.1" },
+    {SQLITE3_TEXT, "", "foobar"},
+    {SQLITE_INTEGER, "", "123"},
+    {SQLITE_FLOAT, "", "123.0"},
+    {SQLITE_TEXT, "ipaddress", "127.0.0.1"},
 };
 
-int guess_type_from_pcre(const string &pattern, std::string &collator)
+int
+guess_type_from_pcre(const string& pattern, std::string& collator)
 {
     try {
         pcrepp re(pattern);
@@ -836,8 +821,9 @@ int guess_type_from_pcre(const string &pattern, std::string &collator)
             pcre_context_static<30> pc;
             pcre_input pi(test_value.sample);
 
-            if (re.match(pc, pi, PCRE_ANCHORED) &&
-                pc[0]->c_begin == 0 && pc[0]->length() == (int) pi.pi_length) {
+            if (re.match(pc, pi, PCRE_ANCHORED) && pc[0]->c_begin == 0
+                && pc[0]->length() == (int) pi.pi_length)
+            {
                 matches.push_back(index);
             }
 
@@ -850,34 +836,39 @@ int guess_type_from_pcre(const string &pattern, std::string &collator)
         }
 
         return retval;
-    } catch (pcrepp::error &e) {
+    } catch (pcrepp::error& e) {
         return SQLITE3_TEXT;
     }
 }
 
 /* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void *mem)
+void
+sqlite_close_wrapper(void* mem)
 {
-    sqlite3_close((sqlite3 *)mem);
+    sqlite3_close((sqlite3*) mem);
 }
 
-int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
-                      const char *detail2, const char *detail3,
-                      const char *detail4)
+int
+sqlite_authorizer(void* pUserData,
+                  int action_code,
+                  const char* detail1,
+                  const char* detail2,
+                  const char* detail3,
+                  const char* detail4)
 {
-    if (action_code == SQLITE_ATTACH)
-    {
+    if (action_code == SQLITE_ATTACH) {
         return SQLITE_DENY;
     }
     return SQLITE_OK;
 }
 
-string sql_keyword_re()
+string
+sql_keyword_re()
 {
     string retval = "(?:";
     bool first = true;
 
-    for (const char *kw : sql_keywords) {
+    for (const char* kw : sql_keywords) {
         if (!first) {
             retval.append("|");
         } else {
@@ -902,7 +893,8 @@ string_attr_type SQL_PAREN_ATTR("sql_paren");
 string_attr_type SQL_COMMA_ATTR("sql_comma");
 string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
 
-void annotate_sql_statement(attr_line_t &al)
+void
+annotate_sql_statement(attr_line_t& al)
 {
     static string keyword_re_str = R"(\A)" + sql_keyword_re();
 
@@ -910,30 +902,32 @@ void annotate_sql_statement(attr_line_t &al)
         pcrepp re;
         string_attr_type_t type;
     } PATTERNS[] = {
-        { pcrepp{R"(^(\.\w+))"}, &SQL_COMMAND_ATTR },
-        { pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR },
-        { pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR },
-        { pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
-        { pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
-        { pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
-        { pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
-        { pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR },
+        {pcrepp{R"(^(\.\w+))"}, &SQL_COMMAND_ATTR},
+        {pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR},
+        {pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR},
+        {pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR},
+        {pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR},
+        {pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])",
+                PCRE_CASELESS},
+         &SQL_IDENTIFIER_ATTR},
+        {pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR},
+        {pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR},
     };
 
     static pcrepp ws_pattern(R"(\A\s+)");
 
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string());
-    auto &line = al.get_string();
-    auto &sa = al.get_attrs();
+    auto& line = al.get_string();
+    auto& sa = al.get_attrs();
 
     while (pi.pi_next_offset < line.length()) {
         if (ws_pattern.match(pc, pi, PCRE_ANCHORED)) {
             continue;
         }
-        for (const auto &pat : PATTERNS) {
+        for (const auto& pat : PATTERNS) {
             if (pat.re.match(pc, pi, PCRE_ANCHORED)) {
-                pcre_context::capture_t *cap = pc.all();
+                pcre_context::capture_t* cap = pc.all();
                 struct line_range lr(cap->c_begin, cap->c_end);
 
                 sa.emplace_back(lr, pat.type);
@@ -945,12 +939,13 @@ void annotate_sql_statement(attr_line_t &al)
     string_attrs_t::const_iterator iter;
     int start = 0;
 
-    while ((iter = find_string_attr(sa, &SQL_IDENTIFIER_ATTR, start)) != sa.end()) {
+    while ((iter = find_string_attr(sa, &SQL_IDENTIFIER_ATTR, start))
+           != sa.end()) {
         string_attrs_t::const_iterator piter;
         bool found_open = false;
         ssize_t lpc;
 
-        for (lpc = iter->sa_range.lr_end; lpc < (int)line.length(); lpc++) {
+        for (lpc = iter->sa_range.lr_end; lpc < (int) line.length(); lpc++) {
             if (line[lpc] == '(') {
                 found_open = true;
                 break;
@@ -963,8 +958,10 @@ void annotate_sql_statement(attr_line_t &al)
             ssize_t pstart = lpc + 1;
             int depth = 1;
 
-            while (depth > 0 &&
-                   (piter = find_string_attr(sa, &SQL_PAREN_ATTR, pstart)) != sa.end()) {
+            while (depth > 0
+                   && (piter = find_string_attr(sa, &SQL_PAREN_ATTR, pstart))
+                       != sa.end())
+            {
                 if (line[piter->sa_range.lr_start] == '(') {
                     depth += 1;
                 } else {
@@ -989,9 +986,10 @@ void annotate_sql_statement(attr_line_t &al)
     stable_sort(sa.begin(), sa.end());
 }
 
-vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x)
+vector<const help_text*>
+find_sql_help_for_line(const attr_line_t& al, size_t x)
 {
-    vector<const help_text *> retval;
+    vector<const help_text*> retval;
     const auto& sa = al.get_attrs();
     string name;
 
@@ -1001,8 +999,8 @@ vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x
         auto sa_opt = get_string_attr(al.get_attrs(), &SQL_COMMAND_ATTR);
 
         if (sa_opt) {
-            auto sql_cmd_map = injector::get<
-                readline_context::command_map_t*, sql_cmd_map_tag>();
+            auto sql_cmd_map = injector::get<readline_context::command_map_t*,
+                                             sql_cmd_map_tag>();
             auto cmd_name = al.get_substring((*sa_opt)->sa_range);
             auto cmd_iter = sql_cmd_map->find(cmd_name);
 
@@ -1014,14 +1012,13 @@ vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x
 
     vector<string> kw;
     auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
-
-        if (sa.sa_type != &SQL_FUNCTION_ATTR &&
-            sa.sa_type != &SQL_KEYWORD_ATTR) {
+        if (sa.sa_type != &SQL_FUNCTION_ATTR && sa.sa_type != &SQL_KEYWORD_ATTR)
+        {
             return false;
         }
 
-        const string &str = al.get_string();
-        const line_range &lr = sa.sa_range;
+        const string& str = al.get_string();
+        const line_range& lr = sa.sa_range;
         int lpc;
 
         if (sa.sa_type == &SQL_FUNCTION_ATTR) {
@@ -1055,8 +1052,8 @@ vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x
 
         if (help_count > 1 && name != func_pair.first->second->ht_name) {
             while (func_pair.first != func_pair.second) {
-                if (find(kw.begin(), kw.end(),
-                         func_pair.first->second->ht_name) == kw.end()) {
+                if (find(kw.begin(), kw.end(), func_pair.first->second->ht_name)
+                    == kw.end()) {
                     ++func_pair.first;
                 } else {
                     func_pair.second = next(func_pair.first);
@@ -1064,9 +1061,9 @@ vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x
                 }
             }
         }
-        for (auto func_iter = func_pair.first;
-             func_iter != func_pair.second;
-             ++func_iter) {
+        for (auto func_iter = func_pair.first; func_iter != func_pair.second;
+             ++func_iter)
+        {
             retval.emplace_back(func_iter->second);
         }
     }

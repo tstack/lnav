@@ -21,64 +21,64 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file readline_curses.cc
  */
 
-#include "config.h"
-
 #include <errno.h>
-#include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include "config.h"
 
 #ifdef HAVE_PTY_H
-#include <pty.h>
+#    include <pty.h>
 #endif
 
 #ifdef HAVE_UTIL_H
-#include <util.h>
+#    include <util.h>
 #endif
 
 #ifdef HAVE_LIBUTIL_H
-#include <libutil.h>
+#    include <libutil.h>
 #endif
 
 #include <string>
 #include <utility>
 
+#include "ansi_scrubber.hh"
+#include "auto_mem.hh"
+#include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
-#include "shlex.hh"
-#include "auto_mem.hh"
-#include "base/lnav_log.hh"
-#include "lnav_util.hh"
-#include "ansi_scrubber.hh"
-#include "readline_curses.hh"
-#include "spookyhash/SpookyV2.h"
 #include "fts_fuzzy_match.hh"
+#include "lnav_util.hh"
+#include "readline_curses.hh"
+#include "shlex.hh"
+#include "spookyhash/SpookyV2.h"
 
 using namespace std;
 
-static int              got_line    = 0;
-static bool             alt_done    = 0;
-static sig_atomic_t     got_timeout = 0;
-static sig_atomic_t     got_winch   = 0;
-static readline_curses *child_this;
-static sig_atomic_t     looping      = 1;
-static const int        HISTORY_SIZE = 256;
-static int              completion_start;
-static const int        FUZZY_PEER_THRESHOLD = 30;
+static int got_line = 0;
+static bool alt_done = 0;
+static sig_atomic_t got_timeout = 0;
+static sig_atomic_t got_winch = 0;
+static readline_curses* child_this;
+static sig_atomic_t looping = 1;
+static const int HISTORY_SIZE = 256;
+static int completion_start;
+static const int FUZZY_PEER_THRESHOLD = 30;
 
-static const char *RL_INIT[] = {
+static const char* RL_INIT[] = {
     /*
      * XXX Need to keep the input on a single line since the display screws
      * up if it wraps around.
@@ -92,36 +92,41 @@ static const char *RL_INIT[] = {
     "\"\\e[Z\": menu-complete-backward",
 };
 
-readline_context *readline_context::loaded_context;
-set<string> *     readline_context::arg_possibilities;
+readline_context* readline_context::loaded_context;
+set<string>* readline_context::arg_possibilities;
 static string last_match_str;
 static bool last_match_str_valid;
 static bool arg_needs_shlex;
 static nonstd::optional<std::string> rewrite_line_start;
 
-static void sigalrm(int sig)
+static void
+sigalrm(int sig)
 {
     got_timeout = 1;
 }
 
-static void sigwinch(int sig)
+static void
+sigwinch(int sig)
 {
     got_winch = 1;
 }
 
-static void sigterm(int sig)
+static void
+sigterm(int sig)
 {
     looping = 0;
 }
 
-static void line_ready_tramp(char *line)
+static void
+line_ready_tramp(char* line)
 {
     child_this->line_ready(line);
     got_line = 1;
     rl_callback_handler_remove();
 }
 
-static int sendall(int sock, const char *buf, size_t len)
+static int
+sendall(int sock, const char* buf, size_t len)
 {
     off_t offset = 0;
 
@@ -130,14 +135,13 @@ static int sendall(int sock, const char *buf, size_t len)
 
         if (rc == -1) {
             switch (errno) {
-            case EAGAIN:
-            case EINTR:
-                break;
-            default:
-                return -1;
+                case EAGAIN:
+                case EINTR:
+                    break;
+                default:
+                    return -1;
             }
-        }
-        else {
+        } else {
             len -= rc;
             offset += rc;
         }
@@ -146,35 +150,37 @@ static int sendall(int sock, const char *buf, size_t len)
     return 0;
 }
 
-static int sendstring(int sock, const char *buf, size_t len)
+static int
+sendstring(int sock, const char* buf, size_t len)
 {
-    if (sendall(sock, (char *)&len, sizeof(len)) == -1) {
+    if (sendall(sock, (char*) &len, sizeof(len)) == -1) {
         return -1;
-    }
-    else if (sendall(sock, buf, len) == -1) {
+    } else if (sendall(sock, buf, len) == -1) {
         return -1;
     }
 
     return 0;
 }
 
-static int sendcmd(int sock, char cmd, const char *buf, size_t len)
+static int
+sendcmd(int sock, char cmd, const char* buf, size_t len)
 {
     size_t total_len = len + 2;
-    char prefix[2] = { cmd, ':' };
+    char prefix[2] = {cmd, ':'};
 
-    if (sendall(sock, (char *)&total_len, sizeof(total_len)) == -1) {
+    if (sendall(sock, (char*) &total_len, sizeof(total_len)) == -1) {
         return -1;
-    }
-    else if (sendall(sock, prefix, sizeof(prefix)) == -1 ||
-             sendall(sock, buf, len) == -1) {
+    } else if (sendall(sock, prefix, sizeof(prefix)) == -1
+               || sendall(sock, buf, len) == -1)
+    {
         return -1;
     }
 
     return 0;
 }
 
-static int recvall(int sock, char *buf, size_t len)
+static int
+recvall(int sock, char* buf, size_t len)
 {
     off_t offset = 0;
 
@@ -183,18 +189,16 @@ static int recvall(int sock, char *buf, size_t len)
 
         if (rc == -1) {
             switch (errno) {
-            case EAGAIN:
-            case EINTR:
-                break;
-            default:
-                return -1;
+                case EAGAIN:
+                case EINTR:
+                    break;
+                default:
+                    return -1;
             }
-        }
-        else if (rc == 0) {
+        } else if (rc == 0) {
             errno = EIO;
             return -1;
-        }
-        else {
+        } else {
             len -= rc;
             offset += rc;
         }
@@ -203,29 +207,29 @@ static int recvall(int sock, char *buf, size_t len)
     return 0;
 }
 
-static ssize_t recvstring(int sock, char *buf, size_t len)
+static ssize_t
+recvstring(int sock, char* buf, size_t len)
 {
     ssize_t retval;
 
-    if (recvall(sock, (char *)&retval, sizeof(retval)) == -1) {
+    if (recvall(sock, (char*) &retval, sizeof(retval)) == -1) {
         return -1;
-    }
-    else if (retval > (ssize_t)len) {
+    } else if (retval > (ssize_t) len) {
         return -1;
-    }
-    else if (recvall(sock, buf, retval) == -1) {
+    } else if (recvall(sock, buf, retval) == -1) {
         return -1;
     }
 
     return retval;
 }
 
-char *readline_context::completion_generator(const char *text_in, int state)
+char*
+readline_context::completion_generator(const char* text_in, int state)
 {
     static vector<string> matches;
 
     vector<string> long_matches;
-    char *retval = nullptr;
+    char* retval = nullptr;
 
     if (state == 0) {
         auto text_str = std::string(text_in);
@@ -242,22 +246,29 @@ char *readline_context::completion_generator(const char *text_in, int state)
 
         matches.clear();
         if (arg_possibilities != nullptr) {
-            for (const auto &poss : (*arg_possibilities)) {
-                auto cmpfunc = (loaded_context->is_case_sensitive() ?
-                                strncmp : strncasecmp);
+            for (const auto& poss : (*arg_possibilities)) {
+                auto cmpfunc
+                    = (loaded_context->is_case_sensitive() ? strncmp
+                                                           : strncasecmp);
                 auto poss_str = poss.c_str();
 
                 // Check for an exact match and for the quoted version.
-                if (cmpfunc(text_str.c_str(), poss_str, text_str.length()) == 0 ||
-                    ((strchr(loaded_context->rc_quote_chars, poss_str[0]) !=
-                        nullptr) &&
-                     cmpfunc(text_str.c_str(), &poss_str[1], text_str.length()) == 0)) {
-                    auto poss_slash_count = std::count(poss.begin(), poss.end(), '/');
+                if (cmpfunc(text_str.c_str(), poss_str, text_str.length()) == 0
+                    || ((strchr(loaded_context->rc_quote_chars, poss_str[0])
+                         != nullptr)
+                        && cmpfunc(text_str.c_str(),
+                                   &poss_str[1],
+                                   text_str.length())
+                            == 0))
+                {
+                    auto poss_slash_count
+                        = std::count(poss.begin(), poss.end(), '/');
 
                     if (endswith(poss, "/")) {
                         poss_slash_count -= 1;
                     }
-                    if (std::count(text_str.begin(), text_str.end(), '/') == poss_slash_count) {
+                    if (std::count(text_str.begin(), text_str.end(), '/')
+                        == poss_slash_count) {
                         matches.emplace_back(poss);
                     } else {
                         long_matches.emplace_back(poss);
@@ -273,20 +284,24 @@ char *readline_context::completion_generator(const char *text_in, int state)
                 vector<pair<int, string>> fuzzy_matches;
                 vector<pair<int, string>> fuzzy_long_matches;
 
-                for (const auto &poss : (*arg_possibilities)) {
+                for (const auto& poss : (*arg_possibilities)) {
                     string poss_str = tolower(poss);
                     int score;
 
-                    if (fts::fuzzy_match(text_str.c_str(), poss_str.c_str(), score) && score > 0) {
+                    if (fts::fuzzy_match(
+                            text_str.c_str(), poss_str.c_str(), score)
+                        && score > 0) {
                         if (score <= 0) {
                             continue;
                         }
 
-                        auto poss_slash_count = std::count(poss_str.begin(), poss_str.end(), '/');
+                        auto poss_slash_count
+                            = std::count(poss_str.begin(), poss_str.end(), '/');
                         if (endswith(poss, "/")) {
                             poss_slash_count -= 1;
                         }
-                        if (std::count(text_str.begin(), text_str.end(), '/') == poss_slash_count) {
+                        if (std::count(text_str.begin(), text_str.end(), '/')
+                            == poss_slash_count) {
                             fuzzy_matches.emplace_back(score, poss);
                         } else {
                             fuzzy_long_matches.emplace_back(score, poss);
@@ -299,12 +314,14 @@ char *readline_context::completion_generator(const char *text_in, int state)
                 }
 
                 if (!fuzzy_matches.empty()) {
-                    stable_sort(begin(fuzzy_matches), end(fuzzy_matches),
+                    stable_sort(
+                        begin(fuzzy_matches),
+                        end(fuzzy_matches),
                         [](auto l, auto r) { return r.first < l.first; });
 
                     int highest = fuzzy_matches[0].first;
 
-                    for (const auto &pair : fuzzy_matches) {
+                    for (const auto& pair : fuzzy_matches) {
                         if (highest - pair.first < FUZZY_PEER_THRESHOLD) {
                             matches.push_back(pair.second);
                         } else {
@@ -321,9 +338,12 @@ char *readline_context::completion_generator(const char *text_in, int state)
             }
 
             last_match_str_valid = false;
-            if (sendstring(child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
-                           "m:0:0:0",
-                           7) == -1) {
+            if (sendstring(
+                    child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
+                    "m:0:0:0",
+                    7)
+                == -1)
+            {
                 _exit(1);
             }
         }
@@ -337,21 +357,21 @@ char *readline_context::completion_generator(const char *text_in, int state)
     return retval;
 }
 
-char **readline_context::attempted_completion(const char *text,
-                                              int start,
-                                              int end)
+char**
+readline_context::attempted_completion(const char* text, int start, int end)
 {
-    char **retval = nullptr;
+    char** retval = nullptr;
 
     completion_start = start;
-    if (start == 0 && loaded_context->rc_possibilities.find("__command") !=
-            loaded_context->rc_possibilities.end()) {
+    if (start == 0
+        && loaded_context->rc_possibilities.find("__command")
+            != loaded_context->rc_possibilities.end())
+    {
         arg_possibilities = &loaded_context->rc_possibilities["__command"];
         arg_needs_shlex = false;
         rl_completion_append_character = loaded_context->rc_append_character;
-    }
-    else {
-        char * space;
+    } else {
+        char* space;
         string cmd;
         vector<string> prefix;
         int point = rl_point;
@@ -368,7 +388,8 @@ char **readline_context::attempted_completion(const char *text,
             auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
 
             if (prefix_iter != loaded_context->rc_prefixes.end()) {
-                arg_possibilities = &(loaded_context->rc_possibilities[prefix_iter->second]);
+                arg_possibilities
+                    = &(loaded_context->rc_possibilities[prefix_iter->second]);
                 arg_needs_shlex = false;
             }
         }
@@ -383,14 +404,16 @@ char **readline_context::attempted_completion(const char *text,
             auto iter = loaded_context->rc_prototypes.find(cmd);
 
             if (iter == loaded_context->rc_prototypes.end()) {
-                if (loaded_context->rc_possibilities.find("*") !=
-                    loaded_context->rc_possibilities.end()) {
+                if (loaded_context->rc_possibilities.find("*")
+                    != loaded_context->rc_possibilities.end())
+                {
                     arg_possibilities = &loaded_context->rc_possibilities["*"];
                     arg_needs_shlex = false;
-                    rl_completion_append_character = loaded_context->rc_append_character;
+                    rl_completion_append_character
+                        = loaded_context->rc_append_character;
                 }
             } else {
-                vector<string> &proto = loaded_context->rc_prototypes[cmd];
+                vector<string>& proto = loaded_context->rc_prototypes[cmd];
 
                 if (proto.empty()) {
                     arg_possibilities = nullptr;
@@ -401,11 +424,12 @@ char **readline_context::attempted_completion(const char *text,
 
                     fn_lexer.split(fn_list, scope);
 
-                    const auto& last_fn =
-                        fn_list.size() <= 1 ? "" : fn_list.back();
+                    const auto& last_fn = fn_list.size() <= 1 ? ""
+                                                              : fn_list.back();
 
                     if (last_fn.find(':') != string::npos) {
-                        auto rp_iter = loaded_context->rc_possibilities.find("remote-path");
+                        auto rp_iter = loaded_context->rc_possibilities.find(
+                            "remote-path");
                         if (rp_iter != loaded_context->rc_possibilities.end()) {
                             for (const auto& poss : rp_iter->second) {
                                 if (startswith(poss, last_fn.c_str())) {
@@ -417,15 +441,14 @@ char **readline_context::attempted_completion(const char *text,
                                 arg_needs_shlex = false;
                             }
                         }
-                        if (!found ||
-                            (endswith(last_fn, "/") && found == 1)) {
+                        if (!found || (endswith(last_fn, "/") && found == 1)) {
                             char msg[2048];
 
-                            snprintf(msg, sizeof(msg),
-                                     "\t:%s",
-                                     last_fn.c_str());
+                            snprintf(
+                                msg, sizeof(msg), "\t:%s", last_fn.c_str());
                             sendstring(child_this->rc_command_pipe[1],
-                                       msg, strlen(msg));
+                                       msg,
+                                       strlen(msg));
                         }
                     }
                     if (!found) {
@@ -434,17 +457,20 @@ char **readline_context::attempted_completion(const char *text,
                         file_name_set.clear();
                         auto_mem<char> completed_fn;
                         int fn_state = 0;
-                        auto recent_netlocs_iter = loaded_context->
-                            rc_possibilities.find("recent-netlocs");
+                        auto recent_netlocs_iter
+                            = loaded_context->rc_possibilities.find(
+                                "recent-netlocs");
 
-                        if (recent_netlocs_iter !=
-                            loaded_context->rc_possibilities.end()) {
+                        if (recent_netlocs_iter
+                            != loaded_context->rc_possibilities.end()) {
                             file_name_set.insert(
                                 recent_netlocs_iter->second.begin(),
                                 recent_netlocs_iter->second.end());
                         }
                         while ((completed_fn = rl_filename_completion_function(
-                            last_fn.c_str(), fn_state)) != nullptr) {
+                                    last_fn.c_str(), fn_state))
+                               != nullptr)
+                        {
                             file_name_set.insert(completed_fn.in());
                             fn_state += 1;
                         }
@@ -452,7 +478,8 @@ char **readline_context::attempted_completion(const char *text,
                         arg_needs_shlex = true;
                     }
                 } else {
-                    arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+                    arg_possibilities
+                        = &(loaded_context->rc_possibilities[proto[0]]);
                     arg_needs_shlex = false;
                 }
             }
@@ -467,7 +494,8 @@ char **readline_context::attempted_completion(const char *text,
     return retval;
 }
 
-static int rubout_char_or_abort(int count, int key)
+static int
+rubout_char_or_abort(int count, int key)
 {
     if (rl_line_buffer[0] == '\0') {
         rl_done = true;
@@ -477,18 +505,21 @@ static int rubout_char_or_abort(int count, int key)
     }
 }
 
-static int alt_done_func(int count, int key)
+static int
+alt_done_func(int count, int key)
 {
     alt_done = true;
     rl_newline(count, key);
     return 0;
 }
 
-int readline_context::command_complete(int count, int key)
+int
+readline_context::command_complete(int count, int key)
 {
-    if (loaded_context->rc_possibilities.find("__command") !=
-        loaded_context->rc_possibilities.end()) {
-        char *space = strchr(rl_line_buffer, ' ');
+    if (loaded_context->rc_possibilities.find("__command")
+        != loaded_context->rc_possibilities.end())
+    {
+        char* space = strchr(rl_line_buffer, ' ');
 
         if (space == nullptr) {
             return rl_menu_complete(count, key);
@@ -498,12 +529,10 @@ int readline_context::command_complete(int count, int key)
 }
 
 readline_context::readline_context(std::string name,
-                                   readline_context::command_map_t *commands,
+                                   readline_context::command_map_t* commands,
                                    bool case_sensitive)
-    : rc_name(std::move(name)),
-      rc_case_sensitive(case_sensitive),
-      rc_quote_chars("\"'"),
-      rc_highlighter(nullptr)
+    : rc_name(std::move(name)), rc_case_sensitive(case_sensitive),
+      rc_quote_chars("\"'"), rc_highlighter(nullptr)
 {
     if (commands != nullptr) {
         command_map_t::iterator iter;
@@ -512,7 +541,8 @@ readline_context::readline_context(std::string name,
             std::string cmd = iter->first;
 
             this->rc_possibilities["__command"].insert(cmd);
-            iter->second->c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
+            iter->second->c_func(
+                INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
         }
     }
 
@@ -527,16 +557,18 @@ readline_context::readline_context(std::string name,
     this->rc_append_character = ' ';
 }
 
-void readline_context::load()
+void
+readline_context::load()
 {
     char buffer[128];
 
-    rl_completer_word_break_characters = (char *)" \t\n|()"; /* XXX */
+    rl_completer_word_break_characters = (char*) " \t\n|()"; /* XXX */
     /*
      * XXX Need to keep the input on a single line since the display screws
      * up if it wraps around.
      */
-    snprintf(buffer, sizeof(buffer),
+    snprintf(buffer,
+             sizeof(buffer),
              "set completion-ignore-case %s",
              this->rc_case_sensitive ? "off" : "on");
     rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
@@ -544,14 +576,15 @@ void readline_context::load()
     loaded_context = this;
     rl_attempted_completion_function = attempted_completion;
     history_set_history_state(&this->rc_history);
-    for (auto &rc_var : this->rc_vars) {
-        *(rc_var.rv_dst.ch) = (char *) rc_var.rv_val.ch;
+    for (auto& rc_var : this->rc_vars) {
+        *(rc_var.rv_dst.ch) = (char*) rc_var.rv_val.ch;
     }
 }
 
-void readline_context::save()
+void
+readline_context::save()
 {
-    HISTORY_STATE *hs = history_get_history_state();
+    HISTORY_STATE* hs = history_get_history_state();
 
     this->rc_history = *hs;
     free(hs);
@@ -559,15 +592,10 @@ void readline_context::save()
 }
 
 readline_curses::readline_curses()
-    : rc_focus(noop_func{}),
-      rc_change(noop_func{}),
-      rc_perform(noop_func{}),
-      rc_alt_perform(noop_func{}),
-      rc_timeout(noop_func{}),
-      rc_abort(noop_func{}),
-      rc_display_match(noop_func{}),
-      rc_display_next(noop_func{}),
-      rc_blur(noop_func{}),
+    : rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
+      rc_alt_perform(noop_func{}), rc_timeout(noop_func{}),
+      rc_abort(noop_func{}), rc_display_match(noop_func{}),
+      rc_display_next(noop_func{}), rc_blur(noop_func{}),
       rc_completion_request(noop_func{})
 {
 }
@@ -578,8 +606,7 @@ readline_curses::~readline_curses()
     this->rc_command_pipe[RCF_MASTER].reset();
     if (this->rc_child == 0) {
         _exit(0);
-    }
-    else if (this->rc_child > 0) {
+    } else if (this->rc_child > 0) {
         int status;
 
         log_debug("terminating readline child %d", this->rc_child);
@@ -593,8 +620,8 @@ readline_curses::~readline_curses()
     }
 }
 
-void readline_curses::store_matches(
-    char **matches, int num_matches, int max_len)
+void
+readline_curses::store_matches(char** matches, int num_matches, int max_len)
 {
     static int match_index = 0;
     char msg[64];
@@ -602,29 +629,34 @@ void readline_curses::store_matches(
 
     max_len = 0;
     for (int lpc = 0; lpc <= num_matches; lpc++) {
-        max_len = max(max_len, (int)strlen(matches[lpc]));
+        max_len = max(max_len, (int) strlen(matches[lpc]));
     }
 
-    if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0) {
+    if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0)
+    {
         match_index += 1;
         rc = snprintf(msg, sizeof(msg), "n:%d", match_index);
 
         if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], msg, rc) == -1) {
             _exit(1);
         }
-    }
-    else {
+    } else {
         match_index = 0;
-        rc = snprintf(msg, sizeof(msg),
+        rc = snprintf(msg,
+                      sizeof(msg),
                       "m:%d:%d:%d",
-                      completion_start, num_matches, max_len);
+                      completion_start,
+                      num_matches,
+                      max_len);
         if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], msg, rc) == -1) {
             _exit(1);
         }
         for (int lpc = 1; lpc <= num_matches; lpc++) {
             if (sendstring(child_this->rc_command_pipe[RCF_SLAVE],
                            matches[lpc],
-                           strlen(matches[lpc])) == -1) {
+                           strlen(matches[lpc]))
+                == -1)
+            {
                 _exit(1);
             }
         }
@@ -634,21 +666,22 @@ void readline_curses::store_matches(
     }
 }
 
-void readline_curses::start()
+void
+readline_curses::start()
 {
     if (this->rc_child > 0) {
         return;
     }
 
     struct winsize ws;
-    int            sp[2];
+    int sp[2];
 
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
         throw error(errno);
     }
 
     this->rc_command_pipe[RCF_MASTER] = sp[RCF_MASTER];
-    this->rc_command_pipe[RCF_SLAVE]  = sp[RCF_SLAVE];
+    this->rc_command_pipe[RCF_SLAVE] = sp[RCF_SLAVE];
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
         throw error(errno);
@@ -658,7 +691,9 @@ void readline_curses::start()
                 this->rc_pty[RCF_SLAVE].out(),
                 nullptr,
                 nullptr,
-                &ws) < 0) {
+                &ws)
+        < 0)
+    {
         perror("error: failed to open terminal(openpty)");
         throw error(errno);
     }
@@ -695,7 +730,8 @@ void readline_curses::start()
 
         rl_add_defun("rubout-char-or-abort", rubout_char_or_abort, '\b');
         rl_add_defun("alt-done", alt_done_func, '\x0a');
-        // rl_add_defun("command-complete", readline_context::command_complete, ' ');
+        // rl_add_defun("command-complete", readline_context::command_complete,
+        // ' ');
 
         for (const auto* init_cmd : RL_INIT) {
             snprintf(buffer, sizeof(buffer), "%s", init_cmd);
@@ -705,8 +741,8 @@ void readline_curses::start()
         child_this = this;
     }
 
-    map<int, readline_context *>::iterator current_context;
-    int    maxfd;
+    map<int, readline_context*>::iterator current_context;
+    int maxfd;
 
     require(!this->rc_contexts.empty());
 
@@ -718,7 +754,7 @@ void readline_curses::start()
 
     while (looping) {
         fd_set ready_rfds;
-        int    rc;
+        int rc;
 
         FD_ZERO(&ready_rfds);
         if (current_context != this->rc_contexts.end()) {
@@ -729,19 +765,18 @@ void readline_curses::start()
         rc = select(maxfd + 1, &ready_rfds, nullptr, nullptr, nullptr);
         if (rc < 0) {
             switch (errno) {
-            case EINTR:
-                break;
+                case EINTR:
+                    break;
             }
-        }
-        else {
+        } else {
             if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
                 static uint64_t last_h1, last_h2;
 
                 struct itimerval itv;
 
-                itv.it_value.tv_sec     = 0;
-                itv.it_value.tv_usec    = KEY_TIMEOUT;
-                itv.it_interval.tv_sec  = 0;
+                itv.it_value.tv_sec = 0;
+                itv.it_value.tv_usec = KEY_TIMEOUT;
+                itv.it_interval.tv_sec = 0;
                 itv.it_interval.tv_usec = 0;
                 setitimer(ITIMER_REAL, &itv, nullptr);
 
@@ -750,23 +785,23 @@ void readline_curses::start()
                     got_line = 1;
                     this->line_ready("");
                     rl_callback_handler_remove();
-                }
-                else {
+                } else {
                     uint64_t h1 = 1, h2 = 2;
 
                     if (rl_last_func == readline_context::command_complete) {
                         rl_last_func = rl_menu_complete;
                     }
 
-                    bool complete_done = (
-                        rl_last_func != rl_menu_complete &&
-                        rl_last_func != rl_backward_menu_complete);
+                    bool complete_done
+                        = (rl_last_func != rl_menu_complete
+                           && rl_last_func != rl_backward_menu_complete);
 
                     if (complete_done) {
                         last_match_str_valid = false;
-                    } else if (rewrite_line_start &&
-                               !startswith(rl_line_buffer,
-                                           rewrite_line_start->c_str())) {
+                    } else if (rewrite_line_start
+                               && !startswith(rl_line_buffer,
+                                              rewrite_line_start->c_str()))
+                    {
                         // If the line was rewritten, the extra text stays on
                         // the screen, so we need to delete it, make sure the
                         // append character is there, and redisplay.  For
@@ -775,12 +810,12 @@ void readline_curses::start()
                         // would switch to ':config' and the comment text would
                         // be left on the display.
                         rl_delete_text(rl_point, rl_end);
-                        if (rl_completion_append_character &&
-                            rl_line_buffer[rl_point] !=
-                            rl_completion_append_character) {
-                            char buf[2] = {
-                                (char) rl_completion_append_character, '\0'
-                            };
+                        if (rl_completion_append_character
+                            && rl_line_buffer[rl_point]
+                                != rl_completion_append_character)
+                        {
+                            char buf[2]
+                                = {(char) rl_completion_append_character, '\0'};
 
                             rl_insert_text(buf);
                         }
@@ -793,18 +828,18 @@ void readline_curses::start()
                     if (h1 == last_h1 && h2 == last_h2) {
                         // do nothing
                     } else if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                       complete_done ? 'l': 'c',
+                                       complete_done ? 'l' : 'c',
                                        rl_line_buffer,
-                                       rl_end) != 0) {
+                                       rl_end)
+                               != 0)
+                    {
                         perror("line: write failed");
                         _exit(1);
                     }
                     last_h1 = h1;
                     last_h2 = h2;
-                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                'w',
-                                "",
-                                0) != 0) {
+                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE], 'w', "", 0)
+                        != 0) {
                         perror("line: write failed");
                         _exit(1);
                     }
@@ -815,34 +850,39 @@ void readline_curses::start()
 
                 if ((rc = recvstring(this->rc_command_pipe[RCF_SLAVE],
                                      msg,
-                                     sizeof(msg) - 1)) < 0) {
+                                     sizeof(msg) - 1))
+                    < 0)
+                {
                     looping = false;
-                }
-                else {
-                    int  context, prompt_start = 0;
+                } else {
+                    int context, prompt_start = 0;
                     char type[1024];
 
                     msg[rc] = '\0';
                     if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start) == 1) {
-                        const char *initial = &msg[prompt_start];
+                        const char* initial = &msg[prompt_start];
 
                         rl_extend_line_buffer(strlen(initial) + 1);
                         strcpy(rl_line_buffer, initial);
                         rl_end = strlen(initial);
-                        rewrite_line_start = std::string(rl_line_buffer, rl_point);
+                        rewrite_line_start
+                            = std::string(rl_line_buffer, rl_point);
                         rl_redisplay();
                         if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
                                     'c',
                                     rl_line_buffer,
-                                    rl_end) != 0) {
+                                    rl_end)
+                            != 0) {
                             perror("line: write failed");
                             _exit(1);
                         }
-                    }
-                    else if (sscanf(msg, "f:%d:%n", &context, &prompt_start) == 1 &&
-                             prompt_start != 0 &&
-                             (current_context = this->rc_contexts.find(context)) !=
-                             this->rc_contexts.end()) {
+                    } else if (sscanf(msg, "f:%d:%n", &context, &prompt_start)
+                                   == 1
+                               && prompt_start != 0
+                               && (current_context
+                                   = this->rc_contexts.find(context))
+                                   != this->rc_contexts.end())
+                    {
                         current_context->second->load();
                         rl_callback_handler_install(&msg[prompt_start],
                                                     line_ready_tramp);
@@ -850,19 +890,18 @@ void readline_curses::start()
                         if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
                                     'l',
                                     rl_line_buffer,
-                                    rl_end) != 0) {
+                                    rl_end)
+                            != 0) {
                             perror("line: write failed");
                             _exit(1);
                         }
-                        if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                    'w',
-                                    "",
-                                    0) != 0) {
+                        if (sendcmd(
+                                this->rc_command_pipe[RCF_SLAVE], 'w', "", 0)
+                            != 0) {
                             perror("line: write failed");
                             _exit(1);
                         }
-                    }
-                    else if (strcmp(msg, "a") == 0) {
+                    } else if (strcmp(msg, "a") == 0) {
                         char reply[4];
 
                         rl_done = 1;
@@ -874,54 +913,51 @@ void readline_curses::start()
 
                         if (sendstring(this->rc_command_pipe[RCF_SLAVE],
                                        reply,
-                                       strlen(reply)) == -1) {
+                                       strlen(reply))
+                            == -1) {
                             perror("abort: write failed");
                             _exit(1);
                         }
-                    }
-                    else if (sscanf(msg,
-                                    "apre:%d:%1023[^\x1d]\x1d%n",
-                                    &context,
-                                    type,
-                                    &prompt_start) == 2) {
+                    } else if (sscanf(msg,
+                                      "apre:%d:%1023[^\x1d]\x1d%n",
+                                      &context,
+                                      type,
+                                      &prompt_start)
+                               == 2)
+                    {
                         require(this->rc_contexts[context] != nullptr);
 
-                        this->rc_contexts[context]->rc_prefixes[string(type)] =
-                            string(&msg[prompt_start]);
-                    }
-                    else if (sscanf(msg,
-                                    "ap:%d:%31[^:]:%n",
-                                    &context,
-                                    type,
-                                    &prompt_start) == 2) {
+                        this->rc_contexts[context]->rc_prefixes[string(type)]
+                            = string(&msg[prompt_start]);
+                    } else if (sscanf(msg,
+                                      "ap:%d:%31[^:]:%n",
+                                      &context,
+                                      type,
+                                      &prompt_start)
+                               == 2) {
                         require(this->rc_contexts[context] != nullptr);
 
-                        this->rc_contexts[context]->
-                                                      add_possibility(string(type),
-                                                                      string(&msg[prompt_start]));
-                        if (rl_last_func == rl_complete ||
-                            rl_last_func == rl_menu_complete) {
+                        this->rc_contexts[context]->add_possibility(
+                            string(type), string(&msg[prompt_start]));
+                        if (rl_last_func == rl_complete
+                            || rl_last_func == rl_menu_complete) {
                             rl_last_func = NULL;
                         }
-                    }
-                    else if (sscanf(msg,
-                                    "rp:%d:%31[^:]:%n",
-                                    &context,
-                                    type,
-                                    &prompt_start) == 2) {
+                    } else if (sscanf(msg,
+                                      "rp:%d:%31[^:]:%n",
+                                      &context,
+                                      type,
+                                      &prompt_start)
+                               == 2) {
                         require(this->rc_contexts[context] != nullptr);
 
-                        this->rc_contexts[context]->
-                                                      rem_possibility(string(type),
-                                                                      string(&msg[prompt_start]));
-                    }
-                    else if (sscanf(msg, "cpre:%d", &context) == 1) {
+                        this->rc_contexts[context]->rem_possibility(
+                            string(type), string(&msg[prompt_start]));
+                    } else if (sscanf(msg, "cpre:%d", &context) == 1) {
                         this->rc_contexts[context]->rc_prefixes.clear();
-                    }
-                    else if (sscanf(msg, "cp:%d:%s", &context, type)) {
+                    } else if (sscanf(msg, "cp:%d:%s", &context, type)) {
                         this->rc_contexts[context]->clear_possibilities(type);
-                    }
-                    else {
+                    } else {
                         log_error("unhandled message: %s", msg);
                     }
                 }
@@ -933,17 +969,19 @@ void readline_curses::start()
             if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
                         't',
                         rl_line_buffer,
-                        rl_end) == -1) {
+                        rl_end)
+                == -1)
+            {
                 _exit(1);
             }
         }
         if (got_line) {
             struct itimerval itv;
 
-            got_line                = 0;
-            itv.it_value.tv_sec     = 0;
-            itv.it_value.tv_usec    = 0;
-            itv.it_interval.tv_sec  = 0;
+            got_line = 0;
+            itv.it_value.tv_sec = 0;
+            itv.it_value.tv_usec = 0;
+            itv.it_interval.tv_sec = 0;
             itv.it_interval.tv_usec = 0;
             if (setitimer(ITIMER_REAL, &itv, nullptr) < 0) {
                 log_error("setitimer: %s", strerror(errno));
@@ -968,7 +1006,8 @@ void readline_curses::start()
     for (auto& pair : this->rc_contexts) {
         pair.second->load();
 
-        auto hpath = (config_dir / pair.second->get_name()).string() + ".history";
+        auto hpath
+            = (config_dir / pair.second->get_name()).string() + ".history";
         write_history(hpath.c_str());
         pair.second->save();
     }
@@ -976,20 +1015,20 @@ void readline_curses::start()
     _exit(0);
 }
 
-void readline_curses::line_ready(const char *line)
+void
+readline_curses::line_ready(const char* line)
 {
     auto_mem<char> expanded;
-    char           msg[1024] = {0};
-    int            rc;
-    const char *cmd_ch = alt_done ? "D" : "d";
+    char msg[1024] = {0};
+    int rc;
+    const char* cmd_ch = alt_done ? "D" : "d";
 
     alt_done = false;
     if (line == nullptr) {
         snprintf(msg, sizeof(msg), "a");
 
-        if (sendstring(this->rc_command_pipe[RCF_SLAVE],
-                       msg,
-                       strlen(msg)) == -1) {
+        if (sendstring(this->rc_command_pipe[RCF_SLAVE], msg, strlen(msg))
+            == -1) {
             perror("abort: write failed");
             _exit(1);
         }
@@ -998,8 +1037,7 @@ void readline_curses::line_ready(const char *line)
 
     if (rl_line_buffer[0] == '^') {
         rc = -1;
-    }
-    else {
+    } else {
         rc = history_expand(rl_line_buffer, expanded.out());
     }
     switch (rc) {
@@ -1013,37 +1051,38 @@ void readline_curses::line_ready(const char *line)
             break;
 #endif
 
-    case -1:
-        snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, line);
-        break;
+        case -1:
+            snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, line);
+            break;
 
-    case 0:
-    case 1:
-    case 2: /* XXX */
-        snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, expanded.in());
-        break;
+        case 0:
+        case 1:
+        case 2: /* XXX */
+            snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, expanded.in());
+            break;
     }
 
-    if (sendstring(this->rc_command_pipe[RCF_SLAVE],
-                   msg,
-                   strlen(msg)) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_SLAVE], msg, strlen(msg)) == -1) {
         perror("line_ready: write failed");
         _exit(1);
     }
 
     {
-        HIST_ENTRY *entry;
+        HIST_ENTRY* entry;
 
-        if (line[0] != '\0' && (
-            history_length == 0 ||
-            (entry = history_get(history_base + history_length - 1)) == nullptr ||
-            strcmp(entry->line, line) != 0)) {
+        if (line[0] != '\0'
+            && (history_length == 0
+                || (entry = history_get(history_base + history_length - 1))
+                    == nullptr
+                || strcmp(entry->line, line) != 0))
+        {
             add_history(line);
         }
     }
 }
 
-void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
+void
+readline_curses::check_poll_set(const vector<struct pollfd>& pollfds)
 {
     int rc;
 
@@ -1063,7 +1102,8 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
     if (pollfd_ready(pollfds, this->rc_command_pipe[RCF_MASTER])) {
         char msg[1024 + 1];
 
-        rc = recvstring(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
+        rc = recvstring(
+            this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
         if (rc >= 0) {
             string old_value = this->rc_value;
 
@@ -1074,12 +1114,14 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 if (this->rc_matches_remaining == 0) {
                     this->rc_display_match(this);
                 }
-            }
-            else if (msg[0] == 'm') {
-                if (sscanf(msg, "m:%d:%d:%d",
+            } else if (msg[0] == 'm') {
+                if (sscanf(msg,
+                           "m:%d:%d:%d",
                            &this->rc_match_start,
                            &this->rc_matches_remaining,
-                           &this->rc_max_match_length) != 3) {
+                           &this->rc_max_match_length)
+                    != 3)
+                {
                     require(0);
                 }
                 this->rc_matches.clear();
@@ -1087,8 +1129,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_display_match(this);
                 }
                 this->rc_match_index = 0;
-            }
-            else if (msg[0] == '\t') {
+            } else if (msg[0] == '\t') {
                 char path[2048];
 
                 if (sscanf(msg, "\t:%s", path) != 1) {
@@ -1096,79 +1137,78 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 }
                 this->rc_remote_complete_path = path;
                 this->rc_completion_request(this);
-            }
-            else if (msg[0] == 'n') {
+            } else if (msg[0] == 'n') {
                 if (sscanf(msg, "n:%d", &this->rc_match_index) != 1) {
                     require(0);
                 }
                 this->rc_display_next(this);
-            }
-            else {
+            } else {
                 switch (msg[0]) {
-                case 't':
-                case 'd':
-                case 'D':
-                    this->rc_value = string(&msg[2]);
-                    break;
+                    case 't':
+                    case 'd':
+                    case 'D':
+                        this->rc_value = string(&msg[2]);
+                        break;
                 }
                 switch (msg[0]) {
-                case 'a':
-                    curs_set(0);
-                    this->vc_line.clear();
-                    this->rc_active_context = -1;
-                    this->rc_matches.clear();
-                    this->rc_abort(this);
-                    this->rc_display_match(this);
-                    this->rc_blur(this);
-                    break;
-
-                case 't':
-                    this->rc_timeout(this);
-                    break;
-
-                case 'd':
-                case 'D':
-                    curs_set(0);
-                    this->rc_active_context = -1;
-                    this->rc_matches.clear();
-                    if (msg[0] == 'D' || this->rc_is_alt_focus) {
-                        this->rc_alt_perform(this);
-                    } else {
-                        this->rc_perform(this);
-                    }
-                    this->rc_display_match(this);
-                    this->rc_blur(this);
-                    break;
-
-                case 'l':
-                    this->rc_line_buffer = &msg[2];
-                    if (this->rc_active_context != -1) {
-                        this->rc_change(this);
-                    }
-                    this->rc_matches.clear();
-                    if (this->rc_active_context != -1) {
+                    case 'a':
+                        curs_set(0);
+                        this->vc_line.clear();
+                        this->rc_active_context = -1;
+                        this->rc_matches.clear();
+                        this->rc_abort(this);
                         this->rc_display_match(this);
-                    }
-                    break;
+                        this->rc_blur(this);
+                        break;
 
-                case 'c':
-                    this->rc_line_buffer = &msg[2];
-                    this->rc_change(this);
-                    this->rc_display_match(this);
-                    break;
-                case 'w':
-                    this->rc_ready_for_input = true;
-                    break;
+                    case 't':
+                        this->rc_timeout(this);
+                        break;
+
+                    case 'd':
+                    case 'D':
+                        curs_set(0);
+                        this->rc_active_context = -1;
+                        this->rc_matches.clear();
+                        if (msg[0] == 'D' || this->rc_is_alt_focus) {
+                            this->rc_alt_perform(this);
+                        } else {
+                            this->rc_perform(this);
+                        }
+                        this->rc_display_match(this);
+                        this->rc_blur(this);
+                        break;
+
+                    case 'l':
+                        this->rc_line_buffer = &msg[2];
+                        if (this->rc_active_context != -1) {
+                            this->rc_change(this);
+                        }
+                        this->rc_matches.clear();
+                        if (this->rc_active_context != -1) {
+                            this->rc_display_match(this);
+                        }
+                        break;
+
+                    case 'c':
+                        this->rc_line_buffer = &msg[2];
+                        this->rc_change(this);
+                        this->rc_display_match(this);
+                        break;
+                    case 'w':
+                        this->rc_ready_for_input = true;
+                        break;
                 }
             }
         }
     }
 }
 
-void readline_curses::handle_key(int ch)
+void
+readline_curses::handle_key(int ch)
 {
-    const char *bch;
-    int         len;
+    const char* bch;
+    int len;
 
     bch = this->map_input(ch, len);
     if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
@@ -1176,7 +1216,10 @@ void readline_curses::handle_key(int ch)
     }
 }
 
-void readline_curses::focus(int context, const std::string& prompt, const std::string& initial)
+void
+readline_curses::focus(int context,
+                       const std::string& prompt,
+                       const std::string& initial)
 {
     char buffer[1024];
 
@@ -1185,9 +1228,10 @@ void readline_curses::focus(int context, const std::string& prompt, const std::s
     this->rc_active_context = context;
 
     snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("focus: write failed");
     }
     wmove(this->vc_window, this->get_actual_y(), this->vc_left);
@@ -1199,65 +1243,73 @@ void readline_curses::focus(int context, const std::string& prompt, const std::s
     this->rc_focus(this);
 }
 
-void readline_curses::rewrite_line(int pos, const std::string& value)
+void
+readline_curses::rewrite_line(int pos, const std::string& value)
 {
     char buffer[1024];
 
     snprintf(buffer, sizeof(buffer), "i:%d:%s", pos, value.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("rewrite_line: write failed");
     }
 }
 
-void readline_curses::abort()
+void
+readline_curses::abort()
 {
     char buffer[1024];
 
     this->vc_x = 0;
     snprintf(buffer, sizeof(buffer), "a");
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer)) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer))
+        == -1) {
         perror("abort: write failed");
     }
 }
 
-void readline_curses::add_prefix(int context,
-                                 const vector<string> &prefix,
-                                 const string &value)
+void
+readline_curses::add_prefix(int context,
+                            const vector<string>& prefix,
+                            const string& value)
 {
     char buffer[1024];
     auto prefix_wire = fmt::format("{}", fmt::join(prefix, "\x1f"));
 
-    snprintf(buffer, sizeof(buffer),
+    snprintf(buffer,
+             sizeof(buffer),
              "apre:%d:%s\x1d%s",
              context,
              prefix_wire.c_str(),
              value.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("add_prefix: write failed");
     }
 }
 
-void readline_curses::clear_prefixes(int context)
+void
+readline_curses::clear_prefixes(int context)
 {
     char buffer[1024];
 
     snprintf(buffer, sizeof(buffer), "cpre:%d", context);
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("add_possibility: write failed");
     }
 }
 
-void readline_curses::add_possibility(int context,
-                                      const string &type,
-                                      const string &value)
+void
+readline_curses::add_possibility(int context,
+                                 const string& type,
+                                 const string& value)
 {
     char buffer[1024];
 
@@ -1265,57 +1317,67 @@ void readline_curses::add_possibility(int context,
         return;
     }
 
-    snprintf(buffer, sizeof(buffer),
+    snprintf(buffer,
+             sizeof(buffer),
              "ap:%d:%s:%s",
-             context, type.c_str(), value.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+             context,
+             type.c_str(),
+             value.c_str());
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("add_possibility: write failed");
     }
 }
 
-void readline_curses::rem_possibility(int context,
-                                      const string &type,
-                                      const string &value)
+void
+readline_curses::rem_possibility(int context,
+                                 const string& type,
+                                 const string& value)
 {
     char buffer[1024];
 
-    snprintf(buffer, sizeof(buffer),
+    snprintf(buffer,
+             sizeof(buffer),
              "rp:%d:%s:%s",
-             context, type.c_str(), value.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+             context,
+             type.c_str(),
+             value.c_str());
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("rem_possiblity: write failed");
     }
 }
 
-void readline_curses::clear_possibilities(int context, string type)
+void
+readline_curses::clear_possibilities(int context, string type)
 {
     char buffer[1024];
 
-    snprintf(buffer, sizeof(buffer),
-             "cp:%d:%s",
-             context, type.c_str());
-    if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                   buffer,
-                   strlen(buffer) + 1) == -1) {
+    snprintf(buffer, sizeof(buffer), "cp:%d:%s", context, type.c_str());
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
         perror("clear_possiblity: write failed");
     }
 }
 
-void readline_curses::do_update()
+void
+readline_curses::do_update()
 {
     if (!this->vc_visible) {
         return;
     }
 
     if (this->rc_active_context == -1) {
-        int alt_start        = -1;
+        int alt_start = -1;
         struct line_range lr(0, 0);
-        attr_line_t       al, alt_al;
-        view_colors &vc = view_colors::singleton();
+        attr_line_t al, alt_al;
+        view_colors& vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
         wattron(this->vc_window, vc.attrs_for_role(view_colors::VCR_TEXT));
@@ -1335,26 +1397,20 @@ void readline_curses::do_update()
             alt_start = getmaxx(this->vc_window) - alt_al.get_string().size();
         }
 
-        if (alt_start >= (int)(al.get_string().length() + 5)) {
+        if (alt_start >= (int) (al.get_string().length() + 5)) {
             lr.lr_end = alt_al.get_string().length();
-            view_curses::mvwattrline(this->vc_window,
-                                     this->get_actual_y(),
-                                     alt_start,
-                                     alt_al,
-                                     lr);
+            view_curses::mvwattrline(
+                this->vc_window, this->get_actual_y(), alt_start, alt_al, lr);
         }
 
         lr.lr_end = al.get_string().length();
-        view_curses::mvwattrline(this->vc_window,
-                                 this->get_actual_y(),
-                                 this->vc_left,
-                                 al,
-                                 lr);
+        view_curses::mvwattrline(
+            this->vc_window, this->get_actual_y(), this->vc_left, al, lr);
         this->set_x(0);
     }
 
     if (this->rc_active_context != -1) {
-        readline_context *rc = this->rc_contexts[this->rc_active_context];
+        readline_context* rc = this->rc_contexts[this->rc_active_context];
         readline_highlighter_t hl = rc->get_highlighter();
         attr_line_t al = this->vc_line;
 
@@ -1362,28 +1418,34 @@ void readline_curses::do_update()
             hl(al, this->vc_left + this->vc_x);
         }
         view_curses::mvwattrline(this->vc_window,
-                                 this->get_actual_y(), this->vc_left,
+                                 this->get_actual_y(),
+                                 this->vc_left,
                                  al,
-                                 line_range{ 0, (int) this->vc_width });
+                                 line_range{0, (int) this->vc_width});
 
-        wmove(this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
+        wmove(
+            this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
     }
 }
 
-std::string readline_curses::get_match_string() const
+std::string
+readline_curses::get_match_string() const
 {
-    auto len = ::min((size_t) this->vc_x, this->rc_line_buffer.size()) - this->rc_match_start;
+    auto len = ::min((size_t) this->vc_x, this->rc_line_buffer.size())
+        - this->rc_match_start;
     auto context = this->get_active_context();
 
     if (context->get_append_character() != 0) {
-        if (this->rc_line_buffer.length() > (this->rc_match_start + len - 1) &&
-            this->rc_line_buffer[this->rc_match_start + len - 1] ==
-            context->get_append_character()) {
+        if (this->rc_line_buffer.length() > (this->rc_match_start + len - 1)
+            && this->rc_line_buffer[this->rc_match_start + len - 1]
+                == context->get_append_character())
+        {
             len -= 1;
-        } else if (this->rc_line_buffer.length() >
-                   (this->rc_match_start + len - 2) &&
-                   this->rc_line_buffer[this->rc_match_start + len - 2] ==
-                   context->get_append_character()) {
+        } else if (this->rc_line_buffer.length()
+                       > (this->rc_match_start + len - 2)
+                   && this->rc_line_buffer[this->rc_match_start + len - 2]
+                       == context->get_append_character())
+        {
             len -= 2;
         }
     }

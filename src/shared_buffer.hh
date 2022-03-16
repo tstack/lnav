@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,12 +32,12 @@
 #ifndef shared_buffer_hh
 #define shared_buffer_hh
 
+#include <string>
+#include <vector>
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-
-#include <string>
-#include <vector>
 
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
@@ -46,15 +46,16 @@ class shared_buffer;
 
 struct shared_buffer_ref {
 public:
-    shared_buffer_ref(char *data = nullptr, size_t len = 0)
-        : sb_owner(nullptr), sb_data(data), sb_length(len) {
-    };
+    shared_buffer_ref(char* data = nullptr, size_t len = 0)
+        : sb_owner(nullptr), sb_data(data), sb_length(len){};
 
-    ~shared_buffer_ref() {
+    ~shared_buffer_ref()
+    {
         this->disown();
     };
 
-    shared_buffer_ref(const shared_buffer_ref &other) {
+    shared_buffer_ref(const shared_buffer_ref& other)
+    {
         this->sb_owner = nullptr;
         this->sb_data = nullptr;
         this->sb_length = 0;
@@ -62,9 +63,10 @@ public:
         this->copy_ref(other);
     };
 
-    shared_buffer_ref(shared_buffer_ref &&other) noexcept;
+    shared_buffer_ref(shared_buffer_ref&& other) noexcept;
 
-    shared_buffer_ref &operator=(const shared_buffer_ref &other) {
+    shared_buffer_ref& operator=(const shared_buffer_ref& other)
+    {
         if (this != &other) {
             this->disown();
             this->copy_ref(other);
@@ -73,33 +75,45 @@ public:
         return *this;
     };
 
-    bool empty() const {
+    bool empty() const
+    {
         return this->sb_data == nullptr || this->sb_length == 0;
     };
 
-    const char *get_data() const { return this->sb_data; };
+    const char* get_data() const
+    {
+        return this->sb_data;
+    };
 
-    const char *get_data_at(off_t offset) const {
+    const char* get_data_at(off_t offset) const
+    {
         return &this->sb_data[offset];
     };
 
-    size_t length() const { return this->sb_length; };
+    size_t length() const
+    {
+        return this->sb_length;
+    };
 
-    shared_buffer_ref &rtrim(bool pred(char)) {
-        while (this->sb_length > 0 && pred(this->sb_data[this->sb_length - 1])) {
+    shared_buffer_ref& rtrim(bool pred(char))
+    {
+        while (this->sb_length > 0 && pred(this->sb_data[this->sb_length - 1]))
+        {
             this->sb_length -= 1;
         }
 
         return *this;
     }
 
-    bool contains(const char *ptr) const {
-        const char *buffer_end = this->sb_data + this->sb_length;
+    bool contains(const char* ptr) const
+    {
+        const char* buffer_end = this->sb_data + this->sb_length;
 
         return (this->sb_data <= ptr && ptr < buffer_end);
     };
 
-    char *get_writable_data() {
+    char* get_writable_data()
+    {
         if (this->take_ownership()) {
             return this->sb_data;
         }
@@ -107,34 +121,37 @@ public:
         return nullptr;
     };
 
-    void share(shared_buffer &sb, char *data, size_t len);
+    void share(shared_buffer& sb, char* data, size_t len);
 
-    bool subset(shared_buffer_ref &other, off_t offset, size_t len);
+    bool subset(shared_buffer_ref& other, off_t offset, size_t len);
 
     bool take_ownership();
 
     void disown();
 
 private:
-    void copy_ref(const shared_buffer_ref &other);
+    void copy_ref(const shared_buffer_ref& other);
 
-    auto_mem<char *> sb_backtrace;
-    shared_buffer *sb_owner;
-    char *sb_data;
+    auto_mem<char*> sb_backtrace;
+    shared_buffer* sb_owner;
+    char* sb_data;
     size_t sb_length;
 };
 
 class shared_buffer {
 public:
-    ~shared_buffer() {
+    ~shared_buffer()
+    {
         this->invalidate_refs();
     }
 
-    void add_ref(shared_buffer_ref &ref) {
+    void add_ref(shared_buffer_ref& ref)
+    {
         this->sb_refs.push_back(&ref);
     };
 
-    bool invalidate_refs() {
+    bool invalidate_refs()
+    {
         bool retval = true;
 
         while (!this->sb_refs.empty()) {
@@ -150,19 +167,21 @@ public:
 };
 
 struct tmp_shared_buffer {
-    explicit tmp_shared_buffer(const char *str, size_t len = -1) {
-        if (len == (size_t)-1) {
+    explicit tmp_shared_buffer(const char* str, size_t len = -1)
+    {
+        if (len == (size_t) -1) {
             len = strlen(str);
         }
 
-        this->tsb_ref.share(this->tsb_manager, (char *)str, len);
+        this->tsb_ref.share(this->tsb_manager, (char*) str, len);
     };
 
     shared_buffer tsb_manager;
     shared_buffer_ref tsb_ref;
 };
 
-inline std::string to_string(const shared_buffer_ref &sbr)
+inline std::string
+to_string(const shared_buffer_ref& sbr)
 {
     return {sbr.get_data(), sbr.length()};
 }

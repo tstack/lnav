@@ -21,37 +21,36 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file grep_proc.cc
  */
 
-#include "config.h"
+#include "grep_proc.hh"
 
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
-#include "base/opt_util.hh"
 #include "base/lnav_log.hh"
+#include "base/opt_util.hh"
 #include "base/string_util.hh"
+#include "config.h"
 #include "lnav_util.hh"
-#include "grep_proc.hh"
 #include "vis_line.hh"
 
 using namespace std;
 
 template<typename LineType>
-grep_proc<LineType>::grep_proc(pcre *code, grep_proc_source<LineType> &gps)
-    : gp_pcre(code),
-      gp_source(gps)
+grep_proc<LineType>::grep_proc(pcre* code, grep_proc_source<LineType>& gps)
+    : gp_pcre(code), gp_source(gps)
 {
     require(this->invariant());
 
@@ -65,11 +64,9 @@ grep_proc<LineType>::~grep_proc()
 }
 
 template<typename LineType>
-void grep_proc<LineType>::handle_match(int line,
-                                       string &line_value,
-                                       int off,
-                                       int *matches,
-                                       int count)
+void
+grep_proc<LineType>::handle_match(
+    int line, string& line_value, int off, int* matches, int count)
 {
     int lpc;
 
@@ -78,21 +75,18 @@ void grep_proc<LineType>::handle_match(int line,
     }
     fprintf(stdout, "[%d:%d]\n", matches[0], matches[1]);
     for (lpc = 1; lpc < count; lpc++) {
-        fprintf(stdout,
-                "(%d:%d)",
-                matches[lpc * 2],
-                matches[lpc * 2 + 1]);
+        fprintf(stdout, "(%d:%d)", matches[lpc * 2], matches[lpc * 2 + 1]);
         fwrite(&(line_value.c_str()[matches[lpc * 2]]),
                1,
-               matches[lpc * 2 + 1] -
-               matches[lpc * 2],
+               matches[lpc * 2 + 1] - matches[lpc * 2],
                stdout);
         fputc('\n', stdout);
     }
 }
 
 template<typename LineType>
-void grep_proc<LineType>::start()
+void
+grep_proc<LineType>::start()
 {
     require(this->invariant());
 
@@ -154,27 +148,31 @@ void grep_proc<LineType>::start()
 }
 
 template<typename LineType>
-void grep_proc<LineType>::child_loop()
+void
+grep_proc<LineType>::child_loop()
 {
-    char   outbuf[BUFSIZ * 2];
+    char outbuf[BUFSIZ * 2];
     string line_value;
 
     /* Make sure buffering is on, not sure of the state in the parent. */
     if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
         perror("setvbuf");
     }
-    lnav_log_file = make_optional_from_nullable(fopen("/tmp/lnav.grep.err", "a"));
+    lnav_log_file
+        = make_optional_from_nullable(fopen("/tmp/lnav.grep.err", "a"));
     line_value.reserve(BUFSIZ * 2);
     while (!this->gp_queue.empty()) {
         LineType start_line = this->gp_queue.front().first;
-        LineType stop_line  = this->gp_queue.front().second;
-        bool        done       = false;
+        LineType stop_line = this->gp_queue.front().second;
+        bool done = false;
         LineType line;
 
         this->gp_queue.pop_front();
-        for (line = this->gp_source.grep_initial_line(start_line, this->gp_highest_line);
+        for (line = this->gp_source.grep_initial_line(start_line,
+                                                      this->gp_highest_line);
              line != -1 && (stop_line == -1 || line < stop_line) && !done;
-             this->gp_source.grep_next_line(line)) {
+             this->gp_source.grep_next_line(line))
+        {
             line_value.clear();
             done = !this->gp_source.grep_value_for_line(line, line_value);
             if (!done) {
@@ -182,16 +180,15 @@ void grep_proc<LineType>::child_loop()
                 pcre_input pi(line_value);
 
                 while (this->gp_pcre.match(pc, pi)) {
-                    pcre_context::iterator   pc_iter;
-                    pcre_context::capture_t *m;
+                    pcre_context::iterator pc_iter;
+                    pcre_context::capture_t* m;
 
                     if (pi.pi_offset == 0) {
                         fprintf(stdout, "%d\n", (int) line);
                     }
                     m = pc.all();
                     fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
-                    for (pc_iter = pc.begin(); pc_iter != pc.end();
-                         pc_iter++) {
+                    for (pc_iter = pc.begin(); pc_iter != pc.end(); pc_iter++) {
                         if (!pc_iter->is_valid()) {
                             continue;
                         }
@@ -232,7 +229,8 @@ void grep_proc<LineType>::child_loop()
 }
 
 template<typename LineType>
-void grep_proc<LineType>::cleanup()
+void
+grep_proc<LineType>::cleanup()
 {
     if (this->gp_child != -1 && this->gp_child != 0) {
         int status = 0;
@@ -242,7 +240,7 @@ void grep_proc<LineType>::cleanup()
             ;
         }
         require(!WIFSIGNALED(status) || WTERMSIG(status) != SIGABRT);
-        this->gp_child         = -1;
+        this->gp_child = -1;
         this->gp_child_started = false;
 
         if (this->gp_sink) {
@@ -267,7 +265,8 @@ void grep_proc<LineType>::cleanup()
 }
 
 template<typename LineType>
-void grep_proc<LineType>::dispatch_line(char *line)
+void
+grep_proc<LineType>::dispatch_line(char* line)
 {
     int start, end, capture_start;
 
@@ -277,8 +276,7 @@ void grep_proc<LineType>::dispatch_line(char *line)
     } else if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
         /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
-    }
-    else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {
+    } else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {
         require(start >= 0);
         require(end >= 0);
 
@@ -286,33 +284,31 @@ void grep_proc<LineType>::dispatch_line(char *line)
         if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match(*this, this->gp_last_line, start, end);
         }
-    }
-    else if (sscanf(line, "(%d:%d)%n", &start, &end, &capture_start) == 2) {
+    } else if (sscanf(line, "(%d:%d)%n", &start, &end, &capture_start) == 2) {
         require(start == -1 || start >= 0);
         require(end >= 0);
 
         /* Pass the captured strings to the sink delegate. */
         if (this->gp_sink != nullptr) {
-            this->gp_sink->grep_capture(*this,
-                                        this->gp_last_line,
-                                        start,
-                                        end,
-                                        start < 0 ?
-                                        nullptr : &line[capture_start]);
+            this->gp_sink->grep_capture(
+                *this,
+                this->gp_last_line,
+                start,
+                end,
+                start < 0 ? nullptr : &line[capture_start]);
         }
-    }
-    else if (line[0] == '/') {
+    } else if (line[0] == '/') {
         if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match_end(*this, this->gp_last_line);
         }
-    }
-    else {
+    } else {
         log_error("bad line from child -- %s", line);
     }
 }
 
 template<typename LineType>
-void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollfds)
+void
+grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd>& pollfds)
 {
     require(this->invariant());
 
@@ -322,11 +318,11 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
 
         rc = read(this->gp_err_pipe, buffer, sizeof(buffer) - 1);
         if (rc > 0) {
-            static const char *PREFIX = ": ";
+            static const char* PREFIX = ": ";
 
             buffer[rc] = '\0';
             if (strncmp(buffer, PREFIX, strlen(PREFIX)) == 0) {
-                char *lf;
+                char* lf;
 
                 if ((lf = strchr(buffer, '\n')) != nullptr) {
                     *lf = '\0';
@@ -335,14 +331,14 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
                     this->gp_control->grep_error(&buffer[strlen(PREFIX)]);
                 }
             }
-        }
-        else if (rc == 0) {
+        } else if (rc == 0) {
             this->gp_err_pipe.reset();
         }
     }
 
-    if (this->gp_line_buffer.get_fd() != -1 &&
-        pollfd_ready(pollfds, this->gp_line_buffer.get_fd())) {
+    if (this->gp_line_buffer.get_fd() != -1
+        && pollfd_ready(pollfds, this->gp_line_buffer.get_fd()))
+    {
         try {
             static const int MAX_LOOPS = 100;
 
@@ -350,8 +346,8 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
             bool drained = false;
 
             while (loop_count < MAX_LOOPS) {
-                auto load_result = this->gp_line_buffer
-                    .load_next_line(this->gp_pipe_range);
+                auto load_result
+                    = this->gp_line_buffer.load_next_line(this->gp_pipe_range);
 
                 if (load_result.isErr()) {
                     break;
@@ -365,15 +361,16 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
                 }
 
                 this->gp_pipe_range = li.li_file_range;
-                this->gp_line_buffer.read_range(li.li_file_range).then([this](auto sbr) {
-                    auto_mem<char> buf;
+                this->gp_line_buffer.read_range(li.li_file_range)
+                    .then([this](auto sbr) {
+                        auto_mem<char> buf;
 
-                    buf = (char *) malloc(sbr.length() + 1);
-                    sbr.rtrim(is_line_ending);
-                    memcpy(buf, sbr.get_data(), sbr.length());
-                    buf[sbr.length()] = '\0';
-                    this->dispatch_line(buf);
-                });
+                        buf = (char*) malloc(sbr.length() + 1);
+                        sbr.rtrim(is_line_ending);
+                        memcpy(buf, sbr.get_data(), sbr.length());
+                        buf[sbr.length()] = '\0';
+                        this->dispatch_line(buf);
+                    });
 
                 loop_count += 1;
             }
@@ -385,8 +382,7 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
             if (drained && this->gp_line_buffer.is_pipe_closed()) {
                 this->cleanup();
             }
-        }
-        catch (line_buffer::error & e) {
+        } catch (line_buffer::error& e) {
             this->cleanup();
         }
     }
@@ -395,7 +391,8 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
 }
 
 template<typename LineType>
-grep_proc<LineType> &grep_proc<LineType>::invalidate()
+grep_proc<LineType>&
+grep_proc<LineType>::invalidate()
 {
     if (this->gp_sink) {
         for (size_t lpc = 0; lpc < this->gp_queue.size(); lpc++) {

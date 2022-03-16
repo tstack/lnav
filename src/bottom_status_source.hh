@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,12 +33,12 @@
 #include <string>
 
 #include "grep_proc.hh"
-#include "textview_curses.hh"
 #include "statusview_curses.hh"
+#include "textview_curses.hh"
 
 class bottom_status_source
-    : public status_data_source,
-      public grep_proc_control {
+    : public status_data_source
+    , public grep_proc_control {
 public:
     typedef enum {
         BSF_LINE_NUMBER,
@@ -53,9 +53,12 @@ public:
 
     bottom_status_source();
 
-    status_field &get_field(field_t id) { return this->bss_fields[id]; };
+    status_field& get_field(field_t id)
+    {
+        return this->bss_fields[id];
+    };
 
-    void set_prompt(const std::string &prompt)
+    void set_prompt(const std::string& prompt)
     {
         this->bss_prompt.set_value(prompt);
     };
@@ -67,17 +70,17 @@ public:
 
     size_t statusview_fields() override;
 
-    status_field &statusview_value_for_field(int field) override;
+    status_field& statusview_value_for_field(int field) override;
 
-    void update_line_number(listview_curses *lc);
+    void update_line_number(listview_curses* lc);
 
-    void update_search_term(textview_curses &tc);
+    void update_search_term(textview_curses& tc);
 
-    void update_percent(listview_curses *lc);
+    void update_percent(listview_curses* lc);
 
-    void update_marks(listview_curses *lc);
+    void update_marks(listview_curses* lc);
 
-    void update_hits(textview_curses *tc);
+    void update_hits(textview_curses* tc);
 
     void update_loading(file_off_t off, file_size_t total);
 
@@ -86,9 +89,9 @@ private:
     status_field bss_error{1024, view_colors::VCR_ALERT_STATUS};
     status_field bss_line_error{1024, view_colors::VCR_ALERT_STATUS};
     status_field bss_fields[BSF__MAX];
-    int          bss_hit_spinner{0};
-    int          bss_load_percent{0};
-    bool         bss_paused{false};
+    int bss_hit_spinner{0};
+    int bss_load_percent{0};
+    bool bss_paused{false};
 };
 
 #endif

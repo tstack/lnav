@@ -21,22 +21,23 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <algorithm>
 
-#include "auto_mem.hh"
-#include "ansi_scrubber.hh"
-#include "view_curses.hh"
 #include "attr_line.hh"
 
-attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
+#include "ansi_scrubber.hh"
+#include "auto_mem.hh"
+#include "config.h"
+#include "view_curses.hh"
+
+attr_line_t&
+attr_line_t::with_ansi_string(const char* str, ...)
 {
     auto_mem<char> formatted_str;
     va_list args;
@@ -53,7 +54,8 @@ attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
     return *this;
 }
 
-attr_line_t &attr_line_t::with_ansi_string(const std::string &str)
+attr_line_t&
+attr_line_t::with_ansi_string(const std::string& str)
 {
     this->al_string = str;
     scrub_ansi_string(this->al_string, this->al_attrs);
@@ -61,7 +63,10 @@ attr_line_t &attr_line_t::with_ansi_string(const std::string &str)
     return *this;
 }
 
-attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_settings *tws)
+attr_line_t&
+attr_line_t::insert(size_t index,
+                    const attr_line_t& al,
+                    text_wrap_settings* tws)
 {
     if (index < this->al_string.length()) {
         shift_string_attrs(this->al_attrs, index, al.al_string.length());
@@ -69,10 +74,10 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
 
     this->al_string.insert(index, al.al_string);
 
-    for (auto &sa : al.al_attrs) {
+    for (auto& sa : al.al_attrs) {
         this->al_attrs.emplace_back(sa);
 
-        line_range &lr = this->al_attrs.back().sa_range;
+        line_range& lr = this->al_attrs.back().sa_range;
 
         lr.shift(0, index);
         if (lr.lr_end == -1) {
@@ -80,7 +85,7 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
         }
     }
 
-    if (tws != nullptr && (int)this->al_string.length() > tws->tws_width) {
+    if (tws != nullptr && (int) this->al_string.length() > tws->tws_width) {
         ssize_t start_pos = index;
         ssize_t line_start = this->al_string.rfind('\n', start_pos);
 
@@ -92,26 +97,27 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
 
         ssize_t line_len = index - line_start;
         ssize_t usable_width = tws->tws_width - tws->tws_indent;
-        ssize_t avail = std::max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
+        ssize_t avail
+            = std::max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
 
         if (avail == 0) {
             avail = INT_MAX;
         }
 
-        while (start_pos < (int)this->al_string.length()) {
+        while (start_pos < (int) this->al_string.length()) {
             ssize_t lpc;
 
             // Find the end of a word or a breakpoint.
-            for (lpc = start_pos;
-                 lpc < (int)this->al_string.length() &&
-                 (isalnum(this->al_string[lpc]) ||
-                  this->al_string[lpc] == ',' ||
-                  this->al_string[lpc] == '_' ||
-                  this->al_string[lpc] == '.' ||
-                  this->al_string[lpc] == ';');
-                 lpc++) {
-                if (this->al_string[lpc] == '-' ||
-                    this->al_string[lpc] == '.') {
+            for (lpc = start_pos; lpc < (int) this->al_string.length()
+                 && (isalnum(this->al_string[lpc])
+                     || this->al_string[lpc] == ','
+                     || this->al_string[lpc] == '_'
+                     || this->al_string[lpc] == '.'
+                     || this->al_string[lpc] == ';');
+                 lpc++)
+            {
+                if (this->al_string[lpc] == '-' || this->al_string[lpc] == '.')
+                {
                     lpc += 1;
                     break;
                 }
@@ -126,15 +132,15 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
             } else {
                 // There's still room to add stuff.
                 avail -= (lpc - start_pos);
-                while (lpc < (int)this->al_string.length() && avail) {
+                while (lpc < (int) this->al_string.length() && avail) {
                     if (this->al_string[lpc] == '\n') {
                         this->insert(lpc + 1, tws->tws_indent, ' ');
                         avail = usable_width;
                         lpc += 1 + tws->tws_indent;
                         break;
                     }
-                    if (isalnum(this->al_string[lpc]) ||
-                        this->al_string[lpc] == '_') {
+                    if (isalnum(this->al_string[lpc])
+                        || this->al_string[lpc] == '_') {
                         break;
                     }
                     avail -= 1;
@@ -147,10 +153,10 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
                     start_pos += 1 + tws->tws_indent;
                     avail = usable_width;
 
-                    for (lpc = start_pos;
-                         lpc < (int)this->al_string.length() &&
-                         this->al_string[lpc] == ' ';
-                         lpc++) {
+                    for (lpc = start_pos; lpc < (int) this->al_string.length()
+                         && this->al_string[lpc] == ' ';
+                         lpc++)
+                    {
                     }
 
                     if (lpc != start_pos) {
@@ -164,7 +170,8 @@ attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_
     return *this;
 }
 
-attr_line_t attr_line_t::subline(size_t start, size_t len) const
+attr_line_t
+attr_line_t::subline(size_t start, size_t len) const
 {
     if (len == std::string::npos) {
         len = this->al_string.length() - start;
@@ -174,16 +181,17 @@ attr_line_t attr_line_t::subline(size_t start, size_t len) const
     attr_line_t retval;
 
     retval.al_string = this->al_string.substr(start, len);
-    for (auto &sa : this->al_attrs) {
+    for (auto& sa : this->al_attrs) {
         if (!lr.intersects(sa.sa_range)) {
             continue;
         }
 
-        retval.al_attrs.emplace_back(lr.intersection(sa.sa_range)
-                                         .shift(lr.lr_start, -lr.lr_start),
-                                     sa.sa_type, sa.sa_value);
+        retval.al_attrs.emplace_back(
+            lr.intersection(sa.sa_range).shift(lr.lr_start, -lr.lr_start),
+            sa.sa_type,
+            sa.sa_value);
 
-        line_range &last_lr = retval.al_attrs.back().sa_range;
+        line_range& last_lr = retval.al_attrs.back().sa_range;
 
         ensure(last_lr.lr_end <= (int) retval.al_string.length());
     }
@@ -191,7 +199,8 @@ attr_line_t attr_line_t::subline(size_t start, size_t len) const
     return retval;
 }
 
-void attr_line_t::split_lines(std::vector<attr_line_t> &lines) const
+void
+attr_line_t::split_lines(std::vector<attr_line_t>& lines) const
 {
     size_t pos = 0, next_line;
 
@@ -202,12 +211,13 @@ void attr_line_t::split_lines(std::vector<attr_line_t> &lines) const
     lines.emplace_back(this->subline(pos));
 }
 
-attr_line_t &attr_line_t::right_justify(unsigned long width)
+attr_line_t&
+attr_line_t::right_justify(unsigned long width)
 {
     long padding = width - this->length();
     if (padding > 0) {
         this->al_string.insert(0, padding, ' ');
-        for (auto &al_attr : this->al_attrs) {
+        for (auto& al_attr : this->al_attrs) {
             if (al_attr.sa_range.lr_start > 0) {
                 al_attr.sa_range.lr_start += padding;
             }
@@ -220,7 +230,8 @@ attr_line_t &attr_line_t::right_justify(unsigned long width)
     return *this;
 }
 
-size_t attr_line_t::nearest_text(size_t x) const
+size_t
+attr_line_t::nearest_text(size_t x) const
 {
     if (x > 0 && x >= (size_t) this->length()) {
         if (this->empty()) {
@@ -237,18 +248,18 @@ size_t attr_line_t::nearest_text(size_t x) const
     return x;
 }
 
-void attr_line_t::apply_hide()
+void
+attr_line_t::apply_hide()
 {
     auto& sa = this->al_attrs;
 
-    for (auto &sattr : sa) {
-        if (sattr.sa_type == &SA_HIDDEN &&
-            sattr.sa_range.length() > 3) {
-            struct line_range &lr = sattr.sa_range;
+    for (auto& sattr : sa) {
+        if (sattr.sa_type == &SA_HIDDEN && sattr.sa_range.length() > 3) {
+            struct line_range& lr = sattr.sa_range;
 
-            std::for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
-                if (attr.sa_type == &view_curses::VC_STYLE &&
-                    lr.contains(attr.sa_range)) {
+            std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
+                if (attr.sa_type == &view_curses::VC_STYLE
+                    && lr.contains(attr.sa_range)) {
                     attr.sa_type = &SA_REMOVED;
                 }
             });
@@ -258,7 +269,6 @@ void attr_line_t::apply_hide()
             sattr.sa_type = &view_curses::VC_ROLE;
             sattr.sa_value.sav_int = view_colors::VCR_HIDDEN;
             lr.lr_end = lr.lr_start + 3;
-
         }
     }
 }

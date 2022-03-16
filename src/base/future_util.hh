@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -44,7 +44,9 @@ namespace futures {
  * @return The new future.
  */
 template<class T>
-std::future<std::decay_t<T>> make_ready_future( T&& t ) {
+std::future<std::decay_t<T>>
+make_ready_future(T&& t)
+{
     std::promise<std::decay_t<T>> pr;
     auto r = pr.get_future();
     pr.set_value(std::forward<T>(t));
@@ -64,9 +66,10 @@ public:
      * @param processor The function to execute with the result of a future.
      */
     explicit future_queue(std::function<void(T&)> processor)
-        : fq_processor(processor) {};
+        : fq_processor(processor){};
 
-    ~future_queue() {
+    ~future_queue()
+    {
         this->pop_to();
     }
 
@@ -77,7 +80,8 @@ public:
      *
      * @param f The future to add to the queue.
      */
-    void push_back(std::future<T>&& f) {
+    void push_back(std::future<T>&& f)
+    {
         this->fq_deque.emplace_back(std::move(f));
         this->pop_to(MAX_QUEUE_SIZE);
     }
@@ -88,7 +92,8 @@ public:
      *
      * @param size The new desired size of the queue.
      */
-    void pop_to(size_t size = 0) {
+    void pop_to(size_t size = 0)
+    {
         while (this->fq_deque.size() > size) {
             auto v = this->fq_deque.front().get();
             this->fq_processor(v);
@@ -100,7 +105,7 @@ public:
     std::deque<std::future<T>> fq_deque;
 };
 
-}
-}
+}  // namespace futures
+}  // namespace lnav
 
 #endif

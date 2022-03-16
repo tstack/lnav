@@ -21,41 +21,44 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <vector>
 #include <algorithm>
+#include <vector>
 
-#include "base/time_util.hh"
-#include "shlex.hh"
-#include "fmt/format.h"
-#include "data_parser.hh"
+#include "textview_curses.hh"
+
 #include "ansi_scrubber.hh"
+#include "base/time_util.hh"
+#include "config.h"
+#include "data_parser.hh"
+#include "fmt/format.h"
+#include "lnav_config.hh"
 #include "log_format.hh"
 #include "logfile.hh"
-#include "textview_curses.hh"
+#include "shlex.hh"
 #include "view_curses.hh"
-#include "lnav_config.hh"
 
 using namespace std;
 
 const auto REVERSE_SEARCH_OFFSET = 2000_vl;
 
 void
-text_filter::revert_to_last(logfile_filter_state &lfs, size_t rollback_size)
+text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
 {
     require(lfs.tfs_lines_for_message[this->lf_index] == 0);
 
-    lfs.tfs_message_matched[this->lf_index] = lfs.tfs_last_message_matched[this->lf_index];
-    lfs.tfs_lines_for_message[this->lf_index] = lfs.tfs_last_lines_for_message[this->lf_index];
+    lfs.tfs_message_matched[this->lf_index]
+        = lfs.tfs_last_message_matched[this->lf_index];
+    lfs.tfs_lines_for_message[this->lf_index]
+        = lfs.tfs_last_lines_for_message[this->lf_index];
 
-    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++) {
+    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++)
+    {
         if (lfs.tfs_message_matched[this->lf_index]) {
             lfs.tfs_filter_hits[this->lf_index] -= 1;
         }
@@ -74,27 +77,33 @@ text_filter::revert_to_last(logfile_filter_state &lfs, size_t rollback_size)
     }
 }
 
-void text_filter::add_line(
-        logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line) {
+void
+text_filter::add_line(logfile_filter_state& lfs,
+                      logfile::const_iterator ll,
+                      shared_buffer_ref& line)
+{
     bool match_state = this->matches(*lfs.tfs_logfile, ll, line);
 
     if (ll->is_message()) {
         this->end_of_message(lfs);
     }
 
-    lfs.tfs_message_matched[this->lf_index] = lfs.tfs_message_matched[this->lf_index] || match_state;
+    lfs.tfs_message_matched[this->lf_index]
+        = lfs.tfs_message_matched[this->lf_index] || match_state;
     lfs.tfs_lines_for_message[this->lf_index] += 1;
 }
 
-void text_filter::end_of_message(logfile_filter_state &lfs)
+void
+text_filter::end_of_message(logfile_filter_state& lfs)
 {
     uint32_t mask = 0;
 
     mask = ((uint32_t) 1U << this->lf_index);
 
-    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++) {
-        require(lfs.tfs_filter_count[this->lf_index] <=
-                lfs.tfs_logfile->size());
+    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++)
+    {
+        require(lfs.tfs_filter_count[this->lf_index]
+                <= lfs.tfs_logfile->size());
 
         size_t line_number = lfs.tfs_filter_count[this->lf_index];
 
@@ -108,19 +117,20 @@ void text_filter::end_of_message(logfile_filter_state &lfs)
             lfs.tfs_filter_hits[this->lf_index] += 1;
         }
     }
-    lfs.tfs_last_message_matched[this->lf_index] = lfs.tfs_message_matched[this->lf_index];
-    lfs.tfs_last_lines_for_message[this->lf_index] = lfs.tfs_lines_for_message[this->lf_index];
+    lfs.tfs_last_message_matched[this->lf_index]
+        = lfs.tfs_message_matched[this->lf_index];
+    lfs.tfs_last_lines_for_message[this->lf_index]
+        = lfs.tfs_lines_for_message[this->lf_index];
     lfs.tfs_message_matched[this->lf_index] = false;
     lfs.tfs_lines_for_message[this->lf_index] = 0;
 }
 
-bookmark_type_t textview_curses::BM_USER("user");
-bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
-bookmark_type_t textview_curses::BM_SEARCH("search");
-bookmark_type_t textview_curses::BM_META("meta");
+const bookmark_type_t textview_curses::BM_USER("user");
+const bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
+const bookmark_type_t textview_curses::BM_SEARCH("search");
+const bookmark_type_t textview_curses::BM_META("meta");
 
-textview_curses::textview_curses()
-    : tc_search_action(noop_func{})
+textview_curses::textview_curses() : tc_search_action(noop_func{})
 {
     this->set_data_source(this);
 }
@@ -130,12 +140,14 @@ textview_curses::~textview_curses()
     this->tc_search_action = noop_func{};
 }
 
-void textview_curses::reload_config(error_reporter &reporter)
+void
+textview_curses::reload_config(error_reporter& reporter)
 {
-    static auto DEFAULT_THEME_NAME = string("default");
+    const static auto DEFAULT_THEME_NAME = string("default");
 
     for (auto iter = this->tc_highlights.begin();
-         iter != this->tc_highlights.end();) {
+         iter != this->tc_highlights.end();)
+    {
         if (iter->first.first != highlight_source_t::THEME) {
             ++iter;
             continue;
@@ -145,39 +157,44 @@ void textview_curses::reload_config(error_reporter &reporter)
     }
 
     std::map<std::string, std::string> vars;
-    auto curr_theme_iter = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
+    auto curr_theme_iter
+        = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
     if (curr_theme_iter != lnav_config.lc_ui_theme_defs.end()) {
         vars = curr_theme_iter->second.lt_vars;
     }
 
-    for (const auto& theme_name : {DEFAULT_THEME_NAME, lnav_config.lc_ui_theme}) {
+    for (const auto& theme_name : {DEFAULT_THEME_NAME, lnav_config.lc_ui_theme})
+    {
         auto theme_iter = lnav_config.lc_ui_theme_defs.find(theme_name);
 
         if (theme_iter == lnav_config.lc_ui_theme_defs.end()) {
             continue;
         }
 
-        for (const auto &hl_pair : theme_iter->second.lt_highlights) {
+        for (const auto& hl_pair : theme_iter->second.lt_highlights) {
             if (hl_pair.second.hc_regex.empty()) {
                 continue;
             }
 
-            const char *errptr;
-            pcre *code;
+            const char* errptr;
+            pcre* code;
             int eoff;
 
             if ((code = pcre_compile(hl_pair.second.hc_regex.c_str(),
                                      0,
                                      &errptr,
                                      &eoff,
-                                     nullptr)) == nullptr) {
-                reporter(&hl_pair.second.hc_regex,
-                         fmt::format("invalid highlight regex: {} at {}",
-                                     errptr, eoff));
+                                     nullptr))
+                == nullptr)
+            {
+                reporter(
+                    &hl_pair.second.hc_regex,
+                    fmt::format(
+                        "invalid highlight regex: {} at {}", errptr, eoff));
                 continue;
             }
 
-            const auto &sc = hl_pair.second.hc_style;
+            const auto& sc = hl_pair.second.hc_style;
             string fg1, bg1, fg_color, bg_color, errmsg;
             bool invalid = false;
             int attrs = 0;
@@ -187,14 +204,14 @@ void textview_curses::reload_config(error_reporter &reporter)
             shlex(fg1).eval(fg_color, vars);
             shlex(bg1).eval(bg_color, vars);
 
-            auto fg = styling::color_unit::from_str(fg_color)
-                .unwrapOrElse([&](const auto& msg) {
+            auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
+                [&](const auto& msg) {
                     reporter(&sc.sc_color, errmsg);
                     invalid = true;
                     return styling::color_unit::make_empty();
                 });
-            auto bg = styling::color_unit::from_str(bg_color)
-                .unwrapOrElse([&](const auto& msg) {
+            auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
+                [&](const auto& msg) {
                     reporter(&sc.sc_background_color, errmsg);
                     invalid = true;
                     return styling::color_unit::make_empty();
@@ -209,16 +226,17 @@ void textview_curses::reload_config(error_reporter &reporter)
             if (sc.sc_underline) {
                 attrs |= A_UNDERLINE;
             }
-            this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}] =
-                highlighter(code)
-                    .with_pattern(hl_pair.second.hc_regex)
-                    .with_attrs(attrs != 0 ? attrs : -1)
-                    .with_color(fg, bg);
+            this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
+                = highlighter(code)
+                      .with_pattern(hl_pair.second.hc_regex)
+                      .with_attrs(attrs != 0 ? attrs : -1)
+                      .with_color(fg, bg);
         }
     }
 }
 
-void textview_curses::reload_data()
+void
+textview_curses::reload_data()
 {
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
@@ -226,7 +244,7 @@ void textview_curses::reload_data()
     listview_curses::reload_data();
 
     if (this->tc_sub_source != nullptr) {
-        auto ttt = dynamic_cast<text_time_translator *>(this->tc_sub_source);
+        auto ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
 
         if (ttt != nullptr) {
             ttt->data_reloaded(this);
@@ -234,7 +252,10 @@ void textview_curses::reload_data()
     }
 }
 
-void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop)
+void
+textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
+                            vis_line_t start,
+                            vis_line_t stop)
 {
     require(this->tc_searching >= 0);
 
@@ -248,9 +269,8 @@ void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vi
         if (pair.first != pair.second) {
             this->set_needs_update();
         }
-        for (auto mark_iter = pair.first;
-             mark_iter != pair.second;
-             ++mark_iter) {
+        for (auto mark_iter = pair.first; mark_iter != pair.second; ++mark_iter)
+        {
             if (this->tc_sub_source) {
                 this->tc_sub_source->text_mark(&BM_SEARCH, *mark_iter, false);
             }
@@ -263,10 +283,11 @@ void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vi
     listview_curses::reload_data();
 }
 
-void textview_curses::grep_end_batch(grep_proc<vis_line_t> &gp)
+void
+textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 {
-    if (this->tc_follow_deadline.tv_sec &&
-        this->tc_follow_top == this->get_top()) {
+    if (this->tc_follow_deadline.tv_sec
+        && this->tc_follow_top == this->get_top()) {
         struct timeval now;
 
         gettimeofday(&now, nullptr);
@@ -284,7 +305,8 @@ void textview_curses::grep_end_batch(grep_proc<vis_line_t> &gp)
     this->tc_search_action(this);
 }
 
-void textview_curses::grep_end(grep_proc<vis_line_t> &gp)
+void
+textview_curses::grep_end(grep_proc<vis_line_t>& gp)
 {
     this->tc_searching -= 1;
     this->grep_end_batch(gp);
@@ -292,10 +314,11 @@ void textview_curses::grep_end(grep_proc<vis_line_t> &gp)
     ensure(this->tc_searching >= 0);
 }
 
-void textview_curses::grep_match(grep_proc<vis_line_t> &gp,
-                                 vis_line_t line,
-                                 int start,
-                                 int end)
+void
+textview_curses::grep_match(grep_proc<vis_line_t>& gp,
+                            vis_line_t line,
+                            int start,
+                            int end)
 {
     this->tc_bookmarks[&BM_SEARCH].insert_once(vis_line_t(line));
     if (this->tc_sub_source != nullptr) {
@@ -307,28 +330,31 @@ void textview_curses::grep_match(grep_proc<vis_line_t> &gp,
     }
 }
 
-void textview_curses::listview_value_for_rows(const listview_curses &lv,
-                                              vis_line_t row,
-                                              vector<attr_line_t> &rows_out)
+void
+textview_curses::listview_value_for_rows(const listview_curses& lv,
+                                         vis_line_t row,
+                                         vector<attr_line_t>& rows_out)
 {
-    for (auto &al : rows_out) {
+    for (auto& al : rows_out) {
         this->textview_value_for_row(row, al);
         ++row;
     }
 }
 
-bool textview_curses::handle_mouse(mouse_event &me)
+bool
+textview_curses::handle_mouse(mouse_event& me)
 {
     unsigned long width;
     vis_line_t height;
 
-    if (this->tc_selection_start == -1_vl &&
-        listview_curses::handle_mouse(me)) {
+    if (this->tc_selection_start == -1_vl && listview_curses::handle_mouse(me))
+    {
         return true;
     }
 
-    if (this->tc_delegate != nullptr &&
-        this->tc_delegate->text_handle_mouse(*this, me)) {
+    if (this->tc_delegate != nullptr
+        && this->tc_delegate->text_handle_mouse(*this, me))
+    {
         return true;
     }
 
@@ -345,65 +371,64 @@ bool textview_curses::handle_mouse(mouse_event &me)
     this->get_dimensions(height, width);
 
     switch (me.me_state) {
-    case mouse_button_state_t::BUTTON_STATE_PRESSED:
-        this->tc_selection_start = mouse_line;
-        this->tc_selection_last = -1_vl;
-        this->tc_selection_cleared = false;
-        break;
-    case mouse_button_state_t::BUTTON_STATE_DRAGGED:
-        if (me.me_y <= 0) {
-            this->shift_top(-1_vl);
-            me.me_y = 0;
-            mouse_line = this->get_top();
-        }
-        if (me.me_y >= height && this->get_top() < this->get_top_for_last_row()) {
-            this->shift_top(1_vl);
-            me.me_y = height;
-            mouse_line = this->get_bottom();
-        }
-
-        if (this->tc_selection_last == mouse_line)
-            break;
-
-        if (this->tc_selection_last != -1) {
-            this->toggle_user_mark(&textview_curses::BM_USER,
-               this->tc_selection_start,
-               this->tc_selection_last);
-        }
-        if (this->tc_selection_start == mouse_line) {
+        case mouse_button_state_t::BUTTON_STATE_PRESSED:
+            this->tc_selection_start = mouse_line;
             this->tc_selection_last = -1_vl;
-        }
-        else {
-            if (!this->tc_selection_cleared) {
-                if (this->tc_sub_source != nullptr) {
-                    this->tc_sub_source->text_clear_marks(&BM_USER);
-                }
-                this->tc_bookmarks[&BM_USER].clear();
-
-                this->tc_selection_cleared = true;
+            this->tc_selection_cleared = false;
+            break;
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
+            if (me.me_y <= 0) {
+                this->shift_top(-1_vl);
+                me.me_y = 0;
+                mouse_line = this->get_top();
             }
-            this->toggle_user_mark(&BM_USER,
-               this->tc_selection_start,
-               mouse_line);
-            this->tc_selection_last = mouse_line;
-        }
-        this->reload_data();
-        break;
-    case mouse_button_state_t::BUTTON_STATE_RELEASED:
-        this->tc_selection_start = -1_vl;
-        this->tc_selection_last = -1_vl;
-        this->tc_selection_cleared = false;
-        break;
+            if (me.me_y >= height
+                && this->get_top() < this->get_top_for_last_row()) {
+                this->shift_top(1_vl);
+                me.me_y = height;
+                mouse_line = this->get_bottom();
+            }
+
+            if (this->tc_selection_last == mouse_line)
+                break;
+
+            if (this->tc_selection_last != -1) {
+                this->toggle_user_mark(&textview_curses::BM_USER,
+                                       this->tc_selection_start,
+                                       this->tc_selection_last);
+            }
+            if (this->tc_selection_start == mouse_line) {
+                this->tc_selection_last = -1_vl;
+            } else {
+                if (!this->tc_selection_cleared) {
+                    if (this->tc_sub_source != nullptr) {
+                        this->tc_sub_source->text_clear_marks(&BM_USER);
+                    }
+                    this->tc_bookmarks[&BM_USER].clear();
+
+                    this->tc_selection_cleared = true;
+                }
+                this->toggle_user_mark(
+                    &BM_USER, this->tc_selection_start, mouse_line);
+                this->tc_selection_last = mouse_line;
+            }
+            this->reload_data();
+            break;
+        case mouse_button_state_t::BUTTON_STATE_RELEASED:
+            this->tc_selection_start = -1_vl;
+            this->tc_selection_last = -1_vl;
+            this->tc_selection_cleared = false;
+            break;
     }
 
     return true;
 }
 
-void textview_curses::textview_value_for_row(vis_line_t row,
-                                             attr_line_t &value_out)
+void
+textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 {
-    string_attrs_t &sa = value_out.get_attrs();
-    string &str = value_out.get_string();
+    string_attrs_t& sa = value_out.get_attrs();
+    string& str = value_out.get_string();
     text_format_t source_format = this->tc_sub_source->get_text_format();
     intern_string_t format_name;
 
@@ -431,18 +456,20 @@ void textview_curses::textview_value_for_row(vis_line_t row,
         format_name = sa_iter->to_string();
     }
 
-    for (auto &tc_highlight : this->tc_highlights) {
-        bool internal_hl =
-            tc_highlight.first.first == highlight_source_t::INTERNAL ||
-            tc_highlight.first.first == highlight_source_t::THEME;
+    for (auto& tc_highlight : this->tc_highlights) {
+        bool internal_hl
+            = tc_highlight.first.first == highlight_source_t::INTERNAL
+            || tc_highlight.first.first == highlight_source_t::THEME;
 
-        if (!tc_highlight.second.h_text_formats.empty() &&
-            tc_highlight.second.h_text_formats.count(source_format) == 0) {
+        if (!tc_highlight.second.h_text_formats.empty()
+            && tc_highlight.second.h_text_formats.count(source_format) == 0)
+        {
             continue;
         }
 
-        if (!tc_highlight.second.h_format_name.empty() &&
-            tc_highlight.second.h_format_name != format_name) {
+        if (!tc_highlight.second.h_format_name.empty()
+            && tc_highlight.second.h_format_name != format_name)
+        {
             continue;
         }
 
@@ -514,25 +541,27 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     }
 #endif
 
-    const auto &user_marks = this->tc_bookmarks[&BM_USER];
-    const auto &user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
-    if (binary_search(user_marks.begin(), user_marks.end(), row) ||
-        binary_search(user_expr_marks.begin(), user_expr_marks.end(), row)) {
+    const auto& user_marks = this->tc_bookmarks[&BM_USER];
+    const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
+    if (binary_search(user_marks.begin(), user_marks.end(), row)
+        || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
+    {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         &view_curses::VC_STYLE,
                         A_REVERSE);
     }
 }
 
-void textview_curses::execute_search(const std::string &regex_orig)
+void
+textview_curses::execute_search(const std::string& regex_orig)
 {
     std::string regex = regex_orig;
-    pcre *code = nullptr;
+    pcre* code = nullptr;
 
-    if ((this->tc_search_child == nullptr) ||
-        (regex != this->tc_current_search)) {
-        const char *errptr;
-        int         eoff;
+    if ((this->tc_search_child == nullptr)
+        || (regex != this->tc_current_search)) {
+        const char* errptr;
+        int eoff;
 
         this->tc_previous_search = this->tc_current_search;
         this->match_reset();
@@ -543,22 +572,19 @@ void textview_curses::execute_search(const std::string &regex_orig)
         log_debug("start search for: '%s'", regex.c_str());
 
         if (regex.empty()) {
-        }
-        else if ((code = pcre_compile(regex.c_str(),
-                                      PCRE_CASELESS,
-                                      &errptr,
-                                      &eoff,
-                                      nullptr)) == nullptr) {
+        } else if ((code = pcre_compile(
+                        regex.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
+                   == nullptr)
+        {
             string errmsg = string(errptr);
 
             regex = pcrepp::quote(regex);
 
             log_info("invalid search regex, using quoted: %s", regex.c_str());
-            if ((code = pcre_compile(regex.c_str(),
-                                     PCRE_CASELESS,
-                                     &errptr,
-                                     &eoff,
-                                     nullptr)) == nullptr) {
+            if ((code = pcre_compile(
+                     regex.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
+                == nullptr)
+            {
                 log_error("Unable to compile quoted regex: %s", regex.c_str());
             }
         }
@@ -568,10 +594,11 @@ void textview_curses::execute_search(const std::string &regex_orig)
 
             hl.with_role(view_colors::VCR_SEARCH);
 
-            highlight_map_t &hm = this->get_highlights();
+            highlight_map_t& hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
-            unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, *this);
+            unique_ptr<grep_proc<vis_line_t>> gp
+                = make_unique<grep_proc<vis_line_t>>(code, *this);
 
             gp->set_sink(this);
             auto top = this->get_top();
@@ -590,8 +617,9 @@ void textview_curses::execute_search(const std::string &regex_orig)
                 gp, highlight_source_t::PREVIEW, "search", hm);
 
             if (this->tc_sub_source != nullptr) {
-                this->tc_sub_source->get_grepper() | [this, code] (auto pair) {
-                    shared_ptr<grep_proc<vis_line_t>> sgp = make_shared<grep_proc<vis_line_t>>(code, *pair.first);
+                this->tc_sub_source->get_grepper() | [this, code](auto pair) {
+                    shared_ptr<grep_proc<vis_line_t>> sgp
+                        = make_shared<grep_proc<vis_line_t>>(code, *pair.first);
 
                     sgp->set_sink(pair.second);
                     sgp->queue_request(0_vl);
@@ -610,11 +638,14 @@ void textview_curses::execute_search(const std::string &regex_orig)
 }
 
 void
-textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start,
-                             pair<int, int> &range_out)
+textview_curses::horiz_shift(vis_line_t start,
+                             vis_line_t end,
+                             int off_start,
+                             pair<int, int>& range_out)
 {
-    highlighter &hl = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
-    int          prev_hit = -1, next_hit = INT_MAX;
+    highlighter& hl
+        = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
+    int prev_hit = -1, next_hit = INT_MAX;
 
     for (; start < end; ++start) {
         std::vector<attr_line_t> rows(1);
@@ -622,8 +653,8 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start,
 
         this->listview_value_for_rows(*this, start, rows);
 
-        const std::string &str = rows[0].get_string();
-        for (off = 0; off < (int)str.size(); ) {
+        const std::string& str = rows[0].get_string();
+        for (off = 0; off < (int) str.size();) {
             int rc, matches[128];
 
             rc = pcre_exec(hl.h_code,
@@ -639,27 +670,23 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start,
 
                 if (rc == 2) {
                     lr.lr_start = matches[2];
-                    lr.lr_end   = matches[3];
-                }
-                else {
+                    lr.lr_end = matches[3];
+                } else {
                     lr.lr_start = matches[0];
-                    lr.lr_end   = matches[1];
+                    lr.lr_end = matches[1];
                 }
 
                 if (lr.lr_start < off_start) {
                     prev_hit = std::max(prev_hit, lr.lr_start);
-                }
-                else if (lr.lr_start > off_start) {
+                } else if (lr.lr_start > off_start) {
                     next_hit = std::min(next_hit, lr.lr_start);
                 }
                 if (lr.lr_end > lr.lr_start) {
                     off = matches[1];
-                }
-                else {
+                } else {
                     off += 1;
                 }
-            }
-            else {
+            } else {
                 off = str.size();
             }
         }
@@ -669,15 +696,16 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start,
 }
 
 void
-textview_curses::set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked)
+textview_curses::set_user_mark(const bookmark_type_t* bm,
+                               vis_line_t vl,
+                               bool marked)
 {
-    bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
+    bookmark_vector<vis_line_t>& bv = this->tc_bookmarks[bm];
     bookmark_vector<vis_line_t>::iterator iter;
 
     if (marked) {
         bv.insert_once(vl);
-    }
-    else {
+    } else {
         iter = std::lower_bound(bv.begin(), bv.end(), vl);
         if (iter != bv.end() && *iter == vl) {
             bv.erase(iter);
@@ -695,7 +723,8 @@ textview_curses::set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked)
 }
 
 void
-textview_curses::toggle_user_mark(bookmark_type_t *bm, vis_line_t start_line,
+textview_curses::toggle_user_mark(const bookmark_type_t* bm,
+                                  vis_line_t start_line,
                                   vis_line_t end_line)
 {
     if (end_line == -1) {
@@ -711,17 +740,16 @@ textview_curses::toggle_user_mark(bookmark_type_t *bm, vis_line_t start_line,
     if (end_line >= this->get_inner_height()) {
         end_line = vis_line_t(this->get_inner_height() - 1);
     }
-    for (vis_line_t curr_line = start_line; curr_line <= end_line;
-         ++curr_line) {
-        bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
+    for (vis_line_t curr_line = start_line; curr_line <= end_line; ++curr_line)
+    {
+        bookmark_vector<vis_line_t>& bv = this->tc_bookmarks[bm];
         bookmark_vector<vis_line_t>::iterator iter;
         bool added;
 
         iter = bv.insert_once(curr_line);
         if (iter == bv.end()) {
             added = true;
-        }
-        else {
+        } else {
             bv.erase(iter);
             added = false;
         }
@@ -733,24 +761,24 @@ textview_curses::toggle_user_mark(bookmark_type_t *bm, vis_line_t start_line,
     this->search_new_data();
 }
 
-void text_time_translator::scroll_invoked(textview_curses *tc)
+void
+text_time_translator::scroll_invoked(textview_curses* tc)
 {
     if (tc->get_inner_height() > 0) {
-        this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
-            this->ttt_top_time = new_top_time;
-        };
+        this->time_for_row(tc->get_top()) |
+            [this](auto new_top_time) { this->ttt_top_time = new_top_time; };
     }
 }
 
-void text_time_translator::data_reloaded(textview_curses *tc)
+void
+text_time_translator::data_reloaded(textview_curses* tc)
 {
     if (tc->get_inner_height() > 0) {
         this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
             if (top_time != this->ttt_top_time) {
                 if (this->ttt_top_time.tv_sec != 0) {
-                    this->row_for_time(this->ttt_top_time) | [tc](auto new_top) {
-                        tc->set_top(new_top);
-                    };
+                    this->row_for_time(this->ttt_top_time) |
+                        [tc](auto new_top) { tc->set_top(new_top); };
                 }
                 this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
                     this->ttt_top_time = new_top_time;
@@ -762,13 +790,16 @@ void text_time_translator::data_reloaded(textview_curses *tc)
 
 template class bookmark_vector<vis_line_t>;
 
-bool empty_filter::matches(const logfile &lf, logfile::const_iterator ll,
-                           shared_buffer_ref &line)
+bool
+empty_filter::matches(const logfile& lf,
+                      logfile::const_iterator ll,
+                      shared_buffer_ref& line)
 {
     return false;
 }
 
-string empty_filter::to_command()
+string
+empty_filter::to_command()
 {
     return "";
 }

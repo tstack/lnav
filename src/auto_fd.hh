@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,14 +32,14 @@
 #ifndef auto_fd_hh
 #define auto_fd_hh
 
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/select.h>
-
+#include <exception>
 #include <new>
 #include <string>
-#include <exception>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <unistd.h>
 
 #include "base/lnav_log.hh"
 #include "base/result.h"
@@ -51,7 +51,6 @@
  */
 class auto_fd {
 public:
-
     /**
      * Wrapper for the posix pipe(2) function that stores the file descriptor
      * results in an auto_fd array.
@@ -60,7 +59,7 @@ public:
      * contains the reader end of the pipe and the second contains the writer.
      * @return The result of the pipe(2) function.
      */
-    static int pipe(auto_fd *af)
+    static int pipe(auto_fd* af)
     {
         int retval, fd[2];
 
@@ -80,7 +79,8 @@ public:
      * @param fd The file descriptor to duplicate.
      * @return A new auto_fd that contains the duplicated file descriptor.
      */
-    static auto_fd dup_of(int fd) {
+    static auto_fd dup_of(int fd)
+    {
         if (fd == -1) {
             return auto_fd{};
         }
@@ -99,8 +99,7 @@ public:
      *
      * @param fd The file descriptor to be managed.
      */
-    explicit auto_fd(int fd = -1)
-        : af_fd(fd)
+    explicit auto_fd(int fd = -1) : af_fd(fd)
     {
         require(fd >= -1);
     };
@@ -112,9 +111,7 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(auto_fd && af) noexcept
-        : af_fd(af.release()) {
-    };
+    auto_fd(auto_fd&& af) noexcept : af_fd(af.release()){};
 
     /**
      * Const copy constructor.  The file descriptor from the source will be
@@ -122,8 +119,7 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(const auto_fd &af)
-        : af_fd(-1)
+    auto_fd(const auto_fd& af) : af_fd(-1)
     {
         if (af.af_fd != -1 && (this->af_fd = dup(af.af_fd)) == -1) {
             throw std::bad_alloc();
@@ -139,7 +135,10 @@ public:
     };
 
     /** @return The file descriptor as a plain integer. */
-    operator int() const { return this->af_fd; };
+    operator int() const
+    {
+        return this->af_fd;
+    };
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -148,7 +147,7 @@ public:
      * @param fd The file descriptor to store in this object.
      * @return *this
      */
-    auto_fd &operator=(int fd)
+    auto_fd& operator=(int fd)
     {
         require(fd >= -1);
 
@@ -162,7 +161,8 @@ public:
      * @param af The old manager of the file descriptor.
      * @return *this
      */
-    auto_fd &operator=(auto_fd && af) noexcept {
+    auto_fd& operator=(auto_fd&& af) noexcept
+    {
         this->reset(af.release());
         return *this;
     };
@@ -173,7 +173,7 @@ public:
      *
      * @return A pointer to the internal integer.
      */
-    int *out()
+    int* out()
     {
         this->reset();
         return &this->af_fd;
@@ -218,7 +218,8 @@ public:
         }
     };
 
-    void close_on_exec() const {
+    void close_on_exec() const
+    {
         if (this->af_fd == -1) {
             return;
         }
@@ -226,12 +227,13 @@ public:
     }
 
 private:
-    int af_fd;  /*< The managed file descriptor. */
+    int af_fd; /*< The managed file descriptor. */
 };
 
 class auto_pipe {
 public:
-    static Result<auto_pipe, std::string> for_child_fd(int child_fd) {
+    static Result<auto_pipe, std::string> for_child_fd(int child_fd)
+    {
         auto_pipe retval(child_fd);
 
         if (retval.open() == -1) {
@@ -245,70 +247,73 @@ public:
         : ap_child_flags(child_flags), ap_child_fd(child_fd)
     {
         switch (child_fd) {
-        case STDIN_FILENO:
-            this->ap_child_flags = O_RDONLY;
-            break;
-        case STDOUT_FILENO:
-        case STDERR_FILENO:
-            this->ap_child_flags = O_WRONLY;
-            break;
+            case STDIN_FILENO:
+                this->ap_child_flags = O_RDONLY;
+                break;
+            case STDOUT_FILENO:
+            case STDERR_FILENO:
+                this->ap_child_flags = O_WRONLY;
+                break;
         }
     };
 
-    int open() {
+    int open()
+    {
         return auto_fd::pipe(this->ap_fd);
     };
 
-    void close() {
+    void close()
+    {
         this->ap_fd[0].reset();
         this->ap_fd[1].reset();
     };
 
-    auto_fd &read_end() {
+    auto_fd& read_end()
+    {
         return this->ap_fd[0];
     };
 
-    auto_fd &write_end() {
+    auto_fd& write_end()
+    {
         return this->ap_fd[1];
     };
 
-    void after_fork(pid_t child_pid) {
+    void after_fork(pid_t child_pid)
+    {
         int new_fd;
 
         switch (child_pid) {
-        case -1:
-            this->close();
-            break;
-        case 0:
-            if (this->ap_child_flags == O_RDONLY) {
-                this->write_end().reset();
-                if (this->read_end().get() == -1) {
-                    this->read_end() = ::open("/dev/null", O_RDONLY);
+            case -1:
+                this->close();
+                break;
+            case 0:
+                if (this->ap_child_flags == O_RDONLY) {
+                    this->write_end().reset();
+                    if (this->read_end().get() == -1) {
+                        this->read_end() = ::open("/dev/null", O_RDONLY);
+                    }
+                    new_fd = this->read_end().get();
+                } else {
+                    this->read_end().reset();
+                    if (this->write_end().get() == -1) {
+                        this->write_end() = ::open("/dev/null", O_WRONLY);
+                    }
+                    new_fd = this->write_end().get();
                 }
-                new_fd = this->read_end().get();
-            }
-            else {
-                this->read_end().reset();
-                if (this->write_end().get() == -1) {
-                    this->write_end() = ::open("/dev/null", O_WRONLY);
+                if (this->ap_child_fd != -1) {
+                    if (new_fd != this->ap_child_fd) {
+                        dup2(new_fd, this->ap_child_fd);
+                        this->close();
+                    }
                 }
-                new_fd = this->write_end().get();
-            }
-            if (this->ap_child_fd != -1) {
-                if (new_fd != this->ap_child_fd) {
-                    dup2(new_fd, this->ap_child_fd);
-                    this->close();
+                break;
+            default:
+                if (this->ap_child_flags == O_RDONLY) {
+                    this->read_end().reset();
+                } else {
+                    this->write_end().reset();
                 }
-            }
-            break;
-        default:
-            if (this->ap_child_flags == O_RDONLY) {
-                this->read_end().reset();
-            }
-            else {
-                this->write_end().reset();
-            }
-            break;
+                break;
         }
     };
 

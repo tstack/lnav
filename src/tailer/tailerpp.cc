@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,9 +31,10 @@
 
 namespace tailer {
 
-int readall(int sock, void *buf, size_t len)
+int
+readall(int sock, void* buf, size_t len)
 {
-    char *cbuf = (char *) buf;
+    char* cbuf = (char*) buf;
     off_t offset = 0;
 
     while (len > 0) {
@@ -59,7 +60,8 @@ int readall(int sock, void *buf, size_t len)
     return 0;
 }
 
-Result<packet, std::string> read_packet(int fd)
+Result<packet, std::string>
+read_packet(int fd)
 {
     tailer_packet_type_t type;
 
@@ -105,43 +107,32 @@ Result<packet, std::string> read_packet(int fd)
         case TPT_SYNCED: {
             packet_synced ps;
 
-            TRY(read_payloads_into(fd,
-                                   ps.ps_root_path,
-                                   ps.ps_path));
+            TRY(read_payloads_into(fd, ps.ps_root_path, ps.ps_path));
             return Ok(packet{ps});
         }
         case TPT_LINK_BLOCK: {
             packet_link pl;
 
-            TRY(read_payloads_into(fd,
-                                   pl.pl_root_path,
-                                   pl.pl_path,
-                                   pl.pl_link_value));
+            TRY(read_payloads_into(
+                fd, pl.pl_root_path, pl.pl_path, pl.pl_link_value));
             return Ok(packet{pl});
         }
         case TPT_PREVIEW_ERROR: {
             packet_preview_error ppe;
 
-            TRY(read_payloads_into(fd,
-                                   ppe.ppe_id,
-                                   ppe.ppe_path,
-                                   ppe.ppe_msg));
+            TRY(read_payloads_into(fd, ppe.ppe_id, ppe.ppe_path, ppe.ppe_msg));
             return Ok(packet{ppe});
         }
         case TPT_PREVIEW_DATA: {
             packet_preview_data ppd;
 
-            TRY(read_payloads_into(fd,
-                                   ppd.ppd_id,
-                                   ppd.ppd_path,
-                                   ppd.ppd_bits));
+            TRY(read_payloads_into(fd, ppd.ppd_id, ppd.ppd_path, ppd.ppd_bits));
             return Ok(packet{ppd});
         }
         case TPT_POSSIBLE_PATH: {
             packet_possible_path ppp;
 
-            TRY(read_payloads_into(fd,
-                                   ppp.ppp_path));
+            TRY(read_payloads_into(fd, ppp.ppp_path));
             return Ok(packet{ppp});
         }
         default:
@@ -150,4 +141,4 @@ Result<packet, std::string> read_packet(int fd)
     }
 }
 
-}
+}  // namespace tailer

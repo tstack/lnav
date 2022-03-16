@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,32 +30,38 @@
 #include "config.h"
 
 #ifdef __CYGWIN__
-#include <sstream>
-#include <iostream>
+#    include <iostream>
+#    include <sstream>
 #endif
 
-#include "paths.hh"
 #include "fmt/format.h"
+#include "paths.hh"
 
 namespace lnav {
 namespace paths {
 
 #ifdef __CYGWIN__
-char* windows_to_unix_file_path(char* input) {
+char*
+windows_to_unix_file_path(char* input)
+{
     if (input == nullptr) {
-      return nullptr;
+        return nullptr;
     }
     std::string file_path;
     file_path.assign(input);
 
     // Replace the slashes
-    std::replace(file_path.begin(), file_path.end(), WINDOWS_FILE_PATH_SEPARATOR, UNIX_FILE_PATH_SEPARATOR);
+    std::replace(file_path.begin(),
+                 file_path.end(),
+                 WINDOWS_FILE_PATH_SEPARATOR,
+                 UNIX_FILE_PATH_SEPARATOR);
 
     // Convert the drive letter to lowercase
-    std::transform(file_path.begin(), file_path.begin() + 1, file_path.begin(),
-                   [](unsigned char character) {
-                       return std::tolower(character);
-                   });
+    std::transform(
+        file_path.begin(),
+        file_path.begin() + 1,
+        file_path.begin(),
+        [](unsigned char character) { return std::tolower(character); });
 
     // Remove the colon
     const auto drive_letter = file_path.substr(0, 1);
@@ -70,7 +76,8 @@ char* windows_to_unix_file_path(char* input) {
 }
 #endif
 
-ghc::filesystem::path dotlnav()
+ghc::filesystem::path
+dotlnav()
 {
 #ifdef __CYGWIN__
     auto home_env = windows_to_unix_file_path(getenv("APPDATA"));
@@ -110,7 +117,8 @@ ghc::filesystem::path dotlnav()
     return ghc::filesystem::current_path();
 }
 
-ghc::filesystem::path workdir()
+ghc::filesystem::path
+workdir()
 {
     auto subdir_name = fmt::format("lnav-user-{}-work", getuid());
     auto tmp_path = ghc::filesystem::temp_directory_path();
@@ -118,5 +126,5 @@ ghc::filesystem::path workdir()
     return tmp_path / ghc::filesystem::path(subdir_name);
 }
 
-}
-}
+}  // namespace paths
+}  // namespace lnav

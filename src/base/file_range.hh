@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -43,28 +43,31 @@ public:
     file_off_t fr_offset{0};
     file_ssize_t fr_size{0};
 
-    void clear() {
+    void clear()
+    {
         this->fr_offset = 0;
         this->fr_size = 0;
     }
 
-    ssize_t next_offset() const {
+    ssize_t next_offset() const
+    {
         return this->fr_offset + this->fr_size;
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return fr_size == 0;
     }
 };
 
 struct source_location {
     source_location()
-        : sl_source(intern_string::lookup("unknown")),
-          sl_line_number(-1) {
+        : sl_source(intern_string::lookup("unknown")), sl_line_number(-1)
+    {
     }
 
     source_location(intern_string_t source, int line)
-        : sl_source(source), sl_line_number(line) {};
+        : sl_source(source), sl_line_number(line){};
 
     intern_string_t sl_source;
     int sl_line_number;

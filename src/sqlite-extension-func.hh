@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,72 +32,73 @@
 #ifndef lnav_sqlite_extension_func_h
 #define lnav_sqlite_extension_func_h
 
-#include <stdint.h>
-#include <sqlite3.h>
-
-#include <string>
 #include <map>
+#include <string>
+
+#include <sqlite3.h>
+#include <stdint.h>
 
 #include "help_text.hh"
 
 struct FuncDef {
-    const char *zName{nullptr};
+    const char* zName{nullptr};
     signed char nArg{0};
-    int eTextRep{0};          /* 1: UTF-16.  0: UTF-8 */
+    int eTextRep{0}; /* 1: UTF-16.  0: UTF-8 */
     uint8_t needCollSeq{0};
-    void (*xFunc)(sqlite3_context*,int,sqlite3_value **){nullptr};
+    void (*xFunc)(sqlite3_context*, int, sqlite3_value**){nullptr};
     help_text fd_help{};
 
-    FuncDef &with_flags(int flags) {
+    FuncDef& with_flags(int flags)
+    {
         this->eTextRep = flags;
         return *this;
     };
 };
 
 struct FuncDefAgg {
-    const char *zName{nullptr};
+    const char* zName{nullptr};
     signed char nArg{0};
     uint8_t needCollSeq{0};
-    void (*xStep)(sqlite3_context*,int,sqlite3_value**){nullptr};
+    void (*xStep)(sqlite3_context*, int, sqlite3_value**){nullptr};
     void (*xFinalize)(sqlite3_context*){nullptr};
     help_text fda_help{};
 };
 
-typedef int (*sqlite_registration_func_t)(struct FuncDef **basic_funcs,
-                                          struct FuncDefAgg **agg_funcs);
+typedef int (*sqlite_registration_func_t)(struct FuncDef** basic_funcs,
+                                          struct FuncDefAgg** agg_funcs);
 
-int common_extension_functions(struct FuncDef **basic_funcs,
-                               struct FuncDefAgg **agg_funcs);
+int common_extension_functions(struct FuncDef** basic_funcs,
+                               struct FuncDefAgg** agg_funcs);
 
-int state_extension_functions(struct FuncDef **basic_funcs,
-                              struct FuncDefAgg **agg_funcs);
+int state_extension_functions(struct FuncDef** basic_funcs,
+                              struct FuncDefAgg** agg_funcs);
 
-int string_extension_functions(struct FuncDef **basic_funcs,
-                               struct FuncDefAgg **agg_funcs);
+int string_extension_functions(struct FuncDef** basic_funcs,
+                               struct FuncDefAgg** agg_funcs);
 
-int network_extension_functions(struct FuncDef **basic_funcs,
-                                struct FuncDefAgg **agg_funcs);
+int network_extension_functions(struct FuncDef** basic_funcs,
+                                struct FuncDefAgg** agg_funcs);
 
-int fs_extension_functions(struct FuncDef **basic_funcs,
-                           struct FuncDefAgg **agg_funcs);
+int fs_extension_functions(struct FuncDef** basic_funcs,
+                           struct FuncDefAgg** agg_funcs);
 
-int json_extension_functions(struct FuncDef **basic_funcs,
-                             struct FuncDefAgg **agg_funcs);
+int json_extension_functions(struct FuncDef** basic_funcs,
+                             struct FuncDefAgg** agg_funcs);
 
-int time_extension_functions(struct FuncDef **basic_funcs,
-                             struct FuncDefAgg **agg_funcs);
+int time_extension_functions(struct FuncDef** basic_funcs,
+                             struct FuncDefAgg** agg_funcs);
 
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
-int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
+int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
 
 extern "C" {
 int sqlite3_db_dump(
-    sqlite3 *db,               /* The database connection */
-    const char *zSchema,       /* Which schema to dump.  Usually "main". */
-    const char *zTable,        /* Which table to dump.  NULL means everything. */
-    int (*xCallback)(const char*,void*),   /* Output sent to this callback */
-    void *pArg                             /* Second argument of the callback */
+    sqlite3* db, /* The database connection */
+    const char* zSchema, /* Which schema to dump.  Usually "main". */
+    const char* zTable, /* Which table to dump.  NULL means everything. */
+    int (*xCallback)(const char*, void*), /* Output sent to this callback */
+    void* pArg /* Second argument of the callback */
 );
 }
 

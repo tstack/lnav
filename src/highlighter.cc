@@ -21,17 +21,17 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include "highlighter.hh"
 
-highlighter::highlighter(const highlighter &other)
+#include "config.h"
+
+highlighter::highlighter(const highlighter& other)
 {
     this->h_pattern = other.h_pattern;
     this->h_fg = other.h_fg;
@@ -46,7 +46,8 @@ highlighter::highlighter(const highlighter &other)
     this->h_nestable = other.h_nestable;
 }
 
-highlighter &highlighter::operator=(const highlighter &other)
+highlighter&
+highlighter::operator=(const highlighter& other)
 {
     if (this == &other) {
         return *this;
@@ -73,39 +74,41 @@ highlighter &highlighter::operator=(const highlighter &other)
     return *this;
 }
 
-void highlighter::study()
+void
+highlighter::study()
 {
-    const char *errptr;
+    const char* errptr;
 
     this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
     if (!this->h_code_extra && errptr) {
         log_error("pcre_study error: %s", errptr);
     }
     if (this->h_code_extra != nullptr) {
-        pcre_extra *extra = this->h_code_extra;
+        pcre_extra* extra = this->h_code_extra;
 
-        extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
-                         PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-        extra->match_limit           = 10000;
+        extra->flags
+            |= (PCRE_EXTRA_MATCH_LIMIT | PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+        extra->match_limit = 10000;
         extra->match_limit_recursion = 500;
     }
 }
 
-void highlighter::annotate(attr_line_t &al, int start) const
+void
+highlighter::annotate(attr_line_t& al, int start) const
 {
-    auto &vc = view_colors::singleton();
-    const auto &str = al.get_string();
-    auto &sa = al.get_attrs();
+    auto& vc = view_colors::singleton();
+    const auto& str = al.get_string();
+    auto& sa = al.get_attrs();
     // The line we pass to pcre_exec will be treated as the start when the
     // carat (^) operator is used.
-    const char *line_start = &(str.c_str()[start]);
+    const char* line_start = &(str.c_str()[start]);
     size_t re_end;
 
     if ((str.length() - start) > 8192)
         re_end = 8192;
     else
         re_end = str.length() - start;
-    for (int off = 0; off < (int)str.size() - start; ) {
+    for (int off = 0; off < (int) str.size() - start;) {
         int rc, matches[60];
         rc = pcre_exec(this->h_code,
                        this->h_code_extra,
@@ -120,17 +123,18 @@ void highlighter::annotate(attr_line_t &al, int start) const
 
             if (rc == 2) {
                 lr.lr_start = start + matches[2];
-                lr.lr_end   = start + matches[3];
-            }
-            else {
+                lr.lr_end = start + matches[3];
+            } else {
                 lr.lr_start = start + matches[0];
-                lr.lr_end   = start + matches[1];
+                lr.lr_end = start + matches[1];
             }
 
-            if (lr.lr_end > lr.lr_start &&
-                (this->h_nestable ||
-                 find_string_attr_containing(sa, &view_curses::VC_STYLE, lr) ==
-                 sa.end())) {
+            if (lr.lr_end > lr.lr_start
+                && (this->h_nestable
+                    || find_string_attr_containing(
+                           sa, &view_curses::VC_STYLE, lr)
+                        == sa.end()))
+            {
                 int attrs = 0;
 
                 if (this->h_attrs != -1) {
@@ -147,21 +151,17 @@ void highlighter::annotate(attr_line_t &al, int start) const
                                     vc.match_color(this->h_bg));
                 }
                 if (this->h_role != view_colors::VCR_NONE) {
-                    sa.emplace_back(lr,
-                                    &view_curses::VC_ROLE,
-                                    this->h_role);
+                    sa.emplace_back(lr, &view_curses::VC_ROLE, this->h_role);
                 }
                 if (attrs) {
                     sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
                 }
 
                 off = matches[1];
-            }
-            else {
+            } else {
                 off += 1;
             }
-        }
-        else {
+        } else {
             off = str.size();
         }
     }

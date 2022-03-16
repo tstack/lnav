@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,34 +30,32 @@
 #ifndef pretty_printer_hh
 #define pretty_printer_hh
 
-#include <sys/types.h>
-
-#include <stack>
 #include <deque>
 #include <sstream>
+#include <stack>
 #include <utility>
+
+#include <sys/types.h>
 
 #include "attr_line.hh"
 #include "data_scanner.hh"
 
 class pretty_printer {
-
 public:
-
     struct element {
-        element(data_token_t token, pcre_context &pc)
-                : e_token(token), e_capture(*pc.all()) {
-
-        };
+        element(data_token_t token, pcre_context& pc)
+            : e_token(token), e_capture(*pc.all())
+        {
+        }
 
         data_token_t e_token;
         pcre_context::capture_t e_capture;
     };
 
-    pretty_printer(data_scanner *ds, string_attrs_t sa, int leading_indent=0)
-            : pp_leading_indent(leading_indent),
-              pp_scanner(ds),
-              pp_attrs(std::move(sa)) {
+    pretty_printer(data_scanner* ds, string_attrs_t sa, int leading_indent = 0)
+        : pp_leading_indent(leading_indent), pp_scanner(ds),
+          pp_attrs(std::move(sa))
+    {
         this->pp_body_lines.push(0);
 
         pcre_context_static<30> pc;
@@ -69,12 +67,11 @@ public:
                 pp_is_xml = true;
             }
         }
-    };
+    }
 
-    void append_to(attr_line_t &al);
+    void append_to(attr_line_t& al);
 
 private:
-
     void descend();
 
     void ascend();
@@ -85,14 +82,14 @@ private:
 
     void append_indent();
 
-    void write_element(const element &el);
+    void write_element(const element& el);
 
     int pp_leading_indent;
     int pp_depth{0};
     int pp_line_length{0};
     int pp_soft_indent{0};
     std::stack<int> pp_body_lines{};
-    data_scanner *pp_scanner;
+    data_scanner* pp_scanner;
     string_attrs_t pp_attrs;
     std::ostringstream pp_stream;
     std::deque<element> pp_values{};

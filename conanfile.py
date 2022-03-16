@@ -35,6 +35,7 @@ class LnavConan(ConanFile):
         "pcre:with_jit": True,
         "sqlite3:enable_json1": True,
         "sqlite3:enable_soundex": True,
+        "readline:with_library": "curses",
     }
 
     def generate(self):

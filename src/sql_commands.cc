@@ -21,32 +21,33 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "base/lnav_log.hh"
-#include "base/fs_util.hh"
-#include "view_helpers.hh"
-#include "bound_tags.hh"
-#include "base/injector.bind.hh"
-#include "readline_context.hh"
-#include "sqlite-extension-func.hh"
-#include "command_executor.hh"
-#include "sqlitepp.hh"
 #include "auto_mem.hh"
+#include "base/fs_util.hh"
+#include "base/injector.bind.hh"
+#include "base/lnav_log.hh"
+#include "bound_tags.hh"
+#include "command_executor.hh"
+#include "config.h"
+#include "readline_context.hh"
 #include "shlex.hh"
+#include "sqlite-extension-func.hh"
+#include "sqlitepp.hh"
+#include "view_helpers.hh"
 
-static
-Result<std::string, std::string> sql_cmd_dump(
-    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+static Result<std::string, std::string>
+sql_cmd_dump(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
 {
-    static auto& lnav_db =
-        injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&, sqlite_db_tag>();
+    static auto& lnav_db
+        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                        sqlite_db_tag>();
 
     std::string retval;
 
@@ -63,15 +64,15 @@ Result<std::string, std::string> sql_cmd_dump(
     auto_mem<FILE> file(fclose);
 
     if ((file = fopen(args[1].c_str(), "w+")) == nullptr) {
-        return ec.make_error("unable to open '{}' for writing: {}",
-                             args[1], strerror(errno));
+        return ec.make_error(
+            "unable to open '{}' for writing: {}", args[1], strerror(errno));
     }
 
     for (size_t lpc = 2; lpc < args.size(); lpc++) {
         sqlite3_db_dump(lnav_db.in(),
                         "main",
                         args[lpc].c_str(),
-                        (int (*)(const char *, void*)) fputs,
+                        (int (*)(const char*, void*)) fputs,
                         file.in());
     }
 
@@ -79,11 +80,14 @@ Result<std::string, std::string> sql_cmd_dump(
     return Ok(retval);
 }
 
-static
-Result<std::string, std::string> sql_cmd_read(
-    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+static Result<std::string, std::string>
+sql_cmd_read(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
 {
-    static auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&, sqlite_db_tag>();
+    static auto& lnav_db
+        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                        sqlite_db_tag>();
 
     std::string retval;
 
@@ -110,27 +114,23 @@ Result<std::string, std::string> sql_cmd_read(
 
         auto script = read_res.unwrap();
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-        const char *start = script.c_str();
+        const char* start = script.c_str();
 
         do {
-            const char *tail;
-            auto rc = sqlite3_prepare_v2(lnav_db.in(),
-                                         start,
-                                         -1,
-                                         stmt.out(),
-                                         &tail);
+            const char* tail;
+            auto rc = sqlite3_prepare_v2(
+                lnav_db.in(), start, -1, stmt.out(), &tail);
 
             if (rc != SQLITE_OK) {
-                const char *errmsg = sqlite3_errmsg(lnav_db.in());
+                const char* errmsg = sqlite3_errmsg(lnav_db.in());
 
                 return ec.make_error("{}", errmsg);
             }
 
             if (stmt.in() != nullptr) {
                 std::string alt_msg;
-                auto exec_res = execute_sql(ec,
-                                            std::string(start, tail - start),
-                                            alt_msg);
+                auto exec_res = execute_sql(
+                    ec, std::string(start, tail - start), alt_msg);
                 if (exec_res.isErr()) {
                     return exec_res;
                 }
@@ -143,9 +143,10 @@ Result<std::string, std::string> sql_cmd_read(
     return Ok(retval);
 }
 
-static
-Result<std::string, std::string> sql_cmd_schema(
-    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+static Result<std::string, std::string>
+sql_cmd_schema(exec_context& ec,
+               std::string cmdline,
+               std::vector<std::string>& args)
 {
     std::string retval;
 
@@ -158,9 +159,10 @@ Result<std::string, std::string> sql_cmd_schema(
     return Ok(retval);
 }
 
-static
-Result<std::string, std::string> sql_cmd_generic(
-    exec_context &ec, std::string cmdline, std::vector<std::string> &args)
+static Result<std::string, std::string>
+sql_cmd_generic(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
 {
     std::string retval;
 
@@ -176,26 +178,27 @@ static readline_context::command_t sql_commands[] = {
     {
         ".dump",
         sql_cmd_dump,
-        help_text(".dump",
-                  "Dump the contents of the database")
+        help_text(".dump", "Dump the contents of the database")
             .sql_command()
             .with_parameter({"path", "The path to the file to write"})
-            .with_tags({"io",}),
+            .with_tags({
+                "io",
+            }),
     },
     {
         ".msgformats",
         sql_cmd_schema,
-        help_text(".msgformats", "df")
-            .sql_command(),
+        help_text(".msgformats", "df").sql_command(),
     },
     {
         ".read",
         sql_cmd_read,
-        help_text(".read",
-                  "Execute the SQLite statements in the given file")
+        help_text(".read", "Execute the SQLite statements in the given file")
             .sql_command()
             .with_parameter({"path", "The path to the file to write"})
-            .with_tags({"io",}),
+            .with_tags({
+                "io",
+            }),
     },
     {
         ".schema",
@@ -245,18 +248,20 @@ static readline_context::command_t sql_commands[] = {
 
 static readline_context::command_map_t sql_cmd_map;
 
-static auto bound_sql_cmd_map = injector::bind<
-    readline_context::command_map_t, sql_cmd_map_tag>::to_instance(+[]() {
-    for (auto& cmd : sql_commands) {
-        sql_cmd_map[cmd.c_name] = &cmd;
-    }
+static auto bound_sql_cmd_map
+    = injector::bind<readline_context::command_map_t,
+                     sql_cmd_map_tag>::to_instance(+[]() {
+          for (auto& cmd : sql_commands) {
+              sql_cmd_map[cmd.c_name] = &cmd;
+          }
 
-    return &sql_cmd_map;
-});
+          return &sql_cmd_map;
+      });
 
 namespace injector {
 template<>
-void force_linking(sql_cmd_map_tag anno)
+void
+force_linking(sql_cmd_map_tag anno)
 {
 }
-}
+}  // namespace injector

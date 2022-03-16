@@ -21,30 +21,30 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file pcap_manager.cc
  */
 
-#include "config.h"
-
-#include <vector>
-#include <thread>
 #include <memory>
+#include <thread>
+#include <vector>
+
+#include "pcap_manager.hh"
 
 #include <unistd.h>
 
 #include "base/fs_util.hh"
-#include "pcap_manager.hh"
+#include "config.h"
 #include "line_buffer.hh"
 
 namespace pcap_manager {
 
 Result<convert_result, std::string>
-convert(const std::string &filename)
+convert(const std::string& filename)
 {
     log_info("attempting to convert pcap file -- %s", filename.c_str());
 
@@ -62,30 +62,34 @@ convert(const std::string &filename)
         dup2(outfile.second, STDOUT_FILENO);
         setenv("TZ", "UTC", 1);
 
-        const char *args[] = {
+        const char* args[] = {
             "tshark",
-            "-T", "ek",
+            "-T",
+            "ek",
             "-P",
             "-V",
-            "-t", "ad",
-            "-r", filename.c_str(),
+            "-t",
+            "ad",
+            "-r",
+            filename.c_str(),
             nullptr,
         };
 
-        execvp("tshark", (char **) args);
+        execvp("tshark", (char**) args);
         if (errno == ENOENT) {
             fprintf(stderr,
                     "pcap support requires 'tshark' v3+ to be installed\n");
         } else {
-            fprintf(stderr,
-                    "failed to execute 'tshark' -- %s\n",
-                    strerror(errno));
+            fprintf(
+                stderr, "failed to execute 'tshark' -- %s\n", strerror(errno));
         }
         _exit(EXIT_FAILURE);
     }
 
     auto error_queue = std::make_shared<std::vector<std::string>>();
-    std::thread err_reader([err = std::move(err_pipe.read_end()), error_queue, child_pid=child.in()]() mutable {
+    std::thread err_reader([err = std::move(err_pipe.read_end()),
+                            error_queue,
+                            child_pid = child.in()]() mutable {
         line_buffer lb;
         file_range pipe_range;
         bool done = false;
@@ -103,18 +107,20 @@ convert(const std::string &filename)
                 if (li.li_file_range.empty()) {
                     done = true;
                 } else {
-                    lb.read_range(li.li_file_range).then([error_queue, child_pid](auto sbr) {
-                        auto line_str = string_fragment(sbr.get_data(),
-                                                        0,
-                                                        sbr.length());
-                        line_str.trim("\n");
-                        if (error_queue->size() < 5) {
-                            error_queue->emplace_back(line_str.to_string());
-                        }
+                    lb.read_range(li.li_file_range)
+                        .then([error_queue, child_pid](auto sbr) {
+                            auto line_str = string_fragment(
+                                sbr.get_data(), 0, sbr.length());
+                            line_str.trim("\n");
+                            if (error_queue->size() < 5) {
+                                error_queue->emplace_back(line_str.to_string());
+                            }
 
-                        log_debug("pcap[%d]: %.*s",
-                                  child_pid, line_str.length(), line_str.data());
-                    });
+                            log_debug("pcap[%d]: %.*s",
+                                      child_pid,
+                                      line_str.length(),
+                                      line_str.data());
+                        });
                 }
             }
         }
@@ -124,8 +130,10 @@ convert(const std::string &filename)
     log_info("started tshark %d to process file", child.in());
 
     return Ok(convert_result{
-        std::move(child), auto_fd(outfile.second), error_queue,
+        std::move(child),
+        auto_fd(outfile.second),
+        error_queue,
     });
 }
 
-}
+}  // namespace pcap_manager

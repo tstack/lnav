@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,15 +32,15 @@
 #ifndef lnav_auto_mem_hh
 #define lnav_auto_mem_hh
 
+#include <exception>
+
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
-
-#include <exception>
 
 #include "base/result.h"
 
-typedef void (*free_func_t)(void *);
+typedef void (*free_func_t)(void*);
 
 /**
  * Resource management class for memory allocated by a custom allocator.
@@ -51,126 +51,149 @@ typedef void (*free_func_t)(void *);
 template<class T, free_func_t default_free = free>
 class auto_mem {
 public:
-    explicit auto_mem(T *ptr = nullptr)
-        : am_ptr(ptr), am_free_func(default_free) {
-    };
+    explicit auto_mem(T* ptr = nullptr)
+        : am_ptr(ptr), am_free_func(default_free){};
 
-    auto_mem(const auto_mem &am) = delete;
+    auto_mem(const auto_mem& am) = delete;
 
     template<typename F>
     explicit auto_mem(F free_func) noexcept
-        : am_ptr(nullptr), am_free_func((free_func_t)free_func) { };
+        : am_ptr(nullptr), am_free_func((free_func_t) free_func){};
 
-    auto_mem(auto_mem &&other) noexcept
-        : am_ptr(other.release()),
-          am_free_func(other.am_free_func) {
-    };
+    auto_mem(auto_mem&& other) noexcept
+        : am_ptr(other.release()), am_free_func(other.am_free_func){};
 
-    ~auto_mem() {
+    ~auto_mem()
+    {
         this->reset();
     };
 
-    operator T *() const { return this->am_ptr; };
+    operator T*() const
+    {
+        return this->am_ptr;
+    };
 
-    auto_mem &operator =(T *ptr)
+    auto_mem& operator=(T* ptr)
     {
         this->reset(ptr);
         return *this;
     };
 
-    auto_mem &operator=(auto_mem &) = delete;
+    auto_mem& operator=(auto_mem&) = delete;
 
-    auto_mem &operator =(auto_mem && am) noexcept
+    auto_mem& operator=(auto_mem&& am) noexcept
     {
         this->reset(am.release());
         this->am_free_func = am.am_free_func;
         return *this;
     };
 
-    T *release()
+    T* release()
     {
-        T *retval = this->am_ptr;
+        T* retval = this->am_ptr;
 
         this->am_ptr = nullptr;
         return retval;
     };
 
-    T *in() const
+    T* in() const
     {
         return this->am_ptr;
     };
 
-    T **out()
+    T** out()
     {
         this->reset();
         return &this->am_ptr;
     };
 
-    void reset(T *ptr = nullptr)
+    void reset(T* ptr = nullptr)
     {
         if (this->am_ptr != ptr) {
             if (this->am_ptr != nullptr) {
-                this->am_free_func((void *)this->am_ptr);
+                this->am_free_func((void*) this->am_ptr);
             }
             this->am_ptr = ptr;
         }
     };
 
 private:
-    T *  am_ptr;
-    void (*am_free_func)(void *);
+    T* am_ptr;
+    void (*am_free_func)(void*);
 };
 
-template<typename T, void(*free_func) (T *)>
+template<typename T, void (*free_func)(T*)>
 class static_root_mem {
 public:
-    static_root_mem() {
+    static_root_mem()
+    {
         memset(&this->srm_value, 0, sizeof(T));
     };
 
-    ~static_root_mem() { free_func(&this->srm_value); };
+    ~static_root_mem()
+    {
+        free_func(&this->srm_value);
+    };
 
-    const T *operator->() const { return &this->srm_value; };
+    const T* operator->() const
+    {
+        return &this->srm_value;
+    };
 
-    const T &in() const { return this->srm_value; };
+    const T& in() const
+    {
+        return this->srm_value;
+    };
 
-    T *inout() {
+    T* inout()
+    {
         free_func(&this->srm_value);
         memset(&this->srm_value, 0, sizeof(T));
         return &this->srm_value;
     };
 
 private:
-    static_root_mem &operator =(T &) { return *this; };
+    static_root_mem& operator=(T&)
+    {
+        return *this;
+    };
 
-    static_root_mem &operator =(static_root_mem &) { return *this; };
+    static_root_mem& operator=(static_root_mem&)
+    {
+        return *this;
+    };
 
     T srm_value;
 };
 
 class auto_buffer {
 public:
-    static auto_buffer alloc(size_t size) {
-        return auto_buffer{ (char *) malloc(size), size };
+    static auto_buffer alloc(size_t size)
+    {
+        return auto_buffer{(char*) malloc(size), size};
     }
 
     auto_buffer(auto_buffer&& other) noexcept
-        : ab_buffer(other.ab_buffer), ab_size(other.ab_size) {
+        : ab_buffer(other.ab_buffer), ab_size(other.ab_size)
+    {
         other.ab_buffer = nullptr;
         other.ab_size = 0;
     }
 
-    ~auto_buffer() {
+    ~auto_buffer()
+    {
         free(this->ab_buffer);
         this->ab_buffer = nullptr;
         this->ab_size = 0;
     }
 
-    char *in() {
+    char* in()
+    {
         return this->ab_buffer;
     }
 
-    std::pair<char *, size_t> release() {
+    std::pair<char*, size_t> release()
+    {
         auto retval = std::make_pair(this->ab_buffer, this->ab_size);
 
         this->ab_buffer = nullptr;
@@ -178,16 +201,18 @@ public:
         return retval;
     }
 
-    size_t size() const {
+    size_t size() const
+    {
         return this->ab_size;
     }
 
-    void expand_by(size_t amount) {
+    void expand_by(size_t amount)
+    {
         if (amount == 0) {
             return;
         }
         auto new_size = this->ab_size + amount;
-        auto new_buffer = (char *) realloc(this->ab_buffer, new_size);
+        auto new_buffer = (char*) realloc(this->ab_buffer, new_size);
 
         if (new_buffer == nullptr) {
             throw std::bad_alloc();
@@ -197,15 +222,16 @@ public:
         this->ab_size = new_size;
     }
 
-    auto_buffer& shrink_to(size_t new_size) {
+    auto_buffer& shrink_to(size_t new_size)
+    {
         this->ab_size = new_size;
         return *this;
     }
-private:
-    auto_buffer(char *buffer, size_t size) : ab_buffer(buffer), ab_size(size) {
-    }
 
-    char *ab_buffer;
+private:
+    auto_buffer(char* buffer, size_t size) : ab_buffer(buffer), ab_size(size) {}
+
+    char* ab_buffer;
     size_t ab_size;
 };
 

@@ -28,9 +28,12 @@
 #ifndef _IS_UTF8_H
 #define _IS_UTF8_H
 
-#include <sys/types.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
-ssize_t is_utf8(unsigned char *str, size_t len, const char **message, int *faulty_bytes);
+ssize_t is_utf8(unsigned char* str,
+                size_t len,
+                const char** message,
+                int* faulty_bytes);
 
 #endif /* _IS_UTF8_H */

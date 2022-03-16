@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,27 +32,26 @@
 
 #include <array>
 
-#include "log_vtab_impl.hh"
 #include "data_parser.hh"
+#include "log_vtab_impl.hh"
 
 /**
  * A virtual table that provides access to all log messages from all formats.
  */
 class all_logs_vtab : public log_vtab_impl {
 public:
-
     all_logs_vtab();
 
-    void get_columns(std::vector<vtab_column> &cols) const override;
+    void get_columns(std::vector<vtab_column>& cols) const override;
 
     void extract(std::shared_ptr<logfile> lf,
                  uint64_t line_number,
-                 shared_buffer_ref &line,
-                 std::vector<logline_value> &values) override;
+                 shared_buffer_ref& line,
+                 std::vector<logline_value>& values) override;
 
-    bool is_valid(log_cursor &lc, logfile_sub_source &lss) override;
+    bool is_valid(log_cursor& lc, logfile_sub_source& lss) override;
 
-    bool next(log_cursor &lc, logfile_sub_source &lss) override;
+    bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
 private:
     logline_value_meta alv_value_meta;
@@ -62,4 +61,4 @@ private:
     std::array<char, data_parser::schema_id_t::STRING_SIZE> alv_schema_buffer{};
 };
 
-#endif //LNAV_ALL_LOGS_VTAB_HH
+#endif  // LNAV_ALL_LOGS_VTAB_HH

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,31 +30,35 @@
 #ifndef files_sub_source_hh
 #define files_sub_source_hh
 
-#include "textview_curses.hh"
 #include "file_collection.hh"
+#include "textview_curses.hh"
 
 class files_sub_source
-    : public text_sub_source, public list_input_delegate {
+    : public text_sub_source
+    , public list_input_delegate {
 public:
     files_sub_source();
 
-    bool list_input_handle_key(listview_curses &lv, int ch) override;
+    bool list_input_handle_key(listview_curses& lv, int ch) override;
 
-    void list_input_handle_scroll_out(listview_curses &lv) override;
+    void list_input_handle_scroll_out(listview_curses& lv) override;
 
     size_t text_line_count() override;
 
-    size_t text_line_width(textview_curses &curses) override;
+    size_t text_line_width(textview_curses& curses) override;
 
-    void
-    text_value_for_line(textview_curses &tc, int line, std::string &value_out,
-                        line_flags_t flags) override;
+    void text_value_for_line(textview_curses& tc,
+                             int line,
+                             std::string& value_out,
+                             line_flags_t flags) override;
 
-    void text_attrs_for_line(textview_curses &tc, int line,
-                             string_attrs_t &value_out) override;
+    void text_attrs_for_line(textview_curses& tc,
+                             int line,
+                             string_attrs_t& value_out) override;
 
-    size_t
-    text_size_for_line(textview_curses &tc, int line, line_flags_t raw) override;
+    size_t text_size_for_line(textview_curses& tc,
+                              int line,
+                              line_flags_t raw) override;
 
     bool fss_editing{false};
     bool fss_filter_state{false};
@@ -62,21 +66,25 @@ public:
 };
 
 struct files_overlay_source : public list_overlay_source {
-    bool list_value_for_overlay(const listview_curses &lv, int y, int bottom,
+    bool list_value_for_overlay(const listview_curses& lv,
+                                int y,
+                                int bottom,
                                 vis_line_t line,
-                                attr_line_t &value_out) override;
+                                attr_line_t& value_out) override;
 };
 
 namespace files_model {
 
-struct no_selection {};
+struct no_selection {
+};
 
 template<typename C, typename T>
 struct selection_base {
     int sb_index{0};
     T sb_iter;
 
-    static C build(int index, T iter) {
+    static C build(int index, T iter)
+    {
         C retval;
 
         retval.sb_index = index;
@@ -86,22 +94,26 @@ struct selection_base {
 };
 
 struct error_selection
-    : public selection_base<error_selection, std::map<std::string, file_error_info>::iterator> {
+    : public selection_base<error_selection,
+                            std::map<std::string, file_error_info>::iterator> {
 };
 
 struct other_selection
-    : public selection_base<other_selection, std::map<std::string, other_file_descriptor>::iterator> {
+    : public selection_base<
+          other_selection,
+          std::map<std::string, other_file_descriptor>::iterator> {
 };
 
 struct file_selection
-    : public selection_base<file_selection, std::vector<std::shared_ptr<logfile>>::iterator> {
+    : public selection_base<file_selection,
+                            std::vector<std::shared_ptr<logfile>>::iterator> {
 };
 
-using files_list_selection = mapbox::util::variant<
-    no_selection, error_selection, other_selection, file_selection>;
+using files_list_selection = mapbox::util::
+    variant<no_selection, error_selection, other_selection, file_selection>;
 
 files_list_selection from_selection(vis_line_t sel_vis);
 
-}
+}  // namespace files_model
 
 #endif

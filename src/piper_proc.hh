@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -33,7 +33,9 @@
 #define piper_proc_hh
 
 #include <string>
+
 #include <sys/types.h>
+
 #include "auto_fd.hh"
 
 /**
@@ -44,11 +46,9 @@
  */
 class piper_proc {
 public:
-    class error
-        : public std::exception {
-public:
-        error(int err)
-            : e_err(err) { };
+    class error : public std::exception {
+    public:
+        error(int err) : e_err(err){};
 
         int e_err;
     };
@@ -72,9 +72,15 @@ public:
     virtual ~piper_proc();
 
     /** @return The file descriptor for the temporary file. */
-    auto_fd get_fd() { return std::move(this->pp_fd); };
+    auto_fd get_fd()
+    {
+        return std::move(this->pp_fd);
+    };
 
-    pid_t get_child_pid() const { return this->pp_child; };
+    pid_t get_child_pid() const
+    {
+        return this->pp_child;
+    };
 
 private:
     /** A file descriptor that refers to the temporary file. */

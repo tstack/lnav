@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,19 +32,18 @@
 #ifndef lnav_file_collection_hh
 #define lnav_file_collection_hh
 
+#include <forward_list>
+#include <list>
 #include <map>
 #include <set>
-#include <list>
 #include <string>
 #include <utility>
-#include <forward_list>
 
-#include "safe/safe.h"
-
-#include "base/future_util.hh"
-#include "logfile_fwd.hh"
 #include "archive_manager.hh"
+#include "base/future_util.hh"
 #include "file_format.hh"
+#include "logfile_fwd.hh"
+#include "safe/safe.h"
 #include "tailer/tailer.looper.hh"
 
 struct tailer_progress {
@@ -64,7 +63,9 @@ struct other_file_descriptor {
 
     other_file_descriptor(file_format_t format = file_format_t::FF_UNKNOWN,
                           std::string description = "")
-        : ofd_format(format), ofd_description(std::move(description)) {}
+        : ofd_format(format), ofd_description(std::move(description))
+    {
+    }
 };
 
 struct file_error_info {
@@ -81,16 +82,22 @@ enum class child_poll_result_t {
 
 class child_poller {
 public:
-    explicit child_poller(auto_pid<process_state::RUNNING> child,
-                          std::function<void(file_collection&, auto_pid<process_state::FINISHED>&)> finalizer)
-        : cp_child(std::move(child)), cp_finalizer(std::move(finalizer)) {
+    explicit child_poller(
+        auto_pid<process_state::running> child,
+        std::function<void(file_collection&,
+                           auto_pid<process_state::finished>&)> finalizer)
+        : cp_child(std::move(child)), cp_finalizer(std::move(finalizer))
+    {
     }
 
     child_poller(child_poller&& other) noexcept
         : cp_child(std::move(other.cp_child)),
-          cp_finalizer(std::move(other.cp_finalizer)) {}
+          cp_finalizer(std::move(other.cp_finalizer))
+    {
+    }
 
-    child_poller& operator=(child_poller&& other) noexcept {
+    child_poller& operator=(child_poller&& other) noexcept
+    {
         this->cp_child = std::move(other.cp_child);
         this->cp_finalizer = std::move(other.cp_finalizer);
 
@@ -100,9 +107,11 @@ public:
     ~child_poller() noexcept = default;
 
     child_poll_result_t poll(file_collection& fc);
+
 private:
-    nonstd::optional<auto_pid<process_state::RUNNING>> cp_child;
-    std::function<void(file_collection&, auto_pid<process_state::FINISHED>&)> cp_finalizer;
+    nonstd::optional<auto_pid<process_state::running>> cp_child;
+    std::function<void(file_collection&, auto_pid<process_state::finished>&)>
+        cp_finalizer;
 };
 
 struct file_collection {
@@ -127,7 +136,8 @@ struct file_collection {
 
     file_collection()
         : fc_progress(std::make_shared<safe::Safe<scan_progress>>())
-    {}
+    {
+    }
 
     void clear()
     {
@@ -141,22 +151,20 @@ struct file_collection {
 
     file_collection rescan_files(bool required = false);
 
-    void
-    expand_filename(lnav::futures::future_queue<file_collection> &fq,
-                    const std::string &path,
-                    logfile_open_options &loo,
-                    bool required);
+    void expand_filename(lnav::futures::future_queue<file_collection>& fq,
+                         const std::string& path,
+                         logfile_open_options& loo,
+                         bool required);
 
-    std::future<file_collection>
-    watch_logfile(const std::string &filename, logfile_open_options &loo,
-                  bool required);
+    std::future<file_collection> watch_logfile(const std::string& filename,
+                                               logfile_open_options& loo,
+                                               bool required);
 
-    void merge(file_collection &other);
+    void merge(file_collection& other);
 
-    void close_files(const std::vector<std::shared_ptr<logfile>> &files);
+    void close_files(const std::vector<std::shared_ptr<logfile>>& files);
 
     void regenerate_unique_file_names();
 };
-
 
 #endif

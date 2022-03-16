@@ -21,34 +21,35 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file log_format_impls.cc
  */
 
-#include "config.h"
+#include <algorithm>
+#include <utility>
+
+#include "log_format.hh"
 
 #include <stdio.h>
 
-#include <utility>
-#include <algorithm>
-
+#include "base/injector.bind.hh"
+#include "base/opt_util.hh"
+#include "config.h"
+#include "formats/logfmt/logfmt.parser.hh"
+#include "log_vtab_impl.hh"
 #include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
-#include "log_format.hh"
-#include "log_vtab_impl.hh"
-#include "base/opt_util.hh"
-#include "base/injector.bind.hh"
 #include "yajlpp/yajlpp.hh"
-#include "formats/logfmt/logfmt.parser.hh"
 
 using namespace std;
 
-static pcrepp RDNS_PATTERN("^(?:com|net|org|edu|[a-z][a-z])"
-                           "(\\.\\w+)+(.+)");
+static pcrepp RDNS_PATTERN(
+    "^(?:com|net|org|edu|[a-z][a-z])"
+    "(\\.\\w+)+(.+)");
 
 /**
  * Attempt to scrub a reverse-DNS string.
@@ -59,14 +60,15 @@ static pcrepp RDNS_PATTERN("^(?:com|net|org|edu|[a-z][a-z])"
  * @return     The scrubbed version of the input string or the original string
  *   if it is not a reverse-DNS string.
  */
-static string scrub_rdns(const string &str)
+static string
+scrub_rdns(const string& str)
 {
     pcre_context_static<30> context;
     pcre_input input(str);
-    string     retval;
+    string retval;
 
     if (RDNS_PATTERN.match(context, input)) {
-        pcre_context::capture_t *cap;
+        pcre_context::capture_t* cap;
 
         cap = context.begin();
         for (int index = 0; index < cap->c_begin; index++) {
@@ -79,15 +81,14 @@ static string scrub_rdns(const string &str)
         }
         retval += input.get_substr(cap);
         retval += input.get_substr(cap + 1);
-    }
-    else {
+    } else {
         retval = str;
     }
     return retval;
 }
 
 class generic_log_format : public log_format {
-    static pcrepp &scrub_pattern()
+    static pcrepp& scrub_pattern()
     {
         static pcrepp SCRUB_PATTERN(
             "\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:(.*)");
@@ -95,46 +96,59 @@ class generic_log_format : public log_format {
         return SCRUB_PATTERN;
     }
 
-    static pcre_format *get_pcre_log_formats() {
+    static pcre_format* get_pcre_log_formats()
+    {
         static pcre_format log_fmt[] = {
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: "
+                        "\\.,/-]+)\\[[^\\]]+\\](.*)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) (.*)"),
 
-            pcre_format(R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w: \.,+/-]+)\]\s*(\w+):?)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\[(\\w+)\\]"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\w+ (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] \\(\\d+\\) (.*)"),
+            pcre_format(
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w: \.,+/-]+)\]\s*(\w+):?)"),
+            pcre_format(
+                "^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: "
+                        "\\.,+/-]+)\\] \\[(\\w+)\\]"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: "
+                        "\\.,+/-]+)\\] \\w+ (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] "
+                        "\\(\\d+\\) (.*)"),
 
-            pcre_format()
-        };
+            pcre_format()};
 
         return log_fmt;
     };
 
-    std::string get_pattern_regex(uint64_t line_number) const {
+    std::string get_pattern_regex(uint64_t line_number) const
+    {
         int pat_index = this->pattern_index_for_line(line_number);
         return get_pcre_log_formats()[pat_index].name;
     }
 
-    const intern_string_t get_name() const {
+    const intern_string_t get_name() const
+    {
         return intern_string::lookup("generic_log");
     };
 
-    void scrub(string &line)
+    void scrub(string& line)
     {
         pcre_context_static<30> context;
         pcre_input pi(line);
-        string     new_line;
+        string new_line;
 
         if (scrub_pattern().match(context, pi)) {
-            pcre_context::capture_t *cap;
+            pcre_context::capture_t* cap;
 
             for (cap = context.begin(); cap != context.end(); cap++) {
                 new_line += scrub_rdns(pi.get_substr(cap));
@@ -144,33 +158,35 @@ class generic_log_format : public log_format {
         }
     };
 
-    scan_result_t scan(logfile &lf,
-                       vector<logline> &dst,
-                       const line_info &li,
-                       shared_buffer_ref &sbr)
+    scan_result_t scan(logfile& lf,
+                       vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr)
     {
         struct exttm log_time;
         struct timeval log_tv;
         pcre_context::capture_t ts, level;
-        const char *last_pos;
+        const char* last_pos;
 
-        if ((last_pos = this->log_scanf(
-                dst.size(),
-                sbr.get_data(),
-                sbr.length(),
-                get_pcre_log_formats(),
-                nullptr,
-                &log_time,
-                &log_tv,
+        if ((last_pos = this->log_scanf(dst.size(),
+                                        sbr.get_data(),
+                                        sbr.length(),
+                                        get_pcre_log_formats(),
+                                        nullptr,
+                                        &log_time,
+                                        &log_tv,
 
-                &ts,
-                &level)) != nullptr) {
-            const char *level_str = &sbr.get_data()[level.c_begin];
+                                        &ts,
+                                        &level))
+            != nullptr)
+        {
+            const char* level_str = &sbr.get_data()[level.c_begin];
             log_level_t level_val = string2level(level_str, level.length());
 
-            if (!((log_time.et_flags & ETF_DAY_SET) &&
-                  (log_time.et_flags & ETF_MONTH_SET) &&
-                  (log_time.et_flags & ETF_YEAR_SET))) {
+            if (!((log_time.et_flags & ETF_DAY_SET)
+                  && (log_time.et_flags & ETF_MONTH_SET)
+                  && (log_time.et_flags & ETF_YEAR_SET)))
+            {
                 this->check_for_new_year(dst, log_time, log_tv);
             }
 
@@ -181,11 +197,14 @@ class generic_log_format : public log_format {
         return SCAN_NO_MATCH;
     };
 
-    void annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
-                      std::vector<logline_value> &values, bool annotate_module) const
+    void annotate(uint64_t line_number,
+                  shared_buffer_ref& line,
+                  string_attrs_t& sa,
+                  std::vector<logline_value>& values,
+                  bool annotate_module) const
     {
         int pat_index = this->pattern_index_for_line(line_number);
-        pcre_format &fmt = get_pcre_log_formats()[pat_index];
+        pcre_format& fmt = get_pcre_log_formats()[pat_index];
         struct line_range lr;
         int prefix_len = 0;
         pcre_input pi(line.get_data(), 0, line.length());
@@ -196,24 +215,23 @@ class generic_log_format : public log_format {
         }
 
         lr.lr_start = pc[0]->c_begin;
-        lr.lr_end   = pc[0]->c_end;
+        lr.lr_end = pc[0]->c_end;
         sa.emplace_back(lr, &logline::L_TIMESTAMP);
 
-        const char *level = &line.get_data()[pc[1]->c_begin];
+        const char* level = &line.get_data()[pc[1]->c_begin];
 
         if (string2level(level, pc[1]->length(), true) == LEVEL_UNKNOWN) {
             prefix_len = pc[0]->c_end;
-        }
-        else {
+        } else {
             prefix_len = pc[1]->c_end;
         }
 
         lr.lr_start = 0;
-        lr.lr_end   = prefix_len;
+        lr.lr_end = prefix_len;
         sa.emplace_back(lr, &logline::L_PREFIX);
 
         lr.lr_start = prefix_len;
-        lr.lr_end   = line.length();
+        lr.lr_end = line.length();
         sa.emplace_back(lr, &SA_BODY);
     };
 
@@ -223,7 +241,8 @@ class generic_log_format : public log_format {
     };
 };
 
-string from_escaped_string(const char *str, size_t len)
+string
+from_escaped_string(const char* str, size_t len)
 {
     string retval;
 
@@ -248,65 +267,69 @@ string from_escaped_string(const char *str, size_t len)
     return retval;
 }
 
-nonstd::optional<const char *>
-lnav_strnstr(const char *s, const char *find, size_t slen)
+nonstd::optional<const char*>
+lnav_strnstr(const char* s, const char* find, size_t slen)
 {
-	char c, sc;
-	size_t len;
+    char c, sc;
+    size_t len;
 
-	if ((c = *find++) != '\0') {
-		len = strlen(find);
-		do {
-			do {
-				if (slen < 1 || (sc = *s) == '\0') {
+    if ((c = *find++) != '\0') {
+        len = strlen(find);
+        do {
+            do {
+                if (slen < 1 || (sc = *s) == '\0') {
                     return nonstd::nullopt;
                 }
-				--slen;
-				++s;
-			} while (sc != c);
-			if (len > slen) {
+                --slen;
+                ++s;
+            } while (sc != c);
+            if (len > slen) {
                 return nonstd::nullopt;
             }
-		} while (strncmp(s, find, len) != 0);
-		s--;
-	}
-	return s;
+        } while (strncmp(s, find, len) != 0);
+        s--;
+    }
+    return s;
 }
 
 struct separated_string {
-    const char *ss_str;
+    const char* ss_str;
     size_t ss_len;
-    const char *ss_separator;
+    const char* ss_separator;
     size_t ss_separator_len;
 
-    separated_string(const char *str, size_t len)
-        : ss_str(str), ss_len(len), ss_separator(",") {
+    separated_string(const char* str, size_t len)
+        : ss_str(str), ss_len(len), ss_separator(",")
+    {
         this->ss_separator_len = strlen(this->ss_separator);
     };
 
-    separated_string &with_separator(const char *sep) {
+    separated_string& with_separator(const char* sep)
+    {
         this->ss_separator = sep;
         this->ss_separator_len = strlen(sep);
         return *this;
     };
 
     struct iterator {
-        const separated_string &i_parent;
-        const char *i_pos;
-        const char *i_next_pos;
+        const separated_string& i_parent;
+        const char* i_pos;
+        const char* i_next_pos;
         size_t i_index;
 
-        iterator(const separated_string &ss, const char *pos)
-            : i_parent(ss), i_pos(pos), i_next_pos(pos), i_index(0) {
+        iterator(const separated_string& ss, const char* pos)
+            : i_parent(ss), i_pos(pos), i_next_pos(pos), i_index(0)
+        {
             this->update();
         };
 
-        void update() {
-            const separated_string &ss = this->i_parent;
-            auto next_field = lnav_strnstr(
-                this->i_pos,
-                ss.ss_separator,
-                ss.ss_len - (this->i_pos - ss.ss_str));
+        void update()
+        {
+            const separated_string& ss = this->i_parent;
+            auto next_field
+                = lnav_strnstr(this->i_pos,
+                               ss.ss_separator,
+                               ss.ss_len - (this->i_pos - ss.ss_str));
             if (next_field) {
                 this->i_next_pos = next_field.value() + ss.ss_separator_len;
             } else {
@@ -314,7 +337,8 @@ struct separated_string {
             }
         };
 
-        iterator &operator++() {
+        iterator& operator++()
+        {
             this->i_pos = this->i_next_pos;
             this->update();
             this->i_index += 1;
@@ -322,8 +346,9 @@ struct separated_string {
             return *this;
         };
 
-        string_fragment operator*() {
-            const separated_string &ss = this->i_parent;
+        string_fragment operator*()
+        {
+            const separated_string& ss = this->i_parent;
             int end;
 
             if (this->i_next_pos < (ss.ss_str + ss.ss_len)) {
@@ -334,78 +359,90 @@ struct separated_string {
             return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
         };
 
-        bool operator==(const iterator &other) const {
-            return (&this->i_parent == &other.i_parent) &&
-                   (this->i_pos == other.i_pos);
+        bool operator==(const iterator& other) const
+        {
+            return (&this->i_parent == &other.i_parent)
+                && (this->i_pos == other.i_pos);
         };
 
-        bool operator!=(const iterator &other) const {
+        bool operator!=(const iterator& other) const
+        {
             return !(*this == other);
         };
 
-        size_t index() const {
+        size_t index() const
+        {
             return this->i_index;
         };
     };
 
-    iterator begin() {
+    iterator begin()
+    {
         return {*this, this->ss_str};
     };
 
-    iterator end() {
+    iterator end()
+    {
         return {*this, this->ss_str + this->ss_len};
     };
 };
 
 class bro_log_format : public log_format {
 public:
-
     struct field_def {
         logline_value_meta fd_meta;
         std::string fd_collator;
         int fd_numeric_index;
 
-        explicit field_def(const intern_string_t name, int col, log_format *format)
+        explicit field_def(const intern_string_t name,
+                           int col,
+                           log_format* format)
             : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
-              fd_numeric_index(-1) {
-        };
+              fd_numeric_index(-1){};
 
-        field_def &with_kind(value_kind_t kind,
+        field_def& with_kind(value_kind_t kind,
                              bool identifier = false,
-                             const std::string &collator = "") {
+                             const std::string& collator = "")
+        {
             this->fd_meta.lvm_kind = kind;
             this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
         };
 
-        field_def &with_numeric_index(int index) {
+        field_def& with_numeric_index(int index)
+        {
             this->fd_numeric_index = index;
             return *this;
         }
     };
 
-    bro_log_format() {
+    bro_log_format()
+    {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
     };
 
-    const intern_string_t get_name() const {
+    const intern_string_t get_name() const
+    {
         static const intern_string_t name(intern_string::lookup("bro"));
 
         return this->blf_format_name.empty() ? name : this->blf_format_name;
     };
 
-    virtual void clear() {
+    virtual void clear()
+    {
         this->log_format::clear();
         this->blf_format_name.clear();
         this->blf_field_defs.clear();
     };
 
-    scan_result_t scan_int(std::vector<logline> &dst,
-                           const line_info &li,
-                           shared_buffer_ref &sbr) {
-        static const intern_string_t STATUS_CODE = intern_string::lookup("bro_status_code");
+    scan_result_t scan_int(std::vector<logline>& dst,
+                           const line_info& li,
+                           shared_buffer_ref& sbr)
+    {
+        static const intern_string_t STATUS_CODE
+            = intern_string::lookup("bro_status_code");
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
@@ -427,16 +464,13 @@ public:
                 break;
             }
 
-            const auto &fd = this->blf_field_defs[iter.index()];
+            const auto& fd = this->blf_field_defs[iter.index()];
 
             if (TS == fd.fd_meta.lvm_name) {
                 string_fragment sf = *iter;
 
-                if (this->lf_date_time.scan(sf.data(),
-                                            sf.length(),
-                                            nullptr,
-                                            &tm,
-                                            tv)) {
+                if (this->lf_date_time.scan(
+                        sf.data(), sf.length(), nullptr, &tm, tv)) {
                     this->lf_timestamp_flags = tm.et_flags;
                     found_ts = true;
                 }
@@ -460,8 +494,10 @@ public:
                         char field_copy[sf.length() + 1];
                         double val;
 
-                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1) {
-                            this->lf_value_stats[fd.fd_numeric_index].add_value(val);
+                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
+                        {
+                            this->lf_value_stats[fd.fd_numeric_index].add_value(
+                                val);
                         }
                         break;
                     }
@@ -479,17 +515,19 @@ public:
         }
     }
 
-    scan_result_t scan(logfile &lf,
-                       std::vector<logline> &dst,
-                       const line_info &li,
-                       shared_buffer_ref &sbr) {
+    scan_result_t scan(logfile& lf,
+                       std::vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr)
+    {
         static pcrepp SEP_RE(R"(^#separator\s+(.+))");
 
         if (!this->blf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);
         }
 
-        if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#') {
+        if (dst.empty() || dst.size() > 20 || sbr.empty()
+            || sbr.get_data()[0] == '#') {
             return SCAN_NO_MATCH;
         }
 
@@ -510,7 +548,8 @@ public:
 
         this->clear();
 
-        string sep = from_escaped_string(pi.get_substr_start(pc[0]), pc[0]->length());
+        string sep
+            = from_escaped_string(pi.get_substr_start(pc[0]), pc[0]->length());
         this->blf_separator = intern_string::lookup(sep);
 
         for (++line_iter; line_iter != dst.end(); ++line_iter) {
@@ -546,7 +585,8 @@ public:
             } else if (directive == "#path") {
                 string path = to_string(*iter);
                 char full_name[128];
-                snprintf(full_name, sizeof(full_name), "bro_%s_log", path.c_str());
+                snprintf(
+                    full_name, sizeof(full_name), "bro_%s_log", path.c_str());
                 this->blf_format_name = intern_string::lookup(full_name);
             } else if (directive == "#fields") {
                 do {
@@ -557,7 +597,7 @@ public:
                     ++iter;
                 } while (iter != ss.end());
             } else if (directive == "#types") {
-                static const char *KNOWN_IDS[] = {
+                static const char* KNOWN_IDS[] = {
                     "bro_conn_uids",
                     "bro_fuid",
                     "bro_host",
@@ -581,27 +621,32 @@ public:
 
                 do {
                     string_fragment field_type = *iter;
-                    auto &fd = this->blf_field_defs[iter.index() - 1];
+                    auto& fd = this->blf_field_defs[iter.index() - 1];
 
                     if (field_type == "time") {
                         fd.with_kind(value_kind_t::VALUE_TIMESTAMP);
                     } else if (field_type == "string") {
-                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_meta.lvm_name);
+                        bool ident = binary_search(begin(KNOWN_IDS),
+                                                   end(KNOWN_IDS),
+                                                   fd.fd_meta.lvm_name);
                         fd.with_kind(value_kind_t::VALUE_TEXT, ident);
                     } else if (field_type == "count") {
-                        bool ident = binary_search(begin(KNOWN_IDS), end(KNOWN_IDS), fd.fd_meta.lvm_name);
+                        bool ident = binary_search(begin(KNOWN_IDS),
+                                                   end(KNOWN_IDS),
+                                                   fd.fd_meta.lvm_name);
                         fd.with_kind(value_kind_t::VALUE_INTEGER, ident)
-                          .with_numeric_index(numeric_count);
+                            .with_numeric_index(numeric_count);
                         numeric_count += 1;
                     } else if (field_type == "bool") {
                         fd.with_kind(value_kind_t::VALUE_BOOLEAN);
                     } else if (field_type == "addr") {
-                        fd.with_kind(value_kind_t::VALUE_TEXT, true, "ipaddress");
+                        fd.with_kind(
+                            value_kind_t::VALUE_TEXT, true, "ipaddress");
                     } else if (field_type == "port") {
                         fd.with_kind(value_kind_t::VALUE_INTEGER, true);
                     } else if (field_type == "interval") {
                         fd.with_kind(value_kind_t::VALUE_FLOAT)
-                          .with_numeric_index(numeric_count);
+                            .with_numeric_index(numeric_count);
                         numeric_count += 1;
                     }
 
@@ -612,9 +657,9 @@ public:
             }
         }
 
-        if (!this->blf_format_name.empty() &&
-            !this->blf_separator.empty() &&
-            !this->blf_field_defs.empty()) {
+        if (!this->blf_format_name.empty() && !this->blf_separator.empty()
+            && !this->blf_field_defs.empty())
+        {
             dst.clear();
             return this->scan_int(dst, li, sbr);
         }
@@ -625,8 +670,12 @@ public:
         return SCAN_NO_MATCH;
     };
 
-    void annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
-                      std::vector<logline_value> &values, bool annotate_module) const {
+    void annotate(uint64_t line_number,
+                  shared_buffer_ref& sbr,
+                  string_attrs_t& sa,
+                  std::vector<logline_value>& values,
+                  bool annotate_module) const
+    {
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
@@ -639,7 +688,7 @@ public:
                 return;
             }
 
-            const field_def &fd = this->blf_field_defs[iter.index()];
+            const field_def& fd = this->blf_field_defs[iter.index()];
             string_fragment sf = *iter;
 
             if (sf == this->blf_empty_field) {
@@ -664,15 +713,18 @@ public:
         }
     };
 
-    const logline_value_stats *stats_for_value(const intern_string_t &name) const {
-        const logline_value_stats *retval = nullptr;
+    const logline_value_stats* stats_for_value(
+        const intern_string_t& name) const
+    {
+        const logline_value_stats* retval = nullptr;
 
         for (size_t lpc = 0; lpc < this->blf_field_defs.size(); lpc++) {
             if (this->blf_field_defs[lpc].fd_meta.lvm_name == name) {
                 if (this->blf_field_defs[lpc].fd_numeric_index < 0) {
                     break;
                 }
-                retval = &this->lf_value_stats[this->blf_field_defs[lpc].fd_numeric_index];
+                retval = &this->lf_value_stats[this->blf_field_defs[lpc]
+                                                   .fd_numeric_index];
                 break;
             }
         }
@@ -680,52 +732,65 @@ public:
         return retval;
     };
 
-    std::shared_ptr<log_format> specialized(int fmt_lock = -1) {
+    std::shared_ptr<log_format> specialized(int fmt_lock = -1)
+    {
         return make_shared<bro_log_format>(*this);
     };
 
     class bro_log_table : public log_format_vtab_impl {
     public:
-        bro_log_table(const bro_log_format &format)
-            : log_format_vtab_impl(format), blt_format(format) {
-
+        bro_log_table(const bro_log_format& format)
+            : log_format_vtab_impl(format), blt_format(format)
+        {
         }
 
-        void get_columns(vector<vtab_column> &cols) const override {
-            for (const auto &fd : this->blt_format.blf_field_defs) {
-                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_meta.lvm_kind);
+        void get_columns(vector<vtab_column>& cols) const override
+        {
+            for (const auto& fd : this->blt_format.blf_field_defs) {
+                std::pair<int, unsigned int> type_pair
+                    = log_vtab_impl::logline_value_to_sqlite_type(
+                        fd.fd_meta.lvm_kind);
 
-                cols.emplace_back(fd.fd_meta.lvm_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
+                cols.emplace_back(fd.fd_meta.lvm_name.to_string(),
+                                  type_pair.first,
+                                  fd.fd_collator,
+                                  false,
+                                  "",
+                                  type_pair.second);
             }
         };
 
-        void get_foreign_keys(std::vector<std::string> &keys_inout) const override {
+        void get_foreign_keys(
+            std::vector<std::string>& keys_inout) const override
+        {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
-            for (const auto &fd : this->blt_format.blf_field_defs) {
+            for (const auto& fd : this->blt_format.blf_field_defs) {
                 if (fd.fd_meta.lvm_identifier) {
                     keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
 
-        const bro_log_format &blt_format;
+        const bro_log_format& blt_format;
     };
 
-    static map<intern_string_t, std::shared_ptr<bro_log_table>> &get_tables() {
+    static map<intern_string_t, std::shared_ptr<bro_log_table>>& get_tables()
+    {
         static map<intern_string_t, std::shared_ptr<bro_log_table>> retval;
 
         return retval;
     };
 
-    std::shared_ptr<log_vtab_impl> get_vtab_impl() const {
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const
+    {
         if (this->blf_format_name.empty()) {
             return nullptr;
         }
 
         std::shared_ptr<bro_log_table> retval = nullptr;
 
-        auto &tables = get_tables();
+        auto& tables = get_tables();
         auto iter = tables.find(this->blf_format_name);
         if (iter == tables.end()) {
             retval = std::make_shared<bro_log_table>(*this);
@@ -735,9 +800,10 @@ public:
         return retval;
     };
 
-    void get_subline(const logline &ll,
-                     shared_buffer_ref &sbr,
-                     bool full_message) {
+    void get_subline(const logline& ll,
+                     shared_buffer_ref& sbr,
+                     bool full_message)
+    {
     }
 
     intern_string_t blf_format_name;
@@ -746,16 +812,14 @@ public:
     intern_string_t blf_empty_field;
     intern_string_t blf_unset_field;
     vector<field_def> blf_field_defs;
-
 };
 
 struct ws_separated_string {
-    const char *ss_str;
+    const char* ss_str;
     size_t ss_len;
 
-    explicit ws_separated_string(const char *str = nullptr, size_t len = -1)
-        : ss_str(str), ss_len(len) {
-    };
+    explicit ws_separated_string(const char* str = nullptr, size_t len = -1)
+        : ss_str(str), ss_len(len){};
 
     struct iterator {
         enum class state_t {
@@ -763,19 +827,21 @@ struct ws_separated_string {
             QUOTED,
         };
 
-        const ws_separated_string &i_parent;
-        const char *i_pos;
-        const char *i_next_pos;
+        const ws_separated_string& i_parent;
+        const char* i_pos;
+        const char* i_next_pos;
         size_t i_index{0};
         state_t i_state{state_t::NORMAL};
 
-        iterator(const ws_separated_string &ss, const char *pos)
-            : i_parent(ss), i_pos(pos), i_next_pos(pos) {
+        iterator(const ws_separated_string& ss, const char* pos)
+            : i_parent(ss), i_pos(pos), i_next_pos(pos)
+        {
             this->update();
         };
 
-        void update() {
-            const auto &ss = this->i_parent;
+        void update()
+        {
+            const auto& ss = this->i_parent;
             bool done = false;
 
             while (!done && this->i_next_pos < (ss.ss_str + ss.ss_len)) {
@@ -799,12 +865,13 @@ struct ws_separated_string {
             }
         };
 
-        iterator &operator++() {
-            const auto &ss = this->i_parent;
+        iterator& operator++()
+        {
+            const auto& ss = this->i_parent;
 
             this->i_pos = this->i_next_pos;
-            while (this->i_pos < (ss.ss_str + ss.ss_len) &&
-                   isspace(*this->i_pos)) {
+            while (this->i_pos < (ss.ss_str + ss.ss_len)
+                   && isspace(*this->i_pos)) {
                 this->i_pos += 1;
                 this->i_next_pos += 1;
             }
@@ -814,39 +881,44 @@ struct ws_separated_string {
             return *this;
         };
 
-        string_fragment operator*() {
-            const auto &ss = this->i_parent;
+        string_fragment operator*()
+        {
+            const auto& ss = this->i_parent;
             int end = this->i_next_pos - ss.ss_str;
 
             return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
         };
 
-        bool operator==(const iterator &other) const {
-            return (&this->i_parent == &other.i_parent) &&
-                   (this->i_pos == other.i_pos);
+        bool operator==(const iterator& other) const
+        {
+            return (&this->i_parent == &other.i_parent)
+                && (this->i_pos == other.i_pos);
         };
 
-        bool operator!=(const iterator &other) const {
+        bool operator!=(const iterator& other) const
+        {
             return !(*this == other);
         };
 
-        size_t index() const {
+        size_t index() const
+        {
             return this->i_index;
         };
     };
 
-    iterator begin() {
+    iterator begin()
+    {
         return {*this, this->ss_str};
     };
 
-    iterator end() {
+    iterator end()
+    {
         return {*this, this->ss_str + this->ss_len};
     };
 };
 
 class w3c_log_format : public log_format {
 public:
-
     struct field_def {
         const intern_string_t fd_name;
         logline_value_meta fd_meta;
@@ -854,85 +926,104 @@ public:
         int fd_numeric_index;
 
         explicit field_def(const intern_string_t name)
-            : fd_name(name),
-              fd_meta(intern_string::lookup(sql_safe_ident(name.to_string_fragment())),
-                      value_kind_t::VALUE_TEXT),
-              fd_numeric_index(-1) {
-        };
+            : fd_name(name), fd_meta(intern_string::lookup(sql_safe_ident(
+                                         name.to_string_fragment())),
+                                     value_kind_t::VALUE_TEXT),
+              fd_numeric_index(-1){};
 
         field_def(const intern_string_t name, logline_value_meta meta)
-            : fd_name(name), fd_meta(meta), fd_numeric_index(-1) {
+            : fd_name(name), fd_meta(meta), fd_numeric_index(-1)
+        {
         }
 
-        field_def(int col, const char *name, value_kind_t kind, bool ident = false, std::string coll = "")
+        field_def(int col,
+                  const char* name,
+                  value_kind_t kind,
+                  bool ident = false,
+                  std::string coll = "")
             : fd_name(intern_string::lookup(name)),
-              fd_meta(intern_string::lookup(sql_safe_ident(string_fragment(name))),
-                      kind,
-                      col),
-              fd_collator(std::move(coll)),
-              fd_numeric_index(-1) {
+              fd_meta(
+                  intern_string::lookup(sql_safe_ident(string_fragment(name))),
+                  kind,
+                  col),
+              fd_collator(std::move(coll)), fd_numeric_index(-1)
+        {
             this->fd_meta.lvm_identifier = ident;
         }
 
-        field_def &with_kind(value_kind_t kind,
+        field_def& with_kind(value_kind_t kind,
                              bool identifier = false,
-                             const std::string &collator = "") {
+                             const std::string& collator = "")
+        {
             this->fd_meta.lvm_kind = kind;
             this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
         };
 
-        field_def &with_numeric_index(int index) {
+        field_def& with_numeric_index(int index)
+        {
             this->fd_numeric_index = index;
             return *this;
         }
     };
 
     struct field_to_struct_t {
-        field_to_struct_t(const char *prefix, const char *struct_name)
+        field_to_struct_t(const char* prefix, const char* struct_name)
             : fs_prefix(prefix),
-              fs_struct_name(intern_string::lookup(struct_name)) {
+              fs_struct_name(intern_string::lookup(struct_name))
+        {
         }
 
-        const char *fs_prefix;
+        const char* fs_prefix;
         intern_string_t fs_struct_name;
     };
 
     static const std::vector<field_def> KNOWN_FIELDS;
     const static std::vector<field_to_struct_t> KNOWN_STRUCT_FIELDS;
 
-    w3c_log_format() {
+    w3c_log_format()
+    {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
     };
 
-    const intern_string_t get_name() const override {
+    const intern_string_t get_name() const override
+    {
         static const intern_string_t name(intern_string::lookup("w3c"));
 
         return this->wlf_format_name.empty() ? name : this->wlf_format_name;
     };
 
-    void clear() override {
+    void clear() override
+    {
         this->log_format::clear();
         this->wlf_time_scanner.clear();
         this->wlf_format_name.clear();
         this->wlf_field_defs.clear();
     };
 
-    scan_result_t scan_int(std::vector<logline> &dst,
-                           const line_info &li,
-                           shared_buffer_ref &sbr) {
+    scan_result_t scan_int(std::vector<logline>& dst,
+                           const line_info& li,
+                           shared_buffer_ref& sbr)
+    {
         static const intern_string_t F_DATE = intern_string::lookup("date");
-        static const intern_string_t F_DATE_LOCAL = intern_string::lookup("date-local");
-        static const intern_string_t F_DATE_UTC = intern_string::lookup("date-UTC");
+        static const intern_string_t F_DATE_LOCAL
+            = intern_string::lookup("date-local");
+        static const intern_string_t F_DATE_UTC
+            = intern_string::lookup("date-UTC");
         static const intern_string_t F_TIME = intern_string::lookup("time");
-        static const intern_string_t F_TIME_LOCAL = intern_string::lookup("time-local");
-        static const intern_string_t F_TIME_UTC = intern_string::lookup("time-UTC");
-        static const intern_string_t F_STATUS_CODE = intern_string::lookup("sc-status");
+        static const intern_string_t F_TIME_LOCAL
+            = intern_string::lookup("time-local");
+        static const intern_string_t F_TIME_UTC
+            = intern_string::lookup("time-UTC");
+        static const intern_string_t F_STATUS_CODE
+            = intern_string::lookup("sc-status");
 
         ws_separated_string ss(sbr.get_data(), sbr.length());
-        struct timeval date_tv{0, 0}, time_tv{0, 0};
+        struct timeval date_tv {
+            0, 0
+        }, time_tv{0, 0};
         struct exttm date_tm, time_tm;
         bool found_date = false, found_time = false;
         log_level_t level = LEVEL_INFO;
@@ -943,7 +1034,7 @@ public:
                 break;
             }
 
-            const field_def &fd = this->wlf_field_defs[iter.index()];
+            const field_def& fd = this->wlf_field_defs[iter.index()];
             string_fragment sf = *iter;
 
             if (sf.startswith("#")) {
@@ -956,35 +1047,32 @@ public:
                                  sbr.length() - sf.length() - 1,
                                  nullptr,
                                  &tm,
-                                 tv)) {
+                                 tv))
+                    {
                         this->lf_date_time.set_base_time(tv.tv_sec);
                         this->wlf_time_scanner.set_base_time(tv.tv_sec);
                     }
                 }
-                dst.emplace_back(li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
+                dst.emplace_back(
+                    li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
                 return SCAN_MATCH;
             }
 
             sf.trim("\" \t");
-            if (F_DATE == fd.fd_name ||
-                F_DATE_LOCAL == fd.fd_name ||
-                F_DATE_UTC == fd.fd_name) {
-                if (this->lf_date_time.scan(sf.data(),
-                                            sf.length(),
-                                            nullptr,
-                                            &date_tm,
-                                            date_tv)) {
+            if (F_DATE == fd.fd_name || F_DATE_LOCAL == fd.fd_name
+                || F_DATE_UTC == fd.fd_name)
+            {
+                if (this->lf_date_time.scan(
+                        sf.data(), sf.length(), nullptr, &date_tm, date_tv)) {
                     this->lf_timestamp_flags |= date_tm.et_flags;
                     found_date = true;
                 }
-            } else if (F_TIME == fd.fd_name ||
-                       F_TIME_LOCAL == fd.fd_name ||
-                       F_TIME_UTC == fd.fd_name) {
-                if (this->wlf_time_scanner.scan(sf.data(),
-                                                sf.length(),
-                                                nullptr,
-                                                &time_tm,
-                                                time_tv)) {
+            } else if (F_TIME == fd.fd_name || F_TIME_LOCAL == fd.fd_name
+                       || F_TIME_UTC == fd.fd_name)
+            {
+                if (this->wlf_time_scanner.scan(
+                        sf.data(), sf.length(), nullptr, &time_tm, time_tv))
+                {
                     this->lf_timestamp_flags |= time_tm.et_flags;
                     found_time = true;
                 }
@@ -1001,8 +1089,10 @@ public:
                         char field_copy[sf.length() + 1];
                         double val;
 
-                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1) {
-                            this->lf_value_stats[fd.fd_numeric_index].add_value(val);
+                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
+                        {
+                            this->lf_value_stats[fd.fd_numeric_index].add_value(
+                                val);
                         }
                         break;
                     }
@@ -1034,10 +1124,11 @@ public:
         }
     }
 
-    scan_result_t scan(logfile &lf,
-                       std::vector<logline> &dst,
-                       const line_info &li,
-                       shared_buffer_ref &sbr) override {
+    scan_result_t scan(logfile& lf,
+                       std::vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr) override
+    {
         static auto W3C_LOG_NAME = intern_string::lookup("w3c_log");
         static auto X_FIELDS_NAME = intern_string::lookup("x_fields");
         static auto X_FIELDS_IDX = 0;
@@ -1046,13 +1137,15 @@ public:
             return this->scan_int(dst, li, sbr);
         }
 
-        if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#') {
+        if (dst.empty() || dst.size() > 20 || sbr.empty()
+            || sbr.get_data()[0] == '#') {
             return SCAN_NO_MATCH;
         }
 
         this->clear();
 
-        for (auto line_iter = dst.begin(); line_iter != dst.end(); ++line_iter) {
+        for (auto line_iter = dst.begin(); line_iter != dst.end(); ++line_iter)
+        {
             auto next_read_result = lf.read_line(line_iter);
 
             if (next_read_result.isErr()) {
@@ -1083,7 +1176,8 @@ public:
                              line.length() - directive.length() - 1,
                              nullptr,
                              &tm,
-                             tv)) {
+                             tv))
+                {
                     this->lf_date_time.set_base_time(tv.tv_sec);
                     this->wlf_time_scanner.set_base_time(tv.tv_sec);
                 }
@@ -1094,11 +1188,10 @@ public:
                     string_fragment sf = *iter;
 
                     sf.trim(")");
-                    auto field_iter = std::find_if(begin(KNOWN_FIELDS),
-                                                   end(KNOWN_FIELDS),
-                                                   [&sf](auto elem) {
-                                                       return sf == elem.fd_name;
-                                                   });
+                    auto field_iter = std::find_if(
+                        begin(KNOWN_FIELDS),
+                        end(KNOWN_FIELDS),
+                        [&sf](auto elem) { return sf == elem.fd_name; });
                     if (field_iter != end(KNOWN_FIELDS)) {
                         this->wlf_field_defs.emplace_back(*field_iter);
                     } else if (sf == "date" || sf == "time") {
@@ -1112,24 +1205,28 @@ public:
                                 return sf.startswith(elem.fs_prefix);
                             });
                         if (fs_iter != end(KNOWN_STRUCT_FIELDS)) {
-                            auto field_name = intern_string::lookup(sf.substr(3));
+                            auto field_name
+                                = intern_string::lookup(sf.substr(3));
                             this->wlf_field_defs.emplace_back(
-                                field_name, logline_value_meta(
+                                field_name,
+                                logline_value_meta(
                                     field_name,
                                     value_kind_t::VALUE_TEXT,
-                                    KNOWN_FIELDS.size() + 1 +
-                                    std::distance(begin(KNOWN_STRUCT_FIELDS), fs_iter),
+                                    KNOWN_FIELDS.size() + 1
+                                        + std::distance(
+                                            begin(KNOWN_STRUCT_FIELDS),
+                                            fs_iter),
                                     this)
                                     .with_struct_name(fs_iter->fs_struct_name));
                         } else {
                             auto field_name = intern_string::lookup(sf);
                             this->wlf_field_defs.emplace_back(
                                 field_name,
-                                logline_value_meta(field_name,
-                                                   value_kind_t::VALUE_TEXT,
-                                                   KNOWN_FIELDS.size() +
-                                                   X_FIELDS_IDX,
-                                                   this)
+                                logline_value_meta(
+                                    field_name,
+                                    value_kind_t::VALUE_TEXT,
+                                    KNOWN_FIELDS.size() + X_FIELDS_IDX,
+                                    this)
                                     .with_struct_name(X_FIELDS_NAME));
                         }
                     }
@@ -1153,8 +1250,7 @@ public:
             }
         }
 
-        if (!this->wlf_format_name.empty() &&
-            !this->wlf_field_defs.empty()) {
+        if (!this->wlf_format_name.empty() && !this->wlf_field_defs.empty()) {
             dst.clear();
             return this->scan_int(dst, li, sbr);
         }
@@ -1165,8 +1261,12 @@ public:
         return SCAN_NO_MATCH;
     };
 
-    void annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
-                  std::vector<logline_value> &values, bool annotate_module) const override {
+    void annotate(uint64_t line_number,
+                  shared_buffer_ref& sbr,
+                  string_attrs_t& sa,
+                  std::vector<logline_value>& values,
+                  bool annotate_module) const override
+    {
         ws_separated_string ss(sbr.get_data(), sbr.length());
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
@@ -1175,11 +1275,11 @@ public:
             if (iter.index() >= this->wlf_field_defs.size()) {
                 sa.emplace_back(line_range{sf.sf_begin, -1},
                                 &SA_INVALID,
-                                (void *) "extra fields detected");
+                                (void*) "extra fields detected");
                 return;
             }
 
-            const field_def &fd = this->wlf_field_defs[iter.index()];
+            const field_def& fd = this->wlf_field_defs[iter.index()];
 
             if (sf == "-") {
                 sf.invalidate();
@@ -1204,10 +1304,12 @@ public:
         }
     };
 
-    const logline_value_stats *stats_for_value(const intern_string_t &name) const override {
-        const logline_value_stats *retval = nullptr;
+    const logline_value_stats* stats_for_value(
+        const intern_string_t& name) const override
+    {
+        const logline_value_stats* retval = nullptr;
 
-        for (const auto & wlf_field_def : this->wlf_field_defs) {
+        for (const auto& wlf_field_def : this->wlf_field_defs) {
             if (wlf_field_def.fd_meta.lvm_name == name) {
                 if (wlf_field_def.fd_numeric_index < 0) {
                     break;
@@ -1220,19 +1322,21 @@ public:
         return retval;
     };
 
-    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override {
+    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
+    {
         return make_shared<w3c_log_format>(*this);
     };
 
     class w3c_log_table : public log_format_vtab_impl {
     public:
-        explicit w3c_log_table(const w3c_log_format &format)
-            : log_format_vtab_impl(format), wlt_format(format) {
-
+        explicit w3c_log_table(const w3c_log_format& format)
+            : log_format_vtab_impl(format), wlt_format(format)
+        {
         }
 
-        void get_columns(vector<vtab_column> &cols) const override {
-            for (const auto &fd : KNOWN_FIELDS) {
+        void get_columns(vector<vtab_column>& cols) const override
+        {
+            for (const auto& fd : KNOWN_FIELDS) {
                 auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
                     fd.fd_meta.lvm_kind);
 
@@ -1245,39 +1349,44 @@ public:
             }
             cols.emplace_back("x_fields");
             cols.back().with_comment(
-                "A JSON-object that contains fields that are not first-class columns");
+                "A JSON-object that contains fields that are not first-class "
+                "columns");
             for (const auto& fs : KNOWN_STRUCT_FIELDS) {
                 cols.emplace_back(fs.fs_struct_name.to_string());
             }
         };
 
-        void get_foreign_keys(std::vector<std::string> &keys_inout) const override {
+        void get_foreign_keys(
+            std::vector<std::string>& keys_inout) const override
+        {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
-            for (const auto &fd : KNOWN_FIELDS) {
+            for (const auto& fd : KNOWN_FIELDS) {
                 if (fd.fd_meta.lvm_identifier) {
                     keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
 
-        const w3c_log_format &wlt_format;
+        const w3c_log_format& wlt_format;
     };
 
-    static map<intern_string_t, std::shared_ptr<w3c_log_table>> &get_tables() {
+    static map<intern_string_t, std::shared_ptr<w3c_log_table>>& get_tables()
+    {
         static map<intern_string_t, std::shared_ptr<w3c_log_table>> retval;
 
         return retval;
     };
 
-    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override {
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
+    {
         if (this->wlf_format_name.empty()) {
             return nullptr;
         }
 
         std::shared_ptr<w3c_log_table> retval = nullptr;
 
-        auto &tables = get_tables();
+        auto& tables = get_tables();
         auto iter = tables.find(this->wlf_format_name);
         if (iter == tables.end()) {
             retval = std::make_shared<w3c_log_table>(*this);
@@ -1287,9 +1396,10 @@ public:
         return retval;
     };
 
-    void get_subline(const logline &ll,
-                     shared_buffer_ref &sbr,
-                     bool full_message) override {
+    void get_subline(const logline& ll,
+                     shared_buffer_ref& sbr,
+                     bool full_message) override
+    {
     }
 
     date_time_scanner wlf_time_scanner;
@@ -1400,39 +1510,45 @@ const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
     },
 };
 
-const std::vector<w3c_log_format::field_to_struct_t> w3c_log_format::KNOWN_STRUCT_FIELDS = {
-    {"cs(", "cs_headers"},
-    {"sc(", "sc_headers"},
-    {"rs(", "rs_headers"},
-    {"sr(", "sr_headers"},
+const std::vector<w3c_log_format::field_to_struct_t>
+    w3c_log_format::KNOWN_STRUCT_FIELDS = {
+        {"cs(", "cs_headers"},
+        {"sc(", "sc_headers"},
+        {"rs(", "rs_headers"},
+        {"sr(", "sr_headers"},
 };
 
 struct logfmt_pair_handler {
-    explicit logfmt_pair_handler(date_time_scanner &dts) : lph_dt_scanner(dts)
+    explicit logfmt_pair_handler(date_time_scanner& dts) : lph_dt_scanner(dts)
     {
     }
 
-    bool process_value(const string_fragment& value_frag) {
-        if (this->lph_key_frag == "time" ||
-            this->lph_key_frag == "ts") {
+    bool process_value(const string_fragment& value_frag)
+    {
+        if (this->lph_key_frag == "time" || this->lph_key_frag == "ts") {
             if (!this->lph_dt_scanner.scan(value_frag.data(),
                                            value_frag.length(),
                                            nullptr,
                                            &this->lph_time_tm,
-                                           this->lph_tv)) {
+                                           this->lph_tv))
+            {
                 return false;
             }
             this->lph_found_time = true;
         } else if (this->lph_key_frag == "level") {
-            this->lph_level = string2level(value_frag.data(), value_frag.length());
+            this->lph_level
+                = string2level(value_frag.data(), value_frag.length());
         }
         return true;
     }
 
-    date_time_scanner &lph_dt_scanner;
+    date_time_scanner& lph_dt_scanner;
     bool lph_found_time{false};
-    struct exttm lph_time_tm{};
-    struct timeval lph_tv{0, 0};
+    struct exttm lph_time_tm {
+    };
+    struct timeval lph_tv {
+        0, 0
+    };
     log_level_t lph_level{log_level_t::LEVEL_INFO};
     string_fragment lph_key_frag{""};
 };
@@ -1448,9 +1564,13 @@ public:
 
     class logfmt_log_table : public log_format_vtab_impl {
     public:
-        logfmt_log_table(const log_format &format) : log_format_vtab_impl(format) {}
+        logfmt_log_table(const log_format& format)
+            : log_format_vtab_impl(format)
+        {
+        }
 
-        void get_columns(vector<vtab_column> &cols) const override {
+        void get_columns(vector<vtab_column>& cols) const override
+        {
             static const auto FIELDS = std::string("fields");
 
             cols.emplace_back(FIELDS);
@@ -1464,10 +1584,13 @@ public:
         return retval;
     }
 
-    scan_result_t scan(logfile &lf, vector<logline> &dst, const line_info &li,
-                       shared_buffer_ref &sbr) override
+    scan_result_t scan(logfile& lf,
+                       vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr) override
     {
-        auto p = logfmt::parser(string_fragment{sbr.get_data(), 0, (int) sbr.length()});
+        auto p = logfmt::parser(
+            string_fragment{sbr.get_data(), 0, (int) sbr.length()});
         scan_result_t retval = scan_result_t::SCAN_NO_MATCH;
         bool done = false;
         logfmt_pair_handler lph(this->lf_date_time);
@@ -1476,10 +1599,8 @@ public:
             auto parse_result = p.step();
 
             done = parse_result.match(
-                [](const logfmt::parser::end_of_input &) {
-                    return true;
-                },
-                [&lph](const logfmt::parser::kvpair &kvp) {
+                [](const logfmt::parser::end_of_input&) { return true; },
+                [&lph](const logfmt::parser::kvpair& kvp) {
                     lph.lph_key_frag = kvp.first;
 
                     return kvp.second.match(
@@ -1492,23 +1613,29 @@ public:
                         [&lph](const logfmt::parser::int_value& iv) {
                             return lph.process_value(iv.iv_str_value);
                         },
-                        [&lph](const logfmt::parser::quoted_value &qv) {
+                        [&lph](const logfmt::parser::quoted_value& qv) {
                             auto_mem<yajl_handle_t> handle(yajl_free);
                             yajl_callbacks cb;
 
                             handle = yajl_alloc(&cb, nullptr, &lph);
                             memset(&cb, 0, sizeof(cb));
-                            cb.yajl_string = +[](void *ctx, const unsigned char* str, size_t len) -> int {
-                                auto& lph = *((logfmt_pair_handler *)ctx);
+                            cb.yajl_string = +[](void* ctx,
+                                                 const unsigned char* str,
+                                                 size_t len) -> int {
+                                auto& lph = *((logfmt_pair_handler*) ctx);
                                 string_fragment value_frag{str, 0, (int) len};
 
                                 return lph.process_value(value_frag);
                             };
 
-                            if (yajl_parse(handle,
-                                           (const unsigned char *) qv.qv_value.data(),
-                                           qv.qv_value.length()) != yajl_status_ok ||
-                                yajl_complete_parse(handle) != yajl_status_ok) {
+                            if (yajl_parse(
+                                    handle,
+                                    (const unsigned char*) qv.qv_value.data(),
+                                    qv.qv_value.length())
+                                    != yajl_status_ok
+                                || yajl_complete_parse(handle)
+                                    != yajl_status_ok)
+                            {
                                 log_debug("json parsing failed");
                                 string_fragment unq_frag{
                                     qv.qv_value.sf_string,
@@ -1521,29 +1648,30 @@ public:
 
                             return false;
                         },
-                        [&lph](const logfmt::parser::unquoted_value &uv) {
+                        [&lph](const logfmt::parser::unquoted_value& uv) {
                             return lph.process_value(uv.uv_value);
-                        }
-                    );
+                        });
                 },
-                [](const logfmt::parser::error &err) {
+                [](const logfmt::parser::error& err) {
                     // log_error("logfmt parse error: %s", err.e_msg.c_str());
                     return true;
-                }
-            );
+                });
         }
 
         if (lph.lph_found_time) {
-            dst.emplace_back(li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
+            dst.emplace_back(
+                li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
             retval = scan_result_t::SCAN_MATCH;
         }
 
         return retval;
     }
 
-    void
-    annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
-             vector<logline_value> &values, bool annotate_module) const override
+    void annotate(uint64_t line_number,
+                  shared_buffer_ref& sbr,
+                  string_attrs_t& sa,
+                  vector<logline_value>& values,
+                  bool annotate_module) const override
     {
         static const auto FIELDS_NAME = intern_string::lookup("fields");
 
@@ -1555,88 +1683,90 @@ public:
             auto parse_result = p.step();
 
             done = parse_result.match(
-                [](const logfmt::parser::end_of_input &) {
-                    return true;
-                },
-                [this, &sa, &values, &sbr](const logfmt::parser::kvpair &kvp) {
+                [](const logfmt::parser::end_of_input&) { return true; },
+                [this, &sa, &values, &sbr](const logfmt::parser::kvpair& kvp) {
                     auto value_frag = kvp.second.match(
-                        [this, &kvp, &values](const logfmt::parser::bool_value& bv) {
-                            auto lvm = logline_value_meta{
-                                intern_string::lookup(kvp.first),
-                                value_kind_t::VALUE_INTEGER,
-                                0,
-                                (log_format *) this
-                            }
-                                .with_struct_name(FIELDS_NAME);
+                        [this, &kvp, &values](
+                            const logfmt::parser::bool_value& bv) {
+                            auto lvm = logline_value_meta{intern_string::lookup(
+                                                              kvp.first),
+                                                          value_kind_t::
+                                                              VALUE_INTEGER,
+                                                          0,
+                                                          (log_format*) this}
+                                           .with_struct_name(FIELDS_NAME);
                             values.emplace_back(lvm, bv.bv_value);
 
                             return bv.bv_str_value;
                         },
-                        [this, &kvp, &values](const logfmt::parser::int_value& iv) {
-                            auto lvm = logline_value_meta{
-                                intern_string::lookup(kvp.first),
-                                value_kind_t::VALUE_INTEGER,
-                                0,
-                                (log_format *) this
-                            }
-                                .with_struct_name(FIELDS_NAME);
+                        [this, &kvp, &values](
+                            const logfmt::parser::int_value& iv) {
+                            auto lvm = logline_value_meta{intern_string::lookup(
+                                                              kvp.first),
+                                                          value_kind_t::
+                                                              VALUE_INTEGER,
+                                                          0,
+                                                          (log_format*) this}
+                                           .with_struct_name(FIELDS_NAME);
                             values.emplace_back(lvm, iv.iv_value);
 
                             return iv.iv_str_value;
                         },
-                        [this, &kvp, &values](const logfmt::parser::float_value& fv) {
-                            auto lvm = logline_value_meta{
-                                intern_string::lookup(kvp.first),
-                                value_kind_t::VALUE_INTEGER,
-                                0,
-                                (log_format *) this
-                            }
-                                .with_struct_name(FIELDS_NAME);
+                        [this, &kvp, &values](
+                            const logfmt::parser::float_value& fv) {
+                            auto lvm = logline_value_meta{intern_string::lookup(
+                                                              kvp.first),
+                                                          value_kind_t::
+                                                              VALUE_INTEGER,
+                                                          0,
+                                                          (log_format*) this}
+                                           .with_struct_name(FIELDS_NAME);
                             values.emplace_back(lvm, fv.fv_value);
 
                             return fv.fv_str_value;
                         },
-                        [](const logfmt::parser::quoted_value &qv) {
+                        [](const logfmt::parser::quoted_value& qv) {
                             return qv.qv_value;
                         },
-                        [](const logfmt::parser::unquoted_value &uv) {
+                        [](const logfmt::parser::unquoted_value& uv) {
                             return uv.uv_value;
-                        }
-                    );
-                    auto value_lr = line_range{
-                        value_frag.sf_begin, value_frag.sf_end
-                    };
+                        });
+                    auto value_lr
+                        = line_range{value_frag.sf_begin, value_frag.sf_end};
 
                     if (kvp.first == "time" || kvp.first == "ts") {
                         sa.emplace_back(value_lr, &logline::L_TIMESTAMP);
                     } else if (kvp.first == "level") {
                     } else if (kvp.first == "msg") {
                         sa.emplace_back(value_lr, &SA_BODY);
-                    } else if (!kvp.second.is<logfmt::parser::int_value>() &&
-                               !kvp.second.is<logfmt::parser::bool_value>()) {
-                        auto lvm = logline_value_meta{
-                            intern_string::lookup(kvp.first),
-                            value_frag.startswith("\"") ?
-                            value_kind_t::VALUE_JSON :
-                            value_kind_t::VALUE_TEXT,
-                            0,
-                            (log_format *) this
-                        }
-                            .with_struct_name(FIELDS_NAME);
+                    } else if (!kvp.second.is<logfmt::parser::int_value>()
+                               && !kvp.second.is<logfmt::parser::bool_value>())
+                    {
+                        auto lvm
+                            = logline_value_meta{intern_string::lookup(
+                                                     kvp.first),
+                                                 value_frag.startswith("\"")
+                                                     ? value_kind_t::VALUE_JSON
+                                                     : value_kind_t::VALUE_TEXT,
+                                                 0,
+                                                 (log_format*) this}
+                                  .with_struct_name(FIELDS_NAME);
                         shared_buffer_ref value_sbr;
 
-                        value_sbr.subset(sbr, value_frag.sf_begin, value_frag.length());
+                        value_sbr.subset(
+                            sbr, value_frag.sf_begin, value_frag.length());
                         values.emplace_back(lvm, value_sbr);
                     }
 
                     return false;
                 },
-                [line_number, &sbr](const logfmt::parser::error &err) {
+                [line_number, &sbr](const logfmt::parser::error& err) {
                     log_error("bad line %.*s", sbr.length(), sbr.get_data());
-                    log_error("%lld:logfmt parse error: %s", line_number, err.e_msg.c_str());
+                    log_error("%lld:logfmt parse error: %s",
+                              line_number,
+                              err.e_msg.c_str());
                     return true;
-                }
-            );
+                });
         }
     }
 
@@ -1647,7 +1777,7 @@ public:
 };
 
 static auto format_binder = injector::bind_multiple<log_format>()
-    .add<logfmt_format>()
-    .add<bro_log_format>()
-    .add<w3c_log_format>()
-    .add<generic_log_format>();
+                                .add<logfmt_format>()
+                                .add<bro_log_format>()
+                                .add<w3c_log_format>()
+                                .add<generic_log_format>();

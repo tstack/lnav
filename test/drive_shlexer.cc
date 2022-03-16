@@ -21,34 +21,34 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <stdlib.h>
 
+#include "config.h"
 #include "shlex.hh"
 
 using namespace std;
 
-const char *ST_TOKEN_NAMES[] = {
-        "err",
-        "wsp",
-        "esc",
-        "dst",
-        "den",
-        "sst",
-        "sen",
-        "ref",
-        "qrf",
-        "til",
+const char* ST_TOKEN_NAMES[] = {
+    "err",
+    "wsp",
+    "esc",
+    "dst",
+    "den",
+    "sst",
+    "sen",
+    "ref",
+    "qrf",
+    "til",
 };
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     if (argc < 2) {
         fprintf(stderr, "error: expecting an argument to parse\n");
@@ -67,14 +67,11 @@ int main(int argc, char *argv[])
         for (lpc = 0; lpc < cap.c_end; lpc++) {
             if (lpc == cap.c_begin) {
                 fputc('^', stdout);
-            }
-            else if (lpc == (cap.c_end - 1)) {
+            } else if (lpc == (cap.c_end - 1)) {
                 fputc('^', stdout);
-            }
-            else if (lpc > cap.c_begin) {
+            } else if (lpc > cap.c_begin) {
                 fputc('-', stdout);
-            }
-            else{
+            } else {
                 fputc(' ', stdout);
             }
         }

@@ -21,15 +21,13 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file pcrepp.cc
  */
-
-#include "config.h"
 
 #include "pcrepp.hh"
 
@@ -38,9 +36,10 @@ using namespace std;
 const int JIT_STACK_MIN_SIZE = 32 * 1024;
 const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
-pcre_context::capture_t *pcre_context::operator[](const char *name) const
+pcre_context::capture_t*
+pcre_context::operator[](const char* name) const
 {
-    capture_t *retval = nullptr;
+    capture_t* retval = nullptr;
     int index;
 
     index = this->pc_pcre->name_index(name);
@@ -51,14 +50,14 @@ pcre_context::capture_t *pcre_context::operator[](const char *name) const
     return retval;
 }
 
-std::string pcrepp::quote(const char *unquoted)
+std::string
+pcrepp::quote(const char* unquoted)
 {
     std::string retval;
 
     for (int lpc = 0; unquoted[lpc]; lpc++) {
-        if (isalnum(unquoted[lpc]) ||
-            unquoted[lpc] == '_' ||
-            unquoted[lpc] & 0x80) {
+        if (isalnum(unquoted[lpc]) || unquoted[lpc] == '_'
+            || unquoted[lpc] & 0x80) {
             retval.push_back(unquoted[lpc]);
         } else {
             retval.push_back('\\');
@@ -69,15 +68,13 @@ std::string pcrepp::quote(const char *unquoted)
     return retval;
 }
 
-Result<pcrepp, pcrepp::compile_error> pcrepp::from_str(std::string pattern, int options)
+Result<pcrepp, pcrepp::compile_error>
+pcrepp::from_str(std::string pattern, int options)
 {
-    const char *errptr;
+    const char* errptr;
     int eoff;
-    auto code = pcre_compile(pattern.c_str(),
-                             options | PCRE_UTF8,
-                             &errptr,
-                             &eoff,
-                             nullptr);
+    auto code = pcre_compile(
+        pattern.c_str(), options | PCRE_UTF8, &errptr, &eoff, nullptr);
 
     if (!code) {
         return Err(compile_error{errptr, eoff});
@@ -86,7 +83,8 @@ Result<pcrepp, pcrepp::compile_error> pcrepp::from_str(std::string pattern, int 
     return Ok(pcrepp(std::move(pattern), code));
 }
 
-void pcrepp::find_captures(const char *pattern)
+void
+pcrepp::find_captures(const char* pattern)
 {
     bool in_class = false, in_escape = false, in_literal = false;
     vector<pcre_context::capture> cap_in_progress;
@@ -97,22 +95,19 @@ void pcrepp::find_captures(const char *pattern)
             if (pattern[lpc] == 'Q') {
                 in_literal = true;
             }
-        }
-        else if (in_class) {
+        } else if (in_class) {
             if (pattern[lpc] == ']') {
                 in_class = false;
             }
             if (pattern[lpc] == '\\') {
                 in_escape = true;
             }
-        }
-        else if (in_literal) {
+        } else if (in_literal) {
             if (pattern[lpc] == '\\' && pattern[lpc + 1] == 'E') {
                 in_literal = false;
                 lpc += 1;
             }
-        }
-        else {
+        } else {
             switch (pattern[lpc]) {
                 case '\\':
                     in_escape = true;
@@ -125,7 +120,7 @@ void pcrepp::find_captures(const char *pattern)
                     break;
                 case ')': {
                     if (!cap_in_progress.empty()) {
-                        pcre_context::capture &cap = cap_in_progress.back();
+                        pcre_context::capture& cap = cap_in_progress.back();
                         char first = '\0', second = '\0', third = '\0';
                         bool is_cap = false;
 
@@ -143,15 +138,14 @@ void pcrepp::find_captures(const char *pattern)
                             if (second == '\'') {
                                 is_cap = true;
                             }
-                            if (second == '<' &&
-                                (isalpha(third) || third == '_')) {
+                            if (second == '<'
+                                && (isalpha(third) || third == '_')) {
                                 is_cap = true;
                             }
                             if (second == 'P' && third == '<') {
                                 is_cap = true;
                             }
-                        }
-                        else if (first != '*') {
+                        } else if (first != '*') {
                             is_cap = true;
                         }
                         if (is_cap) {
@@ -168,12 +162,13 @@ void pcrepp::find_captures(const char *pattern)
     assert((size_t) this->p_capture_count == this->p_captures.size());
 }
 
-bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
+bool
+pcrepp::match(pcre_context& pc, pcre_input& pi, int options) const
 {
-    int         length, startoffset, filtered_options = options;
-    int         count = pc.get_max_count();
-    const char *str;
-    int         rc;
+    int length, startoffset, filtered_options = options;
+    int count = pc.get_max_count();
+    const char* str;
+    int rc;
 
     pc.set_pcrepp(this);
     pi.pi_offset = pi.pi_next_offset;
@@ -181,13 +176,12 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
     str = pi.get_string();
     if (filtered_options & PCRE_ANCHORED) {
         filtered_options &= ~PCRE_ANCHORED;
-        str         = &str[pi.pi_offset];
+        str = &str[pi.pi_offset];
         startoffset = 0;
-        length      = pi.pi_length - pi.pi_offset;
-    }
-    else {
+        length = pi.pi_length - pi.pi_offset;
+    } else {
         startoffset = pi.pi_offset;
-        length      = pi.pi_length;
+        length = pi.pi_length;
     }
     rc = pcre_exec(this->p_code,
                    this->p_code_extra.in(),
@@ -195,7 +189,7 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
                    length,
                    startoffset,
                    filtered_options,
-                   (int *)pc.all(),
+                   (int*) pc.all(),
                    count * 2);
 
     if (rc < 0) {
@@ -209,24 +203,21 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
             default:
                 break;
         }
-    }
-    else if (rc == 0) {
+    } else if (rc == 0) {
         rc = 0;
-    }
-    else if (pc.all()->c_begin == pc.all()->c_end) {
+    } else if (pc.all()->c_begin == pc.all()->c_end) {
         rc = 0;
         if (pi.pi_next_offset + 1 < pi.pi_length) {
             pi.pi_next_offset += 1;
         }
-    }
-    else {
+    } else {
         if (options & PCRE_ANCHORED) {
             for (int lpc = 0; lpc < rc; lpc++) {
                 if (pc.all()[lpc].c_begin == -1) {
                     continue;
                 }
                 pc.all()[lpc].c_begin += pi.pi_offset;
-                pc.all()[lpc].c_end   += pi.pi_offset;
+                pc.all()[lpc].c_end += pi.pi_offset;
             }
         }
         pi.pi_next_offset = pc.all()->c_end;
@@ -237,7 +228,8 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
     return rc > 0;
 }
 
-std::string pcrepp::replace(const char *str, const char *repl) const
+std::string
+pcrepp::replace(const char* str, const char* repl) const
 {
     pcre_context_static<30> pc;
     pcre_input pi(str);
@@ -293,35 +285,34 @@ std::string pcrepp::replace(const char *str, const char *repl) const
     return retval;
 }
 
-void pcrepp::study()
+void
+pcrepp::study()
 {
-    const char *errptr;
+    const char* errptr;
 
     this->p_code_extra = pcre_study(this->p_code,
 #ifdef PCRE_STUDY_JIT_COMPILE
                                     PCRE_STUDY_JIT_COMPILE,
 #else
-        0,
+                                    0,
 #endif
                                     &errptr);
     if (!this->p_code_extra && errptr) {
         // log_error("pcre_study error: %s", errptr);
     }
     if (this->p_code_extra != nullptr) {
-        pcre_extra *extra = this->p_code_extra;
+        pcre_extra* extra = this->p_code_extra;
 
-        extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
-                         PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-        extra->match_limit           = 10000;
+        extra->flags
+            |= (PCRE_EXTRA_MATCH_LIMIT | PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+        extra->match_limit = 10000;
         extra->match_limit_recursion = 500;
 #ifdef PCRE_STUDY_JIT_COMPILE
         // pcre_assign_jit_stack(extra, nullptr, jit_stack());
 #endif
     }
-    pcre_fullinfo(this->p_code,
-                  this->p_code_extra,
-                  PCRE_INFO_OPTIONS,
-                  &this->p_options);
+    pcre_fullinfo(
+        this->p_code, this->p_code_extra, PCRE_INFO_OPTIONS, &this->p_options);
     pcre_fullinfo(this->p_code,
                   this->p_code_extra,
                   PCRE_INFO_CAPTURECOUNT,
@@ -341,9 +332,10 @@ void pcrepp::study()
 }
 
 #ifdef PCRE_STUDY_JIT_COMPILE
-pcre_jit_stack *pcrepp::jit_stack()
+pcre_jit_stack*
+pcrepp::jit_stack()
 {
-    static pcre_jit_stack *retval = nullptr;
+    static pcre_jit_stack* retval = nullptr;
 
     if (retval == nullptr) {
         retval = pcre_jit_stack_alloc(JIT_STACK_MIN_SIZE, JIT_STACK_MAX_SIZE);
@@ -353,9 +345,10 @@ pcre_jit_stack *pcrepp::jit_stack()
 }
 
 #else
-#warning "pcrejit is not available, search performance will be degraded"
+#    warning "pcrejit is not available, search performance will be degraded"
 
-void pcrepp::pcre_free_study(pcre_extra *extra)
+void
+pcrepp::pcre_free_study(pcre_extra* extra)
 {
     free(extra);
 }

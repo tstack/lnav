@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,13 +32,13 @@
 #ifndef json_ptr_hh
 #define json_ptr_hh
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/types.h>
-
 #include <string>
 #include <vector>
+
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "auto_mem.hh"
 #include "yajl/api/yajl_parse.h"
@@ -48,19 +48,23 @@ class json_ptr_walk {
 public:
     const static yajl_callbacks callbacks;
 
-    json_ptr_walk() : jpw_handle(yajl_free), jpw_max_ptr_len(0) {
+    json_ptr_walk() : jpw_handle(yajl_free), jpw_max_ptr_len(0)
+    {
         this->jpw_handle = yajl_alloc(&callbacks, NULL, this);
     };
 
-    yajl_status parse(const char *buffer, ssize_t len) {
+    yajl_status parse(const char* buffer, ssize_t len)
+    {
         yajl_status retval;
 
-        retval = yajl_parse(this->jpw_handle, (const unsigned char *)buffer, len);
+        retval
+            = yajl_parse(this->jpw_handle, (const unsigned char*) buffer, len);
         this->update_error_msg(retval, buffer, len);
         return retval;
     };
 
-    yajl_status complete_parse() {
+    yajl_status complete_parse()
+    {
         yajl_status retval;
 
         retval = yajl_complete_parse(this->jpw_handle);
@@ -68,31 +72,34 @@ public:
         return retval;
     };
 
-    void update_error_msg(yajl_status status, const char *buffer, ssize_t len) {
+    void update_error_msg(yajl_status status, const char* buffer, ssize_t len)
+    {
         switch (status) {
-        case yajl_status_ok:
-            break;
-        case yajl_status_client_canceled:
-            this->jpw_error_msg = "internal error";
-            break;
-        case yajl_status_error: {
-            auto msg = yajl_get_error(
-                this->jpw_handle, 1, (const unsigned char *) buffer, len);
-            this->jpw_error_msg = std::string((const char *) msg);
+            case yajl_status_ok:
+                break;
+            case yajl_status_client_canceled:
+                this->jpw_error_msg = "internal error";
+                break;
+            case yajl_status_error: {
+                auto msg = yajl_get_error(
+                    this->jpw_handle, 1, (const unsigned char*) buffer, len);
+                this->jpw_error_msg = std::string((const char*) msg);
 
-            yajl_free_error(this->jpw_handle, msg);
-            break;
-        }
+                yajl_free_error(this->jpw_handle, msg);
+                break;
+            }
         }
     };
 
-    void clear() {
+    void clear()
+    {
         this->jpw_values.clear();
     };
 
-    void inc_array_index() {
-        if (!this->jpw_array_indexes.empty() &&
-            this->jpw_array_indexes.back() != -1) {
+    void inc_array_index()
+    {
+        if (!this->jpw_array_indexes.empty()
+            && this->jpw_array_indexes.back() != -1) {
             this->jpw_array_indexes.back() += 1;
         }
     };
@@ -101,10 +108,9 @@ public:
 
     struct walk_triple {
         walk_triple(std::string ptr, yajl_type type, std::string value)
-                : wt_ptr(std::move(ptr)), wt_type(type), wt_value(
-            std::move(value)) {
+            : wt_ptr(std::move(ptr)), wt_type(type), wt_value(std::move(value)){
 
-        };
+                                                     };
 
         std::string wt_ptr;
         yajl_type wt_type;
@@ -132,53 +138,61 @@ public:
         MS_ERR_INVALID_INDEX,
     };
 
-    static size_t encode(char *dst, size_t dst_len, const char *src, size_t src_len = -1);
+    static size_t encode(char* dst,
+                         size_t dst_len,
+                         const char* src,
+                         size_t src_len = -1);
 
-    static size_t decode(char *dst, const char *src, ssize_t src_len = -1);
+    static size_t decode(char* dst, const char* src, ssize_t src_len = -1);
 
-    json_ptr(const char *value)
+    json_ptr(const char* value)
         : jp_value(value), jp_pos(value), jp_depth(0), jp_array_index(-1),
-          jp_state(MS_VALUE) {
+          jp_state(MS_VALUE){
 
-    };
+          };
 
-    bool expect_map(int32_t &depth, int32_t &index);
+    bool expect_map(int32_t& depth, int32_t& index);
 
-    bool at_key(int32_t depth, const char *component, ssize_t len = -1);
+    bool at_key(int32_t depth, const char* component, ssize_t len = -1);
 
-    void exit_container(int32_t &depth, int32_t &index);
+    void exit_container(int32_t& depth, int32_t& index);
 
-    bool expect_array(int32_t &depth, int32_t &index);
+    bool expect_array(int32_t& depth, int32_t& index);
 
-    bool at_index(int32_t &depth, int32_t &index, bool primitive = true);
+    bool at_index(int32_t& depth, int32_t& index, bool primitive = true);
 
-    bool reached_end() {
+    bool reached_end()
+    {
         return this->jp_pos[0] == '\0';
     };
 
-    std::string error_msg() const {
+    std::string error_msg() const
+    {
         std::string retval;
 
         switch (this->jp_state) {
-        case MS_ERR_INVALID_ESCAPE:
-            retval = ("invalid escape sequence near -- " + std::string(this->jp_pos));
-            break;
-        case MS_ERR_INVALID_INDEX:
-            retval = ("expecting array index at -- " + std::string(this->jp_pos));
-            break;
-        case MS_ERR_INVALID_TYPE:
-            retval = ("expecting container at -- " + std::string(
-                this->jp_value, this->jp_pos - this->jp_value));
-            break;
-        default:
-            break;
+            case MS_ERR_INVALID_ESCAPE:
+                retval = ("invalid escape sequence near -- "
+                          + std::string(this->jp_pos));
+                break;
+            case MS_ERR_INVALID_INDEX:
+                retval = ("expecting array index at -- "
+                          + std::string(this->jp_pos));
+                break;
+            case MS_ERR_INVALID_TYPE:
+                retval = ("expecting container at -- "
+                          + std::string(this->jp_value,
+                                        this->jp_pos - this->jp_value));
+                break;
+            default:
+                break;
         }
 
         return retval;
     };
 
-    const char *jp_value;
-    const char *jp_pos;
+    const char* jp_value;
+    const char* jp_pos;
     int32_t jp_depth;
     int32_t jp_array_index;
     match_state_t jp_state;

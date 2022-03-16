@@ -21,23 +21,23 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "fmt/format.h"
 #include "fs_util.hh"
+
+#include "config.h"
+#include "fmt/format.h"
 #include "opt_util.hh"
 
 namespace lnav {
 namespace filesystem {
 
 Result<std::pair<ghc::filesystem::path, int>, std::string>
-open_temp_file(const ghc::filesystem::path &pattern)
+open_temp_file(const ghc::filesystem::path& pattern)
 {
     auto pattern_str = pattern.string();
     char pattern_copy[pattern_str.size() + 1];
@@ -46,13 +46,15 @@ open_temp_file(const ghc::filesystem::path &pattern)
     strcpy(pattern_copy, pattern_str.c_str());
     if ((fd = mkstemp(pattern_copy)) == -1) {
         return Err(fmt::format("unable to create temporary file: {} -- {}",
-                               pattern.string(), strerror(errno)));
+                               pattern.string(),
+                               strerror(errno)));
     }
 
     return Ok(std::make_pair(ghc::filesystem::path(pattern_copy), fd));
 }
 
-Result<std::string, std::string> read_file(const ghc::filesystem::path &path)
+Result<std::string, std::string>
+read_file(const ghc::filesystem::path& path)
 {
     try {
         ghc::filesystem::ifstream file_stream(path);
@@ -70,11 +72,12 @@ Result<std::string, std::string> read_file(const ghc::filesystem::path &path)
     }
 }
 
-std::string build_path(const std::vector<ghc::filesystem::path> &paths)
+std::string
+build_path(const std::vector<ghc::filesystem::path>& paths)
 {
     std::string retval;
 
-    for (const auto &path : paths) {
+    for (const auto& path : paths) {
         if (path.empty()) {
             continue;
         }
@@ -90,5 +93,5 @@ std::string build_path(const std::vector<ghc::filesystem::path> &paths)
     return retval;
 }
 
-}
-}
+}  // namespace filesystem
+}  // namespace lnav

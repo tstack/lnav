@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -34,16 +34,16 @@
  * color/style combinations.
  */
 
-#include "config.h"
-
 #include <assert.h>
 
-#include "view_curses.hh"
 #include "ansi_scrubber.hh"
+#include "config.h"
+#include "view_curses.hh"
 
 using namespace std;
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     string_attrs_t sa;
     string str_cp;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
     scrub_ansi_string(str_cp, sa);
     assert(str_cp == "Hello, World!");
-    
+
     assert(sa[0].sa_range.lr_start == 5);
     assert(sa[0].sa_range.lr_end == 7);
     assert(sa[0].sa_type == &view_curses::VC_BACKGROUND);

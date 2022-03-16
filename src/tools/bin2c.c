@@ -3,49 +3,50 @@
 // convert a binary file into a C source vector
 //
 // THE "BEER-WARE LICENSE" (Revision 3.1415):
-// sandro AT sigala DOT it wrote this file. As long as you retain this notice you can do
-// whatever you want with this stuff.  If we meet some day, and you think this stuff is
-// worth it, you can buy me a beer in return.  Sandro Sigala
+// sandro AT sigala DOT it wrote this file. As long as you retain this notice
+// you can do whatever you want with this stuff.  If we meet some day, and you
+// think this stuff is worth it, you can buy me a beer in return.  Sandro Sigala
 
 #ifdef __CYGWIN__
-#include <alloca.h>
+#    include <alloca.h>
 #endif
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <getopt.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <libgen.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <zlib.h>
 
 #ifndef PATH_MAX
-#define PATH_MAX 1024
+#    define PATH_MAX 1024
 #endif
 
-const char *name = NULL;
+const char* name = NULL;
 
-static const char *HEADER_FMT =
-    "#ifndef bin2c_%s_h\n"
-    "#define bin2c_%s_h\n"
-    "\n"
-    "#include \"bin2c.hh\"\n"
-    "\n"
-    "extern struct bin_src_file %s%s;\n"
-    "\n"
-    "#endif\n"
-    "\n";
+static const char* HEADER_FMT
+    = "#ifndef bin2c_%s_h\n"
+      "#define bin2c_%s_h\n"
+      "\n"
+      "#include \"bin2c.hh\"\n"
+      "\n"
+      "extern struct bin_src_file %s%s;\n"
+      "\n"
+      "#endif\n"
+      "\n";
 
 struct file_meta {
-    const char *fm_name;
+    const char* fm_name;
     unsigned int fm_compressed_size;
     unsigned int fm_size;
 };
 
-void symname(char *dst, const char *fname)
+void
+symname(char* dst, const char* fname)
 {
     strcpy(dst, fname);
     for (int lpc = 0; dst[lpc]; lpc++) {
@@ -55,7 +56,8 @@ void symname(char *dst, const char *fname)
     }
 }
 
-void process(struct file_meta *fm, FILE *ofile)
+void
+process(struct file_meta* fm, FILE* ofile)
 {
     struct stat st;
 
@@ -64,8 +66,8 @@ void process(struct file_meta *fm, FILE *ofile)
         exit(1);
     }
 
-    unsigned char *buf = malloc(st.st_size);
-    unsigned char *dest = malloc(st.st_size);
+    unsigned char* buf = malloc(st.st_size);
+    unsigned char* dest = malloc(st.st_size);
 
     int fd = open(fm->fm_name, O_RDONLY);
     if (fd == -1) {
@@ -82,35 +84,36 @@ void process(struct file_meta *fm, FILE *ofile)
     compress(dest, &destLen, buf, st.st_size);
     fm->fm_compressed_size = destLen;
 
-	int c, col = 1;
-	char sym[1024];
+    int c, col = 1;
+    char sym[1024];
 
-	symname(sym, basename((char *) fm->fm_name));
-	fprintf(ofile, "static const unsigned char %s_data[] = {\n", sym);
-	for (int lpc = 0; lpc < destLen; lpc++) {
-	    c = dest[lpc];
-		if (col >= 78 - 6)
-		{
-			fputc('\n', ofile);
-			col = 1;
-		}
-		fprintf(ofile, "0x%.2x, ", c);
-		col += 6;
-	}
-	fprintf(ofile, "0x00\n");
-	fprintf(ofile, "\n};\n");
+    symname(sym, basename((char*) fm->fm_name));
+    fprintf(ofile, "static const unsigned char %s_data[] = {\n", sym);
+    for (int lpc = 0; lpc < destLen; lpc++) {
+        c = dest[lpc];
+        if (col >= 78 - 6) {
+            fputc('\n', ofile);
+            col = 1;
+        }
+        fprintf(ofile, "0x%.2x, ", c);
+        col += 6;
+    }
+    fprintf(ofile, "0x00\n");
+    fprintf(ofile, "\n};\n");
 
-	free(buf);
-	free(dest);
+    free(buf);
+    free(dest);
 }
 
-void usage()
+void
+usage()
 {
-	fprintf(stderr, "usage: bin2c [-n name] <output_file> [input_file1 ...]\n");
-	exit(1);
+    fprintf(stderr, "usage: bin2c [-n name] <output_file> [input_file1 ...]\n");
+    exit(1);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char** argv)
 {
     int c;
 
@@ -132,7 +135,7 @@ int main(int argc, char **argv)
         usage();
     }
 
-    const char *out_base_name = argv[0];
+    const char* out_base_name = argv[0];
     char hname[PATH_MAX], cname[PATH_MAX];
 
     argc -= 1;
@@ -140,17 +143,15 @@ int main(int argc, char **argv)
 
     snprintf(hname, sizeof(hname), "%s.h", out_base_name);
 
-    FILE *hfile = fopen(hname, "wb");
-    if (hfile == NULL)
-    {
+    FILE* hfile = fopen(hname, "wb");
+    if (hfile == NULL) {
         fprintf(stderr, "cannot open %s for writing\n", hname);
         exit(1);
     }
 
     snprintf(cname, sizeof(cname), "%s.cc", out_base_name);
-    FILE *cfile = fopen(cname, "wb");
-    if (cfile == NULL)
-    {
+    FILE* cfile = fopen(cname, "wb");
+    if (cfile == NULL) {
         fprintf(stderr, "cannot open %s for writing\n", cname);
         exit(1);
     }
@@ -159,7 +160,7 @@ int main(int argc, char **argv)
     if (name) {
         strcpy(sym, name);
     } else {
-        const char *in_base = basename(argv[0]);
+        const char* in_base = basename(argv[0]);
 
         symname(sym, in_base);
     }
@@ -172,17 +173,13 @@ int main(int argc, char **argv)
     } else {
         trailer[0] = '\0';
     }
-    fprintf(hfile, HEADER_FMT,
-            sym,
-            sym,
-            sym,
-            trailer);
+    fprintf(hfile, HEADER_FMT, sym, sym, sym, trailer);
     fclose(hfile);
 
     fprintf(cfile, "#include \"bin2c.hh\"\n");
     fprintf(cfile, "\n");
 
-    struct file_meta *meta = alloca(sizeof(struct file_meta) * argc);
+    struct file_meta* meta = alloca(sizeof(struct file_meta) * argc);
 
     memset(meta, 0, sizeof(struct file_meta) * argc);
     for (int lpc = 0; lpc < argc; lpc++) {
@@ -190,20 +187,18 @@ int main(int argc, char **argv)
         process(&meta[lpc], cfile);
     }
 
-    fprintf(cfile,
-            "struct bin_src_file %s%s = {\n",
-            sym,
-            trailer);
+    fprintf(cfile, "struct bin_src_file %s%s = {\n", sym, trailer);
     for (int lpc = 0; lpc < argc; lpc++) {
         char sym[1024];
 
-        symname(sym, basename((char *) meta[lpc].fm_name));
+        symname(sym, basename((char*) meta[lpc].fm_name));
         fprintf(cfile, "    ");
         if (array) {
             fprintf(cfile, "{ ");
         }
-        fprintf(cfile, "\"%s\", %s_data, %d, %d",
-                basename((char *) meta[lpc].fm_name),
+        fprintf(cfile,
+                "\"%s\", %s_data, %d, %d",
+                basename((char*) meta[lpc].fm_name),
                 sym,
                 meta[lpc].fm_compressed_size,
                 meta[lpc].fm_size);

@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,16 +30,20 @@
 #ifndef lnav_log_gutter_source_hh
 #define lnav_log_gutter_source_hh
 
-#include "logfile_sub_source.hh"
 #include "command_executor.hh"
+#include "logfile_sub_source.hh"
 
 class log_gutter_source : public list_gutter_source {
 public:
-    void listview_gutter_value_for_range(
-        const listview_curses &lv, int start, int end, chtype &ch,
-        view_colors::role_t &role_out, view_colors::role_t &bar_role_out) {
-        textview_curses *tc = (textview_curses *)&lv;
-        vis_bookmarks &bm = tc->get_bookmarks();
+    void listview_gutter_value_for_range(const listview_curses& lv,
+                                         int start,
+                                         int end,
+                                         chtype& ch,
+                                         view_colors::role_t& role_out,
+                                         view_colors::role_t& bar_role_out)
+    {
+        textview_curses* tc = (textview_curses*) &lv;
+        vis_bookmarks& bm = tc->get_bookmarks();
         vis_line_t next;
         bool search_hit = false;
 
@@ -54,16 +58,14 @@ public:
         }
         if (next != -1 && next <= end) {
             ch = search_hit ? ACS_PLUS : ACS_LTEE;
-        }
-        else {
+        } else {
             ch = search_hit ? ACS_RTEE : ACS_VLINE;
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
             role_out = view_colors::VCR_ERROR;
             bar_role_out = view_colors::VCR_SCROLLBAR_ERROR;
-        }
-        else {
+        } else {
             next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
             if (next != -1 && next <= end) {
                 role_out = view_colors::VCR_WARNING;

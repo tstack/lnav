@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -39,28 +39,29 @@
 #ifndef pcrepp_hh
 #define pcrepp_hh
 
+#include "config.h"
+
 #ifdef HAVE_PCRE_H
-#include <pcre.h>
+#    include <pcre.h>
 #elif HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
+#    include <pcre/pcre.h>
 #else
-#error "pcre.h not found?"
+#    error "pcre.h not found?"
 #endif
 
-#include <string.h>
-
 #include <cassert>
-#include <string>
+#include <exception>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
-#include <exception>
+
+#include <stdio.h>
+#include <string.h>
 
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
-
-#include <stdio.h>
 
 class pcrepp;
 
@@ -72,10 +73,10 @@ class pcrepp;
 class pcre_context {
 public:
     typedef struct capture {
-        capture() {
+        capture(){
             /* We don't initialize anything since it's a perf hit. */
         };
-        
+
         capture(int begin, int end) : c_begin(begin), c_end(end)
         {
             assert(begin <= end);
@@ -84,24 +85,35 @@ public:
         int c_begin;
         int c_end;
 
-        void ltrim(const char *str) {
+        void ltrim(const char* str)
+        {
             while (this->c_begin < this->c_end && isspace(str[this->c_begin])) {
                 this->c_begin += 1;
             }
         };
 
-        bool contains(int pos) const {
+        bool contains(int pos) const
+        {
             return this->c_begin <= pos && pos < this->c_end;
         };
 
-        bool is_valid() const { return this->c_begin != -1; };
+        bool is_valid() const
+        {
+            return this->c_begin != -1;
+        };
 
-        int length() const { return this->c_end - this->c_begin; };
+        int length() const
+        {
+            return this->c_end - this->c_begin;
+        };
 
-        bool empty() const { return this->c_begin == this->c_end; };
+        bool empty() const
+        {
+            return this->c_begin == this->c_end;
+        };
     } capture_t;
-    typedef capture_t       *iterator;
-    typedef const capture_t *const_iterator;
+    typedef capture_t* iterator;
+    typedef const capture_t* const_iterator;
 
     /** @return The maximum number of strings this context can capture. */
     int get_max_count() const
@@ -119,32 +131,47 @@ public:
         return this->pc_count;
     };
 
-    void set_pcrepp(const pcrepp *src) { this->pc_pcre = src; };
+    void set_pcrepp(const pcrepp* src)
+    {
+        this->pc_pcre = src;
+    };
 
     /**
      * @return a capture_t that covers all of the text that was matched.
      */
-    capture_t *all() const { return pc_captures; };
+    capture_t* all() const
+    {
+        return pc_captures;
+    };
 
     /** @return An iterator to the first capture. */
-    iterator begin() { return pc_captures + 1; };
+    iterator begin()
+    {
+        return pc_captures + 1;
+    };
     /** @return An iterator that refers to the end of the capture array. */
-    iterator end() { return pc_captures + pc_count; };
+    iterator end()
+    {
+        return pc_captures + pc_count;
+    };
 
-    capture_t *operator[](int offset) const {
+    capture_t* operator[](int offset) const
+    {
         if (offset < 0) {
             return nullptr;
         }
         return &this->pc_captures[offset + 1];
     };
 
-    capture_t *operator[](const char *name) const;
+    capture_t* operator[](const char* name) const;
 
-    capture_t *operator[](const std::string &name) const {
+    capture_t* operator[](const std::string& name) const
+    {
         return (*this)[name.c_str()];
     };
 
-    capture_t *first_valid() const {
+    capture_t* first_valid() const
+    {
         for (int lpc = 1; lpc < this->pc_count; lpc++) {
             if (this->pc_captures[lpc].is_valid()) {
                 return &this->pc_captures[lpc];
@@ -155,19 +182,20 @@ public:
     };
 
 protected:
-    pcre_context(capture_t *captures, int max_count)
-        : pc_pcre(nullptr), pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
+    pcre_context(capture_t* captures, int max_count)
+        : pc_pcre(nullptr), pc_captures(captures), pc_max_count(max_count),
+          pc_count(0){};
 
-    const pcrepp *pc_pcre;
-    capture_t *pc_captures;
-    int        pc_max_count;
-    int        pc_count;
+    const pcrepp* pc_pcre;
+    capture_t* pc_captures;
+    int pc_max_count;
+    int pc_count;
 };
 
 struct capture_if_not {
-    capture_if_not(int begin) : cin_begin(begin) { };
+    capture_if_not(int begin) : cin_begin(begin){};
 
-    bool operator()(const pcre_context::capture_t &cap) const
+    bool operator()(const pcre_context::capture_t& cap) const
     {
         return cap.c_begin != this->cin_begin;
     }
@@ -175,9 +203,9 @@ struct capture_if_not {
     int cin_begin;
 };
 
-inline
-pcre_context::iterator skip_invalid_captures(pcre_context::iterator iter,
-                                             pcre_context::iterator pc_end)
+inline pcre_context::iterator
+skip_invalid_captures(pcre_context::iterator iter,
+                      pcre_context::iterator pc_end)
 {
     for (; iter != pc_end; ++iter) {
         if (iter->c_begin == -1) {
@@ -196,7 +224,7 @@ template<size_t MAX_COUNT>
 class pcre_context_static : public pcre_context {
 public:
     pcre_context_static()
-        : pcre_context(this->pc_match_buffer, MAX_COUNT + 1) { };
+        : pcre_context(this->pc_match_buffer, MAX_COUNT + 1){};
 
 private:
     capture_t pc_match_buffer[MAX_COUNT + 1];
@@ -207,42 +235,36 @@ private:
  */
 class pcre_input {
 public:
-    pcre_input(const char *str, size_t off = 0, size_t len = -1)
-        : pi_offset(off),
-          pi_next_offset(off),
-          pi_length(len),
-          pi_string(str)
+    pcre_input(const char* str, size_t off = 0, size_t len = -1)
+        : pi_offset(off), pi_next_offset(off), pi_length(len), pi_string(str)
     {
-        if (this->pi_length == (size_t)-1) {
+        if (this->pi_length == (size_t) -1) {
             this->pi_length = strlen(str);
         }
     };
 
-    pcre_input(const string_fragment &s)
-        : pi_offset(0),
-          pi_next_offset(0),
-          pi_length(s.length()),
-          pi_string(s.data()) {};
+    pcre_input(const string_fragment& s)
+        : pi_offset(0), pi_next_offset(0), pi_length(s.length()),
+          pi_string(s.data()){};
 
     pcre_input(const intern_string_t& s)
-        : pi_offset(0),
-          pi_next_offset(0),
-          pi_length(s.size()),
-          pi_string(s.get()) {};
+        : pi_offset(0), pi_next_offset(0), pi_length(s.size()),
+          pi_string(s.get()){};
 
-    pcre_input(const string_fragment &&) = delete;
+    pcre_input(const string_fragment&&) = delete;
 
-    pcre_input(const std::string &str, size_t off = 0)
-        : pi_offset(off),
-          pi_next_offset(off),
-          pi_length(str.length()),
-          pi_string(str.c_str()) {};
+    pcre_input(const std::string& str, size_t off = 0)
+        : pi_offset(off), pi_next_offset(off), pi_length(str.length()),
+          pi_string(str.c_str()){};
 
-    pcre_input(const std::string &&, size_t off = 0) = delete;
+    pcre_input(const std::string&&, size_t off = 0) = delete;
 
-    const char *get_string() const { return this->pi_string; };
+    const char* get_string() const
+    {
+        return this->pi_string;
+    };
 
-    const char *get_substr_start(pcre_context::const_iterator iter) const
+    const char* get_substr_start(pcre_context::const_iterator iter) const
     {
         return &this->pi_string[iter->c_begin];
     };
@@ -257,15 +279,18 @@ public:
         if (iter->c_begin == -1) {
             return "";
         }
-        return std::string(&this->pi_string[iter->c_begin],
-                           iter->length());
+        return std::string(&this->pi_string[iter->c_begin], iter->length());
     };
 
-    intern_string_t get_substr_i(pcre_context::const_iterator iter) const {
-        return intern_string::lookup(&this->pi_string[iter->c_begin], iter->length());
+    intern_string_t get_substr_i(pcre_context::const_iterator iter) const
+    {
+        return intern_string::lookup(&this->pi_string[iter->c_begin],
+                                     iter->length());
     };
 
-    nonstd::optional<std::string> get_substr_opt(pcre_context::const_iterator iter) const {
+    nonstd::optional<std::string> get_substr_opt(
+        pcre_context::const_iterator iter) const
+    {
         if (iter->is_valid()) {
             return std::string(&this->pi_string[iter->c_begin], iter->length());
         }
@@ -273,29 +298,30 @@ public:
         return nonstd::nullopt;
     }
 
-    void get_substr(pcre_context::const_iterator iter, char *dst) const {
+    void get_substr(pcre_context::const_iterator iter, char* dst) const
+    {
         memcpy(dst, &this->pi_string[iter->c_begin], iter->length());
         dst[iter->length()] = '\0';
     };
 
-    void reset_next_offset() {
+    void reset_next_offset()
+    {
         this->pi_next_offset = this->pi_offset;
     };
 
-    void reset(const char *str, size_t off = 0, size_t len = -1)
+    void reset(const char* str, size_t off = 0, size_t len = -1)
     {
-        this->pi_string      = str;
-        this->pi_offset      = off;
+        this->pi_string = str;
+        this->pi_offset = off;
         this->pi_next_offset = off;
-        if (this->pi_length == (size_t)-1) {
+        if (this->pi_length == (size_t) -1) {
             this->pi_length = strlen(str);
-        }
-        else {
+        } else {
             this->pi_length = len;
         }
     }
 
-    void reset(const std::string &str, size_t off = 0)
+    void reset(const std::string& str, size_t off = 0)
     {
         this->reset(str.c_str(), off, str.length());
     };
@@ -303,46 +329,50 @@ public:
     size_t pi_offset;
     size_t pi_next_offset;
     size_t pi_length;
+
 private:
-    const char *pi_string;
+    const char* pi_string;
 };
 
 struct pcre_named_capture {
     class iterator {
     public:
-        iterator(pcre_named_capture *pnc, size_t name_len)
-            : i_named_capture(pnc), i_name_len(name_len)
+        iterator(pcre_named_capture* pnc, size_t name_len)
+            : i_named_capture(pnc), i_name_len(name_len){};
+
+        iterator() : i_named_capture(nullptr), i_name_len(0){};
+
+        const pcre_named_capture& operator*() const
         {
-        };
-
-        iterator() : i_named_capture(nullptr), i_name_len(0) { };
-
-        const pcre_named_capture &operator*() const {
             return *this->i_named_capture;
         };
 
-        const pcre_named_capture *operator->() const {
+        const pcre_named_capture* operator->() const
+        {
             return this->i_named_capture;
         };
 
-        bool operator!=(const iterator &rhs) const {
+        bool operator!=(const iterator& rhs) const
+        {
             return this->i_named_capture != rhs.i_named_capture;
         };
 
-        iterator &operator++() {
-            char *ptr = (char *)this->i_named_capture;
+        iterator& operator++()
+        {
+            char* ptr = (char*) this->i_named_capture;
 
             ptr += this->i_name_len;
-            this->i_named_capture = (pcre_named_capture *)ptr;
+            this->i_named_capture = (pcre_named_capture*) ptr;
             return *this;
         };
 
     private:
-        pcre_named_capture *i_named_capture;
+        pcre_named_capture* i_named_capture;
         size_t i_name_len;
     };
 
-    int index() const {
+    int index() const
+    {
         return (this->pnc_index_msb << 8 | this->pnc_index_lsb) - 1;
     };
 
@@ -352,16 +382,18 @@ struct pcre_named_capture {
 };
 
 struct pcre_extractor {
-    const pcre_context &pe_context;
-    const pcre_input &pe_input;
+    const pcre_context& pe_context;
+    const pcre_input& pe_input;
 
     template<typename T>
-    intern_string_t get_substr_i(T name) const {
+    intern_string_t get_substr_i(T name) const
+    {
         return this->pe_input.get_substr_i(this->pe_context[name]);
     };
 
     template<typename T>
-    std::string get_substr(T name) const {
+    std::string get_substr(T name) const
+    {
         return this->pe_input.get_substr(this->pe_context[name]);
     };
 };
@@ -369,11 +401,12 @@ struct pcre_extractor {
 class pcrepp {
 public:
     class error : public std::exception {
-public:
+    public:
         error(std::string msg, int offset = 0)
-            : e_msg(std::move(msg)), e_offset(offset) { };
+            : e_msg(std::move(msg)), e_offset(offset){};
 
-        const char *what() const noexcept override {
+        const char* what() const noexcept override
+        {
             return this->e_msg.c_str();
         };
 
@@ -381,28 +414,29 @@ public:
         int e_offset;
     };
 
-    static std::string quote(const char *unquoted);
+    static std::string quote(const char* unquoted);
 
-    static std::string quote(const std::string& unquoted) {
+    static std::string quote(const std::string& unquoted)
+    {
         return quote(unquoted.c_str());
     }
 
     struct compile_error {
-        const char *ce_msg;
+        const char* ce_msg;
         int ce_offset;
     };
 
-    static Result<pcrepp, compile_error> from_str(std::string pattern, int options = 0);
+    static Result<pcrepp, compile_error> from_str(std::string pattern,
+                                                  int options = 0);
 
-    pcrepp(pcre *code) : p_code(code), p_code_extra(pcre_free_study)
+    pcrepp(pcre* code) : p_code(code), p_code_extra(pcre_free_study)
     {
         pcre_refcount(this->p_code, 1);
         this->study();
     };
 
-    pcrepp(std::string pattern, pcre *code)
-        : p_code(code),
-          p_pattern(std::move(pattern)),
+    pcrepp(std::string pattern, pcre* code)
+        : p_code(code), p_pattern(std::move(pattern)),
           p_code_extra(pcre_free_study)
     {
         pcre_refcount(this->p_code, 1);
@@ -410,17 +444,16 @@ public:
         this->find_captures(this->p_pattern.c_str());
     };
 
-    explicit pcrepp(const char *pattern, int options = 0)
-            : p_pattern(pattern), p_code_extra(pcre_free_study)
+    explicit pcrepp(const char* pattern, int options = 0)
+        : p_pattern(pattern), p_code_extra(pcre_free_study)
     {
-        const char *errptr;
-        int         eoff;
+        const char* errptr;
+        int eoff;
 
-        if ((this->p_code = pcre_compile(pattern,
-                                         options,
-                                         &errptr,
-                                         &eoff,
-                                         nullptr)) == nullptr) {
+        if ((this->p_code
+             = pcre_compile(pattern, options, &errptr, &eoff, nullptr))
+            == nullptr)
+        {
             throw error(errptr, eoff);
         }
 
@@ -429,17 +462,16 @@ public:
         this->find_captures(pattern);
     };
 
-    explicit pcrepp(const std::string &pattern, int options = 0)
-            : p_pattern(pattern), p_code_extra(pcre_free_study)
+    explicit pcrepp(const std::string& pattern, int options = 0)
+        : p_pattern(pattern), p_code_extra(pcre_free_study)
     {
-        const char *errptr;
-        int         eoff;
+        const char* errptr;
+        int eoff;
 
-        if ((this->p_code = pcre_compile(pattern.c_str(),
-                                         options | PCRE_UTF8,
-                                         &errptr,
-                                         &eoff,
-                                         nullptr)) == nullptr) {
+        if ((this->p_code = pcre_compile(
+                 pattern.c_str(), options | PCRE_UTF8, &errptr, &eoff, nullptr))
+            == nullptr)
+        {
             throw error(errptr, eoff);
         }
 
@@ -448,29 +480,23 @@ public:
         this->find_captures(pattern.c_str());
     };
 
-    pcrepp() {
-    }
+    pcrepp() {}
 
-    pcrepp(const pcrepp &other)
-        : p_code(other.p_code),
-          p_pattern(other.p_pattern),
-          p_code_extra(pcre_free_study),
-          p_captures(other.p_captures)
+    pcrepp(const pcrepp& other)
+        : p_code(other.p_code), p_pattern(other.p_pattern),
+          p_code_extra(pcre_free_study), p_captures(other.p_captures)
     {
         pcre_refcount(this->p_code, 1);
         this->study();
     };
 
-    pcrepp(pcrepp &&other)
-        : p_code(other.p_code),
-          p_pattern(std::move(other.p_pattern)),
-          p_code_extra(pcre_free_study),
-          p_capture_count(other.p_capture_count),
-          p_named_count(other.p_named_count),
-          p_name_len(other.p_name_len),
-          p_options(other.p_options),
-          p_named_entries(other.p_named_entries),
-          p_captures(std::move(other.p_captures)) {
+    pcrepp(pcrepp&& other)
+        : p_code(other.p_code), p_pattern(std::move(other.p_pattern)),
+          p_code_extra(pcre_free_study), p_capture_count(other.p_capture_count),
+          p_named_count(other.p_named_count), p_name_len(other.p_name_len),
+          p_options(other.p_options), p_named_entries(other.p_named_entries),
+          p_captures(std::move(other.p_captures))
+    {
         pcre_refcount(this->p_code, 1);
         this->p_code_extra = std::move(other.p_code_extra);
     }
@@ -480,7 +506,8 @@ public:
         this->clear();
     };
 
-    pcrepp& operator=(pcrepp&& other) noexcept {
+    pcrepp& operator=(pcrepp&& other) noexcept
+    {
         if (this == &other) {
             return *this;
         }
@@ -499,15 +526,18 @@ public:
         return *this;
     }
 
-    const std::string& get_pattern() const {
+    const std::string& get_pattern() const
+    {
         return this->p_pattern;
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return this->p_pattern.empty();
     }
 
-    void clear() {
+    void clear()
+    {
         if (this->p_code && pcre_refcount(this->p_code, -1) == 0) {
             free(this->p_code);
             this->p_code = nullptr;
@@ -522,35 +552,42 @@ public:
         this->p_captures.clear();
     }
 
-    pcre_named_capture::iterator named_begin() const {
+    pcre_named_capture::iterator named_begin() const
+    {
         return {this->p_named_entries, static_cast<size_t>(this->p_name_len)};
     };
 
-    pcre_named_capture::iterator named_end() const {
-        char *ptr = (char *)this->p_named_entries;
+    pcre_named_capture::iterator named_end() const
+    {
+        char* ptr = (char*) this->p_named_entries;
 
         ptr += this->p_named_count * this->p_name_len;
-        return {(pcre_named_capture *)ptr,
+        return {(pcre_named_capture*) ptr,
                 static_cast<size_t>(this->p_name_len)};
     };
 
-    const std::vector<pcre_context::capture> &captures() const {
+    const std::vector<pcre_context::capture>& captures() const
+    {
         return this->p_captures;
     };
 
-    std::vector<pcre_context::capture>::const_iterator cap_begin() const {
+    std::vector<pcre_context::capture>::const_iterator cap_begin() const
+    {
         return this->p_captures.begin();
     };
 
-    std::vector<pcre_context::capture>::const_iterator cap_end() const {
+    std::vector<pcre_context::capture>::const_iterator cap_end() const
+    {
         return this->p_captures.end();
     };
 
-    int name_index(const std::string &name) const {
+    int name_index(const std::string& name) const
+    {
         return this->name_index(name.c_str());
     };
 
-    int name_index(const char *name) const {
+    int name_index(const char* name) const
+    {
         int retval = pcre_get_stringnumber(this->p_code, name);
 
         if (retval == PCRE_ERROR_NOSUBSTRING) {
@@ -560,10 +597,12 @@ public:
         return retval - 1;
     };
 
-    const char *name_for_capture(int index) const {
+    const char* name_for_capture(int index) const
+    {
         for (pcre_named_capture::iterator iter = this->named_begin();
              iter != this->named_end();
-             ++iter) {
+             ++iter)
+        {
             if (iter->index() == index) {
                 return iter->pnc_name;
             }
@@ -571,14 +610,18 @@ public:
         return "";
     };
 
-    int get_capture_count() const {
+    int get_capture_count() const
+    {
         return this->p_capture_count;
     };
 
-    bool match(pcre_context &pc, pcre_input &pi, int options = 0) const;
+    bool match(pcre_context& pc, pcre_input& pi, int options = 0) const;
 
     template<size_t MATCH_COUNT>
-    nonstd::optional<pcre_context_static<MATCH_COUNT>> match(pcre_input &pi, int options = 0) const {
+    nonstd::optional<pcre_context_static<MATCH_COUNT>> match(pcre_input& pi,
+                                                             int options
+                                                             = 0) const
+    {
         pcre_context_static<MATCH_COUNT> pc;
 
         if (this->match(pc, pi, options)) {
@@ -588,9 +631,10 @@ public:
         return nonstd::nullopt;
     }
 
-    std::string replace(const char *str, const char *repl) const;
+    std::string replace(const char* str, const char* repl) const;
 
-    size_t match_partial(pcre_input &pi) const {
+    size_t match_partial(pcre_input& pi) const
+    {
         size_t length = pi.pi_length;
         int rc;
 
@@ -616,24 +660,24 @@ public:
 
 // #undef PCRE_STUDY_JIT_COMPILE
 #ifdef PCRE_STUDY_JIT_COMPILE
-    static pcre_jit_stack *jit_stack();
+    static pcre_jit_stack* jit_stack();
 
 #else
-    static void pcre_free_study(pcre_extra *);
+    static void pcre_free_study(pcre_extra*);
 #endif
 
     void study();
 
-    void find_captures(const char *pattern);
+    void find_captures(const char* pattern);
 
-    pcre *p_code{nullptr};
+    pcre* p_code{nullptr};
     std::string p_pattern;
     auto_mem<pcre_extra> p_code_extra;
     int p_capture_count{0};
     int p_named_count{0};
     int p_name_len{0};
     unsigned long p_options{0};
-    pcre_named_capture *p_named_entries{nullptr};
+    pcre_named_capture* p_named_entries{nullptr};
     std::vector<pcre_context::capture> p_captures;
 };
 

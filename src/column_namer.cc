@@ -21,52 +21,55 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file column_namer.cc
  */
 
-#include "config.h"
-
 #include <algorithm>
 
-#include "base/string_util.hh"
-#include "sql_util.hh"
-
-#include "base/lnav_log.hh"
 #include "column_namer.hh"
 
-bool column_namer::existing_name(const std::string &in_name) const
+#include "base/lnav_log.hh"
+#include "base/string_util.hh"
+#include "config.h"
+#include "sql_util.hh"
+
+bool
+column_namer::existing_name(const std::string& in_name) const
 {
-    if (std::binary_search(std::begin(sql_keywords),
-                           std::end(sql_keywords),
-                           toupper(in_name))) {
+    if (std::binary_search(
+            std::begin(sql_keywords), std::end(sql_keywords), toupper(in_name)))
+    {
         return true;
     }
 
     if (std::find(this->cn_builtin_names.begin(),
                   this->cn_builtin_names.end(),
-                  in_name) != this->cn_builtin_names.end()) {
+                  in_name)
+        != this->cn_builtin_names.end())
+    {
         return true;
     }
 
-    if (std::find(this->cn_names.begin(),
-                  this->cn_names.end(),
-                  in_name) != this->cn_names.end()) {
+    if (std::find(this->cn_names.begin(), this->cn_names.end(), in_name)
+        != this->cn_names.end())
+    {
         return true;
     }
 
     return false;
 }
 
-std::string column_namer::add_column(const std::string &in_name)
+std::string
+column_namer::add_column(const std::string& in_name)
 {
     std::string base_name = in_name, retval;
-    size_t      buf_size;
-    int         num = 0;
+    size_t buf_size;
+    int num = 0;
 
     buf_size = in_name.length() + 64;
     char buffer[buf_size];

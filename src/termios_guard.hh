@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -43,7 +43,6 @@
  */
 class guard_termios {
 public:
-
     /**
      * Store the TTY termios settings in this object.
      *
@@ -52,8 +51,8 @@ public:
     guard_termios(const int fd) : gt_fd(fd)
     {
         memset(&this->gt_termios, 0, sizeof(this->gt_termios));
-        if (isatty(this->gt_fd) &&
-            tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
+        if (isatty(this->gt_fd)
+            && tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
             perror("tcgetattr");
         }
     };
@@ -64,16 +63,20 @@ public:
      */
     ~guard_termios()
     {
-        if (isatty(this->gt_fd) &&
-            tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
+        if (isatty(this->gt_fd)
+            && tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1)
+        {
             perror("tcsetattr");
         }
     };
 
-    const struct termios *get_termios() const { return &this->gt_termios; };
+    const struct termios* get_termios() const
+    {
+        return &this->gt_termios;
+    };
 
 private:
-    const int      gt_fd;
+    const int gt_fd;
     struct termios gt_termios;
 };
 #endif

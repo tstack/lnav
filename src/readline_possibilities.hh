@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,13 +32,18 @@
 
 #include <string>
 
-#include "textview_curses.hh"
 #include "readline_curses.hh"
+#include "textview_curses.hh"
 
-void add_view_text_possibilities(readline_curses *rlc, int context, const std::string &type, textview_curses *tc);
-void add_filter_expr_possibilities(readline_curses *rlc, int context, const std::string &type);
+void add_view_text_possibilities(readline_curses* rlc,
+                                 int context,
+                                 const std::string& type,
+                                 textview_curses* tc);
+void add_filter_expr_possibilities(readline_curses* rlc,
+                                   int context,
+                                   const std::string& type);
 void add_env_possibilities(int context);
-void add_filter_possibilities(textview_curses *tc);
+void add_filter_possibilities(textview_curses* tc);
 void add_mark_possibilities();
 void add_config_possibilities();
 void add_tag_possibilities();
@@ -47,4 +52,4 @@ void add_recent_netlocs_possibilities();
 
 extern struct sqlite_metadata_callbacks lnav_sql_meta_callbacks;
 
-#endif //LNAV_READLINE_POSSIBILITIES_H
+#endif  // LNAV_READLINE_POSSIBILITIES_H

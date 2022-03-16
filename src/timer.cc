@@ -21,47 +21,45 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "timer.hh"
+
+#include "base/lnav_log.hh"
 #include "config.h"
 
-#include "timer.hh"
-#include "base/lnav_log.hh"
+static const struct itimerval DISABLE_TV = {{0, 0}, {0, 0}};
 
-static const struct itimerval DISABLE_TV = {
-    { 0, 0 },
-    { 0, 0 }
-};
-
-timer::error::error(int err):e_err(err) { }
+timer::error::error(int err) : e_err(err) {}
 
 timer::interrupt_timer::interrupt_timer(struct timeval t,
-        sighandler_t_ sighandler=SIG_IGN) : new_handler(sighandler),
-        new_val((struct itimerval){{0,0},t}),
-        old_val(DISABLE_TV), armed(false) {
+                                        sighandler_t_ sighandler = SIG_IGN)
+    : new_handler(sighandler), new_val((struct itimerval){{0, 0}, t}),
+      old_val(DISABLE_TV), armed(false)
+{
     memset(&this->old_handler, 0, sizeof(this->old_handler));
 }
 
-int timer::interrupt_timer::arm_timer() {
+int
+timer::interrupt_timer::arm_timer()
+{
     struct sigaction sa;
 
     // Disable the interval timer before setting the handler and arming the
     // interval timer or else we will have a race-condition where the timer
     // might fire and the appropriate handler might not be set.
     if (setitimer(ITIMER_REAL, &DISABLE_TV, &this->old_val) != 0) {
-        log_error("Unable to disable the timer: %s",
-                  strerror(errno));
+        log_error("Unable to disable the timer: %s", strerror(errno));
         return -1;
     }
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = this->new_handler;
     if (sigaction(SIGALRM, &sa, &this->old_handler) == -1) {
-        log_error("Unable to set the signal handler: %s",
-                  strerror(errno));
+        log_error("Unable to set the signal handler: %s", strerror(errno));
         if (setitimer(ITIMER_REAL, &this->old_val, NULL) != 0) {
             log_error("Unable to reset the interrupt timer: %s",
                       strerror(errno));
@@ -71,7 +69,7 @@ int timer::interrupt_timer::arm_timer() {
     }
 
     if (setitimer(ITIMER_REAL, &this->new_val, NULL) != 0) {
-        if(sigaction(SIGALRM, &this->old_handler, NULL) == -1) {
+        if (sigaction(SIGALRM, &this->old_handler, NULL) == -1) {
             log_error("Unable to reset the signal handler: %s",
                       strerror(errno));
             throw timer::error(errno);
@@ -83,19 +81,22 @@ int timer::interrupt_timer::arm_timer() {
     return 0;
 }
 
-bool timer::interrupt_timer::is_armed() {
+bool
+timer::interrupt_timer::is_armed()
+{
     return this->armed;
 }
 
-void timer::interrupt_timer::disarm_timer() {
+void
+timer::interrupt_timer::disarm_timer()
+{
     if (this->armed) {
         // Disable the interval timer before resetting the handler and rearming
         // the previous interval timer or else we will have a race-condition
         // where the timer might fire and the appropriate handler might not be
         // set.
         if (setitimer(ITIMER_REAL, &DISABLE_TV, NULL) != 0) {
-            log_error("Failed to disable the timer: %s",
-                      strerror(errno));
+            log_error("Failed to disable the timer: %s", strerror(errno));
             throw timer::error(errno);
         }
         if (sigaction(SIGALRM, &this->old_handler, NULL) == -1) {
@@ -114,6 +115,7 @@ void timer::interrupt_timer::disarm_timer() {
     }
 }
 
-timer::interrupt_timer::~interrupt_timer() {
+timer::interrupt_timer::~interrupt_timer()
+{
     this->disarm_timer();
 }

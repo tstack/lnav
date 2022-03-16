@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,28 +32,28 @@
 #ifndef log_format_loader_hh
 #define log_format_loader_hh
 
+#include <string>
+#include <vector>
+
 #include <sqlite3.h>
 
-#include <vector>
-#include <string>
-
+#include "base/intern_string.hh"
 #include "ghc/filesystem.hpp"
 
 class log_vtab_manager;
 
 std::vector<intern_string_t> load_format_file(
-        const ghc::filesystem::path &filename,
-        std::vector<std::string> &errors);
+    const ghc::filesystem::path& filename, std::vector<std::string>& errors);
 
-void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
-                  std::vector<std::string> &errors);
+void load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
+                  std::vector<std::string>& errors);
 
-void load_format_vtabs(log_vtab_manager *vtab_manager,
-                       std::vector<std::string> &errors);
+void load_format_vtabs(log_vtab_manager* vtab_manager,
+                       std::vector<std::string>& errors);
 
-void load_format_extra(sqlite3 *db,
-                       const std::vector<ghc::filesystem::path> &extra_paths,
-                       std::vector<std::string> &errors);
+void load_format_extra(sqlite3* db,
+                       const std::vector<ghc::filesystem::path>& extra_paths,
+                       std::vector<std::string>& errors);
 
 struct script_metadata {
     ghc::filesystem::path sm_path;
@@ -62,15 +62,14 @@ struct script_metadata {
     std::string sm_description;
 };
 
-void extract_metadata_from_file(struct script_metadata &meta_inout);
+void extract_metadata_from_file(struct script_metadata& meta_inout);
 
 struct available_scripts {
     std::map<std::string, std::vector<script_metadata>> as_scripts;
 };
 
-void find_format_scripts(
-    const std::vector<ghc::filesystem::path> &extra_paths,
-    available_scripts& scripts);
+void find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
+                         available_scripts& scripts);
 
 extern struct json_path_container format_handlers;
 extern struct json_path_container root_format_handler;

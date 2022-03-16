@@ -21,35 +21,37 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <chrono>
 
+#include "humanize.time.hh"
+
+#include "config.h"
 #include "fmt/format.h"
 #include "time_util.hh"
-#include "humanize.time.hh"
 
 namespace humanize {
 namespace time {
 
 using namespace std::chrono_literals;
 
-point point::from_tv(const timeval &tv)
+point
+point::from_tv(const timeval& tv)
 {
     return point(tv);
 }
 
-std::string point::as_time_ago() const
+std::string
+point::as_time_ago() const
 {
-    struct timeval current_time = this->p_recent_point
-        .value_or(current_timeval());
-    const char *fmt;
+    struct timeval current_time
+        = this->p_recent_point.value_or(current_timeval());
+    const char* fmt;
     char buffer[64];
     int amount;
 
@@ -57,7 +59,8 @@ std::string point::as_time_ago() const
         current_time.tv_sec = convert_log_time_to_local(current_time.tv_sec);
     }
 
-    auto delta = std::chrono::seconds(current_time.tv_sec - this->p_past_point.tv_sec);
+    auto delta
+        = std::chrono::seconds(current_time.tv_sec - this->p_past_point.tv_sec);
     if (delta < 0s) {
         return "in the future";
     } else if (delta < 1min) {
@@ -66,7 +69,8 @@ std::string point::as_time_ago() const
         return "one minute ago";
     } else if (delta < 1h) {
         fmt = "%d minutes ago";
-        amount = std::chrono::duration_cast<std::chrono::minutes>(delta).count();
+        amount
+            = std::chrono::duration_cast<std::chrono::minutes>(delta).count();
     } else if (delta < 2h) {
         return "one hour ago";
     } else if (delta < 24h) {
@@ -89,7 +93,8 @@ std::string point::as_time_ago() const
     return std::string(buffer);
 }
 
-std::string point::as_precise_time_ago() const
+std::string
+point::as_precise_time_ago() const
 {
     struct timeval now, diff;
 
@@ -121,31 +126,33 @@ std::string point::as_precise_time_ago() const
     }
 }
 
-duration duration::from_tv(const struct timeval &tv)
+duration
+duration::from_tv(const struct timeval& tv)
 {
     return duration{tv};
 }
 
-std::string duration::to_string() const
+std::string
+duration::to_string() const
 {
     /* 24h22m33s111 */
 
     static const struct rel_interval {
         uint64_t length;
-        const char *format;
-        const char *symbol;
+        const char* format;
+        const char* symbol;
     } intervals[] = {
-        { 1000, "%03lld%s", ""  },
-        {   60, "%lld%s",   "s" },
-        {   60, "%lld%s",   "m" },
-        {   24, "%lld%s",   "h" },
-        {    0, "%lld%s",   "d" },
+        {1000, "%03lld%s", ""},
+        {60, "%lld%s", "s"},
+        {60, "%lld%s", "m"},
+        {24, "%lld%s", "h"},
+        {0, "%lld%s", "d"},
     };
 
-    auto *curr_interval = intervals;
+    auto* curr_interval = intervals;
     auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::seconds(this->d_timeval.tv_sec)) +
-                 std::chrono::microseconds(this->d_timeval.tv_usec);
+                     std::chrono::seconds(this->d_timeval.tv_sec))
+        + std::chrono::microseconds(this->d_timeval.tv_usec);
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(usecs);
     std::string retval;
     bool neg = false;
@@ -157,8 +164,8 @@ std::string duration::to_string() const
 
     uint64_t remaining;
     if (millis >= 10min) {
-        remaining = std::chrono::duration_cast<std::chrono::seconds>(millis)
-            .count();
+        remaining
+            = std::chrono::duration_cast<std::chrono::seconds>(millis).count();
         curr_interval += 1;
     } else {
         remaining = millis.count();
@@ -171,8 +178,7 @@ std::string duration::to_string() const
         if (curr_interval->length) {
             amount = remaining % curr_interval->length;
             remaining = remaining / curr_interval->length;
-        }
-        else {
+        } else {
             amount = remaining;
             remaining = 0;
         }
@@ -181,7 +187,10 @@ std::string duration::to_string() const
             break;
         }
 
-        snprintf(segment, sizeof(segment), curr_interval->format, amount,
+        snprintf(segment,
+                 sizeof(segment),
+                 curr_interval->format,
+                 amount,
                  curr_interval->symbol);
         retval.insert(0, segment);
     }
@@ -193,5 +202,5 @@ std::string duration::to_string() const
     return retval;
 }
 
-}
-}
+}  // namespace time
+}  // namespace humanize

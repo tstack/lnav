@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -40,18 +40,20 @@
 class module_format;
 
 class external_log_format : public log_format {
-
 public:
     struct sample {
-        sample() : s_level(LEVEL_UNKNOWN) {};
+        sample() : s_level(LEVEL_UNKNOWN){};
 
         std::string s_line;
         log_level_t s_level;
     };
 
     struct value_def {
-        value_def(intern_string_t name, value_kind_t kind, int col, log_format *format)
-        : vd_meta(name, kind, col, format) {};
+        value_def(intern_string_t name,
+                  value_kind_t kind,
+                  int col,
+                  log_format* format)
+            : vd_meta(name, kind, col, format){};
 
         logline_value_meta vd_meta;
         std::string vd_collate;
@@ -69,16 +71,17 @@ public:
         indexed_value_def(int index = -1,
                           int unit_index = -1,
                           std::shared_ptr<value_def> vd = nullptr)
-            : ivd_index(index),
-              ivd_unit_field_index(unit_index),
-              ivd_value_def(std::move(vd)) {
+            : ivd_index(index), ivd_unit_field_index(unit_index),
+              ivd_value_def(std::move(vd))
+        {
         }
 
         int ivd_index;
         int ivd_unit_field_index;
         std::shared_ptr<value_def> ivd_value_def;
 
-        bool operator<(const indexed_value_def &rhs) const {
+        bool operator<(const indexed_value_def& rhs) const
+        {
             return this->ivd_index < rhs.ivd_index;
         }
     };
@@ -104,7 +107,8 @@ public:
     };
 
     struct yajl_handle_deleter {
-        void operator()(yajl_handle handle) const {
+        void operator()(yajl_handle handle) const
+        {
             if (handle != nullptr) {
                 yajl_free(handle);
             }
@@ -112,52 +116,53 @@ public:
     };
 
     external_log_format(const intern_string_t name)
-        : elf_column_count(0),
-          elf_timestamp_divisor(1.0),
+        : elf_column_count(0), elf_timestamp_divisor(1.0),
           elf_level_field(intern_string::lookup("level", -1)),
           elf_body_field(intern_string::lookup("body", -1)),
-          elf_container(false),
-          elf_has_module_format(false),
-          elf_builtin_format(false),
-          elf_type(ELF_TYPE_TEXT),
-          jlf_hide_extra(false),
-          jlf_cached_offset(-1),
-          jlf_yajl_handle(nullptr, yajl_handle_deleter()),
-          elf_name(name) {
+          elf_container(false), elf_has_module_format(false),
+          elf_builtin_format(false), elf_type(ELF_TYPE_TEXT),
+          jlf_hide_extra(false), jlf_cached_offset(-1),
+          jlf_yajl_handle(nullptr, yajl_handle_deleter()), elf_name(name)
+    {
         this->jlf_line_offsets.reserve(128);
     };
 
-    const intern_string_t get_name() const {
+    const intern_string_t get_name() const
+    {
         return this->elf_name;
     };
 
-    bool match_name(const std::string &filename);
+    bool match_name(const std::string& filename);
 
     bool match_mime_type(const file_format_t ff) const;
 
-    scan_result_t scan(logfile &lf,
-                       std::vector<logline> &dst,
-                       const line_info &offset,
-                       shared_buffer_ref &sbr);
+    scan_result_t scan(logfile& lf,
+                       std::vector<logline>& dst,
+                       const line_info& offset,
+                       shared_buffer_ref& sbr);
 
-    bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) const;
+    bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const;
 
-    void annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
-                  std::vector<logline_value> &values, bool annotate_module = true) const;
+    void annotate(uint64_t line_number,
+                  shared_buffer_ref& line,
+                  string_attrs_t& sa,
+                  std::vector<logline_value>& values,
+                  bool annotate_module = true) const;
 
-    void rewrite(exec_context &ec,
-                 shared_buffer_ref &line,
-                 string_attrs_t &sa,
-                 std::string &value_out);
+    void rewrite(exec_context& ec,
+                 shared_buffer_ref& line,
+                 string_attrs_t& sa,
+                 std::string& value_out);
 
-    void build(std::vector<std::string> &errors);
+    void build(std::vector<std::string>& errors);
 
-    void register_vtabs(log_vtab_manager *vtab_manager,
-                        std::vector<std::string> &errors);
+    void register_vtabs(log_vtab_manager* vtab_manager,
+                        std::vector<std::string>& errors);
 
-    bool match_samples(const std::vector<sample> &samples) const;
+    bool match_samples(const std::vector<sample>& samples) const;
 
-    bool hide_field(const intern_string_t field_name, bool val) {
+    bool hide_field(const intern_string_t field_name, bool val)
+    {
         auto vd_iter = this->elf_value_defs.find(field_name);
 
         if (vd_iter == this->elf_value_defs.end()) {
@@ -170,11 +175,13 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock);
 
-    const logline_value_stats *stats_for_value(const intern_string_t &name) const {
-        const logline_value_stats *retval = nullptr;
+    const logline_value_stats* stats_for_value(
+        const intern_string_t& name) const
+    {
+        const logline_value_stats* retval = nullptr;
 
         for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
-            value_def &vd = *this->elf_numeric_value_defs[lpc];
+            value_def& vd = *this->elf_numeric_value_defs[lpc];
 
             if (vd.vd_meta.lvm_name == name) {
                 retval = &this->lf_value_stats[lpc];
@@ -185,12 +192,15 @@ public:
         return retval;
     };
 
-    void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message);
+    void get_subline(const logline& ll,
+                     shared_buffer_ref& sbr,
+                     bool full_message);
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const;
 
-    const std::vector<std::string> *get_actions(const logline_value &lv) const {
-        const std::vector<std::string> *retval = nullptr;
+    const std::vector<std::string>* get_actions(const logline_value& lv) const
+    {
+        const std::vector<std::string>* retval = nullptr;
 
         const auto iter = this->elf_value_defs.find(lv.lv_meta.lvm_name);
         if (iter != this->elf_value_defs.end()) {
@@ -200,7 +210,8 @@ public:
         return retval;
     };
 
-    std::set<std::string> get_source_path() const {
+    std::set<std::string> get_source_path() const
+    {
         return this->elf_source_path;
     };
 
@@ -232,8 +243,7 @@ public:
             : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
               jfe_max_width(LLONG_MAX), jfe_align(align_t::LEFT),
               jfe_overflow(overflow_t::ABBREV),
-              jfe_text_transform(transform_t::NONE)
-        { };
+              jfe_text_transform(transform_t::NONE){};
 
         json_log_field jfe_type;
         intern_string_t jfe_value;
@@ -247,14 +257,13 @@ public:
     };
 
     struct json_field_cmp {
-        json_field_cmp(json_log_field type,
-                       const intern_string_t name)
-            : jfc_type(type), jfc_field_name(name) {
-        };
+        json_field_cmp(json_log_field type, const intern_string_t name)
+            : jfc_type(type), jfc_field_name(name){};
 
-        bool operator()(const json_format_element &jfe) const {
-            return (this->jfc_type == jfe.jfe_type &&
-                    this->jfc_field_name == jfe.jfe_value);
+        bool operator()(const json_format_element& jfe) const
+        {
+            return (this->jfc_type == jfe.jfe_type
+                    && this->jfc_field_name == jfe.jfe_value);
         };
 
         json_log_field jfc_type;
@@ -262,8 +271,7 @@ public:
     };
 
     struct highlighter_def {
-        highlighter_def() : hd_underline(false), hd_blink(false) {
-        }
+        highlighter_def() : hd_underline(false), hd_blink(false) {}
 
         std::string hd_pattern;
         std::string hd_color;
@@ -274,10 +282,12 @@ public:
 
     long value_line_count(const intern_string_t ist,
                           bool top_level,
-                          const unsigned char *str = nullptr,
-                          ssize_t len = -1) const {
+                          const unsigned char* str = nullptr,
+                          ssize_t len = -1) const
+    {
         const auto iter = this->elf_value_defs.find(ist);
-        long line_count = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
+        long line_count
+            = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
 
         if (iter == this->elf_value_defs.end()) {
             return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
@@ -289,21 +299,24 @@ public:
 
         if (std::find_if(this->jlf_line_format.begin(),
                          this->jlf_line_format.end(),
-                         json_field_cmp(JLF_VARIABLE, ist)) !=
-            this->jlf_line_format.end()) {
+                         json_field_cmp(JLF_VARIABLE, ist))
+            != this->jlf_line_format.end())
+        {
             return line_count - 1;
         }
 
         return line_count;
     };
 
-    bool has_value_def(const intern_string_t ist) const {
+    bool has_value_def(const intern_string_t ist) const
+    {
         const auto iter = this->elf_value_defs.find(ist);
 
         return iter != this->elf_value_defs.end();
     };
 
-    std::string get_pattern_name(uint64_t line_number) const {
+    std::string get_pattern_name(uint64_t line_number) const
+    {
         if (this->elf_type != ELF_TYPE_TEXT) {
             return "structured";
         }
@@ -311,7 +324,8 @@ public:
         return this->elf_pattern_order[pat_index]->p_config_path;
     }
 
-    std::string get_pattern_regex(uint64_t line_number) const {
+    std::string get_pattern_regex(uint64_t line_number) const
+    {
         if (this->elf_type != ELF_TYPE_TEXT) {
             return "";
         }
@@ -319,20 +333,23 @@ public:
         return this->elf_pattern_order[pat_index]->p_string;
     }
 
-    log_level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {
+    log_level_t convert_level(const pcre_input& pi,
+                              pcre_context::capture_t* level_cap) const
+    {
         log_level_t retval = LEVEL_INFO;
 
         if (level_cap != nullptr && level_cap->is_valid()) {
             pcre_context_static<128> pc_level;
-            pcre_input pi_level(pi.get_substr_start(level_cap),
-                                0,
-                                level_cap->length());
+            pcre_input pi_level(
+                pi.get_substr_start(level_cap), 0, level_cap->length());
 
             if (this->elf_level_patterns.empty()) {
-                retval = string2level(pi_level.get_string(), level_cap->length());
+                retval
+                    = string2level(pi_level.get_string(), level_cap->length());
             } else {
-                for (const auto &elf_level_pattern : this->elf_level_patterns) {
-                    if (elf_level_pattern.second.lp_pcre->match(pc_level, pi_level)) {
+                for (const auto& elf_level_pattern : this->elf_level_patterns) {
+                    if (elf_level_pattern.second.lp_pcre->match(pc_level,
+                                                                pi_level)) {
                         retval = elf_level_pattern.first;
                         break;
                     }
@@ -345,7 +362,8 @@ public:
 
     typedef std::map<intern_string_t, module_format> mod_map_t;
     static mod_map_t MODULE_FORMATS;
-    static std::vector<std::shared_ptr<external_log_format>> GRAPH_ORDERED_FORMATS;
+    static std::vector<std::shared_ptr<external_log_format>>
+        GRAPH_ORDERED_FORMATS;
 
     std::set<std::string> elf_source_path;
     std::list<intern_string_t> elf_collision;
@@ -367,11 +385,11 @@ public:
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;
-    std::vector<std::pair<int64_t, log_level_t> > elf_level_pairs;
+    std::vector<std::pair<int64_t, log_level_t>> elf_level_pairs;
     bool elf_container;
     bool elf_has_module_format;
     bool elf_builtin_format;
-    std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
+    std::vector<std::pair<intern_string_t, std::string>> elf_search_tables;
     std::map<const intern_string_t, highlighter_def> elf_highlighter_patterns;
 
     enum elf_type_t {
@@ -382,7 +400,8 @@ public:
 
     elf_type_t elf_type;
 
-    void json_append_to_cache(const char *value, ssize_t len) {
+    void json_append_to_cache(const char* value, ssize_t len)
+    {
         size_t old_size = this->jlf_cached_line.size();
         if (len == -1) {
             len = strlen(value);
@@ -391,13 +410,17 @@ public:
         memcpy(&(this->jlf_cached_line[old_size]), value, len);
     };
 
-    void json_append_to_cache(ssize_t len) {
+    void json_append_to_cache(ssize_t len)
+    {
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
     };
 
-    void json_append(const json_format_element &jfe, const char *value, ssize_t len) {
+    void json_append(const json_format_element& jfe,
+                     const char* value,
+                     ssize_t len)
+    {
         if (len == -1) {
             len = strlen(value);
         }
@@ -415,7 +438,8 @@ public:
     };
 
     logline_value_meta get_value_meta(intern_string_t field_name,
-                                      value_kind_t kind) {
+                                      value_kind_t kind)
+    {
         auto iter = this->elf_value_defs.find(field_name);
 
         if (iter == this->elf_value_defs.end()) {
@@ -444,16 +468,16 @@ public:
     string_attrs_t jlf_line_attrs;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
+
 private:
     const intern_string_t elf_name;
 
-    static uint8_t module_scan(const pcre_input &pi,
-                               pcre_context::capture_t *body_cap,
-                               const intern_string_t &mod_name);
+    static uint8_t module_scan(const pcre_input& pi,
+                               pcre_context::capture_t* body_cap,
+                               const intern_string_t& mod_name);
 };
 
 class module_format {
-
 public:
     std::shared_ptr<log_format> mf_mod_format;
 };

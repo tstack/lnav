@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,23 +32,24 @@
 
 #include <functional>
 
-#include "help_text.hh"
 #include "attr_line.hh"
+#include "help_text.hh"
 
-using help_example_to_attr_line_fun_t =
-std::function<attr_line_t(const help_text &, const help_example &)>;
+using help_example_to_attr_line_fun_t
+    = std::function<attr_line_t(const help_text&, const help_example&)>;
 
-void
-format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &out,
-                          bool synopsis_only = false);
+void format_help_text_for_term(const help_text& ht,
+                               size_t width,
+                               attr_line_t& out,
+                               bool synopsis_only = false);
 
-void format_example_text_for_term(
-    const help_text &ht,
-    help_example_to_attr_line_fun_t eval,
-    size_t width, attr_line_t &out);
+void format_example_text_for_term(const help_text& ht,
+                                  help_example_to_attr_line_fun_t eval,
+                                  size_t width,
+                                  attr_line_t& out);
 
-void format_help_text_for_rst(const help_text &ht,
+void format_help_text_for_rst(const help_text& ht,
                               help_example_to_attr_line_fun_t eval,
-                              FILE *rst_file);
+                              FILE* rst_file);
 
-#endif //LNAV_HELP_TEXT_FORMATTER_HH
+#endif  // LNAV_HELP_TEXT_FORMATTER_HH

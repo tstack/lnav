@@ -21,49 +21,49 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file yajlpp.cc
  */
 
-#include "config.h"
-
 #include <regex>
 #include <utility>
 
-#include "fmt/format.h"
-
 #include "yajlpp.hh"
-#include "yajlpp_def.hh"
+
+#include "config.h"
+#include "fmt/format.h"
 #include "yajl/api/yajl_parse.h"
+#include "yajlpp_def.hh"
 
 using namespace std;
 
-const json_path_handler_base::enum_value_t json_path_handler_base::ENUM_TERMINATOR((const char *) nullptr, 0);
+const json_path_handler_base::enum_value_t
+    json_path_handler_base::ENUM_TERMINATOR((const char*) nullptr, 0);
 
-json_path_handler_base::json_path_handler_base(const string &property)
-    : jph_property(property.back() == '#' ?
-                   property.substr(0, property.size() - 1) :
-                   property),
+json_path_handler_base::json_path_handler_base(const string& property)
+    : jph_property(property.back() == '#'
+                       ? property.substr(0, property.size() - 1)
+                       : property),
       jph_regex(pcrepp::quote(property), PCRE_ANCHORED),
       jph_is_array(property.back() == '#')
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
 
-static std::string scrub_pattern(const std::string &pattern)
+static std::string
+scrub_pattern(const std::string& pattern)
 {
     static const std::regex CAPTURE(R"(\(\?\<\w+\>)");
 
     return std::regex_replace(pattern, CAPTURE, "(");
 }
 
-json_path_handler_base::json_path_handler_base(const pcrepp &property)
-    : jph_property(scrub_pattern(property.p_pattern)),
-      jph_regex(property),
+json_path_handler_base::json_path_handler_base(const pcrepp& property)
+    : jph_property(scrub_pattern(property.p_pattern)), jph_regex(property),
       jph_is_array(property.p_pattern.back() == '#'),
       jph_is_pattern_property(true)
 {
@@ -71,27 +71,26 @@ json_path_handler_base::json_path_handler_base(const pcrepp &property)
 }
 
 json_path_handler_base::json_path_handler_base(string property,
-                                               const pcrepp &property_re)
-    : jph_property(std::move(property)),
-      jph_regex(property_re),
+                                               const pcrepp& property_re)
+    : jph_property(std::move(property)), jph_regex(property_re),
       jph_is_array(property_re.p_pattern.find('#') != string::npos)
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
 
-yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen handle) const
+yajl_gen_status
+json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 {
     vector<string> local_paths;
 
     if (this->jph_path_provider) {
         this->jph_path_provider(ygc.ygc_obj_stack.top(), local_paths);
-    }
-    else {
+    } else {
         local_paths.emplace_back(this->jph_property);
     }
 
     if (this->jph_children) {
-        for (const auto &lpath : local_paths) {
+        for (const auto& lpath : local_paths) {
             string full_path = lpath;
             if (this->jph_path_provider) {
                 full_path += "/";
@@ -108,19 +107,17 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
 
                 this->jph_regex.match(pc, pi);
                 ygc.ygc_obj_stack.push(this->jph_obj_provider(
-                    {{pc, pi}, -1}, ygc.ygc_obj_stack.top()
-                ));
+                    {{pc, pi}, -1}, ygc.ygc_obj_stack.top()));
                 if (!ygc.ygc_default_stack.empty()) {
                     ygc.ygc_default_stack.push(this->jph_obj_provider(
-                        {{pc, pi}, -1}, ygc.ygc_default_stack.top()
-                    ));
+                        {{pc, pi}, -1}, ygc.ygc_default_stack.top()));
                 }
             }
 
-            for (auto &jph : this->jph_children->jpc_children) {
+            for (auto& jph : this->jph_children->jpc_children) {
                 yajl_gen_status status = jph.gen(ygc, handle);
 
-                const unsigned char *buf;
+                const unsigned char* buf;
                 size_t len;
                 yajl_gen_get_buf(handle, &buf, &len);
                 if (status != yajl_gen_status_ok) {
@@ -143,15 +140,14 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
                 ygc.ygc_depth -= 1;
             }
         }
-    }
-    else if (this->jph_gen_callback != nullptr) {
+    } else if (this->jph_gen_callback != nullptr) {
         return this->jph_gen_callback(ygc, *this, handle);
     }
 
     return yajl_gen_status_ok;
 }
 
-const char *SCHEMA_TYPE_STRINGS[] = {
+const char* SCHEMA_TYPE_STRINGS[] = {
     "any",
     "boolean",
     "integer",
@@ -161,7 +157,8 @@ const char *SCHEMA_TYPE_STRINGS[] = {
     "object",
 };
 
-yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) const
+yajl_gen_status
+json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
 {
     if (this->jph_children) {
         {
@@ -172,7 +169,8 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
                 schema.gen(this->jph_description);
             }
             if (this->jph_is_pattern_property) {
-                ygc.ygc_path.emplace_back(fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
+                ygc.ygc_path.emplace_back(
+                    fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
             } else {
                 ygc.ygc_path.emplace_back(this->jph_property);
             }
@@ -187,8 +185,9 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
                         yajlpp_array type_array(ygc.ygc_handle);
 
                         type_array.gen("array");
-                        for (auto schema_type: this->get_types()) {
-                            type_array.gen(SCHEMA_TYPE_STRINGS[(int) schema_type]);
+                        for (auto schema_type : this->get_types()) {
+                            type_array.gen(
+                                SCHEMA_TYPE_STRINGS[(int) schema_type]);
                         }
                     }
                     schema.gen("items");
@@ -213,7 +212,8 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
         yajlpp_map schema(ygc.ygc_handle);
 
         if (this->jph_is_pattern_property) {
-            ygc.ygc_path.emplace_back(fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
+            ygc.ygc_path.emplace_back(
+                fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
         } else {
             ygc.ygc_path.emplace_back(this->jph_property);
         }
@@ -234,7 +234,7 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
                 yajlpp_array type_array(ygc.ygc_handle);
 
                 type_array.gen("array");
-                for (auto schema_type: this->get_types()) {
+                for (auto schema_type : this->get_types()) {
                     type_array.gen(SCHEMA_TYPE_STRINGS[(int) schema_type]);
                 }
             }
@@ -249,7 +249,7 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
             schema.gen("examples");
 
             yajlpp_array example_array(ygc.ygc_handle);
-            for (auto &ex : this->jph_examples) {
+            for (auto& ex : this->jph_examples) {
                 example_array.gen(ex);
             }
         }
@@ -264,7 +264,8 @@ yajl_gen_status json_path_handler_base::gen_schema(yajlpp_gen_context &ygc) cons
     return yajl_gen_status_ok;
 }
 
-yajl_gen_status json_path_handler_base::gen_schema_type(yajlpp_gen_context &ygc) const
+yajl_gen_status
+json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
 {
     yajlpp_generator schema(ygc.ygc_handle);
 
@@ -274,12 +275,12 @@ yajl_gen_status json_path_handler_base::gen_schema_type(yajlpp_gen_context &ygc)
     } else {
         yajlpp_array type_array(ygc.ygc_handle);
 
-        for (auto schema_type: types) {
+        for (auto schema_type : types) {
             type_array.gen(SCHEMA_TYPE_STRINGS[(int) schema_type]);
         }
     }
 
-    for (auto &schema_type : types) {
+    for (auto& schema_type : types) {
         switch (schema_type) {
             case schema_type_t::STRING:
                 if (this->jph_min_length > 0) {
@@ -318,22 +319,22 @@ yajl_gen_status json_path_handler_base::gen_schema_type(yajlpp_gen_context &ygc)
     return yajl_gen_keys_must_be_strings;
 }
 
-void json_path_handler_base::walk(
-    const std::function<void(const json_path_handler_base &,
-                             const std::string &,
-                             void *)> &cb,
-    void *root, const string &base) const
+void
+json_path_handler_base::walk(
+    const std::function<
+        void(const json_path_handler_base&, const std::string&, void*)>& cb,
+    void* root,
+    const string& base) const
 {
     vector<string> local_paths;
 
     if (this->jph_path_provider) {
         this->jph_path_provider(root, local_paths);
 
-        for (auto &lpath : local_paths) {
+        for (auto& lpath : local_paths) {
             cb(*this, lpath, nullptr);
         }
-    }
-    else {
+    } else {
         local_paths.emplace_back(this->jph_property);
 
         string full_path = base + this->jph_property;
@@ -344,23 +345,20 @@ void json_path_handler_base::walk(
     }
 
     if (this->jph_children) {
-        for (const auto &lpath : local_paths) {
-            for (auto &jph : this->jph_children->jpc_children) {
+        for (const auto& lpath : local_paths) {
+            for (auto& jph : this->jph_children->jpc_children) {
                 string full_path = base + lpath;
                 if (this->jph_children) {
                     full_path += "/";
                 }
-                json_path_container dummy = {
-                    json_path_handler(this->jph_property)
-                };
+                json_path_container dummy
+                    = {json_path_handler(this->jph_property)};
                 dummy.jpc_children[0].jph_callbacks = this->jph_callbacks;
 
                 yajlpp_parse_context ypc("possibilities", &dummy);
-                void *child_root = root;
+                void* child_root = root;
 
-                ypc.set_path(full_path)
-                    .with_obj(root)
-                    .update_callbacks();
+                ypc.set_path(full_path).with_obj(root).update_callbacks();
                 if (this->jph_obj_provider) {
                     string full_path = lpath + "/";
                     pcre_input pi(full_path);
@@ -375,10 +373,9 @@ void json_path_handler_base::walk(
                 jph.walk(cb, child_root, full_path);
             }
         }
-    }
-    else {
-        for (auto &lpath : local_paths) {
-            void *field = nullptr;
+    } else {
+        for (auto& lpath : local_paths) {
+            void* field = nullptr;
 
             if (this->jph_field_getter) {
                 field = this->jph_field_getter(root, lpath);
@@ -388,10 +385,9 @@ void json_path_handler_base::walk(
     }
 }
 
-yajlpp_parse_context::yajlpp_parse_context(std::string source,
-                                           const struct json_path_container *handlers)
-    : ypc_source(std::move(source)),
-      ypc_handlers(handlers)
+yajlpp_parse_context::yajlpp_parse_context(
+    std::string source, const struct json_path_container* handlers)
+    : ypc_source(std::move(source)), ypc_handlers(handlers)
 {
     this->ypc_path.reserve(4096);
     this->ypc_path.push_back('/');
@@ -400,17 +396,18 @@ yajlpp_parse_context::yajlpp_parse_context(std::string source,
     memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
 }
 
-int yajlpp_parse_context::map_start(void *ctx)
+int
+yajlpp_parse_context::map_start(void* ctx)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     require(ypc->ypc_path.size() >= 2);
 
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.size() - 1);
 
-    if (ypc->ypc_path.size() > 1 &&
-        ypc->ypc_path[ypc->ypc_path.size() - 2] == '#') {
+    if (ypc->ypc_path.size() > 1
+        && ypc->ypc_path[ypc->ypc_path.size() - 2] == '#') {
         ypc->ypc_array_index.back() += 1;
     }
 
@@ -421,11 +418,10 @@ int yajlpp_parse_context::map_start(void *ctx)
     return retval;
 }
 
-int yajlpp_parse_context::map_key(void *ctx,
-                                  const unsigned char *key,
-                                  size_t len)
+int
+yajlpp_parse_context::map_key(void* ctx, const unsigned char* key, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     require(ypc->ypc_path.size() >= 2);
@@ -454,8 +450,7 @@ int yajlpp_parse_context::map_key(void *ctx,
                     break;
             }
         }
-    }
-    else {
+    } else {
         size_t start = ypc->ypc_path.size();
         ypc->ypc_path.resize(ypc->ypc_path.size() + len);
         memcpy(&ypc->ypc_path[start], key, len);
@@ -475,9 +470,11 @@ int yajlpp_parse_context::map_key(void *ctx,
     return retval;
 }
 
-void yajlpp_parse_context::update_callbacks(const json_path_container *orig_handlers, int child_start)
+void
+yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
+                                       int child_start)
 {
-    const json_path_container *handlers = orig_handlers;
+    const json_path_container* handlers = orig_handlers;
 
     this->ypc_current_handler = nullptr;
 
@@ -499,8 +496,8 @@ void yajlpp_parse_context::update_callbacks(const json_path_container *orig_hand
     if (!this->ypc_active_paths.empty()) {
         string curr_path(&this->ypc_path[0], this->ypc_path.size() - 1);
 
-        if (this->ypc_active_paths.find(curr_path) ==
-            this->ypc_active_paths.end()) {
+        if (this->ypc_active_paths.find(curr_path)
+            == this->ypc_active_paths.end()) {
             return;
         }
     }
@@ -511,18 +508,20 @@ void yajlpp_parse_context::update_callbacks(const json_path_container *orig_hand
         }
     }
 
-    for (auto &jph : handlers->jpc_children) {
+    for (auto& jph : handlers->jpc_children) {
         pi.reset(&this->ypc_path[1 + child_start],
                  0,
                  this->ypc_path.size() - 2 - child_start);
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
-            pcre_context::capture_t *cap = this->ypc_pcre_context.all();
+            pcre_context::capture_t* cap = this->ypc_pcre_context.all();
 
             if (jph.jph_obj_provider) {
                 int index = this->index_for_provider();
 
-                if ((1 + child_start + cap->c_end != (int)this->ypc_path.size() - 1) &&
-                    (!jph.is_array() || index >= 0)) {
+                if ((1 + child_start + cap->c_end
+                     != (int) this->ypc_path.size() - 1)
+                    && (!jph.is_array() || index >= 0))
+                {
                     this->ypc_obj_stack.push(jph.jph_obj_provider(
                         {{this->ypc_pcre_context, pi}, index},
                         this->ypc_obj_stack.top()));
@@ -532,14 +531,15 @@ void yajlpp_parse_context::update_callbacks(const json_path_container *orig_hand
             if (jph.jph_children) {
                 this->ypc_handler_stack.emplace_back(&jph);
 
-                if (1 + child_start + cap->c_end != (int)this->ypc_path.size() - 1) {
+                if (1 + child_start + cap->c_end
+                    != (int) this->ypc_path.size() - 1) {
                     this->update_callbacks(jph.jph_children,
                                            1 + child_start + cap->c_end);
                     return;
                 }
-            }
-            else {
-                if (1 + child_start + cap->c_end != (int)this->ypc_path.size() - 1) {
+            } else {
+                if (1 + child_start + cap->c_end
+                    != (int) this->ypc_path.size() - 1) {
                     continue;
                 }
 
@@ -549,9 +549,11 @@ void yajlpp_parse_context::update_callbacks(const json_path_container *orig_hand
             if (jph.jph_callbacks.yajl_null != nullptr)
                 this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
             if (jph.jph_callbacks.yajl_boolean != nullptr)
-                this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
+                this->ypc_callbacks.yajl_boolean
+                    = jph.jph_callbacks.yajl_boolean;
             if (jph.jph_callbacks.yajl_integer != nullptr)
-                this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
+                this->ypc_callbacks.yajl_integer
+                    = jph.jph_callbacks.yajl_integer;
             if (jph.jph_callbacks.yajl_double != nullptr)
                 this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
             if (jph.jph_callbacks.yajl_string != nullptr)
@@ -564,9 +566,10 @@ void yajlpp_parse_context::update_callbacks(const json_path_container *orig_hand
     this->ypc_handler_stack.emplace_back(nullptr);
 }
 
-int yajlpp_parse_context::map_end(void *ctx)
+int
+yajlpp_parse_context::map_end(void* ctx)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
@@ -584,9 +587,10 @@ int yajlpp_parse_context::map_end(void *ctx)
     return retval;
 }
 
-int yajlpp_parse_context::array_start(void *ctx)
+int
+yajlpp_parse_context::array_start(void* ctx)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.size() - 1);
@@ -605,9 +609,10 @@ int yajlpp_parse_context::array_start(void *ctx)
     return retval;
 }
 
-int yajlpp_parse_context::array_end(void *ctx)
+int
+yajlpp_parse_context::array_end(void* ctx)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
@@ -626,42 +631,43 @@ int yajlpp_parse_context::array_end(void *ctx)
     return retval;
 }
 
-int yajlpp_parse_context::handle_unused(void *ctx)
+int
+yajlpp_parse_context::handle_unused(void* ctx)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
 
     if (ypc->ypc_ignore_unused) {
         return 1;
     }
 
-    const json_path_handler_base *handler = ypc->ypc_current_handler;
+    const json_path_handler_base* handler = ypc->ypc_current_handler;
 
     int line_number = ypc->get_line_number();
 
-    if (handler != nullptr && strlen(handler->jph_synopsis) > 0 &&
-        strlen(handler->jph_description) > 0) {
-
-        ypc->report_error(
-            lnav_log_level_t::WARNING,
-            "%s:line %d",
-            ypc->ypc_source.c_str(),
-            line_number);
-        ypc->report_error(lnav_log_level_t::WARNING, "  unexpected data for path");
+    if (handler != nullptr && strlen(handler->jph_synopsis) > 0
+        && strlen(handler->jph_description) > 0)
+    {
+        ypc->report_error(lnav_log_level_t::WARNING,
+                          "%s:line %d",
+                          ypc->ypc_source.c_str(),
+                          line_number);
+        ypc->report_error(lnav_log_level_t::WARNING,
+                          "  unexpected data for path");
 
         ypc->report_error(lnav_log_level_t::WARNING,
                           "    %s %s -- %s",
                           &ypc->ypc_path[0],
                           handler->jph_synopsis,
                           handler->jph_description);
-    }
-    else if (ypc->ypc_path[1]) {
+    } else if (ypc->ypc_path[1]) {
         ypc->report_error(lnav_log_level_t::WARNING,
                           "%s:line %d",
                           ypc->ypc_source.c_str(),
                           line_number);
         ypc->report_error(lnav_log_level_t::WARNING, "  unexpected path --");
 
-        ypc->report_error(lnav_log_level_t::WARNING, "    %s", &ypc->ypc_path[0]);
+        ypc->report_error(
+            lnav_log_level_t::WARNING, "    %s", &ypc->ypc_path[0]);
     } else {
         ypc->report_error(lnav_log_level_t::WARNING,
                           "%s:line %d\n  unexpected JSON value",
@@ -669,28 +675,44 @@ int yajlpp_parse_context::handle_unused(void *ctx)
                           line_number);
     }
 
-    if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused ||
-        ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused ||
-        ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused ||
-        ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(lnav_log_level_t::WARNING, "  expecting one of the following data types --");
+    if (ypc->ypc_callbacks.yajl_boolean
+            != (int (*)(void*, int)) yajlpp_parse_context::handle_unused
+        || ypc->ypc_callbacks.yajl_integer
+            != (int (*)(void*, long long)) yajlpp_parse_context::handle_unused
+        || ypc->ypc_callbacks.yajl_double
+            != (int (*)(void*, double)) yajlpp_parse_context::handle_unused
+        || ypc->ypc_callbacks.yajl_string
+            != (int (*)(void*, const unsigned char*, size_t))
+                yajlpp_parse_context::handle_unused)
+    {
+        ypc->report_error(lnav_log_level_t::WARNING,
+                          "  expecting one of the following data types --");
     }
 
-    if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
+    if (ypc->ypc_callbacks.yajl_boolean
+        != (int (*)(void*, int)) yajlpp_parse_context::handle_unused)
+    {
         ypc->report_error(lnav_log_level_t::WARNING, "    boolean");
     }
-    if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
+    if (ypc->ypc_callbacks.yajl_integer
+        != (int (*)(void*, long long)) yajlpp_parse_context::handle_unused)
+    {
         ypc->report_error(lnav_log_level_t::WARNING, "    integer");
     }
-    if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
+    if (ypc->ypc_callbacks.yajl_double
+        != (int (*)(void*, double)) yajlpp_parse_context::handle_unused)
+    {
         ypc->report_error(lnav_log_level_t::WARNING, "    float");
     }
-    if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
+    if (ypc->ypc_callbacks.yajl_string
+        != (int (*)(void*, const unsigned char*, size_t))
+            yajlpp_parse_context::handle_unused)
+    {
         ypc->report_error(lnav_log_level_t::WARNING, "    string");
     }
 
     if (handler == nullptr) {
-        const json_path_container *accepted_handlers;
+        const json_path_container* accepted_handlers;
 
         if (ypc->ypc_sibling_handlers) {
             accepted_handlers = ypc->ypc_sibling_handlers;
@@ -699,11 +721,12 @@ int yajlpp_parse_context::handle_unused(void *ctx)
         }
 
         ypc->report_error(lnav_log_level_t::WARNING, "  accepted paths --");
-        for (auto &jph : accepted_handlers->jpc_children) {
-            ypc->report_error(lnav_log_level_t::WARNING, "    %s %s -- %s",
-                    jph.jph_property.c_str(),
-                    jph.jph_synopsis,
-                    jph.jph_description);
+        for (auto& jph : accepted_handlers->jpc_children) {
+            ypc->report_error(lnav_log_level_t::WARNING,
+                              "    %s %s -- %s",
+                              jph.jph_property.c_str(),
+                              jph.jph_synopsis,
+                              jph.jph_description);
         }
     }
 
@@ -712,12 +735,12 @@ int yajlpp_parse_context::handle_unused(void *ctx)
 
 const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
     yajlpp_parse_context::handle_unused,
-    (int (*)(void *, int))yajlpp_parse_context::handle_unused,
-    (int (*)(void *, long long))yajlpp_parse_context::handle_unused,
-    (int (*)(void *, double))yajlpp_parse_context::handle_unused,
+    (int (*)(void*, int)) yajlpp_parse_context::handle_unused,
+    (int (*)(void*, long long)) yajlpp_parse_context::handle_unused,
+    (int (*)(void*, double)) yajlpp_parse_context::handle_unused,
     nullptr,
-    (int (*)(void *, const unsigned char *, size_t))
-    yajlpp_parse_context::handle_unused,
+    (int (*)(void*, const unsigned char*, size_t))
+        yajlpp_parse_context::handle_unused,
     yajlpp_parse_context::map_start,
     yajlpp_parse_context::map_key,
     yajlpp_parse_context::map_end,
@@ -726,7 +749,7 @@ const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
 };
 
 yajl_status
-yajlpp_parse_context::parse(const unsigned char *jsonText, size_t jsonTextLen)
+yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
 {
     this->ypc_json_text = jsonText;
 
@@ -734,26 +757,29 @@ yajlpp_parse_context::parse(const unsigned char *jsonText, size_t jsonTextLen)
 
     size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
 
-    this->ypc_line_number += std::count(&jsonText[0], &jsonText[consumed], '\n');
+    this->ypc_line_number
+        += std::count(&jsonText[0], &jsonText[consumed], '\n');
 
     this->ypc_json_text = nullptr;
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
         auto msg = yajl_get_error(this->ypc_handle, 1, jsonText, jsonTextLen);
 
-        this->ypc_error_reporter(
-            *this, lnav_log_level_t::ERROR,
-            fmt::format("error:{}:{}:invalid json -- {}",
-                        this->ypc_source,
-                        this->get_line_number(),
-                        msg).c_str());
+        this->ypc_error_reporter(*this,
+                                 lnav_log_level_t::ERROR,
+                                 fmt::format("error:{}:{}:invalid json -- {}",
+                                             this->ypc_source,
+                                             this->get_line_number(),
+                                             msg)
+                                     .c_str());
         yajl_free_error(this->ypc_handle, msg);
     }
 
     return retval;
 }
 
-yajl_status yajlpp_parse_context::complete_parse()
+yajl_status
+yajlpp_parse_context::complete_parse()
 {
     yajl_status retval = yajl_complete_parse(this->ypc_handle);
 
@@ -761,37 +787,38 @@ yajl_status yajlpp_parse_context::complete_parse()
         auto msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
 
         this->ypc_error_reporter(
-            *this, lnav_log_level_t::ERROR,
-            fmt::format("error:{}:invalid json -- {}",
-                        this->ypc_source,
-                        msg).c_str());
+            *this,
+            lnav_log_level_t::ERROR,
+            fmt::format("error:{}:invalid json -- {}", this->ypc_source, msg)
+                .c_str());
         yajl_free_error(this->ypc_handle, msg);
     }
 
     return retval;
 }
 
-const intern_string_t yajlpp_parse_context::get_path() const
+const intern_string_t
+yajlpp_parse_context::get_path() const
 {
     if (this->ypc_path.size() <= 1) {
         return intern_string_t();
     }
-    return intern_string::lookup(&this->ypc_path[1],
-                                 this->ypc_path.size() - 2);
+    return intern_string::lookup(&this->ypc_path[1], this->ypc_path.size() - 2);
 }
 
-const intern_string_t yajlpp_parse_context::get_full_path() const
+const intern_string_t
+yajlpp_parse_context::get_full_path() const
 {
     if (this->ypc_path.size() <= 1) {
         static intern_string_t SLASH = intern_string::lookup("/");
 
         return SLASH;
     }
-    return intern_string::lookup(&this->ypc_path[0],
-                                 this->ypc_path.size() - 1);
+    return intern_string::lookup(&this->ypc_path[0], this->ypc_path.size() - 1);
 }
 
-void yajlpp_parse_context::reset(const struct json_path_container *handlers)
+void
+yajlpp_parse_context::reset(const struct json_path_container* handlers)
 {
     this->ypc_handlers = handlers;
     this->ypc_path.clear();
@@ -808,7 +835,8 @@ void yajlpp_parse_context::reset(const struct json_path_container *handlers)
     }
 }
 
-void yajlpp_parse_context::set_static_handler(json_path_handler_base &jph)
+void
+yajlpp_parse_context::set_static_handler(json_path_handler_base& jph)
 {
     this->ypc_path.clear();
     this->ypc_path.push_back('/');
@@ -827,7 +855,8 @@ void yajlpp_parse_context::set_static_handler(json_path_handler_base &jph)
         this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
 }
 
-yajlpp_parse_context &yajlpp_parse_context::set_path(const string &path)
+yajlpp_parse_context&
+yajlpp_parse_context::set_path(const string& path)
 {
     this->ypc_path.resize(path.size() + 1);
     std::copy(path.begin(), path.end(), this->ypc_path.begin());
@@ -843,27 +872,28 @@ yajlpp_parse_context &yajlpp_parse_context::set_path(const string &path)
     return *this;
 }
 
-const char *yajlpp_parse_context::get_path_fragment(int offset, char *frag_in,
-                                                    size_t &len_out) const
+const char*
+yajlpp_parse_context::get_path_fragment(int offset,
+                                        char* frag_in,
+                                        size_t& len_out) const
 {
-    const char *retval;
+    const char* retval;
     size_t start, end;
 
     if (offset < 0) {
         offset = ((int) this->ypc_path_index_stack.size()) + offset;
     }
     start = this->ypc_path_index_stack[offset] + ((offset == 0) ? 0 : 1);
-    if ((offset + 1) < (int)this->ypc_path_index_stack.size()) {
+    if ((offset + 1) < (int) this->ypc_path_index_stack.size()) {
         end = this->ypc_path_index_stack[offset + 1];
-    }
-    else {
+    } else {
         end = this->ypc_path.size() - 1;
     }
     if (this->ypc_handlers) {
-        len_out = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
+        len_out
+            = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
         retval = frag_in;
-    }
-    else {
+    } else {
         retval = &this->ypc_path[start];
         len_out = end - start;
     }
@@ -871,31 +901,32 @@ const char *yajlpp_parse_context::get_path_fragment(int offset, char *frag_in,
     return retval;
 }
 
-int yajlpp_parse_context::get_line_number() const
+int
+yajlpp_parse_context::get_line_number() const
 {
     if (this->ypc_handle != NULL && this->ypc_json_text) {
         size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
-        long current_count = std::count(&this->ypc_json_text[0],
-                                        &this->ypc_json_text[consumed],
-                                        '\n');
+        long current_count = std::count(
+            &this->ypc_json_text[0], &this->ypc_json_text[consumed], '\n');
 
         return this->ypc_line_number + current_count;
-    }
-    else {
+    } else {
         return this->ypc_line_number;
     }
 }
 
-void yajlpp_gen_context::gen()
+void
+yajlpp_gen_context::gen()
 {
     yajlpp_map root(this->ygc_handle);
 
-    for (auto &jph : this->ygc_handlers->jpc_children) {
+    for (auto& jph : this->ygc_handlers->jpc_children) {
         jph.gen(*this, this->ygc_handle);
     }
 }
 
-void yajlpp_gen_context::gen_schema(const json_path_container *handlers)
+void
+yajlpp_gen_context::gen_schema(const json_path_container* handlers)
 {
     if (handlers == nullptr) {
         handlers = this->ygc_handlers;
@@ -916,7 +947,7 @@ void yajlpp_gen_context::gen_schema(const json_path_container *handlers)
             schema.gen("definitions");
 
             yajlpp_map defs(this->ygc_handle);
-            for (auto &container : this->ygc_schema_definitions) {
+            for (auto& container : this->ygc_schema_definitions) {
                 defs.gen(container.first);
 
                 yajlpp_map def(this->ygc_handle);
@@ -937,43 +968,49 @@ void yajlpp_gen_context::gen_schema(const json_path_container *handlers)
     }
 }
 
-yajlpp_gen_context &yajlpp_gen_context::with_context(yajlpp_parse_context &ypc)
+yajlpp_gen_context&
+yajlpp_gen_context::with_context(yajlpp_parse_context& ypc)
 {
     this->ygc_obj_stack = ypc.ypc_obj_stack;
-    if (ypc.ypc_current_handler == nullptr &&
-        !ypc.ypc_handler_stack.empty() &&
-        ypc.ypc_handler_stack.back() != nullptr) {
+    if (ypc.ypc_current_handler == nullptr && !ypc.ypc_handler_stack.empty()
+        && ypc.ypc_handler_stack.back() != nullptr)
+    {
         this->ygc_handlers = ypc.ypc_handler_stack.back()->jph_children;
         this->ygc_depth += 1;
     }
     return *this;
 }
 
-json_path_handler &json_path_handler::with_children(const json_path_container &container) {
+json_path_handler&
+json_path_handler::with_children(const json_path_container& container)
+{
     this->jph_children = &container;
     return *this;
 }
 
-void json_path_container::gen_schema(yajlpp_gen_context &ygc) const
+void
+json_path_container::gen_schema(yajlpp_gen_context& ygc) const
 {
     if (!this->jpc_definition_id.empty()) {
         ygc.ygc_schema_definitions[this->jpc_definition_id] = this;
 
         yajl_gen_string(ygc.ygc_handle, "$ref");
-        yajl_gen_string(ygc.ygc_handle, fmt::format("#/definitions/{}", this->jpc_definition_id));
+        yajl_gen_string(
+            ygc.ygc_handle,
+            fmt::format("#/definitions/{}", this->jpc_definition_id));
         return;
     }
 
     this->gen_properties(ygc);
 }
 
-void json_path_container::gen_properties(yajlpp_gen_context &ygc) const
+void
+json_path_container::gen_properties(yajlpp_gen_context& ygc) const
 {
-    auto pattern_count = count_if(this->jpc_children.begin(),
-                                  this->jpc_children.end(),
-                                  [](auto &jph) {
-                                      return jph.jph_is_pattern_property;
-                                  });
+    auto pattern_count = count_if(
+        this->jpc_children.begin(), this->jpc_children.end(), [](auto& jph) {
+            return jph.jph_is_pattern_property;
+        });
     auto plain_count = this->jpc_children.size() - pattern_count;
 
     if (plain_count > 0) {
@@ -981,7 +1018,7 @@ void json_path_container::gen_properties(yajlpp_gen_context &ygc) const
         {
             yajlpp_map properties(ygc.ygc_handle);
 
-            for (auto &child_handler : this->jpc_children) {
+            for (auto& child_handler : this->jpc_children) {
                 if (child_handler.jph_is_pattern_property) {
                     continue;
                 }
@@ -995,7 +1032,7 @@ void json_path_container::gen_properties(yajlpp_gen_context &ygc) const
         {
             yajlpp_map properties(ygc.ygc_handle);
 
-            for (auto &child_handler : this->jpc_children) {
+            for (auto& child_handler : this->jpc_children) {
                 if (!child_handler.jph_is_pattern_property) {
                     continue;
                 }
@@ -1009,24 +1046,30 @@ void json_path_container::gen_properties(yajlpp_gen_context &ygc) const
     yajl_gen_bool(ygc.ygc_handle, false);
 }
 
-static void schema_printer(FILE *file, const char *str, size_t len)
+static void
+schema_printer(FILE* file, const char* str, size_t len)
 {
     fwrite(str, len, 1, file);
 }
 
-void dump_schema_to(const json_path_container &jpc, const char *internals_dir, const char *name)
+void
+dump_schema_to(const json_path_container& jpc,
+               const char* internals_dir,
+               const char* name)
 {
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
     auto schema_path = fmt::format("{}/{}", internals_dir, name);
-    auto file = unique_ptr<FILE, decltype(&fclose)>(fopen(schema_path.c_str(), "w+"), fclose);
+    auto file = unique_ptr<FILE, decltype(&fclose)>(
+        fopen(schema_path.c_str(), "w+"), fclose);
 
     if (!file.get()) {
         return;
     }
 
     yajl_gen_config(genner, yajl_gen_beautify, true);
-    yajl_gen_config(genner, yajl_gen_print_callback, schema_printer, file.get());
+    yajl_gen_config(
+        genner, yajl_gen_print_callback, schema_printer, file.get());
 
     ygc.gen_schema();
 }

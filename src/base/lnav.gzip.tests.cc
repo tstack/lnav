@@ -21,35 +21,35 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <zlib.h>
 #include <iostream>
 
-#include "doctest/doctest.h"
+#include <zlib.h>
 
 #include "base/lnav.gzip.hh"
+#include "config.h"
+#include "doctest/doctest.h"
 
-TEST_CASE("lnav::gzip::uncompress") {
+TEST_CASE("lnav::gzip::uncompress")
+{
     {
         auto u_res = lnav::gzip::uncompress("empty", nullptr, 0);
 
         CHECK(u_res.isErr());
-        CHECK(u_res.unwrapErr() ==
-              "unable to uncompress: empty -- buffer error");
+        CHECK(u_res.unwrapErr()
+              == "unable to uncompress: empty -- buffer error");
     }
 
     {
         auto u_res = lnav::gzip::uncompress("garbage", "abc", 3);
 
         CHECK(u_res.isErr());
-        CHECK(u_res.unwrapErr() ==
-              "unable to uncompress: garbage -- incorrect header check");
+        CHECK(u_res.unwrapErr()
+              == "unable to uncompress: garbage -- incorrect header check");
     }
 }

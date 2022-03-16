@@ -21,39 +21,38 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "log_level.hh"
 
 #include <ctype.h>
 
-#include "log_level.hh"
+#include "config.h"
 
-const char *level_names[LEVEL__MAX + 1] = {
-    "unknown",
-    "trace",
-    "debug5",
-    "debug4",
-    "debug3",
-    "debug2",
-    "debug",
-    "info",
-    "stats",
-    "notice",
-    "warning",
-    "error",
-    "critical",
-    "fatal",
-    "invalid",
+const char* level_names[LEVEL__MAX + 1] = {"unknown",
+                                           "trace",
+                                           "debug5",
+                                           "debug4",
+                                           "debug3",
+                                           "debug2",
+                                           "debug",
+                                           "info",
+                                           "stats",
+                                           "notice",
+                                           "warning",
+                                           "error",
+                                           "critical",
+                                           "fatal",
+                                           "invalid",
 
-    nullptr
-};
+                                           nullptr};
 
-log_level_t abbrev2level(const char *levelstr, ssize_t len)
+log_level_t
+abbrev2level(const char* levelstr, ssize_t len)
 {
     if (len == 0 || levelstr[0] == '\0') {
         return LEVEL_UNKNOWN;
@@ -78,13 +77,11 @@ log_level_t abbrev2level(const char *levelstr, ssize_t len)
             }
             return LEVEL_DEBUG;
         case 'I':
-            if (len == 7 &&
-                toupper(levelstr[1]) == 'N' &&
-                toupper(levelstr[2]) == 'V' &&
-                toupper(levelstr[3]) == 'A' &&
-                toupper(levelstr[4]) == 'L' &&
-                toupper(levelstr[5]) == 'I' &&
-                toupper(levelstr[6]) == 'D') {
+            if (len == 7 && toupper(levelstr[1]) == 'N'
+                && toupper(levelstr[2]) == 'V' && toupper(levelstr[3]) == 'A'
+                && toupper(levelstr[4]) == 'L' && toupper(levelstr[5]) == 'I'
+                && toupper(levelstr[6]) == 'D')
+            {
                 return LEVEL_INVALID;
             }
             return LEVEL_INFO;
@@ -105,7 +102,8 @@ log_level_t abbrev2level(const char *levelstr, ssize_t len)
     }
 }
 
-int levelcmp(const char *l1, ssize_t l1_len, const char *l2, ssize_t l2_len)
+int
+levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len)
 {
     return abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
 }

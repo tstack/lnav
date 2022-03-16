@@ -21,27 +21,34 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <cmath>
 #include <vector>
 
-#include "fmt/format.h"
 #include "humanize.hh"
+
+#include "config.h"
+#include "fmt/format.h"
 
 namespace humanize {
 
-std::string file_size(file_ssize_t value)
+std::string
+file_size(file_ssize_t value)
 {
     static const double LN1024 = log(1024.0);
-    static const std::vector<const char *> UNITS = {
-        " ", "K", "M", "G", "T", "P", "E",
+    static const std::vector<const char*> UNITS = {
+        " ",
+        "K",
+        "M",
+        "G",
+        "T",
+        "P",
+        "E",
     };
 
     if (value < 0) {
@@ -52,8 +59,8 @@ std::string file_size(file_ssize_t value)
         return "0.0 B";
     }
 
-    auto exp = floor(std::min(log(value) / LN1024,
-                              (double) (UNITS.size() - 1)));
+    auto exp
+        = floor(std::min(log(value) / LN1024, (double) (UNITS.size() - 1)));
     auto divisor = pow(1024, exp);
 
     return fmt::format(FMT_STRING("{:.1f}{}B"),
@@ -61,7 +68,8 @@ std::string file_size(file_ssize_t value)
                        UNITS[exp]);
 }
 
-const std::string& sparkline(double value, nonstd::optional<double> upper_opt)
+const std::string&
+sparkline(double value, nonstd::optional<double> upper_opt)
 {
     static const std::string ZERO = " ";
     static const std::string BARS[] = {
@@ -91,4 +99,4 @@ const std::string& sparkline(double value, nonstd::optional<double> upper_opt)
     return BARS[index];
 }
 
-}
+}  // namespace humanize

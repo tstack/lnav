@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,9 +30,9 @@
 #ifndef lnav_humanize_time_hh
 #define lnav_humanize_time_hh
 
-#include <sys/time.h>
-
 #include <string>
+
+#include <sys/time.h>
 
 #include "optional.hpp"
 
@@ -41,15 +41,15 @@ namespace time {
 
 class point {
 public:
-    static point from_tv(const struct timeval &tv);
+    static point from_tv(const struct timeval& tv);
 
-    point &with_recent_point(const struct timeval &tv)
+    point& with_recent_point(const struct timeval& tv)
     {
         this->p_recent_point = tv;
         return *this;
     }
 
-    point &with_convert_to_local(bool convert_to_local)
+    point& with_convert_to_local(bool convert_to_local)
     {
         this->p_convert_to_local = convert_to_local;
         return *this;
@@ -60,9 +60,10 @@ public:
     std::string as_precise_time_ago() const;
 
 private:
-    explicit point(const struct timeval &tv) : p_past_point{tv.tv_sec,
-                                                            tv.tv_usec}
-    {}
+    explicit point(const struct timeval& tv)
+        : p_past_point{tv.tv_sec, tv.tv_usec}
+    {
+    }
 
     struct timeval p_past_point;
     nonstd::optional<struct timeval> p_recent_point;
@@ -74,13 +75,14 @@ public:
     static duration from_tv(const struct timeval& tv);
 
     std::string to_string() const;
+
 private:
     explicit duration(const struct timeval& tv) : d_timeval(tv) {}
 
     struct timeval d_timeval;
 };
 
-}
-}
+}  // namespace time
+}  // namespace humanize
 
 #endif

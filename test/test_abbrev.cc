@@ -21,31 +21,30 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <assert.h>
 
 #include "base/string_util.hh"
+#include "config.h"
 
 static struct test_data {
-    const char *str{nullptr};
-    const char *abbrev_str{nullptr};
+    const char* str{nullptr};
+    const char* abbrev_str{nullptr};
     size_t max_len{0};
 } TEST_DATA[] = {
-    { "abc", "abc", 5 },
-    { "com.example.foo.bar", "c.e.f.bar", 5 },
-    { "com.example.foo.bar", "c.e.foo.bar", 15 },
-    { "no dots in here", "no dots in here", 5 },
+    {"abc", "abc", 5},
+    {"com.example.foo.bar", "c.e.f.bar", 5},
+    {"com.example.foo.bar", "c.e.foo.bar", 15},
+    {"no dots in here", "no dots in here", 5},
 };
 
-
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     for (const auto& td : TEST_DATA) {
         char buffer[1024];

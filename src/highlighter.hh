@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -40,22 +40,20 @@
 #include "view_curses.hh"
 
 struct highlighter {
-    highlighter()
-        : h_code(nullptr),
-          h_code_extra(nullptr) { };
+    highlighter() : h_code(nullptr), h_code_extra(nullptr){};
 
-    explicit highlighter(pcre *code)
-        : h_code(code)
+    explicit highlighter(pcre* code) : h_code(code)
     {
         pcre_refcount(this->h_code, 1);
         this->study();
     };
 
-    highlighter(const highlighter &other);
+    highlighter(const highlighter& other);
 
-    highlighter &operator=(const highlighter &other);
+    highlighter& operator=(const highlighter& other);
 
-    virtual ~highlighter() {
+    virtual ~highlighter()
+    {
         if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
             free(this->h_code);
             this->h_code = nullptr;
@@ -65,44 +63,52 @@ struct highlighter {
 
     void study();
 
-    highlighter &with_pattern(const std::string &pattern) {
+    highlighter& with_pattern(const std::string& pattern)
+    {
         this->h_pattern = pattern;
 
         return *this;
     }
 
-    highlighter &with_role(view_colors::role_t role) {
+    highlighter& with_role(view_colors::role_t role)
+    {
         this->h_role = role;
 
         return *this;
     };
 
-    highlighter &with_attrs(int attrs) {
+    highlighter& with_attrs(int attrs)
+    {
         this->h_attrs = attrs;
 
         return *this;
     };
 
-    highlighter &with_text_format(text_format_t tf) {
+    highlighter& with_text_format(text_format_t tf)
+    {
         this->h_text_formats.insert(tf);
 
         return *this;
     }
 
-    highlighter &with_format_name(intern_string_t name) {
+    highlighter& with_format_name(intern_string_t name)
+    {
         this->h_format_name = name;
 
         return *this;
     };
 
-    highlighter &with_color(const styling::color_unit &fg, const styling::color_unit &bg) {
+    highlighter& with_color(const styling::color_unit& fg,
+                            const styling::color_unit& bg)
+    {
         this->h_fg = fg;
         this->h_bg = bg;
 
         return *this;
     };
 
-    highlighter &with_nestable(bool val) {
+    highlighter& with_nestable(bool val)
+    {
         this->h_nestable = val;
         return *this;
     }
@@ -114,14 +120,14 @@ struct highlighter {
         return this->h_attrs;
     };
 
-    void annotate(attr_line_t &al, int start) const;
+    void annotate(attr_line_t& al, int start) const;
 
     std::string h_pattern;
     view_colors::role_t h_role{view_colors::VCR_NONE};
     styling::color_unit h_fg{styling::color_unit::make_empty()};
     styling::color_unit h_bg{styling::color_unit::make_empty()};
-    pcre *h_code;
-    pcre_extra *h_code_extra;
+    pcre* h_code;
+    pcre_extra* h_code_extra;
     int h_attrs{-1};
     std::set<text_format_t> h_text_formats;
     intern_string_t h_format_name;

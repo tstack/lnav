@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,18 +31,18 @@
 #define LNAV_READLINE_CALLBACKS_HH
 
 void rl_set_help();
-void rl_change(readline_curses *rc);
-void rl_search(readline_curses *rc);
-void lnav_rl_abort(readline_curses *rc);
-void rl_callback(readline_curses *rc);
-void rl_alt_callback(readline_curses *rc);
-void rl_display_matches(readline_curses *rc);
-void rl_display_next(readline_curses *rc);
-void rl_completion_request(readline_curses *rc);
+void rl_change(readline_curses* rc);
+void rl_search(readline_curses* rc);
+void lnav_rl_abort(readline_curses* rc);
+void rl_callback(readline_curses* rc);
+void rl_alt_callback(readline_curses* rc);
+void rl_display_matches(readline_curses* rc);
+void rl_display_next(readline_curses* rc);
+void rl_completion_request(readline_curses* rc);
 
-extern const char *RE_HELP;
-extern const char *RE_EXAMPLE;
-extern const char *SQL_HELP;
-extern const char *SQL_EXAMPLE;
+extern const char* RE_HELP;
+extern const char* RE_EXAMPLE;
+extern const char* SQL_HELP;
+extern const char* SQL_EXAMPLE;
 
-#endif //LNAV_READLINE_CALLBACKS_HH
+#endif  // LNAV_READLINE_CALLBACKS_HH

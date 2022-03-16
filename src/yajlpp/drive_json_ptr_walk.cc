@@ -21,28 +21,29 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file drive_json_ptr_dump.cc
  */
 
-#include "config.h"
-
 #include <iostream>
+
 #include <stdlib.h>
 
-#include "yajlpp.hh"
+#include "base/lnav_log.hh"
+#include "config.h"
 #include "json_op.hh"
 #include "json_ptr.hh"
 #include "yajl/api/yajl_gen.h"
-#include "base/lnav_log.hh"
+#include "yajlpp.hh"
 
 using namespace std;
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
     yajl_status status;
@@ -54,7 +55,8 @@ int main(int argc, char *argv[])
 
     status = jpw.parse(json_input.c_str(), json_input.size());
     if (status == yajl_status_error) {
-        fprintf(stderr, "error:cannot parse JSON input -- %s\n",
+        fprintf(stderr,
+                "error:cannot parse JSON input -- %s\n",
                 jpw.jpw_error_msg.c_str());
         return EXIT_FAILURE;
     }
@@ -65,17 +67,18 @@ int main(int argc, char *argv[])
 
     status = jpw.complete_parse();
     if (status == yajl_status_error) {
-        fprintf(stderr, "error:cannot parse JSON input -- %s\n",
-            jpw.jpw_error_msg.c_str());
+        fprintf(stderr,
+                "error:cannot parse JSON input -- %s\n",
+                jpw.jpw_error_msg.c_str());
         return EXIT_FAILURE;
-    }
-    else if (status == yajl_status_client_canceled) {
+    } else if (status == yajl_status_client_canceled) {
         fprintf(stderr, "client cancel\n");
     }
 
     for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
          iter != jpw.jpw_values.end();
-         ++iter) {
+         ++iter)
+    {
         printf("%s = %s\n", iter->wt_ptr.c_str(), iter->wt_value.c_str());
 
         {
@@ -86,10 +89,11 @@ int main(int argc, char *argv[])
 
             jo.jo_ptr_callbacks = json_op::gen_callbacks;
             jo.jo_ptr_data = gen.get_handle();
-            parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+            parse_handle.reset(
+                yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
 
             yajl_parse(parse_handle.in(),
-                       (const unsigned char *) json_input.c_str(),
+                       (const unsigned char*) json_input.c_str(),
                        json_input.size());
             yajl_complete_parse(parse_handle.in());
 

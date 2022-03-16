@@ -21,27 +21,26 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-
-#include "fmt/format.h"
-
 #include "network.tcp.hh"
+
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+#include "config.h"
+#include "fmt/format.h"
 
 namespace network {
 namespace tcp {
 
-Result<auto_fd, std::string> connect(const char *hostname,
-                                     const char *servname)
+Result<auto_fd, std::string>
+connect(const char* hostname, const char* servname)
 {
     struct addrinfo hints, *ai;
 
@@ -52,7 +51,9 @@ Result<auto_fd, std::string> connect(const char *hostname,
 
     if (rc != 0) {
         return Err(fmt::format("unable to resolve {}:{} -- {}",
-                               hostname, servname, gai_strerror(rc)));
+                               hostname,
+                               servname,
+                               gai_strerror(rc)));
     }
 
     auto retval = auto_fd(socket(ai->ai_family, ai->ai_socktype, 0));
@@ -60,11 +61,13 @@ Result<auto_fd, std::string> connect(const char *hostname,
     rc = ::connect(retval, ai->ai_addr, ai->ai_addrlen);
     if (rc != 0) {
         return Err(fmt::format("unable to connect to {}:{} -- {}",
-                               hostname, servname, strerror(rc)));
+                               hostname,
+                               servname,
+                               strerror(rc)));
     }
 
     return Ok(retval);
 }
 
-}
-}
+}  // namespace tcp
+}  // namespace network

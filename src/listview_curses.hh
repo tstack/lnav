@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,12 +32,12 @@
 #ifndef listview_curses_hh
 #define listview_curses_hh
 
-#include <sys/types.h>
-
 #include <list>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <sys/types.h>
 
 #include "base/func_util.hh"
 #include "view_curses.hh"
@@ -53,9 +53,10 @@ public:
     virtual ~list_data_source() = default;
 
     /** @return The number of rows in the list. */
-    virtual size_t listview_rows(const listview_curses &lv) = 0;
+    virtual size_t listview_rows(const listview_curses& lv) = 0;
 
-    virtual size_t listview_width(const listview_curses &lv) {
+    virtual size_t listview_width(const listview_curses& lv)
+    {
         return INT_MAX;
     };
 
@@ -65,14 +66,17 @@ public:
      * @param row The row number.
      * @param value_out The destination for the string value.
      */
-    virtual void listview_value_for_rows(const listview_curses &lv,
+    virtual void listview_value_for_rows(const listview_curses& lv,
                                          vis_line_t start_row,
-                                         std::vector<attr_line_t> &rows_out) = 0;
+                                         std::vector<attr_line_t>& rows_out)
+        = 0;
 
-    virtual size_t listview_size_for_row(const listview_curses &lv,
-        vis_line_t row) = 0;
+    virtual size_t listview_size_for_row(const listview_curses& lv,
+                                         vis_line_t row)
+        = 0;
 
-    virtual std::string listview_source_name(const listview_curses &lv) {
+    virtual std::string listview_source_name(const listview_curses& lv)
+    {
         return "";
     };
 };
@@ -82,10 +86,13 @@ public:
     virtual ~list_gutter_source() = default;
 
     virtual void listview_gutter_value_for_range(
-        const listview_curses &lv, int start, int end,
-        chtype &ch_out,
-        view_colors::role_t &role_out,
-        view_colors::role_t &bar_role_out) {
+        const listview_curses& lv,
+        int start,
+        int end,
+        chtype& ch_out,
+        view_colors::role_t& role_out,
+        view_colors::role_t& bar_role_out)
+    {
         ch_out = ACS_VLINE;
     };
 };
@@ -94,42 +101,46 @@ class list_overlay_source {
 public:
     virtual ~list_overlay_source() = default;
 
-    virtual bool list_value_for_overlay(const listview_curses &lv,
-                                        int y, int bottom,
+    virtual bool list_value_for_overlay(const listview_curses& lv,
+                                        int y,
+                                        int bottom,
                                         vis_line_t line,
-                                        attr_line_t &value_out) = 0;
+                                        attr_line_t& value_out)
+        = 0;
 };
 
 class list_input_delegate {
 public:
     virtual ~list_input_delegate() = default;
 
-    virtual bool list_input_handle_key(listview_curses &lv, int ch) = 0;
+    virtual bool list_input_handle_key(listview_curses& lv, int ch) = 0;
 
-    virtual void list_input_handle_scroll_out(listview_curses &lv) {
-    };
+    virtual void list_input_handle_scroll_out(listview_curses& lv){};
 };
 
 /**
  * View that displays a list of lines that can optionally contain highlighting.
  */
 class listview_curses
-    : public view_curses, private log_state_dumper {
+    : public view_curses
+    , private log_state_dumper {
 public:
     using action = std::function<void(listview_curses*)>;
 
     listview_curses();
 
-    void set_title(const std::string &title) {
+    void set_title(const std::string& title)
+    {
         this->lv_title = title;
     };
 
-    const std::string &get_title() const {
+    const std::string& get_title() const
+    {
         return this->lv_title;
     };
 
     /** @param src The data source delegate. */
-    void set_data_source(list_data_source *src)
+    void set_data_source(list_data_source* src)
     {
         this->lv_source = src;
         this->invoke_scroll();
@@ -137,14 +148,19 @@ public:
     };
 
     /** @return The data source delegate. */
-    list_data_source *get_data_source() const { return this->lv_source; };
+    list_data_source* get_data_source() const
+    {
+        return this->lv_source;
+    };
 
-    void set_gutter_source(list_gutter_source *src) {
+    void set_gutter_source(list_gutter_source* src)
+    {
         this->lv_gutter_source = src;
     };
 
     /** @param src The data source delegate. */
-    listview_curses &set_overlay_source(list_overlay_source *src) {
+    listview_curses& set_overlay_source(list_overlay_source* src)
+    {
         this->lv_overlay_source = src;
         this->reload_data();
 
@@ -152,12 +168,13 @@ public:
     };
 
     /** @return The overlay source delegate. */
-    list_overlay_source *get_overlay_source()
+    list_overlay_source* get_overlay_source()
     {
         return this->lv_overlay_source;
     };
 
-    listview_curses &add_input_delegate(list_input_delegate &lid) {
+    listview_curses& add_input_delegate(list_input_delegate& lid)
+    {
         this->lv_input_delegates.push_back(&lid);
 
         return *this;
@@ -167,28 +184,44 @@ public:
      * @param va The action to invoke when the view is scrolled.
      * @todo Allow multiple observers.
      */
-    void set_scroll_action(action va) { this->lv_scroll = std::move(va); };
+    void set_scroll_action(action va)
+    {
+        this->lv_scroll = std::move(va);
+    };
 
-    void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
-    bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
+    void set_show_scrollbar(bool ss)
+    {
+        this->lv_show_scrollbar = ss;
+    };
+    bool get_show_scrollbar() const
+    {
+        return this->lv_show_scrollbar;
+    };
 
-    void set_show_bottom_border(bool val) {
+    void set_show_bottom_border(bool val)
+    {
         if (this->lv_show_bottom_border != val) {
             this->lv_show_bottom_border = val;
             this->set_needs_update();
         }
     };
-    bool get_show_bottom_border() const { return this->lv_show_bottom_border; };
+    bool get_show_bottom_border() const
+    {
+        return this->lv_show_bottom_border;
+    };
 
-    void set_selectable(bool sel) {
+    void set_selectable(bool sel)
+    {
         this->lv_selectable = sel;
     };
 
-    bool is_selectable() const {
+    bool is_selectable() const
+    {
         return this->lv_selectable;
     };
 
-    void set_selection(vis_line_t sel) {
+    void set_selection(vis_line_t sel)
+    {
         if (this->lv_selection != sel) {
             this->lv_selection = sel;
             this->scroll_selection_into_view();
@@ -196,7 +229,8 @@ public:
         }
     }
 
-    void scroll_selection_into_view() {
+    void scroll_selection_into_view()
+    {
         unsigned long width;
         vis_line_t height;
 
@@ -213,11 +247,13 @@ public:
 
     void shift_selection(int offset);
 
-    vis_line_t get_selection() const {
+    vis_line_t get_selection() const
+    {
         return this->lv_selection;
     }
 
-    listview_curses &set_word_wrap(bool ww) {
+    listview_curses& set_word_wrap(bool ww)
+    {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
 
         this->lv_word_wrap = ww;
@@ -232,14 +268,18 @@ public:
         return *this;
     };
 
-    bool get_word_wrap() const { return this->lv_word_wrap; };
+    bool get_word_wrap() const
+    {
+        return this->lv_word_wrap;
+    };
 
     enum row_direction_t {
         RD_UP = -1,
         RD_DOWN = 1,
     };
 
-    vis_line_t rows_available(vis_line_t line, row_direction_t dir) const {
+    vis_line_t rows_available(vis_line_t line, row_direction_t dir) const
+    {
         unsigned long width;
         vis_line_t height;
         vis_line_t retval(0);
@@ -249,11 +289,12 @@ public:
             size_t row_count = this->lv_source->listview_rows(*this);
 
             width -= 1;
-            while ((height > 0) && (line >= 0) && ((size_t)line < row_count)) {
-                size_t len = this->lv_source->listview_size_for_row(*this, line);
+            while ((height > 0) && (line >= 0) && ((size_t) line < row_count)) {
+                size_t len
+                    = this->lv_source->listview_size_for_row(*this, line);
 
                 do {
-                    len -= std::min((size_t)width, len);
+                    len -= std::min((size_t) width, len);
                     --height;
                 } while (len > 0);
                 line += vis_line_t(dir);
@@ -261,16 +302,17 @@ public:
                     ++retval;
                 }
             }
-        }
-        else {
+        } else {
             switch (dir) {
-            case RD_UP:
-                retval = std::min(height, line + 1_vl);
-                break;
-            case RD_DOWN:
-                retval = std::min(height,
-                    vis_line_t(this->lv_source->listview_rows(*this) - line));
-                break;
+                case RD_UP:
+                    retval = std::min(height, line + 1_vl);
+                    break;
+                case RD_DOWN:
+                    retval = std::min(
+                        height,
+                        vis_line_t(this->lv_source->listview_rows(*this)
+                                   - line));
+                    break;
             }
         }
 
@@ -278,7 +320,9 @@ public:
     };
 
     template<typename F>
-    auto map_top_row(F func) -> typename std::result_of<F(const attr_line_t&)>::type {
+    auto map_top_row(F func) ->
+        typename std::result_of<F(const attr_line_t&)>::type
+    {
         if (this->get_inner_height() == 0) {
             return nonstd::nullopt;
         }
@@ -290,28 +334,40 @@ public:
     }
 
     /** @param win The curses window this view is attached to. */
-    void set_window(WINDOW *win) { this->lv_window = win; };
+    void set_window(WINDOW* win)
+    {
+        this->lv_window = win;
+    };
 
     /** @return The curses window this view is attached to. */
-    WINDOW *get_window() const { return this->lv_window; };
+    WINDOW* get_window() const
+    {
+        return this->lv_window;
+    };
 
     void set_y(unsigned int y)
     {
         if (y != this->lv_y) {
-            this->lv_y            = y;
+            this->lv_y = y;
             this->set_needs_update();
         }
     };
-    unsigned int get_y() const { return this->lv_y; };
+    unsigned int get_y() const
+    {
+        return this->lv_y;
+    };
 
     void set_x(unsigned int x)
     {
         if (x != this->lv_x) {
-            this->lv_x            = x;
+            this->lv_x = x;
             this->set_needs_update();
         }
     };
-    unsigned int get_x() const { return this->lv_x; };
+    unsigned int get_x() const
+    {
+        return this->lv_x;
+    };
 
     /**
      * Set the line number to be displayed at the top of the view.  If the
@@ -324,9 +380,13 @@ public:
     void set_top(vis_line_t top, bool suppress_flash = false);
 
     /** @return The line number that is displayed at the top. */
-    vis_line_t get_top() const { return this->lv_top; };
+    vis_line_t get_top() const
+    {
+        return this->lv_top;
+    };
 
-    nonstd::optional<vis_line_t> get_top_opt() const {
+    nonstd::optional<vis_line_t> get_top_opt() const
+    {
         if (this->get_inner_height() == 0_vl) {
             return nonstd::nullopt;
         }
@@ -349,13 +409,15 @@ public:
         return retval;
     };
 
-    vis_line_t get_top_for_last_row() {
+    vis_line_t get_top_for_last_row()
+    {
         auto retval = 0_vl;
 
         if (this->get_inner_height() > 0) {
             vis_line_t last_line(this->get_inner_height() - 1);
 
-            retval = last_line - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
+            retval = last_line
+                - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
             if ((retval + this->lv_tail_space) < this->get_inner_height()) {
                 retval += this->lv_tail_space;
             }
@@ -383,14 +445,13 @@ public:
             if (suppress_flash == false) {
                 alerter::singleton().chime();
             }
-        }
-        else {
-            this->set_top(std::max(0_vl, this->lv_top + offset), suppress_flash);
+        } else {
+            this->set_top(std::max(0_vl, this->lv_top + offset),
+                          suppress_flash);
         }
 
         return this->lv_top;
     };
-
 
     /**
      * Set the column number to be displayed at the left of the view.  If the
@@ -422,7 +483,10 @@ public:
     };
 
     /** @return The column number that is displayed at the left. */
-    unsigned int get_left() const { return this->lv_left; };
+    unsigned int get_left() const
+    {
+        return this->lv_left;
+    };
 
     /**
      * Shift the value of left by the given value.
@@ -434,11 +498,9 @@ public:
     {
         if (this->lv_word_wrap) {
             alerter::singleton().chime();
-        }
-        else if (offset < 0 && this->lv_left < (unsigned int)-offset) {
+        } else if (offset < 0 && this->lv_left < (unsigned int) -offset) {
             this->set_left(0);
-        }
-        else {
+        } else {
             this->set_left(this->lv_left + offset);
         }
 
@@ -455,27 +517,36 @@ public:
     void set_height(vis_line_t height)
     {
         if (this->lv_height != height) {
-            this->lv_height       = height;
+            this->lv_height = height;
             this->set_needs_update();
         }
     };
 
     /** @return The absolute or relative height of the window. */
-    vis_line_t get_height() const { return this->lv_height; };
+    vis_line_t get_height() const
+    {
+        return this->lv_height;
+    };
 
     /** @return The number of rows of data in this view's source data. */
     vis_line_t get_inner_height() const
     {
-        return vis_line_t(this->lv_source == nullptr ? 0 :
-                          this->lv_source->listview_rows(*this));
+        return vis_line_t(this->lv_source == nullptr
+                              ? 0
+                              : this->lv_source->listview_rows(*this));
     };
 
-    size_t get_inner_width() const {
-        return this->lv_source == nullptr ? 0 :
-               this->lv_source->listview_width(*this);
+    size_t get_inner_width() const
+    {
+        return this->lv_source == nullptr
+            ? 0
+            : this->lv_source->listview_width(*this);
     };
 
-    void set_overlay_needs_update() { this->lv_overlay_needs_update = true; };
+    void set_overlay_needs_update()
+    {
+        this->lv_overlay_needs_update = true;
+    };
 
     /**
      * Get the actual dimensions of the view.
@@ -483,7 +554,7 @@ public:
      * @param height_out The actual height of the view in lines.
      * @param width_out The actual width of the view in columns.
      */
-    void get_dimensions(vis_line_t &height_out, unsigned long &width_out) const
+    void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const
     {
         unsigned long height;
 
@@ -494,15 +565,12 @@ public:
             } else {
                 width_out = 80;
             }
-        }
-        else {
+        } else {
             getmaxyx(this->lv_window, height, width_out);
             if (this->lv_height < 0) {
-                height_out = vis_line_t(height) +
-                    this->lv_height -
-                    vis_line_t(this->lv_y);
-            }
-            else {
+                height_out = vis_line_t(height) + this->lv_height
+                    - vis_line_t(this->lv_y);
+            } else {
                 height_out = this->lv_height;
             }
         }
@@ -513,7 +581,8 @@ public:
         }
     };
 
-    std::pair<vis_line_t, unsigned long> get_dimensions() const {
+    std::pair<vis_line_t, unsigned long> get_dimensions() const
+    {
         unsigned long width;
         vis_line_t height;
 
@@ -535,28 +604,32 @@ public:
      */
     void do_update();
 
-    bool handle_mouse(mouse_event &me);
+    bool handle_mouse(mouse_event& me);
 
-    listview_curses &set_tail_space(vis_line_t space) {
+    listview_curses& set_tail_space(vis_line_t space)
+    {
         this->lv_tail_space = space;
 
         return *this;
     };
 
-    void log_state() {
+    void log_state()
+    {
         log_debug("listview_curses=%p", this);
         log_debug("  lv_title=%s", this->lv_title.c_str());
         log_debug("  lv_y=%u", this->lv_y);
         log_debug("  lv_top=%d", (int) this->lv_top);
     };
 
-    virtual void invoke_scroll() {
+    virtual void invoke_scroll()
+    {
         this->lv_scroll(this);
     }
 
 protected:
-    void delegate_scroll_out() {
-        for (auto &lv_input_delegate : this->lv_input_delegates) {
+    void delegate_scroll_out()
+    {
+        for (auto& lv_input_delegate : this->lv_input_delegates) {
             lv_input_delegate->list_input_handle_scroll_out(*this);
         }
     }
@@ -571,21 +644,21 @@ protected:
     static list_gutter_source DEFAULT_GUTTER_SOURCE;
 
     std::string lv_title;
-    list_data_source *lv_source{nullptr}; /*< The data source delegate. */
-    std::list<list_input_delegate *> lv_input_delegates;
-    list_overlay_source *lv_overlay_source{nullptr};
-    action       lv_scroll;         /*< The scroll action. */
-    WINDOW *     lv_window{nullptr};         /*< The window that contains this view. */
+    list_data_source* lv_source{nullptr}; /*< The data source delegate. */
+    std::list<list_input_delegate*> lv_input_delegates;
+    list_overlay_source* lv_overlay_source{nullptr};
+    action lv_scroll; /*< The scroll action. */
+    WINDOW* lv_window{nullptr}; /*< The window that contains this view. */
     unsigned int lv_x{0};
-    unsigned int lv_y{0};              /*< The y offset of this view. */
-    vis_line_t   lv_top{0};            /*< The line at the top of the view. */
-    unsigned int lv_left{0};           /*< The column at the left of the view. */
-    vis_line_t   lv_height{0};         /*< The abs/rel height of the view. */
+    unsigned int lv_y{0}; /*< The y offset of this view. */
+    vis_line_t lv_top{0}; /*< The line at the top of the view. */
+    unsigned int lv_left{0}; /*< The column at the left of the view. */
+    vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
     int lv_history_position{0};
     bool lv_overlay_needs_update{true};
-    bool lv_show_scrollbar{true};         /*< Draw the scrollbar in the view. */
+    bool lv_show_scrollbar{true}; /*< Draw the scrollbar in the view. */
     bool lv_show_bottom_border{false};
-    list_gutter_source *lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
+    list_gutter_source* lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
     bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{0};

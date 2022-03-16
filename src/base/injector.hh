@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,12 +32,12 @@
 #ifndef lnav_injector_hh
 #define lnav_injector_hh
 
-#include <assert.h>
-
 #include <map>
 #include <memory>
-#include <vector>
 #include <type_traits>
+#include <vector>
+
+#include <assert.h>
 
 #include "base/lnav_log.hh"
 
@@ -46,40 +46,45 @@ namespace injector {
 template<typename Annotation>
 void force_linking(Annotation anno);
 
-template<class ...>
+template<class...>
 using void_t = void;
 
-template <class, class = void>
-struct has_injectable : std::false_type {};
+template<class, class = void>
+struct has_injectable : std::false_type {
+};
 
-template <class T>
-struct has_injectable<T, void_t<typename T::injectable>> : std::true_type
-{};
+template<class T>
+struct has_injectable<T, void_t<typename T::injectable>> : std::true_type {
+};
 
-template<typename T, typename...Annotations>
+template<typename T, typename... Annotations>
 struct singleton_storage {
-    static T *get() {
+    static T* get()
+    {
         static int _[] = {0, (force_linking(Annotations{}), 0)...};
-        (void)_;
+        (void) _;
         assert(ss_data != nullptr);
         return ss_data;
     }
 
-    static std::shared_ptr<T> create() {
+    static std::shared_ptr<T> create()
+    {
         static int _[] = {0, (force_linking(Annotations{}), 0)...};
-        (void)_;
+        (void) _;
         return ss_factory();
     }
+
 protected:
-    static T *ss_data;
+    static T* ss_data;
     static std::function<std::shared_ptr<T>()> ss_factory;
 };
 
-template<typename T, typename...Annotations>
-T *singleton_storage<T, Annotations...>::ss_data = nullptr;
+template<typename T, typename... Annotations>
+T* singleton_storage<T, Annotations...>::ss_data = nullptr;
 
-template<typename T, typename...Annotations>
-std::function<std::shared_ptr<T>()> singleton_storage<T, Annotations...>::ss_factory;
+template<typename T, typename... Annotations>
+std::function<std::shared_ptr<T>()>
+    singleton_storage<T, Annotations...>::ss_factory;
 
 template<typename T>
 struct Impl {
@@ -88,7 +93,8 @@ struct Impl {
 
 template<typename T>
 struct multiple_storage {
-    static std::vector<std::shared_ptr<T>> create() {
+    static std::vector<std::shared_ptr<T>> create()
+    {
         std::vector<std::shared_ptr<T>> retval;
 
         for (const auto& pair : get_factories()) {
@@ -96,28 +102,35 @@ struct multiple_storage {
         }
         return retval;
     }
-protected:
-    using factory_map_t = std::map<std::string, std::function<std::shared_ptr<T>()>>;
 
-    static factory_map_t& get_factories() {
+protected:
+    using factory_map_t
+        = std::map<std::string, std::function<std::shared_ptr<T>()>>;
+
+    static factory_map_t& get_factories()
+    {
         static factory_map_t retval;
 
         return retval;
     }
 };
 
-template<typename T, typename...Annotations,
-    std::enable_if_t<std::is_reference<T>::value, bool> = true>
-T get()
+template<typename T,
+         typename... Annotations,
+         std::enable_if_t<std::is_reference<T>::value, bool> = true>
+T
+get()
 {
     using plain_t = std::remove_const_t<std::remove_reference_t<T>>;
 
     return *singleton_storage<plain_t, Annotations...>::get();
 }
 
-template<typename T, typename...Annotations,
-    std::enable_if_t<std::is_pointer<T>::value, bool> = true>
-T get()
+template<typename T,
+         typename... Annotations,
+         std::enable_if_t<std::is_pointer<T>::value, bool> = true>
+T
+get()
 {
     using plain_t = std::remove_const_t<std::remove_pointer_t<T>>;
 
@@ -125,31 +138,38 @@ T get()
 }
 
 template<class T>
-struct is_shared_ptr : std::false_type {};
+struct is_shared_ptr : std::false_type {
+};
 
 template<class T>
-struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {
+};
 
 template<class T>
-struct is_vector : std::false_type {};
+struct is_vector : std::false_type {
+};
 
 template<class T>
-struct is_vector<std::vector<T>> : std::true_type {};
-
-template<typename T, typename...Annotations,
-    std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
-T get()
-{
-    return singleton_storage<typename T::element_type, Annotations...>::create();
-}
+struct is_vector<std::vector<T>> : std::true_type {
+};
 
 template<typename T,
-    std::enable_if_t<is_vector<T>::value, bool> = true>
-T get()
+         typename... Annotations,
+         std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
+T
+get()
+{
+    return singleton_storage<typename T::element_type,
+                             Annotations...>::create();
+}
+
+template<typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
+T
+get()
 {
     return multiple_storage<typename T::value_type::element_type>::create();
 }
 
-}
+}  // namespace injector
 
 #endif

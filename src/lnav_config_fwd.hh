@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,28 +32,29 @@
 #ifndef lnav_config_fwd_hh
 #define lnav_config_fwd_hh
 
-#include <string>
 #include <functional>
+#include <string>
 
 class lnav_config_listener {
 public:
-    using error_reporter = const std::function<void(const void *, const std::string msg)>;
+    using error_reporter
+        = const std::function<void(const void*, const std::string msg)>;
 
-    lnav_config_listener() {
+    lnav_config_listener()
+    {
         this->lcl_next = LISTENER_LIST;
         LISTENER_LIST = this;
     }
 
     virtual ~lnav_config_listener() = default;
 
-    virtual void reload_config(error_reporter &reporter) {
+    virtual void reload_config(error_reporter& reporter){
 
     };
 
-    static lnav_config_listener *LISTENER_LIST;
+    static lnav_config_listener* LISTENER_LIST;
 
-    lnav_config_listener *lcl_next;
+    lnav_config_listener* lcl_next;
 };
-
 
 #endif

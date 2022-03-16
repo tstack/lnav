@@ -21,23 +21,22 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "config.h"
 
 #include <sstream>
 #include <unordered_map>
 
 #include "base/lnav_log.hh"
+#include "config.h"
 #include "pugixml/pugixml.hpp"
 #include "sql_help.hh"
 #include "sql_util.hh"
-#include "xml_util.hh"
 #include "vtab_module.hh"
+#include "xml_util.hh"
 #include "yajlpp/yajlpp.hh"
 
 using namespace std;
@@ -51,11 +50,11 @@ enum {
     XP_COL_VALUE,
 };
 
-static
-thread_local std::unordered_map<std::string, pugi::xpath_query> QUERY_CACHE;
+static thread_local std::unordered_map<std::string, pugi::xpath_query>
+    QUERY_CACHE;
 
-static
-pugi::xpath_query checkout_query(const std::string& query)
+static pugi::xpath_query
+checkout_query(const std::string& query)
 {
     auto iter = QUERY_CACHE.find(query);
     if (iter == QUERY_CACHE.end()) {
@@ -77,8 +76,8 @@ pugi::xpath_query checkout_query(const std::string& query)
     return retval;
 }
 
-static
-void checkin_query(const std::string& query_str, pugi::xpath_query query)
+static void
+checkin_query(const std::string& query_str, pugi::xpath_query query)
 {
     if (!query) {
         return;
@@ -88,8 +87,8 @@ void checkin_query(const std::string& query_str, pugi::xpath_query query)
 }
 
 struct xpath_vtab {
-    static constexpr const char *NAME = "xpath";
-    static constexpr const char *CREATE_STMT = R"(
+    static constexpr const char* NAME = "xpath";
+    static constexpr const char* CREATE_STMT = R"(
 -- The xpath() table-valued function allows you to execute an xpath expression
 CREATE TABLE xpath (
     result text,        -- The result of the xpath expression
@@ -112,39 +111,43 @@ CREATE TABLE xpath (
         pugi::xml_document c_doc;
         pugi::xpath_node_set c_results;
 
-        cursor(sqlite3_vtab *vt)
-            : base({vt}) {
-        };
+        cursor(sqlite3_vtab* vt) : base({vt}){};
 
-        ~cursor() {
+        ~cursor()
+        {
             this->reset();
         }
 
-        int reset() {
+        int reset()
+        {
             this->c_rowid = 0;
             checkin_query(this->c_xpath, std::move(this->c_query));
 
             return SQLITE_OK;
         };
 
-        int next() {
+        int next()
+        {
             this->c_rowid += 1;
 
             return SQLITE_OK;
         };
 
-        int eof() {
+        int eof()
+        {
             return this->c_rowid >= (int64_t) this->c_results.size();
         };
 
-        int get_rowid(sqlite3_int64 &rowid_out) {
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
             rowid_out = this->c_rowid;
 
             return SQLITE_OK;
         };
     };
 
-    int get_column(const cursor &vc, sqlite3_context *ctx, int col) {
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
         switch (col) {
             case XP_COL_RESULT: {
                 auto& xpath_node = vc.c_results[vc.c_rowid];
@@ -217,10 +220,8 @@ CREATE TABLE xpath (
 
                     auto sf = gen.to_string_fragment();
 
-                    sqlite3_result_text(ctx,
-                                        sf.data(),
-                                        sf.length(),
-                                        SQLITE_TRANSIENT);
+                    sqlite3_result_text(
+                        ctx, sf.data(), sf.length(), SQLITE_TRANSIENT);
                     sqlite3_result_subtype(ctx, 'J');
                 } else {
                     sqlite3_result_null(ctx);
@@ -239,10 +240,8 @@ CREATE TABLE xpath (
 
                     auto node_text = x_node.text();
 
-                    sqlite3_result_text(ctx,
-                                        node_text.get(),
-                                        -1,
-                                        SQLITE_TRANSIENT);
+                    sqlite3_result_text(
+                        ctx, node_text.get(), -1, SQLITE_TRANSIENT);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -273,7 +272,8 @@ CREATE TABLE xpath (
     }
 };
 
-static int rcBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo)
+static int
+rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
 {
     vtab_index_constraints vic(pIdxInfo);
     vtab_index_usage viu(pIdxInfo);
@@ -295,11 +295,14 @@ static int rcBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo)
     return SQLITE_OK;
 }
 
-static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
-                    int idxNum, const char *idxStr,
-                    int argc, sqlite3_value **argv)
+static int
+rcFilter(sqlite3_vtab_cursor* pVtabCursor,
+         int idxNum,
+         const char* idxStr,
+         int argc,
+         sqlite3_value** argv)
 {
-    auto *pCur = (xpath_vtab::cursor *)pVtabCursor;
+    auto* pCur = (xpath_vtab::cursor*) pVtabCursor;
 
     if (argc != 2) {
         pCur->c_xpath.clear();
@@ -315,23 +318,25 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
         return SQLITE_OK;
     }
 
-    auto blob = (const char *) sqlite3_value_blob(argv[1]);
+    auto blob = (const char*) sqlite3_value_blob(argv[1]);
     pCur->c_value.assign(blob, byte_count);
     auto parse_res = pCur->c_doc.load_string(pCur->c_value.c_str());
     if (!parse_res) {
-        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-            "Invalid XML document at offset %d: %s",
-            parse_res.offset, parse_res.description());
+        pVtabCursor->pVtab->zErrMsg
+            = sqlite3_mprintf("Invalid XML document at offset %d: %s",
+                              parse_res.offset,
+                              parse_res.description());
         return SQLITE_ERROR;
     }
 
-    pCur->c_xpath = (const char *) sqlite3_value_text(argv[0]);
+    pCur->c_xpath = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_query = checkout_query(pCur->c_xpath);
     if (!pCur->c_query) {
         auto& res = pCur->c_query.result();
-        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-            "Invalid XPATH expression at offset %d: %s",
-            res.offset, res.description());
+        pVtabCursor->pVtab->zErrMsg
+            = sqlite3_mprintf("Invalid XPATH expression at offset %d: %s",
+                              res.offset,
+                              res.description());
         return SQLITE_ERROR;
     }
 
@@ -341,38 +346,39 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
     return SQLITE_OK;
 }
 
-int register_xpath_vtab(sqlite3 *db)
+int
+register_xpath_vtab(sqlite3* db)
 {
     static vtab_module<tvt_no_update<xpath_vtab>> XPATH_MODULE;
-    static help_text xpath_help = help_text("xpath",
-        "A table-valued function that executes an xpath expression over an XML "
-        "string and returns the selected values.")
-        .sql_table_valued_function()
-        .with_parameter({"xpath",
-                         "The XPATH expression to evaluate over the XML document."})
-        .with_parameter({"xmldoc",
-                         "The XML document as a string."})
-        .with_result({"result",
-                      "The result of the XPATH expression."})
-        .with_result({"node_path",
-                      "The absolute path to the node containing the result."})
-        .with_result({"node_attr",
-                      "The node's attributes stored in JSON object."})
-        .with_result({"node_text",
-                      "The node's text value."})
-        .with_tags({"string", "xml"})
-        .with_example({
-            "To select the XML nodes on the path '/abc/def'",
-            "SELECT * FROM xpath('/abc/def', '<abc><def a=\"b\">Hello</def><def>Bye</def></abc>')"
-        })
-        .with_example({
-            "To select all 'a' attributes on the path '/abc/def'",
-            "SELECT * FROM xpath('/abc/def/@a', '<abc><def a=\"b\">Hello</def><def>Bye</def></abc>')"
-        })
-        .with_example({
-            "To select the text nodes on the path '/abc/def'",
-            "SELECT * FROM xpath('/abc/def/text()', '<abc><def a=\"b\">Hello &#x2605;</def></abc>')"
-        });
+    static help_text xpath_help
+        = help_text("xpath",
+                    "A table-valued function that executes an xpath expression "
+                    "over an XML "
+                    "string and returns the selected values.")
+              .sql_table_valued_function()
+              .with_parameter(
+                  {"xpath",
+                   "The XPATH expression to evaluate over the XML document."})
+              .with_parameter({"xmldoc", "The XML document as a string."})
+              .with_result({"result", "The result of the XPATH expression."})
+              .with_result(
+                  {"node_path",
+                   "The absolute path to the node containing the result."})
+              .with_result(
+                  {"node_attr", "The node's attributes stored in JSON object."})
+              .with_result({"node_text", "The node's text value."})
+              .with_tags({"string", "xml"})
+              .with_example({"To select the XML nodes on the path '/abc/def'",
+                             "SELECT * FROM xpath('/abc/def', '<abc><def "
+                             "a=\"b\">Hello</def><def>Bye</def></abc>')"})
+              .with_example(
+                  {"To select all 'a' attributes on the path '/abc/def'",
+                   "SELECT * FROM xpath('/abc/def/@a', '<abc><def "
+                   "a=\"b\">Hello</def><def>Bye</def></abc>')"})
+              .with_example(
+                  {"To select the text nodes on the path '/abc/def'",
+                   "SELECT * FROM xpath('/abc/def/text()', '<abc><def "
+                   "a=\"b\">Hello &#x2605;</def></abc>')"});
 
     int rc;
 

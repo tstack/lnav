@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -49,7 +49,7 @@ namespace fmt {
 template<>
 struct formatter<file_format_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(file_format_t ff, FormatContext &ctx)
+    auto format(file_format_t ff, FormatContext& ctx)
     {
         string_view name = "unknown";
         switch (ff) {
@@ -71,6 +71,6 @@ struct formatter<file_format_t> : formatter<string_view> {
         return formatter<string_view>::format(name, ctx);
     }
 };
-}
+}  // namespace fmt
 
 #endif

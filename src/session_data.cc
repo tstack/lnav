@@ -21,48 +21,48 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file session_data.cc
  */
 
-#include "config.h"
-
-#include <stdio.h>
-#include <glob.h>
-#include <fcntl.h>
-#include <sys/types.h>
-
 #include <algorithm>
 #include <utility>
+
+#include "session_data.hh"
+
+#include <fcntl.h>
+#include <glob.h>
+#include <stdio.h>
+#include <sys/types.h>
 #include <yajl/api/yajl_tree.h>
 
 #include "base/fs_util.hh"
 #include "base/isc.hh"
 #include "base/opt_util.hh"
 #include "base/paths.hh"
+#include "command_executor.hh"
+#include "config.h"
+#include "lnav.hh"
+#include "lnav_util.hh"
+#include "log_format_ext.hh"
+#include "logfile.hh"
+#include "service_tags.hh"
+#include "sql_util.hh"
 #include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-#include "lnav.hh"
-#include "logfile.hh"
-#include "sql_util.hh"
-#include "lnav_util.hh"
-#include "session_data.hh"
-#include "command_executor.hh"
-#include "log_format_ext.hh"
-#include "service_tags.hh"
 
 using namespace std;
 
 struct session_data_t session_data;
 
-static const char *LOG_METADATA_NAME = "log_metadata.db";
+static const char* LOG_METADATA_NAME = "log_metadata.db";
 
-static const char *BOOKMARK_TABLE_DEF = R"(
+static const char* BOOKMARK_TABLE_DEF = R"(
 CREATE TABLE IF NOT EXISTS bookmarks (
     log_time datetime,
     log_format varchar(64),
@@ -97,28 +97,29 @@ CREATE TABLE IF NOT EXISTS recent_netlocs (
 );
 )";
 
-static const char *BOOKMARK_LRU_STMT =
-    "DELETE FROM bookmarks WHERE access_time <= "
-    "  (SELECT access_time FROM bookmarks "
-    "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
+static const char* BOOKMARK_LRU_STMT
+    = "DELETE FROM bookmarks WHERE access_time <= "
+      "  (SELECT access_time FROM bookmarks "
+      "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
 
-static const char *NETLOC_LRU_STMT =
-    "DELETE FROM recent_netlocs WHERE access_time <= "
-    "  (SELECT access_time FROM bookmarks "
-    "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
+static const char* NETLOC_LRU_STMT
+    = "DELETE FROM recent_netlocs WHERE access_time <= "
+      "  (SELECT access_time FROM bookmarks "
+      "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
 
-static const char *UPGRADE_STMTS[] = {
+static const char* UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN tags text DEFAULT '';)",
 };
 
-static const size_t MAX_SESSIONS           = 8;
+static const size_t MAX_SESSIONS = 8;
 static const size_t MAX_SESSION_FILE_COUNT = 256;
 
 static std::vector<content_line_t> marked_session_lines;
 static std::vector<content_line_t> offset_session_lines;
 
-int bind_to_sqlite(sqlite3_stmt *stmt, int index, const struct timeval &tv)
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const struct timeval& tv)
 {
     char timestamp[64];
 
@@ -127,33 +128,45 @@ int bind_to_sqlite(sqlite3_stmt *stmt, int index, const struct timeval &tv)
     return sqlite3_bind_text(stmt, index, timestamp, -1, SQLITE_TRANSIENT);
 }
 
-int bind_to_sqlite(sqlite3_stmt *stmt, int index, const char *str)
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const char* str)
 {
     return sqlite3_bind_text(stmt, index, str, -1, SQLITE_TRANSIENT);
 }
 
-int bind_to_sqlite(sqlite3_stmt *stmt, int index, intern_string_t ist)
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, intern_string_t ist)
 {
-    return sqlite3_bind_text(stmt, index, ist.get(), ist.size(), SQLITE_TRANSIENT);
+    return sqlite3_bind_text(
+        stmt, index, ist.get(), ist.size(), SQLITE_TRANSIENT);
 }
 
-int bind_to_sqlite(sqlite3_stmt *stmt, int index, const string &str)
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const string& str)
 {
-    return sqlite3_bind_text(stmt, index, str.c_str(), str.size(), SQLITE_TRANSIENT);
+    return sqlite3_bind_text(
+        stmt, index, str.c_str(), str.size(), SQLITE_TRANSIENT);
 }
 
-int bind_to_sqlite(sqlite3_stmt *stmt, int index, int64_t i)
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, int64_t i)
 {
     return sqlite3_bind_int64(stmt, index, i);
 }
 
-template <typename... Args, std::size_t... Idx>
-int bind_values_helper(sqlite3_stmt *stmt, std::index_sequence<Idx...> idxs, Args ... args) {
-    int rcs[] = { bind_to_sqlite(stmt, Idx + 1, args)... };
+template<typename... Args, std::size_t... Idx>
+int
+bind_values_helper(sqlite3_stmt* stmt,
+                   std::index_sequence<Idx...> idxs,
+                   Args... args)
+{
+    int rcs[] = {bind_to_sqlite(stmt, Idx + 1, args)...};
 
     for (size_t lpc = 0; lpc < idxs.size(); lpc++) {
         if (rcs[lpc] != SQLITE_OK) {
-            log_error("Failed to bind column %d in statement: %s", lpc, sqlite3_sql(stmt));
+            log_error("Failed to bind column %d in statement: %s",
+                      lpc,
+                      sqlite3_sql(stmt));
             return rcs[lpc];
         }
     }
@@ -161,17 +174,21 @@ int bind_values_helper(sqlite3_stmt *stmt, std::index_sequence<Idx...> idxs, Arg
     return SQLITE_OK;
 }
 
-template <typename... Args>
-int bind_values(sqlite3_stmt *stmt, Args ... args) {
-    return bind_values_helper(stmt, std::make_index_sequence<sizeof...(Args)>(), args...);
+template<typename... Args>
+int
+bind_values(sqlite3_stmt* stmt, Args... args)
+{
+    return bind_values_helper(
+        stmt, std::make_index_sequence<sizeof...(Args)>(), args...);
 }
 
-static bool bind_line(sqlite3 *db,
-                      sqlite3_stmt *stmt,
-                      content_line_t cl,
-                      time_t session_time)
+static bool
+bind_line(sqlite3* db,
+          sqlite3_stmt* stmt,
+          content_line_t cl,
+          time_t session_time)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    logfile_sub_source& lss = lnav_data.ld_log_source;
     shared_ptr<logfile> lf;
 
     lf = lss.find(cl);
@@ -189,30 +206,29 @@ static bool bind_line(sqlite3 *db,
         return false;
     }
 
-    auto line_hash = read_result.map([cl](auto sbr) {
-        return hasher()
-            .update(sbr.get_data(), sbr.length())
-            .update(cl)
-            .to_string();
-    }).unwrap();
+    auto line_hash = read_result
+                         .map([cl](auto sbr) {
+                             return hasher()
+                                 .update(sbr.get_data(), sbr.length())
+                                 .update(cl)
+                                 .to_string();
+                         })
+                         .unwrap();
 
     return bind_values(stmt,
                        lf->original_line_time(line_iter),
                        lf->get_format()->get_name(),
                        line_hash,
-                       session_time) == SQLITE_OK;
+                       session_time)
+        == SQLITE_OK;
 }
 
 struct session_file_info {
-    session_file_info(int timestamp,
-                      string id,
-                      string path)
-        : sfi_timestamp(timestamp),
-          sfi_id(std::move(id)),
-          sfi_path(std::move(path)) {
-    };
+    session_file_info(int timestamp, string id, string path)
+        : sfi_timestamp(timestamp), sfi_id(std::move(id)),
+          sfi_path(std::move(path)){};
 
-    bool operator<(const session_file_info &other) const
+    bool operator<(const session_file_info& other) const
     {
         if (this->sfi_timestamp < other.sfi_timestamp) {
             return true;
@@ -223,42 +239,45 @@ struct session_file_info {
         return false;
     };
 
-    int    sfi_timestamp;
+    int sfi_timestamp;
     string sfi_id;
     string sfi_path;
 };
 
-static void cleanup_session_data()
+static void
+cleanup_session_data()
 {
-    static_root_mem<glob_t, globfree>   session_file_list;
+    static_root_mem<glob_t, globfree> session_file_list;
     std::list<struct session_file_info> session_info_list;
     map<string, int> session_count;
     auto session_file_pattern = lnav::paths::dotlnav() / "*-*.ts*.json";
 
-    if (glob(session_file_pattern.c_str(),
-             0,
-             nullptr,
-             session_file_list.inout()) == 0) {
+    if (glob(
+            session_file_pattern.c_str(), 0, nullptr, session_file_list.inout())
+        == 0)
+    {
         for (size_t lpc = 0; lpc < session_file_list->gl_pathc; lpc++) {
-            const char *path = session_file_list->gl_pathv[lpc];
-            char        hash_id[64];
-            int         timestamp;
-            const char *base;
+            const char* path = session_file_list->gl_pathv[lpc];
+            char hash_id[64];
+            int timestamp;
+            const char* base;
 
             base = strrchr(path, '/');
             if (base == nullptr) {
                 continue;
             }
             base += 1;
-            if (sscanf(base, "file-%63[^.].ts%d.json",
-                       hash_id, &timestamp) == 2) {
+            if (sscanf(base, "file-%63[^.].ts%d.json", hash_id, &timestamp)
+                == 2) {
                 session_count[hash_id] += 1;
                 session_info_list.emplace_back(timestamp, hash_id, path);
             }
             if (sscanf(base,
                        "view-info-%63[^.].ts%d.ppid%*d.json",
                        hash_id,
-                       &timestamp) == 2) {
+                       &timestamp)
+                == 2)
+            {
                 session_count[hash_id] += 1;
                 session_info_list.emplace_back(timestamp, hash_id, path);
             }
@@ -270,21 +289,19 @@ static void cleanup_session_data()
     size_t session_loops = 0;
 
     while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
-        const session_file_info &front = session_info_list.front();
+        const session_file_info& front = session_info_list.front();
 
         session_loops += 1;
-        if (session_loops < MAX_SESSION_FILE_COUNT &&
-            session_count[front.sfi_id] == 1) {
+        if (session_loops < MAX_SESSION_FILE_COUNT
+            && session_count[front.sfi_id] == 1) {
             session_info_list.splice(session_info_list.end(),
                                      session_info_list,
                                      session_info_list.begin());
-        }
-        else {
+        } else {
             if (remove(front.sfi_path.c_str()) != 0) {
-                log_error(
-                        "Unable to remove session file: %s -- %s",
-                        front.sfi_path.c_str(),
-                        strerror(errno));
+                log_error("Unable to remove session file: %s -- %s",
+                          front.sfi_path.c_str(),
+                          strerror(errno));
             }
             session_count[front.sfi_id] -= 1;
             session_info_list.pop_front();
@@ -294,31 +311,32 @@ static void cleanup_session_data()
     session_info_list.sort();
 
     while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
-        const session_file_info &front = session_info_list.front();
+        const session_file_info& front = session_info_list.front();
 
         if (remove(front.sfi_path.c_str()) != 0) {
-            log_error(
-                    "Unable to remove session file: %s -- %s",
-                    front.sfi_path.c_str(),
-                    strerror(errno));
+            log_error("Unable to remove session file: %s -- %s",
+                      front.sfi_path.c_str(),
+                      strerror(errno));
         }
         session_count[front.sfi_id] -= 1;
         session_info_list.pop_front();
     }
 }
 
-void init_session()
+void
+init_session()
 {
     lnav_data.ld_session_time = time(nullptr);
     lnav_data.ld_session_id.clear();
 }
 
-static nonstd::optional<std::string> compute_session_id()
+static nonstd::optional<std::string>
+compute_session_id()
 {
     bool has_files = false;
     hasher h;
 
-    for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
+    for (auto& ld_file_name : lnav_data.ld_active_files.fc_file_names) {
         if (!ld_file_name.second.loo_include_in_session) {
             continue;
         }
@@ -332,7 +350,8 @@ static nonstd::optional<std::string> compute_session_id()
     return h.to_string();
 }
 
-nonstd::optional<session_pair_t> scan_sessions()
+nonstd::optional<session_pair_t>
+scan_sessions()
 {
     static_root_mem<glob_t, globfree> view_info_list;
     char view_info_pattern_base[128];
@@ -343,21 +362,22 @@ nonstd::optional<session_pair_t> scan_sessions()
     if (!session_id) {
         return nonstd::nullopt;
     }
-    std::list<session_pair_t> &session_file_names =
-        lnav_data.ld_session_id[session_id.value()];
+    std::list<session_pair_t>& session_file_names
+        = lnav_data.ld_session_id[session_id.value()];
 
     session_file_names.clear();
 
-    snprintf(view_info_pattern_base, sizeof(view_info_pattern_base),
+    snprintf(view_info_pattern_base,
+             sizeof(view_info_pattern_base),
              "view-info-%s.*.json",
              session_id.value().c_str());
     auto view_info_pattern = lnav::paths::dotlnav() / view_info_pattern_base;
-    if (glob(view_info_pattern.c_str(), 0, nullptr,
-             view_info_list.inout()) == 0) {
+    if (glob(view_info_pattern.c_str(), 0, nullptr, view_info_list.inout())
+        == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
-            const char *path = view_info_list->gl_pathv[lpc];
+            const char* path = view_info_list->gl_pathv[lpc];
             int timestamp, ppid, rc;
-            const char *base;
+            const char* base;
 
             base = strrchr(path, '/');
             if (base == nullptr) {
@@ -367,10 +387,12 @@ nonstd::optional<session_pair_t> scan_sessions()
             if ((rc = sscanf(base,
                              "view-info-%*[^.].ts%d.ppid%d.json",
                              &timestamp,
-                             &ppid)) == 2) {
+                             &ppid))
+                == 2)
+            {
                 ppid_time_pair_t ptp;
 
-                ptp.first  = (ppid == getppid()) ? 1 : 0;
+                ptp.first = (ppid == getppid()) ? 1 : 0;
                 ptp.second = timestamp;
                 session_file_names.emplace_back(ptp, path);
             }
@@ -380,13 +402,12 @@ nonstd::optional<session_pair_t> scan_sessions()
     session_file_names.sort();
 
     while (session_file_names.size() > MAX_SESSIONS) {
-        const std::string &name = session_file_names.front().second;
+        const std::string& name = session_file_names.front().second;
 
         if (remove(name.c_str()) != 0) {
-            log_error(
-                    "Unable to remove session: %s -- %s",
-                    name.c_str(),
-                    strerror(errno));
+            log_error("Unable to remove session: %s -- %s",
+                      name.c_str(),
+                      strerror(errno));
         }
         session_file_names.pop_front();
     }
@@ -398,10 +419,12 @@ nonstd::optional<session_pair_t> scan_sessions()
     return nonstd::make_optional(session_file_names.back());
 }
 
-void load_time_bookmarks()
+void
+load_time_bookmarks()
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
+    logfile_sub_source& lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata>& bm_meta
+        = lss.get_user_bookmark_metadata();
     auto_mem<sqlite3, sqlite_close_wrapper> db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -415,8 +438,10 @@ void load_time_bookmarks()
         return;
     }
 
-    for (const char *upgrade_stmt : UPGRADE_STMTS) {
-        if (sqlite3_exec(db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    for (const char* upgrade_stmt : UPGRADE_STMTS) {
+        if (sqlite3_exec(db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out())
+            != SQLITE_OK)
+        {
             log_error("unable to upgrade bookmark table -- %s", errmsg.in());
         }
     }
@@ -426,7 +451,9 @@ void load_time_bookmarks()
                                "SELECT netloc FROM recent_netlocs",
                                -1,
                                stmt.out(),
-                               nullptr) != SQLITE_OK) {
+                               nullptr)
+            != SQLITE_OK)
+        {
             return;
         }
 
@@ -437,7 +464,7 @@ void load_time_bookmarks()
                 case SQLITE_ROW: {
                     auto netloc = sqlite3_column_text(stmt.in(), 0);
 
-                    session_data.sd_recent_netlocs.insert((const char *) netloc);
+                    session_data.sd_recent_netlocs.insert((const char*) netloc);
                     break;
                 }
                 default:
@@ -447,23 +474,27 @@ void load_time_bookmarks()
         }
     }
 
-    if (sqlite3_prepare_v2(db.in(),
-                           "SELECT log_time, log_format, log_hash, session_time, part_name, access_time, comment,"
-                           " tags, session_time=? as same_session FROM bookmarks WHERE "
-                           " log_time between ? and ? and log_format = ? "
-                           " ORDER BY same_session DESC, session_time DESC",
-                           -1,
-                           stmt.out(),
-                           nullptr) != SQLITE_OK) {
-        log_error(
-                "could not prepare bookmark select statement -- %s",
-                sqlite3_errmsg(db));
+    if (sqlite3_prepare_v2(
+            db.in(),
+            "SELECT log_time, log_format, log_hash, session_time, part_name, "
+            "access_time, comment,"
+            " tags, session_time=? as same_session FROM bookmarks WHERE "
+            " log_time between ? and ? and log_format = ? "
+            " ORDER BY same_session DESC, session_time DESC",
+            -1,
+            stmt.out(),
+            nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare bookmark select statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
-         ++file_iter) {
+         ++file_iter)
+    {
         shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
@@ -482,7 +513,9 @@ void load_time_bookmarks()
                         lnav_data.ld_session_load_time,
                         lf->original_line_time(low_line_iter),
                         lf->original_line_time(high_line_iter),
-                        lf->get_format()->get_name()) != SQLITE_OK) {
+                        lf->get_format()->get_name())
+            != SQLITE_OK)
+        {
             return;
         }
 
@@ -495,145 +528,162 @@ void load_time_bookmarks()
             int rc = sqlite3_step(stmt.in());
 
             switch (rc) {
-            case SQLITE_OK:
-            case SQLITE_DONE:
-                done = true;
-                break;
-
-            case SQLITE_ROW: {
-                const char *log_time = (const char *)sqlite3_column_text(stmt.in(), 0);
-                const char *log_hash = (const char *)sqlite3_column_text(stmt.in(), 2);
-                const char *part_name = (const char *)sqlite3_column_text(stmt.in(), 4);
-                const char *comment = (const char *)sqlite3_column_text(stmt.in(), 6);
-                const char *tags = (const char *)sqlite3_column_text(stmt.in(), 7);
-                int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
-                struct timeval log_tv;
-                struct exttm log_tm;
-
-                if (last_mark_time == -1) {
-                    last_mark_time = mark_time;
-                }
-                else if (last_mark_time != mark_time) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
                     done = true;
-                    continue;
-                }
+                    break;
 
-                if (part_name == nullptr) {
-                    continue;
-                }
+                case SQLITE_ROW: {
+                    const char* log_time
+                        = (const char*) sqlite3_column_text(stmt.in(), 0);
+                    const char* log_hash
+                        = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    const char* part_name
+                        = (const char*) sqlite3_column_text(stmt.in(), 4);
+                    const char* comment
+                        = (const char*) sqlite3_column_text(stmt.in(), 6);
+                    const char* tags
+                        = (const char*) sqlite3_column_text(stmt.in(), 7);
+                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
+                    struct timeval log_tv;
+                    struct exttm log_tm;
 
-                if (!dts.scan(log_time, strlen(log_time), NULL, &log_tm, log_tv)) {
-                    continue;
-                }
-
-                auto line_iter = lower_bound(lf->begin(), lf->end(), log_tv);
-                while (line_iter != lf->end()) {
-                    struct timeval line_tv = line_iter->get_timeval();
-
-                    if ((line_tv.tv_sec != log_tv.tv_sec) ||
-                        (line_tv.tv_usec != log_tv.tv_usec)) {
-                        break;
+                    if (last_mark_time == -1) {
+                        last_mark_time = mark_time;
+                    } else if (last_mark_time != mark_time) {
+                        done = true;
+                        continue;
                     }
 
-                    auto cl = content_line_t(std::distance(lf->begin(), line_iter));
-                    auto read_result = lf->read_line(line_iter);
-
-                    if(read_result.isErr()) {
-                        break;
+                    if (part_name == nullptr) {
+                        continue;
                     }
 
-                    auto sbr = read_result.unwrap();
+                    if (!dts.scan(
+                            log_time, strlen(log_time), NULL, &log_tm, log_tv))
+                    {
+                        continue;
+                    }
 
-                    string line_hash = hasher()
-                        .update(sbr.get_data(), sbr.length())
-                        .update(cl)
-                        .to_string();
+                    auto line_iter
+                        = lower_bound(lf->begin(), lf->end(), log_tv);
+                    while (line_iter != lf->end()) {
+                        struct timeval line_tv = line_iter->get_timeval();
 
-                    if (line_hash == log_hash) {
-                        content_line_t line_cl = content_line_t(
-                            base_content_line + std::distance(lf->begin(), line_iter));
-                        bool meta = false;
-
-                        if (part_name != nullptr && part_name[0] != '\0') {
-                            lss.set_user_mark(&textview_curses::BM_META, line_cl);
-                            bm_meta[line_cl].bm_name = part_name;
-                            meta = true;
+                        if ((line_tv.tv_sec != log_tv.tv_sec)
+                            || (line_tv.tv_usec != log_tv.tv_usec)) {
+                            break;
                         }
-                        if (comment != nullptr && comment[0] != '\0') {
-                            lss.set_user_mark(&textview_curses::BM_META,
-                                              line_cl);
-                            bm_meta[line_cl].bm_comment = comment;
-                            meta = true;
-                        }
-                        if (tags != nullptr && tags[0] != '\0') {
-                            auto_mem<yajl_val_s> tag_list(yajl_tree_free);
-                            char error_buffer[1024];
 
-                            tag_list = yajl_tree_parse(tags, error_buffer, sizeof(error_buffer));
-                            if (!YAJL_IS_ARRAY(tag_list.in())) {
-                                log_error("invalid tags column: %s", tags);
-                            } else {
+                        auto cl = content_line_t(
+                            std::distance(lf->begin(), line_iter));
+                        auto read_result = lf->read_line(line_iter);
+
+                        if (read_result.isErr()) {
+                            break;
+                        }
+
+                        auto sbr = read_result.unwrap();
+
+                        string line_hash
+                            = hasher()
+                                  .update(sbr.get_data(), sbr.length())
+                                  .update(cl)
+                                  .to_string();
+
+                        if (line_hash == log_hash) {
+                            content_line_t line_cl = content_line_t(
+                                base_content_line
+                                + std::distance(lf->begin(), line_iter));
+                            bool meta = false;
+
+                            if (part_name != nullptr && part_name[0] != '\0') {
                                 lss.set_user_mark(&textview_curses::BM_META,
                                                   line_cl);
-                                for (size_t lpc = 0; lpc < tag_list.in()->u.array.len; lpc++) {
-                                    yajl_val elem = tag_list.in()->u.array.values[lpc];
-
-                                    if (!YAJL_IS_STRING(elem)) {
-                                        continue;
-                                    }
-                                    bookmark_metadata::KNOWN_TAGS.insert(elem->u.string);
-                                    bm_meta[line_cl].add_tag(elem->u.string);
-                                }
+                                bm_meta[line_cl].bm_name = part_name;
+                                meta = true;
                             }
-                            meta = true;
+                            if (comment != nullptr && comment[0] != '\0') {
+                                lss.set_user_mark(&textview_curses::BM_META,
+                                                  line_cl);
+                                bm_meta[line_cl].bm_comment = comment;
+                                meta = true;
+                            }
+                            if (tags != nullptr && tags[0] != '\0') {
+                                auto_mem<yajl_val_s> tag_list(yajl_tree_free);
+                                char error_buffer[1024];
+
+                                tag_list = yajl_tree_parse(
+                                    tags, error_buffer, sizeof(error_buffer));
+                                if (!YAJL_IS_ARRAY(tag_list.in())) {
+                                    log_error("invalid tags column: %s", tags);
+                                } else {
+                                    lss.set_user_mark(&textview_curses::BM_META,
+                                                      line_cl);
+                                    for (size_t lpc = 0;
+                                         lpc < tag_list.in()->u.array.len;
+                                         lpc++) {
+                                        yajl_val elem
+                                            = tag_list.in()
+                                                  ->u.array.values[lpc];
+
+                                        if (!YAJL_IS_STRING(elem)) {
+                                            continue;
+                                        }
+                                        bookmark_metadata::KNOWN_TAGS.insert(
+                                            elem->u.string);
+                                        bm_meta[line_cl].add_tag(
+                                            elem->u.string);
+                                    }
+                                }
+                                meta = true;
+                            }
+                            if (!meta) {
+                                marked_session_lines.push_back(line_cl);
+                                lss.set_user_mark(&textview_curses::BM_USER,
+                                                  line_cl);
+                            }
+                            reload_needed = true;
                         }
-                        if (!meta) {
-                            marked_session_lines.push_back(line_cl);
-                            lss.set_user_mark(&textview_curses::BM_USER,
-                                              line_cl);
-                        }
-                        reload_needed = true;
+
+                        ++line_iter;
                     }
-
-                    ++line_iter;
+                    break;
                 }
-                break;
-            }
 
-            default:
-                {
-                    const char *errmsg;
+                default: {
+                    const char* errmsg;
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     log_error(
-                            "bookmark select error: code %d -- %s",
-                            rc,
-                            errmsg);
+                        "bookmark select error: code %d -- %s", rc, errmsg);
                     done = true;
-                }
-                break;
+                } break;
             }
         }
 
         sqlite3_reset(stmt.in());
     }
 
-    if (sqlite3_prepare_v2(db.in(),
-                           "SELECT *,session_time=? as same_session FROM time_offset WHERE "
-                           " log_time between ? and ? and log_format = ? "
-                           " ORDER BY same_session DESC, session_time DESC",
-                           -1,
-                           stmt.out(),
-                           nullptr) != SQLITE_OK) {
-        log_error(
-                "could not prepare time_offset select statement -- %s",
-                sqlite3_errmsg(db));
+    if (sqlite3_prepare_v2(
+            db.in(),
+            "SELECT *,session_time=? as same_session FROM time_offset WHERE "
+            " log_time between ? and ? and log_format = ? "
+            " ORDER BY same_session DESC, session_time DESC",
+            -1,
+            stmt.out(),
+            nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare time_offset select statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
-         ++file_iter) {
+         ++file_iter)
+    {
         shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
@@ -652,7 +702,9 @@ void load_time_bookmarks()
                         lnav_data.ld_session_load_time,
                         lf->original_line_time(low_line_iter),
                         lf->original_line_time(high_line_iter),
-                        lf->get_format()->get_name()) != SQLITE_OK) {
+                        lf->get_format()->get_name())
+            != SQLITE_OK)
+        {
             return;
         }
 
@@ -665,76 +717,77 @@ void load_time_bookmarks()
             int rc = sqlite3_step(stmt.in());
 
             switch (rc) {
-            case SQLITE_OK:
-            case SQLITE_DONE:
-                done = true;
-                break;
-
-            case SQLITE_ROW: {
-                const char *log_time = (const char *)sqlite3_column_text(stmt.in(), 0);
-                const char *log_hash = (const char *)sqlite3_column_text(stmt.in(), 2);
-                int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
-                struct timeval log_tv;
-                struct exttm log_tm;
-
-                if (last_mark_time == -1) {
-                    last_mark_time = mark_time;
-                }
-                else if (last_mark_time != mark_time) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
                     done = true;
-                    continue;
-                }
+                    break;
 
-                if (sqlite3_column_type(stmt.in(), 4) == SQLITE_NULL) {
-                    continue;
-                }
+                case SQLITE_ROW: {
+                    const char* log_time
+                        = (const char*) sqlite3_column_text(stmt.in(), 0);
+                    const char* log_hash
+                        = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
+                    struct timeval log_tv;
+                    struct exttm log_tm;
 
-                if (!dts.scan(log_time, strlen(log_time), nullptr, &log_tm, log_tv)) {
-                    continue;
-                }
-
-                auto line_iter = lower_bound(lf->begin(),
-                                             lf->end(),
-                                             log_tv);
-                while (line_iter != lf->end()) {
-                    struct timeval line_tv = line_iter->get_timeval();
-
-                    if ((line_tv.tv_sec != log_tv.tv_sec) ||
-                        (line_tv.tv_usec != log_tv.tv_usec)) {
-                        break;
+                    if (last_mark_time == -1) {
+                        last_mark_time = mark_time;
+                    } else if (last_mark_time != mark_time) {
+                        done = true;
+                        continue;
                     }
 
-                    if (lf->get_content_id() == log_hash) {
-                        int file_line = std::distance(lf->begin(), line_iter);
-                        content_line_t line_cl = content_line_t(
-                            base_content_line + file_line);
-                        struct timeval offset;
-
-                        offset_session_lines.push_back(line_cl);
-                        offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
-                        offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
-                        lf->adjust_content_time(file_line, offset);
-
-                        reload_needed = true;
+                    if (sqlite3_column_type(stmt.in(), 4) == SQLITE_NULL) {
+                        continue;
                     }
 
-                    ++line_iter;
-                }
-                break;
-            }
+                    if (!dts.scan(log_time,
+                                  strlen(log_time),
+                                  nullptr,
+                                  &log_tm,
+                                  log_tv)) {
+                        continue;
+                    }
 
-            default:
-                {
-                    const char *errmsg;
+                    auto line_iter
+                        = lower_bound(lf->begin(), lf->end(), log_tv);
+                    while (line_iter != lf->end()) {
+                        struct timeval line_tv = line_iter->get_timeval();
+
+                        if ((line_tv.tv_sec != log_tv.tv_sec)
+                            || (line_tv.tv_usec != log_tv.tv_usec)) {
+                            break;
+                        }
+
+                        if (lf->get_content_id() == log_hash) {
+                            int file_line
+                                = std::distance(lf->begin(), line_iter);
+                            content_line_t line_cl
+                                = content_line_t(base_content_line + file_line);
+                            struct timeval offset;
+
+                            offset_session_lines.push_back(line_cl);
+                            offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
+                            offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
+                            lf->adjust_content_time(file_line, offset);
+
+                            reload_needed = true;
+                        }
+
+                        ++line_iter;
+                    }
+                    break;
+                }
+
+                default: {
+                    const char* errmsg;
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     log_error(
-                            "bookmark select error: code %d -- %s",
-                            rc,
-                            errmsg);
+                        "bookmark select error: code %d -- %s", rc, errmsg);
                     done = true;
-                }
-                break;
+                } break;
             }
         }
 
@@ -746,16 +799,20 @@ void load_time_bookmarks()
     }
 }
 
-static int read_files(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static int
+read_files(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
     return 1;
 }
 
-static int read_current_search(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static int
+read_current_search(yajlpp_parse_context* ypc,
+                    const unsigned char* str,
+                    size_t len)
 {
-    string       regex        = std::string((const char *)str, len);
-    const char **view_name;
-    int          view_index;
+    string regex = std::string((const char*) str, len);
+    const char** view_name;
+    int view_index;
 
     view_name = find(lnav_view_strings,
                      lnav_view_strings + LNV__MAX,
@@ -770,9 +827,10 @@ static int read_current_search(yajlpp_parse_context *ypc, const unsigned char *s
     return 1;
 }
 
-static int read_top_line(yajlpp_parse_context *ypc, long long value)
+static int
+read_top_line(yajlpp_parse_context* ypc, long long value)
 {
-    const char **         view_name;
+    const char** view_name;
     int view_index;
 
     view_name = find(lnav_view_strings,
@@ -786,9 +844,10 @@ static int read_top_line(yajlpp_parse_context *ypc, long long value)
     return 1;
 }
 
-static int read_word_wrap(yajlpp_parse_context *ypc, int value)
+static int
+read_word_wrap(yajlpp_parse_context* ypc, int value)
 {
-    const char **         view_name;
+    const char** view_name;
     int view_index;
 
     view_name = find(lnav_view_strings,
@@ -796,10 +855,8 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
                      ypc->get_path_fragment(-2));
     view_index = view_name - lnav_view_strings;
     if (view_index == LNV_HELP) {
-
-    }
-    else if (view_index < LNV__MAX) {
-        textview_curses &tc = lnav_data.ld_views[view_index];
+    } else if (view_index < LNV__MAX) {
+        textview_curses& tc = lnav_data.ld_views[view_index];
 
         tc.set_word_wrap(value);
     }
@@ -807,9 +864,10 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
     return 1;
 }
 
-static int read_filtering(yajlpp_parse_context *ypc, int value)
+static int
+read_filtering(yajlpp_parse_context* ypc, int value)
 {
-    const char **view_name;
+    const char** view_name;
     int view_index;
 
     view_name = find(lnav_view_strings,
@@ -817,10 +875,8 @@ static int read_filtering(yajlpp_parse_context *ypc, int value)
                      ypc->get_path_fragment(-2));
     view_index = view_name - lnav_view_strings;
     if (view_index == LNV_HELP) {
-
-    }
-    else if (view_index < LNV__MAX) {
-        textview_curses &tc = lnav_data.ld_views[view_index];
+    } else if (view_index < LNV__MAX) {
+        textview_curses& tc = lnav_data.ld_views[view_index];
 
         if (tc.get_sub_source() != nullptr) {
             tc.get_sub_source()->tss_apply_filters = value;
@@ -830,15 +886,16 @@ static int read_filtering(yajlpp_parse_context *ypc, int value)
     return 1;
 }
 
-static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static int
+read_commands(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
-    std::string cmdline = std::string((const char *)str, len);
-    const char **         view_name;
+    std::string cmdline = std::string((const char*) str, len);
+    const char** view_name;
     int view_index;
 
     view_name = find(lnav_view_strings,
-            lnav_view_strings + LNV__MAX,
-            ypc->get_path_fragment(-3));
+                     lnav_view_strings + LNV__MAX,
+                     ypc->get_path_fragment(-3));
     view_index = view_name - lnav_view_strings;
     bool active = ensure_view(&lnav_data.ld_views[view_index]);
     execute_command(lnav_data.ld_exec_context, cmdline);
@@ -849,18 +906,16 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
     return 1;
 }
 
-static struct json_path_container view_def_handlers = {
-    json_path_handler("top_line",  read_top_line),
-    json_path_handler("search",    read_current_search),
-    json_path_handler("word_wrap", read_word_wrap),
-    json_path_handler("filtering", read_filtering),
-    json_path_handler("commands#", read_commands)
-};
+static struct json_path_container view_def_handlers
+    = {json_path_handler("top_line", read_top_line),
+       json_path_handler("search", read_current_search),
+       json_path_handler("word_wrap", read_word_wrap),
+       json_path_handler("filtering", read_filtering),
+       json_path_handler("commands#", read_commands)};
 
-static struct json_path_container view_handlers = {
-    yajlpp::pattern_property_handler("([^/]+)")
-        .with_children(view_def_handlers)
-};
+static struct json_path_container view_handlers
+    = {yajlpp::pattern_property_handler("([^/]+)").with_children(
+        view_def_handlers)};
 
 static struct json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
@@ -871,7 +926,7 @@ static struct json_path_container file_state_handlers = {
 static struct json_path_container file_states_handlers = {
     yajlpp::pattern_property_handler(R"((?<filename>[^/]+))")
         .with_description("Map of file names to file state objects")
-        .with_obj_provider<file_state, void>([](const auto& ypc, auto *root) {
+        .with_obj_provider<file_state, void>([](const auto& ypc, auto* root) {
             auto fn = ypc.get_substr("filename");
             return &session_data.sd_file_states[fn];
         })
@@ -883,14 +938,13 @@ static struct json_path_container view_info_handlers = {
         .FOR_FIELD(session_data_t, sd_save_time),
     yajlpp::property_handler("time-offset")
         .FOR_FIELD(session_data_t, sd_time_offset),
-    json_path_handler("files#",                  read_files),
-    yajlpp::property_handler("file-states")
-        .with_children(file_states_handlers),
-    yajlpp::property_handler("views")
-        .with_children(view_handlers),
+    json_path_handler("files#", read_files),
+    yajlpp::property_handler("file-states").with_children(file_states_handlers),
+    yajlpp::property_handler("views").with_children(view_handlers),
 };
 
-void load_session()
+void
+load_session()
 {
     load_time_bookmarks();
     scan_sessions() | [](const auto pair) {
@@ -909,10 +963,9 @@ void load_session()
 
         if ((fd = lnav::filesystem::openp(view_info_path, O_RDONLY)) < 0) {
             perror("cannot open session file");
-        }
-        else {
+        } else {
             unsigned char buffer[1024];
-            ssize_t        rc;
+            ssize_t rc;
 
             log_info("loading session file: %s", view_info_path.c_str());
             while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
@@ -955,19 +1008,22 @@ void load_session()
     };
 }
 
-static void yajl_writer(void *context, const char *str, size_t len)
+static void
+yajl_writer(void* context, const char* str, size_t len)
 {
-    FILE *file = (FILE *)context;
+    FILE* file = (FILE*) context;
 
     fwrite(str, len, 1, file);
 }
 
-static void save_user_bookmarks(
-    sqlite3 *db, sqlite3_stmt *stmt, bookmark_vector<content_line_t> &user_marks)
+static void
+save_user_bookmarks(sqlite3* db,
+                    sqlite3_stmt* stmt,
+                    bookmark_vector<content_line_t>& user_marks)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    std::map<content_line_t, bookmark_metadata> &bm_meta =
-        lss.get_user_bookmark_metadata();
+    logfile_sub_source& lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata>& bm_meta
+        = lss.get_user_bookmark_metadata();
     bookmark_vector<content_line_t>::iterator iter;
 
     for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
@@ -981,33 +1037,36 @@ static void save_user_bookmarks(
         }
 
         if (meta_iter == bm_meta.end()) {
-            if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind log hash -- %s",
-                        sqlite3_errmsg(db));
+            if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT)
+                != SQLITE_OK) {
+                log_error("could not bind log hash -- %s", sqlite3_errmsg(db));
                 return;
             }
-        }
-        else {
+        } else {
             if (meta_iter->second.empty()) {
                 continue;
             }
 
-            if (sqlite3_bind_text(stmt, 5,
+            if (sqlite3_bind_text(stmt,
+                                  5,
                                   meta_iter->second.bm_name.c_str(),
                                   meta_iter->second.bm_name.length(),
-                                  SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind part name -- %s",
-                        sqlite3_errmsg(db));
+                                  SQLITE_TRANSIENT)
+                != SQLITE_OK)
+            {
+                log_error("could not bind part name -- %s", sqlite3_errmsg(db));
                 return;
             }
 
-            bookmark_metadata &line_meta = meta_iter->second;
-            if (sqlite3_bind_text(stmt, 6,
+            bookmark_metadata& line_meta = meta_iter->second;
+            if (sqlite3_bind_text(stmt,
+                                  6,
                                   meta_iter->second.bm_comment.c_str(),
                                   meta_iter->second.bm_comment.length(),
-                                  SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind comment -- %s",
-                          sqlite3_errmsg(db));
+                                  SQLITE_TRANSIENT)
+                != SQLITE_OK)
+            {
+                log_error("could not bind comment -- %s", sqlite3_errmsg(db));
                 return;
             }
 
@@ -1021,7 +1080,7 @@ static void save_user_bookmarks(
                 {
                     yajlpp_array arr(gen);
 
-                    for (const auto &str : line_meta.bm_tags) {
+                    for (const auto& str : line_meta.bm_tags) {
                         arr.gen(str);
                     }
                 }
@@ -1029,20 +1088,18 @@ static void save_user_bookmarks(
                 tags = gen.to_string_fragment().to_string();
             }
 
-            if (sqlite3_bind_text(stmt, 7,
-                                  tags.c_str(),
-                                  tags.length(),
-                                  SQLITE_TRANSIENT) != SQLITE_OK) {
-                log_error("could not bind tags -- %s",
-                          sqlite3_errmsg(db));
+            if (sqlite3_bind_text(
+                    stmt, 7, tags.c_str(), tags.length(), SQLITE_TRANSIENT)
+                != SQLITE_OK)
+            {
+                log_error("could not bind tags -- %s", sqlite3_errmsg(db));
                 return;
             }
         }
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
-            log_error(
-                    "could not execute bookmark insert statement -- %s",
-                    sqlite3_errmsg(db));
+            log_error("could not execute bookmark insert statement -- %s",
+                      sqlite3_errmsg(db));
             return;
         }
 
@@ -1050,10 +1107,10 @@ static void save_user_bookmarks(
 
         sqlite3_reset(stmt);
     }
-
 }
 
-static void save_time_bookmarks()
+static void
+save_time_bookmarks()
 {
     auto_mem<sqlite3, sqlite_close_wrapper> db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
@@ -1065,32 +1122,35 @@ static void save_time_bookmarks()
         return;
     }
 
-    if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(
+            db.in(), BOOKMARK_TABLE_DEF, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
         log_error("unable to make bookmark table -- %s", errmsg.in());
         return;
     }
 
-    if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(
+            db.in(), "BEGIN TRANSACTION", nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
         log_error("unable to begin transaction -- %s", errmsg.in());
         return;
     }
 
     {
-        static const char *UPDATE_NETLOCS_STMT =
-            R"(REPLACE INTO recent_netlocs (netloc) VALUES (?))";
+        static const char* UPDATE_NETLOCS_STMT
+            = R"(REPLACE INTO recent_netlocs (netloc) VALUES (?))";
 
         std::set<std::string> netlocs;
 
-        isc::to<tailer::looper&, services::remote_tailer_t>()
-            .send_and_wait([&netlocs](auto& tlooper) {
-                netlocs = tlooper.active_netlocs();
-            });
+        isc::to<tailer::looper&, services::remote_tailer_t>().send_and_wait(
+            [&netlocs](auto& tlooper) { netlocs = tlooper.active_netlocs(); });
 
-        if (sqlite3_prepare_v2(db.in(),
-                               UPDATE_NETLOCS_STMT,
-                               -1,
-                               stmt.out(),
-                               nullptr) != SQLITE_OK) {
+        if (sqlite3_prepare_v2(
+                db.in(), UPDATE_NETLOCS_STMT, -1, stmt.out(), nullptr)
+            != SQLITE_OK)
+        {
             log_error("could not prepare recent_netlocs statement -- %s",
                       sqlite3_errmsg(db));
             return;
@@ -1100,9 +1160,8 @@ static void save_time_bookmarks()
             bind_to_sqlite(stmt.in(), 1, netloc);
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-                log_error(
-                    "could not execute bookmark insert statement -- %s",
-                    sqlite3_errmsg(db));
+                log_error("could not execute bookmark insert statement -- %s",
+                          sqlite3_errmsg(db));
                 return;
             }
 
@@ -1111,8 +1170,8 @@ static void save_time_bookmarks()
         session_data.sd_recent_netlocs.insert(netlocs.begin(), netlocs.end());
     }
 
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
+    logfile_sub_source& lss = lnav_data.ld_log_source;
+    bookmarks<content_line_t>::type& bm = lss.get_user_bookmarks();
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM bookmarks WHERE "
@@ -1120,23 +1179,26 @@ static void save_time_bookmarks()
                            " and session_time = ?",
                            -1,
                            stmt.out(),
-                           nullptr) != SQLITE_OK) {
-        log_error(
-                "could not prepare bookmark delete statement -- %s",
-                sqlite3_errmsg(db));
+                           nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare bookmark delete statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
-    for (auto &marked_session_line : marked_session_lines) {
-        if (!bind_line(
-            db.in(), stmt.in(), marked_session_line, lnav_data.ld_session_time)) {
+    for (auto& marked_session_line : marked_session_lines) {
+        if (!bind_line(db.in(),
+                       stmt.in(),
+                       marked_session_line,
+                       lnav_data.ld_session_time))
+        {
             continue;
         }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            log_error(
-                    "could not execute bookmark insert statement -- %s",
-                    sqlite3_errmsg(db));
+            log_error("could not execute bookmark insert statement -- %s",
+                      sqlite3_errmsg(db));
             return;
         }
 
@@ -1147,14 +1209,16 @@ static void save_time_bookmarks()
 
     if (sqlite3_prepare_v2(db.in(),
                            "REPLACE INTO bookmarks"
-                           " (log_time, log_format, log_hash, session_time, part_name, comment, tags)"
+                           " (log_time, log_format, log_hash, session_time, "
+                           "part_name, comment, tags)"
                            " VALUES (?, ?, ?, ?, ?, ?, ?)",
                            -1,
                            stmt.out(),
-                           nullptr) != SQLITE_OK) {
-        log_error(
-                "could not prepare bookmark replace statement -- %s",
-                sqlite3_errmsg(db));
+                           nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare bookmark replace statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
@@ -1163,7 +1227,8 @@ static void save_time_bookmarks()
 
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
-             ++file_iter) {
+             ++file_iter)
+        {
             shared_ptr<logfile> lf = (*file_iter)->get_file();
 
             if (lf == nullptr) {
@@ -1172,24 +1237,26 @@ static void save_time_bookmarks()
 
             content_line_t base_content_line;
             base_content_line = lss.get_file_base_content_line(file_iter);
-            base_content_line = content_line_t(
-                base_content_line + lf->size() - 1);
+            base_content_line
+                = content_line_t(base_content_line + lf->size() - 1);
 
-            if (!bind_line(db.in(), stmt.in(), base_content_line,
-                           lnav_data.ld_session_time)) {
+            if (!bind_line(db.in(),
+                           stmt.in(),
+                           base_content_line,
+                           lnav_data.ld_session_time))
+            {
                 continue;
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
                 log_error("could not bind log hash -- %s",
-                        sqlite3_errmsg(db.in()));
+                          sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-                log_error(
-                        "could not execute bookmark insert statement -- %s",
-                        sqlite3_errmsg(db));
+                log_error("could not execute bookmark insert statement -- %s",
+                          sqlite3_errmsg(db));
                 return;
             }
 
@@ -1206,23 +1273,26 @@ static void save_time_bookmarks()
                            " and session_time = ?",
                            -1,
                            stmt.out(),
-                           NULL) != SQLITE_OK) {
-        log_error(
-                "could not prepare time_offset delete statement -- %s",
-                sqlite3_errmsg(db));
+                           NULL)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare time_offset delete statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
-    for (auto &offset_session_line : offset_session_lines) {
-        if (!bind_line(
-            db.in(), stmt.in(), offset_session_line, lnav_data.ld_session_time)) {
+    for (auto& offset_session_line : offset_session_lines) {
+        if (!bind_line(db.in(),
+                       stmt.in(),
+                       offset_session_line,
+                       lnav_data.ld_session_time))
+        {
             continue;
         }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            log_error(
-                    "could not execute bookmark insert statement -- %s",
-                    sqlite3_errmsg(db));
+            log_error("could not execute bookmark insert statement -- %s",
+                      sqlite3_errmsg(db));
             return;
         }
 
@@ -1233,14 +1303,16 @@ static void save_time_bookmarks()
 
     if (sqlite3_prepare_v2(db.in(),
                            "REPLACE INTO time_offset"
-                           " (log_time, log_format, log_hash, session_time, offset_sec, offset_usec)"
+                           " (log_time, log_format, log_hash, session_time, "
+                           "offset_sec, offset_usec)"
                            " VALUES (?, ?, ?, ?, ?, ?)",
                            -1,
                            stmt.out(),
-                           NULL) != SQLITE_OK) {
-        log_error(
-                "could not prepare time_offset replace statement -- %s",
-                sqlite3_errmsg(db));
+                           NULL)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare time_offset replace statement -- %s",
+                  sqlite3_errmsg(db));
         return;
     }
 
@@ -1249,7 +1321,8 @@ static void save_time_bookmarks()
 
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
-             ++file_iter) {
+             ++file_iter)
+        {
             shared_ptr<logfile> lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
@@ -1263,26 +1336,26 @@ static void save_time_bookmarks()
                              lf->original_line_time(lf->begin()),
                              lf->get_format()->get_name(),
                              lf->get_content_id(),
-                             lnav_data.ld_session_time)) {
+                             lnav_data.ld_session_time))
+            {
                 continue;
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
                 log_error("could not bind log hash -- %s",
-                        sqlite3_errmsg(db.in()));
+                          sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_bind_null(stmt.in(), 6) != SQLITE_OK) {
                 log_error("could not bind log hash -- %s",
-                        sqlite3_errmsg(db.in()));
+                          sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-                log_error(
-                        "could not execute bookmark insert statement -- %s",
-                        sqlite3_errmsg(db));
+                log_error("could not execute bookmark insert statement -- %s",
+                          sqlite3_errmsg(db));
                 return;
             }
 
@@ -1290,7 +1363,7 @@ static void save_time_bookmarks()
         }
     }
 
-    for (auto &ls : lss) {
+    for (auto& ls : lss) {
         logfile::iterator line_iter;
 
         if (ls->get_file() == nullptr)
@@ -1320,32 +1393,38 @@ static void save_time_bookmarks()
                     offset.tv_usec);
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            log_error(
-                    "could not execute bookmark insert statement -- %s",
-                    sqlite3_errmsg(db));
+            log_error("could not execute bookmark insert statement -- %s",
+                      sqlite3_errmsg(db));
             return;
         }
 
         sqlite3_reset(stmt.in());
     }
 
-    if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
         log_error("unable to begin transaction -- %s", errmsg.in());
         return;
     }
 
-    if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
         log_error("unable to delete old bookmarks -- %s", errmsg.in());
         return;
     }
 
-    if (sqlite3_exec(db.in(), NETLOC_LRU_STMT, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    if (sqlite3_exec(db.in(), NETLOC_LRU_STMT, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
         log_error("unable to delete old netlocs -- %s", errmsg.in());
         return;
     }
 }
 
-static void save_session_with_id(const std::string session_id)
+static void
+save_session_with_id(const std::string session_id)
 {
     auto_mem<FILE> file(fclose);
     yajl_gen handle = nullptr;
@@ -1355,7 +1434,8 @@ static void save_session_with_id(const std::string session_id)
     log_info("saving session with id: %s", session_id.c_str());
 
     char view_base_name[256];
-    snprintf(view_base_name, sizeof(view_base_name),
+    snprintf(view_base_name,
+             sizeof(view_base_name),
              "view-info-%s.ts%ld.ppid%d.json",
              session_id.c_str(),
              lnav_data.ld_session_time,
@@ -1364,17 +1444,13 @@ static void save_session_with_id(const std::string session_id)
     auto view_file_name = lnav::paths::dotlnav() / view_base_name;
     auto view_file_tmp_name = view_file_name.string() + ".tmp";
 
-
-
     if ((file = fopen(view_file_tmp_name.c_str(), "w")) == nullptr) {
         perror("Unable to open session file");
-    }
-    else if (nullptr == (handle = yajl_gen_alloc(nullptr))) {
+    } else if (nullptr == (handle = yajl_gen_alloc(nullptr))) {
         perror("Unable to create yajl_gen object");
-    }
-    else {
-        yajl_gen_config(handle,
-                        yajl_gen_print_callback, yajl_writer, file.in());
+    } else {
+        yajl_gen_config(
+            handle, yajl_gen_print_callback, yajl_writer, file.in());
 
         {
             yajlpp_map root_map(handle);
@@ -1390,7 +1466,8 @@ static void save_session_with_id(const std::string session_id)
             {
                 yajlpp_array file_list(handle);
 
-                for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
+                for (auto& ld_file_name :
+                     lnav_data.ld_active_files.fc_file_names) {
                     file_list.gen(ld_file_name.first);
                 }
             }
@@ -1400,7 +1477,7 @@ static void save_session_with_id(const std::string session_id)
             {
                 yajlpp_map file_states(handle);
 
-                for (auto &lf : lnav_data.ld_active_files.fc_files) {
+                for (auto& lf : lnav_data.ld_active_files.fc_files) {
                     auto ld_opt = lnav_data.ld_log_source.find_data(lf);
 
                     file_states.gen(lf->get_filename());
@@ -1420,9 +1497,9 @@ static void save_session_with_id(const std::string session_id)
                 yajlpp_map top_view_map(handle);
 
                 for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-                    textview_curses &tc = lnav_data.ld_views[lpc];
-                    unsigned long    width;
-                    vis_line_t       height;
+                    textview_curses& tc = lnav_data.ld_views[lpc];
+                    unsigned long width;
+                    vis_line_t height;
 
                     top_view_map.gen(lnav_view_strings[lpc]);
 
@@ -1433,9 +1510,8 @@ static void save_session_with_id(const std::string session_id)
                     tc.get_dimensions(height, width);
                     if (tc.get_top() >= tc.get_top_for_last_row()) {
                         view_map.gen(-1LL);
-                    }
-                    else{
-                        view_map.gen((long long)tc.get_top());
+                    } else {
+                        view_map.gen((long long) tc.get_top());
                     }
 
                     view_map.gen("search");
@@ -1452,7 +1528,7 @@ static void save_session_with_id(const std::string session_id)
                     view_map.gen("filtering");
                     view_map.gen(tss->tss_apply_filters);
 
-                    filter_stack &fs = tss->get_filters();
+                    filter_stack& fs = tss->get_filters();
 
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
@@ -1471,9 +1547,9 @@ static void save_session_with_id(const std::string session_id)
                         }
                     }
 
-                    auto &hmap = lnav_data.ld_views[lpc].get_highlights();
+                    auto& hmap = lnav_data.ld_views[lpc].get_highlights();
 
-                    for (auto & hl : hmap) {
+                    for (auto& hl : hmap) {
                         if (hl.first.first != highlight_source_t::INTERACTIVE) {
                             continue;
                         }
@@ -1481,8 +1557,10 @@ static void save_session_with_id(const std::string session_id)
                     }
 
                     if (lpc == LNV_LOG) {
-                        for (const auto& format : log_format::get_root_formats()) {
-                            auto *elf = dynamic_cast<external_log_format *>(format.get());
+                        for (const auto& format :
+                             log_format::get_root_formats()) {
+                            auto* elf = dynamic_cast<external_log_format*>(
+                                format.get());
 
                             if (elf == nullptr) {
                                 continue;
@@ -1495,25 +1573,26 @@ static void save_session_with_id(const std::string session_id)
 
                                 cmd_array.gen("hide-fields "
                                               + elf->get_name().to_string()
-                                              + "."
-                                              + vd.first.to_string());
+                                              + "." + vd.first.to_string());
                             }
                         }
 
-                        logfile_sub_source &lss = lnav_data.ld_log_source;
+                        logfile_sub_source& lss = lnav_data.ld_log_source;
 
                         struct timeval min_time, max_time;
                         bool have_min_time = lss.get_min_log_time(min_time);
                         bool have_max_time = lss.get_max_log_time(max_time);
                         char min_time_str[32], max_time_str[32];
 
-                        sql_strftime(min_time_str, sizeof(min_time_str), min_time);
+                        sql_strftime(
+                            min_time_str, sizeof(min_time_str), min_time);
                         if (have_min_time) {
                             cmd_array.gen("hide-lines-before "
                                           + string(min_time_str));
                         }
                         if (have_max_time) {
-                            sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+                            sql_strftime(
+                                max_time_str, sizeof(max_time_str), max_time);
                             cmd_array.gen("hide-lines-after "
                                           + string(max_time_str));
                         }
@@ -1532,22 +1611,20 @@ static void save_session_with_id(const std::string session_id)
 
         fclose(file.release());
 
-        log_perror(rename(view_file_tmp_name.c_str(),
-            view_file_name.c_str()));
+        log_perror(rename(view_file_tmp_name.c_str(), view_file_name.c_str()));
 
         log_info("Saved session: %s", view_file_name.c_str());
     }
 }
 
-void save_session()
+void
+save_session()
 {
     log_debug("BEGIN save_session");
     save_time_bookmarks();
 
     const auto opt_session_id = compute_session_id();
-    opt_session_id | [](auto &session_id) {
-        save_session_with_id(session_id);
-    };
+    opt_session_id | [](auto& session_id) { save_session_with_id(session_id); };
     for (const auto& pair : lnav_data.ld_session_id) {
         if (opt_session_id && pair.first == opt_session_id.value()) {
             continue;
@@ -1557,7 +1634,8 @@ void save_session()
     log_debug("END save_session");
 }
 
-void reset_session()
+void
+reset_session()
 {
     log_info("reset session: time=%d", lnav_data.ld_session_time);
 
@@ -1566,8 +1644,8 @@ void reset_session()
     lnav_data.ld_session_time = time(nullptr);
     session_data.sd_file_states.clear();
 
-    for (auto &tc : lnav_data.ld_views) {
-        auto &hmap = tc.get_highlights();
+    for (auto& tc : lnav_data.ld_views) {
+        auto& hmap = tc.get_highlights();
         auto hl_iter = hmap.begin();
 
         while (hl_iter != hmap.end()) {
@@ -1591,8 +1669,8 @@ void reset_session()
 
     lnav_data.ld_log_source.get_user_bookmark_metadata().clear();
 
-    for (auto &tc : lnav_data.ld_views) {
-        text_sub_source *tss = tc.get_sub_source();
+    for (auto& tc : lnav_data.ld_views) {
+        text_sub_source* tss = tc.get_sub_source();
 
         if (tss == nullptr) {
             continue;
@@ -1610,13 +1688,13 @@ void reset_session()
     lnav_data.ld_filter_view.reload_data();
     lnav_data.ld_files_view.reload_data();
     for (const auto& format : log_format::get_root_formats()) {
-        auto *elf = dynamic_cast<external_log_format *>(format.get());
+        auto* elf = dynamic_cast<external_log_format*>(format.get());
 
         if (elf == nullptr) {
             continue;
         }
 
-        for (const auto &vd : elf->elf_value_defs) {
+        for (const auto& vd : elf->elf_value_defs) {
             vd.second->vd_meta.lvm_user_hidden = false;
         }
     }

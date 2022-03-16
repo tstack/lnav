@@ -21,18 +21,19 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "base/string_util.hh"
 #include "pretty_printer.hh"
 
-void pretty_printer::append_to(attr_line_t &al)
+#include "base/string_util.hh"
+#include "config.h"
+
+void
+pretty_printer::append_to(attr_line_t& al)
 {
     pcre_context_static<30> pc;
     data_token_t dt;
@@ -92,8 +93,8 @@ void pretty_printer::append_to(attr_line_t &al)
                 }
                 break;
             case DT_WHITE:
-                if (this->pp_values.empty() && this->pp_depth == 0 &&
-                    this->pp_line_length == 0) {
+                if (this->pp_values.empty() && this->pp_depth == 0
+                    && this->pp_line_length == 0) {
                     this->pp_leading_indent = el.e_capture.length();
                     continue;
                 }
@@ -118,19 +119,21 @@ void pretty_printer::append_to(attr_line_t &al)
     al.append(combined);
 }
 
-void pretty_printer::write_element(const pretty_printer::element &el)
+void
+pretty_printer::write_element(const pretty_printer::element& el)
 {
-    if (this->pp_leading_indent == 0 &&
-        this->pp_line_length == 0 &&
-        el.e_token == DT_WHITE) {
+    if (this->pp_leading_indent == 0 && this->pp_line_length == 0
+        && el.e_token == DT_WHITE)
+    {
         if (this->pp_depth == 0) {
             this->pp_soft_indent += el.e_capture.length();
         }
         return;
     }
-    if (((this->pp_leading_indent == 0) ||
-         (this->pp_line_length <= this->pp_leading_indent)) &&
-        el.e_token == DT_LINE) {
+    if (((this->pp_leading_indent == 0)
+         || (this->pp_line_length <= this->pp_leading_indent))
+        && el.e_token == DT_LINE)
+    {
         this->pp_soft_indent = 0;
         if (this->pp_line_length > 0) {
             this->pp_line_length = 0;
@@ -139,19 +142,19 @@ void pretty_printer::write_element(const pretty_printer::element &el)
         }
         return;
     }
-    pcre_input &pi = this->pp_scanner->get_input();
+    pcre_input& pi = this->pp_scanner->get_input();
     if (this->pp_line_length == 0) {
         this->append_indent();
     }
     ssize_t start_size = this->pp_stream.tellp();
     if (el.e_token == DT_QUOTED_STRING) {
-        auto_mem<char> unquoted_str((char *)malloc(el.e_capture.length() + 1));
-        const char *start = pi.get_substr_start(&el.e_capture);
+        auto_mem<char> unquoted_str((char*) malloc(el.e_capture.length() + 1));
+        const char* start = pi.get_substr_start(&el.e_capture);
         unquote(unquoted_str.in(), start, el.e_capture.length());
         data_scanner ds(unquoted_str.in());
         string_attrs_t sa;
-        pretty_printer str_pp(&ds, sa,
-                              this->pp_leading_indent + this->pp_depth * 4);
+        pretty_printer str_pp(
+            &ds, sa, this->pp_leading_indent + this->pp_depth * 4);
         attr_line_t result;
         str_pp.append_to(result);
         if (result.get_string().find('\n') != std::string::npos) {
@@ -165,21 +168,19 @@ void pretty_printer::write_element(const pretty_printer::element &el)
                     this->pp_stream << start[0] << start[0];
                     break;
             }
-            this->pp_stream
-                << std::endl
-                << result.get_string();
+            this->pp_stream << std::endl << result.get_string();
             if (result.empty() || result.get_string().back() != '\n') {
                 this->pp_stream << std::endl;
             }
-            this->pp_stream
-                << start[el.e_capture.length() - 1]
-                << start[el.e_capture.length() - 1];
+            this->pp_stream << start[el.e_capture.length() - 1]
+                            << start[el.e_capture.length() - 1];
         } else {
             this->pp_stream << pi.get_substr(&el.e_capture);
         }
     } else {
         this->pp_stream << pi.get_substr(&el.e_capture);
-        int shift_amount = start_size - el.e_capture.c_begin - this->pp_shift_accum;
+        int shift_amount
+            = start_size - el.e_capture.c_begin - this->pp_shift_accum;
         shift_string_attrs(this->pp_attrs, el.e_capture.c_begin, shift_amount);
         this->pp_shift_accum = start_size - el.e_capture.c_begin;
     }
@@ -190,9 +191,11 @@ void pretty_printer::write_element(const pretty_printer::element &el)
     }
 }
 
-void pretty_printer::append_indent()
+void
+pretty_printer::append_indent()
 {
-    this->pp_stream << std::string(this->pp_leading_indent + this->pp_soft_indent, ' ');
+    this->pp_stream << std::string(
+        this->pp_leading_indent + this->pp_soft_indent, ' ');
     this->pp_soft_indent = 0;
     if (this->pp_stream.tellp() == this->pp_leading_indent) {
         return;
@@ -202,17 +205,17 @@ void pretty_printer::append_indent()
     }
 }
 
-bool pretty_printer::flush_values(bool start_on_depth)
+bool
+pretty_printer::flush_values(bool start_on_depth)
 {
     bool retval = false;
 
     while (!this->pp_values.empty()) {
         {
-            element &el = this->pp_values.front();
+            element& el = this->pp_values.front();
             this->write_element(this->pp_values.front());
-            if (start_on_depth &&
-                (el.e_token == DT_LSQUARE ||
-                 el.e_token == DT_LCURLY)) {
+            if (start_on_depth
+                && (el.e_token == DT_LSQUARE || el.e_token == DT_LCURLY)) {
                 if (this->pp_line_length > 0) {
                     this->pp_stream << std::endl;
                 }
@@ -225,7 +228,8 @@ bool pretty_printer::flush_values(bool start_on_depth)
     return retval;
 }
 
-void pretty_printer::start_new_line()
+void
+pretty_printer::start_new_line()
 {
     bool has_output;
 
@@ -241,20 +245,21 @@ void pretty_printer::start_new_line()
     this->pp_body_lines.top() += 1;
 }
 
-void pretty_printer::ascend()
+void
+pretty_printer::ascend()
 {
     if (this->pp_depth > 0) {
         int lines = this->pp_body_lines.top();
         this->pp_depth -= 1;
         this->pp_body_lines.pop();
         this->pp_body_lines.top() += lines;
-    }
-    else {
+    } else {
         this->pp_body_lines.top() = 0;
     }
 }
 
-void pretty_printer::descend()
+void
+pretty_printer::descend()
 {
     this->pp_depth += 1;
     this->pp_body_lines.push(0);

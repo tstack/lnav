@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,19 +31,20 @@
 #define time_t_hh
 
 #include <stdio.h>
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
-#define timeit(_block)    {                            \
-        struct timeval _st, _en, _diff;                \
-                                                       \
-        gettimeofday(&_st, NULL);                      \
-        { _block; }                                    \
-        gettimeofday(&_en, NULL);                      \
-        timersub(&_en, &_st, &_diff);                  \
-        fprintf(stderr,                                \
-                "%s %d.%06d\n",                        \
-                #_block, _diff.tv_sec, _diff.tv_usec); \
-        fflush(stderr);                                \
-}
+#define timeit(_block) \
+    { \
+        struct timeval _st, _en, _diff; \
+\
+        gettimeofday(&_st, NULL); \
+        { \
+            _block; \
+        } \
+        gettimeofday(&_en, NULL); \
+        timersub(&_en, &_st, &_diff); \
+        fprintf(stderr, "%s %d.%06d\n", #_block, _diff.tv_sec, _diff.tv_usec); \
+        fflush(stderr); \
+    }
 #endif

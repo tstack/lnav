@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,30 +14,30 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include <string>
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <string>
-
+#include "config.h"
 #include "pcrepp/pcrepp.hh"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     pcre_context_static<30> context;
     int retval = EXIT_SUCCESS;
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     {
         pcrepp match1("(\\w*)=(\\d+)");
         pcre_input pi("a=1  b=2");
-        pcre_context::capture_t *cap;
+        pcre_context::capture_t* cap;
 
         assert(match1.match(context, pi));
 
@@ -78,14 +78,13 @@ int main(int argc, char *argv[])
     {
         pcrepp match3("(?<var1>\\d+)(?<var2>\\w+)");
         pcre_named_capture::iterator iter;
-        const char *expected_names[] = {
+        const char* expected_names[] = {
             "var1",
             "var2",
         };
         int index = 0;
 
-        for (iter = match3.named_begin();
-             iter != match3.named_end();
+        for (iter = match3.named_begin(); iter != match3.named_end();
              ++iter, index++) {
             assert(strcmp(iter->pnc_name, expected_names[index]) == 0);
         }
@@ -105,14 +104,12 @@ int main(int argc, char *argv[])
         assert("foo" == pi.get_substr(&cap));
     }
 
-    const char *empty_cap_regexes[] = {
-            "foo (?:bar)",
-            "foo [(]",
-            "foo \\Q(bar)\\E",
-            "(?i)",
+    const char* empty_cap_regexes[] = {"foo (?:bar)",
+                                       "foo [(]",
+                                       "foo \\Q(bar)\\E",
+                                       "(?i)",
 
-            NULL
-    };
+                                       NULL};
 
     for (int lpc = 0; empty_cap_regexes[lpc]; lpc++) {
         pcrepp re(empty_cap_regexes[lpc]);

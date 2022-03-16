@@ -21,36 +21,36 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "spookyhash/SpookyV2.h"
-
 #include "sequence_matcher.hh"
+
+#include "config.h"
+#include "spookyhash/SpookyV2.h"
 
 using namespace std;
 
-sequence_matcher::sequence_matcher(field_col_t &example)
+sequence_matcher::sequence_matcher(field_col_t& example)
 {
     for (field_col_t::iterator col_iter = example.begin();
          col_iter != example.end();
-         ++col_iter) {
+         ++col_iter)
+    {
         std::string first_value;
-        field       sf;
+        field sf;
 
         sf.sf_value = *col_iter;
         for (field_row_t::iterator row_iter = (*col_iter).begin();
              row_iter != (*col_iter).end();
-             ++row_iter) {
+             ++row_iter)
+        {
             if (row_iter == (*col_iter).begin()) {
                 first_value = *row_iter;
-            }
-            else if (first_value != *row_iter) {
+            } else if (first_value != *row_iter) {
                 sf.sf_type = FT_CONSTANT;
             }
         }
@@ -62,19 +62,19 @@ sequence_matcher::sequence_matcher(field_col_t &example)
     this->sm_count = example.front().size();
 }
 
-void sequence_matcher::identity(const std::vector<string> &values,
-                                id_t &id_out)
+void
+sequence_matcher::identity(const std::vector<string>& values, id_t& id_out)
 {
     SpookyHash context;
-    int     lpc = 0;
+    int lpc = 0;
 
     context.Init(0, 0);
     for (std::list<field>::iterator iter = sm_fields.begin();
          iter != sm_fields.end();
-         ++iter, lpc++) {
+         ++iter, lpc++)
+    {
         if (iter->sf_type == FT_VARIABLE) {
-            context.Update( values[lpc].c_str(),
-                            values[lpc].length() + 1);
+            context.Update(values[lpc].c_str(), values[lpc].length() + 1);
         }
     }
     context.Final(id_out.out(0), id_out.out(1));

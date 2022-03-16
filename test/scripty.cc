@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,78 +14,77 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/ioctl.h>
 #include <termios.h>
-#include <signal.h>
+#include <unistd.h>
+
+#include "config.h"
 
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/curses.h>
+#    include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
-#  include <ncursesw.h>
+#    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/curses.h>
+#    include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
-#  include <ncurses.h>
+#    include <ncurses.h>
 #elif defined HAVE_CURSES_H
-#  include <curses.h>
+#    include <curses.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
 #ifdef HAVE_PTY_H
-#include <pty.h>
+#    include <pty.h>
 #endif
 
 #ifdef HAVE_UTIL_H
-#include <util.h>
+#    include <util.h>
 #endif
 
 #ifdef HAVE_LIBUTIL_H
-#include <libutil.h>
+#    include <libutil.h>
 #endif
 
+#include <algorithm>
 #include <map>
 #include <queue>
-#include <string>
 #include <sstream>
-#include <algorithm>
+#include <string>
 #include <utility>
 
-#include "ww898/cp_utf8.hpp"
-#include "fmt/format.h"
-#include "ghc/filesystem.hpp"
-
-#include "base/string_util.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
-#include "termios_guard.hh"
+#include "base/string_util.hh"
+#include "fmt/format.h"
+#include "ghc/filesystem.hpp"
 #include "styling.hh"
+#include "termios_guard.hh"
+#include "ww898/cp_utf8.hpp"
 
 using namespace std;
 
@@ -93,12 +92,10 @@ using namespace std;
  * An RAII class for opening a PTY and forking a child process.
  */
 class child_term {
-
 public:
     class error : public std::exception {
     public:
-        error(int err) : e_err(err)
-        {};
+        error(int err) : e_err(err){};
 
         int e_err;
     };
@@ -110,24 +107,22 @@ public:
 
         memset(&ws, 0, sizeof(ws));
 
-        if (isatty(STDIN_FILENO) &&
-            tcgetattr(STDIN_FILENO, &this->ct_termios) == -1) {
+        if (isatty(STDIN_FILENO)
+            && tcgetattr(STDIN_FILENO, &this->ct_termios) == -1) {
             throw error(errno);
         }
 
-        if (isatty(STDOUT_FILENO) &&
-            ioctl(STDOUT_FILENO, TIOCGWINSZ, &this->ct_winsize) == -1) {
+        if (isatty(STDOUT_FILENO)
+            && ioctl(STDOUT_FILENO, TIOCGWINSZ, &this->ct_winsize) == -1)
+        {
             throw error(errno);
         }
 
         ws.ws_col = 80;
         ws.ws_row = 24;
 
-        if (openpty(this->ct_master.out(),
-                    slave.out(),
-                    nullptr,
-                    nullptr,
-                    &ws) < 0) {
+        if (openpty(this->ct_master.out(), slave.out(), nullptr, nullptr, &ws)
+            < 0) {
             throw error(errno);
         }
 
@@ -152,12 +147,14 @@ public:
     {
         (void) this->wait_for_child();
 
-        if (isatty(STDIN_FILENO) &&
-            tcsetattr(STDIN_FILENO, TCSANOW, &this->ct_termios) == -1) {
+        if (isatty(STDIN_FILENO)
+            && tcsetattr(STDIN_FILENO, TCSANOW, &this->ct_termios) == -1)
+        {
             perror("tcsetattr");
         }
-        if (isatty(STDOUT_FILENO) &&
-            ioctl(STDOUT_FILENO, TIOCSWINSZ, &this->ct_winsize) == -1) {
+        if (isatty(STDOUT_FILENO)
+            && ioctl(STDOUT_FILENO, TIOCSWINSZ, &this->ct_winsize) == -1)
+        {
             perror("ioctl");
         }
     };
@@ -170,34 +167,41 @@ public:
             kill(this->ct_child, SIGTERM);
             this->ct_child = -1;
 
-            while (wait(&retval) < 0 && (errno == EINTR));
+            while (wait(&retval) < 0 && (errno == EINTR))
+                ;
         }
 
         return retval;
     };
 
     bool is_child() const
-    { return this->ct_child == 0; };
+    {
+        return this->ct_child == 0;
+    };
 
     pid_t get_child_pid() const
-    { return this->ct_child; };
+    {
+        return this->ct_child;
+    };
 
     int get_fd() const
-    { return this->ct_master; };
+    {
+        return this->ct_master;
+    };
 
 protected:
     pid_t ct_child;
     auto_fd ct_master;
     struct termios ct_termios;
     struct winsize ct_winsize;
-
 };
 
 /**
  * @param fd The file descriptor to switch to raw mode.
  * @return Zero on success, -1 on error.
  */
-static int tty_raw(int fd)
+static int
+tty_raw(int fd)
 {
     struct termios attr[1];
 
@@ -217,7 +221,8 @@ static int tty_raw(int fd)
     return tcsetattr(fd, TCSANOW, attr);
 }
 
-static void dump_memory(FILE *dst, const char *src, int len)
+static void
+dump_memory(FILE* dst, const char* src, int len)
 {
     int lpc;
 
@@ -226,7 +231,8 @@ static void dump_memory(FILE *dst, const char *src, int len)
     }
 }
 
-static std::vector<char> hex2bits(const char *src)
+static std::vector<char>
+hex2bits(const char* src)
 {
     std::vector<char> retval;
 
@@ -240,7 +246,8 @@ static std::vector<char> hex2bits(const char *src)
     return retval;
 }
 
-static const char *tstamp()
+static const char*
+tstamp()
 {
     static char buf[64];
 
@@ -263,7 +270,7 @@ struct command {
 };
 
 static struct {
-    const char *sd_program_name{nullptr};
+    const char* sd_program_name{nullptr};
     sig_atomic_t sd_looping{true};
 
     pid_t sd_child_pid{-1};
@@ -307,11 +314,13 @@ struct term_machine {
 
     struct term_attr {
         term_attr(size_t pos, const std::string& desc)
-            : ta_pos(pos), ta_end(pos), ta_desc({desc}) {
+            : ta_pos(pos), ta_end(pos), ta_desc({desc})
+        {
         }
 
         term_attr(size_t pos, size_t end, const std::string& desc)
-            : ta_pos(pos), ta_end(end), ta_desc({desc}) {
+            : ta_pos(pos), ta_end(end), ta_desc({desc})
+        {
         }
 
         size_t ta_pos;
@@ -319,30 +328,36 @@ struct term_machine {
         std::vector<std::string> ta_desc;
     };
 
-    term_machine(child_term& ct) : tm_child_term(ct) {
+    term_machine(child_term& ct) : tm_child_term(ct)
+    {
         this->clear();
     }
 
-    ~term_machine() {
+    ~term_machine()
+    {
         this->flush_line();
     }
 
-    void clear() {
+    void clear()
+    {
         std::fill(begin(this->tm_line), end(this->tm_line), ' ');
         this->tm_line_attrs.clear();
         this->tm_new_data = false;
     }
 
-    void add_line_attr(const std::string& desc) {
-        if (!this->tm_line_attrs.empty() &&
-            this->tm_line_attrs.back().ta_pos == this->tm_cursor_x) {
+    void add_line_attr(const std::string& desc)
+    {
+        if (!this->tm_line_attrs.empty()
+            && this->tm_line_attrs.back().ta_pos == this->tm_cursor_x)
+        {
             this->tm_line_attrs.back().ta_desc.emplace_back(desc);
         } else {
             this->tm_line_attrs.emplace_back(this->tm_cursor_x, desc);
         }
     }
 
-    void write_char(char ch) {
+    void write_char(char ch)
+    {
         if (isprint(ch)) {
             require(ch);
 
@@ -376,9 +391,8 @@ struct term_machine {
                     break;
                 case '\x0f':
                     if (this->tm_shift_start != this->tm_cursor_x) {
-                        this->tm_line_attrs.emplace_back(this->tm_shift_start,
-                                                         this->tm_cursor_x,
-                                                         "alt");
+                        this->tm_line_attrs.emplace_back(
+                            this->tm_shift_start, this->tm_cursor_x, "alt");
                     }
                     break;
                 default:
@@ -390,23 +404,24 @@ struct term_machine {
         }
     }
 
-    void flush_line() {
-        if (std::exchange(this->tm_waiting_on_input, false) &&
-            !this->tm_user_input.empty()) {
+    void flush_line()
+    {
+        if (std::exchange(this->tm_waiting_on_input, false)
+            && !this->tm_user_input.empty())
+        {
             fprintf(stderr, "%s:flush keys\n", tstamp());
             fprintf(scripty_data.sd_from_child, "K ");
-            dump_memory(scripty_data.sd_from_child,
-                        this->tm_user_input.data(),
-                        1);
+            dump_memory(
+                scripty_data.sd_from_child, this->tm_user_input.data(), 1);
             fprintf(scripty_data.sd_from_child, "\n");
             this->tm_user_input.erase(this->tm_user_input.begin());
         }
         if (this->tm_new_data || !this->tm_line_attrs.empty()) {
-            // fprintf(scripty_data.sd_from_child, "flush %d\n", this->tm_flush_count);
+            // fprintf(scripty_data.sd_from_child, "flush %d\n",
+            // this->tm_flush_count);
             fprintf(stderr, "%s:flush %d\n", tstamp(), this->tm_flush_count++);
-            fprintf(scripty_data.sd_from_child,
-                    "S % 3d \u250B",
-                    this->tm_cursor_y);
+            fprintf(
+                scripty_data.sd_from_child, "S % 3d \u250B", this->tm_cursor_y);
             for (auto uch : this->tm_line) {
                 ww898::utf::utf8::write(uch, [](auto ch) {
                     fputc(ch, scripty_data.sd_from_child);
@@ -415,45 +430,46 @@ struct term_machine {
             fprintf(scripty_data.sd_from_child, "\u250B\n");
             for (size_t lpc = 0; lpc < this->tm_line_attrs.size(); lpc++) {
                 const auto& ta = this->tm_line_attrs[lpc];
-                auto full_desc = fmt::format("{}", fmt::join(ta.ta_desc.begin(),
-                                                             ta.ta_desc.end(),
-                                                             ", "));
+                auto full_desc = fmt::format(
+                    "{}",
+                    fmt::join(ta.ta_desc.begin(), ta.ta_desc.end(), ", "));
                 int line_len;
 
                 if (ta.ta_pos == ta.ta_end) {
-                    line_len = fprintf(scripty_data.sd_from_child,
-                                       "A      %s%s %s",
-                                       repeat("\u00B7", ta.ta_pos).c_str(),
-                                       ((lpc + 1 <
-                                         this->tm_line_attrs.size()) &&
-                                        (ta.ta_pos ==
-                                         this->tm_line_attrs[lpc + 1].ta_pos)) ?
-                                       "\u251C" :
-                                       "\u2514",
-                                       full_desc.c_str());
+                    line_len = fprintf(
+                        scripty_data.sd_from_child,
+                        "A      %s%s %s",
+                        repeat("\u00B7", ta.ta_pos).c_str(),
+                        ((lpc + 1 < this->tm_line_attrs.size())
+                         && (ta.ta_pos == this->tm_line_attrs[lpc + 1].ta_pos))
+                            ? "\u251C"
+                            : "\u2514",
+                        full_desc.c_str());
                     line_len -= 2 + ta.ta_pos;
                 } else {
-                    line_len = fprintf(scripty_data.sd_from_child,
-                                       "A      %s%s%s\u251b %s",
-                                       std::string(ta.ta_pos, ' ').c_str(),
-                                       ((lpc + 1 <
-                                         this->tm_line_attrs.size()) &&
-                                        (ta.ta_pos ==
-                                         this->tm_line_attrs[lpc + 1].ta_pos)) ?
-                                       "\u2518" :
-                                       "\u2514",
-                                       std::string(ta.ta_end - ta.ta_pos - 1, '-').c_str(),
-                                       full_desc.c_str());
+                    line_len = fprintf(
+                        scripty_data.sd_from_child,
+                        "A      %s%s%s\u251b %s",
+                        std::string(ta.ta_pos, ' ').c_str(),
+                        ((lpc + 1 < this->tm_line_attrs.size())
+                         && (ta.ta_pos == this->tm_line_attrs[lpc + 1].ta_pos))
+                            ? "\u2518"
+                            : "\u2514",
+                        std::string(ta.ta_end - ta.ta_pos - 1, '-').c_str(),
+                        full_desc.c_str());
                     line_len -= 4;
                 }
-                for (size_t lpc2 = lpc + 1; lpc2 < this->tm_line_attrs.size(); lpc2++) {
+                for (size_t lpc2 = lpc + 1; lpc2 < this->tm_line_attrs.size();
+                     lpc2++) {
                     auto bar_pos = 7 + this->tm_line_attrs[lpc2].ta_pos;
 
                     if (bar_pos < line_len) {
                         continue;
                     }
-                    line_len += fprintf(scripty_data.sd_from_child, "%s\u2502",
-                                        std::string(bar_pos - line_len, ' ').c_str());
+                    line_len += fprintf(
+                        scripty_data.sd_from_child,
+                        "%s\u2502",
+                        std::string(bar_pos - line_len, ' ').c_str());
                     line_len -= 2;
                 }
                 fprintf(scripty_data.sd_from_child, "\n");
@@ -463,14 +479,16 @@ struct term_machine {
         fflush(scripty_data.sd_from_child);
     }
 
-    std::vector<int> get_m_params() {
+    std::vector<int> get_m_params()
+    {
         std::vector<int> retval;
         size_t index = 1;
 
         while (index < this->tm_escape_buffer.size()) {
             int val, last;
 
-            if (sscanf(&this->tm_escape_buffer[index], "%d%n", &val, &last) == 1) {
+            if (sscanf(&this->tm_escape_buffer[index], "%d%n", &val, &last)
+                == 1) {
                 retval.push_back(val);
                 index += last;
                 if (this->tm_escape_buffer[index] != ';') {
@@ -485,30 +503,30 @@ struct term_machine {
         return retval;
     }
 
-    void new_user_input(char ch) {
+    void new_user_input(char ch)
+    {
         this->tm_user_input.push_back(ch);
     }
 
-    void new_input(char ch) {
+    void new_input(char ch)
+    {
         if (this->tm_unicode_remaining > 0) {
             this->tm_unicode_buffer.push_back(ch);
             this->tm_unicode_remaining -= 1;
             if (this->tm_unicode_remaining == 0) {
                 this->tm_new_data = true;
-                this->tm_line[this->tm_cursor_x++] = ww898::utf::utf8::read(
-                    [this]() {
-                        auto retval = this->tm_unicode_buffer.front();
+                this->tm_line[this->tm_cursor_x++]
+                    = ww898::utf::utf8::read([this]() {
+                          auto retval = this->tm_unicode_buffer.front();
 
-                        this->tm_unicode_buffer.pop_front();
-                        return retval;
-                    });
+                          this->tm_unicode_buffer.pop_front();
+                          return retval;
+                      });
             }
             return;
         } else {
-            auto utfsize = ww898::utf::utf8::char_size([ch]() {
-                return std::make_pair(ch, 16);
-            });
-
+            auto utfsize = ww898::utf::utf8::char_size(
+                [ch]() { return std::make_pair(ch, 16); });
 
             if (utfsize.unwrap() > 1) {
                 this->tm_unicode_remaining = utfsize.unwrap() - 1;
@@ -583,7 +601,8 @@ struct term_machine {
             }
             case state::ESCAPE_FIXED_LENGTH: {
                 this->tm_escape_buffer.push_back(ch);
-                if (this->tm_escape_buffer.size() == this->tm_escape_expected_size) {
+                if (this->tm_escape_buffer.size()
+                    == this->tm_escape_expected_size) {
                     auto iter = CSI_TO_DESC.find(
                         std::string(this->tm_escape_buffer.data(),
                                     this->tm_escape_buffer.size()));
@@ -720,7 +739,8 @@ struct term_machine {
 
                                 if (attrs.empty()) {
                                     this->add_line_attr("normal");
-                                } else if ((30 <= attrs[0]) && (attrs[0] <= 37)) {
+                                } else if ((30 <= attrs[0]) && (attrs[0] <= 37))
+                                {
                                     auto xt = xterm_colors();
 
                                     this->add_line_attr(fmt::format(
@@ -733,11 +753,13 @@ struct term_machine {
                                     this->add_line_attr(fmt::format(
                                         "fg({})",
                                         xt->tc_palette[attrs[2]].xc_hex));
-                                } else if ((40 <= attrs[0]) && (attrs[0] <= 47)) {
+                                } else if ((40 <= attrs[0]) && (attrs[0] <= 47))
+                                {
                                     auto xt = xterm_colors();
 
                                     this->add_line_attr(fmt::format(
-                                        "bg({})", xt->tc_palette[attrs[0] - 40].xc_hex));
+                                        "bg({})",
+                                        xt->tc_palette[attrs[0] - 40].xc_hex));
                                 } else if (attrs[0] == 48) {
                                     auto xt = xterm_colors();
 
@@ -760,7 +782,8 @@ struct term_machine {
                                             this->add_line_attr("inverse");
                                             break;
                                         default:
-                                            this->add_line_attr(this->tm_escape_buffer.data());
+                                            this->add_line_attr(
+                                                this->tm_escape_buffer.data());
                                             break;
                                     }
                                 }
@@ -768,7 +791,8 @@ struct term_machine {
                             }
                             default:
                                 fprintf(stderr, "%s:missed %c\n", tstamp(), ch);
-                                this->add_line_attr(this->tm_escape_buffer.data());
+                                this->add_line_attr(
+                                    this->tm_escape_buffer.data());
                                 break;
                         }
                     } else {
@@ -779,7 +803,6 @@ struct term_machine {
                     }
                     this->tm_state = state::NORMAL;
                 } else {
-
                 }
                 break;
             }
@@ -788,8 +811,8 @@ struct term_machine {
                     this->tm_escape_buffer.push_back('\0');
 
                     auto num = this->get_m_params();
-                    auto semi_index = strchr(
-                        this->tm_escape_buffer.data(), ';');
+                    auto semi_index
+                        = strchr(this->tm_escape_buffer.data(), ';');
 
                     switch (num[0]) {
                         case 0: {
@@ -803,7 +826,8 @@ struct term_machine {
                             this->flush_line();
                             this->tm_waiting_on_input = true;
                             if (!scripty_data.sd_replay.empty()) {
-                                const auto &cmd = scripty_data.sd_replay.front();
+                                const auto& cmd
+                                    = scripty_data.sd_replay.front();
 
                                 this->tm_user_input = cmd.c_arg;
                                 write(this->tm_child_term.get_fd(),
@@ -844,43 +868,49 @@ struct term_machine {
     size_t tm_flush_count{0};
 };
 
-static void sigchld(int sig)
+static void
+sigchld(int sig)
 {
 }
 
-static void sigpass(int sig)
+static void
+sigpass(int sig)
 {
     kill(scripty_data.sd_child_pid, sig);
 }
 
-static void usage()
+static void
+usage()
 {
-    const char *usage_msg =
-        "usage: %s [-h] [-t to_child] [-f from_child] -- <cmd>\n"
-        "\n"
-        "Recorder for TTY I/O from a child process."
-        "\n"
-        "Options:\n"
-        "  -h         Print this message, then exit.\n"
-        "  -n         Do not pass the output to the console.\n"
-        "  -i         Pass stdin to the child process instead of connecting\n"
-        "             the child to the tty.\n"
-        "  -a <file>  The file where the actual I/O from/to the child process\n"
-        "             should be stored.\n"
-        "  -e <file>  The file containing the expected I/O from/to the child\n"
-        "             process.\n"
-        "\n"
-        "Examples:\n"
-        "  To record a session for playback later:\n"
-        "    $ scripty -a output.0 -- myCursesApp\n"
-        "\n"
-        "  To replay the recorded session:\n"
-        "    $ scripty -e input.0 -- myCursesApp\n";
+    const char* usage_msg
+        = "usage: %s [-h] [-t to_child] [-f from_child] -- <cmd>\n"
+          "\n"
+          "Recorder for TTY I/O from a child process."
+          "\n"
+          "Options:\n"
+          "  -h         Print this message, then exit.\n"
+          "  -n         Do not pass the output to the console.\n"
+          "  -i         Pass stdin to the child process instead of connecting\n"
+          "             the child to the tty.\n"
+          "  -a <file>  The file where the actual I/O from/to the child "
+          "process\n"
+          "             should be stored.\n"
+          "  -e <file>  The file containing the expected I/O from/to the "
+          "child\n"
+          "             process.\n"
+          "\n"
+          "Examples:\n"
+          "  To record a session for playback later:\n"
+          "    $ scripty -a output.0 -- myCursesApp\n"
+          "\n"
+          "  To replay the recorded session:\n"
+          "    $ scripty -e input.0 -- myCursesApp\n";
 
     fprintf(stderr, usage_msg, scripty_data.sd_program_name);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     int c, fd, retval = EXIT_SUCCESS;
     bool passout = true, passin = false, prompt = false;
@@ -901,7 +931,8 @@ int main(int argc, char *argv[])
             case 'e':
                 scripty_data.sd_expected_name = optarg;
                 if ((file = fopen(optarg, "r")) == nullptr) {
-                    fprintf(stderr, "%s:error: cannot open %s\n", tstamp(), optarg);
+                    fprintf(
+                        stderr, "%s:error: cannot open %s\n", tstamp(), optarg);
                     retval = EXIT_FAILURE;
                 } else {
                     char line[32 * 1024];
@@ -936,16 +967,18 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (!scripty_data.sd_expected_name.empty() &&
-        scripty_data.sd_actual_name.empty()) {
-        scripty_data.sd_actual_name =
-            scripty_data.sd_expected_name.filename();
+    if (!scripty_data.sd_expected_name.empty()
+        && scripty_data.sd_actual_name.empty())
+    {
+        scripty_data.sd_actual_name = scripty_data.sd_expected_name.filename();
         scripty_data.sd_actual_name += ".tmp";
     }
 
     if (!scripty_data.sd_actual_name.empty()) {
-        if ((scripty_data.sd_from_child = fopen(
-            scripty_data.sd_actual_name.c_str(), "w")) == nullptr) {
+        if ((scripty_data.sd_from_child
+             = fopen(scripty_data.sd_actual_name.c_str(), "w"))
+            == nullptr)
+        {
             fprintf(stderr,
                     "error: unable to open %s -- %s\n",
                     scripty_data.sd_actual_name.c_str(),
@@ -1019,7 +1052,10 @@ int main(int argc, char *argv[])
                         case EINTR:
                             break;
                         default:
-                            fprintf(stderr, "%s:select %s\n", tstamp(), strerror(errno));
+                            fprintf(stderr,
+                                    "%s:select %s\n",
+                                    tstamp(),
+                                    strerror(errno));
                             kill(ct.get_child_pid(), SIGKILL);
                             scripty_data.sd_looping = false;
                             break;
@@ -1038,7 +1074,10 @@ int main(int argc, char *argv[])
                             log_perror(write(ct.get_fd(), buffer, rc));
 
                             for (ssize_t lpc = 0; lpc < rc; lpc++) {
-                                fprintf(stderr, "%s:to-child %02x\n", tstamp(), buffer[lpc] & 0xff);
+                                fprintf(stderr,
+                                        "%s:to-child %02x\n",
+                                        tstamp(),
+                                        buffer[lpc] & 0xff);
                                 tm.new_user_input(buffer[lpc]);
                             }
                         }
@@ -1061,11 +1100,11 @@ int main(int argc, char *argv[])
                                             buffer[lpc] & 0xff);
 #endif
                                     tm.new_input(buffer[lpc]);
-                                    if (scripty_data.sd_replay.size() !=
-                                        last_replay_size) {
+                                    if (scripty_data.sd_replay.size()
+                                        != last_replay_size) {
                                         last = now;
-                                        last_replay_size =
-                                            scripty_data.sd_replay.size();
+                                        last_replay_size
+                                            = scripty_data.sd_replay.size();
                                     }
                                 }
                             }
@@ -1095,18 +1134,15 @@ int main(int argc, char *argv[])
                            scripty_data.sd_actual_name.c_str(),
                            scripty_data.sd_expected_name.c_str());
 
-                    auto options =
-                        ghc::filesystem::copy_options::overwrite_existing;
-                    ghc::filesystem::copy_file(
-                        scripty_data.sd_actual_name,
-                        scripty_data.sd_expected_name,
-                        options);
-                }
-                else{
+                    auto options
+                        = ghc::filesystem::copy_options::overwrite_existing;
+                    ghc::filesystem::copy_file(scripty_data.sd_actual_name,
+                                               scripty_data.sd_expected_name,
+                                               options);
+                } else {
                     retval = EXIT_FAILURE;
                 }
-            }
-            else {
+            } else {
                 fprintf(stderr, "%s:error: mismatch\n", tstamp());
                 retval = EXIT_FAILURE;
             }

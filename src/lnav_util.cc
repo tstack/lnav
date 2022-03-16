@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -31,20 +31,21 @@
  * Dumping ground for useful functions with no other home.
  */
 
-#include "config.h"
+#include "lnav_util.hh"
 
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "lnav_util.hh"
-#include "base/result.h"
 #include "ansi_scrubber.hh"
+#include "base/result.h"
+#include "config.h"
 #include "fmt/format.h"
 #include "view_curses.hh"
 
 using namespace std;
 
-bool change_to_parent_dir()
+bool
+change_to_parent_dir()
 {
     bool retval = false;
     char cwd[3] = "";
@@ -55,8 +56,7 @@ bool change_to_parent_dir()
     if (strcmp(cwd, "/") != 0) {
         if (chdir("..") == -1) {
             perror("chdir('..')");
-        }
-        else {
+        } else {
             retval = true;
         }
     }
@@ -64,17 +64,18 @@ bool change_to_parent_dir()
     return retval;
 }
 
-bool is_dev_null(const struct stat &st)
+bool
+is_dev_null(const struct stat& st)
 {
     struct stat null_stat;
 
     stat("/dev/null", &null_stat);
 
-    return st.st_dev == null_stat.st_dev &&
-           st.st_ino == null_stat.st_ino;
+    return st.st_dev == null_stat.st_dev && st.st_ino == null_stat.st_ino;
 }
 
-bool is_dev_null(int fd)
+bool
+is_dev_null(int fd)
 {
     struct stat fd_stat;
 
@@ -82,7 +83,8 @@ bool is_dev_null(int fd)
     return is_dev_null(fd_stat);
 }
 
-std::string ok_prefix(std::string msg)
+std::string
+ok_prefix(std::string msg)
 {
     if (msg.empty()) {
         return msg;
@@ -91,7 +93,8 @@ std::string ok_prefix(std::string msg)
     return std::string(ANSI_COLOR(COLOR_GREEN) "\u2714" ANSI_NORM " ") + msg;
 }
 
-std::string err_prefix(const std::string msg)
+std::string
+err_prefix(const std::string msg)
 {
     if (msg.empty()) {
         return msg;
@@ -100,7 +103,8 @@ std::string err_prefix(const std::string msg)
     return std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg;
 }
 
-Result<std::string, std::string> err_to_ok(const std::string msg)
+Result<std::string, std::string>
+err_to_ok(const std::string msg)
 {
     return Ok(err_prefix(msg));
 }

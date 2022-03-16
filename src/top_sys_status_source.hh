@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,10 +35,8 @@
 #include "logfile_sub_source.hh"
 #include "statusview_curses.hh"
 
-class top_sys_status_source
-    : public status_data_source {
+class top_sys_status_source : public status_data_source {
 public:
-
     typedef enum {
         TSF_CPU,
         TSF_MEM,
@@ -66,9 +64,12 @@ public:
         this->tss_fields[TSF_TRAF].set_role(view_colors::VCR_ACTIVE_STATUS);
     };
 
-    size_t statusview_fields() { return TSF__MAX; };
+    size_t statusview_fields()
+    {
+        return TSF__MAX;
+    };
 
-    status_field &statusview_value_for_field(int field)
+    status_field& statusview_value_for_field(int field)
     {
         return this->tss_fields[field];
     };

@@ -21,37 +21,39 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include <future>
 #include <algorithm>
+#include <future>
+
+#include "logfile_sub_source.hh"
+
 #include <sqlite3.h>
 
+#include "ansi_scrubber.hh"
 #include "base/humanize.time.hh"
 #include "base/string_util.hh"
+#include "command_executor.hh"
+#include "config.h"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "relative_time.hh"
-#include "logfile_sub_source.hh"
-#include "command_executor.hh"
-#include "ansi_scrubber.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
 using namespace std;
 
-bookmark_type_t logfile_sub_source::BM_ERRORS("error");
-bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
-bookmark_type_t logfile_sub_source::BM_FILES("");
+const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
+const bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
+const bookmark_type_t logfile_sub_source::BM_FILES("");
 
-static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+static int
+pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
     if (!sqlite3_stmt_busy(stmt)) {
         return 0;
@@ -64,7 +66,7 @@ static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
             ec.ec_accumulator->append(", ");
         }
 
-        const char *res = (const char *)sqlite3_column_text(stmt, lpc);
+        const char* res = (const char*) sqlite3_column_text(stmt, lpc);
         if (res == nullptr) {
             continue;
         }
@@ -75,9 +77,8 @@ static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
     return 0;
 }
 
-static future<string> pretty_pipe_callback(exec_context &ec,
-                                           const string &cmdline,
-                                           auto_fd &fd)
+static future<string>
+pretty_pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
 {
     auto retval = std::async(std::launch::async, [&]() {
         char buffer[1024];
@@ -101,17 +102,15 @@ static future<string> pretty_pipe_callback(exec_context &ec,
 }
 
 logfile_sub_source::logfile_sub_source()
-    : text_sub_source(1),
-      lss_meta_grepper(*this),
-      lss_location_history(*this)
+    : text_sub_source(1), lss_meta_grepper(*this), lss_location_history(*this)
 {
     this->tss_supports_filtering = true;
     this->clear_line_size_cache();
     this->clear_min_max_log_times();
 }
 
-shared_ptr<logfile> logfile_sub_source::find(const char *fn,
-                                  content_line_t &line_base)
+shared_ptr<logfile>
+logfile_sub_source::find(const char* fn, content_line_t& line_base)
 {
     iterator iter;
     shared_ptr<logfile> retval = nullptr;
@@ -119,8 +118,9 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
     line_base = content_line_t(0);
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end() && retval == nullptr;
-         iter++) {
-        auto &ld = *(*iter);
+         iter++)
+    {
+        auto& ld = *(*iter);
         auto lf = ld.get_file_ptr();
 
         if (lf == nullptr) {
@@ -128,8 +128,7 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
         }
         if (strcmp(lf->get_filename().c_str(), fn) == 0) {
             retval = ld.get_file();
-        }
-        else {
+        } else {
             line_base += content_line_t(MAX_LINES_PER_FILE);
         }
     }
@@ -137,7 +136,8 @@ shared_ptr<logfile> logfile_sub_source::find(const char *fn,
     return retval;
 }
 
-nonstd::optional<vis_line_t> logfile_sub_source::find_from_time(const struct timeval &start) const
+nonstd::optional<vis_line_t>
+logfile_sub_source::find_from_time(const struct timeval& start) const
 {
     auto lb = lower_bound(this->lss_filtered_index.begin(),
                           this->lss_filtered_index.end(),
@@ -150,23 +150,24 @@ nonstd::optional<vis_line_t> logfile_sub_source::find_from_time(const struct tim
     return nonstd::nullopt;
 }
 
-void logfile_sub_source::text_value_for_line(textview_curses &tc,
-                                             int row,
-                                             string &value_out,
-                                             line_flags_t flags)
+void
+logfile_sub_source::text_value_for_line(textview_curses& tc,
+                                        int row,
+                                        string& value_out,
+                                        line_flags_t flags)
 {
     content_line_t line(0);
 
     require(row >= 0);
-    require((size_t)row < this->lss_filtered_index.size());
+    require((size_t) row < this->lss_filtered_index.size());
 
     line = this->at(vis_line_t(row));
 
     if (flags & RF_RAW) {
         shared_ptr<logfile> lf = this->find(line);
         value_out = lf->read_line(lf->begin() + line)
-            .map([](auto sbr) { return to_string(sbr); })
-            .unwrapOr({});
+                        .map([](auto sbr) { return to_string(sbr); })
+                        .unwrapOr({});
         return;
     }
 
@@ -187,10 +188,10 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         this->lss_token_file->read_full_message(this->lss_token_line, sbr);
         this->lss_token_value = to_string(sbr);
     } else {
-        this->lss_token_value =
-            this->lss_token_file->read_line(this->lss_token_line).map([](auto sbr) {
-                return to_string(sbr);
-            }).unwrapOr({});
+        this->lss_token_value
+            = this->lss_token_file->read_line(this->lss_token_line)
+                  .map([](auto sbr) { return to_string(sbr); })
+                  .unwrapOr({});
     }
     this->lss_token_shift_start = 0;
     this->lss_token_shift_size = 0;
@@ -205,19 +206,21 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     shared_buffer_ref sbr;
 
     sbr.share(this->lss_share_manager,
-              (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
+              (char*) this->lss_token_value.c_str(),
+              this->lss_token_value.size());
     if (this->lss_token_line->is_continued()) {
         this->lss_token_attrs.emplace_back(
-            line_range{0, (int) this->lss_token_value.length()},
-            &SA_BODY);
+            line_range{0, (int) this->lss_token_value.length()}, &SA_BODY);
     } else {
-        format->annotate(line, sbr, this->lss_token_attrs, this->lss_token_values);
+        format->annotate(
+            line, sbr, this->lss_token_attrs, this->lss_token_values);
     }
     if (this->lss_token_line->get_sub_offset() != 0) {
         this->lss_token_attrs.clear();
     }
     if (flags & RF_REWRITE) {
-        exec_context ec(&this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
+        exec_context ec(
+            &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
         string rewritten_line;
 
         ec.with_perms(exec_context::perm_t::READ_ONLY);
@@ -230,17 +233,18 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         value_out = this->lss_token_value;
     }
 
-    if ((this->lss_token_file->is_time_adjusted() ||
-         format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) &&
-        format->lf_date_time.dts_fmt_lock != -1) {
-        auto time_attr = find_string_attr(
-            this->lss_token_attrs, &logline::L_TIMESTAMP);
+    if ((this->lss_token_file->is_time_adjusted()
+         || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED)
+        && format->lf_date_time.dts_fmt_lock != -1)
+    {
+        auto time_attr
+            = find_string_attr(this->lss_token_attrs, &logline::L_TIMESTAMP);
         if (time_attr != this->lss_token_attrs.end()) {
             const struct line_range time_range = time_attr->sa_range;
             struct timeval adjusted_time;
             struct exttm adjusted_tm;
             char buffer[128];
-            const char *fmt;
+            const char* fmt;
             ssize_t len;
 
             if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
@@ -257,14 +261,12 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 adjusted_time = this->lss_token_line->get_timeval();
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                 adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
-                len = format->lf_date_time.ftime(buffer, sizeof(buffer),
-                                                 adjusted_tm);
+                len = format->lf_date_time.ftime(
+                    buffer, sizeof(buffer), adjusted_tm);
             }
 
-            value_out.replace(time_range.lr_start,
-                              time_range.length(),
-                              buffer,
-                              len);
+            value_out.replace(
+                time_range.lr_start, time_range.length(), buffer, len);
             this->lss_token_shift_start = time_range.lr_start;
             this->lss_token_shift_size = len - time_range.length();
         }
@@ -300,10 +302,12 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         auto curr_tv = this->lss_token_line->get_timeval();
         struct timeval diff_tv;
 
-        vis_line_t prev_mark =
-            tc.get_bookmarks()[&textview_curses::BM_USER].prev(vis_line_t(row));
-        vis_line_t next_mark =
-            tc.get_bookmarks()[&textview_curses::BM_USER].next(vis_line_t(row));
+        vis_line_t prev_mark
+            = tc.get_bookmarks()[&textview_curses::BM_USER].prev(
+                vis_line_t(row));
+        vis_line_t next_mark
+            = tc.get_bookmarks()[&textview_curses::BM_USER].next(
+                vis_line_t(row));
         if (prev_mark == -1 && next_mark != -1) {
             auto next_line = this->find_line(this->at(next_mark));
 
@@ -324,38 +328,40 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     this->lss_in_value_for_line = false;
 }
 
-void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
-                                             int row,
-                                             string_attrs_t &value_out)
+void
+logfile_sub_source::text_attrs_for_line(textview_curses& lv,
+                                        int row,
+                                        string_attrs_t& value_out)
 {
-    view_colors &     vc        = view_colors::singleton();
-    logline *         next_line = nullptr;
+    view_colors& vc = view_colors::singleton();
+    logline* next_line = nullptr;
     struct line_range lr;
     int time_offset_end = 0;
-    int attrs           = 0;
+    int attrs = 0;
 
     value_out = this->lss_token_attrs;
 
     attrs = vc.vc_level_attrs[this->lss_token_line->get_msg_level()].first;
 
-    if ((row + 1) < (int)this->lss_filtered_index.size()) {
+    if ((row + 1) < (int) this->lss_filtered_index.size()) {
         next_line = this->find_line(this->at(vis_line_t(row + 1)));
     }
 
-    if (next_line != nullptr &&
-        (day_num(next_line->get_time()) >
-         day_num(this->lss_token_line->get_time()))) {
+    if (next_line != nullptr
+        && (day_num(next_line->get_time())
+            > day_num(this->lss_token_line->get_time())))
+    {
         attrs |= A_UNDERLINE;
     }
 
-    const std::vector<logline_value> &line_values = this->lss_token_values;
+    const std::vector<logline_value>& line_values = this->lss_token_values;
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
     value_out.emplace_back(lr, &SA_ORIGINAL_LINE);
 
     lr.lr_start = time_offset_end;
-    lr.lr_end   = -1;
+    lr.lr_end = -1;
 
     value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
@@ -365,26 +371,27 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 continue;
             }
 
-
             value_out.emplace_back(token_attr.sa_range,
                                    &view_curses::VC_ROLE,
                                    view_colors::VCR_INVALID_MSG);
         }
     }
 
-    for (const auto &line_value : line_values) {
-        if ((!(this->lss_token_flags & RF_FULL) &&
-            line_value.lv_sub_offset != this->lss_token_line->get_sub_offset()) ||
-            !line_value.lv_origin.is_valid()) {
+    for (const auto& line_value : line_values) {
+        if ((!(this->lss_token_flags & RF_FULL)
+             && line_value.lv_sub_offset
+                 != this->lss_token_line->get_sub_offset())
+            || !line_value.lv_origin.is_valid())
+        {
             continue;
         }
 
         if (line_value.lv_meta.is_hidden()) {
-            value_out.emplace_back(
-                line_value.lv_origin, &SA_HIDDEN);
+            value_out.emplace_back(line_value.lv_origin, &SA_HIDDEN);
         }
 
-        if (!line_value.lv_meta.lvm_identifier || !line_value.lv_origin.is_valid()) {
+        if (!line_value.lv_meta.lvm_identifier
+            || !line_value.lv_origin.is_valid()) {
             continue;
         }
 
@@ -394,13 +401,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 this->lss_token_value.c_str(), this->lss_token_value.length());
         }
 
-        value_out.emplace_back(ident_range,
-                               &view_curses::VC_ROLE,
-                               view_colors::VCR_IDENTIFIER);
+        value_out.emplace_back(
+            ident_range, &view_curses::VC_ROLE, view_colors::VCR_IDENTIFIER);
     }
 
     if (this->lss_token_shift_size) {
-        shift_string_attrs(value_out, this->lss_token_shift_start + 1,
+        shift_string_attrs(value_out,
+                           this->lss_token_shift_start + 1,
                            this->lss_token_shift_size);
     }
 
@@ -409,32 +416,30 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = 0;
     lr.lr_end = 1;
     {
-        auto &bm = lv.get_bookmarks();
-        const auto &bv = bm[&BM_FILES];
-        bool is_first_for_file = binary_search(
-            bv.begin(), bv.end(), vis_line_t(row));
-        bool is_last_for_file = binary_search(
-            bv.begin(), bv.end(), vis_line_t(row + 1));
+        auto& bm = lv.get_bookmarks();
+        const auto& bv = bm[&BM_FILES];
+        bool is_first_for_file
+            = binary_search(bv.begin(), bv.end(), vis_line_t(row));
+        bool is_last_for_file
+            = binary_search(bv.begin(), bv.end(), vis_line_t(row + 1));
         chtype graph = ACS_VLINE;
         if (is_first_for_file) {
             if (is_last_for_file) {
                 graph = ACS_HLINE;
-            }
-            else {
+            } else {
                 graph = ACS_ULCORNER;
             }
-        }
-        else if (is_last_for_file) {
+        } else if (is_last_for_file) {
             graph = ACS_LLCORNER;
         }
-        value_out.push_back(
-            string_attr(lr, &view_curses::VC_GRAPHIC, graph));
+        value_out.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, graph));
 
         if (!(this->lss_token_flags & RF_FULL)) {
-            bookmark_vector<vis_line_t> &bv_search = bm[&textview_curses::BM_SEARCH];
+            bookmark_vector<vis_line_t>& bv_search
+                = bm[&textview_curses::BM_SEARCH];
 
-            if (binary_search(::begin(bv_search), ::end(bv_search),
-                              vis_line_t(row))) {
+            if (binary_search(
+                    ::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
                 value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
@@ -442,46 +447,49 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
     }
 
-    value_out.emplace_back(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-        this->lss_token_file->get_filename()));
+    value_out.emplace_back(
+        lr,
+        &view_curses::VC_STYLE,
+        vc.attrs_for_ident(this->lss_token_file->get_filename()));
 
     if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
-        size_t file_offset_end = (this->lss_flags & F_FILENAME) ?
-                                    this->lss_filename_width :
-                                    this->lss_basename_width ;
+        size_t file_offset_end = (this->lss_flags & F_FILENAME)
+            ? this->lss_filename_width
+            : this->lss_basename_width;
 
         shift_string_attrs(value_out, 0, file_offset_end);
 
         lr.lr_start = 0;
-        lr.lr_end   = file_offset_end + 1;
-        value_out.emplace_back(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-            this->lss_token_file->get_filename()));
+        lr.lr_end = file_offset_end + 1;
+        value_out.emplace_back(
+            lr,
+            &view_curses::VC_STYLE,
+            vc.attrs_for_ident(this->lss_token_file->get_filename()));
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;
-        lr.lr_start     = 0;
-        lr.lr_end       = time_offset_end;
+        lr.lr_start = 0;
+        lr.lr_end = time_offset_end;
 
         shift_string_attrs(value_out, 0, time_offset_end);
 
-        value_out.emplace_back(lr,
-                               &view_curses::VC_ROLE,
-                               view_colors::VCR_OFFSET_TIME);
-        value_out.emplace_back(line_range(12, 13),
-            &view_curses::VC_GRAPHIC, ACS_VLINE);
+        value_out.emplace_back(
+            lr, &view_curses::VC_ROLE, view_colors::VCR_OFFSET_TIME);
+        value_out.emplace_back(
+            line_range(12, 13), &view_curses::VC_GRAPHIC, ACS_VLINE);
 
         view_colors::role_t bar_role = view_colors::VCR_NONE;
 
         switch (this->get_line_accel_direction(vis_line_t(row))) {
-        case log_accel::A_STEADY:
-            break;
-        case log_accel::A_DECEL:
-            bar_role = view_colors::VCR_DIFF_DELETE;
-            break;
-        case log_accel::A_ACCEL:
-            bar_role = view_colors::VCR_DIFF_ADD;
-            break;
+            case log_accel::A_STEADY:
+                break;
+            case log_accel::A_DECEL:
+                bar_role = view_colors::VCR_DIFF_DELETE;
+                break;
+            case log_accel::A_ACCEL:
+                bar_role = view_colors::VCR_DIFF_ADD;
+                break;
         }
         if (bar_role != view_colors::VCR_NONE) {
             value_out.emplace_back(
@@ -490,13 +498,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 
     lr.lr_start = 0;
-    lr.lr_end   = -1;
+    lr.lr_end = -1;
     value_out.emplace_back(lr, &logline::L_FILE, this->lss_token_file.get());
-    value_out.emplace_back(lr, &SA_FORMAT,
-                           this->lss_token_file->get_format()->get_name());
+    value_out.emplace_back(
+        lr, &SA_FORMAT, this->lss_token_file->get_format()->get_name());
 
     {
-        const auto &bv = lv.get_bookmarks()[&textview_curses::BM_META];
+        const auto& bv = lv.get_bookmarks()[&textview_curses::BM_META];
         bookmark_vector<vis_line_t>::const_iterator bv_iter;
 
         bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
@@ -506,15 +514,18 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             std::map<content_line_t, bookmark_metadata>::iterator bm_iter;
 
             if ((bm_iter = this->lss_user_mark_metadata.find(part_start_line))
-                != this->lss_user_mark_metadata.end() &&
-                !bm_iter->second.bm_name.empty()) {
+                    != this->lss_user_mark_metadata.end()
+                && !bm_iter->second.bm_name.empty())
+            {
                 lr.lr_start = 0;
-                lr.lr_end   = -1;
-                value_out.emplace_back(lr, &logline::L_PARTITION, &bm_iter->second);
+                lr.lr_end = -1;
+                value_out.emplace_back(
+                    lr, &logline::L_PARTITION, &bm_iter->second);
             }
         }
 
-        auto bm_iter = this->lss_user_mark_metadata.find(this->at(vis_line_t(row)));
+        auto bm_iter
+            = this->lss_user_mark_metadata.find(this->at(vis_line_t(row)));
 
         if (bm_iter != this->lss_user_mark_metadata.end()) {
             lr.lr_start = 0;
@@ -524,21 +535,23 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 
     if (this->lss_token_file->is_time_adjusted()) {
-        struct line_range time_range = find_string_attr_range(
-            value_out, &logline::L_TIMESTAMP);
+        struct line_range time_range
+            = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
+            value_out.emplace_back(time_range,
+                                   &view_curses::VC_ROLE,
                                    view_colors::VCR_ADJUSTED_TIME);
         }
     }
 
     if (this->lss_token_line->is_time_skewed()) {
-        struct line_range time_range = find_string_attr_range(
-            value_out, &logline::L_TIMESTAMP);
+        struct line_range time_range
+            = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range, &view_curses::VC_ROLE,
+            value_out.emplace_back(time_range,
+                                   &view_curses::VC_ROLE,
                                    view_colors::VCR_SKEWED_TIME);
         }
     }
@@ -546,14 +559,14 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     if (!this->lss_token_line->is_continued()) {
         if (this->lss_preview_filter_stmt != nullptr) {
             int color;
-            auto eval_res = this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
-                                                  this->lss_token_file_data,
-                                                  this->lss_token_line);
+            auto eval_res
+                = this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
+                                        this->lss_token_file_data,
+                                        this->lss_token_line);
             if (eval_res.isErr()) {
                 color = COLOR_YELLOW;
-                value_out.emplace_back(line_range{0, -1},
-                                       &SA_ERROR,
-                                       eval_res.unwrapErr());
+                value_out.emplace_back(
+                    line_range{0, -1}, &SA_ERROR, eval_res.unwrapErr());
             } else {
                 auto matched = eval_res.unwrap();
 
@@ -561,16 +574,17 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                     color = COLOR_GREEN;
                 } else {
                     color = COLOR_RED;
-                    value_out.emplace_back(line_range{0, 1}, &view_curses::VC_STYLE,
-                                           A_BLINK);
+                    value_out.emplace_back(
+                        line_range{0, 1}, &view_curses::VC_STYLE, A_BLINK);
                 }
             }
-            value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+            value_out.emplace_back(
+                line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
         }
 
         auto sql_filter_opt = this->get_sql_filter();
         if (sql_filter_opt) {
-            auto sf = (sql_filter *) sql_filter_opt.value().get();
+            auto sf = (sql_filter*) sql_filter_opt.value().get();
             int color;
             auto eval_res = this->eval_sql_filter(sf->sf_filter_stmt.in(),
                                                   this->lss_token_file_data,
@@ -580,16 +594,17 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                     "filter expression evaluation failed with -- {}",
                     eval_res.unwrapErr());
                 color = COLOR_YELLOW;
-                value_out.emplace_back(line_range{0, -1},
-                                       &SA_ERROR,
-                                       msg);
-                value_out.emplace_back(line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+                value_out.emplace_back(line_range{0, -1}, &SA_ERROR, msg);
+                value_out.emplace_back(
+                    line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
             }
         }
     }
 }
 
-logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
+logfile_sub_source::rebuild_result
+logfile_sub_source::rebuild_index(
+    nonstd::optional<ui_clock::time_point> deadline)
 {
     iterator iter;
     size_t total_lines = 0;
@@ -612,10 +627,11 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
         file_order[lpc] = lpc;
     }
     if (!this->lss_index.empty()) {
-        std::stable_sort(file_order.begin(), file_order.end(),
-                         [this](const auto &left, const auto &right) {
-                             const auto &left_ld = this->lss_files[left];
-                             const auto &right_ld = this->lss_files[right];
+        std::stable_sort(file_order.begin(),
+                         file_order.end(),
+                         [this](const auto& left, const auto& right) {
+                             const auto& left_ld = this->lss_files[left];
+                             const auto& right_ld = this->lss_files[right];
 
                              if (left_ld->get_file_ptr() == nullptr) {
                                  return true;
@@ -624,27 +640,27 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                                  return false;
                              }
 
-                             return left_ld->get_file_ptr()->back() <
-                                    right_ld->get_file_ptr()->back();
+                             return left_ld->get_file_ptr()->back()
+                                 < right_ld->get_file_ptr()->back();
                          });
     }
 
     bool time_left = true;
     for (const auto file_index : file_order) {
-        auto &ld = *(this->lss_files[file_index]);
+        auto& ld = *(this->lss_files[file_index]);
         auto lf = ld.get_file_ptr();
 
         if (lf == nullptr) {
             if (ld.ld_lines_indexed > 0) {
                 log_debug("%d: file closed, doing full rebuild",
                           ld.ld_file_index);
-                force  = true;
+                force = true;
                 retval = rebuild_result::rr_full_rebuild;
             }
-        }
-        else {
+        } else {
             if (time_left && deadline && ui_clock::now() > deadline.value()) {
-                log_debug("no time left, skipping %s", lf->get_filename().c_str());
+                log_debug("no time left, skipping %s",
+                          lf->get_filename().c_str());
                 time_left = false;
             }
 
@@ -657,33 +673,39 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                         if (retval == rebuild_result::rr_no_change) {
                             retval = rebuild_result::rr_appended_lines;
                         }
-                        log_debug("new lines for %s:%d", lf->get_filename().c_str(), lf->size());
-                        if (!this->lss_index.empty() &&
-                            lf->size() > ld.ld_lines_indexed) {
-                            logline &new_file_line = (*lf)[ld.ld_lines_indexed];
+                        log_debug("new lines for %s:%d",
+                                  lf->get_filename().c_str(),
+                                  lf->size());
+                        if (!this->lss_index.empty()
+                            && lf->size() > ld.ld_lines_indexed) {
+                            logline& new_file_line = (*lf)[ld.ld_lines_indexed];
                             content_line_t cl = this->lss_index.back();
-                            logline *last_indexed_line = this->find_line(cl);
+                            logline* last_indexed_line = this->find_line(cl);
 
-                            // If there are new lines that are older than what we
-                            // have in the index, we need to resort.
-                            if (last_indexed_line == nullptr ||
-                                new_file_line <
-                                last_indexed_line->get_timeval()) {
-                                log_debug("%s:%ld: found older lines, full "
-                                          "rebuild: %p  %lld < %lld",
-                                          lf->get_filename().c_str(),
-                                          ld.ld_lines_indexed,
-                                          last_indexed_line,
-                                          new_file_line.get_time_in_millis(),
-                                          last_indexed_line == nullptr ?
-                                          (uint64_t) -1 :
-                                          last_indexed_line->get_time_in_millis());
-                                if (retval <= rebuild_result::rr_partial_rebuild) {
+                            // If there are new lines that are older than what
+                            // we have in the index, we need to resort.
+                            if (last_indexed_line == nullptr
+                                || new_file_line
+                                    < last_indexed_line->get_timeval())
+                            {
+                                log_debug(
+                                    "%s:%ld: found older lines, full "
+                                    "rebuild: %p  %lld < %lld",
+                                    lf->get_filename().c_str(),
+                                    ld.ld_lines_indexed,
+                                    last_indexed_line,
+                                    new_file_line.get_time_in_millis(),
+                                    last_indexed_line == nullptr
+                                        ? (uint64_t) -1
+                                        : last_indexed_line
+                                              ->get_time_in_millis());
+                                if (retval
+                                    <= rebuild_result::rr_partial_rebuild) {
                                     retval = rebuild_result::rr_partial_rebuild;
                                     if (!lowest_tv) {
                                         lowest_tv = new_file_line.get_timeval();
-                                    } else if (new_file_line.get_timeval() <
-                                               lowest_tv.value()) {
+                                    } else if (new_file_line.get_timeval()
+                                               < lowest_tv.value()) {
                                         lowest_tv = new_file_line.get_timeval();
                                     }
                                 }
@@ -717,8 +739,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
     auto& vis_bm = this->tss_view->get_bookmarks();
 
     if (force) {
-        for (iter = this->lss_files.begin();
-             iter != this->lss_files.end();
+        for (iter = this->lss_files.begin(); iter != this->lss_files.end();
              iter++) {
             (*iter)->ld_lines_indexed = 0;
         }
@@ -734,10 +755,9 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
 
         log_debug("partial rebuild with lowest time: %ld",
                   lowest_tv.value().tv_sec);
-        for (iter = this->lss_files.begin();
-             iter != this->lss_files.end();
+        for (iter = this->lss_files.begin(); iter != this->lss_files.end();
              iter++) {
-            logfile_data &ld = *(*iter);
+            logfile_data& ld = *(*iter);
             auto lf = ld.get_file_ptr();
 
             if (lf == nullptr) {
@@ -753,8 +773,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                           std::distance(lf->cbegin(), line_iter.value()),
                           lf->size());
             }
-            ld.ld_lines_indexed = std::distance(
-                lf->cbegin(), line_iter.value_or(lf->cend()));
+            ld.ld_lines_indexed
+                = std::distance(lf->cbegin(), line_iter.value_or(lf->cend()));
             remaining += lf->size() - ld.ld_lines_indexed;
         }
 
@@ -762,24 +782,24 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                                     this->lss_index.end(),
                                     *lowest_tv,
                                     logline_cmp(*this));
-        this->lss_index.shrink_to(std::distance(
-            this->lss_index.begin(), row_iter));
+        this->lss_index.shrink_to(
+            std::distance(this->lss_index.begin(), row_iter));
         log_debug("new index size %ld/%ld; remain %ld",
                   this->lss_index.ba_size,
                   this->lss_index.ba_capacity,
                   remaining);
         auto filt_row_iter = lower_bound(this->lss_filtered_index.begin(),
-                                    this->lss_filtered_index.end(),
-                                    *lowest_tv,
-                                    filtered_logline_cmp(*this));
-        this->lss_filtered_index.resize(std::distance(
-            this->lss_filtered_index.begin(), filt_row_iter));
+                                         this->lss_filtered_index.end(),
+                                         *lowest_tv,
+                                         filtered_logline_cmp(*this));
+        this->lss_filtered_index.resize(
+            std::distance(this->lss_filtered_index.begin(), filt_row_iter));
         search_start = vis_line_t(this->lss_filtered_index.size());
 
         auto bm_range = vis_bm[&textview_curses::BM_USER_EXPR].equal_range(
             search_start, -1_vl);
-        auto bm_new_size = std::distance(vis_bm[&textview_curses::BM_USER_EXPR]
-            .begin(), bm_range.first);
+        auto bm_new_size = std::distance(
+            vis_bm[&textview_curses::BM_USER_EXPR].begin(), bm_range.first);
         vis_bm[&textview_curses::BM_USER_EXPR].resize(bm_new_size);
 
         if (this->lss_index_delegate) {
@@ -807,12 +827,12 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
             if (lf == nullptr) {
                 continue;
             }
-            this->lss_longest_line = std::max(
-                this->lss_longest_line, lf->get_longest_line_length());
-            this->lss_basename_width = std::max(
-                this->lss_basename_width, lf->get_unique_path().size());
-            this->lss_filename_width = std::max(
-                this->lss_filename_width, lf->get_filename().size());
+            this->lss_longest_line = std::max(this->lss_longest_line,
+                                              lf->get_longest_line_length());
+            this->lss_basename_width = std::max(this->lss_basename_width,
+                                                lf->get_unique_path().size());
+            this->lss_filename_width
+                = std::max(this->lss_filename_width, lf->get_filename().size());
         }
 
         if (full_sort) {
@@ -823,13 +843,14 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                     continue;
                 }
 
-                for (size_t line_index = 0; line_index < lf->size(); line_index++) {
+                for (size_t line_index = 0; line_index < lf->size();
+                     line_index++) {
                     if ((*lf)[line_index].is_ignored()) {
                         continue;
                     }
 
-                    content_line_t con_line(ld->ld_file_index * MAX_LINES_PER_FILE +
-                                            line_index);
+                    content_line_t con_line(
+                        ld->ld_file_index * MAX_LINES_PER_FILE + line_index);
 
                     this->lss_index.push_back(con_line);
                 }
@@ -842,25 +863,22 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
             }
             sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
             if (this->lss_sorting_observer) {
-                this->lss_sorting_observer(*this, this->lss_index.size(),
-                                           this->lss_index.size());
+                this->lss_sorting_observer(
+                    *this, this->lss_index.size(), this->lss_index.size());
             }
         } else {
             kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
                 file_count);
 
-            for (iter = this->lss_files.begin();
-                 iter != this->lss_files.end();
+            for (iter = this->lss_files.begin(); iter != this->lss_files.end();
                  iter++) {
-                logfile_data *ld = iter->get();
+                logfile_data* ld = iter->get();
                 auto lf = ld->get_file_ptr();
                 if (lf == nullptr) {
                     continue;
                 }
 
-                merge.add(ld,
-                          lf->begin() + ld->ld_lines_indexed,
-                          lf->end());
+                merge.add(ld, lf->begin() + ld->ld_lines_indexed, lf->end());
                 index_size += lf->size();
             }
 
@@ -871,7 +889,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
             }
             for (;;) {
                 logfile::iterator lf_iter;
-                logfile_data *ld;
+                logfile_data* ld;
 
                 if (!merge.get_top(ld, lf_iter)) {
                     break;
@@ -881,8 +899,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                     int file_index = ld->ld_file_index;
                     int line_index = lf_iter - ld->get_file_ptr()->begin();
 
-                    content_line_t con_line(file_index * MAX_LINES_PER_FILE +
-                                            line_index);
+                    content_line_t con_line(file_index * MAX_LINES_PER_FILE
+                                            + line_index);
 
                     this->lss_index.push_back(con_line);
                 }
@@ -898,8 +916,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
             }
         }
 
-        for (iter = this->lss_files.begin();
-             iter != this->lss_files.end();
+        for (iter = this->lss_files.begin(); iter != this->lss_files.end();
              iter++) {
             auto lf = (*iter)->get_file_ptr();
 
@@ -921,7 +938,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
 
         for (size_t index_index = start_size;
              index_index < this->lss_index.size();
-             index_index++) {
+             index_index++)
+        {
             content_line_t cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
             auto ld = this->find_data(cl, line_number);
@@ -937,12 +955,13 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
                 continue;
             }
 
-            if (!this->tss_apply_filters ||
-                (!(*ld)->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
-                                                  line_number) &&
-                 this->check_extra_filters(ld, line_iter))) {
-                auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(),
-                                                      ld, line_iter);
+            if (!this->tss_apply_filters
+                || (!(*ld)->ld_filter_state.excluded(
+                        filter_in_mask, filter_out_mask, line_number)
+                    && this->check_extra_filters(ld, line_iter)))
+            {
+                auto eval_res = this->eval_sql_filter(
+                    this->lss_marker_stmt.in(), ld, line_iter);
                 if (eval_res.isErr()) {
                     line_iter->set_expr_mark(false);
                 } else {
@@ -950,17 +969,16 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
 
                     if (matched) {
                         line_iter->set_expr_mark(true);
-                        vis_bm[&textview_curses::BM_USER_EXPR]
-                            .insert_once(vis_line_t(this->lss_filtered_index.size()));
-                    }
-                    else {
+                        vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
+                            vis_line_t(this->lss_filtered_index.size()));
+                    } else {
                         line_iter->set_expr_mark(false);
                     }
                 }
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
                     this->lss_index_delegate->index_line(
-                            *this, lf, lf->begin() + line_number);
+                        *this, lf, lf->begin() + line_number);
                 }
             }
         }
@@ -989,7 +1007,8 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index(nonstd::opt
     return retval;
 }
 
-void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
+void
+logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
     shared_ptr<logfile> last_file = nullptr;
     vis_line_t vl;
@@ -998,21 +1017,22 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     bm[&BM_ERRORS].clear();
     bm[&BM_FILES].clear();
 
-    for (auto &lss_user_mark : this->lss_user_marks) {
+    for (auto& lss_user_mark : this->lss_user_marks) {
         bm[lss_user_mark.first].clear();
     }
 
-    for (; vl < (int)this->lss_filtered_index.size(); ++vl) {
+    for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
         shared_ptr<logfile> lf;
 
         lf = this->find(cl);
 
-        for (auto &lss_user_mark : this->lss_user_marks) {
+        for (auto& lss_user_mark : this->lss_user_marks) {
             if (binary_search(lss_user_mark.second.begin(),
                               lss_user_mark.second.end(),
-                              orig_cl)) {
+                              orig_cl))
+            {
                 bm[lss_user_mark.first].insert_once(vl);
 
                 if (lss_user_mark.first == &textview_curses::BM_USER) {
@@ -1049,13 +1069,13 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     }
 }
 
-log_accel::direction_t logfile_sub_source::get_line_accel_direction(
-    vis_line_t vl)
+log_accel::direction_t
+logfile_sub_source::get_line_accel_direction(vis_line_t vl)
 {
     log_accel la;
 
     while (vl >= 0) {
-        logline *curr_line = this->find_line(this->at(vl));
+        logline* curr_line = this->find_line(this->at(vl));
 
         if (!curr_line->is_message()) {
             --vl;
@@ -1072,7 +1092,8 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
     return la.get_direction();
 }
 
-void logfile_sub_source::text_filters_changed()
+void
+logfile_sub_source::text_filters_changed()
 {
     if (this->lss_line_meta_changed) {
         this->invalidate_sql_filter();
@@ -1084,7 +1105,8 @@ void logfile_sub_source::text_filters_changed()
 
         if (lf != nullptr) {
             ld->ld_filter_state.clear_deleted_filter_state();
-            lf->reobserve_from(lf->begin() + ld->ld_filter_state.get_min_count(lf->size()));
+            lf->reobserve_from(lf->begin()
+                               + ld->ld_filter_state.get_min_count(lf->size()));
         }
     }
 
@@ -1099,7 +1121,9 @@ void logfile_sub_source::text_filters_changed()
     vis_bm[&textview_curses::BM_USER_EXPR].clear();
 
     this->lss_filtered_index.clear();
-    for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
+    for (size_t index_index = 0; index_index < this->lss_index.size();
+         index_index++)
+    {
         content_line_t cl = (content_line_t) this->lss_index[index_index];
         uint64_t line_number;
         auto ld = this->find_data(cl, line_number);
@@ -1111,12 +1135,13 @@ void logfile_sub_source::text_filters_changed()
         auto lf = (*ld)->get_file_ptr();
         auto line_iter = lf->begin() + line_number;
 
-        if (!this->tss_apply_filters ||
-            (!(*ld)->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
-                                              line_number) &&
-             this->check_extra_filters(ld, line_iter))) {
-            auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(),
-                                                  ld, line_iter);
+        if (!this->tss_apply_filters
+            || (!(*ld)->ld_filter_state.excluded(
+                    filtered_in_mask, filtered_out_mask, line_number)
+                && this->check_extra_filters(ld, line_iter)))
+        {
+            auto eval_res = this->eval_sql_filter(
+                this->lss_marker_stmt.in(), ld, line_iter);
             if (eval_res.isErr()) {
                 line_iter->set_expr_mark(false);
             } else {
@@ -1124,10 +1149,9 @@ void logfile_sub_source::text_filters_changed()
 
                 if (matched) {
                     line_iter->set_expr_mark(true);
-                    vis_bm[&textview_curses::BM_USER_EXPR]
-                        .insert_once(vis_line_t(this->lss_filtered_index.size()));
-                }
-                else {
+                    vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
+                        vis_line_t(this->lss_filtered_index.size()));
+                } else {
                     line_iter->set_expr_mark(false);
                 }
             }
@@ -1148,7 +1172,8 @@ void logfile_sub_source::text_filters_changed()
     }
 }
 
-bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
+bool
+logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 {
     switch (ch) {
         case 'h':
@@ -1174,16 +1199,16 @@ bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
     return false;
 }
 
-nonstd::optional<pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>>
+nonstd::optional<
+    pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
 logfile_sub_source::get_grepper()
 {
-    return make_pair(
-        (grep_proc_source<vis_line_t> *) &this->lss_meta_grepper,
-        (grep_proc_sink<vis_line_t> *) &this->lss_meta_grepper
-    );
+    return make_pair((grep_proc_source<vis_line_t>*) &this->lss_meta_grepper,
+                     (grep_proc_sink<vis_line_t>*) &this->lss_meta_grepper);
 }
 
-bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
+bool
+logfile_sub_source::insert_file(const shared_ptr<logfile>& lf)
 {
     iterator existing;
 
@@ -1201,8 +1226,7 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
             this->lss_files.size(), this->get_filters(), lf);
         ld->set_visibility(lf->get_open_options().loo_is_visible);
         this->lss_files.push_back(std::move(ld));
-    }
-    else {
+    } else {
         (*existing)->set_file(lf);
     }
     this->lss_force_rebuild = true;
@@ -1210,12 +1234,14 @@ bool logfile_sub_source::insert_file(const shared_ptr<logfile> &lf)
     return true;
 }
 
-Result<void, std::string> logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt *stmt)
+Result<void, std::string>
+logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 {
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
-        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+        auto eval_res
+            = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
 
         if (eval_res.isErr()) {
             sqlite3_finalize(stmt);
@@ -1247,12 +1273,13 @@ Result<void, std::string> logfile_sub_source::set_sql_filter(std::string stmt_st
 }
 
 Result<void, std::string>
-logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
+logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
 {
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
-        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+        auto eval_res
+            = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
 
         if (eval_res.isErr()) {
             sqlite3_finalize(stmt);
@@ -1273,7 +1300,8 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
         auto cl = this->at(row);
         auto ld = this->find_data(cl);
         auto ll = (*ld)->get_file()->begin() + cl;
-        auto eval_res = this->eval_sql_filter(this->lss_marker_stmt.in(), ld, ll);
+        auto eval_res
+            = this->eval_sql_filter(this->lss_marker_stmt.in(), ld, ll);
 
         if (eval_res.isErr()) {
             ll->set_expr_mark(false);
@@ -1288,7 +1316,8 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
             }
         }
         if (this->lss_index_delegate) {
-            this->lss_index_delegate->index_line(*this, (*ld)->get_file_ptr(), ll);
+            this->lss_index_delegate->index_line(
+                *this, (*ld)->get_file_ptr(), ll);
         }
     }
     if (this->lss_index_delegate) {
@@ -1299,12 +1328,13 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt *stmt)
 }
 
 Result<void, std::string>
-logfile_sub_source::set_preview_sql_filter(sqlite3_stmt *stmt)
+logfile_sub_source::set_preview_sql_filter(sqlite3_stmt* stmt)
 {
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
-        auto eval_res = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
+        auto eval_res
+            = this->eval_sql_filter(stmt, ld, (*ld)->get_file_ptr()->begin());
 
         if (eval_res.isErr()) {
             sqlite3_finalize(stmt);
@@ -1318,7 +1348,9 @@ logfile_sub_source::set_preview_sql_filter(sqlite3_stmt *stmt)
 }
 
 Result<bool, std::string>
-logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::const_iterator ll)
+logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
+                                    iterator ld,
+                                    logfile::const_iterator ll)
 {
     if (stmt == nullptr) {
         return Ok(false);
@@ -1338,10 +1370,10 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
 
     auto count = sqlite3_bind_parameter_count(stmt);
     for (int lpc = 0; lpc < count; lpc++) {
-        auto *name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+        auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
 
         if (name[0] == '$') {
-            const char *env_value;
+            const char* env_value;
 
             if ((env_value = getenv(&name[1])) != nullptr) {
                 sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
@@ -1349,20 +1381,17 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
             continue;
         }
         if (strcmp(name, ":log_level") == 0) {
-            sqlite3_bind_text(stmt,
-                              lpc + 1,
-                              ll->get_level_name(), -1,
-                              SQLITE_STATIC);
+            sqlite3_bind_text(
+                stmt, lpc + 1, ll->get_level_name(), -1, SQLITE_STATIC);
             continue;
         }
         if (strcmp(name, ":log_time") == 0) {
-            auto len = sql_strftime(timestamp_buffer, sizeof(timestamp_buffer),
+            auto len = sql_strftime(timestamp_buffer,
+                                    sizeof(timestamp_buffer),
                                     ll->get_timeval(),
                                     'T');
-            sqlite3_bind_text(stmt,
-                              lpc + 1,
-                              timestamp_buffer, len,
-                              SQLITE_STATIC);
+            sqlite3_bind_text(
+                stmt, lpc + 1, timestamp_buffer, len, SQLITE_STATIC);
             continue;
         }
         if (strcmp(name, ":log_time_msecs") == 0) {
@@ -1374,12 +1403,12 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
             continue;
         }
         if (strcmp(name, ":log_comment") == 0) {
-            const auto &bm = this->get_user_bookmark_metadata();
+            const auto& bm = this->get_user_bookmark_metadata();
             auto cl = this->get_file_base_content_line(ld);
             cl += content_line_t(std::distance(lf->cbegin(), ll));
             auto bm_iter = bm.find(cl);
             if (bm_iter != bm.end() && !bm_iter->second.bm_comment.empty()) {
-                const auto &meta = bm_iter->second;
+                const auto& meta = bm_iter->second;
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
                                   meta.bm_comment.c_str(),
@@ -1389,12 +1418,12 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
             continue;
         }
         if (strcmp(name, ":log_tags") == 0) {
-            const auto &bm = this->get_user_bookmark_metadata();
+            const auto& bm = this->get_user_bookmark_metadata();
             auto cl = this->get_file_base_content_line(ld);
             cl += content_line_t(std::distance(lf->cbegin(), ll));
             auto bm_iter = bm.find(cl);
             if (bm_iter != bm.end() && !bm_iter->second.bm_tags.empty()) {
-                const auto &meta = bm_iter->second;
+                const auto& meta = bm_iter->second;
                 yajlpp_gen gen;
 
                 yajl_gen_config(gen, yajl_gen_beautify, false);
@@ -1402,18 +1431,15 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
                 {
                     yajlpp_array arr(gen);
 
-                    for (const auto &str : meta.bm_tags) {
+                    for (const auto& str : meta.bm_tags) {
                         arr.gen(str);
                     }
                 }
 
                 string_fragment sf = gen.to_string_fragment();
 
-                sqlite3_bind_text(stmt,
-                                  lpc + 1,
-                                  sf.data(),
-                                  sf.length(),
-                                  SQLITE_TRANSIENT);
+                sqlite3_bind_text(
+                    stmt, lpc + 1, sf.data(), sf.length(), SQLITE_TRANSIENT);
             }
             continue;
         }
@@ -1421,15 +1447,14 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
             const auto& filename = lf->get_filename();
             sqlite3_bind_text(stmt,
                               lpc + 1,
-                              filename.c_str(), filename.length(),
+                              filename.c_str(),
+                              filename.length(),
                               SQLITE_STATIC);
             continue;
         }
         if (strcmp(name, ":log_text") == 0) {
-            sqlite3_bind_text(stmt,
-                              lpc + 1,
-                              sbr.get_data(), sbr.length(),
-                              SQLITE_STATIC);
+            sqlite3_bind_text(
+                stmt, lpc + 1, sbr.get_data(), sbr.length(), SQLITE_STATIC);
             continue;
         }
         if (strcmp(name, ":log_body") == 0) {
@@ -1501,7 +1526,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt *stmt, iterator ld, logfile::co
     return Ok(true);
 }
 
-bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
+bool
+logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
 {
     if (this->lss_marked_only && !(ll->is_marked() || ll->is_expr_marked())) {
         return false;
@@ -1522,7 +1548,8 @@ bool logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
     return true;
 }
 
-void logfile_sub_source::invalidate_sql_filter()
+void
+logfile_sub_source::invalidate_sql_filter()
 {
     for (auto& ld : *this) {
         ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
@@ -1530,7 +1557,9 @@ void logfile_sub_source::invalidate_sql_filter()
 }
 
 void
-logfile_sub_source::text_mark(bookmark_type_t *bm, vis_line_t line, bool added)
+logfile_sub_source::text_mark(const bookmark_type_t* bm,
+                              vis_line_t line,
+                              bool added)
 {
     if (line >= (int) this->lss_index.size()) {
         return;
@@ -1540,37 +1569,38 @@ logfile_sub_source::text_mark(bookmark_type_t *bm, vis_line_t line, bool added)
     std::vector<content_line_t>::iterator lb;
 
     if (bm == &textview_curses::BM_USER) {
-        logline *ll = this->find_line(cl);
+        logline* ll = this->find_line(cl);
 
         ll->set_mark(added);
     }
-    lb = std::lower_bound(this->lss_user_marks[bm].begin(),
-                          this->lss_user_marks[bm].end(),
-                          cl);
+    lb = std::lower_bound(
+        this->lss_user_marks[bm].begin(), this->lss_user_marks[bm].end(), cl);
     if (added) {
         if (lb == this->lss_user_marks[bm].end() || *lb != cl) {
             this->lss_user_marks[bm].insert(lb, cl);
         }
-    }
-    else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
+    } else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
         require(lb != this->lss_user_marks[bm].end());
 
         this->lss_user_marks[bm].erase(lb);
     }
-    if (bm == &textview_curses::BM_META &&
-        this->lss_meta_grepper.gps_proc != nullptr) {
+    if (bm == &textview_curses::BM_META
+        && this->lss_meta_grepper.gps_proc != nullptr)
+    {
         this->tss_view->search_range(line, line + 1_vl);
         this->tss_view->search_new_data();
     }
 }
 
-void logfile_sub_source::text_clear_marks(bookmark_type_t *bm)
+void
+logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
 {
     std::vector<content_line_t>::iterator iter;
 
     if (bm == &textview_curses::BM_USER) {
         for (iter = this->lss_user_marks[bm].begin();
-             iter != this->lss_user_marks[bm].end();) {
+             iter != this->lss_user_marks[bm].end();)
+        {
             auto bm_iter = this->lss_user_mark_metadata.find(*iter);
             if (bm_iter != this->lss_user_mark_metadata.end()) {
                 ++iter;
@@ -1584,13 +1614,13 @@ void logfile_sub_source::text_clear_marks(bookmark_type_t *bm)
     }
 }
 
-void logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
+void
+logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
 {
     iterator iter;
 
-    iter = std::find_if(this->lss_files.begin(),
-                        this->lss_files.end(),
-                        logfile_data_eq(lf));
+    iter = std::find_if(
+        this->lss_files.begin(), this->lss_files.end(), logfile_data_eq(lf));
     if (iter != this->lss_files.end()) {
         bookmarks<content_line_t>::type::iterator mark_iter;
         int file_index = iter - this->lss_files.begin();
@@ -1598,18 +1628,18 @@ void logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
         (*iter)->clear();
         for (mark_iter = this->lss_user_marks.begin();
              mark_iter != this->lss_user_marks.end();
-             ++mark_iter) {
-            content_line_t mark_curr = content_line_t(
-                file_index * MAX_LINES_PER_FILE);
-            content_line_t mark_end = content_line_t(
-                (file_index + 1) * MAX_LINES_PER_FILE);
+             ++mark_iter)
+        {
+            content_line_t mark_curr
+                = content_line_t(file_index * MAX_LINES_PER_FILE);
+            content_line_t mark_end
+                = content_line_t((file_index + 1) * MAX_LINES_PER_FILE);
             bookmark_vector<content_line_t>::iterator bv_iter;
-            bookmark_vector<content_line_t> &         bv =
-                mark_iter->second;
+            bookmark_vector<content_line_t>& bv = mark_iter->second;
 
-            while ((bv_iter =
-                        std::lower_bound(bv.begin(), bv.end(),
-                                         mark_curr)) != bv.end()) {
+            while ((bv_iter = std::lower_bound(bv.begin(), bv.end(), mark_curr))
+                   != bv.end())
+            {
                 if (*bv_iter >= mark_end) {
                     break;
                 }
@@ -1629,7 +1659,7 @@ logfile_sub_source::find_from_content(content_line_t cl)
 
     if (lf != nullptr) {
         auto ll_iter = lf->begin() + line;
-        auto &ll = *ll_iter;
+        auto& ll = *ll_iter;
         auto vis_start_opt = this->find_from_time(ll.get_timeval());
 
         if (!vis_start_opt) {
@@ -1658,7 +1688,8 @@ logfile_sub_source::find_from_content(content_line_t cl)
     return nonstd::nullopt;
 }
 
-void logfile_sub_source::reload_index_delegate()
+void
+logfile_sub_source::reload_index_delegate()
 {
     if (this->lss_index_delegate == nullptr) {
         return;
@@ -1671,7 +1702,8 @@ void logfile_sub_source::reload_index_delegate()
         auto ld = this->find_data(cl, line_number);
         std::shared_ptr<logfile> lf = (*ld)->get_file();
 
-        this->lss_index_delegate->index_line(*this, lf.get(), lf->begin() + line_number);
+        this->lss_index_delegate->index_line(
+            *this, lf.get(), lf->begin() + line_number);
     }
     this->lss_index_delegate->index_complete(*this);
 }
@@ -1679,11 +1711,10 @@ void logfile_sub_source::reload_index_delegate()
 nonstd::optional<std::shared_ptr<text_filter>>
 logfile_sub_source::get_sql_filter()
 {
-    auto iter = std::find_if(this->tss_filters.begin(),
-                             this->tss_filters.end(),
-                             [](const auto& filt) {
-                                 return filt->get_index() == 0;
-                             });
+    auto iter
+        = std::find_if(this->tss_filters.begin(),
+                       this->tss_filters.end(),
+                       [](const auto& filt) { return filt->get_index() == 0; });
 
     if (iter != this->tss_filters.end()) {
         return *iter;
@@ -1691,7 +1722,8 @@ logfile_sub_source::get_sql_filter()
     return nonstd::nullopt;
 }
 
-void log_location_history::loc_history_append(vis_line_t top)
+void
+log_location_history::loc_history_append(vis_line_t top)
 {
     if (top >= vis_line_t(this->llh_log_source.text_line_count())) {
         return;
@@ -1706,7 +1738,8 @@ void log_location_history::loc_history_append(vis_line_t top)
     this->llh_history.push_back(cl);
 }
 
-nonstd::optional<vis_line_t> log_location_history::loc_history_back(vis_line_t current_top)
+nonstd::optional<vis_line_t>
+log_location_history::loc_history_back(vis_line_t current_top)
 {
     while (this->lh_history_position < this->llh_history.size()) {
         auto iter = this->llh_history.rbegin();
@@ -1755,8 +1788,10 @@ log_location_history::loc_history_forward(vis_line_t current_top)
     return nonstd::nullopt;
 }
 
-bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
-                         shared_buffer_ref &line)
+bool
+sql_filter::matches(const logfile& lf,
+                    logfile::const_iterator ll,
+                    shared_buffer_ref& line)
 {
     if (!ll->is_message()) {
         return false;
@@ -1771,7 +1806,8 @@ bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
         return false;
     }
 
-    auto eval_res = this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll);
+    auto eval_res
+        = this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll);
     if (eval_res.unwrapOr(true)) {
         return false;
     }
@@ -1779,26 +1815,28 @@ bool sql_filter::matches(const logfile &lf, logfile::const_iterator ll,
     return true;
 }
 
-std::string sql_filter::to_command()
+std::string
+sql_filter::to_command()
 {
     return fmt::format("filter-expr {}", this->lf_id);
 }
 
-bool logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
-                                                           string &value_out)
+bool
+logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
+                                                      string& value_out)
 {
     content_line_t cl = this->lmg_source.at(vis_line_t(line));
-    std::map<content_line_t, bookmark_metadata> &user_mark_meta =
-        lmg_source.get_user_bookmark_metadata();
+    std::map<content_line_t, bookmark_metadata>& user_mark_meta
+        = lmg_source.get_user_bookmark_metadata();
     auto meta_iter = user_mark_meta.find(cl);
 
     if (meta_iter == user_mark_meta.end()) {
         value_out.clear();
     } else {
-        bookmark_metadata &bm = meta_iter->second;
+        bookmark_metadata& bm = meta_iter->second;
 
         value_out.append(bm.bm_comment);
-        for (const auto &tag : bm.bm_tags) {
+        for (const auto& tag : bm.bm_tags) {
             value_out.append(tag);
         }
     }
@@ -1806,11 +1844,12 @@ bool logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
     return !this->lmg_done;
 }
 
-vis_line_t logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
-                                                               vis_line_t highest)
+vis_line_t
+logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
+                                                    vis_line_t highest)
 {
-    vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
-    bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
+    vis_bookmarks& bm = this->lmg_source.tss_view->get_bookmarks();
+    bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_META];
 
     if (bv.empty()) {
         return -1_vl;
@@ -1818,10 +1857,11 @@ vis_line_t logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
     return *bv.begin();
 }
 
-void logfile_sub_source::meta_grepper::grep_next_line(vis_line_t &line)
+void
+logfile_sub_source::meta_grepper::grep_next_line(vis_line_t& line)
 {
-    vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
-    bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
+    vis_bookmarks& bm = this->lmg_source.tss_view->get_bookmarks();
+    bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_META];
 
     line = bv.next(vis_line_t(line));
     if (line == -1) {
@@ -1829,21 +1869,25 @@ void logfile_sub_source::meta_grepper::grep_next_line(vis_line_t &line)
     }
 }
 
-void logfile_sub_source::meta_grepper::grep_begin(grep_proc<vis_line_t> &gp,
-                                                  vis_line_t start,
-                                                  vis_line_t stop)
+void
+logfile_sub_source::meta_grepper::grep_begin(grep_proc<vis_line_t>& gp,
+                                             vis_line_t start,
+                                             vis_line_t stop)
 {
     this->lmg_source.tss_view->grep_begin(gp, start, stop);
 }
 
-void logfile_sub_source::meta_grepper::grep_end(grep_proc<vis_line_t> &gp)
+void
+logfile_sub_source::meta_grepper::grep_end(grep_proc<vis_line_t>& gp)
 {
     this->lmg_source.tss_view->grep_end(gp);
 }
 
-void logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t> &gp,
-                                                  vis_line_t line, int start,
-                                                  int end)
+void
+logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t>& gp,
+                                             vis_line_t line,
+                                             int start,
+                                             int end)
 {
     this->lmg_source.tss_view->grep_match(gp, line, start, end);
 }

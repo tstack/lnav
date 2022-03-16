@@ -21,29 +21,29 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file text_format.cc
  */
 
-#include "config.h"
+#include "text_format.hh"
 
+#include "config.h"
 #include "pcrepp/pcrepp.hh"
 #include "yajl/api/yajl_parse.h"
 
-#include "text_format.hh"
-
-text_format_t detect_text_format(const char *str, size_t len)
+text_format_t
+detect_text_format(const char* str, size_t len)
 {
     // XXX This is a pretty crude way of detecting format...
     static pcrepp PYTHON_MATCHERS = pcrepp(
         "(?:"
-            "^\\s*def\\s+\\w+\\([^)]*\\):[^\\n]*$|"
-            "^\\s*try:[^\\n]*$"
-            ")",
+        "^\\s*def\\s+\\w+\\([^)]*\\):[^\\n]*$|"
+        "^\\s*try:[^\\n]*$"
+        ")",
         PCRE_MULTILINE);
 
     static pcrepp RUST_MATCHERS = pcrepp(R"(
@@ -53,7 +53,7 @@ text_format_t detect_text_format(const char *str, size_t len)
 ^\s*impl\s+\w+.*$
 )
 )",
-        PCRE_MULTILINE);
+                                         PCRE_MULTILINE);
 
     static pcrepp JAVA_MATCHERS = pcrepp(
         "(?:"
@@ -65,26 +65,26 @@ text_format_t detect_text_format(const char *str, size_t len)
 
     static pcrepp C_LIKE_MATCHERS = pcrepp(
         "(?:"
-            "^#\\s*include\\s+|"
-            "^#\\s*define\\s+|"
-            "^\\s*if\\s+\\([^)]+\\)[^\\n]*$|"
-            "^\\s*(?:\\w+\\s+)*class \\w+ {"
-            ")",
+        "^#\\s*include\\s+|"
+        "^#\\s*define\\s+|"
+        "^\\s*if\\s+\\([^)]+\\)[^\\n]*$|"
+        "^\\s*(?:\\w+\\s+)*class \\w+ {"
+        ")",
         PCRE_MULTILINE);
 
     static pcrepp SQL_MATCHERS = pcrepp(
         "(?:"
-            "select\\s+.+\\s+from\\s+|"
-            "insert\\s+into\\s+.+\\s+values"
-            ")",
-        PCRE_MULTILINE|PCRE_CASELESS);
+        "select\\s+.+\\s+from\\s+|"
+        "insert\\s+into\\s+.+\\s+values"
+        ")",
+        PCRE_MULTILINE | PCRE_CASELESS);
 
     static pcrepp XML_MATCHERS = pcrepp(
         "(?:"
         R"(<\?xml(\s+\w+\s*=\s*"[^"]*")*\?>|)"
         R"(</?\w+(\s+\w+\s*=\s*"[^"]*")*\s*>)"
         ")",
-        PCRE_MULTILINE|PCRE_CASELESS);
+        PCRE_MULTILINE | PCRE_CASELESS);
 
     text_format_t retval = text_format_t::TF_UNKNOWN;
     pcre_input pi(str, 0, len);
@@ -94,7 +94,7 @@ text_format_t detect_text_format(const char *str, size_t len)
         auto_mem<yajl_handle_t> jhandle(yajl_free);
 
         jhandle = yajl_alloc(nullptr, nullptr, nullptr);
-        if (yajl_parse(jhandle, (unsigned char *) str, len) == yajl_status_ok) {
+        if (yajl_parse(jhandle, (unsigned char*) str, len) == yajl_status_ok) {
             return text_format_t::TF_JSON;
         }
     }

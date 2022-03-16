@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -34,8 +34,7 @@
 
 #include "statusview_curses.hh"
 
-class preview_status_source
-    : public status_data_source {
+class preview_status_source : public status_data_source {
 public:
     typedef enum {
         TSF_TITLE,
@@ -46,7 +45,8 @@ public:
         TSF__MAX
     } field_t;
 
-    preview_status_source() {
+    preview_status_source()
+    {
         static const char TOGGLE_MSG[] = "Press CTRL+P to show/hide";
 
         this->tss_fields[TSF_TITLE].set_width(14);
@@ -62,13 +62,18 @@ public:
         this->tss_fields[TSF_TOGGLE].right_justify(true);
     };
 
-    size_t statusview_fields() override { return TSF__MAX; };
+    size_t statusview_fields() override
+    {
+        return TSF__MAX;
+    };
 
-    status_field &statusview_value_for_field(int field) override {
+    status_field& statusview_value_for_field(int field) override
+    {
         return this->tss_fields[field];
     };
 
-    status_field &get_description() {
+    status_field& get_description()
+    {
         return this->tss_fields[TSF_DESCRIPTION];
     };
 

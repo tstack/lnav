@@ -21,31 +21,32 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "hist_source.hh"
 
 #include "base/math_util.hh"
-#include "hist_source.hh"
+#include "config.h"
 
 using namespace std;
 
-const char *hist_source2::LINE_FORMAT = " %8d normal  %8d errors  %8d warnings  %8d marks";
+const char* hist_source2::LINE_FORMAT
+    = " %8d normal  %8d errors  %8d warnings  %8d marks";
 
-nonstd::optional<vis_line_t> hist_source2::row_for_time(struct timeval tv_bucket)
+nonstd::optional<vis_line_t>
+hist_source2::row_for_time(struct timeval tv_bucket)
 {
     std::map<int64_t, struct bucket_block>::iterator iter;
     int retval = 0;
     time_t time_bucket = rounddown(tv_bucket.tv_sec, this->hs_time_slice);
 
-    for (iter = this->hs_blocks.begin();
-         iter != this->hs_blocks.end();
-         ++iter) {
-        struct bucket_block &bb = iter->second;
+    for (iter = this->hs_blocks.begin(); iter != this->hs_blocks.end(); ++iter)
+    {
+        struct bucket_block& bb = iter->second;
 
         if (time_bucket < bb.bb_buckets[0].b_time) {
             break;
@@ -64,25 +65,26 @@ nonstd::optional<vis_line_t> hist_source2::row_for_time(struct timeval tv_bucket
     return vis_line_t(retval);
 }
 
-void hist_source2::text_value_for_line(textview_curses &tc, int row,
-                                       std::string &value_out,
-                                       text_sub_source::line_flags_t flags)
+void
+hist_source2::text_value_for_line(textview_curses& tc,
+                                  int row,
+                                  std::string& value_out,
+                                  text_sub_source::line_flags_t flags)
 {
-    bucket_t &bucket = this->find_bucket(row);
+    bucket_t& bucket = this->find_bucket(row);
     struct tm bucket_tm;
     char tm_buffer[128];
     char line[256];
 
     if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
-        strftime(tm_buffer, sizeof(tm_buffer),
-                 " %a %b %d %H:%M:%S  ",
-                 &bucket_tm);
-    }
-    else {
+        strftime(
+            tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S  ", &bucket_tm);
+    } else {
         log_error("no time?");
         tm_buffer[0] = '\0';
     }
-    snprintf(line, sizeof(line),
+    snprintf(line,
+             sizeof(line),
              LINE_FORMAT,
              (int) rint(bucket.b_values[HT_NORMAL].hv_value),
              (int) rint(bucket.b_values[HT_ERROR].hv_value),
@@ -94,22 +96,27 @@ void hist_source2::text_value_for_line(textview_curses &tc, int row,
     value_out.append(line);
 }
 
-void hist_source2::text_attrs_for_line(textview_curses &tc, int row,
-                                       string_attrs_t &value_out)
+void
+hist_source2::text_attrs_for_line(textview_curses& tc,
+                                  int row,
+                                  string_attrs_t& value_out)
 {
-    bucket_t &bucket = this->find_bucket(row);
+    bucket_t& bucket = this->find_bucket(row);
     int left = 0;
 
     for (int lpc = 0; lpc < HT__MAX; lpc++) {
-        this->hs_chart.chart_attrs_for_value(
-            tc, left, (const hist_type_t) lpc,
-            bucket.b_values[lpc].hv_value,
-            value_out);
+        this->hs_chart.chart_attrs_for_value(tc,
+                                             left,
+                                             (const hist_type_t) lpc,
+                                             bucket.b_values[lpc].hv_value,
+                                             value_out);
     }
 }
 
-void hist_source2::add_value(time_t row, hist_source2::hist_type_t htype,
-                             double value)
+void
+hist_source2::add_value(time_t row,
+                        hist_source2::hist_type_t htype,
+                        double value)
 {
     if (row < this->hs_last_row) {
         log_error("time mismatch %ld %ld", row, this->hs_last_row);
@@ -125,14 +132,15 @@ void hist_source2::add_value(time_t row, hist_source2::hist_type_t htype,
         this->hs_last_row = row;
     }
 
-    bucket_t &bucket = this->find_bucket(this->hs_last_bucket);
+    bucket_t& bucket = this->find_bucket(this->hs_last_bucket);
     bucket.b_time = row;
     bucket.b_values[htype].hv_value += value;
 }
 
-void hist_source2::init()
+void
+hist_source2::init()
 {
-    view_colors &vc = view_colors::singleton();
+    view_colors& vc = view_colors::singleton();
 
     this->hs_chart
         .with_attrs_for_ident(HT_NORMAL,
@@ -145,7 +153,8 @@ void hist_source2::init()
                               vc.attrs_for_role(view_colors::VCR_KEYWORD));
 }
 
-void hist_source2::clear()
+void
+hist_source2::clear()
 {
     this->hs_line_count = 0;
     this->hs_last_bucket = -1;
@@ -155,33 +164,35 @@ void hist_source2::clear()
     this->init();
 }
 
-void hist_source2::end_of_row()
+void
+hist_source2::end_of_row()
 {
     if (this->hs_last_bucket >= 0) {
-        bucket_t &last_bucket = this->find_bucket(this->hs_last_bucket);
+        bucket_t& last_bucket = this->find_bucket(this->hs_last_bucket);
 
         for (int lpc = 0; lpc < HT__MAX; lpc++) {
-            this->hs_chart.add_value(
-                (const hist_type_t) lpc,
-                last_bucket.b_values[lpc].hv_value);
+            this->hs_chart.add_value((const hist_type_t) lpc,
+                                     last_bucket.b_values[lpc].hv_value);
         }
     }
 }
 
-nonstd::optional<struct timeval> hist_source2::time_for_row(vis_line_t row)
+nonstd::optional<struct timeval>
+hist_source2::time_for_row(vis_line_t row)
 {
     if (row < 0 || row > this->hs_line_count) {
         return nonstd::nullopt;
     }
 
-    bucket_t &bucket = this->find_bucket(row);
+    bucket_t& bucket = this->find_bucket(row);
 
-    return timeval{ bucket.b_time, 0 };
+    return timeval{bucket.b_time, 0};
 }
 
-hist_source2::bucket_t &hist_source2::find_bucket(int64_t index)
+hist_source2::bucket_t&
+hist_source2::find_bucket(int64_t index)
 {
-    struct bucket_block &bb = this->hs_blocks[index / BLOCK_SIZE];
+    struct bucket_block& bb = this->hs_blocks[index / BLOCK_SIZE];
     unsigned int intra_block_index = index % BLOCK_SIZE;
     bb.bb_used = std::max(intra_block_index, bb.bb_used);
     this->hs_line_count = std::max(this->hs_line_count, index + 1);

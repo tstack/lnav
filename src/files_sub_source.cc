@@ -21,27 +21,27 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "files_sub_source.hh"
 
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
+#include "config.h"
+#include "lnav.hh"
 #include "mapbox/variant.hpp"
 
-#include "lnav.hh"
-#include "files_sub_source.hh"
-
 namespace files_model {
-files_list_selection from_selection(vis_line_t sel_vis)
+files_list_selection
+from_selection(vis_line_t sel_vis)
 {
-    auto &fc = lnav_data.ld_active_files;
+    auto& fc = lnav_data.ld_active_files;
     int sel = (int) sel_vis;
 
     if (sel < fc.fc_name_to_errors.size()) {
@@ -71,52 +71,49 @@ files_list_selection from_selection(vis_line_t sel_vis)
 
     return no_selection{};
 }
-}
+}  // namespace files_model
 
-files_sub_source::files_sub_source()
-{
+files_sub_source::files_sub_source() {}
 
-}
-
-bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
+bool
+files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 {
     switch (ch) {
         case KEY_ENTER:
         case '\r': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match(
-                [](files_model::no_selection) {},
-                [](files_model::error_selection) {},
-                [](files_model::other_selection) {},
-                [&](files_model::file_selection& fs) {
-                    auto& lss = lnav_data.ld_log_source;
-                    auto lf = *fs.sb_iter;
+            sel.match([](files_model::no_selection) {},
+                      [](files_model::error_selection) {},
+                      [](files_model::other_selection) {},
+                      [&](files_model::file_selection& fs) {
+                          auto& lss = lnav_data.ld_log_source;
+                          auto lf = *fs.sb_iter;
 
-                    lss.find_data(lf) | [](auto ld) {
-                        ld->set_visibility(true);
-                        lnav_data.ld_log_source.text_filters_changed();
-                    };
+                          lss.find_data(lf) | [](auto ld) {
+                              ld->set_visibility(true);
+                              lnav_data.ld_log_source.text_filters_changed();
+                          };
 
-                    if (lf->get_format() != nullptr) {
-                        auto& log_view = lnav_data.ld_views[LNV_LOG];
-                        lss.row_for_time(lf->front().get_timeval()) | [](auto row) {
-                            lnav_data.ld_views[LNV_LOG].set_top(row);
-                        };
-                        ensure_view(&log_view);
-                    } else {
-                        auto& tv = lnav_data.ld_views[LNV_TEXT];
-                        auto& tss = lnav_data.ld_text_source;
+                          if (lf->get_format() != nullptr) {
+                              auto& log_view = lnav_data.ld_views[LNV_LOG];
+                              lss.row_for_time(lf->front().get_timeval()) |
+                                  [](auto row) {
+                                      lnav_data.ld_views[LNV_LOG].set_top(row);
+                                  };
+                              ensure_view(&log_view);
+                          } else {
+                              auto& tv = lnav_data.ld_views[LNV_TEXT];
+                              auto& tss = lnav_data.ld_text_source;
 
-                        tss.to_front(lf);
-                        tv.reload_data();
-                        ensure_view(&tv);
-                    }
+                              tss.to_front(lf);
+                              tv.reload_data();
+                              ensure_view(&tv);
+                          }
 
-                    lv.reload_data();
-                    lnav_data.ld_mode = LNM_PAGING;
-                }
-            );
+                          lv.reload_data();
+                          lnav_data.ld_mode = LNM_PAGING;
+                      });
 
             return true;
         }
@@ -124,29 +121,27 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
         case ' ': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match(
-                [](files_model::no_selection) {},
-                [](files_model::error_selection) {},
-                [](files_model::other_selection) {},
-                [&](files_model::file_selection& fs) {
-                    auto& lss = lnav_data.ld_log_source;
-                    auto lf = *fs.sb_iter;
+            sel.match([](files_model::no_selection) {},
+                      [](files_model::error_selection) {},
+                      [](files_model::other_selection) {},
+                      [&](files_model::file_selection& fs) {
+                          auto& lss = lnav_data.ld_log_source;
+                          auto lf = *fs.sb_iter;
 
-                    lss.find_data(lf) | [](auto ld) {
-                        ld->set_visibility(!ld->ld_visible);
-                    };
+                          lss.find_data(lf) | [](auto ld) {
+                              ld->set_visibility(!ld->ld_visible);
+                          };
 
-                    auto top_view = *lnav_data.ld_view_stack.top();
-                    auto tss = top_view->get_sub_source();
+                          auto top_view = *lnav_data.ld_view_stack.top();
+                          auto tss = top_view->get_sub_source();
 
-                    if (tss != nullptr) {
-                        tss->text_filters_changed();
-                        top_view->reload_data();
-                    }
+                          if (tss != nullptr) {
+                              tss->text_filters_changed();
+                              top_view->reload_data();
+                          }
 
-                    lv.reload_data();
-                }
-            );
+                          lv.reload_data();
+                      });
             return true;
         }
         case 'n': {
@@ -158,83 +153,87 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             return true;
         }
         case '/': {
-            execute_command(lnav_data.ld_exec_context,
-                            "prompt search-files");
+            execute_command(lnav_data.ld_exec_context, "prompt search-files");
             return true;
         }
         case 'X': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match(
-                [](files_model::no_selection) {},
-                [&](files_model::error_selection& es) {
-                    auto &fc = lnav_data.ld_active_files;
+            sel.match([](files_model::no_selection) {},
+                      [&](files_model::error_selection& es) {
+                          auto& fc = lnav_data.ld_active_files;
 
-                    fc.fc_file_names.erase(es.sb_iter->first);
+                          fc.fc_file_names.erase(es.sb_iter->first);
 
-                    auto name_iter = fc.fc_file_names.begin();
-                    while (name_iter != fc.fc_file_names.end()) {
-                        if (name_iter->first == es.sb_iter->first) {
-                            name_iter = fc.fc_file_names.erase(name_iter);
-                            continue;
-                        }
+                          auto name_iter = fc.fc_file_names.begin();
+                          while (name_iter != fc.fc_file_names.end()) {
+                              if (name_iter->first == es.sb_iter->first) {
+                                  name_iter = fc.fc_file_names.erase(name_iter);
+                                  continue;
+                              }
 
-                        auto rp_opt = humanize::network::path::from_str(name_iter->first);
+                              auto rp_opt = humanize::network::path::from_str(
+                                  name_iter->first);
 
-                        if (rp_opt) {
-                            auto rp = *rp_opt;
+                              if (rp_opt) {
+                                  auto rp = *rp_opt;
 
-                            if (fmt::format("{}", rp.home()) == es.sb_iter->first) {
-                                fc.fc_other_files.erase(name_iter->first);
-                                name_iter = fc.fc_file_names.erase(name_iter);
-                                continue;
-                            }
-                        }
-                        ++name_iter;
-                    }
+                                  if (fmt::format("{}", rp.home())
+                                      == es.sb_iter->first) {
+                                      fc.fc_other_files.erase(name_iter->first);
+                                      name_iter
+                                          = fc.fc_file_names.erase(name_iter);
+                                      continue;
+                                  }
+                              }
+                              ++name_iter;
+                          }
 
-                    fc.fc_name_to_errors.erase(es.sb_iter);
-                    fc.fc_invalidate_merge = true;
-                    lv.reload_data();
-                },
-                [](files_model::other_selection) {},
-                [](files_model::file_selection) {}
-            );
+                          fc.fc_name_to_errors.erase(es.sb_iter);
+                          fc.fc_invalidate_merge = true;
+                          lv.reload_data();
+                      },
+                      [](files_model::other_selection) {},
+                      [](files_model::file_selection) {});
             return true;
         }
     }
     return false;
 }
 
-void files_sub_source::list_input_handle_scroll_out(listview_curses &lv)
+void
+files_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
     lnav_data.ld_mode = LNM_PAGING;
     lnav_data.ld_filter_view.reload_data();
 }
 
-size_t files_sub_source::text_line_count()
+size_t
+files_sub_source::text_line_count()
 {
-    const auto &fc = lnav_data.ld_active_files;
+    const auto& fc = lnav_data.ld_active_files;
 
-    return fc.fc_name_to_errors.size() +
-           fc.fc_other_files.size() +
-           fc.fc_files.size();
+    return fc.fc_name_to_errors.size() + fc.fc_other_files.size()
+        + fc.fc_files.size();
 }
 
-size_t files_sub_source::text_line_width(textview_curses &curses)
+size_t
+files_sub_source::text_line_width(textview_curses& curses)
 {
     return 512;
 }
 
-void files_sub_source::text_value_for_line(textview_curses &tc, int line,
-                                           std::string &value_out,
-                                           text_sub_source::line_flags_t flags)
+void
+files_sub_source::text_value_for_line(textview_curses& tc,
+                                      int line,
+                                      std::string& value_out,
+                                      text_sub_source::line_flags_t flags)
 {
     const auto dim = tc.get_dimensions();
-    const auto &fc = lnav_data.ld_active_files;
-    auto filename_width =
-        std::min(fc.fc_largest_path_length,
-                 std::max((size_t) 40, (size_t) dim.second - 30));
+    const auto& fc = lnav_data.ld_active_files;
+    auto filename_width
+        = std::min(fc.fc_largest_path_length,
+                   std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (line < fc.fc_name_to_errors.size()) {
         auto iter = fc.fc_name_to_errors.begin();
@@ -243,9 +242,10 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
         auto fn = path.filename().string();
 
         truncate_to(fn, filename_width);
-        value_out = fmt::format(
-            FMT_STRING("    {:<{}}   {}"),
-            fn, filename_width, iter->second.fei_description);
+        value_out = fmt::format(FMT_STRING("    {:<{}}   {}"),
+                                fn,
+                                filename_width,
+                                iter->second.fei_description);
         return;
     }
 
@@ -258,16 +258,17 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
         auto fn = path.string();
 
         truncate_to(fn, filename_width);
-        value_out = fmt::format(
-            FMT_STRING("    {:<{}}   {:14}  {}"),
-            fn, filename_width, iter->second.ofd_format,
-            iter->second.ofd_description);
+        value_out = fmt::format(FMT_STRING("    {:<{}}   {:14}  {}"),
+                                fn,
+                                filename_width,
+                                iter->second.ofd_format,
+                                iter->second.ofd_description);
         return;
     }
 
     line -= fc.fc_other_files.size();
 
-    const auto &lf = fc.fc_files[line];
+    const auto& lf = fc.fc_files[line];
     auto fn = lf->get_unique_path();
     char start_time[64] = "", end_time[64] = "";
     std::vector<std::string> file_notes;
@@ -280,31 +281,34 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
     for (const auto& pair : lf->get_notes()) {
         file_notes.push_back(pair.second);
     }
-    value_out = fmt::format(
-        FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}  {}"),
-        fn,
-        filename_width,
-        humanize::file_size(lf->get_index_size()),
-        start_time,
-        end_time,
-        fmt::join(file_notes, "; "));
-    this->fss_last_line_len =
-        filename_width + 23 + strlen(start_time) + strlen(end_time);
+    value_out = fmt::format(FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}  {}"),
+                            fn,
+                            filename_width,
+                            humanize::file_size(lf->get_index_size()),
+                            start_time,
+                            end_time,
+                            fmt::join(file_notes, "; "));
+    this->fss_last_line_len
+        = filename_width + 23 + strlen(start_time) + strlen(end_time);
 }
 
-void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
-                                           string_attrs_t &value_out)
+void
+files_sub_source::text_attrs_for_line(textview_curses& tc,
+                                      int line,
+                                      string_attrs_t& value_out)
 {
-    bool selected = lnav_data.ld_mode == LNM_FILES && line == tc.get_selection();
-    const auto &fc = lnav_data.ld_active_files;
-    auto &vcolors = view_colors::singleton();
+    bool selected
+        = lnav_data.ld_mode == LNM_FILES && line == tc.get_selection();
+    const auto& fc = lnav_data.ld_active_files;
+    auto& vcolors = view_colors::singleton();
     const auto dim = tc.get_dimensions();
-    auto filename_width =
-        std::min(fc.fc_largest_path_length,
-                 std::max((size_t) 40, (size_t) dim.second - 30));
+    auto filename_width
+        = std::min(fc.fc_largest_path_length,
+                   std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (selected) {
-        value_out.emplace_back(line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
+        value_out.emplace_back(
+            line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
     }
 
     if (line < fc.fc_name_to_errors.size()) {
@@ -328,9 +332,8 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
                                    view_colors::VCR_DISABLED_FOCUSED);
         }
         if (line == fc.fc_other_files.size() - 1) {
-            value_out.emplace_back(line_range{0, -1},
-                                   &view_curses::VC_STYLE,
-                                   A_UNDERLINE);
+            value_out.emplace_back(
+                line_range{0, -1}, &view_curses::VC_STYLE, A_UNDERLINE);
         }
         return;
     }
@@ -338,13 +341,12 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     line -= fc.fc_other_files.size();
 
     if (selected) {
-        value_out.emplace_back(line_range{0, -1},
-                               &view_curses::VC_ROLE,
-                               view_colors::VCR_FOCUSED);
+        value_out.emplace_back(
+            line_range{0, -1}, &view_curses::VC_ROLE, view_colors::VCR_FOCUSED);
     }
 
     auto& lss = lnav_data.ld_log_source;
-    auto &lf = fc.fc_files[line];
+    auto& lf = fc.fc_files[line];
     auto ld_opt = lss.find_data(lf);
 
     chtype visible = ACS_DIAMOND;
@@ -353,7 +355,8 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     }
     value_out.emplace_back(line_range{2, 3}, &view_curses::VC_GRAPHIC, visible);
     if (visible == ACS_DIAMOND) {
-        value_out.emplace_back(line_range{2, 3}, &view_curses::VC_FOREGROUND,
+        value_out.emplace_back(line_range{2, 3},
+                               &view_curses::VC_FOREGROUND,
                                vcolors.ansi_to_theme_color(COLOR_GREEN));
     }
 
@@ -365,45 +368,51 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
 
     lr.lr_start = this->fss_last_line_len;
     lr.lr_end = -1;
-    value_out.emplace_back(lr, &view_curses::VC_FOREGROUND,
+    value_out.emplace_back(lr,
+                           &view_curses::VC_FOREGROUND,
                            vcolors.ansi_to_theme_color(COLOR_YELLOW));
 }
 
-size_t files_sub_source::text_size_for_line(textview_curses &tc, int line,
-                                            text_sub_source::line_flags_t raw)
+size_t
+files_sub_source::text_size_for_line(textview_curses& tc,
+                                     int line,
+                                     text_sub_source::line_flags_t raw)
 {
     return 0;
 }
 
-static
-auto spinner_index()
+static auto
+spinner_index()
 {
     auto now = ui_clock::now();
 
     return std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()).count() / 100;
+               now.time_since_epoch())
+               .count()
+        / 100;
 }
 
 bool
-files_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
-                                             int bottom, vis_line_t line,
-                                             attr_line_t &value_out)
+files_overlay_source::list_value_for_overlay(const listview_curses& lv,
+                                             int y,
+                                             int bottom,
+                                             vis_line_t line,
+                                             attr_line_t& value_out)
 {
     if (y == 0) {
         static const char PROG[] = "-\\|/";
         constexpr size_t PROG_SIZE = sizeof(PROG) - 1;
 
-        auto &fc = lnav_data.ld_active_files;
-        auto &fc_prog = fc.fc_progress;
+        auto& fc = lnav_data.ld_active_files;
+        auto& fc_prog = fc.fc_progress;
         safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
 
         if (!sp->sp_extractions.empty()) {
             const auto& prog = sp->sp_extractions.front();
 
             value_out.with_ansi_string(fmt::format(
-                "{} Extracting "
-                ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                "... {:>8}/{}",
+                "{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                                                        "... {:>8}/{}",
                 PROG[spinner_index() % PROG_SIZE],
                 prog.ep_path.filename().string(),
                 humanize::file_size(prog.ep_out_size),
@@ -414,9 +423,8 @@ files_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
             auto first_iter = sp->sp_tailers.begin();
 
             value_out.with_ansi_string(fmt::format(
-                "{} Connecting to "
-                ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                ": {}",
+                "{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                                                           ": {}",
                 PROG[spinner_index() % PROG_SIZE],
                 first_iter->first,
                 first_iter->second.tp_message));

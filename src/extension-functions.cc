@@ -109,63 +109,64 @@ Original code 2006 June 05 by relicoder.
 //#include "config.h"
 
 // #define COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE 1
-#define HAVE_ACOSH 1
-#define HAVE_ASINH 1
-#define HAVE_ATANH 1
-#define HAVE_SINH 1
-#define HAVE_COSH 1
-#define HAVE_TANH 1
-#define HAVE_LOG10 1
-#define HAVE_ISBLANK 1
+#define HAVE_ACOSH     1
+#define HAVE_ASINH     1
+#define HAVE_ATANH     1
+#define HAVE_SINH      1
+#define HAVE_COSH      1
+#define HAVE_TANH      1
+#define HAVE_LOG10     1
+#define HAVE_ISBLANK   1
 #define SQLITE_SOUNDEX 1
-#define HAVE_TRIM 1		/* LMH 2007-03-25 if sqlite has trim functions */
+#define HAVE_TRIM      1 /* LMH 2007-03-25 if sqlite has trim functions */
 
 #define __STDC_FORMAT_MACROS
 
 #ifdef COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE
-#include "sqlite3ext.h"
+#    include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 #else
-#include "sqlite3.h"
+#    include "sqlite3.h"
 #endif
 
 #include <ctype.h>
 /* relicoder */
-#include <math.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>		/* LMH 2007-03-25 */
-
-#include <stdlib.h>
 #include <assert.h>
+#include <errno.h> /* LMH 2007-03-25 */
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef _MAP_H_
-#define _MAP_H_
+#    define _MAP_H_
 
-#include <stdint.h>
-#include <inttypes.h>
+#    include <inttypes.h>
+#    include <stdint.h>
 
-#include "sqlite-extension-func.hh"
+#    include "sqlite-extension-func.hh"
 
 /*
-** Simple binary tree implementation to use in median, mode and quartile calculations
-** Tree is not necessarily balanced. That would require something like red&black trees of AVL
+** Simple binary tree implementation to use in median, mode and quartile
+*calculations
+** Tree is not necessarily balanced. That would require something like red&black
+*trees of AVL
 */
 
-typedef int(*cmp_func)(const void *, const void *);
-typedef void(*map_iterator)(void*, int64_t, void*);
+typedef int (*cmp_func)(const void*, const void*);
+typedef void (*map_iterator)(void*, int64_t, void*);
 
-typedef struct node{
-  struct node *l;
-  struct node *r;
-  void* data;
-  int64_t count;
+typedef struct node {
+    struct node* l;
+    struct node* r;
+    void* data;
+    int64_t count;
 } node;
 
-typedef struct map{
-  node *base;
-  cmp_func cmp;
-  short free;
+typedef struct map {
+    node* base;
+    cmp_func cmp;
+    short free;
 } map;
 
 /*
@@ -176,39 +177,41 @@ map map_make(cmp_func cmp);
 /*
 ** inserts the element e into map m
 */
-void map_insert(map *m, void *e);
+void map_insert(map* m, void* e);
 
 /*
 ** executes function iter over all elements in the map, in key increasing order
 */
-void map_iterate(map *m, map_iterator iter, void* p);
+void map_iterate(map* m, map_iterator iter, void* p);
 
 /*
 ** frees all memory used by a map
 */
-void map_destroy(map *m);
+void map_destroy(map* m);
 
 /*
 ** compares 2 integers
 ** to use with map_make
 */
-int int_cmp(const void *a, const void *b);
+int int_cmp(const void* a, const void* b);
 
 /*
 ** compares 2 doubles
 ** to use with map_make
 */
-int double_cmp(const void *a, const void *b);
+int double_cmp(const void* a, const void* b);
 
 #endif /* _MAP_H_ */
 
-typedef uint8_t         u8;
-typedef uint16_t        u16;
-typedef int64_t         i64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef int64_t i64;
 
-static char *sqlite3StrDup( const char *z ) {
-    char *res = (char *) sqlite3_malloc(strlen(z) + 1 );
-    return strcpy( res, z );
+static char*
+sqlite3StrDup(const char* z)
+{
+    char* res = (char*) sqlite3_malloc(strlen(z) + 1);
+    return strcpy(res, z);
 }
 
 /*
@@ -221,34 +224,273 @@ static char *sqlite3StrDup( const char *z ) {
 ** of trailing bytes expected. A value '4' indicates that the table key
 ** is not a legal first byte for a UTF-8 character.
 */
-static const u8 xtra_utf8_bytes[256]  = {
-/* 0xxxxxxx */
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+static const u8 xtra_utf8_bytes[256] = {
+    /* 0xxxxxxx */
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 
-/* 10wwwwww */
-4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
-4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
-4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
-4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
+    /* 10wwwwww */
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
 
-/* 110yyyyy */
-1, 1, 1, 1, 1, 1, 1, 1,     1, 1, 1, 1, 1, 1, 1, 1,
-1, 1, 1, 1, 1, 1, 1, 1,     1, 1, 1, 1, 1, 1, 1, 1,
+    /* 110yyyyy */
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
 
-/* 1110zzzz */
-2, 2, 2, 2, 2, 2, 2, 2,     2, 2, 2, 2, 2, 2, 2, 2,
+    /* 1110zzzz */
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
 
-/* 11110yyy */
-3, 3, 3, 3, 3, 3, 3, 3,     4, 4, 4, 4, 4, 4, 4, 4,
+    /* 11110yyy */
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
 };
-
 
 /*
 ** This table maps from the number of trailing bytes in a UTF-8 character
@@ -256,11 +498,11 @@ static const u8 xtra_utf8_bytes[256]  = {
 ** read by a naive implementation of a UTF-8 character reader. The code
 ** in the READ_UTF8 macro explains things best.
 */
-static const int xtra_utf8_bits[] =  {
-  0,
-  12416,          /* (0xC0 << 6) + (0x80) */
-  925824,         /* (0xE0 << 12) + (0x80 << 6) + (0x80) */
-  63447168        /* (0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80 */
+static const int xtra_utf8_bits[] = {
+    0,
+    12416, /* (0xC0 << 6) + (0x80) */
+    925824, /* (0xE0 << 12) + (0x80 << 6) + (0x80) */
+    63447168 /* (0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80 */
 };
 
 /*
@@ -270,38 +512,49 @@ static const int xtra_utf8_bits[] =  {
 ** result.  Otherwise, we have an (illegal) overlong encoding.
 */
 static const unsigned long utf_mask[] = {
-  0x00000000,
-  0xffffff80,
-  0xfffff800,
-  0xffff0000,
+    0x00000000,
+    0xffffff80,
+    0xfffff800,
+    0xffff0000,
 };
 
 /* LMH salvaged from sqlite3 3.3.13 source code src/utf.c */
-#define READ_UTF8(zIn, c) { \
-  int xtra;                                            \
-  c = *(zIn)++;                                        \
-  xtra = xtra_utf8_bytes[c];                           \
-  switch( xtra ){                                      \
-    case 4: c = (int)0xFFFD; break;                    \
-    case 3: c = (c<<6) + *(zIn)++;                     \
-    case 2: c = (c<<6) + *(zIn)++;                     \
-    case 1: c = (c<<6) + *(zIn)++;                     \
-    c -= xtra_utf8_bits[xtra];                         \
-    if( (utf_mask[xtra]&c)==0                          \
-        || (c&0xFFFFF800)==0xD800                      \
-        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }    \
-  }                                                    \
+#define READ_UTF8(zIn, c) \
+    { \
+        int xtra; \
+        c = *(zIn)++; \
+        xtra = xtra_utf8_bytes[c]; \
+        switch (xtra) { \
+            case 4: \
+                c = (int) 0xFFFD; \
+                break; \
+            case 3: \
+                c = (c << 6) + *(zIn)++; \
+            case 2: \
+                c = (c << 6) + *(zIn)++; \
+            case 1: \
+                c = (c << 6) + *(zIn)++; \
+                c -= xtra_utf8_bits[xtra]; \
+                if ((utf_mask[xtra] & c) == 0 || (c & 0xFFFFF800) == 0xD800 \
+                    || (c & 0xFFFFFFFE) == 0xFFFE) \
+                { \
+                    c = 0xFFFD; \
+                } \
+        } \
+    }
+
+static int
+sqlite3ReadUtf8(const unsigned char* z)
+{
+    int c;
+    READ_UTF8(z, c);
+    return c;
 }
 
-static int sqlite3ReadUtf8(const unsigned char *z){
-  int c;
-  READ_UTF8(z, c);
-  return c;
-}
-
-#define SKIP_UTF8(zIn) {                               \
-  zIn += (xtra_utf8_bytes[*(u8 *)zIn] + 1);            \
-}
+#define SKIP_UTF8(zIn) \
+    { \
+        zIn += (xtra_utf8_bytes[*(u8*) zIn] + 1); \
+    }
 
 /*
 ** pZ is a UTF-8 encoded unicode string. If nByte is less than zero,
@@ -310,20 +563,22 @@ static int sqlite3ReadUtf8(const unsigned char *z){
 ** number of unicode characters in the first nByte of pZ (or up to
 ** the first 0x00, whichever comes first).
 */
-static int sqlite3Utf8CharLen(const char *z, int nByte){
-  int r = 0;
-  const char *zTerm;
-  if( nByte>=0 ){
-    zTerm = &z[nByte];
-  }else{
-    zTerm = (const char *)(-1);
-  }
-  assert( z<=zTerm );
-  while( *z!=0 && z<zTerm ){
-    SKIP_UTF8(z);
-    r++;
-  }
-  return r;
+static int
+sqlite3Utf8CharLen(const char* z, int nByte)
+{
+    int r = 0;
+    const char* zTerm;
+    if (nByte >= 0) {
+        zTerm = &z[nByte];
+    } else {
+        zTerm = (const char*) (-1);
+    }
+    assert(z <= zTerm);
+    while (*z != 0 && z < zTerm) {
+        SKIP_UTF8(z);
+        r++;
+    }
+    return r;
 }
 
 /*
@@ -331,51 +586,57 @@ static int sqlite3Utf8CharLen(const char *z, int nByte){
 ** X so that it points to the next character.  This only works right
 ** if X points to a well-formed UTF-8 string.
 */
-#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
-#define sqliteCharVal(X)   sqlite3ReadUtf8(X)
+#define sqliteNextChar(X) \
+    while ((0xc0 & *++(X)) == 0x80) { \
+    }
+#define sqliteCharVal(X) sqlite3ReadUtf8(X)
 
 /*
 ** This is a macro that facilitates writting wrappers for math.h functions
 ** it creates code for a function to use in SQlite that gets one numeric input
 ** and returns a floating point value.
 **
-** Could have been implemented using pointers to functions but this way it's inline
+** Could have been implemented using pointers to functions but this way it's
+*inline
 ** and thus more efficient. Lower * ranking though...
 **
 ** Parameters:
 ** name:      function name to de defined (eg: sinFunc)
 ** function:  function defined in math.h to wrap (eg: sin)
-** domain:    boolean condition that CAN'T happen in terms of the input parameter rVal
+** domain:    boolean condition that CAN'T happen in terms of the input
+*parameter rVal
 **            (eg: rval<0 for sqrt)
 */
-/* LMH 2007-03-25 Changed to use errno and remove domain; no pre-checking for errors. */
+/* LMH 2007-03-25 Changed to use errno and remove domain; no pre-checking for
+ * errors. */
 #define GEN_MATH_WRAP_DOUBLE_1(name, function) \
-static void name(sqlite3_context *context, int argc, sqlite3_value **argv){\
-  double rVal = 0.0, val;\
-  assert( argc==1 );\
-  switch( sqlite3_value_type(argv[0]) ){\
-    case SQLITE_NULL: {\
-      sqlite3_result_null(context);\
-      break;\
-    }\
-    default: {\
-      rVal = sqlite3_value_double(argv[0]);\
-      errno = 0;\
-      val = function(rVal);\
-      if (errno == 0) {\
-        sqlite3_result_double(context, val);\
-      } else {\
-        sqlite3_result_error(context, strerror(errno), errno);\
-      }\
-      break;\
-    }\
-  }\
-}\
-
+    static void name(sqlite3_context* context, int argc, sqlite3_value** argv) \
+    { \
+        double rVal = 0.0, val; \
+        assert(argc == 1); \
+        switch (sqlite3_value_type(argv[0])) { \
+            case SQLITE_NULL: { \
+                sqlite3_result_null(context); \
+                break; \
+            } \
+            default: { \
+                rVal = sqlite3_value_double(argv[0]); \
+                errno = 0; \
+                val = function(rVal); \
+                if (errno == 0) { \
+                    sqlite3_result_double(context, val); \
+                } else { \
+                    sqlite3_result_error(context, strerror(errno), errno); \
+                } \
+                break; \
+            } \
+        } \
+    }
 
 /*
 ** Example of GEN_MATH_WRAP_DOUBLE_1 usage
-** this creates function sqrtFunc to wrap the math.h standard function sqrt(x)=x^0.5
+** this creates function sqrtFunc to wrap the math.h standard function
+*sqrt(x)=x^0.5
 */
 GEN_MATH_WRAP_DOUBLE_1(sqrtFunc, sqrt)
 
@@ -385,30 +646,38 @@ GEN_MATH_WRAP_DOUBLE_1(asinFunc, asin)
 GEN_MATH_WRAP_DOUBLE_1(atanFunc, atan)
 
 /*
-** Many of systems don't have inverse hyperbolic trig functions so this will emulate
-** them on those systems in terms of log and sqrt (formulas are too trivial to demand
+** Many of systems don't have inverse hyperbolic trig functions so this will
+*emulate
+** them on those systems in terms of log and sqrt (formulas are too trivial to
+*demand
 ** written proof here)
 */
 
 #ifndef HAVE_ACOSH
-static double acosh(double x){
-  return log(x + sqrt(x*x - 1.0));
+static double
+acosh(double x)
+{
+    return log(x + sqrt(x * x - 1.0));
 }
 #endif
 
 GEN_MATH_WRAP_DOUBLE_1(acoshFunc, acosh)
 
 #ifndef HAVE_ASINH
-static double asinh(double x){
-  return log(x + sqrt(x*x + 1.0));
+static double
+asinh(double x)
+{
+    return log(x + sqrt(x * x + 1.0));
 }
 #endif
 
 GEN_MATH_WRAP_DOUBLE_1(asinhFunc, asinh)
 
 #ifndef HAVE_ATANH
-static double atanh(double x){
-  return (1.0/2.0)*log((1+x)/(1-x)) ;
+static double
+atanh(double x)
+{
+    return (1.0 / 2.0) * log((1 + x) / (1 - x));
 }
 #endif
 
@@ -417,8 +686,10 @@ GEN_MATH_WRAP_DOUBLE_1(atanhFunc, atanh)
 /*
 ** math.h doesn't require cot (cotangent) so it's defined here
 */
-static double cot(double x){
-  return 1.0/tan(x);
+static double
+cot(double x)
+{
+    return 1.0 / tan(x);
 }
 
 GEN_MATH_WRAP_DOUBLE_1(sinFunc, sin)
@@ -426,33 +697,42 @@ GEN_MATH_WRAP_DOUBLE_1(cosFunc, cos)
 GEN_MATH_WRAP_DOUBLE_1(tanFunc, tan)
 GEN_MATH_WRAP_DOUBLE_1(cotFunc, cot)
 
-static double coth(double x){
-  return 1.0/tanh(x);
+static double
+coth(double x)
+{
+    return 1.0 / tanh(x);
 }
 
 /*
-** Many systems don't have hyperbolic trigonometric functions so this will emulate
+** Many systems don't have hyperbolic trigonometric functions so this will
+*emulate
 ** them on those systems directly from the definition in terms of exp
 */
 #ifndef HAVE_SINH
-static double sinh(double x){
-  return (exp(x)-exp(-x))/2.0;
+static double
+sinh(double x)
+{
+    return (exp(x) - exp(-x)) / 2.0;
 }
 #endif
 
 GEN_MATH_WRAP_DOUBLE_1(sinhFunc, sinh)
 
 #ifndef HAVE_COSH
-static double cosh(double x){
-  return (exp(x)+exp(-x))/2.0;
+static double
+cosh(double x)
+{
+    return (exp(x) + exp(-x)) / 2.0;
 }
 #endif
 
 GEN_MATH_WRAP_DOUBLE_1(coshFunc, cosh)
 
 #ifndef HAVE_TANH
-static double tanh(double x){
-  return sinh(x)/cosh(x);
+static double
+tanh(double x)
+{
+    return sinh(x) / cosh(x);
 }
 #endif
 
@@ -465,12 +745,14 @@ GEN_MATH_WRAP_DOUBLE_1(cothFunc, coth)
 */
 
 #ifndef HAVE_LOG10
-static double log10(double x){
-  static double l10 = -1.0;
-  if( l10<0.0 ){
-    l10 = log(10.0);
-  }
-  return log(x)/l10;
+static double
+log10(double x)
+{
+    static double l10 = -1.0;
+    if (l10 < 0.0) {
+        l10 = log(10.0);
+    }
+    return log(x) / l10;
 }
 #endif
 
@@ -487,52 +769,62 @@ GEN_MATH_WRAP_DOUBLE_1(expFunc, exp)
 ** static double PI = acos(-1.0);
 ** #define M_PI (PI)
 */
-#define M_PI 3.14159265358979323846
+#    define M_PI 3.14159265358979323846
 #endif
 
 /* Convert Degrees into Radians */
-static double deg2rad(double x){
-  return x*M_PI/180.0;
+static double
+deg2rad(double x)
+{
+    return x * M_PI / 180.0;
 }
 
 /* Convert Radians into Degrees */
-static double rad2deg(double x){
-  return 180.0*x/M_PI;
+static double
+rad2deg(double x)
+{
+    return 180.0 * x / M_PI;
 }
 
 GEN_MATH_WRAP_DOUBLE_1(rad2degFunc, rad2deg)
 GEN_MATH_WRAP_DOUBLE_1(deg2radFunc, deg2rad)
 
 /* constant function that returns the value of PI=3.1415... */
-static void piFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  sqlite3_result_double(context, M_PI);
+static void
+piFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    sqlite3_result_double(context, M_PI);
 }
 
 /*
-** Implements the sqrt function, it has the peculiarity of returning an integer when the
+** Implements the sqrt function, it has the peculiarity of returning an integer
+*when the
 ** the argument is an integer.
-** Since SQLite isn't strongly typed (almost untyped actually) this is a bit pedantic
+** Since SQLite isn't strongly typed (almost untyped actually) this is a bit
+*pedantic
 */
-static void squareFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  i64 iVal = 0;
-  double rVal = 0.0;
-  assert( argc==1 );
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER: {
-      iVal = sqlite3_value_int64(argv[0]);
-      sqlite3_result_int64(context, iVal*iVal);
-      break;
+static void
+squareFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    i64 iVal = 0;
+    double rVal = 0.0;
+    assert(argc == 1);
+    switch (sqlite3_value_type(argv[0])) {
+        case SQLITE_INTEGER: {
+            iVal = sqlite3_value_int64(argv[0]);
+            sqlite3_result_int64(context, iVal * iVal);
+            break;
+        }
+        case SQLITE_NULL: {
+            sqlite3_result_null(context);
+            break;
+        }
+        default: {
+            rVal = sqlite3_value_double(argv[0]);
+            sqlite3_result_double(context, rVal * rVal);
+            break;
+        }
     }
-    case SQLITE_NULL: {
-      sqlite3_result_null(context);
-      break;
-    }
-    default: {
-      rVal = sqlite3_value_double(argv[0]);
-      sqlite3_result_double(context, rVal*rVal);
-      break;
-    }
-  }
 }
 
 /*
@@ -540,47 +832,56 @@ static void squareFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 ** When both the base and the exponent are integers the result should be integer
 ** (see sqrt just before this). Here the result is always double
 */
-/* LMH 2007-03-25 Changed to use errno; no pre-checking for errors.  Also removes
-  but that was present in the pre-checking that called sqlite3_result_error on
+/* LMH 2007-03-25 Changed to use errno; no pre-checking for errors.  Also
+  removes but that was present in the pre-checking that called
+  sqlite3_result_error on
   a non-positive first argument, which is not always an error. */
-static void powerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  double r1 = 0.0;
-  double r2 = 0.0;
-  double val;
+static void
+powerFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    double r1 = 0.0;
+    double r2 = 0.0;
+    double val;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL || sqlite3_value_type(argv[1]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    r1 = sqlite3_value_double(argv[0]);
-    r2 = sqlite3_value_double(argv[1]);
-    errno = 0;
-    val = pow(r1,r2);
-    if (errno == 0) {
-      sqlite3_result_double(context, val);
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL
+        || sqlite3_value_type(argv[1]) == SQLITE_NULL)
+    {
+        sqlite3_result_null(context);
     } else {
-      sqlite3_result_error(context, strerror(errno), errno);
+        r1 = sqlite3_value_double(argv[0]);
+        r2 = sqlite3_value_double(argv[1]);
+        errno = 0;
+        val = pow(r1, r2);
+        if (errno == 0) {
+            sqlite3_result_double(context, val);
+        } else {
+            sqlite3_result_error(context, strerror(errno), errno);
+        }
     }
-  }
 }
 
 /*
 ** atan2 wrapper
 */
-static void atn2Func(sqlite3_context *context, int argc, sqlite3_value **argv){
-  double r1 = 0.0;
-  double r2 = 0.0;
+static void
+atn2Func(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    double r1 = 0.0;
+    double r2 = 0.0;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL || sqlite3_value_type(argv[1]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    r1 = sqlite3_value_double(argv[0]);
-    r2 = sqlite3_value_double(argv[1]);
-    sqlite3_result_double(context, atan2(r1,r2));
-  }
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL
+        || sqlite3_value_type(argv[1]) == SQLITE_NULL)
+    {
+        sqlite3_result_null(context);
+    } else {
+        r1 = sqlite3_value_double(argv[0]);
+        r2 = sqlite3_value_double(argv[1]);
+        sqlite3_result_double(context, atan2(r1, r2));
+    }
 }
 
 /*
@@ -589,226 +890,244 @@ static void atn2Func(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** positive, 0 or negative.
 ** When the argument is NULL the result is also NULL (completly conventional)
 */
-static void signFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  double rVal=0.0;
-  i64 iVal=0;
-  assert( argc==1 );
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER: {
-      iVal = sqlite3_value_int64(argv[0]);
-      iVal = ( iVal > 0) ? 1: ( iVal < 0 ) ? -1: 0;
-      sqlite3_result_int64(context, iVal);
-      break;
-    }
-    case SQLITE_NULL: {
-      sqlite3_result_null(context);
-      break;
-    }
-    default: {
- /* 2nd change below. Line for abs was: if( rVal<0 ) rVal = rVal * -1.0;  */
+static void
+signFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    double rVal = 0.0;
+    i64 iVal = 0;
+    assert(argc == 1);
+    switch (sqlite3_value_type(argv[0])) {
+        case SQLITE_INTEGER: {
+            iVal = sqlite3_value_int64(argv[0]);
+            iVal = (iVal > 0) ? 1 : (iVal < 0) ? -1 : 0;
+            sqlite3_result_int64(context, iVal);
+            break;
+        }
+        case SQLITE_NULL: {
+            sqlite3_result_null(context);
+            break;
+        }
+        default: {
+            /* 2nd change below. Line for abs was: if( rVal<0 ) rVal = rVal *
+             * -1.0;  */
 
-      rVal = sqlite3_value_double(argv[0]);
-      rVal = ( rVal > 0) ? 1: ( rVal < 0 ) ? -1: 0;
-      sqlite3_result_double(context, rVal);
-      break;
+            rVal = sqlite3_value_double(argv[0]);
+            rVal = (rVal > 0) ? 1 : (rVal < 0) ? -1 : 0;
+            sqlite3_result_double(context, rVal);
+            break;
+        }
     }
-  }
 }
-
 
 /*
 ** smallest integer value not less than argument
 */
-static void ceilFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  double rVal=0.0;
-  assert( argc==1 );
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER: {
-      i64 iVal = sqlite3_value_int64(argv[0]);
-      sqlite3_result_int64(context, iVal);
-      break;
+static void
+ceilFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    double rVal = 0.0;
+    assert(argc == 1);
+    switch (sqlite3_value_type(argv[0])) {
+        case SQLITE_INTEGER: {
+            i64 iVal = sqlite3_value_int64(argv[0]);
+            sqlite3_result_int64(context, iVal);
+            break;
+        }
+        case SQLITE_NULL: {
+            sqlite3_result_null(context);
+            break;
+        }
+        default: {
+            rVal = sqlite3_value_double(argv[0]);
+            sqlite3_result_int64(context, (i64) ceil(rVal));
+            break;
+        }
     }
-    case SQLITE_NULL: {
-      sqlite3_result_null(context);
-      break;
-    }
-    default: {
-      rVal = sqlite3_value_double(argv[0]);
-      sqlite3_result_int64(context, (i64) ceil(rVal));
-      break;
-    }
-  }
 }
 
 /*
 ** largest integer value not greater than argument
 */
-static void floorFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  double rVal=0.0;
-  assert( argc==1 );
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER: {
-      i64 iVal = sqlite3_value_int64(argv[0]);
-      sqlite3_result_int64(context, iVal);
-      break;
+static void
+floorFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    double rVal = 0.0;
+    assert(argc == 1);
+    switch (sqlite3_value_type(argv[0])) {
+        case SQLITE_INTEGER: {
+            i64 iVal = sqlite3_value_int64(argv[0]);
+            sqlite3_result_int64(context, iVal);
+            break;
+        }
+        case SQLITE_NULL: {
+            sqlite3_result_null(context);
+            break;
+        }
+        default: {
+            rVal = sqlite3_value_double(argv[0]);
+            sqlite3_result_int64(context, (i64) floor(rVal));
+            break;
+        }
     }
-    case SQLITE_NULL: {
-      sqlite3_result_null(context);
-      break;
-    }
-    default: {
-      rVal = sqlite3_value_double(argv[0]);
-      sqlite3_result_int64(context, (i64) floor(rVal));
-      break;
-    }
-  }
 }
 
 /*
-** Given a string (s) in the first argument and an integer (n) in the second returns the
+** Given a string (s) in the first argument and an integer (n) in the second
+*returns the
 ** string that constains s contatenated n times
 */
-static void replicateFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-    static const char *EMPTY = "";
-  unsigned char *z;        /* result string */
-  i64 iCount;              /* times to repeat */
-  i64 nLen;                /* length of the input string (no multibyte considerations) */
-  i64 nTLen;               /* length of the result string (no multibyte considerations) */
-  i64 i=0;
+static void
+replicateFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    static const char* EMPTY = "";
+    unsigned char* z; /* result string */
+    i64 iCount; /* times to repeat */
+    i64 nLen; /* length of the input string (no multibyte considerations) */
+    i64 nTLen; /* length of the result string (no multibyte considerations) */
+    i64 i = 0;
 
-  if( argc!=2 || SQLITE_NULL==sqlite3_value_type(argv[0]) )
-    return;
+    if (argc != 2 || SQLITE_NULL == sqlite3_value_type(argv[0]))
+        return;
 
-  iCount = sqlite3_value_int64(argv[1]);
+    iCount = sqlite3_value_int64(argv[1]);
 
-  if( iCount<0 ){
-    sqlite3_result_error(context, "domain error", -1);
-    return;
-  }
+    if (iCount < 0) {
+        sqlite3_result_error(context, "domain error", -1);
+        return;
+    }
 
-  if (iCount == 0) {
-      sqlite3_result_text(context, EMPTY, 0, SQLITE_STATIC);
-      return;
-  }
+    if (iCount == 0) {
+        sqlite3_result_text(context, EMPTY, 0, SQLITE_STATIC);
+        return;
+    }
 
-    nLen  = sqlite3_value_bytes(argv[0]);
-    nTLen = nLen*iCount;
-    z= (unsigned char *) sqlite3_malloc(nTLen + 1);
-    if (!z){
-      sqlite3_result_error_nomem(context);
-      if (z) sqlite3_free(z);
-      return;
+    nLen = sqlite3_value_bytes(argv[0]);
+    nTLen = nLen * iCount;
+    z = (unsigned char*) sqlite3_malloc(nTLen + 1);
+    if (!z) {
+        sqlite3_result_error_nomem(context);
+        if (z)
+            sqlite3_free(z);
+        return;
     }
     auto zo = sqlite3_value_text(argv[0]);
 
-    for(i=0; i<iCount; ++i){
-      strcpy((char*)(z+i*nLen), (char*)zo);
+    for (i = 0; i < iCount; ++i) {
+        strcpy((char*) (z + i * nLen), (char*) zo);
     }
 
-    sqlite3_result_text(context, (char*)z, -1, sqlite3_free);
+    sqlite3_result_text(context, (char*) z, -1, sqlite3_free);
 }
 
 /*
-** Some systems (win32 among others) don't have an isblank function, this will emulate it.
+** Some systems (win32 among others) don't have an isblank function, this will
+*emulate it.
 ** This function is not UFT-8 safe since it only analyses a byte character.
 */
 #ifndef HAVE_ISBLANK
-int isblank(char c){
-  return( ' '==c || '\t'==c );
+int
+isblank(char c)
+{
+    return (' ' == c || '\t' == c);
 }
 #endif
 
-static void properFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const unsigned char *z;     /* input string */
-  unsigned char *zo;          /* output string */
-  unsigned char *zt;          /* iterator */
-  char r;
-  int c=1;
+static void
+properFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const unsigned char* z; /* input string */
+    unsigned char* zo; /* output string */
+    unsigned char* zt; /* iterator */
+    char r;
+    int c = 1;
 
-  assert( argc==1);
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
-
-  z = sqlite3_value_text(argv[0]);
-  zo = (unsigned char *)sqlite3StrDup((char *) z);
-  if (!zo) {
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-  zt = zo;
-
-  while( (r = *(z++))!=0 ){
-    if( isblank(r) ){
-      c=1;
-    }else{
-      if( c==1 ){
-        r = toupper(r);
-      }else{
-        r = tolower(r);
-      }
-      c=0;
+    assert(argc == 1);
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
     }
-    *(zt++) = r;
-  }
-  *zt = '\0';
 
-  sqlite3_result_text(context, (char*)zo, -1, SQLITE_TRANSIENT);
-  sqlite3_free(zo);
+    z = sqlite3_value_text(argv[0]);
+    zo = (unsigned char*) sqlite3StrDup((char*) z);
+    if (!zo) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    zt = zo;
+
+    while ((r = *(z++)) != 0) {
+        if (isblank(r)) {
+            c = 1;
+        } else {
+            if (c == 1) {
+                r = toupper(r);
+            } else {
+                r = tolower(r);
+            }
+            c = 0;
+        }
+        *(zt++) = r;
+    }
+    *zt = '\0';
+
+    sqlite3_result_text(context, (char*) zo, -1, SQLITE_TRANSIENT);
+    sqlite3_free(zo);
 }
 
 /*
-** given an input string (s) and an integer (n) adds spaces at the begining of  s
+** given an input string (s) and an integer (n) adds spaces at the begining of s
 ** until it has a length of n characters.
 ** When s has a length >=n it's a NOP
 ** padl(NULL) = NULL
 */
-static void padlFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  i64 ilen;          /* length to pad to */
-  i64 zl;            /* length of the input string (UTF-8 chars) */
-  int i = 0;
-  const char *zi;    /* input string */
-  char *zo;          /* output string */
-  char *zt;
+static void
+padlFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    i64 ilen; /* length to pad to */
+    i64 zl; /* length of the input string (UTF-8 chars) */
+    int i = 0;
+    const char* zi; /* input string */
+    char* zo; /* output string */
+    char* zt;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    zi = (char *)sqlite3_value_text(argv[0]);
-    ilen = sqlite3_value_int64(argv[1]);
-    /* check domain */
-    if(ilen<0){
-      sqlite3_result_error(context, "domain error", -1);
-      return;
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        sqlite3_result_null(context);
+    } else {
+        zi = (char*) sqlite3_value_text(argv[0]);
+        ilen = sqlite3_value_int64(argv[1]);
+        /* check domain */
+        if (ilen < 0) {
+            sqlite3_result_error(context, "domain error", -1);
+            return;
+        }
+        zl = sqlite3Utf8CharLen(zi, -1);
+        if (zl >= ilen) {
+            /* string is longer than the requested pad length, return the same
+             * string (dup it) */
+            zo = sqlite3StrDup(zi);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        } else {
+            zo = (char*) sqlite3_malloc(strlen(zi) + ilen - zl + 1);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            zt = zo;
+            for (i = 1; i + zl <= ilen; ++i) {
+                *(zt++) = ' ';
+            }
+            /* no need to take UTF-8 into consideration here */
+            strcpy(zt, zi);
+        }
+        sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        sqlite3_free(zo);
     }
-    zl = sqlite3Utf8CharLen(zi, -1);
-    if( zl>=ilen ){
-      /* string is longer than the requested pad length, return the same string (dup it) */
-      zo = sqlite3StrDup(zi);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    }else{
-      zo = (char *) sqlite3_malloc(strlen(zi) + ilen - zl + 1);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      zt = zo;
-      for(i=1; i+zl<=ilen; ++i){
-        *(zt++)=' ';
-      }
-      /* no need to take UTF-8 into consideration here */
-      strcpy(zt,zi);
-    }
-    sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    sqlite3_free(zo);
-  }
 }
 
 /*
@@ -817,52 +1136,55 @@ static void padlFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** When s has a length >=n it's a NOP
 ** padl(NULL) = NULL
 */
-static void padrFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  i64 ilen;          /* length to pad to */
-  i64 zl;            /* length of the input string (UTF-8 chars) */
-  i64 zll;           /* length of the input string (bytes) */
-  int i = 0;
-  const char *zi;    /* input string */
-  char *zo;          /* output string */
-  char *zt;
+static void
+padrFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    i64 ilen; /* length to pad to */
+    i64 zl; /* length of the input string (UTF-8 chars) */
+    i64 zll; /* length of the input string (bytes) */
+    int i = 0;
+    const char* zi; /* input string */
+    char* zo; /* output string */
+    char* zt;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    zi = (char *)sqlite3_value_text(argv[0]);
-    ilen = sqlite3_value_int64(argv[1]);
-    /* check domain */
-    if(ilen<0){
-      sqlite3_result_error(context, "domain error", -1);
-      return;
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        sqlite3_result_null(context);
+    } else {
+        zi = (char*) sqlite3_value_text(argv[0]);
+        ilen = sqlite3_value_int64(argv[1]);
+        /* check domain */
+        if (ilen < 0) {
+            sqlite3_result_error(context, "domain error", -1);
+            return;
+        }
+        zl = sqlite3Utf8CharLen(zi, -1);
+        if (zl >= ilen) {
+            /* string is longer than the requested pad length, return the same
+             * string (dup it) */
+            zo = sqlite3StrDup(zi);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        } else {
+            zll = strlen(zi);
+            zo = (char*) sqlite3_malloc(zll + ilen - zl + 1);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            zt = strcpy(zo, zi) + zll;
+            for (i = 1; i + zl <= ilen; ++i) {
+                *(zt++) = ' ';
+            }
+            *zt = '\0';
+        }
+        sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        sqlite3_free(zo);
     }
-    zl = sqlite3Utf8CharLen(zi, -1);
-    if( zl>=ilen ){
-      /* string is longer than the requested pad length, return the same string (dup it) */
-      zo = sqlite3StrDup(zi);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    }else{
-      zll = strlen(zi);
-      zo = (char *) sqlite3_malloc(zll + ilen - zl + 1);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      zt = strcpy(zo,zi)+zll;
-      for(i=1; i+zl<=ilen; ++i){
-        *(zt++) = ' ';
-      }
-      *zt = '\0';
-    }
-    sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    sqlite3_free(zo);
-  }
 }
 
 /*
@@ -872,110 +1194,120 @@ static void padrFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** When s has a length >=n it's a NOP
 ** padl(NULL) = NULL
 */
-static void padcFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  i64 ilen;           /* length to pad to */
-  i64 zl;             /* length of the input string (UTF-8 chars) */
-  i64 zll;            /* length of the input string (bytes) */
-  int i = 0;
-  const char *zi;     /* input string */
-  char *zo;           /* output string */
-  char *zt;
+static void
+padcFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    i64 ilen; /* length to pad to */
+    i64 zl; /* length of the input string (UTF-8 chars) */
+    i64 zll; /* length of the input string (bytes) */
+    int i = 0;
+    const char* zi; /* input string */
+    char* zo; /* output string */
+    char* zt;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    zi = (char *)sqlite3_value_text(argv[0]);
-    ilen = sqlite3_value_int64(argv[1]);
-    /* check domain */
-    if(ilen<0){
-      sqlite3_result_error(context, "domain error", -1);
-      return;
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        sqlite3_result_null(context);
+    } else {
+        zi = (char*) sqlite3_value_text(argv[0]);
+        ilen = sqlite3_value_int64(argv[1]);
+        /* check domain */
+        if (ilen < 0) {
+            sqlite3_result_error(context, "domain error", -1);
+            return;
+        }
+        zl = sqlite3Utf8CharLen(zi, -1);
+        if (zl >= ilen) {
+            /* string is longer than the requested pad length, return the same
+             * string (dup it) */
+            zo = sqlite3StrDup(zi);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        } else {
+            zll = strlen(zi);
+            zo = (char*) sqlite3_malloc(zll + ilen - zl + 1);
+            if (!zo) {
+                sqlite3_result_error_nomem(context);
+                return;
+            }
+            zt = zo;
+            for (i = 1; 2 * i + zl <= ilen; ++i) {
+                *(zt++) = ' ';
+            }
+            strcpy(zt, zi);
+            zt += zll;
+            for (; i + zl <= ilen; ++i) {
+                *(zt++) = ' ';
+            }
+            *zt = '\0';
+        }
+        sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        sqlite3_free(zo);
     }
-    zl = sqlite3Utf8CharLen(zi, -1);
-    if( zl>=ilen ){
-      /* string is longer than the requested pad length, return the same string (dup it) */
-      zo = sqlite3StrDup(zi);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    }else{
-      zll = strlen(zi);
-      zo = (char *) sqlite3_malloc(zll + ilen - zl + 1);
-      if (!zo){
-        sqlite3_result_error_nomem(context);
-        return;
-      }
-      zt = zo;
-      for(i=1; 2*i+zl<=ilen; ++i){
-        *(zt++) = ' ';
-      }
-      strcpy(zt, zi);
-      zt+=zll;
-      for(; i+zl<=ilen; ++i){
-        *(zt++) = ' ';
-      }
-      *zt = '\0';
-    }
-    sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    sqlite3_free(zo);
-  }
 }
 
 /*
-** given 2 string (s1,s2) returns the string s1 with the characters NOT in s2 removed
+** given 2 string (s1,s2) returns the string s1 with the characters NOT in s2
+*removed
 ** assumes strings are UTF-8 encoded
 */
-static void strfilterFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *zi1;        /* first parameter string (searched string) */
-  const char *zi2;        /* second parameter string (vcontains valid characters) */
-  const char *z1;
-  const char *z21;
-  const char *z22;
-  char *zo;               /* output string */
-  char *zot;
-  int c1 = 0;
-  int c2 = 0;
+static void
+strfilterFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* zi1; /* first parameter string (searched string) */
+    const char* zi2; /* second parameter string (vcontains valid characters) */
+    const char* z1;
+    const char* z21;
+    const char* z22;
+    char* zo; /* output string */
+    char* zot;
+    int c1 = 0;
+    int c2 = 0;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0]) == SQLITE_NULL || sqlite3_value_type(argv[1]) == SQLITE_NULL ){
-    sqlite3_result_null(context);
-  }else{
-    zi1 = (char *)sqlite3_value_text(argv[0]);
-    zi2 = (char *)sqlite3_value_text(argv[1]);
-    /*
-    ** maybe I could allocate less, but that would imply 2 passes, rather waste
-    ** (possibly) some memory
-    */
-    zo = (char *) sqlite3_malloc(strlen(zi1) + 1);
-    if (!zo){
-      sqlite3_result_error_nomem(context);
-      return;
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL
+        || sqlite3_value_type(argv[1]) == SQLITE_NULL)
+    {
+        sqlite3_result_null(context);
+    } else {
+        zi1 = (char*) sqlite3_value_text(argv[0]);
+        zi2 = (char*) sqlite3_value_text(argv[1]);
+        /*
+        ** maybe I could allocate less, but that would imply 2 passes, rather
+        *waste
+        ** (possibly) some memory
+        */
+        zo = (char*) sqlite3_malloc(strlen(zi1) + 1);
+        if (!zo) {
+            sqlite3_result_error_nomem(context);
+            return;
+        }
+        zot = zo;
+        z1 = zi1;
+        while ((c1 = sqliteCharVal((unsigned char*) z1)) != 0) {
+            z21 = zi2;
+            while ((c2 = sqliteCharVal((unsigned char*) z21)) != 0 && c2 != c1)
+            {
+                sqliteNextChar(z21);
+            }
+            if (c2 != 0) {
+                z22 = z21;
+                sqliteNextChar(z22);
+                strncpy(zot, z21, z22 - z21);
+                zot += z22 - z21;
+            }
+            sqliteNextChar(z1);
+        }
+        *zot = '\0';
+
+        sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+        sqlite3_free(zo);
     }
-    zot = zo;
-    z1 = zi1;
-    while( (c1=sqliteCharVal((unsigned char *)z1))!=0 ){
-      z21=zi2;
-      while( (c2=sqliteCharVal((unsigned char *)z21))!=0 && c2!=c1 ){
-        sqliteNextChar(z21);
-      }
-      if( c2!=0){
-        z22=z21;
-        sqliteNextChar(z22);
-        strncpy(zot, z21, z22-z21);
-        zot+=z22-z21;
-      }
-      sqliteNextChar(z1);
-    }
-    *zot = '\0';
-
-    sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-    sqlite3_free(zo);
-  }
 }
 
 /*
@@ -985,260 +1317,289 @@ static void strfilterFunc(sqlite3_context *context, int argc, sqlite3_value **ar
 ** updates p to point to the character where the match occured.
 ** This is an auxiliary function.
 */
-static int _substr(const char* z1, const char* z2, int s, const char** p){
-  int c = 0;
-  int rVal=-1;
-  const char* zt1;
-  const char* zt2;
-  int c1,c2;
+static int
+_substr(const char* z1, const char* z2, int s, const char** p)
+{
+    int c = 0;
+    int rVal = -1;
+    const char* zt1;
+    const char* zt2;
+    int c1, c2;
 
-  if( '\0'==*z1 ){
-    return -1;
-  }
-
-  while( (sqliteCharVal((unsigned char *)z2) != 0) && (c++)<s){
-    sqliteNextChar(z2);
-  }
-
-  c = 0;
-  while( (sqliteCharVal((unsigned char *)z2)) != 0 ){
-    zt1 = z1;
-    zt2 = z2;
-
-    do{
-      c1 = sqliteCharVal((unsigned char *)zt1);
-      c2 = sqliteCharVal((unsigned char *)zt2);
-      if (c1 == 0) {
-          break;
-      }
-      if (c2 == 0) {
-          break;
-      }
-      sqliteNextChar(zt1);
-      sqliteNextChar(zt2);
-    }while( c1 == c2 && c1 != 0 && c2 != 0 );
-
-    if( c1 == 0 ){
-      rVal = c;
-      break;
+    if ('\0' == *z1) {
+        return -1;
     }
 
-    sqliteNextChar(z2);
-    ++c;
-  }
-  if(p){
-    *p=z2;
-  }
-  return rVal >=0 ? rVal+s : rVal;
+    while ((sqliteCharVal((unsigned char*) z2) != 0) && (c++) < s) {
+        sqliteNextChar(z2);
+    }
+
+    c = 0;
+    while ((sqliteCharVal((unsigned char*) z2)) != 0) {
+        zt1 = z1;
+        zt2 = z2;
+
+        do {
+            c1 = sqliteCharVal((unsigned char*) zt1);
+            c2 = sqliteCharVal((unsigned char*) zt2);
+            if (c1 == 0) {
+                break;
+            }
+            if (c2 == 0) {
+                break;
+            }
+            sqliteNextChar(zt1);
+            sqliteNextChar(zt2);
+        } while (c1 == c2 && c1 != 0 && c2 != 0);
+
+        if (c1 == 0) {
+            rVal = c;
+            break;
+        }
+
+        sqliteNextChar(z2);
+        ++c;
+    }
+    if (p) {
+        *p = z2;
+    }
+    return rVal >= 0 ? rVal + s : rVal;
 }
 
 /*
-** given 2 input strings (s1,s2) and an integer (n) searches from the nth character
+** given 2 input strings (s1,s2) and an integer (n) searches from the nth
+*character
 ** for the string s1. Returns the position where the match occured.
 ** Characters are counted from 1.
 ** 0 is returned when no match occurs.
 */
 
-static void charindexFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const u8 *z1;          /* s1 string */
-  u8 *z2;                /* s2 string */
-  int s=0;
-  int rVal=0;
+static void
+charindexFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const u8* z1; /* s1 string */
+    u8* z2; /* s2 string */
+    int s = 0;
+    int rVal = 0;
 
-  assert( argc==3 ||argc==2);
+    assert(argc == 3 || argc == 2);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) || SQLITE_NULL==sqlite3_value_type(argv[1])){
-    sqlite3_result_null(context);
-    return;
-  }
-
-  z1 = sqlite3_value_text(argv[0]);
-  if( z1==0 ) return;
-  z2 = (u8*) sqlite3_value_text(argv[1]);
-  if(argc==3){
-    s = sqlite3_value_int(argv[2])-1;
-    if(s<0){
-      s=0;
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])
+        || SQLITE_NULL == sqlite3_value_type(argv[1]))
+    {
+        sqlite3_result_null(context);
+        return;
     }
-  }else{
-    s = 0;
-  }
 
-  rVal = _substr((char *)z1,(char *)z2,s,NULL);
-  sqlite3_result_int(context, rVal+1);
+    z1 = sqlite3_value_text(argv[0]);
+    if (z1 == 0)
+        return;
+    z2 = (u8*) sqlite3_value_text(argv[1]);
+    if (argc == 3) {
+        s = sqlite3_value_int(argv[2]) - 1;
+        if (s < 0) {
+            s = 0;
+        }
+    } else {
+        s = 0;
+    }
+
+    rVal = _substr((char*) z1, (char*) z2, s, NULL);
+    sqlite3_result_int(context, rVal + 1);
 }
 
 /*
-** given a string (s) and an integer (n) returns the n leftmost (UTF-8) characters
+** given a string (s) and an integer (n) returns the n leftmost (UTF-8)
+*characters
 ** if the string has a length<=n or is NULL this function is NOP
 */
-static void leftFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  int c=0;
-  int cc=0;
-  int l=0;
-  const unsigned char *z;       /* input string */
-  const unsigned char *zt;
-  unsigned char *rz;            /* output string */
+static void
+leftFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    int c = 0;
+    int cc = 0;
+    int l = 0;
+    const unsigned char* z; /* input string */
+    const unsigned char* zt;
+    unsigned char* rz; /* output string */
 
-  assert( argc==2);
+    assert(argc == 2);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) || SQLITE_NULL==sqlite3_value_type(argv[1])){
-    sqlite3_result_null(context);
-    return;
-  }
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])
+        || SQLITE_NULL == sqlite3_value_type(argv[1]))
+    {
+        sqlite3_result_null(context);
+        return;
+    }
 
-  z  = sqlite3_value_text(argv[0]);
-  l  = sqlite3_value_int(argv[1]);
-  zt = z;
+    z = sqlite3_value_text(argv[0]);
+    l = sqlite3_value_int(argv[1]);
+    zt = z;
 
-  while( sqliteCharVal(zt) && c++<l)
-    sqliteNextChar(zt);
+    while (sqliteCharVal(zt) && c++ < l)
+        sqliteNextChar(zt);
 
-  cc=zt-z;
+    cc = zt - z;
 
-  rz = (unsigned char *) sqlite3_malloc(zt - z + 1);
-  if (!rz){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-  strncpy((char*) rz, (char*) z, zt-z);
-  *(rz+cc) = '\0';
-  sqlite3_result_text(context, (char*)rz, -1, SQLITE_TRANSIENT);
-  sqlite3_free(rz);
+    rz = (unsigned char*) sqlite3_malloc(zt - z + 1);
+    if (!rz) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    strncpy((char*) rz, (char*) z, zt - z);
+    *(rz + cc) = '\0';
+    sqlite3_result_text(context, (char*) rz, -1, SQLITE_TRANSIENT);
+    sqlite3_free(rz);
 }
 
 /*
-** given a string (s) and an integer (n) returns the n rightmost (UTF-8) characters
+** given a string (s) and an integer (n) returns the n rightmost (UTF-8)
+*characters
 ** if the string has a length<=n or is NULL this function is NOP
 */
-static void rightFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  int l=0;
-  int c=0;
-  int cc=0;
-  const char *z;
-  const char *zt;
-  const char *ze;
-  char *rz;
+static void
+rightFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    int l = 0;
+    int c = 0;
+    int cc = 0;
+    const char* z;
+    const char* zt;
+    const char* ze;
+    char* rz;
 
-  assert( argc==2);
+    assert(argc == 2);
 
-  if( SQLITE_NULL == sqlite3_value_type(argv[0]) || SQLITE_NULL == sqlite3_value_type(argv[1])){
-    sqlite3_result_null(context);
-    return;
-  }
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])
+        || SQLITE_NULL == sqlite3_value_type(argv[1]))
+    {
+        sqlite3_result_null(context);
+        return;
+    }
 
-  z  = (char *)sqlite3_value_text(argv[0]);
-  l  = sqlite3_value_int(argv[1]);
-  zt = z;
+    z = (char*) sqlite3_value_text(argv[0]);
+    l = sqlite3_value_int(argv[1]);
+    zt = z;
 
-  while( sqliteCharVal((unsigned char *)zt)!=0){
-    sqliteNextChar(zt);
-    ++c;
-  }
+    while (sqliteCharVal((unsigned char*) zt) != 0) {
+        sqliteNextChar(zt);
+        ++c;
+    }
 
-  ze = zt;
-  zt = z;
+    ze = zt;
+    zt = z;
 
-  cc=c-l;
-  if(cc<0)
-    cc=0;
+    cc = c - l;
+    if (cc < 0)
+        cc = 0;
 
-  while( cc-- > 0 ){
-    sqliteNextChar(zt);
-  }
+    while (cc-- > 0) {
+        sqliteNextChar(zt);
+    }
 
-  rz = (char *) sqlite3_malloc(ze - zt + 1);
-  if (!rz){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-  strcpy((char*) rz, (char*) (zt));
-  sqlite3_result_text(context, (char*)rz, -1, SQLITE_TRANSIENT);
-  sqlite3_free(rz);
+    rz = (char*) sqlite3_malloc(ze - zt + 1);
+    if (!rz) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    strcpy((char*) rz, (char*) (zt));
+    sqlite3_result_text(context, (char*) rz, -1, SQLITE_TRANSIENT);
+    sqlite3_free(rz);
 }
 
 #ifndef HAVE_TRIM
 /*
 ** removes the whitespaces at the begining of a string.
 */
-const char* ltrim(const char* s){
-  while( *s==' ' )
-    ++s;
-  return s;
+const char*
+ltrim(const char* s)
+{
+    while (*s == ' ')
+        ++s;
+    return s;
 }
 
 /*
 ** removes the whitespaces at the end of a string.
 ** !mutates the input string!
 */
-void rtrim(char* s){
-  char* ss = s+strlen(s)-1;
-  while( ss>=s && *ss==' ' )
-    --ss;
-  *(ss+1)='\0';
+void
+rtrim(char* s)
+{
+    char* ss = s + strlen(s) - 1;
+    while (ss >= s && *ss == ' ')
+        --ss;
+    *(ss + 1) = '\0';
 }
 
 /*
 **  Removes the whitespace at the begining of a string
 */
-static void ltrimFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z;
+static void
+ltrimFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* z;
 
-  assert( argc==1);
+    assert(argc == 1);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
-  z = sqlite3_value_text(argv[0]);
-  sqlite3_result_text(context, ltrim(z), -1, SQLITE_TRANSIENT);
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
+    }
+    z = sqlite3_value_text(argv[0]);
+    sqlite3_result_text(context, ltrim(z), -1, SQLITE_TRANSIENT);
 }
 
 /*
 **  Removes the whitespace at the end of a string
 */
-static void rtrimFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z;
-  char *rz;
-  /* try not to change data in argv */
+static void
+rtrimFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* z;
+    char* rz;
+    /* try not to change data in argv */
 
-  assert( argc==1);
+    assert(argc == 1);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
-  z = sqlite3_value_text(argv[0]);
-  rz = sqlite3StrDup(z);
-  rtrim(rz);
-  sqlite3_result_text(context, rz, -1, SQLITE_TRANSIENT);
-  sqlite3_free(rz);
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
+    }
+    z = sqlite3_value_text(argv[0]);
+    rz = sqlite3StrDup(z);
+    rtrim(rz);
+    sqlite3_result_text(context, rz, -1, SQLITE_TRANSIENT);
+    sqlite3_free(rz);
 }
 
 /*
 **  Removes the whitespace at the begining and end of a string
 */
-static void trimFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z;
-  char *rz;
-  /* try not to change data in argv */
+static void
+trimFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* z;
+    char* rz;
+    /* try not to change data in argv */
 
-  assert( argc==1);
+    assert(argc == 1);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
-  z = sqlite3_value_text(argv[0]);
-  rz = sqlite3StrDup(z);
-  rtrim(rz);
-  sqlite3_result_text(context, ltrim(rz), -1, SQLITE_TRANSIENT);
-  sqlite3_free(rz);
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
+    }
+    z = sqlite3_value_text(argv[0]);
+    rz = sqlite3StrDup(z);
+    rtrim(rz);
+    sqlite3_result_text(context, ltrim(rz), -1, SQLITE_TRANSIENT);
+    sqlite3_free(rz);
 }
 #endif
 
 /*
-** given a pointer to a string s1, the length of that string (l1), a new string (s2)
+** given a pointer to a string s1, the length of that string (l1), a new string
+*(s2)
 ** and it's length (l2) appends s2 to s1.
 ** All lengths in bytes.
 ** This is just an auxiliary function
@@ -1254,122 +1615,129 @@ static void trimFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 /*
 ** given strings s, s1 and s2 replaces occurrences of s1 in s by s2
 */
-static void replaceFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z1;     /* string s (first parameter) */
-  const char *z2;     /* string s1 (second parameter) string to look for */
-  const char *z3;     /* string s2 (third parameter) string to replace occurrences of s1 with */
-  int lz1;
-  int lz2;
-  int lz3;
-  int lzo=0;
-  char *zo=0;
-  int ret=0;
-  const char *zt1;
-  const char *zt2;
+static void
+replaceFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* z1; /* string s (first parameter) */
+    const char* z2; /* string s1 (second parameter) string to look for */
+    const char* z3; /* string s2 (third parameter) string to replace occurrences
+                       of s1 with */
+    int lz1;
+    int lz2;
+    int lz3;
+    int lzo = 0;
+    char* zo = 0;
+    int ret = 0;
+    const char* zt1;
+    const char* zt2;
 
-  assert( 3==argc );
+    assert(3 == argc);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
+    }
 
-  z1 = sqlite3_value_text(argv[0]);
-  z2 = sqlite3_value_text(argv[1]);
-  z3 = sqlite3_value_text(argv[2]);
-  /* handle possible null values */
-  if( 0==z2 ){
-    z2="";
-  }
-  if( 0==z3 ){
-    z3="";
-  }
+    z1 = sqlite3_value_text(argv[0]);
+    z2 = sqlite3_value_text(argv[1]);
+    z3 = sqlite3_value_text(argv[2]);
+    /* handle possible null values */
+    if (0 == z2) {
+        z2 = "";
+    }
+    if (0 == z3) {
+        z3 = "";
+    }
 
-  lz1 = strlen(z1);
-  lz2 = strlen(z2);
-  lz3 = strlen(z3);
+    lz1 = strlen(z1);
+    lz2 = strlen(z2);
+    lz3 = strlen(z3);
 
-#if 0
+#    if 0
   /* special case when z2 is empty (or null) nothing will be changed */
   if( 0==lz2 ){
     sqlite3_result_text(context, z1, -1, SQLITE_TRANSIENT);
     return;
   }
-#endif
+#    endif
 
-  zt1=z1;
-  zt2=z1;
+    zt1 = z1;
+    zt2 = z1;
 
-  while(1){
-    ret=_substr(z2,zt1 , 0, &zt2);
+    while (1) {
+        ret = _substr(z2, zt1, 0, &zt2);
 
-    if( ret<0 )
-      break;
+        if (ret < 0)
+            break;
 
-    _append(&zo, lzo, zt1, zt2-zt1);
-    lzo+=zt2-zt1;
-    _append(&zo, lzo, z3, lz3);
-    lzo+=lz3;
+        _append(&zo, lzo, zt1, zt2 - zt1);
+        lzo += zt2 - zt1;
+        _append(&zo, lzo, z3, lz3);
+        lzo += lz3;
 
-    zt1=zt2+lz2;
-  }
-  _append(&zo, lzo, zt1, lz1-(zt1-z1));
-  sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
-  sqlite3_free(zo);
+        zt1 = zt2 + lz2;
+    }
+    _append(&zo, lzo, zt1, lz1 - (zt1 - z1));
+    sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
+    sqlite3_free(zo);
 }
 #endif
 
 /*
-** given a string returns the same string but with the characters in reverse order
+** given a string returns the same string but with the characters in reverse
+*order
 */
-static void reverseFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z;
-  const char *zt;
-  char *rz;
-  char *rzt;
-  int l = 0;
-  int i = 0;
+static void
+reverseFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    const char* z;
+    const char* zt;
+    char* rz;
+    char* rzt;
+    int l = 0;
+    int i = 0;
 
-  assert( 1==argc );
+    assert(1 == argc);
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ){
-    sqlite3_result_null(context);
-    return;
-  }
-  z = (char *)sqlite3_value_text(argv[0]);
-  l = strlen(z);
-  rz = (char *) sqlite3_malloc(l + 1);
-  if (!rz){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
-  rzt = rz+l;
-  *(rzt--) = '\0';
-
-  zt=z;
-  while( sqliteCharVal((unsigned char *)zt)!=0 ){
-    z=zt;
-    sqliteNextChar(zt);
-    for(i=1; zt-i>=z; ++i){
-      *(rzt--)=*(zt-i);
+    if (SQLITE_NULL == sqlite3_value_type(argv[0])) {
+        sqlite3_result_null(context);
+        return;
     }
-  }
+    z = (char*) sqlite3_value_text(argv[0]);
+    l = strlen(z);
+    rz = (char*) sqlite3_malloc(l + 1);
+    if (!rz) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    rzt = rz + l;
+    *(rzt--) = '\0';
 
-  sqlite3_result_text(context, rz, -1, SQLITE_TRANSIENT);
-  sqlite3_free(rz);
+    zt = z;
+    while (sqliteCharVal((unsigned char*) zt) != 0) {
+        z = zt;
+        sqliteNextChar(zt);
+        for (i = 1; zt - i >= z; ++i) {
+            *(rzt--) = *(zt - i);
+        }
+    }
+
+    sqlite3_result_text(context, rz, -1, SQLITE_TRANSIENT);
+    sqlite3_free(rz);
 }
 
 /*
 ** An instance of the following structure holds the context of a
 ** stdev() or variance() aggregate computation.
-** implementaion of http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Algorithm_II
+** implementaion of
+*http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Algorithm_II
 ** less prone to rounding errors
 */
 typedef struct StdevCtx StdevCtx;
 struct StdevCtx {
-  double rM;
-  double rS;
-  i64 cnt;          /* number of elements */
+    double rM;
+    double rS;
+    i64 cnt; /* number of elements */
 };
 
 /*
@@ -1377,120 +1745,129 @@ struct StdevCtx {
 ** mode() or median() aggregate computation.
 ** Depends on structures defined in map.c (see map & map)
 ** These aggregate functions only work for integers and floats although
-** they could be made to work for strings. This is usually considered meaningless.
-** Only usuall order (for median), no use of collation functions (would this even make sense?)
+** they could be made to work for strings. This is usually considered
+*meaningless.
+** Only usuall order (for median), no use of collation functions (would this
+*even make sense?)
 */
 typedef struct ModeCtx ModeCtx;
 struct ModeCtx {
-  i64 riM;            /* integer value found so far */
-  double rdM;         /* double value found so far */
-  i64 cnt;            /* number of elements so far */
-  double pcnt;        /* number of elements smaller than a percentile */
-  i64 mcnt;           /* maximum number of occurrences (for mode) */
-  i64 mn;             /* number of occurrences (for mode and percentiles) */
-  i64 is_double;      /* whether the computation is being done for doubles (>0) or integers (=0) */
-  map* m;             /* map structure used for the computation */
-  int done;           /* whether the answer has been found */
+    i64 riM; /* integer value found so far */
+    double rdM; /* double value found so far */
+    i64 cnt; /* number of elements so far */
+    double pcnt; /* number of elements smaller than a percentile */
+    i64 mcnt; /* maximum number of occurrences (for mode) */
+    i64 mn; /* number of occurrences (for mode and percentiles) */
+    i64 is_double; /* whether the computation is being done for doubles (>0) or
+                      integers (=0) */
+    map* m; /* map structure used for the computation */
+    int done; /* whether the answer has been found */
 };
 
 /*
 ** called for each value received during a calculation of stdev or variance
 */
-static void varianceStep(sqlite3_context *context, int argc, sqlite3_value **argv){
-  StdevCtx *p;
+static void
+varianceStep(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    StdevCtx* p;
 
-  double delta;
-  double x;
+    double delta;
+    double x;
 
-  assert( argc==1 );
-  p = (StdevCtx *) sqlite3_aggregate_context(context, sizeof(*p));
-  /* only consider non-null values */
-  if( SQLITE_NULL != sqlite3_value_numeric_type(argv[0]) ){
-    p->cnt++;
-    x = sqlite3_value_double(argv[0]);
-    delta = (x-p->rM);
-    p->rM += delta/p->cnt;
-    p->rS += delta*(x-p->rM);
-  }
+    assert(argc == 1);
+    p = (StdevCtx*) sqlite3_aggregate_context(context, sizeof(*p));
+    /* only consider non-null values */
+    if (SQLITE_NULL != sqlite3_value_numeric_type(argv[0])) {
+        p->cnt++;
+        x = sqlite3_value_double(argv[0]);
+        delta = (x - p->rM);
+        p->rM += delta / p->cnt;
+        p->rS += delta * (x - p->rM);
+    }
 }
 
 /*
 ** called for each value received during a calculation of mode of median
 */
-static void modeStep(sqlite3_context *context, int argc, sqlite3_value **argv){
-  ModeCtx *p;
-  i64 xi=0;
-  double xd=0.0;
-  i64 *iptr;
-  double *dptr;
-  int type;
+static void
+modeStep(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    ModeCtx* p;
+    i64 xi = 0;
+    double xd = 0.0;
+    i64* iptr;
+    double* dptr;
+    int type;
 
-  assert( argc==1 );
-  type = sqlite3_value_numeric_type(argv[0]);
+    assert(argc == 1);
+    type = sqlite3_value_numeric_type(argv[0]);
 
-  if( type == SQLITE_NULL)
-    return;
+    if (type == SQLITE_NULL)
+        return;
 
-  p = (ModeCtx *) sqlite3_aggregate_context(context, sizeof(*p));
+    p = (ModeCtx*) sqlite3_aggregate_context(context, sizeof(*p));
 
-  if( 0==(p->m) ){
-    p->m = (map *) calloc(1, sizeof(map));
-    if( type==SQLITE_INTEGER ){
-      /* map will be used for integers */
-      *(p->m) = map_make(int_cmp);
-      p->is_double = 0;
-    }else{
-      p->is_double = 1;
-      /* map will be used for doubles */
-      *(p->m) = map_make(double_cmp);
+    if (0 == (p->m)) {
+        p->m = (map*) calloc(1, sizeof(map));
+        if (type == SQLITE_INTEGER) {
+            /* map will be used for integers */
+            *(p->m) = map_make(int_cmp);
+            p->is_double = 0;
+        } else {
+            p->is_double = 1;
+            /* map will be used for doubles */
+            *(p->m) = map_make(double_cmp);
+        }
     }
-  }
 
-  ++(p->cnt);
+    ++(p->cnt);
 
-  if( 0==p->is_double ){
-    xi = sqlite3_value_int64(argv[0]);
-    iptr = (i64*)calloc(1,sizeof(i64));
-    *iptr = xi;
-    map_insert(p->m, iptr);
-  }else{
-    xd = sqlite3_value_double(argv[0]);
-    dptr = (double*)calloc(1,sizeof(double));
-    *dptr = xd;
-    map_insert(p->m, dptr);
-  }
+    if (0 == p->is_double) {
+        xi = sqlite3_value_int64(argv[0]);
+        iptr = (i64*) calloc(1, sizeof(i64));
+        *iptr = xi;
+        map_insert(p->m, iptr);
+    } else {
+        xd = sqlite3_value_double(argv[0]);
+        dptr = (double*) calloc(1, sizeof(double));
+        *dptr = xd;
+        map_insert(p->m, dptr);
+    }
 }
 
 /*
 **  Auxiliary function that iterates all elements in a map and finds the mode
 **  (most frequent value)
 */
-static void modeIterate(void* e, i64 c, void* pp){
-  i64 ei;
-  double ed;
-  ModeCtx *p = (ModeCtx*)pp;
+static void
+modeIterate(void* e, i64 c, void* pp)
+{
+    i64 ei;
+    double ed;
+    ModeCtx* p = (ModeCtx*) pp;
 
-  if( 0==p->is_double ){
-    ei = *(int*)(e);
+    if (0 == p->is_double) {
+        ei = *(int*) (e);
 
-	if( p->mcnt==c ){
-      ++p->mn;
-    }else if( p->mcnt<c ){
-      p->riM = ei;
-      p->mcnt = c;
-	  p->mn=1;
+        if (p->mcnt == c) {
+            ++p->mn;
+        } else if (p->mcnt < c) {
+            p->riM = ei;
+            p->mcnt = c;
+            p->mn = 1;
+        }
+    } else {
+        ed = *(double*) (e);
+
+        if (p->mcnt == c) {
+            ++p->mn;
+        } else if (p->mcnt < c) {
+            p->rdM = ed;
+            p->mcnt = c;
+            p->mn = 1;
+        }
     }
-  }else{
-    ed = *(double*)(e);
-
-	if( p->mcnt==c ){
-      ++p->mn;
-    }else if(p->mcnt<c){
-      p->rdM = ed;
-      p->mcnt = c;
-	  p->mn=1;
-    }
-  }
 }
 
 /*
@@ -1498,142 +1875,158 @@ static void modeIterate(void* e, i64 c, void* pp){
 **  (the value such that the number of elements smaller is equal the number of
 **  elements larger)
 */
-static void medianIterate(void* e, i64 c, void* pp){
-  i64 ei;
-  double ed;
-  double iL;
-  double iR;
-  int il;
-  int ir;
-  ModeCtx *p = (ModeCtx*)pp;
+static void
+medianIterate(void* e, i64 c, void* pp)
+{
+    i64 ei;
+    double ed;
+    double iL;
+    double iR;
+    int il;
+    int ir;
+    ModeCtx* p = (ModeCtx*) pp;
 
-  if(p->done>0)
-    return;
+    if (p->done > 0)
+        return;
 
-  iL = p->pcnt;
-  iR = p->cnt - p->pcnt;
-  il = p->mcnt + c;
-  ir = p->cnt - p->mcnt;
+    iL = p->pcnt;
+    iR = p->cnt - p->pcnt;
+    il = p->mcnt + c;
+    ir = p->cnt - p->mcnt;
 
-  if( il >= iL ){
-    if( ir >= iR ){
-    ++p->mn;
-      if( 0==p->is_double ){
-        ei = *(int*)(e);
-        p->riM += ei;
-      }else{
-        ed = *(double*)(e);
-        p->rdM += ed;
-      }
-    }else{
-      p->done=1;
+    if (il >= iL) {
+        if (ir >= iR) {
+            ++p->mn;
+            if (0 == p->is_double) {
+                ei = *(int*) (e);
+                p->riM += ei;
+            } else {
+                ed = *(double*) (e);
+                p->rdM += ed;
+            }
+        } else {
+            p->done = 1;
+        }
     }
-  }
-  p->mcnt+=c;
+    p->mcnt += c;
 }
 
 /*
 ** Returns the mode value
 */
-static void modeFinalize(sqlite3_context *context){
-  ModeCtx *p;
-  p = (ModeCtx *) sqlite3_aggregate_context(context, 0);
-  if( p && p->m ){
-    map_iterate(p->m, modeIterate, p);
-    map_destroy(p->m);
-    free(p->m);
+static void
+modeFinalize(sqlite3_context* context)
+{
+    ModeCtx* p;
+    p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
+    if (p && p->m) {
+        map_iterate(p->m, modeIterate, p);
+        map_destroy(p->m);
+        free(p->m);
 
-    if( 1==p->mn ){
-      if( 0==p->is_double )
-        sqlite3_result_int64(context, p->riM);
-      else
-        sqlite3_result_double(context, p->rdM);
+        if (1 == p->mn) {
+            if (0 == p->is_double)
+                sqlite3_result_int64(context, p->riM);
+            else
+                sqlite3_result_double(context, p->rdM);
+        }
     }
-  }
 }
 
 /*
 ** auxiliary function for percentiles
 */
-static void _medianFinalize(sqlite3_context *context){
-  ModeCtx *p;
-  p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
-  if( p && p->m ){
-    p->done=0;
-    map_iterate(p->m, medianIterate, p);
-    map_destroy(p->m);
-    free(p->m);
+static void
+_medianFinalize(sqlite3_context* context)
+{
+    ModeCtx* p;
+    p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
+    if (p && p->m) {
+        p->done = 0;
+        map_iterate(p->m, medianIterate, p);
+        map_destroy(p->m);
+        free(p->m);
 
-    if( 0==p->is_double )
-      if( 1==p->mn )
-      	sqlite3_result_int64(context, p->riM);
-      else
-      	sqlite3_result_double(context, p->riM*1.0/p->mn);
-    else
-      sqlite3_result_double(context, p->rdM/p->mn);
-  }
+        if (0 == p->is_double)
+            if (1 == p->mn)
+                sqlite3_result_int64(context, p->riM);
+            else
+                sqlite3_result_double(context, p->riM * 1.0 / p->mn);
+        else
+            sqlite3_result_double(context, p->rdM / p->mn);
+    }
 }
 
 /*
 ** Returns the median value
 */
-static void medianFinalize(sqlite3_context *context){
-  ModeCtx *p;
-  p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
-  if( p!=0 ){
-    p->pcnt = (p->cnt)/2.0;
-    _medianFinalize(context);
-  }
+static void
+medianFinalize(sqlite3_context* context)
+{
+    ModeCtx* p;
+    p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
+    if (p != 0) {
+        p->pcnt = (p->cnt) / 2.0;
+        _medianFinalize(context);
+    }
 }
 
 /*
 ** Returns the lower_quartile value
 */
-static void lower_quartileFinalize(sqlite3_context *context){
-  ModeCtx *p;
-  p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
-  if( p!=0 ){
-    p->pcnt = (p->cnt)/4.0;
-    _medianFinalize(context);
-  }
+static void
+lower_quartileFinalize(sqlite3_context* context)
+{
+    ModeCtx* p;
+    p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
+    if (p != 0) {
+        p->pcnt = (p->cnt) / 4.0;
+        _medianFinalize(context);
+    }
 }
 
 /*
 ** Returns the upper_quartile value
 */
-static void upper_quartileFinalize(sqlite3_context *context){
-  ModeCtx *p;
-  p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
-  if( p!=0 ){
-    p->pcnt = (p->cnt)*3/4.0;
-    _medianFinalize(context);
-  }
+static void
+upper_quartileFinalize(sqlite3_context* context)
+{
+    ModeCtx* p;
+    p = (ModeCtx*) sqlite3_aggregate_context(context, 0);
+    if (p != 0) {
+        p->pcnt = (p->cnt) * 3 / 4.0;
+        _medianFinalize(context);
+    }
 }
 
 /*
 ** Returns the stdev value
 */
-static void stdevFinalize(sqlite3_context *context){
-  StdevCtx *p;
-  p = (StdevCtx *) sqlite3_aggregate_context(context, 0);
-  if( p && p->cnt>1 ){
-    sqlite3_result_double(context, sqrt(p->rS/(p->cnt-1)));
-  }else{
-    sqlite3_result_double(context, 0.0);
-  }
+static void
+stdevFinalize(sqlite3_context* context)
+{
+    StdevCtx* p;
+    p = (StdevCtx*) sqlite3_aggregate_context(context, 0);
+    if (p && p->cnt > 1) {
+        sqlite3_result_double(context, sqrt(p->rS / (p->cnt - 1)));
+    } else {
+        sqlite3_result_double(context, 0.0);
+    }
 }
 
 /*
 ** Returns the variance value
 */
-static void varianceFinalize(sqlite3_context *context){
-  StdevCtx *p;
-  p = (StdevCtx *) sqlite3_aggregate_context(context, 0);
-  if( p && p->cnt>1 ){
-    sqlite3_result_double(context, p->rS/(p->cnt-1));
-  }else{
-    sqlite3_result_double(context, 0.0);
-  }
+static void
+varianceFinalize(sqlite3_context* context)
+{
+    StdevCtx* p;
+    p = (StdevCtx*) sqlite3_aggregate_context(context, 0);
+    if (p && p->cnt > 1) {
+        sqlite3_result_double(context, p->rS / (p->cnt - 1));
+    } else {
+        sqlite3_result_double(context, 0.0);
+    }
 }
 
 #ifdef SQLITE_SOUNDEX
@@ -1643,70 +2036,77 @@ static void varianceFinalize(sqlite3_context *context){
 ** Calculates the soundex value of a string
 */
 
-static void soundex(const u8 *zIn, char *zResult){
-  int i, j;
-  static const unsigned char iCode[] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
-    1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 0,
-    0, 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
-    1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 0,
-  };
+static void
+soundex(const u8* zIn, char* zResult)
+{
+    int i, j;
+    static const unsigned char iCode[] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0, 1, 2, 6, 2, 3, 0, 1, 0,
+        2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5,
+        5, 0, 1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 0,
+    };
 
-  for(i=0; zIn[i] && !isalpha(zIn[i]); i++){}
-  if( zIn[i] ){
-    zResult[0] = toupper(zIn[i]);
-    for(j=1; j<4 && zIn[i]; i++){
-      int code = iCode[zIn[i]&0x7f];
-      if( code>0 ){
-        zResult[j++] = code + '0';
-      }
+    for (i = 0; zIn[i] && !isalpha(zIn[i]); i++) {
     }
-    while( j<4 ){
-      zResult[j++] = '0';
+    if (zIn[i]) {
+        zResult[0] = toupper(zIn[i]);
+        for (j = 1; j < 4 && zIn[i]; i++) {
+            int code = iCode[zIn[i] & 0x7f];
+            if (code > 0) {
+                zResult[j++] = code + '0';
+            }
+        }
+        while (j < 4) {
+            zResult[j++] = '0';
+        }
+        zResult[j] = 0;
+    } else {
+        strcpy(zResult, "?000");
     }
-    zResult[j] = 0;
-  }else{
-    strcpy(zResult, "?000");
-  }
 }
 
 /*
-** computes the number of different characters between the soundex value fo 2 strings
+** computes the number of different characters between the soundex value fo 2
+*strings
 */
-static void differenceFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  char zResult1[8];
-  char zResult2[8];
-  char *zR1 = zResult1;
-  char *zR2 = zResult2;
-  int rVal = 0;
-  int i = 0;
-  const u8 *zIn1;
-  const u8 *zIn2;
+static void
+differenceFunc(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    char zResult1[8];
+    char zResult2[8];
+    char* zR1 = zResult1;
+    char* zR2 = zResult2;
+    int rVal = 0;
+    int i = 0;
+    const u8* zIn1;
+    const u8* zIn2;
 
-  assert( argc==2 );
+    assert(argc == 2);
 
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL || sqlite3_value_type(argv[1])==SQLITE_NULL ){
-    sqlite3_result_null(context);
-    return;
-  }
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL
+        || sqlite3_value_type(argv[1]) == SQLITE_NULL)
+    {
+        sqlite3_result_null(context);
+        return;
+    }
 
-  zIn1 = (u8*)sqlite3_value_text(argv[0]);
-  zIn2 = (u8*)sqlite3_value_text(argv[1]);
+    zIn1 = (u8*) sqlite3_value_text(argv[0]);
+    zIn2 = (u8*) sqlite3_value_text(argv[1]);
 
-  soundex(zIn1, zR1);
-  soundex(zIn2, zR2);
+    soundex(zIn1, zR1);
+    soundex(zIn2, zR2);
 
-  for(i=0; i<4; ++i){
-    if( sqliteCharVal((unsigned char *)zR1)==sqliteCharVal((unsigned char *)zR2) )
-      ++rVal;
-    sqliteNextChar(zR1);
-    sqliteNextChar(zR2);
-  }
-  sqlite3_result_int(context, rVal);
+    for (i = 0; i < 4; ++i) {
+        if (sqliteCharVal((unsigned char*) zR1)
+            == sqliteCharVal((unsigned char*) zR2))
+            ++rVal;
+        sqliteNextChar(zR1);
+        sqliteNextChar(zR2);
+    }
+    sqlite3_result_int(context, rVal);
 }
 #endif
 
@@ -1715,506 +2115,714 @@ static void differenceFunc(sqlite3_context *context, int argc, sqlite3_value **a
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-int common_extension_functions(struct FuncDef **basic_funcs,
-                               struct FuncDefAgg **agg_funcs) {
-  static struct FuncDef aFuncs[] = {
-    /* math.h */
-    { "acos",               1, SQLITE_UTF8,    0, acosFunc,
-      help_text("acos")
-          .sql_function()
-          .with_summary("Returns the arccosine of a number, in radians")
-          .with_parameter({"num", "A cosine value that is between -1 and 1"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the arccosine of 0.2",
-              "SELECT acos(0.2)"
-          })},
-    { "asin",               1, SQLITE_UTF8,    0, asinFunc,
-      help_text("asin")
-          .sql_function()
-          .with_summary("Returns the arcsine of a number, in radians")
-          .with_parameter({"num", "A sine value that is between -1 and 1"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the arcsine of 0.2",
-              "SELECT asin(0.2)"
-          })},
-    { "atan",               1, SQLITE_UTF8,    0, atanFunc,
-      help_text("atan")
-          .sql_function()
-          .with_summary("Returns the arctangent of a number, in radians")
-          .with_parameter({"num", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the arctangent of 0.2",
-              "SELECT atan(0.2)"
-          })},
-    { "atn2",               2, SQLITE_UTF8,    0, atn2Func,
-      help_text("atn2")
-          .sql_function()
-          .with_summary("Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)")
-          .with_parameter({"y", "The y coordinate of the point"})
-          .with_parameter({"x", "The x coordinate of the point"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the angle, in degrees, for the point at (5, 5)",
-              "SELECT degrees(atn2(5, 5))"
-          })},
-    /* XXX alias */
-    { "atan2",              2, SQLITE_UTF8,    0, atn2Func,
-      help_text("atan2")
-          .sql_function()
-          .with_summary("Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)")
-          .with_parameter({"y", "The y coordinate of the point"})
-          .with_parameter({"x", "The x coordinate of the point"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the angle, in degrees, for the point at (5, 5)",
-              "SELECT degrees(atan2(5, 5))"
-          })},
-    { "acosh",              1, SQLITE_UTF8,    0, acoshFunc,
-      help_text("acosh")
-          .sql_function()
-          .with_summary("Returns the hyperbolic arccosine of a number")
-          .with_parameter({"num", "A number that is one or more"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the hyperbolic arccosine of 1.2",
-              "SELECT acosh(1.2)"
-          })},
-    { "asinh",              1, SQLITE_UTF8,    0, asinhFunc,
-      help_text("asinh")
-          .sql_function()
-          .with_summary("Returns the hyperbolic arcsine of a number")
-          .with_parameter({"num", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the hyperbolic arcsine of 0.2",
-              "SELECT asinh(0.2)"
-          })},
-    { "atanh",              1, SQLITE_UTF8,    0, atanhFunc,
-      help_text("atanh")
-          .sql_function()
-          .with_summary("Returns the hyperbolic arctangent of a number")
-          .with_parameter({"num", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the hyperbolic arctangent of 0.2",
-              "SELECT atanh(0.2)"
-          })},
+int
+common_extension_functions(struct FuncDef** basic_funcs,
+                           struct FuncDefAgg** agg_funcs)
+{
+    static struct FuncDef aFuncs[] = {
+        /* math.h */
+        {
+            "acos",
+            1,
+            SQLITE_UTF8,
+            0,
+            acosFunc,
+            help_text("acos")
+                .sql_function()
+                .with_summary("Returns the arccosine of a number, in radians")
+                .with_parameter(
+                    {"num", "A cosine value that is between -1 and 1"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the arccosine of 0.2", "SELECT acos(0.2)"}),
+        },
+        {
+            "asin",
+            1,
+            SQLITE_UTF8,
+            0,
+            asinFunc,
+            help_text("asin")
+                .sql_function()
+                .with_summary("Returns the arcsine of a number, in radians")
+                .with_parameter(
+                    {"num", "A sine value that is between -1 and 1"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the arcsine of 0.2", "SELECT asin(0.2)"}),
+        },
+        {
+            "atan",
+            1,
+            SQLITE_UTF8,
+            0,
+            atanFunc,
+            help_text("atan")
+                .sql_function()
+                .with_summary("Returns the arctangent of a number, in radians")
+                .with_parameter({"num", "The number"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the arctangent of 0.2", "SELECT atan(0.2)"}),
+        },
+        {
+            "atn2",
+            2,
+            SQLITE_UTF8,
+            0,
+            atn2Func,
+            help_text("atn2")
+                .sql_function()
+                .with_summary("Returns the angle in the plane between the "
+                              "positive X axis "
+                              "and the ray from (0, 0) to the point (x, y)")
+                .with_parameter({"y", "The y coordinate of the point"})
+                .with_parameter({"x", "The x coordinate of the point"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the angle, in degrees, for the point at (5, 5)",
+                    "SELECT degrees(atn2(5, 5))",
+                }),
+        },
+        /* XXX alias */
+        {
+            "atan2",
+            2,
+            SQLITE_UTF8,
+            0,
+            atn2Func,
+            help_text("atan2")
+                .sql_function()
+                .with_summary("Returns the angle in the plane between the "
+                              "positive X axis "
+                              "and the ray from (0, 0) to the point (x, y)")
+                .with_parameter({"y", "The y coordinate of the point"})
+                .with_parameter({"x", "The x coordinate of the point"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the angle, in degrees, for the point at (5, 5)",
+                    "SELECT degrees(atan2(5, 5))",
+                }),
+        },
+        {
+            "acosh",
+            1,
+            SQLITE_UTF8,
+            0,
+            acoshFunc,
+            help_text("acosh")
+                .sql_function()
+                .with_summary("Returns the hyperbolic arccosine of a number")
+                .with_parameter({"num", "A number that is one or more"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the hyperbolic arccosine of 1.2",
+                    "SELECT acosh(1.2)",
+                }),
+        },
+        {
+            "asinh",
+            1,
+            SQLITE_UTF8,
+            0,
+            asinhFunc,
+            help_text("asinh")
+                .sql_function()
+                .with_summary("Returns the hyperbolic arcsine of a number")
+                .with_parameter({"num", "The number"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the hyperbolic arcsine of 0.2",
+                    "SELECT asinh(0.2)",
+                }),
+        },
+        {
+            "atanh",
+            1,
+            SQLITE_UTF8,
+            0,
+            atanhFunc,
+            help_text("atanh")
+                .sql_function()
+                .with_summary("Returns the hyperbolic arctangent of a number")
+                .with_parameter({"num", "The number"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the hyperbolic arctangent of 0.2",
+                    "SELECT atanh(0.2)",
+                }),
+        },
 
-    { "difference",         2, SQLITE_UTF8,    0, differenceFunc},
-    { "degrees",            1, SQLITE_UTF8,    0, rad2degFunc,
-      help_text("degrees")
-          .sql_function()
-          .with_summary("Converts radians to degrees")
-          .with_parameter({"radians", "The radians value to convert to degrees"})
-          .with_tags({"math"})
-          .with_example({
-              "To convert PI to degrees",
-              "SELECT degrees(pi())"
-          })},
-    { "radians",            1, SQLITE_UTF8,    0, deg2radFunc,
-      help_text("radians")
-          .sql_function()
-          .with_summary("Converts degrees to radians")
-          .with_parameter({"degrees", "The degrees value to convert to radians"})
-          .with_tags({"math"})
-          .with_example({
-              "To convert 180 degrees to radians",
-              "SELECT radians(180)"
-          })},
+        {"difference", 2, SQLITE_UTF8, 0, differenceFunc},
+        {
+            "degrees",
+            1,
+            SQLITE_UTF8,
+            0,
+            rad2degFunc,
+            help_text("degrees")
+                .sql_function()
+                .with_summary("Converts radians to degrees")
+                .with_parameter(
+                    {"radians", "The radians value to convert to degrees"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To convert PI to degrees", "SELECT degrees(pi())"}),
+        },
+        {
+            "radians",
+            1,
+            SQLITE_UTF8,
+            0,
+            deg2radFunc,
+            help_text("radians")
+                .sql_function()
+                .with_summary("Converts degrees to radians")
+                .with_parameter(
+                    {"degrees", "The degrees value to convert to radians"})
+                .with_tags({"math"})
+                .with_example({
+                    "To convert 180 degrees to radians",
+                    "SELECT radians(180)",
+                }),
+        },
 
-    { "cos",                1, SQLITE_UTF8,    0, cosFunc  },
-    { "sin",                1, SQLITE_UTF8,    0, sinFunc },
-    { "tan",                1, SQLITE_UTF8,    0, tanFunc },
-    { "cot",                1, SQLITE_UTF8,    0, cotFunc },
-    { "cosh",               1, SQLITE_UTF8,    0, coshFunc  },
-    { "sinh",               1, SQLITE_UTF8,    0, sinhFunc },
-    { "tanh",               1, SQLITE_UTF8,    0, tanhFunc },
-    { "coth",               1, SQLITE_UTF8,    0, cothFunc },
+        {"cos", 1, SQLITE_UTF8, 0, cosFunc},
+        {"sin", 1, SQLITE_UTF8, 0, sinFunc},
+        {"tan", 1, SQLITE_UTF8, 0, tanFunc},
+        {"cot", 1, SQLITE_UTF8, 0, cotFunc},
+        {"cosh", 1, SQLITE_UTF8, 0, coshFunc},
+        {"sinh", 1, SQLITE_UTF8, 0, sinhFunc},
+        {"tanh", 1, SQLITE_UTF8, 0, tanhFunc},
+        {"coth", 1, SQLITE_UTF8, 0, cothFunc},
 
-    { "exp",                1, SQLITE_UTF8,    0, expFunc,
-      help_text("exp")
-          .sql_function()
-          .with_summary("Returns the value of e raised to the power of x")
-          .with_parameter({"x", "The exponent"})
-          .with_tags({"math"})
-          .with_example({
-              "To raise e to 2",
-              "SELECT exp(2)"
-          })},
-    { "log",                1, SQLITE_UTF8,    0, logFunc,
-      help_text("log")
-          .sql_function()
-          .with_summary("Returns the natural logarithm of x")
-          .with_parameter({"x", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the natual logarithm of 8",
-              "SELECT log(8)"
-          })},
-    { "log10",              1, SQLITE_UTF8,    0, log10Func,
-      help_text("log10")
-          .sql_function()
-          .with_summary("Returns the base-10 logarithm of X")
-          .with_parameter({"x", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the logarithm of 100",
-              "SELECT log10(100)"
-          })},
-    { "power",              2, SQLITE_UTF8,    0, powerFunc,
-      help_text("power")
-          .sql_function()
-          .with_summary("Returns the base to the given exponent")
-          .with_parameter({"base", "The base number"})
-          .with_parameter({"exp", "The exponent"})
-          .with_tags({"math"})
-          .with_example({
-              "To raise two to the power of three",
-              "SELECT power(2, 3)"
-          })},
-    { "sign",               1, SQLITE_UTF8,    0, signFunc,
-      help_text("sign")
-          .sql_function()
-          .with_summary("Returns the sign of the given number as -1, 0, or 1")
-          .with_parameter({"num", "The number"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the sign of 10",
-              "SELECT sign(10)"
-          })
-          .with_example({
-              "To get the sign of 0",
-              "SELECT sign(0)"
-          })
-          .with_example({
-              "To get the sign of -10",
-              "SELECT sign(-10)"
-          })},
-    { "sqrt",               1, SQLITE_UTF8,    0, sqrtFunc },
-    { "square",             1, SQLITE_UTF8,    0, squareFunc,
-      help_text("square")
-          .sql_function()
-          .with_summary("Returns the square of the argument")
-          .with_parameter({"num", "The number to square"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the square of two",
-              "SELECT square(2)"
-          })},
+        {
+            "exp",
+            1,
+            SQLITE_UTF8,
+            0,
+            expFunc,
+            help_text("exp")
+                .sql_function()
+                .with_summary("Returns the value of e raised to the power of x")
+                .with_parameter({"x", "The exponent"})
+                .with_tags({"math"})
+                .with_example({"To raise e to 2", "SELECT exp(2)"}),
+        },
+        {
+            "log",
+            1,
+            SQLITE_UTF8,
+            0,
+            logFunc,
+            help_text("log")
+                .sql_function()
+                .with_summary("Returns the natural logarithm of x")
+                .with_parameter({"x", "The number"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the natual logarithm of 8", "SELECT log(8)"}),
+        },
+        {
+            "log10",
+            1,
+            SQLITE_UTF8,
+            0,
+            log10Func,
+            help_text("log10")
+                .sql_function()
+                .with_summary("Returns the base-10 logarithm of X")
+                .with_parameter({"x", "The number"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the logarithm of 100", "SELECT log10(100)"}),
+        },
+        {
+            "power",
+            2,
+            SQLITE_UTF8,
+            0,
+            powerFunc,
+            help_text("power")
+                .sql_function()
+                .with_summary("Returns the base to the given exponent")
+                .with_parameter({"base", "The base number"})
+                .with_parameter({"exp", "The exponent"})
+                .with_tags({"math"})
+                .with_example({
+                    "To raise two to the power of three",
+                    "SELECT power(2, 3)",
+                }),
+        },
+        {
+            "sign",
+            1,
+            SQLITE_UTF8,
+            0,
+            signFunc,
+            help_text("sign")
+                .sql_function()
+                .with_summary(
+                    "Returns the sign of the given number as -1, 0, or 1")
+                .with_parameter({"num", "The number"})
+                .with_tags({"math"})
+                .with_example({"To get the sign of 10", "SELECT sign(10)"})
+                .with_example({"To get the sign of 0", "SELECT sign(0)"})
+                .with_example({"To get the sign of -10", "SELECT sign(-10)"}),
+        },
+        {"sqrt", 1, SQLITE_UTF8, 0, sqrtFunc},
+        {
+            "square",
+            1,
+            SQLITE_UTF8,
+            0,
+            squareFunc,
+            help_text("square")
+                .sql_function()
+                .with_summary("Returns the square of the argument")
+                .with_parameter({"num", "The number to square"})
+                .with_tags({"math"})
+                .with_example({"To get the square of two", "SELECT square(2)"}),
+        },
 
-    { "ceil",               1, SQLITE_UTF8,    0, ceilFunc,
-      help_text("ceil")
-          .sql_function()
-          .with_summary("Returns the smallest integer that is not less than the argument")
-          .with_parameter({"num", "The number to raise to the ceiling"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the ceiling of 1.23",
-              "SELECT ceil(1.23)"
-          })},
-    { "floor",              1, SQLITE_UTF8,    0, floorFunc,
-      help_text("floor")
-          .sql_function()
-          .with_summary("Returns the largest integer that is not greater than the argument")
-          .with_parameter({"num", "The number to lower to the floor"})
-          .with_tags({"math"})
-          .with_example({
-              "To get the floor of 1.23",
-              "SELECT floor(1.23)"
-          })},
+        {
+            "ceil",
+            1,
+            SQLITE_UTF8,
+            0,
+            ceilFunc,
+            help_text("ceil")
+                .sql_function()
+                .with_summary(
+                    "Returns the smallest integer that is not less than "
+                    "the argument")
+                .with_parameter({"num", "The number to raise to the ceiling"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the ceiling of 1.23", "SELECT ceil(1.23)"}),
+        },
+        {
+            "floor",
+            1,
+            SQLITE_UTF8,
+            0,
+            floorFunc,
+            help_text("floor")
+                .sql_function()
+                .with_summary("Returns the largest integer that is not greater "
+                              "than the argument")
+                .with_parameter({"num", "The number to lower to the floor"})
+                .with_tags({"math"})
+                .with_example(
+                    {"To get the floor of 1.23", "SELECT floor(1.23)"}),
+        },
 
-    { "pi",                 0, SQLITE_UTF8,    1, piFunc,
-      help_text("pi")
-          .sql_function()
-          .with_summary("Returns the value of PI")
-          .with_tags({"math"})
-          .with_example({
-              "To get the value of PI",
-              "SELECT pi()"
-          })},
+        {
+            "pi",
+            0,
+            SQLITE_UTF8,
+            1,
+            piFunc,
+            help_text("pi")
+                .sql_function()
+                .with_summary("Returns the value of PI")
+                .with_tags({"math"})
+                .with_example({"To get the value of PI", "SELECT pi()"}),
+        },
 
-
-    /* string */
-    { "replicate",          2, SQLITE_UTF8,    0, replicateFunc,
-      help_text("replicate")
-          .sql_function()
-          .with_summary("Returns the given string concatenated N times.")
-          .with_parameter({"str", "The string to replicate."})
-          .with_parameter({"N", "The number of times to replicate the string."})
-          .with_tags({"string"})
-          .with_example({
-              "To repeat the string 'abc' three times",
-              "SELECT replicate('abc', 3)"
-          })
-    },
-    { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
-    { "charindex",          3, SQLITE_UTF8,    0, charindexFunc,
-      help_text("charindex")
-          .sql_function()
-          .with_summary("Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X")
-          .with_parameter({"needle", "The string to look for in the haystack"})
-          .with_parameter({"haystack", "The string to search within"})
-          .with_parameter(help_text("start", "The one-based index within the haystack to start the search")
-                              .optional())
-          .with_tags({"string"})
-          .with_example({
-              "To search for the string 'abc' within 'abcabc' and starting at position 2",
-              "SELECT charindex('abc', 'abcabc', 2)"
-          })
-          .with_example({
-              "To search for the string 'abc' within 'abcdef' and starting at position 2",
-              "SELECT charindex('abc', 'abcdef', 2)"
-          })},
-    { "leftstr",            2, SQLITE_UTF8,    0, leftFunc,
-      help_text("leftstr")
-          .sql_function()
-          .with_summary("Returns the N leftmost (UTF-8) characters in the given string.")
-          .with_parameter({"str", "The string to return subset."})
-          .with_parameter({"N", "The number of characters from the left side of the string to return."})
-          .with_tags({"string"})
-          .with_example({
-              "To get the first character of the string 'abc'",
-              "SELECT leftstr('abc', 1)"
-          })
-          .with_example({
-              "To get the first ten characters of a string, regardless of size",
-              "SELECT leftstr('abc', 10)"
-          })
-    },
-    { "rightstr",           2, SQLITE_UTF8,    0, rightFunc,
-      help_text("rightstr")
-          .sql_function()
-          .with_summary("Returns the N rightmost (UTF-8) characters in the given string.")
-          .with_parameter({"str", "The string to return subset."})
-          .with_parameter({"N", "The number of characters from the right side of the string to return."})
-          .with_tags({"string"})
-          .with_example({
-              "To get the last character of the string 'abc'",
-              "SELECT rightstr('abc', 1)"
-          })
-          .with_example({
-              "To get the last ten characters of a string, regardless of size",
-              "SELECT rightstr('abc', 10)"
-          })
-    },
+        /* string */
+        {
+            "replicate",
+            2,
+            SQLITE_UTF8,
+            0,
+            replicateFunc,
+            help_text("replicate")
+                .sql_function()
+                .with_summary("Returns the given string concatenated N times.")
+                .with_parameter({"str", "The string to replicate."})
+                .with_parameter(
+                    {"N", "The number of times to replicate the string."})
+                .with_tags({"string"})
+                .with_example({
+                    "To repeat the string 'abc' three times",
+                    "SELECT replicate('abc', 3)",
+                }),
+        },
+        {"charindex", 2, SQLITE_UTF8, 0, charindexFunc},
+        {
+            "charindex",
+            3,
+            SQLITE_UTF8,
+            0,
+            charindexFunc,
+            help_text("charindex")
+                .sql_function()
+                .with_summary("Finds the first occurrence of the needle within "
+                              "the haystack "
+                              "and returns the number of prior characters plus "
+                              "1, or 0 if Y "
+                              "is nowhere found within X")
+                .with_parameter(
+                    {"needle", "The string to look for in the haystack"})
+                .with_parameter({"haystack", "The string to search within"})
+                .with_parameter(help_text("start",
+                                          "The one-based index within the "
+                                          "haystack to start the search")
+                                    .optional())
+                .with_tags({"string"})
+                .with_example({
+                    "To search for the string 'abc' within 'abcabc' "
+                    "and starting at position 2",
+                    "SELECT charindex('abc', 'abcabc', 2)",
+                })
+                .with_example({
+                    "To search for the string 'abc' within 'abcdef' "
+                    "and starting at position 2",
+                    "SELECT charindex('abc', 'abcdef', 2)",
+                }),
+        },
+        {
+            "leftstr",
+            2,
+            SQLITE_UTF8,
+            0,
+            leftFunc,
+            help_text("leftstr")
+                .sql_function()
+                .with_summary(
+                    "Returns the N leftmost (UTF-8) characters in the "
+                    "given string.")
+                .with_parameter({"str", "The string to return subset."})
+                .with_parameter(
+                    {"N",
+                     "The number of characters from the left side of "
+                     "the string to return."})
+                .with_tags({"string"})
+                .with_example({
+                    "To get the first character of the string 'abc'",
+                    "SELECT leftstr('abc', 1)",
+                })
+                .with_example({
+                    "To get the first ten characters of a string, "
+                    "regardless of size",
+                    "SELECT leftstr('abc', 10)",
+                }),
+        },
+        {
+            "rightstr",
+            2,
+            SQLITE_UTF8,
+            0,
+            rightFunc,
+            help_text("rightstr")
+                .sql_function()
+                .with_summary(
+                    "Returns the N rightmost (UTF-8) characters in the "
+                    "given string.")
+                .with_parameter({"str", "The string to return subset."})
+                .with_parameter(
+                    {"N",
+                     "The number of characters from the right side of "
+                     "the string to return."})
+                .with_tags({"string"})
+                .with_example({
+                    "To get the last character of the string 'abc'",
+                    "SELECT rightstr('abc', 1)",
+                })
+                .with_example({
+                    "To get the last ten characters of a string, "
+                    "regardless of size",
+                    "SELECT rightstr('abc', 10)",
+                }),
+        },
 #ifndef HAVE_TRIM
-    { "ltrim",              1, SQLITE_UTF8,    0, ltrimFunc },
-    { "rtrim",              1, SQLITE_UTF8,    0, rtrimFunc },
-    { "trim",               1, SQLITE_UTF8,    0, trimFunc },
-    { "replace",            3, SQLITE_UTF8,    0, replaceFunc },
+        {"ltrim", 1, SQLITE_UTF8, 0, ltrimFunc},
+        {"rtrim", 1, SQLITE_UTF8, 0, rtrimFunc},
+        {"trim", 1, SQLITE_UTF8, 0, trimFunc},
+        {"replace", 3, SQLITE_UTF8, 0, replaceFunc},
 #endif
-    { "reverse",            1, SQLITE_UTF8,    0, reverseFunc,
-      help_text("reverse")
-          .sql_function()
-          .with_summary("Returns the reverse of the given string.")
-          .with_parameter({"str", "The string to reverse."})
-          .with_tags({"string"})
-          .with_example({
-              "To reverse the string 'abc'",
-              "SELECT reverse('abc')"
-          })
-    },
-    { "proper",             1, SQLITE_UTF8,    0, properFunc,
-      help_text("proper")
-          .sql_function()
-          .with_summary("Capitalize the first character of words in the given string")
-          .with_parameter({"str", "The string to capitalize."})
-          .with_tags({"string"})
-          .with_example({
-              "To capitalize the words in the string 'hello, world!'",
-              "SELECT proper('hello, world!')"
-          })},
-    { "padl",               2, SQLITE_UTF8,    0, padlFunc,
-      help_text("padl")
-          .sql_function()
-          .with_summary("Pad the given string with leading spaces until it reaches the desired length")
-          .with_parameter({"str", "The string to pad"})
-          .with_parameter({"len", "The minimum desired length of the output string"})
-          .with_tags({"string"})
-          .with_example({
-              "To pad the string 'abc' to a length of six characters",
-              "SELECT padl('abc', 6)"
-          })
-          .with_example({
-              "To pad the string 'abcdef' to a length of four characters",
-              "SELECT padl('abcdef', 4)"
-          })},
-    { "padr",               2, SQLITE_UTF8,    0, padrFunc,
-        help_text("padr")
-        .sql_function()
-        .with_summary("Pad the given string with trailing spaces until it reaches the desired length")
-        .with_parameter({"str", "The string to pad"})
-        .with_parameter({"len", "The minimum desired length of the output string"})
-        .with_tags({"string"})
-        .with_example({
-            "To pad the string 'abc' to a length of six characters",
-            "SELECT padr('abc', 6) || 'def'"
-        })
-        .with_example({
-            "To pad the string 'abcdef' to a length of four characters",
-            "SELECT padr('abcdef', 4) || 'ghi'"
-        })},
-    { "padc",               2, SQLITE_UTF8,    0, padcFunc,
-      help_text("padc")
-          .sql_function()
-          .with_summary("Pad the given string with enough spaces to make it centered within the given length")
-          .with_parameter({"str", "The string to pad"})
-          .with_parameter({"len", "The minimum desired length of the output string"})
-          .with_tags({"string"})
-          .with_example({
-              "To pad the string 'abc' to a length of six characters",
-              "SELECT padc('abc', 6) || 'def'"
-          })
-          .with_example({
-              "To pad the string 'abcdef' to a length of eight characters",
-              "SELECT padc('abcdef', 8) || 'ghi'"
-          })},
-    { "strfilter",          2, SQLITE_UTF8,    0, strfilterFunc,
-      help_text("strfilter")
-          .sql_function()
-          .with_summary("Returns the source string with only the characters given in the second parameter")
-          .with_parameter({"source", "The string to filter"})
-          .with_parameter({"include", "The characters to include in the result"})
-          .with_tags({"string"})
-          .with_example({
-              "To get the 'b', 'c', and 'd' characters from the string 'abcabc'",
-              "SELECT strfilter('abcabc', 'bcd')"
-          })},
+        {
+            "reverse",
+            1,
+            SQLITE_UTF8,
+            0,
+            reverseFunc,
+            help_text("reverse")
+                .sql_function()
+                .with_summary("Returns the reverse of the given string.")
+                .with_parameter({"str", "The string to reverse."})
+                .with_tags({"string"})
+                .with_example(
+                    {"To reverse the string 'abc'", "SELECT reverse('abc')"}),
+        },
+        {
+            "proper",
+            1,
+            SQLITE_UTF8,
+            0,
+            properFunc,
+            help_text("proper")
+                .sql_function()
+                .with_summary("Capitalize the first character of words in the "
+                              "given string")
+                .with_parameter({"str", "The string to capitalize."})
+                .with_tags({"string"})
+                .with_example({
+                    "To capitalize the words in the string 'hello, world!'",
+                    "SELECT proper('hello, world!')",
+                }),
+        },
+        {
+            "padl",
+            2,
+            SQLITE_UTF8,
+            0,
+            padlFunc,
+            help_text("padl")
+                .sql_function()
+                .with_summary(
+                    "Pad the given string with leading spaces until it "
+                    "reaches the desired length")
+                .with_parameter({"str", "The string to pad"})
+                .with_parameter(
+                    {"len", "The minimum desired length of the output string"})
+                .with_tags({"string"})
+                .with_example(
+                    {"To pad the string 'abc' to a length of six characters",
+                     "SELECT padl('abc', 6)"})
+                .with_example({
+                    "To pad the string 'abcdef' to a length of four "
+                    "characters",
+                    "SELECT padl('abcdef', 4)",
+                }),
+        },
+        {
+            "padr",
+            2,
+            SQLITE_UTF8,
+            0,
+            padrFunc,
+            help_text("padr")
+                .sql_function()
+                .with_summary(
+                    "Pad the given string with trailing spaces until it "
+                    "reaches the desired length")
+                .with_parameter({"str", "The string to pad"})
+                .with_parameter(
+                    {"len", "The minimum desired length of the output string"})
+                .with_tags({"string"})
+                .with_example(
+                    {"To pad the string 'abc' to a length of six characters",
+                     "SELECT padr('abc', 6) || 'def'"})
+                .with_example({
+                    "To pad the string 'abcdef' to a length of four characters",
+                    "SELECT padr('abcdef', 4) || 'ghi'",
+                }),
+        },
+        {
+            "padc",
+            2,
+            SQLITE_UTF8,
+            0,
+            padcFunc,
+            help_text("padc")
+                .sql_function()
+                .with_summary(
+                    "Pad the given string with enough spaces to make it "
+                    "centered within the given length")
+                .with_parameter({"str", "The string to pad"})
+                .with_parameter(
+                    {"len", "The minimum desired length of the output string"})
+                .with_tags({"string"})
+                .with_example(
+                    {"To pad the string 'abc' to a length of six characters",
+                     "SELECT padc('abc', 6) || 'def'"})
+                .with_example({
+                    "To pad the string 'abcdef' to a length of "
+                    "eight characters",
+                    "SELECT padc('abcdef', 8) || 'ghi'",
+                }),
+        },
+        {
+            "strfilter",
+            2,
+            SQLITE_UTF8,
+            0,
+            strfilterFunc,
+            help_text("strfilter")
+                .sql_function()
+                .with_summary(
+                    "Returns the source string with only the characters "
+                    "given in the second parameter")
+                .with_parameter({"source", "The string to filter"})
+                .with_parameter(
+                    {"include", "The characters to include in the result"})
+                .with_tags({"string"})
+                .with_example({
+                    "To get the 'b', 'c', and 'd' characters from the "
+                    "string 'abcabc'",
+                    "SELECT strfilter('abcabc', 'bcd')",
+                }),
+        },
 
-    { NULL }
-  };
+        {nullptr},
+    };
 
-  /* Aggregate functions */
-  static struct FuncDefAgg aAggs[] = {
-    { "stdev",            1, 0, varianceStep, stdevFinalize  },
-    { "stddev",           1, 0, varianceStep, stdevFinalize  },
-    { "variance",         1, 0, varianceStep, varianceFinalize  },
-    { "mode",             1, 0, modeStep,     modeFinalize  },
-    { "median",           1, 0, modeStep,     medianFinalize  },
-    { "lower_quartile",   1, 0, modeStep,     lower_quartileFinalize  },
-    { "upper_quartile",   1, 0, modeStep,     upper_quartileFinalize  },
+    /* Aggregate functions */
+    static struct FuncDefAgg aAggs[] = {
+        {"stdev", 1, 0, varianceStep, stdevFinalize},
+        {"stddev", 1, 0, varianceStep, stdevFinalize},
+        {"variance", 1, 0, varianceStep, varianceFinalize},
+        {"mode", 1, 0, modeStep, modeFinalize},
+        {"median", 1, 0, modeStep, medianFinalize},
+        {"lower_quartile", 1, 0, modeStep, lower_quartileFinalize},
+        {"upper_quartile", 1, 0, modeStep, upper_quartileFinalize},
 
-    { NULL }
-  };
+        {nullptr},
+    };
 
-  *basic_funcs = aFuncs;
-  *agg_funcs = aAggs;
+    *basic_funcs = aFuncs;
+    *agg_funcs = aAggs;
 
-  return SQLITE_OK;
+    return SQLITE_OK;
 }
 
 #ifdef COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE
-int sqlite3_extension_init(
-    sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi){
-  SQLITE_EXTENSION_INIT2(pApi);
-  RegisterExtensionFunctions(db);
-  return 0;
+int
+sqlite3_extension_init(sqlite3* db,
+                       char** pzErrMsg,
+                       const sqlite3_api_routines* pApi)
+{
+    SQLITE_EXTENSION_INIT2(pApi);
+    RegisterExtensionFunctions(db);
+    return 0;
 }
 #endif /* COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE */
 
-map map_make(cmp_func cmp){
-  map r;
-  r.cmp=cmp;
-  r.base = 0;
-  r.free = 0;
+map
+map_make(cmp_func cmp)
+{
+    map r;
+    r.cmp = cmp;
+    r.base = 0;
+    r.free = 0;
 
-  return r;
+    return r;
 }
 
-void* xcalloc(size_t nmemb, size_t size, const char* s){
-  void* ret = calloc(nmemb, size);
-  return ret;
+void*
+xcalloc(size_t nmemb, size_t size, const char* s)
+{
+    void* ret = calloc(nmemb, size);
+    return ret;
 }
 
-static void xfree(void* p){
-  free(p);
+static void
+xfree(void* p)
+{
+    free(p);
 }
 
-void node_insert(node** n, cmp_func cmp, void *e){
-  int c;
-  node* nn;
-  if(*n==0){
-    nn = (node*)xcalloc(1,sizeof(node), "for node");
-    nn->data = e;
-    nn->count = 1;
-    *n=nn;
-  }else{
-    c=cmp((*n)->data,e);
-    if(0==c){
-      ++((*n)->count);
-      xfree(e);
-    }else if(c>0){
-      /* put it right here */
-      node_insert(&((*n)->l), cmp, e);
-    }else{
-      node_insert(&((*n)->r), cmp, e);
+void
+node_insert(node** n, cmp_func cmp, void* e)
+{
+    int c;
+    node* nn;
+    if (*n == 0) {
+        nn = (node*) xcalloc(1, sizeof(node), "for node");
+        nn->data = e;
+        nn->count = 1;
+        *n = nn;
+    } else {
+        c = cmp((*n)->data, e);
+        if (0 == c) {
+            ++((*n)->count);
+            xfree(e);
+        } else if (c > 0) {
+            /* put it right here */
+            node_insert(&((*n)->l), cmp, e);
+        } else {
+            node_insert(&((*n)->r), cmp, e);
+        }
     }
-  }
 }
 
-void map_insert(map *m, void *e){
-  node_insert(&(m->base), m->cmp, e);
+void
+map_insert(map* m, void* e)
+{
+    node_insert(&(m->base), m->cmp, e);
 }
 
-void node_iterate(node *n, map_iterator iter, void* p){
-  if(n){
-    if(n->l)
-      node_iterate(n->l, iter, p);
-    iter(n->data, n->count, p);
-    if(n->r)
-      node_iterate(n->r, iter, p);
-  }
+void
+node_iterate(node* n, map_iterator iter, void* p)
+{
+    if (n) {
+        if (n->l)
+            node_iterate(n->l, iter, p);
+        iter(n->data, n->count, p);
+        if (n->r)
+            node_iterate(n->r, iter, p);
+    }
 }
 
-void map_iterate(map *m, map_iterator iter, void* p){
-  node_iterate(m->base, iter, p);
+void
+map_iterate(map* m, map_iterator iter, void* p)
+{
+    node_iterate(m->base, iter, p);
 }
 
-void node_destroy(node *n){
-  if(0!=n){
-    xfree(n->data);
-    if(n->l)
-      node_destroy(n->l);
-    if(n->r)
-      node_destroy(n->r);
+void
+node_destroy(node* n)
+{
+    if (0 != n) {
+        xfree(n->data);
+        if (n->l)
+            node_destroy(n->l);
+        if (n->r)
+            node_destroy(n->r);
 
-    xfree(n);
-  }
+        xfree(n);
+    }
 }
 
-void map_destroy(map *m){
-  node_destroy(m->base);
+void
+map_destroy(map* m)
+{
+    node_destroy(m->base);
 }
 
-int int_cmp(const void *a, const void *b){
-  int64_t aa = *(int64_t *)(a);
-  int64_t bb = *(int64_t *)(b);
-  /* printf("cmp %d <=> %d\n",aa,bb); */
-  if(aa==bb)
-    return 0;
-  else if(aa<bb)
-    return -1;
-  else
-    return 1;
+int
+int_cmp(const void* a, const void* b)
+{
+    int64_t aa = *(int64_t*) (a);
+    int64_t bb = *(int64_t*) (b);
+    /* printf("cmp %d <=> %d\n",aa,bb); */
+    if (aa == bb)
+        return 0;
+    else if (aa < bb)
+        return -1;
+    else
+        return 1;
 }
 
-int double_cmp(const void *a, const void *b){
-  double aa = *(double *)(a);
-  double bb = *(double *)(b);
-  /* printf("cmp %d <=> %d\n",aa,bb); */
-  if(aa==bb)
-    return 0;
-  else if(aa<bb)
-    return -1;
-  else
-    return 1;
+int
+double_cmp(const void* a, const void* b)
+{
+    double aa = *(double*) (a);
+    double bb = *(double*) (b);
+    /* printf("cmp %d <=> %d\n",aa,bb); */
+    if (aa == bb)
+        return 0;
+    else if (aa < bb)
+        return -1;
+    else
+        return 1;
 }
 
-void print_elem(void *e, int64_t c, void* p){
-  int ee = *(int*)(e);
-  printf("%d => %" PRId64 "\n", ee,c);
+void
+print_elem(void* e, int64_t c, void* p)
+{
+    int ee = *(int*) (e);
+    printf("%d => %" PRId64 "\n", ee, c);
 }
-

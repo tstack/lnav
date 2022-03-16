@@ -21,34 +21,36 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <regex>
+
+#include "tailer.looper.hh"
 
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
-#include "tailer.looper.hh"
-#include "tailer.looper.cfg.hh"
-#include "tailer.h"
-#include "tailerpp.hh"
+#include "config.h"
+#include "line_buffer.hh"
 #include "lnav.hh"
 #include "service_tags.hh"
-#include "line_buffer.hh"
+#include "tailer.h"
+#include "tailer.looper.cfg.hh"
 #include "tailerbin.h"
+#include "tailerpp.hh"
 
 using namespace std::chrono_literals;
 
 static const auto HOST_RETRY_DELAY = 1min;
 
-static void read_err_pipe(const std::string &netloc, auto_fd &err,
-                          std::vector<std::string> &eq)
+static void
+read_err_pipe(const std::string& netloc,
+              auto_fd& err,
+              std::vector<std::string>& eq)
 {
     line_buffer lb;
     file_range pipe_range;
@@ -69,35 +71,42 @@ static void read_err_pipe(const std::string &netloc, auto_fd &err,
                 done = true;
             } else {
                 lb.read_range(li.li_file_range).then([netloc, &eq](auto sbr) {
-                    auto line_str = string_fragment(sbr.get_data(),
-                                                    0,
-                                                    sbr.length());
+                    auto line_str
+                        = string_fragment(sbr.get_data(), 0, sbr.length());
                     line_str.trim("\n");
                     if (eq.size() < 10) {
                         eq.template emplace_back(line_str.to_string());
                     }
 
-                    auto level =
-                        line_str.startswith("error:") ? lnav_log_level_t::ERROR :
-                        line_str.startswith("warning:") ? lnav_log_level_t::WARNING :
-                        line_str.startswith("info:") ? lnav_log_level_t::INFO :
-                        lnav_log_level_t::DEBUG;
-                    log_msg_wrapper(level, "tailer[%s] %.*s",
+                    auto level = line_str.startswith("error:")
+                        ? lnav_log_level_t::ERROR
+                        : line_str.startswith("warning:")
+                        ? lnav_log_level_t::WARNING
+                        : line_str.startswith("info:")
+                        ? lnav_log_level_t::INFO
+                        : lnav_log_level_t::DEBUG;
+                    log_msg_wrapper(level,
+                                    "tailer[%s] %.*s",
                                     netloc.c_str(),
-                                    line_str.length(), line_str.data());
+                                    line_str.length(),
+                                    line_str.data());
                 });
             }
         }
     }
 }
 
-static void update_tailer_progress(const std::string& netloc, const std::string& msg)
+static void
+update_tailer_progress(const std::string& netloc, const std::string& msg)
 {
-    lnav_data.ld_active_files.fc_progress->writeAccess()->
-        sp_tailers[netloc].tp_message = msg;
+    lnav_data.ld_active_files.fc_progress->writeAccess()
+        ->sp_tailers[netloc]
+        .tp_message
+        = msg;
 }
 
-static void update_tailer_description(
+static void
+update_tailer_description(
     const std::string& netloc,
     const std::map<std::string, logfile_open_options>& desired_paths,
     const std::string& remote_uname)
@@ -105,11 +114,10 @@ static void update_tailer_description(
     std::vector<std::string> paths;
 
     for (const auto& des_pair : desired_paths) {
-        paths.emplace_back(fmt::format(
-            "{}{}", netloc, des_pair.first));
+        paths.emplace_back(fmt::format("{}{}", netloc, des_pair.first));
     }
-    isc::to<main_looper&, services::main_t>()
-        .send([paths, remote_uname](auto& mlooper) {
+    isc::to<main_looper&, services::main_t>().send(
+        [paths, remote_uname](auto& mlooper) {
             auto& fc = lnav_data.ld_active_files;
 
             for (const auto& path : paths) {
@@ -122,10 +130,10 @@ static void update_tailer_description(
                 iter->second.ofd_description = remote_uname;
             }
         });
-
 }
 
-void tailer::looper::loop_body()
+void
+tailer::looper::loop_body()
 {
     auto now = std::chrono::steady_clock::now();
     std::vector<std::string> to_erase;
@@ -142,11 +150,11 @@ void tailer::looper::loop_body()
 
             if (create_res.isErr()) {
                 report_error(netloc, create_res.unwrapErr());
-                if (std::any_of(rpq.rpq_new_paths.begin(),
-                                rpq.rpq_new_paths.end(),
-                                [](const auto& pair) {
-                                    return !pair.second.loo_tail;
-                                })) {
+                if (std::any_of(
+                        rpq.rpq_new_paths.begin(),
+                        rpq.rpq_new_paths.end(),
+                        [](const auto& pair) { return !pair.second.loo_tail; }))
+                {
                     rpq.send_synced_to_main(netloc);
                     to_erase.push_back(netloc);
                 } else {
@@ -169,8 +177,8 @@ void tailer::looper::loop_body()
                       netloc.c_str(),
                       rpq.rpq_new_paths.begin()->first.c_str());
             this->l_remotes[netloc]->send(
-                [paths = rpq.rpq_new_paths](auto &ht) {
-                    for (const auto &pair : paths) {
+                [paths = rpq.rpq_new_paths](auto& ht) {
+                    for (const auto& pair : paths) {
                         log_debug("adding path to tailer -- %s",
                                   pair.first.c_str());
                         ht.open_remote_path(pair.first, pair.second);
@@ -188,15 +196,17 @@ void tailer::looper::loop_body()
     }
 }
 
-void tailer::looper::add_remote(const network::path &path,
-                                logfile_open_options options)
+void
+tailer::looper::add_remote(const network::path& path,
+                           logfile_open_options options)
 {
     auto netloc_str = fmt::format("{}", path.home());
-    this->l_netlocs_to_paths[netloc_str].rpq_new_paths[path.p_path] =
-        std::move(options);
+    this->l_netlocs_to_paths[netloc_str].rpq_new_paths[path.p_path]
+        = std::move(options);
 }
 
-void tailer::looper::load_preview(int64_t id, const network::path& path)
+void
+tailer::looper::load_preview(int64_t id, const network::path& path)
 {
     auto netloc_str = fmt::format("{}", path.home());
     auto iter = this->l_remotes.find(netloc_str);
@@ -206,8 +216,8 @@ void tailer::looper::load_preview(int64_t id, const network::path& path)
 
         if (create_res.isErr()) {
             auto msg = create_res.unwrapErr();
-            isc::to<main_looper&, services::main_t>()
-                .send([id, msg](auto& mlooper) {
+            isc::to<main_looper&, services::main_t>().send(
+                [id, msg](auto& mlooper) {
                     if (lnav_data.ld_preview_generation != id) {
                         return;
                     }
@@ -225,12 +235,13 @@ void tailer::looper::load_preview(int64_t id, const network::path& path)
         this->s_children.add_child_service(ht);
     }
 
-    this->l_remotes[netloc_str]->send([id, file_path = path.p_path](auto &ht) {
+    this->l_remotes[netloc_str]->send([id, file_path = path.p_path](auto& ht) {
         ht.load_preview(id, file_path);
     });
 }
 
-void tailer::looper::complete_path(const network::path& path)
+void
+tailer::looper::complete_path(const network::path& path)
 {
     auto netloc_str = fmt::format("{}", path.home());
     auto iter = this->l_remotes.find(netloc_str);
@@ -247,9 +258,8 @@ void tailer::looper::complete_path(const network::path& path)
         this->s_children.add_child_service(ht);
     }
 
-    this->l_remotes[netloc_str]->send([file_path = path.p_path](auto &ht) {
-        ht.complete_path(file_path);
-    });
+    this->l_remotes[netloc_str]->send(
+        [file_path = path.p_path](auto& ht) { ht.complete_path(file_path); });
 }
 
 static std::vector<std::string>
@@ -277,8 +287,7 @@ create_ssh_args_from_config(const std::string& dest)
         if (pair.second.empty()) {
             continue;
         }
-        retval.emplace_back(fmt::format(
-            "-o{}={}", pair.first, pair.second));
+        retval.emplace_back(fmt::format("-o{}={}", pair.first, pair.second));
     }
     retval.emplace_back(dest);
 
@@ -315,16 +324,17 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
         if (child.in_child()) {
             auto arg_strs = create_ssh_args_from_config(ssh_dest);
-            std::vector<char *> args;
+            std::vector<char*> args;
 
-            arg_strs.emplace_back(fmt::format(
-                cfg.c_transfer_cmd, tailer_bin_name));
+            arg_strs.emplace_back(
+                fmt::format(cfg.c_transfer_cmd, tailer_bin_name));
 
-            fmt::print(stderr, "tailer({}): executing -- {}\n",
+            fmt::print(stderr,
+                       "tailer({}): executing -- {}\n",
                        netloc,
                        fmt::join(arg_strs, " "));
             for (const auto& arg : arg_strs) {
-                args.push_back((char *) arg.data());
+                args.push_back((char*) arg.data());
             }
             args.push_back(nullptr);
 
@@ -334,7 +344,9 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
         std::vector<std::string> error_queue;
         log_debug("starting err reader");
-        std::thread err_reader([netloc, err = std::move(err_pipe.read_end()), &error_queue]() mutable {
+        std::thread err_reader([netloc,
+                                err = std::move(err_pipe.read_end()),
+                                &error_queue]() mutable {
             log_set_thread_prefix(fmt::format("tailer({})", netloc));
             read_err_pipe(netloc, err, error_queue);
         });
@@ -345,7 +357,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
         while (total_bytes < sf.length()) {
             log_debug("attempting to write %d", sf.length() - total_bytes);
-            auto rc = write(in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
+            auto rc = write(
+                in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
 
             log_debug("wrote %d", rc);
             if (rc < 0) {
@@ -367,15 +380,19 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
                 break;
             }
             log_debug("tailer(%s): transfer output -- %.*s",
-                      netloc.c_str(), rc, buffer);
+                      netloc.c_str(),
+                      rc,
+                      buffer);
         }
 
         auto finished_child = std::move(child).wait_for_child();
 
         err_reader.join();
-        if (!finished_child.was_normal_exit() ||
-            finished_child.exit_status() != EXIT_SUCCESS) {
-            auto error_msg = error_queue.empty() ? "unknown" : error_queue.back();
+        if (!finished_child.was_normal_exit()
+            || finished_child.exit_status() != EXIT_SUCCESS)
+        {
+            auto error_msg = error_queue.empty() ? "unknown"
+                                                 : error_queue.back();
             return Err(fmt::format("failed to ssh to host: {}", error_msg));
         }
     }
@@ -393,15 +410,16 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
     if (child.in_child()) {
         auto arg_strs = create_ssh_args_from_config(ssh_dest);
-        std::vector<char *> args;
+        std::vector<char*> args;
 
         arg_strs.emplace_back(fmt::format(cfg.c_start_cmd, tailer_bin_name));
 
-        fmt::print(stderr, "tailer({}): executing -- {}\n",
+        fmt::print(stderr,
+                   "tailer({}): executing -- {}\n",
                    netloc,
                    fmt::join(arg_strs, " "));
         for (const auto& arg : arg_strs) {
-            args.push_back((char *) arg.data());
+            args.push_back((char*) arg.data());
         }
         args.push_back(nullptr);
 
@@ -409,22 +427,21 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         _exit(EXIT_FAILURE);
     }
 
-    return Ok(std::make_shared<host_tailer>(
-        netloc,
-        std::move(child),
-        std::move(in_pipe.write_end()),
-        std::move(out_pipe.read_end()),
-        std::move(err_pipe.read_end())
-    ));
+    return Ok(std::make_shared<host_tailer>(netloc,
+                                            std::move(child),
+                                            std::move(in_pipe.write_end()),
+                                            std::move(out_pipe.read_end()),
+                                            std::move(err_pipe.read_end())));
 }
 
-static
-ghc::filesystem::path remote_cache_path()
+static ghc::filesystem::path
+remote_cache_path()
 {
     return lnav::paths::workdir() / "remotes";
 }
 
-ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
+ghc::filesystem::path
+tailer::looper::host_tailer::tmp_path()
 {
     auto local_path = remote_cache_path();
 
@@ -439,44 +456,42 @@ ghc::filesystem::path tailer::looper::host_tailer::tmp_path()
     return resolved_path.in();
 }
 
-static
-std::string scrub_netloc(const std::string& netloc)
+static std::string
+scrub_netloc(const std::string& netloc)
 {
     const static std::regex TO_SCRUB(R"([^\w\.\@])");
 
     return std::regex_replace(netloc, TO_SCRUB, "_");
 }
 
-tailer::looper::host_tailer::host_tailer(const std::string &netloc,
-                                         auto_pid<process_state::RUNNING> child,
+tailer::looper::host_tailer::host_tailer(const std::string& netloc,
+                                         auto_pid<process_state::running> child,
                                          auto_fd to_child,
                                          auto_fd from_child,
                                          auto_fd err_from_child)
-    : isc::service<host_tailer>(netloc),
-      ht_netloc(netloc),
+    : isc::service<host_tailer>(netloc), ht_netloc(netloc),
       ht_local_path(tmp_path() / scrub_netloc(netloc)),
-      ht_error_reader([
-          netloc, err = std::move(err_from_child), &eq = this->ht_error_queue]() mutable {
+      ht_error_reader([netloc,
+                       err = std::move(err_from_child),
+                       &eq = this->ht_error_queue]() mutable {
           read_err_pipe(netloc, err, eq);
       }),
       ht_state(connected{
-          std::move(child),
-          std::move(to_child),
-          std::move(from_child),
-          {}
-      })
+          std::move(child), std::move(to_child), std::move(from_child), {}})
 {
 }
 
-void tailer::looper::host_tailer::open_remote_path(const std::string& path,
-                                                   logfile_open_options loo)
+void
+tailer::looper::host_tailer::open_remote_path(const std::string& path,
+                                              logfile_open_options loo)
 {
     this->ht_state.match(
         [&](connected& conn) {
             conn.c_desired_paths[path] = std::move(loo);
             send_packet(conn.ht_to_child.get(),
                         TPT_OPEN_PATH,
-                        TPPT_STRING, path.c_str(),
+                        TPPT_STRING,
+                        path.c_str(),
                         TPPT_DONE);
         },
         [&](const disconnected& d) {
@@ -485,61 +500,60 @@ void tailer::looper::host_tailer::open_remote_path(const std::string& path,
         },
         [&](const synced& s) {
             log_warning("synced with host, not tailing: %s", path.c_str());
-        }
-    );
+        });
 }
 
-void tailer::looper::host_tailer::load_preview(int64_t id, const std::string &path)
+void
+tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
 {
     this->ht_state.match(
         [&](connected& conn) {
             send_packet(conn.ht_to_child.get(),
                         TPT_LOAD_PREVIEW,
-                        TPPT_STRING, path.c_str(),
-                        TPPT_INT64, id,
+                        TPPT_STRING,
+                        path.c_str(),
+                        TPPT_INT64,
+                        id,
                         TPPT_DONE);
         },
         [&](const disconnected& d) {
             log_warning("disconnected from host, cannot preview: %s",
                         path.c_str());
 
-            auto msg = fmt::format("error: disconnected from {}", this->ht_netloc);
-            isc::to<main_looper&, services::main_t>()
-                .send([=](auto& mlooper) {
-                    if (lnav_data.ld_preview_generation != id) {
-                        return;
-                    }
-                    lnav_data.ld_preview_status_source.get_description()
-                        .set_cylon(false)
-                        .set_value(msg);
-                });
+            auto msg
+                = fmt::format("error: disconnected from {}", this->ht_netloc);
+            isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
+                if (lnav_data.ld_preview_generation != id) {
+                    return;
+                }
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_cylon(false)
+                    .set_value(msg);
+            });
         },
-        [&](const synced& s) {
-            require(false);
-        }
-    );
+        [&](const synced& s) { require(false); });
 }
 
-void tailer::looper::host_tailer::complete_path(const std::string &path)
+void
+tailer::looper::host_tailer::complete_path(const std::string& path)
 {
     this->ht_state.match(
         [&](connected& conn) {
             send_packet(conn.ht_to_child.get(),
                         TPT_COMPLETE_PATH,
-                        TPPT_STRING, path.c_str(),
+                        TPPT_STRING,
+                        path.c_str(),
                         TPPT_DONE);
         },
         [&](const disconnected& d) {
             log_warning("disconnected from host, cannot preview: %s",
                         path.c_str());
         },
-        [&](const synced& s) {
-            require(false);
-        }
-    );
+        [&](const synced& s) { require(false); });
 }
 
-void tailer::looper::host_tailer::loop_body()
+void
+tailer::looper::host_tailer::loop_body()
 {
     const static uint64_t TOUCH_FREQ = 10000;
 
@@ -549,8 +563,8 @@ void tailer::looper::host_tailer::loop_body()
 
     this->ht_cycle_count += 1;
     if (this->ht_cycle_count % TOUCH_FREQ == 0) {
-        auto now = ghc::filesystem::file_time_type{
-            std::chrono::system_clock::now()};
+        auto now
+            = ghc::filesystem::file_time_type{std::chrono::system_clock::now()};
         ghc::filesystem::last_write_time(this->ht_local_path, now);
     }
 
@@ -573,34 +587,34 @@ void tailer::looper::host_tailer::loop_body()
 
         auto packet = read_res.unwrap();
         this->ht_state = packet.match(
-            [&](const tailer::packet_eof &te) {
+            [&](const tailer::packet_eof& te) {
                 log_debug("all done!");
 
                 auto finished_child = std::move(conn).close();
-                if (finished_child.exit_status() != 0 &&
-                    !this->ht_error_queue.empty()) {
-                    report_error(this->ht_netloc,
-                                 this->ht_error_queue.back());
+                if (finished_child.exit_status() != 0
+                    && !this->ht_error_queue.empty()) {
+                    report_error(this->ht_netloc, this->ht_error_queue.back());
                 }
 
                 return state_v{disconnected()};
             },
-            [&](const tailer::packet_announce &pa) {
+            [&](const tailer::packet_announce& pa) {
                 update_tailer_description(
                     this->ht_netloc, conn.c_desired_paths, pa.pa_uname);
                 this->ht_uname = pa.pa_uname;
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_log &pl) {
+            [&](const tailer::packet_log& pl) {
                 log_debug("%s\n", pl.pl_msg.c_str());
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_error &pe) {
-                log_debug("Got an error: %s -- %s", pe.pe_path.c_str(),
-                       pe.pe_msg.c_str());
+            [&](const tailer::packet_error& pe) {
+                log_debug("Got an error: %s -- %s",
+                          pe.pe_path.c_str(),
+                          pe.pe_msg.c_str());
 
-                lnav_data.ld_active_files.fc_progress->writeAccess()->
-                    sp_tailers.erase(this->ht_netloc);
+                lnav_data.ld_active_files.fc_progress->writeAccess()
+                    ->sp_tailers.erase(this->ht_netloc);
 
                 auto desired_iter = conn.c_desired_paths.find(pe.pe_path);
                 if (desired_iter != conn.c_desired_paths.end()) {
@@ -608,26 +622,26 @@ void tailer::looper::host_tailer::loop_body()
                     if (!desired_iter->second.loo_tail) {
                         conn.c_desired_paths.erase(desired_iter);
                     }
-                }
-                else {
+                } else {
                     auto child_iter = conn.c_child_paths.find(pe.pe_path);
 
-                    if (child_iter != conn.c_child_paths.end() &&
-                        !child_iter->second.loo_tail) {
+                    if (child_iter != conn.c_child_paths.end()
+                        && !child_iter->second.loo_tail) {
                         conn.c_child_paths.erase(child_iter);
                     }
                 }
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(pe.pe_path)).relative_path();
+                                       ghc::filesystem::path(pe.pe_path))
+                                       .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
                 log_debug("removing %s", local_path.c_str());
                 this->ht_active_files.erase(local_path);
                 ghc::filesystem::remove_all(local_path);
 
-                if (conn.c_desired_paths.empty() &&
-                    conn.c_child_paths.empty()) {
+                if (conn.c_desired_paths.empty() && conn.c_child_paths.empty())
+                {
                     log_info("tailer(%s): all desired paths synced",
                              this->ht_netloc.c_str());
                     return state_v{synced{}};
@@ -635,9 +649,11 @@ void tailer::looper::host_tailer::loop_body()
 
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_offer_block &pob) {
-                log_debug("Got an offer: %s  %lld - %lld", pob.pob_path.c_str(),
-                       pob.pob_offset, pob.pob_length);
+            [&](const tailer::packet_offer_block& pob) {
+                log_debug("Got an offer: %s  %lld - %lld",
+                          pob.pob_path.c_str(),
+                          pob.pob_offset,
+                          pob.pob_length);
 
                 logfile_open_options loo;
                 if (pob.pob_path == pob.pob_root_path) {
@@ -653,7 +669,8 @@ void tailer::looper::host_tailer::loop_body()
                 } else {
                     auto child_iter = conn.c_child_paths.find(pob.pob_path);
                     if (child_iter == conn.c_child_paths.end()) {
-                        auto root_iter = conn.c_desired_paths.find(pob.pob_root_path);
+                        auto root_iter
+                            = conn.c_desired_paths.find(pob.pob_root_path);
 
                         if (root_iter == conn.c_desired_paths.end()) {
                             log_warning("ignoring child of unknown root: %s",
@@ -661,7 +678,8 @@ void tailer::looper::host_tailer::loop_body()
                             return std::move(this->ht_state);
                         }
 
-                        conn.c_child_paths[pob.pob_path] = std::move(root_iter->second);
+                        conn.c_child_paths[pob.pob_path]
+                            = std::move(root_iter->second);
                         child_iter = conn.c_child_paths.find(pob.pob_path);
                     }
 
@@ -672,7 +690,8 @@ void tailer::looper::host_tailer::loop_body()
                     this->ht_netloc, conn.c_desired_paths, this->ht_uname);
 
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(pob.pob_path)).relative_path();
+                                       ghc::filesystem::path(pob.pob_path))
+                                       .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
                 auto fd = auto_fd(::open(local_path.c_str(), O_RDONLY));
 
@@ -680,9 +699,12 @@ void tailer::looper::host_tailer::loop_body()
                     this->ht_active_files.insert(local_path);
 
                     auto custom_name = this->get_display_path(pob.pob_path);
-                    isc::to<main_looper &, services::main_t>()
-                        .send([local_path, custom_name, loo, netloc = this->ht_netloc](auto &mlooper) {
-                            auto &active_fc = lnav_data.ld_active_files;
+                    isc::to<main_looper&, services::main_t>().send(
+                        [local_path,
+                         custom_name,
+                         loo,
+                         netloc = this->ht_netloc](auto& mlooper) {
+                            auto& active_fc = lnav_data.ld_active_files;
                             auto lpath_str = local_path.string();
 
                             {
@@ -695,7 +717,8 @@ void tailer::looper::host_tailer::loop_body()
                                 log_debug("already in fc_file_names");
                                 return;
                             }
-                            if (active_fc.fc_closed_files.count(custom_name) > 0) {
+                            if (active_fc.fc_closed_files.count(custom_name)
+                                > 0) {
                                 log_debug("in closed");
                                 return;
                             }
@@ -716,7 +739,8 @@ void tailer::looper::host_tailer::loop_body()
                     log_debug("file not found, sending need block");
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
-                                TPPT_STRING, pob.pob_path.c_str(),
+                                TPPT_STRING,
+                                pob.pob_path.c_str(),
                                 TPPT_DONE);
                     return std::move(this->ht_state);
                 }
@@ -728,7 +752,8 @@ void tailer::looper::host_tailer::loop_body()
                     ghc::filesystem::remove_all(local_path);
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
-                                TPPT_STRING, pob.pob_path.c_str(),
+                                TPPT_STRING,
+                                pob.pob_path.c_str(),
                                 TPPT_DONE);
                     return std::move(this->ht_state);
                 }
@@ -737,7 +762,8 @@ void tailer::looper::host_tailer::loop_body()
                     log_debug("local file is synced, sending need block");
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
-                                TPPT_STRING, pob.pob_path.c_str(),
+                                TPPT_STRING,
+                                pob.pob_path.c_str(),
                                 TPPT_DONE);
                     return std::move(this->ht_state);
                 }
@@ -745,7 +771,7 @@ void tailer::looper::host_tailer::loop_body()
                 constexpr int64_t BUFFER_SIZE = 4 * 1024 * 1024;
                 auto_mem<unsigned char> buffer;
 
-                buffer = (unsigned char *) malloc(BUFFER_SIZE);
+                buffer = (unsigned char*) malloc(BUFFER_SIZE);
                 auto remaining = pob.pob_length;
                 auto remaining_offset = pob.pob_offset;
                 tailer::hash_frag thf;
@@ -753,13 +779,17 @@ void tailer::looper::host_tailer::loop_body()
                 sha256_init(&shactx);
 
                 log_debug("checking offer %s[%lld..+%lld]",
-                          local_path.c_str(), remaining_offset, remaining);
+                          local_path.c_str(),
+                          remaining_offset,
+                          remaining);
                 while (remaining > 0) {
                     auto nbytes = std::min(remaining, BUFFER_SIZE);
-                    auto bytes_read = pread(fd, buffer, nbytes, remaining_offset);
+                    auto bytes_read
+                        = pread(fd, buffer, nbytes, remaining_offset);
                     if (bytes_read == -1) {
-                        log_debug("unable to read file, sending need block -- %s",
-                                  strerror(errno));
+                        log_debug(
+                            "unable to read file, sending need block -- %s",
+                            strerror(errno));
                         ghc::filesystem::remove_all(local_path);
                         break;
                     }
@@ -778,10 +808,14 @@ void tailer::looper::host_tailer::loop_body()
                         log_debug("local file block is same, sending ack");
                         send_packet(conn.ht_to_child.get(),
                                     TPT_ACK_BLOCK,
-                                    TPPT_STRING, pob.pob_path.c_str(),
-                                    TPPT_INT64, pob.pob_offset,
-                                    TPPT_INT64, pob.pob_length,
-                                    TPPT_INT64, (int64_t) st.st_size,
+                                    TPPT_STRING,
+                                    pob.pob_path.c_str(),
+                                    TPPT_INT64,
+                                    pob.pob_offset,
+                                    TPPT_INT64,
+                                    pob.pob_length,
+                                    TPPT_INT64,
+                                    (int64_t) st.st_size,
                                     TPPT_DONE);
                         return std::move(this->ht_state);
                     }
@@ -789,13 +823,15 @@ void tailer::looper::host_tailer::loop_body()
                 }
                 send_packet(conn.ht_to_child.get(),
                             TPT_NEED_BLOCK,
-                            TPPT_STRING, pob.pob_path.c_str(),
+                            TPPT_STRING,
+                            pob.pob_path.c_str(),
                             TPPT_DONE);
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_tail_block &ptb) {
+            [&](const tailer::packet_tail_block& ptb) {
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(ptb.ptb_path)).relative_path();
+                                       ghc::filesystem::path(ptb.ptb_path))
+                                       .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
                 log_debug("writing tail to: %lld/%ld %s",
@@ -803,16 +839,16 @@ void tailer::looper::host_tailer::loop_body()
                           ptb.ptb_bits.size(),
                           local_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
-                auto fd = auto_fd(
-                    ::open(local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT,
-                           0600));
+                auto fd = auto_fd(::open(
+                    local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0600));
 
                 if (fd == -1) {
                     log_error("open: %s", strerror(errno));
                 } else {
                     ftruncate(fd, ptb.ptb_offset);
                     pwrite(fd,
-                           ptb.ptb_bits.data(), ptb.ptb_bits.size(),
+                           ptb.ptb_bits.data(),
+                           ptb.ptb_bits.size(),
                            ptb.ptb_offset);
                     auto mtime = ghc::filesystem::file_time_type{
                         std::chrono::seconds{ptb.ptb_mtime}};
@@ -821,7 +857,7 @@ void tailer::looper::host_tailer::loop_body()
                 }
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_synced &ps) {
+            [&](const tailer::packet_synced& ps) {
                 if (ps.ps_root_path == ps.ps_path) {
                     auto iter = conn.c_desired_paths.find(ps.ps_path);
 
@@ -831,7 +867,6 @@ void tailer::looper::host_tailer::loop_body()
                                      iter->first.c_str());
                             conn.c_desired_paths.erase(iter);
                         }
-
                     }
                 } else {
                     auto iter = conn.c_child_paths.find(ps.ps_path);
@@ -845,8 +880,8 @@ void tailer::looper::host_tailer::loop_body()
                     }
                 }
 
-                if (conn.c_desired_paths.empty() &&
-                    conn.c_child_paths.empty()) {
+                if (conn.c_desired_paths.empty() && conn.c_child_paths.empty())
+                {
                     log_info("tailer(%s): all desired paths synced",
                              this->ht_netloc.c_str());
                     return state_v{synced{}};
@@ -854,16 +889,17 @@ void tailer::looper::host_tailer::loop_body()
 
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_link &pl) {
+            [&](const tailer::packet_link& pl) {
                 auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(pl.pl_path)).relative_path();
+                                       ghc::filesystem::path(pl.pl_path))
+                                       .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
                 auto remote_link_path = ghc::filesystem::path(pl.pl_link_value);
                 std::string link_path;
 
                 if (remote_path.is_absolute()) {
-                    auto local_link_path =
-                        this->ht_local_path / remote_link_path.relative_path();
+                    auto local_link_path = this->ht_local_path
+                        / remote_link_path.relative_path();
 
                     link_path = local_link_path.string();
                 } else {
@@ -881,9 +917,9 @@ void tailer::looper::host_tailer::loop_body()
 
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_preview_error &ppe) {
-                isc::to<main_looper&, services::main_t>()
-                    .send([ppe](auto& mlooper) {
+            [&](const tailer::packet_preview_error& ppe) {
+                isc::to<main_looper&, services::main_t>().send(
+                    [ppe](auto& mlooper) {
                         if (lnav_data.ld_preview_generation != ppe.ppe_id) {
                             log_debug("preview ID mismatch: %lld != %lld",
                                       lnav_data.ld_preview_generation,
@@ -899,9 +935,9 @@ void tailer::looper::host_tailer::loop_body()
 
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_preview_data &ppd) {
-                isc::to<main_looper&, services::main_t>()
-                    .send([netloc = this->ht_netloc, ppd](auto& mlooper) {
+            [&](const tailer::packet_preview_data& ppd) {
+                isc::to<main_looper&, services::main_t>().send(
+                    [netloc = this->ht_netloc, ppd](auto& mlooper) {
                         if (lnav_data.ld_preview_generation != ppd.ppd_id) {
                             log_debug("preview ID mismatch: %lld != %lld",
                                       lnav_data.ld_preview_generation,
@@ -915,26 +951,23 @@ void tailer::looper::host_tailer::loop_body()
                             .set_value("For file: %s:%s",
                                        netloc.c_str(),
                                        ppd.ppd_path.c_str());
-                        lnav_data.ld_preview_source
-                            .replace_with(str)
+                        lnav_data.ld_preview_source.replace_with(str)
                             .set_text_format(detect_text_format(str));
                     });
                 return std::move(this->ht_state);
             },
-            [&](const tailer::packet_possible_path &ppp) {
+            [&](const tailer::packet_possible_path& ppp) {
                 log_debug("possible path: %s", ppp.ppp_path.c_str());
-                auto full_path = fmt::format("{}{}",
-                                             this->ht_netloc,
-                                             ppp.ppp_path);
+                auto full_path
+                    = fmt::format("{}{}", this->ht_netloc, ppp.ppp_path);
 
-                isc::to<main_looper&, services::main_t>()
-                    .send([full_path](auto& mlooper) {
+                isc::to<main_looper&, services::main_t>().send(
+                    [full_path](auto& mlooper) {
                         lnav_data.ld_rl_view->add_possibility(
                             LNM_COMMAND, "remote-path", full_path);
                     });
                 return std::move(this->ht_state);
-            }
-        );
+            });
 
         if (!this->ht_state.is<connected>()) {
             this->s_looping = false;
@@ -948,7 +981,8 @@ tailer::looper::host_tailer::compute_timeout(mstime_t current_time) const
     return 0s;
 }
 
-void tailer::looper::host_tailer::stopped()
+void
+tailer::looper::host_tailer::stopped()
 {
     if (this->ht_state.is<connected>()) {
         this->ht_state = disconnected();
@@ -958,19 +992,22 @@ void tailer::looper::host_tailer::stopped()
     }
 }
 
-std::string tailer::looper::host_tailer::get_display_path(const std::string& remote_path) const
+std::string
+tailer::looper::host_tailer::get_display_path(
+    const std::string& remote_path) const
 {
     return fmt::format("{}{}", this->ht_netloc, remote_path);
 }
 
-void *tailer::looper::host_tailer::run()
+void*
+tailer::looper::host_tailer::run()
 {
     log_set_thread_prefix(fmt::format("tailer({})", this->ht_netloc));
 
     return service_base::run();
 }
 
-auto_pid<process_state::FINISHED>
+auto_pid<process_state::finished>
 tailer::looper::host_tailer::connected::close() &&
 {
     this->ht_to_child.reset();
@@ -984,8 +1021,7 @@ tailer::looper::child_finished(std::shared_ptr<service_base> child)
 {
     auto child_tailer = std::static_pointer_cast<host_tailer>(child);
 
-    for (auto iter = this->l_remotes.begin();
-         iter != this->l_remotes.end();
+    for (auto iter = this->l_remotes.begin(); iter != this->l_remotes.end();
          ++iter) {
         if (iter->second != child_tailer) {
             continue;
@@ -1000,15 +1036,16 @@ tailer::looper::child_finished(std::shared_ptr<service_base> child)
                 this->l_netlocs_to_paths.erase(netloc_iter);
             }
         }
-        lnav_data.ld_active_files.fc_progress->writeAccess()->
-            sp_tailers.erase(iter->first);
+        lnav_data.ld_active_files.fc_progress->writeAccess()->sp_tailers.erase(
+            iter->first);
         this->l_remotes.erase(iter);
         return;
     }
 }
 
 void
-tailer::looper::remote_path_queue::send_synced_to_main(const std::string& netloc)
+tailer::looper::remote_path_queue::send_synced_to_main(
+    const std::string& netloc)
 {
     std::set<std::string> synced_files;
 
@@ -1023,8 +1060,8 @@ tailer::looper::remote_path_queue::send_synced_to_main(const std::string& netloc
         }
     }
 
-    isc::to<main_looper&, services::main_t>()
-        .send([file_set = std::move(synced_files)](auto& mlooper) {
+    isc::to<main_looper&, services::main_t>().send(
+        [file_set = std::move(synced_files)](auto& mlooper) {
             file_collection fc;
 
             fc.fc_synced_files = file_set;
@@ -1032,23 +1069,25 @@ tailer::looper::remote_path_queue::send_synced_to_main(const std::string& netloc
         });
 }
 
-void tailer::looper::report_error(std::string path, std::string msg)
+void
+tailer::looper::report_error(std::string path, std::string msg)
 {
-    isc::to<main_looper&, services::main_t>()
-        .send([=](auto& mlooper) {
-            file_collection fc;
+    isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
+        file_collection fc;
 
-            fc.fc_name_to_errors.emplace(path, file_error_info{
-                {},
-                msg,
-            });
-            update_active_files(fc);
-            lnav_data.ld_active_files.fc_progress->writeAccess()->
-                sp_tailers.erase(path);
-        });
+        fc.fc_name_to_errors.emplace(path,
+                                     file_error_info{
+                                         {},
+                                         msg,
+                                     });
+        update_active_files(fc);
+        lnav_data.ld_active_files.fc_progress->writeAccess()->sp_tailers.erase(
+            path);
+    });
 }
 
-void tailer::cleanup_cache()
+void
+tailer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
         auto now = std::chrono::system_clock::now();
@@ -1057,7 +1096,8 @@ void tailer::cleanup_cache()
         std::vector<ghc::filesystem::path> to_remove;
 
         log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
-        for (const auto& entry : ghc::filesystem::directory_iterator(cache_path)) {
+        for (const auto& entry :
+             ghc::filesystem::directory_iterator(cache_path)) {
             auto mtime = ghc::filesystem::last_write_time(entry.path());
             auto exp_time = mtime + cfg.c_cache_ttl;
             if (now < exp_time) {

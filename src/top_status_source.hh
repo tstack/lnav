@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,8 +35,7 @@
 #include "listview_curses.hh"
 #include "statusview_curses.hh"
 
-class top_status_source
-    : public status_data_source {
+class top_status_source : public status_data_source {
 public:
     typedef enum {
         TSF_TIME,
@@ -52,20 +51,23 @@ public:
 
     top_status_source();
 
-    size_t statusview_fields() override { return TSF__MAX; };
+    size_t statusview_fields() override
+    {
+        return TSF__MAX;
+    };
 
-    status_field &statusview_value_for_field(int field) override
+    status_field& statusview_value_for_field(int field) override
     {
         return this->tss_fields[field];
     };
 
-    void update_time(const struct timeval &current_time);
+    void update_time(const struct timeval& current_time);
 
     void update_time();
 
-    void update_filename(listview_curses *lc);
+    void update_filename(listview_curses* lc);
 
-    void update_view_name(listview_curses *lc);
+    void update_view_name(listview_curses* lc);
 
 private:
     status_field tss_fields[TSF__MAX];

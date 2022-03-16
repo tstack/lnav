@@ -21,32 +21,31 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <vector>
 
-#include "base/fs_util.hh"
-#include "base/string_util.hh"
-#include "base/injector.hh"
-#include "yajlpp/json_ptr.hh"
-#include "lnav.hh"
-#include "log_format_loader.hh"
-#include "shlex.hh"
-#include "lnav_util.hh"
-#include "sql_util.hh"
-#include "lnav_config.hh"
-#include "service_tags.hh"
-#include "bound_tags.hh"
-
 #include "command_executor.hh"
+
+#include "base/fs_util.hh"
+#include "base/injector.hh"
+#include "base/string_util.hh"
+#include "bound_tags.hh"
+#include "config.h"
 #include "db_sub_source.hh"
+#include "lnav.hh"
+#include "lnav_config.hh"
+#include "lnav_util.hh"
+#include "log_format_loader.hh"
 #include "papertrail_proc.hh"
+#include "service_tags.hh"
+#include "shlex.hh"
+#include "sql_util.hh"
+#include "yajlpp/json_ptr.hh"
 
 using namespace std;
 
@@ -59,12 +58,13 @@ SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
     ORDER BY total DESC
 )";
 
-int sql_progress(const struct log_cursor &lc)
+int
+sql_progress(const struct log_cursor& lc)
 {
     static sig_atomic_t sql_counter = 0;
 
     size_t total = lnav_data.ld_log_source.text_line_count();
-    off_t  off   = lc.lc_curr_line;
+    off_t off = lc.lc_curr_line;
 
     if (off < 0) {
         return 0;
@@ -89,7 +89,8 @@ int sql_progress(const struct log_cursor &lc)
     return 0;
 }
 
-void sql_progress_finished()
+void
+sql_progress_finished()
 {
     if (lnav_data.ld_window == nullptr) {
         return;
@@ -102,9 +103,14 @@ void sql_progress_finished()
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 
-Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem::path &path, int line_number, char mode, const string &cmdline);
+Result<string, string> execute_from_file(exec_context& ec,
+                                         const ghc::filesystem::path& path,
+                                         int line_number,
+                                         char mode,
+                                         const string& cmdline);
 
-Result<string, string> execute_command(exec_context &ec, const string &cmdline)
+Result<string, string>
+execute_command(exec_context& ec, const string& cmdline)
 {
     vector<string> args;
 
@@ -117,8 +123,7 @@ Result<string, string> execute_command(exec_context &ec, const string &cmdline)
 
         if ((iter = lnav_commands.find(args[0])) == lnav_commands.end()) {
             return ec.make_error("unknown command - {}", args[0]);
-        }
-        else {
+        } else {
             return iter->second->c_func(ec, cmdline, args);
         }
     }
@@ -126,9 +131,10 @@ Result<string, string> execute_command(exec_context &ec, const string &cmdline)
     return ec.make_error("no command to execute");
 }
 
-Result<string, string> execute_sql(exec_context &ec, const string &sql, string &alt_msg)
+Result<string, string>
+execute_sql(exec_context& ec, const string& sql, string& alt_msg)
 {
-    db_label_source &dls = lnav_data.ld_db_row_source;
+    db_label_source& dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     struct timeval start_tv, end_tv;
     string stmt_str = trim(sql);
@@ -143,8 +149,8 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         vector<string> args;
         split_ws(stmt_str, args);
 
-        auto sql_cmd_map = injector::get<
-            readline_context::command_map_t *, sql_cmd_map_tag>();
+        auto sql_cmd_map = injector::get<readline_context::command_map_t*,
+                                         sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
@@ -159,40 +165,36 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
     ec.ec_accumulator->clear();
 
     pair<string, int> source = ec.ec_source.top();
-    sql_progress_guard progress_guard(sql_progress,
-                                      sql_progress_finished,
-                                      source.first,
-                                      source.second);
+    sql_progress_guard progress_guard(
+        sql_progress, sql_progress_finished, source.first, source.second);
     gettimeofday(&start_tv, nullptr);
-    retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
-       stmt_str.c_str(),
-       -1,
-       stmt.out(),
-       nullptr);
+    retcode = sqlite3_prepare_v2(
+        lnav_data.ld_db.in(), stmt_str.c_str(), -1, stmt.out(), nullptr);
     if (retcode != SQLITE_OK) {
-        const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+        const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
         alt_msg = "";
         return ec.make_error("{}", errmsg);
-    }
-    else if (stmt == nullptr) {
+    } else if (stmt == nullptr) {
         alt_msg = "";
         return ec.make_error("No statement given");
     }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-    else if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in())) {
+    else if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in()))
+    {
         return ec.make_error(
             "modifying statements are not allowed in this context: {}", sql);
     }
 #endif
-    else {
+    else
+    {
         bool done = false;
         int param_count;
 
         param_count = sqlite3_bind_parameter_count(stmt.in());
         for (int lpc = 0; lpc < param_count; lpc++) {
             map<string, string>::iterator ov_iter;
-            const char *name;
+            const char* name;
 
             name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
             ov_iter = ec.ec_override.find(name);
@@ -202,12 +204,11 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                                   ov_iter->second.c_str(),
                                   ov_iter->second.length(),
                                   SQLITE_TRANSIENT);
-            }
-            else if (name[0] == '$') {
-                const auto &lvars = ec.ec_local_vars.top();
-                const auto &gvars = ec.ec_global_vars;
+            } else if (name[0] == '$') {
+                const auto& lvars = ec.ec_local_vars.top();
+                const auto& gvars = ec.ec_global_vars;
                 map<string, string>::const_iterator local_var, global_var;
-                const char *env_value;
+                const char* env_value;
 
                 if (lnav_data.ld_window) {
                     char buf[32];
@@ -216,45 +217,48 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                     getmaxyx(lnav_data.ld_window, lines, cols);
                     if (strcmp(name, "$LINES") == 0) {
                         snprintf(buf, sizeof(buf), "%d", lines);
-                        sqlite3_bind_text(stmt.in(), lpc + 1,
-                                          buf, -1,
-                                          SQLITE_TRANSIENT);
+                        sqlite3_bind_text(
+                            stmt.in(), lpc + 1, buf, -1, SQLITE_TRANSIENT);
                     } else if (strcmp(name, "$COLS") == 0) {
                         snprintf(buf, sizeof(buf), "%d", cols);
-                        sqlite3_bind_text(stmt.in(), lpc + 1,
-                                          buf, -1,
-                                          SQLITE_TRANSIENT);
+                        sqlite3_bind_text(
+                            stmt.in(), lpc + 1, buf, -1, SQLITE_TRANSIENT);
                     }
                 }
 
                 if ((local_var = lvars.find(&name[1])) != lvars.end()) {
-                    sqlite3_bind_text(stmt.in(), lpc + 1,
-                                      local_var->second.c_str(), -1,
+                    sqlite3_bind_text(stmt.in(),
+                                      lpc + 1,
+                                      local_var->second.c_str(),
+                                      -1,
                                       SQLITE_TRANSIENT);
-                }
-                else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
-                    sqlite3_bind_text(stmt.in(), lpc + 1,
-                                      global_var->second.c_str(), -1,
+                } else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
+                    sqlite3_bind_text(stmt.in(),
+                                      lpc + 1,
+                                      global_var->second.c_str(),
+                                      -1,
                                       SQLITE_TRANSIENT);
+                } else if ((env_value = getenv(&name[1])) != nullptr) {
+                    sqlite3_bind_text(
+                        stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
                 }
-                else if ((env_value = getenv(&name[1])) != nullptr) {
-                    sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
-                }
-            }
-            else if (name[0] == ':' && ec.ec_line_values != nullptr) {
+            } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
                 for (auto& lv : *ec.ec_line_values) {
                     if (lv.lv_meta.lvm_name != &name[1]) {
                         continue;
                     }
                     switch (lv.lv_meta.lvm_kind) {
                         case value_kind_t::VALUE_BOOLEAN:
-                            sqlite3_bind_int64(stmt.in(), lpc + 1, lv.lv_value.i);
+                            sqlite3_bind_int64(
+                                stmt.in(), lpc + 1, lv.lv_value.i);
                             break;
                         case value_kind_t::VALUE_FLOAT:
-                            sqlite3_bind_double(stmt.in(), lpc + 1, lv.lv_value.d);
+                            sqlite3_bind_double(
+                                stmt.in(), lpc + 1, lv.lv_value.d);
                             break;
                         case value_kind_t::VALUE_INTEGER:
-                            sqlite3_bind_int64(stmt.in(), lpc + 1, lv.lv_value.i);
+                            sqlite3_bind_int64(
+                                stmt.in(), lpc + 1, lv.lv_value.i);
                             break;
                         case value_kind_t::VALUE_NULL:
                             sqlite3_bind_null(stmt.in(), lpc + 1);
@@ -268,8 +272,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                             break;
                     }
                 }
-            }
-            else {
+            } else {
                 sqlite3_bind_null(stmt.in(), lpc + 1);
                 log_warning("Could not bind variable: %s", name);
             }
@@ -294,7 +297,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                     break;
 
                 default: {
-                    const char *errmsg;
+                    const char* errmsg;
 
                     log_error("sqlite3_step error code: %d", retcode);
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
@@ -304,12 +307,12 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
             }
         }
 
-        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty() &&
-            !ec.ec_dry_run) {
-            auto &vars = ec.ec_local_vars.top();
+        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty()
+            && !ec.ec_dry_run) {
+            auto& vars = ec.ec_local_vars.top();
 
             for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                const auto &column_name = dls.dls_headers[lpc].hm_name;
+                const auto& column_name = dls.dls_headers[lpc].hm_name;
 
                 if (sql_ident_needs_quote(column_name.c_str())) {
                     continue;
@@ -342,8 +345,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
 
         if (!ec.ec_accumulator->empty()) {
             retval = ec.ec_accumulator->get_string();
-        }
-        else if (!dls.dls_rows.empty()) {
+        } else if (!dls.dls_rows.empty()) {
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 if (ec.ec_local_vars.size() == 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
@@ -351,14 +353,14 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
 
                 retval = "";
                 alt_msg = "";
-            }
-            else if (dls.dls_rows.size() == 1) {
-                auto &row = dls.dls_rows[0];
+            } else if (dls.dls_rows.size() == 1) {
+                auto& row = dls.dls_rows[0];
 
                 if (dls.dls_headers.size() == 1) {
                     retval = row[0];
                 } else {
-                    for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+                    for (unsigned int lpc = 0; lpc < dls.dls_headers.size();
+                         lpc++) {
                         if (lpc > 0) {
                             retval.append("; ");
                         }
@@ -367,29 +369,31 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                         retval.append(row[lpc]);
                     }
                 }
-            }
-            else {
+            } else {
                 int row_count = dls.dls_rows.size();
                 char row_count_buf[128];
                 struct timeval diff_tv;
 
                 timersub(&end_tv, &start_tv, &diff_tv);
-                snprintf(row_count_buf, sizeof(row_count_buf),
-                         ANSI_BOLD("%'d") " row%s matched in "
-                         ANSI_BOLD("%ld.%03ld") " seconds",
+                snprintf(row_count_buf,
+                         sizeof(row_count_buf),
+                         ANSI_BOLD("%'d") " row%s matched in " ANSI_BOLD(
+                             "%ld.%03ld") " seconds",
                          row_count,
                          row_count == 1 ? "" : "s",
                          diff_tv.tv_sec,
                          std::max((long) diff_tv.tv_usec / 1000, 1L));
                 retval = row_count_buf;
                 alt_msg = HELP_MSG_2(
-                    y, Y,
+                    y,
+                    Y,
                     "to move forward/backward through query results "
-                        "in the log view");
+                    "in the log view");
             }
         }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-        else if (sqlite3_stmt_readonly(stmt.in())) {
+        else if (sqlite3_stmt_readonly(stmt.in()))
+        {
             retval = "info: No rows matched";
             alt_msg = "";
 
@@ -405,25 +409,27 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
     return Ok(retval);
 }
 
-static Result<string, string> execute_file_contents(exec_context &ec, const ghc::filesystem::path &path, bool multiline)
+static Result<string, string>
+execute_file_contents(exec_context& ec,
+                      const ghc::filesystem::path& path,
+                      bool multiline)
 {
     static ghc::filesystem::path stdin_path("-");
     static ghc::filesystem::path dev_stdin_path("/dev/stdin");
 
     string retval;
-    FILE *file;
+    FILE* file;
 
     if (path == stdin_path || path == dev_stdin_path) {
         if (isatty(STDIN_FILENO)) {
             return ec.make_error("stdin has already been consumed");
         }
         file = stdin;
-    }
-    else if ((file = fopen(path.c_str(), "r")) == nullptr) {
+    } else if ((file = fopen(path.c_str(), "r")) == nullptr) {
         return ec.make_error("unable to open file");
     }
 
-    int    line_number = 0, starting_line_number = 0;
+    int line_number = 0, starting_line_number = 0;
     auto_mem<char> line;
     size_t line_max_size;
     ssize_t line_size;
@@ -448,7 +454,8 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
             case ';':
             case '|':
                 if (mode) {
-                    retval = TRY(execute_from_file(ec, path, starting_line_number, mode, trim(cmdline)));
+                    retval = TRY(execute_from_file(
+                        ec, path, starting_line_number, mode, trim(cmdline)));
                 }
 
                 starting_line_number = line_number;
@@ -458,17 +465,17 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
             default:
                 if (multiline) {
                     cmdline += line;
-                }
-                else {
-                    retval = TRY(execute_from_file(ec, path, line_number, ':', line.in()));
+                } else {
+                    retval = TRY(execute_from_file(
+                        ec, path, line_number, ':', line.in()));
                 }
                 break;
         }
-
     }
 
     if (mode) {
-        retval = TRY(execute_from_file(ec, path, starting_line_number, mode, trim(cmdline)));
+        retval = TRY(execute_from_file(
+            ec, path, starting_line_number, mode, trim(cmdline)));
     }
 
     if (file == stdin) {
@@ -483,7 +490,8 @@ static Result<string, string> execute_file_contents(exec_context &ec, const ghc:
     return Ok(retval);
 }
 
-Result<string, string> execute_file(exec_context &ec, const string &path_and_args, bool multiline)
+Result<string, string>
+execute_file(exec_context& ec, const string& path_and_args, bool multiline)
 {
     available_scripts scripts;
     vector<string> split_args;
@@ -508,8 +516,8 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
 
     add_ansi_vars(vars);
 
-    snprintf(env_arg_name, sizeof(env_arg_name), "%d",
-             (int) split_args.size() - 1);
+    snprintf(
+        env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
 
     vars["#"] = env_arg_name;
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
@@ -560,22 +568,27 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     }
 
     if (!paths_to_exec.empty()) {
-        for (auto &path_iter : paths_to_exec) {
-            retval = TRY(
-                execute_file_contents(ec, path_iter.sm_path, multiline));
+        for (auto& path_iter : paths_to_exec) {
+            retval
+                = TRY(execute_file_contents(ec, path_iter.sm_path, multiline));
         }
     }
     ec.ec_local_vars.pop();
 
     if (paths_to_exec.empty()) {
-        return ec.make_error("unknown script -- {} -- {}",
-                             script_name, open_error);
+        return ec.make_error(
+            "unknown script -- {} -- {}", script_name, open_error);
     }
 
     return Ok(retval);
 }
 
-Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem::path &path, int line_number, char mode, const string &cmdline)
+Result<string, string>
+execute_from_file(exec_context& ec,
+                  const ghc::filesystem::path& path,
+                  int line_number,
+                  char mode,
+                  const string& cmdline)
 {
     string retval, alt_msg;
     auto _sg = ec.enter_source(path.string(), line_number);
@@ -585,9 +598,8 @@ Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem
             retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
-            lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
-                tc->execute_search(cmdline.substr(1));
-            };
+            lnav_data.ld_view_stack.top() |
+                [cmdline](auto tc) { tc->execute_search(cmdline.substr(1)); };
             break;
         case ';':
             setup_logline_table(ec);
@@ -609,15 +621,16 @@ Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem
     return Ok(retval);
 }
 
-Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_mode)
+Result<string, string>
+execute_any(exec_context& ec, const string& cmdline_with_mode)
 {
     string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
     auto _cleanup = finally([&ec] {
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
             // block the UI.
-            (lnav_data.ld_flags & LNF_HEADLESS ||
-             ec.ec_path_stack.size() > 1)) {
+            (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
+        {
             rescan_files();
             rebuild_indexes_repeatedly();
         }
@@ -628,9 +641,8 @@ Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_
             retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
-            lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
-                tc->execute_search(cmdline.substr(1));
-            };
+            lnav_data.ld_view_stack.top() |
+                [cmdline](auto tc) { tc->execute_search(cmdline.substr(1)); };
             break;
         case ';':
             setup_logline_table(ec);
@@ -648,38 +660,40 @@ Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_
     return Ok(retval);
 }
 
-void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>, string> > &msgs)
+void
+execute_init_commands(exec_context& ec,
+                      vector<pair<Result<string, string>, string> >& msgs)
 {
     if (lnav_data.ld_cmd_init_done) {
         return;
     }
 
-    db_label_source &dls = lnav_data.ld_db_row_source;
+    db_label_source& dls = lnav_data.ld_db_row_source;
     int option_index = 1;
 
     log_info("Executing initial commands");
-    for (auto &cmd : lnav_data.ld_commands) {
+    for (auto& cmd : lnav_data.ld_commands) {
         string alt_msg;
 
         wait_for_children();
 
         ec.ec_source.emplace("command-option", option_index++);
         switch (cmd.at(0)) {
-        case ':':
-            msgs.emplace_back(execute_command(ec, cmd.substr(1)), alt_msg);
-            break;
-        case '/':
-            lnav_data.ld_view_stack.top() | [cmd] (auto tc) {
-                tc->execute_search(cmd.substr(1));
-            };
-            break;
-        case ';':
-            setup_logline_table(ec);
-            msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg), alt_msg);
-            break;
-        case '|':
-            msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
-            break;
+            case ':':
+                msgs.emplace_back(execute_command(ec, cmd.substr(1)), alt_msg);
+                break;
+            case '/':
+                lnav_data.ld_view_stack.top() |
+                    [cmd](auto tc) { tc->execute_search(cmd.substr(1)); };
+                break;
+            case ';':
+                setup_logline_table(ec);
+                msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg),
+                                  alt_msg);
+                break;
+            case '|':
+                msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
+                break;
         }
 
         rescan_files();
@@ -691,16 +705,13 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
 
     if (!lnav_data.ld_pt_search.empty()) {
 #ifdef HAVE_LIBCURL
-        auto pt = make_shared<papertrail_proc>(
-            lnav_data.ld_pt_search.substr(3),
-            lnav_data.ld_pt_min_time,
-            lnav_data.ld_pt_max_time);
-        lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
-            .with_fd(pt->copy_fd());
-        isc::to<curl_looper&, services::curl_streamer_t>()
-            .send([pt](auto& clooper) {
-                clooper.add_request(pt);
-            });
+        auto pt = make_shared<papertrail_proc>(lnav_data.ld_pt_search.substr(3),
+                                               lnav_data.ld_pt_min_time,
+                                               lnav_data.ld_pt_max_time);
+        lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search].with_fd(
+            pt->copy_fd());
+        isc::to<curl_looper&, services::curl_streamer_t>().send(
+            [pt](auto& clooper) { clooper.add_request(pt); });
 #endif
     }
 
@@ -711,9 +722,10 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
     lnav_data.ld_cmd_init_done = true;
 }
 
-int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+int
+sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
-    auto &dls = lnav_data.ld_db_row_source;
+    auto& dls = lnav_data.ld_db_row_source;
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
@@ -721,8 +733,8 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
         return 0;
     }
 
-    stacked_bar_chart<std::string> &chart = dls.dls_chart;
-    view_colors &vc = view_colors::singleton();
+    stacked_bar_chart<std::string>& chart = dls.dls_chart;
+    view_colors& vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
@@ -731,14 +743,14 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
     dls.dls_rows.resize(row_number + 1);
     if (dls.dls_headers.empty()) {
         for (lpc = 0; lpc < ncols; lpc++) {
-            int    type    = sqlite3_column_type(stmt, lpc);
+            int type = sqlite3_column_type(stmt, lpc);
             string colname = sqlite3_column_name(stmt, lpc);
-            bool   graphable;
+            bool graphable;
 
-            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT) &&
-                         !binary_search(lnav_data.ld_db_key_names.begin(),
-                                        lnav_data.ld_db_key_names.end(),
-                                        colname));
+            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT)
+                         && !binary_search(lnav_data.ld_db_key_names.begin(),
+                                           lnav_data.ld_db_key_names.end(),
+                                           colname));
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
@@ -748,13 +760,15 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
         }
     }
     for (lpc = 0; lpc < ncols; lpc++) {
-        const char *value = (const char *)sqlite3_column_text(stmt, lpc);
-        db_label_source::header_meta &hm = dls.dls_headers[lpc];
+        const char* value = (const char*) sqlite3_column_text(stmt, lpc);
+        db_label_source::header_meta& hm = dls.dls_headers[lpc];
 
         dls.push_column(value);
-        if ((hm.hm_column_type == SQLITE_TEXT ||
-             hm.hm_column_type == SQLITE_NULL) && hm.hm_sub_type == 0) {
-            sqlite3_value *raw_value = sqlite3_column_value(stmt, lpc);
+        if ((hm.hm_column_type == SQLITE_TEXT
+             || hm.hm_column_type == SQLITE_NULL)
+            && hm.hm_sub_type == 0)
+        {
+            sqlite3_value* raw_value = sqlite3_column_value(stmt, lpc);
 
             switch (sqlite3_value_type(raw_value)) {
                 case SQLITE_TEXT:
@@ -768,12 +782,13 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
     return retval;
 }
 
-future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &fd)
+future<string>
+pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
 {
     auto out = ec.get_output();
 
     if (out) {
-        FILE *file = *out;
+        FILE* file = *out;
 
         return std::async(std::launch::async, [&fd, file]() {
             char buffer[1024];
@@ -791,8 +806,10 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         });
     } else {
         auto pp = make_shared<piper_proc>(
-            fd, false, lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
-            "lnav.out.XXXXXX")
+            fd,
+            false,
+            lnav::filesystem::open_temp_file(
+                ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
                 .map([](auto pair) {
                     ghc::filesystem::remove(pair.first);
 
@@ -805,7 +822,8 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
 
         lnav_data.ld_pipers.push_back(pp);
         snprintf(desc,
-                 sizeof(desc), "[%d] Output of %s",
+                 sizeof(desc),
+                 "[%d] Output of %s",
                  exec_count++,
                  cmdline.c_str());
         lnav_data.ld_active_files.fc_file_names[desc]
@@ -822,9 +840,10 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
     }
 }
 
-void add_global_vars(exec_context &ec)
+void
+add_global_vars(exec_context& ec)
 {
-    for (const auto &iter : lnav_config.lc_global_vars) {
+    for (const auto& iter : lnav_config.lc_global_vars) {
         shlex subber(iter.second);
         string str;
 
@@ -838,7 +857,8 @@ void add_global_vars(exec_context &ec)
     }
 }
 
-std::string exec_context::get_error_prefix()
+std::string
+exec_context::get_error_prefix()
 {
     if (this->ec_source.size() <= 1) {
         return "error: ";
@@ -849,7 +869,8 @@ std::string exec_context::get_error_prefix()
     return fmt::format("{}:{}: error: ", source.first, source.second);
 }
 
-void exec_context::set_output(const string &name, FILE *file, int (*closer)(FILE *))
+void
+exec_context::set_output(const string& name, FILE* file, int (*closer)(FILE*))
 {
     log_info("redirecting command output to: %s", name.c_str());
     this->ec_output_stack.back().second | [](auto out) {
@@ -857,10 +878,12 @@ void exec_context::set_output(const string &name, FILE *file, int (*closer)(FILE
             out.second(out.first);
         }
     };
-    this->ec_output_stack.back() = std::make_pair(name, std::make_pair(file, closer));
+    this->ec_output_stack.back()
+        = std::make_pair(name, std::make_pair(file, closer));
 }
 
-void exec_context::clear_output()
+void
+exec_context::clear_output()
 {
     log_info("redirecting command output to screen");
     this->ec_output_stack.back().second | [](auto out) {
@@ -871,23 +894,24 @@ void exec_context::clear_output()
     this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
 }
 
-exec_context::exec_context(std::vector<logline_value> *line_values,
+exec_context::exec_context(std::vector<logline_value>* line_values,
                            sql_callback_t sql_callback,
                            pipe_callback_t pipe_callback)
     : ec_line_values(line_values),
       ec_accumulator(std::make_unique<attr_line_t>()),
-      ec_sql_callback(sql_callback),
-      ec_pipe_callback(pipe_callback) {
+      ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
+{
     this->ec_local_vars.push(std::map<std::string, std::string>());
     this->ec_path_stack.emplace_back(".");
     this->ec_source.emplace("command", 1);
     this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
 }
 
-exec_context::output_guard::output_guard(exec_context &context,
+exec_context::output_guard::output_guard(exec_context& context,
                                          std::string name,
-                                         const nonstd::optional<output_t> &file)
-    : sg_context(context) {
+                                         const nonstd::optional<output_t>& file)
+    : sg_context(context)
+{
     if (file) {
         log_info("redirecting command output to: %s", name.c_str());
     }

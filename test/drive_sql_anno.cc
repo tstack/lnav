@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -39,7 +39,8 @@
 
 using namespace std;
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
     auto_mem<sqlite3> db(sqlite3_close);
@@ -52,8 +53,7 @@ int main(int argc, char *argv[])
     } else if (sqlite3_open(":memory:", db.out()) != SQLITE_OK) {
         fprintf(stderr, "error: unable to make sqlite memory database\n");
         retval = EXIT_FAILURE;
-    }
-    else {
+    } else {
         register_sqlite_funcs(db.in(), sqlite_registration_funcs);
 
         attr_line_t al(argv[1]);
@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
         annotate_sql_statement(al);
 
         printf("  %14s %s\n", " ", argv[1]);
-        for (auto &attr : al.get_attrs()) {
-            auto &lr = attr.sa_range;
+        for (auto& attr : al.get_attrs()) {
+            auto& lr = attr.sa_range;
 
             printf("  %14s %s%s\n",
                    attr.sa_type->sat_name,
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
             }
 
             auto avail_help = find_sql_help_for_line(al, near);
-            for (const auto &ht : avail_help) {
+            for (const auto& ht : avail_help) {
                 printf("%s: %s\n", ht->ht_name, ht->ht_summary);
             }
         }

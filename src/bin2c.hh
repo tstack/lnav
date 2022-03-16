@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,21 +32,24 @@
 #ifndef lnav_bin2c_hh
 #define lnav_bin2c_hh
 
-#include <zlib.h>
+#include <memory>
+
 #include <assert.h>
 #include <sys/types.h>
-
-#include <memory>
+#include <zlib.h>
 
 #include "base/intern_string.hh"
 
 struct bin_src_file {
-    bin_src_file(const char *name, const unsigned char *data,
-                 size_t compressed_size, size_t size)
+    bin_src_file(const char* name,
+                 const unsigned char* data,
+                 size_t compressed_size,
+                 size_t size)
         : bsf_name(name), bsf_data(new unsigned char[size + 1]), bsf_size(size)
     {
         uLongf zsize = size;
-        auto rc = uncompress(this->bsf_data.get(), &zsize, data, compressed_size);
+        auto rc
+            = uncompress(this->bsf_data.get(), &zsize, data, compressed_size);
         assert(rc == Z_OK);
         assert(zsize == size);
         this->bsf_data[size] = '\0';
@@ -57,13 +60,13 @@ struct bin_src_file {
         return string_fragment{this->bsf_data.get(), 0, (int) this->bsf_size};
     }
 
-    const char *get_name() const
+    const char* get_name() const
     {
         return this->bsf_name;
     }
 
 private:
-    const char *bsf_name;
+    const char* bsf_name;
     std::unique_ptr<unsigned char[]> bsf_data;
     ssize_t bsf_size;
 };

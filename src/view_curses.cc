@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -30,22 +30,21 @@
  */
 
 #ifdef __CYGWIN__
-#include <alloca.h>
+#    include <alloca.h>
 #endif
 
-#include "config.h"
-
+#include <chrono>
 #include <cmath>
 #include <string>
-#include <chrono>
 
+#include "ansi_scrubber.hh"
+#include "attr_line.hh"
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
-#include "view_curses.hh"
-#include "ansi_scrubber.hh"
+#include "config.h"
 #include "lnav_config.hh"
-#include "attr_line.hh"
 #include "shlex.hh"
+#include "view_curses.hh"
 
 using namespace std::chrono_literals;
 
@@ -58,12 +57,10 @@ string_attr_type view_curses::VC_FOREGROUND("foreground");
 string_attr_type view_curses::VC_BACKGROUND("background");
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
-    { 0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count() },
-    { 0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count() }
-};
+    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
+    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()}};
 
-ui_periodic_timer::ui_periodic_timer()
-        : upt_counter(0)
+ui_periodic_timer::ui_periodic_timer() : upt_counter(0)
 {
     struct sigaction sa;
 
@@ -76,19 +73,23 @@ ui_periodic_timer::ui_periodic_timer()
     }
 }
 
-ui_periodic_timer &ui_periodic_timer::singleton()
+ui_periodic_timer&
+ui_periodic_timer::singleton()
 {
     static ui_periodic_timer retval;
 
     return retval;
 }
 
-void ui_periodic_timer::sigalrm(int sig)
+void
+ui_periodic_timer::sigalrm(int sig)
 {
     singleton().upt_counter += 1;
 }
 
-alerter &alerter::singleton() {
+alerter&
+alerter::singleton()
+{
     static alerter retval;
 
     return retval;
@@ -99,12 +100,13 @@ struct utf_to_display_adjustment {
     int uda_offset;
 
     utf_to_display_adjustment(int utf_origin, int offset)
-        : uda_origin(utf_origin), uda_offset(offset) {
+        : uda_origin(utf_origin), uda_offset(offset){
 
-    };
+                                  };
 };
 
-void view_curses::awaiting_user_input()
+void
+view_curses::awaiting_user_input()
 {
     static const bool enabled = getenv("lnav_test") != nullptr;
     static const char OSC_INPUT[] = "\x1b]999;send-input\a";
@@ -114,21 +116,22 @@ void view_curses::awaiting_user_input()
     }
 }
 
-void view_curses::mvwattrline(WINDOW *window,
-                              int y,
-                              int x,
-                              attr_line_t &al,
-                              const struct line_range &lr_chars,
-                              view_colors::role_t base_role)
+void
+view_curses::mvwattrline(WINDOW* window,
+                         int y,
+                         int x,
+                         attr_line_t& al,
+                         const struct line_range& lr_chars,
+                         view_colors::role_t base_role)
 {
     attr_t text_attrs, attrs;
     int line_width_chars;
-    string_attrs_t &         sa   = al.get_attrs();
-    std::string &            line = al.get_string();
+    string_attrs_t& sa = al.get_attrs();
+    std::string& line = al.get_string();
     string_attrs_t::const_iterator iter;
     std::vector<utf_to_display_adjustment> utf_adjustments;
     int tab_count = 0;
-    char *expanded_line;
+    char* expanded_line;
     int exp_index = 0;
     int exp_offset = 0;
     std::string full_line;
@@ -137,11 +140,11 @@ void view_curses::mvwattrline(WINDOW *window,
 
     line_width_chars = lr_chars.length();
     tab_count = count(line.begin(), line.end(), '\t');
-    expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
+    expanded_line = (char*) alloca(line.size() + tab_count * 8 + 1);
 
-    short *fg_color = (short *) alloca(line_width_chars * sizeof(short));
+    short* fg_color = (short*) alloca(line_width_chars * sizeof(short));
     bool has_fg = false;
-    short *bg_color = (short *) alloca(line_width_chars * sizeof(short));
+    short* bg_color = (short*) alloca(line_width_chars * sizeof(short));
     bool has_bg = false;
     line_range lr_bytes{lr_chars.lr_start, lr_chars.lr_end};
     int char_index = 0;
@@ -190,8 +193,8 @@ void view_curses::mvwattrline(WINDOW *window,
                         }
                         exp_offset += offset;
                         utf_adjustments.emplace_back(lpc, offset);
-                        for (; offset &&
-                               (lpc + 1) < line.size(); lpc++, offset++) {
+                        for (; offset && (lpc + 1) < line.size();
+                             lpc++, offset++) {
                             expanded_line[exp_index] = line[lpc + 1];
                             exp_index += 1;
                         }
@@ -206,15 +209,16 @@ void view_curses::mvwattrline(WINDOW *window,
     expanded_line[exp_index] = '\0';
     full_line = std::string(expanded_line);
 
-    view_colors &vc = view_colors::singleton();
+    view_colors& vc = view_colors::singleton();
     text_attrs = vc.attrs_for_role(base_role);
-    attrs      = text_attrs;
+    attrs = text_attrs;
     wmove(window, y, x);
     wattron(window, attrs);
-    if (lr_bytes.lr_start < (int)full_line.size()) {
-        waddnstr(window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
+    if (lr_bytes.lr_start < (int) full_line.size()) {
+        waddnstr(
+            window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
     }
-    if (lr_bytes.lr_end > (int)full_line.size()) {
+    if (lr_bytes.lr_end > (int) full_line.size()) {
         whline(window, ' ', lr_bytes.lr_end - (full_line.size() + exp_offset));
     }
     wattroff(window, attrs);
@@ -226,16 +230,15 @@ void view_curses::mvwattrline(WINDOW *window,
         require(attr_range.lr_start >= 0);
         require(attr_range.lr_end >= -1);
 
-        if (!(iter->sa_type == &VC_ROLE ||
-              iter->sa_type == &VC_ROLE_FG ||
-              iter->sa_type == &VC_STYLE ||
-              iter->sa_type == &VC_GRAPHIC ||
-              iter->sa_type == &VC_FOREGROUND ||
-              iter->sa_type == &VC_BACKGROUND)) {
+        if (!(iter->sa_type == &VC_ROLE || iter->sa_type == &VC_ROLE_FG
+              || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC
+              || iter->sa_type == &VC_FOREGROUND
+              || iter->sa_type == &VC_BACKGROUND))
+        {
             continue;
         }
 
-        for (const auto &adj : utf_adjustments) {
+        for (const auto& adj : utf_adjustments) {
             // If the UTF adjustment is in the viewport, we need to adjust this
             // attribute.
             if (adj.uda_origin < iter->sa_range.lr_start) {
@@ -244,7 +247,7 @@ void view_curses::mvwattrline(WINDOW *window,
         }
 
         if (attr_range.lr_end != -1) {
-            for (const auto &adj : utf_adjustments) {
+            for (const auto& adj : utf_adjustments) {
                 if (adj.uda_origin < iter->sa_range.lr_end) {
                     attr_range.lr_end += adj.uda_offset;
                 }
@@ -257,12 +260,14 @@ void view_curses::mvwattrline(WINDOW *window,
         if (attr_range.lr_end < lr_chars.lr_start) {
             continue;
         }
-        attr_range.lr_start = std::max(0, attr_range.lr_start - lr_chars.lr_start);
+        attr_range.lr_start
+            = std::max(0, attr_range.lr_start - lr_chars.lr_start);
         if (attr_range.lr_start > line_width_chars) {
             continue;
         }
 
-        attr_range.lr_end = std::min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
+        attr_range.lr_end
+            = std::min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
 
         if (iter->sa_type == &VC_FOREGROUND) {
             if (!has_fg) {
@@ -270,11 +275,12 @@ void view_curses::mvwattrline(WINDOW *window,
             }
             short attr_fg = iter->sa_value.sav_int;
             if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_fg = vc.color_for_ident(
-                    &line[iter->sa_range.lr_start],
-                    iter->sa_range.length());
+                attr_fg = vc.color_for_ident(&line[iter->sa_range.lr_start],
+                                             iter->sa_range.length());
             }
-            std::fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], attr_fg);
+            std::fill(&fg_color[attr_range.lr_start],
+                      &fg_color[attr_range.lr_end],
+                      attr_fg);
             has_fg = true;
             continue;
         }
@@ -285,11 +291,12 @@ void view_curses::mvwattrline(WINDOW *window,
             }
             short attr_bg = iter->sa_value.sav_int;
             if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_bg = vc.color_for_ident(
-                    &line[iter->sa_range.lr_start],
-                    iter->sa_range.length());
+                attr_bg = vc.color_for_ident(&line[iter->sa_range.lr_start],
+                                             iter->sa_range.length());
             }
-            std::fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, attr_bg);
+            std::fill(bg_color + attr_range.lr_start,
+                      bg_color + attr_range.lr_end,
+                      attr_bg);
             has_bg = true;
             continue;
         }
@@ -305,45 +312,50 @@ void view_curses::mvwattrline(WINDOW *window,
                 attrs = iter->sa_value.sav_int & ~A_COLOR;
                 color_pair = PAIR_NUMBER(iter->sa_value.sav_int);
             } else if (iter->sa_type == &VC_ROLE) {
-                attrs = vc.attrs_for_role((view_colors::role_t) iter->sa_value.sav_int);
+                attrs = vc.attrs_for_role(
+                    (view_colors::role_t) iter->sa_value.sav_int);
                 color_pair = PAIR_NUMBER(attrs);
                 attrs = attrs & ~A_COLOR;
             } else if (iter->sa_type == &VC_ROLE_FG) {
                 short role_fg, role_bg;
-                attrs = vc.attrs_for_role((view_colors::role_t) iter->sa_value.sav_int);
+                attrs = vc.attrs_for_role(
+                    (view_colors::role_t) iter->sa_value.sav_int);
                 color_pair = PAIR_NUMBER(attrs);
                 pair_content(color_pair, &role_fg, &role_bg);
                 attrs = attrs & ~A_COLOR;
                 if (!has_fg) {
                     memset(fg_color, -1, line_width_chars * sizeof(short));
                 }
-                std::fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], (short) role_fg);
+                std::fill(&fg_color[attr_range.lr_start],
+                          &fg_color[attr_range.lr_end],
+                          (short) role_fg);
                 has_fg = true;
                 color_pair = 0;
             }
 
             if (graphic || attrs || color_pair > 0) {
                 int x_pos = x + attr_range.lr_start;
-                int ch_width = std::min(awidth, (line_width_chars - attr_range.lr_start));
+                int ch_width = std::min(
+                    awidth, (line_width_chars - attr_range.lr_start));
                 cchar_t row_ch[ch_width + 1];
 
-                if (attrs & (A_LEFT|A_RIGHT)) {
+                if (attrs & (A_LEFT | A_RIGHT)) {
                     short pair_fg, pair_bg;
 
                     pair_content(color_pair, &pair_fg, &pair_bg);
                     if (attrs & A_LEFT) {
-                        pair_fg = vc.color_for_ident(
-                            &line[iter->sa_range.lr_start],
-                            iter->sa_range.length());
+                        pair_fg
+                            = vc.color_for_ident(&line[iter->sa_range.lr_start],
+                                                 iter->sa_range.length());
                     }
                     if (attrs & A_RIGHT) {
-                        pair_bg = vc.color_for_ident(
-                            &line[iter->sa_range.lr_start],
-                            iter->sa_range.length());
+                        pair_bg
+                            = vc.color_for_ident(&line[iter->sa_range.lr_start],
+                                                 iter->sa_range.length());
                     }
                     color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
 
-                    attrs &= ~(A_LEFT|A_RIGHT);
+                    attrs &= ~(A_LEFT | A_RIGHT);
                 }
 
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
@@ -358,8 +370,8 @@ void view_curses::mvwattrline(WINDOW *window,
                         clear_rev = true;
                     }
                     if (color_pair > 0) {
-                        row_ch[lpc].attr =
-                            attrs | (row_ch[lpc].attr & ~A_COLOR);
+                        row_ch[lpc].attr
+                            = attrs | (row_ch[lpc].attr & ~A_COLOR);
 #ifdef NCURSES_EXT_COLORS
                         row_ch[lpc].ext_color = color_pair;
 #else
@@ -408,26 +420,26 @@ void view_curses::mvwattrline(WINDOW *window,
             int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
 
             row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
-#ifdef NCURSES_EXT_COLORS
+#    ifdef NCURSES_EXT_COLORS
             row_ch[lpc].ext_color = color_pair;
-#else
+#    else
             row_ch[lpc].attr |= COLOR_PAIR(color_pair);
-#endif
+#    endif
         }
         mvwadd_wchnstr(window, y, x, row_ch, ch_width);
     }
 #endif
 }
 
-view_colors &view_colors::singleton()
+view_colors&
+view_colors::singleton()
 {
     static view_colors s_vc;
 
     return s_vc;
 }
 
-view_colors::view_colors()
-    : vc_dyn_pairs(0)
+view_colors::view_colors() : vc_dyn_pairs(0)
 {
     size_t color_index = 0;
     for (int z = 0; z < 6; z++) {
@@ -456,14 +468,15 @@ static std::string COLOR_NAMES[] = {
 
 class color_listener : public lnav_config_listener {
 public:
-    void reload_config(error_reporter &reporter) override {
+    void reload_config(error_reporter& reporter) override
+    {
         if (!view_colors::initialized) {
             return;
         }
 
-        auto &vc = view_colors::singleton();
+        auto& vc = view_colors::singleton();
 
-        for (const auto &pair : lnav_config.lc_ui_theme_defs) {
+        for (const auto& pair : lnav_config.lc_ui_theme_defs) {
             vc.init_roles(pair.second, reporter);
         }
 
@@ -484,9 +497,10 @@ public:
 };
 
 static color_listener _COLOR_LISTENER;
-term_color_palette *view_colors::vc_active_palette;
+term_color_palette* view_colors::vc_active_palette;
 
-void view_colors::init()
+void
+view_colors::init()
 {
     vc_active_palette = ansi_colors();
     if (has_colors()) {
@@ -511,15 +525,16 @@ void view_colors::init()
                 if (fg == 0 && bg == 0)
                     continue;
 
-                if (lnav_config.lc_ui_default_colors &&
-                    ansi_colors_to_curses[fg] == COLOR_WHITE &&
-                    ansi_colors_to_curses[bg] == COLOR_BLACK) {
+                if (lnav_config.lc_ui_default_colors
+                    && ansi_colors_to_curses[fg] == COLOR_WHITE
+                    && ansi_colors_to_curses[bg] == COLOR_BLACK)
+                {
                     init_pair(ansi_color_pair_index(fg, bg), -1, -1);
                 } else {
                     auto curs_bg = ansi_colors_to_curses[bg];
 
-                    if (lnav_config.lc_ui_default_colors &&
-                        curs_bg == COLOR_BLACK) {
+                    if (lnav_config.lc_ui_default_colors
+                        && curs_bg == COLOR_BLACK) {
                         curs_bg = -1;
                     }
                     init_pair(ansi_color_pair_index(fg, bg),
@@ -539,7 +554,7 @@ void view_colors::init()
     initialized = true;
 
     {
-        auto reporter = [](const void *, const std::string &) {
+        auto reporter = [](const void*, const std::string&) {
 
         };
 
@@ -547,7 +562,8 @@ void view_colors::init()
     }
 }
 
-inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
+inline attr_t
+attr_for_colors(int& pair_base, short fg, short bg)
 {
     if (fg == -1) {
         fg = COLOR_WHITE;
@@ -589,10 +605,12 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
     return retval;
 }
 
-std::pair<attr_t, attr_t> view_colors::to_attrs(
-    int &pair_base,
-    const lnav_theme &lt, const style_config &sc, const style_config &fallback_sc,
-    lnav_config_listener::error_reporter &reporter)
+std::pair<attr_t, attr_t>
+view_colors::to_attrs(int& pair_base,
+                      const lnav_theme& lt,
+                      const style_config& sc,
+                      const style_config& fallback_sc,
+                      lnav_config_listener::error_reporter& reporter)
 {
     std::string fg1, bg1, fg_color, bg_color;
 
@@ -607,18 +625,19 @@ std::pair<attr_t, attr_t> view_colors::to_attrs(
     shlex(fg1).eval(fg_color, lt.lt_vars);
     shlex(bg1).eval(bg_color, lt.lt_vars);
 
-    auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse([&](const auto& msg) {
-        reporter(&sc.sc_color, msg);
-        return styling::color_unit::make_empty();
-    });
-    auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse([&](const auto& msg) {
-        reporter(&sc.sc_background_color, msg);
-        return styling::color_unit::make_empty();
-    });
+    auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
+        [&](const auto& msg) {
+            reporter(&sc.sc_color, msg);
+            return styling::color_unit::make_empty();
+        });
+    auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
+        [&](const auto& msg) {
+            reporter(&sc.sc_background_color, msg);
+            return styling::color_unit::make_empty();
+        });
 
-    attr_t retval1 = attr_for_colors(pair_base,
-                                     this->match_color(fg),
-                                     this->match_color(bg));
+    attr_t retval1 = attr_for_colors(
+        pair_base, this->match_color(fg), this->match_color(bg));
     attr_t retval2 = 0;
 
     if (sc.sc_underline) {
@@ -633,23 +652,24 @@ std::pair<attr_t, attr_t> view_colors::to_attrs(
     return {retval1, retval2};
 }
 
-void view_colors::init_roles(const lnav_theme &lt,
-    lnav_config_listener::error_reporter &reporter)
+void
+view_colors::init_roles(const lnav_theme& lt,
+                        lnav_config_listener::error_reporter& reporter)
 {
     int color_pair_base = VC_ANSI_END + 1;
     rgb_color fg, bg;
     std::string err;
 
     if (COLORS == 256) {
-        const auto &ident_sc = lt.lt_style_identifier;
+        const auto& ident_sc = lt.lt_style_identifier;
         int ident_bg = (lnav_config.lc_ui_default_colors ? -1 : COLOR_BLACK);
 
         if (!ident_sc.sc_background_color.empty()) {
             std::string bg_color;
 
             shlex(ident_sc.sc_background_color).eval(bg_color, lt.lt_vars);
-            auto rgb_bg = rgb_color::from_str(bg_color)
-                .unwrapOrElse([&](const auto& msg) {
+            auto rgb_bg = rgb_color::from_str(bg_color).unwrapOrElse(
+                [&](const auto& msg) {
                     reporter(&ident_sc.sc_background_color, msg);
                     return rgb_color{};
                 });
@@ -660,8 +680,8 @@ void view_colors::init_roles(const lnav_theme &lt,
     }
 
     /* Setup the mappings from roles to actual colors. */
-    this->vc_role_colors[VCR_TEXT] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_text, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_TEXT] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_text, lt.lt_style_text, reporter);
 
     {
         int pnum = PAIR_NUMBER(this->vc_role_colors[VCR_TEXT].first);
@@ -676,16 +696,18 @@ void view_colors::init_roles(const lnav_theme &lt,
 
                 auto fg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
                 auto bg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_bg]);
-                auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
-                auto bg_str = bg_iter == lt.lt_vars.end() ? "" : bg_iter->second;
+                auto fg_str = fg_iter == lt.lt_vars.end() ? ""
+                                                          : fg_iter->second;
+                auto bg_str = bg_iter == lt.lt_vars.end() ? ""
+                                                          : bg_iter->second;
 
-                auto rgb_fg = rgb_color::from_str(fg_str)
-                    .unwrapOrElse([&](const auto& msg) {
+                auto rgb_fg = rgb_color::from_str(fg_str).unwrapOrElse(
+                    [&](const auto& msg) {
                         reporter(&fg_str, msg);
                         return rgb_color{};
                     });
-                auto rgb_bg = rgb_color::from_str(bg_str)
-                    .unwrapOrElse([&](const auto& msg) {
+                auto rgb_bg = rgb_color::from_str(bg_str).unwrapOrElse(
+                    [&](const auto& msg) {
                         reporter(&fg_str, msg);
                         return rgb_color{};
                     });
@@ -716,137 +738,194 @@ void view_colors::init_roles(const lnav_theme &lt,
         this->vc_role_colors[VCR_TEXT].second |= A_DIM;
     }
     this->vc_role_colors[VCR_SEARCH] = std::make_pair(A_REVERSE, A_REVERSE);
-    this->vc_role_colors[VCR_IDENTIFIER] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_identifier, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_OK] = this->to_attrs(color_pair_base,
-                                                  lt, lt.lt_style_ok,
-                                                  lt.lt_style_text,
-                                                  reporter);
-    this->vc_role_colors[VCR_ERROR] = this->to_attrs(color_pair_base,
-                                                     lt, lt.lt_style_error,
-                                                     lt.lt_style_text,
-                                                     reporter);
-    this->vc_role_colors[VCR_WARNING] = this->to_attrs(color_pair_base,
-                                                       lt, lt.lt_style_warning,
-                                                       lt.lt_style_text,
-                                                       reporter);
-    this->vc_role_colors[VCR_ALT_ROW] = this->to_attrs(color_pair_base,
-                                                       lt, lt.lt_style_alt_text,
-                                                       lt.lt_style_text,
-                                                       reporter);
-    this->vc_role_colors[VCR_HIDDEN] = this->to_attrs(color_pair_base,
-                                                      lt, lt.lt_style_hidden,
-                                                      lt.lt_style_text,
-                                                      reporter);
-    this->vc_role_colors[VCR_ADJUSTED_TIME] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_adjusted_time, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_SKEWED_TIME] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_skewed_time, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_OFFSET_TIME] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_offset_time, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_INVALID_MSG] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_invalid_msg, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_IDENTIFIER]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_identifier,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_OK] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_ok, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_ERROR] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_error, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_WARNING] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_warning, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_ALT_ROW] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_alt_text, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_HIDDEN] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_hidden, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_ADJUSTED_TIME]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_adjusted_time,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_SKEWED_TIME]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_skewed_time,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_OFFSET_TIME]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_offset_time,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_INVALID_MSG]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_invalid_msg,
+                         lt.lt_style_text,
+                         reporter);
 
-    this->vc_role_colors[VCR_STATUS] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_status, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_WARN_STATUS] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_warn_status, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_ALERT_STATUS] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_alert_status, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_ACTIVE_STATUS] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_active_status, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_ACTIVE_STATUS2] =
-        std::make_pair(this->vc_role_colors[VCR_ACTIVE_STATUS].first | A_BOLD,
-                       this->vc_role_colors[VCR_ACTIVE_STATUS].second | A_BOLD);
-    this->vc_role_colors[VCR_STATUS_TITLE] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_status_title, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_STATUS_SUBTITLE] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_status_subtitle, lt.lt_style_status, reporter);
+    this->vc_role_colors[VCR_STATUS] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_status, lt.lt_style_status, reporter);
+    this->vc_role_colors[VCR_WARN_STATUS]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_warn_status,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_ALERT_STATUS]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_alert_status,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_ACTIVE_STATUS]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_active_status,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_ACTIVE_STATUS2] = std::make_pair(
+        this->vc_role_colors[VCR_ACTIVE_STATUS].first | A_BOLD,
+        this->vc_role_colors[VCR_ACTIVE_STATUS].second | A_BOLD);
+    this->vc_role_colors[VCR_STATUS_TITLE]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_title,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_STATUS_SUBTITLE]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_subtitle,
+                         lt.lt_style_status,
+                         reporter);
 
-    this->vc_role_colors[VCR_STATUS_HOTKEY] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_status_hotkey, lt.lt_style_status,
-        reporter);
-    this->vc_role_colors[VCR_STATUS_TITLE_HOTKEY] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_status_title_hotkey, lt.lt_style_status,
-        reporter);
-    this->vc_role_colors[VCR_STATUS_DISABLED_TITLE] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_status_disabled_title, lt.lt_style_status,
-        reporter);
+    this->vc_role_colors[VCR_STATUS_HOTKEY]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_hotkey,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_STATUS_TITLE_HOTKEY]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_title_hotkey,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_STATUS_DISABLED_TITLE]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_disabled_title,
+                         lt.lt_style_status,
+                         reporter);
 
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status_subtitle.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status_title.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_TITLE_TO_SUB] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color
+            = lt.lt_style_status_title.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_TITLE_TO_SUB] = this->to_attrs(
+            color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status_title.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status_subtitle.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_SUB_TO_TITLE] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color
+            = lt.lt_style_status_subtitle.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_SUB_TO_TITLE] = this->to_attrs(
+            color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
 
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status_subtitle.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_SUB_TO_NORMAL] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color
+            = lt.lt_style_status_subtitle.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_SUB_TO_NORMAL] = this->to_attrs(
+            color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status_subtitle.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_NORMAL_TO_SUB] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color = lt.lt_style_status.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_NORMAL_TO_SUB] = this->to_attrs(
+            color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
 
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status_title.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_TITLE_TO_NORMAL] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color
+            = lt.lt_style_status_title.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_TITLE_TO_NORMAL]
+            = this->to_attrs(
+                color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
         style_config stitch_sc;
 
         stitch_sc.sc_color = lt.lt_style_status_title.sc_background_color;
-        stitch_sc.sc_background_color =
-            lt.lt_style_status.sc_background_color;
-        this->vc_role_colors[VCR_STATUS_STITCH_NORMAL_TO_TITLE] =
-            this->to_attrs(color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
+        stitch_sc.sc_background_color = lt.lt_style_status.sc_background_color;
+        this->vc_role_colors[VCR_STATUS_STITCH_NORMAL_TO_TITLE]
+            = this->to_attrs(
+                color_pair_base, lt, stitch_sc, lt.lt_style_status, reporter);
     }
 
-    this->vc_role_colors[VCR_INACTIVE_STATUS] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_inactive_status, lt.lt_style_status, reporter);
-    this->vc_role_colors[VCR_INACTIVE_ALERT_STATUS] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_inactive_alert_status, lt.lt_style_alert_status, reporter);
+    this->vc_role_colors[VCR_INACTIVE_STATUS]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_inactive_status,
+                         lt.lt_style_status,
+                         reporter);
+    this->vc_role_colors[VCR_INACTIVE_ALERT_STATUS]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_inactive_alert_status,
+                         lt.lt_style_alert_status,
+                         reporter);
 
     this->vc_role_colors[VCR_POPUP] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_popup, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_FOCUSED] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_focused, lt.lt_style_focused, reporter);
-    this->vc_role_colors[VCR_DISABLED_FOCUSED] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_disabled_focused, lt.lt_style_disabled_focused, reporter);
+    this->vc_role_colors[VCR_FOCUSED] = this->to_attrs(color_pair_base,
+                                                       lt,
+                                                       lt.lt_style_focused,
+                                                       lt.lt_style_focused,
+                                                       reporter);
+    this->vc_role_colors[VCR_DISABLED_FOCUSED]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_disabled_focused,
+                         lt.lt_style_disabled_focused,
+                         reporter);
     this->vc_role_colors[VCR_COLOR_HINT] = std::make_pair(
         COLOR_PAIR(color_pair_base), COLOR_PAIR(color_pair_base + 1));
     color_pair_base += 2;
 
-    this->vc_role_colors[VCR_SCROLLBAR] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_scrollbar, lt.lt_style_status, reporter);
+    this->vc_role_colors[VCR_SCROLLBAR] = this->to_attrs(color_pair_base,
+                                                         lt,
+                                                         lt.lt_style_scrollbar,
+                                                         lt.lt_style_status,
+                                                         reporter);
     {
         style_config bar_sc;
 
@@ -864,53 +943,88 @@ void view_colors::init_roles(const lnav_theme &lt,
             color_pair_base, lt, bar_sc, lt.lt_style_warn_status, reporter);
     }
 
-    this->vc_role_colors[VCR_KEYWORD] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_keyword, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_STRING] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_string, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_COMMENT] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_comment, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_DOC_DIRECTIVE] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_doc_directive, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_VARIABLE] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_variable, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_SYMBOL] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_symbol, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_KEYWORD] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_keyword, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_STRING] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_string, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_COMMENT] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_comment, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_DOC_DIRECTIVE]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_doc_directive,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_VARIABLE] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_variable, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_SYMBOL] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_symbol, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_NUMBER] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_number, lt.lt_style_text, reporter);
 
-    this->vc_role_colors[VCR_RE_SPECIAL] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_re_special, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_RE_SPECIAL]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_re_special,
+                         lt.lt_style_text,
+                         reporter);
     this->vc_role_colors[VCR_RE_REPEAT] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_re_repeat, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_FILE] = this->to_attrs(color_pair_base,
-        lt, lt.lt_style_file, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_FILE] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_file, lt.lt_style_text, reporter);
 
-    this->vc_role_colors[VCR_DIFF_DELETE]  = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_diff_delete, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_DIFF_ADD]     = this->to_attrs(
+    this->vc_role_colors[VCR_DIFF_DELETE]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_diff_delete,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_DIFF_ADD] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_diff_add, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_DIFF_SECTION] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_diff_section, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_DIFF_SECTION]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_diff_section,
+                         lt.lt_style_text,
+                         reporter);
 
-    this->vc_role_colors[VCR_LOW_THRESHOLD] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_low_threshold, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_MED_THRESHOLD] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_med_threshold, lt.lt_style_text, reporter);
-    this->vc_role_colors[VCR_HIGH_THRESHOLD] = this->to_attrs(
-        color_pair_base, lt, lt.lt_style_high_threshold, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_LOW_THRESHOLD]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_low_threshold,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_MED_THRESHOLD]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_med_threshold,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[VCR_HIGH_THRESHOLD]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_high_threshold,
+                         lt.lt_style_text,
+                         reporter);
 
     for (auto level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
          level < LEVEL__MAX;
-         level = static_cast<log_level_t>(level + 1)) {
+         level = static_cast<log_level_t>(level + 1))
+    {
         auto level_iter = lt.lt_level_styles.find(level);
 
         if (level_iter == lt.lt_level_styles.end()) {
-            this->vc_level_attrs[level] = this->to_attrs(
-                color_pair_base, lt, lt.lt_style_text, lt.lt_style_text, reporter);
+            this->vc_level_attrs[level] = this->to_attrs(color_pair_base,
+                                                         lt,
+                                                         lt.lt_style_text,
+                                                         lt.lt_style_text,
+                                                         reporter);
         } else {
-            this->vc_level_attrs[level] = this->to_attrs(
-                color_pair_base, lt, level_iter->second, lt.lt_style_text, reporter);
+            this->vc_level_attrs[level] = this->to_attrs(color_pair_base,
+                                                         lt,
+                                                         level_iter->second,
+                                                         lt.lt_style_text,
+                                                         reporter);
         }
     }
 
@@ -920,7 +1034,8 @@ void view_colors::init_roles(const lnav_theme &lt,
     this->vc_dyn_pairs.clear();
 }
 
-int view_colors::ensure_color_pair(short fg, short bg)
+int
+view_colors::ensure_color_pair(short fg, short bg)
 {
     require(fg >= -100);
     require(bg >= -100);
@@ -940,12 +1055,11 @@ int view_colors::ensure_color_pair(short fg, short bg)
     pair_content(def_pair, &def_fg, &def_bg);
 
     int new_pair = this->vc_color_pair_end + this->vc_dyn_pairs.size();
-    auto retval = PAIR_NUMBER(attr_for_colors(new_pair,
-                                              fg == -1 ? def_fg : fg,
-                                              bg == -1 ? def_bg : bg));
+    auto retval = PAIR_NUMBER(attr_for_colors(
+        new_pair, fg == -1 ? def_fg : fg, bg == -1 ? def_bg : bg));
 
     if (initialized) {
-        struct dyn_pair dp = { (int) retval };
+        struct dyn_pair dp = {(int) retval};
 
         this->vc_dyn_pairs.put(index_pair, dp);
     }
@@ -953,8 +1067,9 @@ int view_colors::ensure_color_pair(short fg, short bg)
     return retval;
 }
 
-int view_colors::ensure_color_pair(const styling::color_unit &rgb_fg,
-                                   const styling::color_unit &rgb_bg)
+int
+view_colors::ensure_color_pair(const styling::color_unit& rgb_fg,
+                               const styling::color_unit& rgb_bg)
 {
     auto fg = this->match_color(rgb_fg);
     auto bg = this->match_color(rgb_bg);
@@ -962,30 +1077,30 @@ int view_colors::ensure_color_pair(const styling::color_unit &rgb_fg,
     return this->ensure_color_pair(fg, bg);
 }
 
-short view_colors::match_color(const styling::color_unit &color) const
+short
+view_colors::match_color(const styling::color_unit& color) const
 {
     return color.cu_value.match(
-        [](styling::semantic) {
-            return MATCH_COLOR_SEMANTIC;
-        },
+        [](styling::semantic) { return MATCH_COLOR_SEMANTIC; },
         [](const rgb_color& color) {
             if (color.empty()) {
                 return MATCH_COLOR_DEFAULT;
             }
 
             return vc_active_palette->match_color(lab_color(color));
-        }
-    );
+        });
 }
 
-int view_colors::color_for_ident(const char *str, size_t len) const
+int
+view_colors::color_for_ident(const char* str, size_t len) const
 {
-    unsigned long index = crc32(1, (const Bytef*)str, len);
+    unsigned long index = crc32(1, (const Bytef*) str, len);
     int retval;
 
     if (COLORS >= 256) {
         if (str[0] == '#' && (len == 4 || len == 7)) {
-            auto fg_res = styling::color_unit::from_str(string_fragment(str, 0, len));
+            auto fg_res
+                = styling::color_unit::from_str(string_fragment(str, 0, len));
             if (fg_res.isOk()) {
                 return this->match_color(fg_res.unwrap());
             }
@@ -993,19 +1108,19 @@ int view_colors::color_for_ident(const char *str, size_t len) const
 
         unsigned long offset = index % HI_COLOR_COUNT;
         retval = this->vc_highlight_colors[offset];
-    }
-    else {
+    } else {
         retval = -1;
     }
 
     return retval;
 }
 
-attr_t view_colors::attrs_for_ident(const char *str, size_t len)
+attr_t
+view_colors::attrs_for_ident(const char* str, size_t len)
 {
     auto retval = this->attrs_for_role(VCR_IDENTIFIER);
 
-    if (retval & (A_LEFT|A_RIGHT)) {
+    if (retval & (A_LEFT | A_RIGHT)) {
         auto color_pair = PAIR_NUMBER(retval);
         short pair_fg, pair_bg;
 
@@ -1017,19 +1132,17 @@ attr_t view_colors::attrs_for_ident(const char *str, size_t len)
             pair_bg = this->color_for_ident(str, len);
         }
         color_pair = this->ensure_color_pair(pair_fg, pair_bg);
-        retval &= ~(A_COLOR|A_LEFT|A_RIGHT);
+        retval &= ~(A_COLOR | A_LEFT | A_RIGHT);
         retval |= COLOR_PAIR(color_pair);
     }
 
     return retval;
 }
 
-lab_color::lab_color(const rgb_color &rgb)
+lab_color::lab_color(const rgb_color& rgb)
 {
-    double r = rgb.rc_r / 255.0,
-        g = rgb.rc_g / 255.0,
-        b = rgb.rc_b / 255.0,
-        x, y, z;
+    double r = rgb.rc_r / 255.0, g = rgb.rc_g / 255.0, b = rgb.rc_b / 255.0, x,
+           y, z;
 
     r = (r > 0.04045) ? pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
     g = (g > 0.04045) ? pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
@@ -1039,16 +1152,17 @@ lab_color::lab_color(const rgb_color &rgb)
     y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
     z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
 
-    x = (x > 0.008856) ? pow(x, 1.0/3.0) : (7.787 * x) + 16.0/116.0;
-    y = (y > 0.008856) ? pow(y, 1.0/3.0) : (7.787 * y) + 16.0/116.0;
-    z = (z > 0.008856) ? pow(z, 1.0/3.0) : (7.787 * z) + 16.0/116.0;
+    x = (x > 0.008856) ? pow(x, 1.0 / 3.0) : (7.787 * x) + 16.0 / 116.0;
+    y = (y > 0.008856) ? pow(y, 1.0 / 3.0) : (7.787 * y) + 16.0 / 116.0;
+    z = (z > 0.008856) ? pow(z, 1.0 / 3.0) : (7.787 * z) + 16.0 / 116.0;
 
     this->lc_l = (116.0 * y) - 16;
     this->lc_a = 500.0 * (x - y);
     this->lc_b = 200.0 * (y - z);
 }
 
-double lab_color::deltaE(const lab_color &other) const
+double
+lab_color::deltaE(const lab_color& other) const
 {
     double deltaL = this->lc_l - other.lc_l;
     double deltaA = this->lc_a - other.lc_a;
@@ -1063,11 +1177,13 @@ double lab_color::deltaE(const lab_color &other) const
     double deltaLKlsl = deltaL / (1.0);
     double deltaCkcsc = deltaC / (sc);
     double deltaHkhsh = deltaH / (sh);
-    double i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
+    double i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc
+        + deltaHkhsh * deltaHkhsh;
     return i < 0.0 ? 0.0 : sqrt(i);
 }
 
-bool lab_color::operator<(const lab_color &rhs) const
+bool
+lab_color::operator<(const lab_color& rhs) const
 {
     if (lc_l < rhs.lc_l)
         return true;
@@ -1080,29 +1196,32 @@ bool lab_color::operator<(const lab_color &rhs) const
     return lc_b < rhs.lc_b;
 }
 
-bool lab_color::operator>(const lab_color &rhs) const
+bool
+lab_color::operator>(const lab_color& rhs) const
 {
     return rhs < *this;
 }
 
-bool lab_color::operator<=(const lab_color &rhs) const
+bool
+lab_color::operator<=(const lab_color& rhs) const
 {
     return !(rhs < *this);
 }
 
-bool lab_color::operator>=(const lab_color &rhs) const
+bool
+lab_color::operator>=(const lab_color& rhs) const
 {
     return !(*this < rhs);
 }
 
-bool lab_color::operator==(const lab_color &rhs) const
+bool
+lab_color::operator==(const lab_color& rhs) const
 {
-    return lc_l == rhs.lc_l &&
-           lc_a == rhs.lc_a &&
-           lc_b == rhs.lc_b;
+    return lc_l == rhs.lc_l && lc_a == rhs.lc_a && lc_b == rhs.lc_b;
 }
 
-bool lab_color::operator!=(const lab_color &rhs) const
+bool
+lab_color::operator!=(const lab_color& rhs) const
 {
     return !(rhs == *this);
 }

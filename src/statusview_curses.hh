@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -35,24 +35,21 @@
 #include <string>
 #include <vector>
 
-#include "view_curses.hh"
 #include "ansi_scrubber.hh"
+#include "view_curses.hh"
 
 /**
  * Container for individual status values.
  */
 class status_field {
 public:
-
     /**
      * @param width The maximum width of the field in characters.
      * @param role The color role for this field, defaults to VCR_STATUS.
      */
     status_field(int width = 1,
                  view_colors::role_t role = view_colors::VCR_STATUS)
-        : sf_width(width),
-          sf_role(role) {
-    };
+        : sf_width(width), sf_role(role){};
 
     virtual ~status_field() = default;
 
@@ -65,9 +62,9 @@ public:
      * @param fmt The format string.
      * @param ... Arguments for the format.
      */
-    status_field& set_value(const char *fmt, ...)
+    status_field& set_value(const char* fmt, ...)
     {
-        char    buffer[256];
+        char buffer[256];
         va_list args;
 
         va_start(args, fmt);
@@ -80,54 +77,103 @@ public:
 
     void set_stitch_value(view_colors::role_t left, view_colors::role_t right);
 
-    void set_left_pad(size_t val) { this->sf_left_pad = val; };
-    size_t get_left_pad() const { return this->sf_left_pad; };
+    void set_left_pad(size_t val)
+    {
+        this->sf_left_pad = val;
+    };
+    size_t get_left_pad() const
+    {
+        return this->sf_left_pad;
+    };
 
     /** @return The string value for this field. */
-    attr_line_t &get_value() { return this->sf_value; };
+    attr_line_t& get_value()
+    {
+        return this->sf_value;
+    };
 
-    void right_justify(bool yes) { this->sf_right_justify = yes; };
-    bool is_right_justified() const { return this->sf_right_justify; };
+    void right_justify(bool yes)
+    {
+        this->sf_right_justify = yes;
+    };
+    bool is_right_justified() const
+    {
+        return this->sf_right_justify;
+    };
 
-    status_field& set_cylon(bool yes) {
+    status_field& set_cylon(bool yes)
+    {
         this->sf_cylon = yes;
         return *this;
     };
-    bool is_cylon() const { return this->sf_cylon; };
+    bool is_cylon() const
+    {
+        return this->sf_cylon;
+    };
 
     void do_cylon();
 
     /** @return True if this field's value is an empty string. */
-    bool empty() const { return this->sf_value.get_string().empty(); };
+    bool empty() const
+    {
+        return this->sf_value.get_string().empty();
+    };
 
-    void clear() { this->sf_value.clear(); };
+    void clear()
+    {
+        this->sf_value.clear();
+    };
 
     /** @param role The color role for this field. */
-    void set_role(view_colors::role_t role) { this->sf_role = role; };
+    void set_role(view_colors::role_t role)
+    {
+        this->sf_role = role;
+    };
     /** @return The color role for this field. */
-    view_colors::role_t get_role() const { return this->sf_role; };
+    view_colors::role_t get_role() const
+    {
+        return this->sf_role;
+    };
 
     /** @param width The maximum display width, in characters. */
-    void set_width(ssize_t width) { this->sf_width = width; };
+    void set_width(ssize_t width)
+    {
+        this->sf_width = width;
+    };
     /** @param width The maximum display width, in characters. */
-    ssize_t get_width() const { return this->sf_width; };
+    ssize_t get_width() const
+    {
+        return this->sf_width;
+    };
 
     /** @param width The maximum display width, in characters. */
-    void set_min_width(int width) { this->sf_min_width = width; };
+    void set_min_width(int width)
+    {
+        this->sf_min_width = width;
+    };
     /** @param width The maximum display width, in characters. */
-    size_t get_min_width() const { return this->sf_min_width; };
+    size_t get_min_width() const
+    {
+        return this->sf_min_width;
+    };
 
-    void set_share(int share) { this->sf_share = share; };
-    int get_share() const { return this->sf_share; };
+    void set_share(int share)
+    {
+        this->sf_share = share;
+    };
+    int get_share() const
+    {
+        return this->sf_share;
+    };
 
 protected:
-    ssize_t             sf_width;     /*< The maximum display width, in chars. */
-    ssize_t             sf_min_width{0}; /*< The minimum display width, in chars. */
-    bool                sf_right_justify{false};
-    bool                sf_cylon{false};
-    ssize_t             sf_cylon_pos{0};
-    attr_line_t         sf_value; /*< The value to display for this field. */
-    view_colors::role_t sf_role;  /*< The color role for this field. */
+    ssize_t sf_width; /*< The maximum display width, in chars. */
+    ssize_t sf_min_width{0}; /*< The minimum display width, in chars. */
+    bool sf_right_justify{false};
+    bool sf_cylon{false};
+    ssize_t sf_cylon_pos{0};
+    attr_line_t sf_value; /*< The value to display for this field. */
+    view_colors::role_t sf_role; /*< The color role for this field. */
     int sf_share{0};
     size_t sf_left_pad{0};
 };
@@ -150,34 +196,57 @@ public:
      * @param field The index of the field to return.
      * @return A reference to the field at the given index.
      */
-    virtual status_field &statusview_value_for_field(int field) = 0;
+    virtual status_field& statusview_value_for_field(int field) = 0;
 };
 
 /**
  * A view that displays a collection of fields in a line on the display.
  */
-class statusview_curses
-    : public view_curses {
+class statusview_curses : public view_curses {
 public:
-    void set_data_source(status_data_source *src) { this->sc_source = src; };
-    status_data_source *get_data_source() { return this->sc_source; };
+    void set_data_source(status_data_source* src)
+    {
+        this->sc_source = src;
+    };
+    status_data_source* get_data_source()
+    {
+        return this->sc_source;
+    };
 
-    void set_top(int top) { this->sc_top = top; };
-    int get_top() const { return this->sc_top; };
+    void set_top(int top)
+    {
+        this->sc_top = top;
+    };
+    int get_top() const
+    {
+        return this->sc_top;
+    };
 
-    void set_window(WINDOW *win) { this->sc_window = win; };
-    WINDOW *get_window() { return this->sc_window; };
+    void set_window(WINDOW* win)
+    {
+        this->sc_window = win;
+    };
+    WINDOW* get_window()
+    {
+        return this->sc_window;
+    };
 
-    void set_enabled(bool value) { this->sc_enabled = value; };
-    bool get_enabled() const { return this->sc_enabled; };
+    void set_enabled(bool value)
+    {
+        this->sc_enabled = value;
+    };
+    bool get_enabled() const
+    {
+        return this->sc_enabled;
+    };
 
     void window_change();
 
     void do_update() override;
 
 private:
-    status_data_source *sc_source{nullptr};
-    WINDOW *            sc_window{nullptr};
+    status_data_source* sc_source{nullptr};
+    WINDOW* sc_window{nullptr};
     int sc_top{0};
     unsigned long sc_last_width{0};
     bool sc_enabled{true};

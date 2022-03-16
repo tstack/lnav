@@ -21,46 +21,47 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file curl_looper.cc
  */
 
-#include "config.h"
-
 #include <algorithm>
 
-#if defined(HAVE_LIBCURL)
-#include <curl/multi.h>
+#include "config.h"
 
-#include "curl_looper.hh"
+#if defined(HAVE_LIBCURL)
+#    include <curl/multi.h>
+
+#    include "curl_looper.hh"
 
 using namespace std;
 
 struct curl_request_eq {
-    explicit curl_request_eq(const std::string &name) : cre_name(name) {
-    };
+    explicit curl_request_eq(const std::string& name) : cre_name(name){};
 
-    bool operator()(const std::shared_ptr<curl_request>& cr) const {
+    bool operator()(const std::shared_ptr<curl_request>& cr) const
+    {
         return this->cre_name == cr->get_name();
     };
 
-    bool operator()(const pair<mstime_t, std::shared_ptr<curl_request>> &pair) const {
+    bool operator()(
+        const pair<mstime_t, std::shared_ptr<curl_request>>& pair) const
+    {
         return this->cre_name == pair.second->get_name();
     };
 
-    const std::string &cre_name;
+    const std::string& cre_name;
 };
 
-int curl_request::debug_cb(CURL *handle,
-                           curl_infotype type,
-                           char *data,
-                           size_t size,
-                           void *userp) {
-    curl_request *cr = (curl_request *) userp;
+int
+curl_request::debug_cb(
+    CURL* handle, curl_infotype type, char* data, size_t size, void* userp)
+{
+    curl_request* cr = (curl_request*) userp;
     bool write_to_log;
 
     switch (type) {
@@ -71,8 +72,7 @@ int curl_request::debug_cb(CURL *handle,
         case CURLINFO_HEADER_OUT:
             if (lnav_log_level == lnav_log_level_t::TRACE) {
                 write_to_log = true;
-            }
-            else {
+            } else {
                 write_to_log = false;
             }
             break;
@@ -91,7 +91,8 @@ int curl_request::debug_cb(CURL *handle,
     return 0;
 }
 
-void curl_looper::loop_body()
+void
+curl_looper::loop_body()
 {
     mstime_t current_time = getmstime();
 
@@ -104,7 +105,8 @@ void curl_looper::loop_body()
     this->requeue_requests(current_time + 5);
 }
 
-void curl_looper::perform_io()
+void
+curl_looper::perform_io()
 {
     if (this->cl_handle_to_request.empty()) {
         return;
@@ -114,57 +116,54 @@ void curl_looper::perform_io()
     auto timeout = this->compute_timeout(current_time);
     int running_handles;
 
-    curl_multi_wait(this->cl_curl_multi,
-                    nullptr,
-                    0,
-                    timeout.count(),
-                    nullptr);
+    curl_multi_wait(this->cl_curl_multi, nullptr, 0, timeout.count(), nullptr);
     curl_multi_perform(this->cl_curl_multi, &running_handles);
 }
 
-void curl_looper::requeue_requests(mstime_t up_to_time)
+void
+curl_looper::requeue_requests(mstime_t up_to_time)
 {
-    while (!this->cl_poll_queue.empty() &&
-           this->cl_poll_queue.front().first <= up_to_time) {
+    while (!this->cl_poll_queue.empty()
+           && this->cl_poll_queue.front().first <= up_to_time)
+    {
         auto cr = this->cl_poll_queue.front().second;
 
         log_debug("%s:polling request is ready again -- %p",
-                  cr->get_name().c_str(), cr.get());
+                  cr->get_name().c_str(),
+                  cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
         curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
         this->cl_poll_queue.erase(this->cl_poll_queue.begin());
     }
 }
 
-void curl_looper::check_for_new_requests() {
+void
+curl_looper::check_for_new_requests()
+{
     while (!this->cl_new_requests.empty()) {
         auto cr = this->cl_new_requests.back();
 
-        log_info("%s:new curl request %p",
-                 cr->get_name().c_str(),
-                 cr.get());
+        log_info("%s:new curl request %p", cr->get_name().c_str(), cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
         curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
         this->cl_new_requests.pop_back();
     }
     while (!this->cl_close_requests.empty()) {
-        const std::string &name = this->cl_close_requests.back();
-        auto all_iter = find_if(
-                this->cl_all_requests.begin(),
-                this->cl_all_requests.end(),
-                curl_request_eq(name));
+        const std::string& name = this->cl_close_requests.back();
+        auto all_iter = find_if(this->cl_all_requests.begin(),
+                                this->cl_all_requests.end(),
+                                curl_request_eq(name));
 
         log_info("attempting to close request -- %s", name.c_str());
         if (all_iter != this->cl_all_requests.end()) {
             auto cr = *all_iter;
 
-            log_info("%s:closing request -- %p",
-                     cr->get_name().c_str(), cr.get());
+            log_info(
+                "%s:closing request -- %p", cr->get_name().c_str(), cr.get());
             (*all_iter)->close();
             auto act_iter = this->cl_handle_to_request.find(cr->get_handle());
             if (act_iter != this->cl_handle_to_request.end()) {
-                curl_multi_remove_handle(this->cl_curl_multi,
-                                         cr->get_handle());
+                curl_multi_remove_handle(this->cl_curl_multi, cr->get_handle());
                 this->cl_handle_to_request.erase(act_iter);
             }
             auto poll_iter = find_if(this->cl_poll_queue.begin(),
@@ -174,8 +173,7 @@ void curl_looper::check_for_new_requests() {
                 this->cl_poll_queue.erase(poll_iter);
             }
             this->cl_all_requests.erase(all_iter);
-        }
-        else {
+        } else {
             log_error("Unable to find request with the name -- %s",
                       name.c_str());
         }
@@ -184,18 +182,19 @@ void curl_looper::check_for_new_requests() {
     }
 }
 
-void curl_looper::check_for_finished_requests()
+void
+curl_looper::check_for_finished_requests()
 {
-    CURLMsg *msg;
+    CURLMsg* msg;
     int msgs_left;
 
-    while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left)) !=
-        nullptr) {
+    while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left))
+           != nullptr) {
         if (msg->msg != CURLMSG_DONE) {
             continue;
         }
 
-        CURL *easy = msg->easy_handle;
+        CURL* easy = msg->easy_handle;
         auto iter = this->cl_handle_to_request.find(easy);
 
         curl_multi_remove_handle(this->cl_curl_multi, easy);
@@ -207,15 +206,15 @@ void curl_looper::check_for_finished_requests()
             delay_ms = cr->complete(msg->data.result);
             if (delay_ms < 0) {
                 log_info("%s:curl_request %p finished, deleting...",
-                         cr->get_name().c_str(), cr.get());
+                         cr->get_name().c_str(),
+                         cr.get());
                 auto all_iter = find(this->cl_all_requests.begin(),
                                      this->cl_all_requests.end(),
                                      cr);
                 if (all_iter != this->cl_all_requests.end()) {
                     this->cl_all_requests.erase(all_iter);
                 }
-            }
-            else {
+            } else {
                 log_debug("%s:curl_request %p is polling, requeueing in %d",
                           cr->get_name().c_str(),
                           cr.get(),
@@ -227,16 +226,18 @@ void curl_looper::check_for_finished_requests()
     }
 }
 
-std::chrono::milliseconds curl_looper::compute_timeout(mstime_t current_time) const
+std::chrono::milliseconds
+curl_looper::compute_timeout(mstime_t current_time) const
 {
     std::chrono::milliseconds retval = 1s;
 
     if (!this->cl_handle_to_request.empty()) {
         retval = 1ms;
     } else if (!this->cl_poll_queue.empty()) {
-        retval = std::max(
-            1ms,
-            std::chrono::milliseconds(this->cl_poll_queue.front().first - current_time));
+        retval
+            = std::max(1ms,
+                       std::chrono::milliseconds(
+                           this->cl_poll_queue.front().first - current_time));
     }
 
     ensure(retval.count() > 0);

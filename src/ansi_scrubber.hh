@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -37,22 +37,22 @@
 
 #include "attr_line.hh"
 
-#define ANSI_CSI              "\x1b["
-#define ANSI_CHAR_ATTR        "m"
-#define ANSI_BOLD_PARAM       "1"
-#define ANSI_BOLD_START       ANSI_CSI ANSI_BOLD_PARAM ANSI_CHAR_ATTR
-#define ANSI_UNDERLINE_START  ANSI_CSI "4m"
-#define ANSI_NORM             ANSI_CSI "0m"
-#define ANSI_STRIKE_PARAM     "9"
-#define ANSI_STRIKE_START     ANSI_CSI ANSI_STRIKE_PARAM ANSI_CHAR_ATTR
+#define ANSI_CSI             "\x1b["
+#define ANSI_CHAR_ATTR       "m"
+#define ANSI_BOLD_PARAM      "1"
+#define ANSI_BOLD_START      ANSI_CSI ANSI_BOLD_PARAM ANSI_CHAR_ATTR
+#define ANSI_UNDERLINE_START ANSI_CSI "4m"
+#define ANSI_NORM            ANSI_CSI "0m"
+#define ANSI_STRIKE_PARAM    "9"
+#define ANSI_STRIKE_START    ANSI_CSI ANSI_STRIKE_PARAM ANSI_CHAR_ATTR
 
-#define ANSI_BOLD(msg)  ANSI_BOLD_START msg ANSI_NORM
-#define ANSI_UNDERLINE(msg)  ANSI_UNDERLINE_START msg ANSI_NORM
+#define ANSI_BOLD(msg)      ANSI_BOLD_START msg ANSI_NORM
+#define ANSI_UNDERLINE(msg) ANSI_UNDERLINE_START msg ANSI_NORM
 
-#define ANSI_ROLE(msg)  ANSI_CSI "%dO" msg ANSI_NORM
-#define XANSI_COLOR(col) "3" #col
+#define ANSI_ROLE(msg)        ANSI_CSI "%dO" msg ANSI_NORM
+#define XANSI_COLOR(col)      "3" #col
 #define ANSI_COLOR_PARAM(col) XANSI_COLOR(col)
-#define ANSI_COLOR(col) ANSI_CSI XANSI_COLOR(col) "m"
+#define ANSI_COLOR(col)       ANSI_CSI XANSI_COLOR(col) "m"
 
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add
@@ -61,12 +61,12 @@
  * @param str The string to check for ANSI escape sequences.
  * @param sa  The container for any style attributes.
  */
-void scrub_ansi_string(std::string &str, string_attrs_t &sa);
+void scrub_ansi_string(std::string& str, string_attrs_t& sa);
 
 /**
  * Populate a variable map with strings that contain escape sequences that
  * might be useful to script writers.
  */
-void add_ansi_vars(std::map<std::string, std::string> &vars);
+void add_ansi_vars(std::map<std::string, std::string>& vars);
 
 #endif

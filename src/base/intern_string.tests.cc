@@ -21,20 +21,19 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <cctype>
 #include <iostream>
 
-#include "doctest/doctest.h"
-
 #include "intern_string.hh"
+
+#include "config.h"
+#include "doctest/doctest.h"
 
 TEST_CASE("consume")
 {
@@ -42,7 +41,7 @@ TEST_CASE("consume")
     auto is_dq = string_fragment::tag1{'"'};
     auto is_colon = string_fragment::tag1{':'};
 
-    const char *pair = "foo  =  bar";
+    const char* pair = "foo  =  bar";
     auto sf = string_fragment(pair);
 
     auto split_sf = sf.split_while(isalnum);
@@ -64,7 +63,7 @@ TEST_CASE("consume")
     auto no_value = sf.consume(is_colon);
     CHECK(!no_value.has_value());
 
-    const char *qs = R"("foo \" bar")";
+    const char* qs = R"("foo \" bar")";
     auto qs_sf = string_fragment{qs};
 
     auto qs_body = qs_sf.consume(is_dq);

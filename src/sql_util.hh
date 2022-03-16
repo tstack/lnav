@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,24 +32,23 @@
 #ifndef lnav_sql_util_hh
 #define lnav_sql_util_hh
 
-#include <time.h>
-#include <sys/time.h>
-
-#include <sqlite3.h>
-
 #include <map>
 #include <string>
 #include <vector>
+
+#include <sqlite3.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include "base/intern_string.hh"
 #include "base/time_util.hh"
 #include "sqlitepp.hh"
 
-extern const char *sql_keywords[145];
-extern const char *sql_function_names[];
+extern const char* sql_keywords[145];
+extern const char* sql_function_names[];
 
-typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
-typedef std::vector<std::string>               db_table_list_t;
+typedef int (*sqlite_exec_callback)(void*, int, char**, char**);
+typedef std::vector<std::string> db_table_list_t;
 typedef std::map<std::string, db_table_list_t> db_table_map_t;
 
 struct sqlite_metadata_callbacks {
@@ -58,52 +57,61 @@ struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_table_list;
     sqlite_exec_callback smc_table_info;
     sqlite_exec_callback smc_foreign_key_list;
-    void *smc_userdata{nullptr};
+    void* smc_userdata{nullptr};
     db_table_map_t smc_db_list{};
 };
 
-int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
+int walk_sqlite_metadata(sqlite3* db, struct sqlite_metadata_callbacks& smc);
 
-void dump_sqlite_schema(sqlite3 *db, std::string &schema_out);
+void dump_sqlite_schema(sqlite3* db, std::string& schema_out);
 
-void attach_sqlite_db(sqlite3 *db, const std::string &filename);
+void attach_sqlite_db(sqlite3* db, const std::string& filename);
 
-ssize_t sql_strftime(char *buffer, size_t buffer_size, lnav::time64_t tim, int millis,
-    char sep = ' ');
+ssize_t sql_strftime(char* buffer,
+                     size_t buffer_size,
+                     lnav::time64_t tim,
+                     int millis,
+                     char sep = ' ');
 
-inline ssize_t sql_strftime(char *buffer, size_t buffer_size,
-                            const struct timeval &tv, char sep = ' ')
+inline ssize_t
+sql_strftime(char* buffer,
+             size_t buffer_size,
+             const struct timeval& tv,
+             char sep = ' ')
 {
     return sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
 }
 
 void sql_install_logger();
 
-bool sql_ident_needs_quote(const char *ident);
+bool sql_ident_needs_quote(const char* ident);
 
-char *sql_quote_ident(const char *ident);
+char* sql_quote_ident(const char* ident);
 
-std::string sql_safe_ident(const string_fragment &ident);
+std::string sql_safe_ident(const string_fragment& ident);
 
-void sql_compile_script(sqlite3 *db,
-                        const char *src_name,
-                        const char *script,
-                        std::vector<sqlite3_stmt *> &stmts,
-                        std::vector<std::string> &errors);
+void sql_compile_script(sqlite3* db,
+                        const char* src_name,
+                        const char* script,
+                        std::vector<sqlite3_stmt*>& stmts,
+                        std::vector<std::string>& errors);
 
-void sql_execute_script(sqlite3 *db,
-                        const std::vector<sqlite3_stmt *> &stmts,
-                        std::vector<std::string> &errors);
+void sql_execute_script(sqlite3* db,
+                        const std::vector<sqlite3_stmt*>& stmts,
+                        std::vector<std::string>& errors);
 
-void sql_execute_script(sqlite3 *db,
-                        const char *src_name,
-                        const char *script,
-                        std::vector<std::string> &errors);
+void sql_execute_script(sqlite3* db,
+                        const char* src_name,
+                        const char* script,
+                        std::vector<std::string>& errors);
 
-int guess_type_from_pcre(const std::string &pattern, std::string &collator);
+int guess_type_from_pcre(const std::string& pattern, std::string& collator);
 
-int sqlite_authorizer(void* pUserData, int action_code, const char *detail1,
-                      const char *detail2, const char *detail3,
-                      const char *detail4);
+int sqlite_authorizer(void* pUserData,
+                      int action_code,
+                      const char* detail1,
+                      const char* detail2,
+                      const char* detail3,
+                      const char* detail4);
 
 #endif

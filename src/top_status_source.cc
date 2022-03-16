@@ -21,17 +21,17 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "top_status_source.hh"
 
+#include "config.h"
 #include "lnav_config.hh"
 #include "logfile_sub_source.hh"
-#include "top_status_source.hh"
 
 top_status_source::top_status_source()
 {
@@ -59,19 +59,22 @@ top_status_source::top_status_source()
     this->tss_fields[TSF_FILENAME].right_justify(true);
 }
 
-void top_status_source::update_time(const timeval &current_time)
+void
+top_status_source::update_time(const timeval& current_time)
 {
-    status_field &sf           = this->tss_fields[TSF_TIME];
-    char          buffer[32];
+    status_field& sf = this->tss_fields[TSF_TIME];
+    char buffer[32];
 
     buffer[0] = ' ';
-    strftime(&buffer[1], sizeof(buffer) - 1,
+    strftime(&buffer[1],
+             sizeof(buffer) - 1,
              lnav_config.lc_ui_clock_format.c_str(),
              localtime(&current_time.tv_sec));
     sf.set_value(buffer);
 }
 
-void top_status_source::update_time()
+void
+top_status_source::update_time()
 {
     struct timeval tv;
 
@@ -79,66 +82,65 @@ void top_status_source::update_time()
     this->update_time(tv);
 }
 
-void top_status_source::update_filename(listview_curses *lc)
+void
+top_status_source::update_filename(listview_curses* lc)
 {
-    auto &sf_partition = this->tss_fields[TSF_PARTITION_NAME];
-    auto &sf_format = this->tss_fields[TSF_FORMAT];
-    auto &sf_filename = this->tss_fields[TSF_FILENAME];
+    auto& sf_partition = this->tss_fields[TSF_PARTITION_NAME];
+    auto& sf_format = this->tss_fields[TSF_FORMAT];
+    auto& sf_filename = this->tss_fields[TSF_FILENAME];
 
     if (lc->get_inner_height() > 0) {
         string_attrs_t::const_iterator line_attr;
         std::vector<attr_line_t> rows(1);
 
-        lc->get_data_source()->
-            listview_value_for_rows(*lc, lc->get_top(), rows);
-        auto &sa = rows[0].get_attrs();
+        lc->get_data_source()->listview_value_for_rows(
+            *lc, lc->get_top(), rows);
+        auto& sa = rows[0].get_attrs();
         line_attr = find_string_attr(sa, &logline::L_FILE);
         if (line_attr != sa.end()) {
-            logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;
+            logfile* lf = (logfile*) line_attr->sa_value.sav_ptr;
 
             if (lf->get_format()) {
                 sf_format.set_value("% 13s",
                                     lf->get_format()->get_name().get());
-            }
-            else if (!lf->get_filename().empty()) {
+            } else if (!lf->get_filename().empty()) {
                 sf_format.set_value("% 13s", "plain text");
-            }
-            else{
+            } else {
                 sf_format.clear();
             }
 
-            if (sf_filename.get_width() > (ssize_t) lf->get_filename().length()) {
+            if (sf_filename.get_width() > (ssize_t) lf->get_filename().length())
+            {
                 sf_filename.set_value(lf->get_filename());
             } else {
                 sf_filename.set_value(lf->get_unique_path());
             }
-        }
-        else {
+        } else {
             sf_format.clear();
             sf_filename.clear();
         }
 
         line_attr = find_string_attr(sa, &logline::L_PARTITION);
         if (line_attr != sa.end()) {
-            auto bm = (bookmark_metadata *)line_attr->sa_value.sav_ptr;
+            auto bm = (bookmark_metadata*) line_attr->sa_value.sav_ptr;
 
             sf_partition.set_value(bm->bm_name.c_str());
-        }
-        else {
+        } else {
             sf_partition.clear();
         }
-    }
-    else {
+    } else {
         sf_format.clear();
         if (lc->get_data_source() != nullptr) {
-            sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
+            sf_filename.set_value(
+                lc->get_data_source()->listview_source_name(*lc));
         }
     }
 }
 
-void top_status_source::update_view_name(listview_curses *lc)
+void
+top_status_source::update_view_name(listview_curses* lc)
 {
-    status_field &sf_view_name = this->tss_fields[TSF_VIEW_NAME];
+    status_field& sf_view_name = this->tss_fields[TSF_VIEW_NAME];
 
     sf_view_name.set_value("%s ", lc->get_title().c_str());
 }

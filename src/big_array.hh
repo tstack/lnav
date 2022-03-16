@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -33,6 +33,7 @@
 #define lnav_big_array_hh
 
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "base/math_util.hh"
 
@@ -40,11 +41,13 @@ template<typename T>
 struct big_array {
     static const size_t DEFAULT_INCREMENT = 100 * 1000;
 
-    big_array() : ba_ptr(nullptr), ba_size(0), ba_capacity(0) {
+    big_array()
+        : ba_ptr(nullptr), ba_size(0), ba_capacity(0){
 
-    };
+                                       };
 
-    bool reserve(size_t size) {
+    bool reserve(size_t size)
+    {
         if (size < this->ba_capacity) {
             return false;
         }
@@ -55,67 +58,77 @@ struct big_array {
         }
 
         this->ba_capacity = size + DEFAULT_INCREMENT;
-        void *result = mmap(nullptr,
-                            roundup_size(this->ba_capacity * sizeof(T),
-                                         getpagesize()),
-                            PROT_READ|PROT_WRITE,
-                            MAP_ANONYMOUS|MAP_PRIVATE,
-                            -1,
-                            0);
+        void* result
+            = mmap(nullptr,
+                   roundup_size(this->ba_capacity * sizeof(T), getpagesize()),
+                   PROT_READ | PROT_WRITE,
+                   MAP_ANONYMOUS | MAP_PRIVATE,
+                   -1,
+                   0);
 
         ensure(result != MAP_FAILED);
 
-        this->ba_ptr = (T *) result;
+        this->ba_ptr = (T*) result;
 
         return true;
     };
 
-    void clear() {
+    void clear()
+    {
         this->ba_size = 0;
     };
 
-    size_t size() const {
+    size_t size() const
+    {
         return this->ba_size;
     };
 
-    void shrink_to(size_t new_size) {
+    void shrink_to(size_t new_size)
+    {
         require(new_size <= this->ba_size);
 
         this->ba_size = new_size;
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return this->ba_size == 0;
     };
 
-    void push_back(const T &val) {
+    void push_back(const T& val)
+    {
         this->ba_ptr[this->ba_size] = val;
         this->ba_size += 1;
     };
 
-    T &operator[](size_t index) {
+    T& operator[](size_t index)
+    {
         return this->ba_ptr[index];
     };
 
-    const T &operator[](size_t index) const {
+    const T& operator[](size_t index) const
+    {
         return this->ba_ptr[index];
     };
 
-    T &back() {
+    T& back()
+    {
         return this->ba_ptr[this->ba_size - 1];
     }
 
-    typedef T *iterator;
+    typedef T* iterator;
 
-    iterator begin() {
+    iterator begin()
+    {
         return this->ba_ptr;
     };
 
-    iterator end() {
+    iterator end()
+    {
         return this->ba_ptr + this->ba_size;
     };
 
-    T *ba_ptr;
+    T* ba_ptr;
     size_t ba_size;
     size_t ba_capacity;
 };

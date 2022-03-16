@@ -21,50 +21,55 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "lnav.hh"
 #include "base/injector.hh"
-#include "service_tags.hh"
 #include "bound_tags.hh"
+#include "config.h"
+#include "lnav.hh"
+#include "service_tags.hh"
 
 struct lnav_data_t lnav_data;
 
-void rebuild_hist()
+void
+rebuild_hist()
 {
 }
 
-bool setup_logline_table(exec_context &ec)
-{
-    return false;
-}
-
-bool rescan_files(bool required)
+bool
+setup_logline_table(exec_context& ec)
 {
     return false;
 }
 
-void wait_for_children()
+bool
+rescan_files(bool required)
 {
-
+    return false;
 }
 
-size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+void
+wait_for_children()
+{
+}
+
+size_t
+rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
     return 0;
 }
 
-void rebuild_indexes_repeatedly()
+void
+rebuild_indexes_repeatedly()
 {
 }
 
-textview_curses *get_textview_for_mode(ln_mode_t mode)
+textview_curses*
+get_textview_for_mode(ln_mode_t mode)
 {
     return nullptr;
 }
@@ -73,12 +78,14 @@ readline_context::command_map_t lnav_commands;
 
 namespace injector {
 template<>
-void force_linking(sqlite_db_tag anno)
+void
+force_linking(sqlite_db_tag anno)
 {
 }
 
 template<>
-void force_linking(services::curl_streamer_t anno)
+void
+force_linking(services::curl_streamer_t anno)
 {
 }
-}
+}  // namespace injector

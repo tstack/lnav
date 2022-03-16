@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,9 +32,9 @@
 #ifndef lnav_view_helpers_hh
 #define lnav_view_helpers_hh
 
+#include "bookmarks.hh"
 #include "help_text.hh"
 #include "vis_line.hh"
-#include "bookmarks.hh"
 
 class textview_curses;
 
@@ -52,23 +52,24 @@ typedef enum {
     LNV__MAX
 } lnav_view_t;
 
-extern const char *lnav_view_strings[LNV__MAX + 1];
+extern const char* lnav_view_strings[LNV__MAX + 1];
 
-nonstd::optional<lnav_view_t> view_from_string(const char *name);
+nonstd::optional<lnav_view_t> view_from_string(const char* name);
 
-bool ensure_view(textview_curses *expected_tc);
+bool ensure_view(textview_curses* expected_tc);
 bool ensure_view(lnav_view_t expected);
-bool toggle_view(textview_curses *toggle_tc);
+bool toggle_view(textview_curses* toggle_tc);
 void layout_views();
 
 nonstd::optional<vis_line_t> next_cluster(
-    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-    bookmark_type_t *bt,
+    vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+    const bookmark_type_t* bt,
     vis_line_t top);
-bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
-                    bookmark_type_t *bt,
+bool moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t)
+                        const,
+                    const bookmark_type_t* bt,
                     vis_line_t top);
-void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
-vis_line_t search_forward_from(textview_curses *tc);
+void previous_cluster(const bookmark_type_t* bt, textview_curses* tc);
+vis_line_t search_forward_from(textview_curses* tc);
 
 #endif

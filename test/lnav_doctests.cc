@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,14 +30,11 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "doctest/doctest.h"
-
 #include "byte_array.hh"
+#include "doctest/doctest.h"
 #include "lnav_config.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
-#include "logfile.hh"
-#include "log_format.hh"
 
 using namespace std;
 
@@ -61,7 +58,8 @@ TEST_CASE("overwritten-logfile") {
 }
 #endif
 
-TEST_CASE("byte_array") {
+TEST_CASE("byte_array")
+{
     using my_array_t = byte_array<8>;
 
     my_array_t ba1;
@@ -84,17 +82,20 @@ TEST_CASE("byte_array") {
     CHECK(ba2.to_string() == "6162636431323334");
 }
 
-TEST_CASE("ptime_fmt") {
-    const char *date_str = "2018-05-16 18:16:42";
+TEST_CASE("ptime_fmt")
+{
+    const char* date_str = "2018-05-16 18:16:42";
     struct exttm tm;
     off_t off = 0;
 
-    bool rc = ptime_fmt("%Y-%d-%m\t%H:%M:%S", &tm, date_str, off, strlen(date_str));
+    bool rc
+        = ptime_fmt("%Y-%d-%m\t%H:%M:%S", &tm, date_str, off, strlen(date_str));
     CHECK(!rc);
     CHECK(off == 8);
 }
 
-TEST_CASE("rgb_color from string") {
+TEST_CASE("rgb_color from string")
+{
     string name = "SkyBlue1";
     auto color = rgb_color::from_str(name).unwrap();
     CHECK(color.rc_r == 135);
@@ -102,8 +103,9 @@ TEST_CASE("rgb_color from string") {
     CHECK(color.rc_b == 255);
 }
 
-TEST_CASE("ptime_roundtrip") {
-    const char *fmts[] = {
+TEST_CASE("ptime_roundtrip")
+{
+    const char* fmts[] = {
         "%Y-%m-%d %l:%M:%S %p",
         "%Y-%m-%d %I:%M:%S %p",
     };
@@ -118,40 +120,39 @@ TEST_CASE("ptime_roundtrip") {
             memset(&etm, 0, sizeof(etm));
             gmtime_r(&sec, &etm.et_tm);
             etm.et_flags = ETF_YEAR_SET | ETF_MONTH_SET | ETF_DAY_SET;
-            size_t ftime_size = ftime_fmt(ftime_result, sizeof(ftime_result),
-                                          fmt, etm);
-            size_t strftime_size = strftime(strftime_result,
-                                            sizeof(strftime_result), fmt,
-                                            &etm.et_tm);
+            size_t ftime_size
+                = ftime_fmt(ftime_result, sizeof(ftime_result), fmt, etm);
+            size_t strftime_size = strftime(
+                strftime_result, sizeof(strftime_result), fmt, &etm.et_tm);
 
-                CHECK(string(ftime_result, ftime_size) ==
-                      string(strftime_result, strftime_size));
+            CHECK(string(ftime_result, ftime_size)
+                  == string(strftime_result, strftime_size));
 
             struct exttm etm2;
             off_t off = 0;
 
             memset(&etm2, 0, sizeof(etm2));
             bool rc = ptime_fmt(fmt, &etm2, ftime_result, off, ftime_size);
-                CHECK(rc);
-                CHECK(sec == tm2sec(&etm2.et_tm));
+            CHECK(rc);
+            CHECK(sec == tm2sec(&etm2.et_tm));
         }
     }
 }
 
 class my_path_source : public unique_path_source {
 public:
-    explicit my_path_source(ghc::filesystem::path p) : mps_path(std::move(p)) {
+    explicit my_path_source(ghc::filesystem::path p) : mps_path(std::move(p)) {}
 
-    }
-
-    ghc::filesystem::path get_path() const override {
+    ghc::filesystem::path get_path() const override
+    {
         return this->mps_path;
     }
 
     ghc::filesystem::path mps_path;
 };
 
-TEST_CASE("unique_path") {
+TEST_CASE("unique_path")
+{
     unique_path_generator upg;
 
     auto bar = make_shared<my_path_source>("/foo/bar");

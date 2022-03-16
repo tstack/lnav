@@ -21,25 +21,26 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "log_actions.hh"
 
 #include "base/fs_util.hh"
-#include "log_actions.hh"
+#include "config.h"
 #include "piper_proc.hh"
 
 using namespace std;
 
-string action_delegate::execute_action(const string &action_name)
+string
+action_delegate::execute_action(const string& action_name)
 {
     auto& ldh = this->ad_log_helper;
     auto value_index = this->ad_press_value;
-    logline_value &lv = ldh.ldh_line_values[value_index];
+    logline_value& lv = ldh.ldh_line_values[value_index];
     shared_ptr<logfile> lf = ldh.ldh_file;
     const auto format = lf->get_format();
     pid_t child_pid;
@@ -47,7 +48,7 @@ string action_delegate::execute_action(const string &action_name)
 
     auto iter = format->lf_action_defs.find(action_name);
 
-    const log_format::action_def &action = iter->second;
+    const log_format::action_def& action = iter->second;
 
     auto_pipe in_pipe(STDIN_FILENO);
     auto_pipe out_pipe(STDOUT_FILENO);
@@ -64,10 +65,11 @@ string action_delegate::execute_action(const string &action_name)
 
     switch (child_pid) {
         case -1:
-            retval = "error: unable to fork child process -- " + string(strerror(errno));
+            retval = "error: unable to fork child process -- "
+                + string(strerror(errno));
             break;
         case 0: {
-            const char *args[action.ad_cmdline.size() + 1];
+            const char* args[action.ad_cmdline.size() + 1];
             set<std::string> path_set(format->get_source_path());
             char env_buffer[64];
             int value_line;
@@ -75,18 +77,20 @@ string action_delegate::execute_action(const string &action_name)
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
-            snprintf(env_buffer, sizeof(env_buffer),
+            snprintf(env_buffer,
+                     sizeof(env_buffer),
                      "%ld",
                      (ldh.ldh_line - lf->begin()) + 1);
             setenv("LNAV_ACTION_FILE_LINE", env_buffer, 1);
-            snprintf(env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
+            snprintf(
+                env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
             setenv("LNAV_ACTION_MSG_LINE", env_buffer, 1);
             setenv("LNAV_ACTION_VALUE_NAME", lv.lv_meta.lvm_name.get(), 1);
             value_line = ldh.ldh_y_offset - ldh.get_value_line(lv) + 1;
             snprintf(env_buffer, sizeof(env_buffer), "%d", value_line);
             setenv("LNAV_ACTION_VALUE_LINE", env_buffer, 1);
 
-            for (const auto &path_iter : path_set) {
+            for (const auto& path_iter : path_set) {
                 if (!path.empty()) {
                     path += ":";
                 }
@@ -98,14 +102,13 @@ string action_delegate::execute_action(const string &action_name)
                 args[lpc] = action.ad_cmdline[lpc].c_str();
             }
             args[action.ad_cmdline.size()] = nullptr;
-            execvp(args[0], (char *const *) args);
+            execvp(args[0], (char* const*) args);
             fprintf(stderr,
                     "error: could not exec process -- %s:%s\n",
                     args[0],
                     strerror(errno));
             _exit(0);
-        }
-            break;
+        } break;
         default: {
             static int exec_count = 0;
 
@@ -122,8 +125,9 @@ string action_delegate::execute_action(const string &action_name)
                 auto pp = make_shared<piper_proc>(
                     out_pipe.read_end(),
                     false,
-                    lnav::filesystem::open_temp_file(ghc::filesystem::temp_directory_path() /
-                                   "lnav.action.XXXXXX")
+                    lnav::filesystem::open_temp_file(
+                        ghc::filesystem::temp_directory_path()
+                        / "lnav.action.XXXXXX")
                         .map([](auto pair) {
                             ghc::filesystem::remove(pair.first);
 
@@ -131,21 +135,21 @@ string action_delegate::execute_action(const string &action_name)
                         })
                         .expect("Cannot create temporary file for action")
                         .second);
-                auto desc = fmt::format("[{}] Output of {}", exec_count++,
-                                        action.ad_cmdline[0]);
+                auto desc = fmt::format(
+                    "[{}] Output of {}", exec_count++, action.ad_cmdline[0]);
 
                 this->ad_piper_cb(desc, pp);
             }
 
             return "";
-        }
-            break;
+        } break;
     }
 
     return retval;
 }
 
-bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
+bool
+action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
 {
     bool retval = false;
 
@@ -165,7 +169,8 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
                 this->ad_press_line = mouse_line;
                 this->ad_log_helper.parse_line(mouse_line, true);
 
-                this->ad_log_helper.get_line_bounds(this->ad_line_index, line_end_index);
+                this->ad_log_helper.get_line_bounds(this->ad_line_index,
+                                                    line_end_index);
 
                 struct line_range lr(this->ad_line_index, line_end_index);
 
@@ -176,7 +181,8 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
                     for (size_t lpc = 0;
                          lpc < this->ad_log_helper.ldh_line_values.size();
                          lpc++) {
-                        logline_value &lv = this->ad_log_helper.ldh_line_values[lpc];
+                        logline_value& lv
+                            = this->ad_log_helper.ldh_line_values[lpc];
 
                         if (lv.lv_origin.contains(x_offset)) {
                             this->ad_press_value = lpc;
@@ -195,13 +201,15 @@ bool action_delegate::text_handle_mouse(textview_curses &tc, mouse_event &me)
             }
             break;
         case mouse_button_state_t::BUTTON_STATE_RELEASED:
-            if (this->ad_press_value != -1 && this->ad_press_line == mouse_line) {
-                logline_value &lv = this->ad_log_helper.ldh_line_values[this->ad_press_value];
+            if (this->ad_press_value != -1 && this->ad_press_line == mouse_line)
+            {
+                logline_value& lv
+                    = this->ad_log_helper.ldh_line_values[this->ad_press_value];
                 int x_offset = this->ad_line_index + mouse_left;
 
                 if (lv.lv_origin.contains(x_offset)) {
                     shared_ptr<logfile> lf = this->ad_log_helper.ldh_file;
-                    const vector<string> *actions;
+                    const vector<string>* actions;
 
                     actions = lf->get_format()->get_actions(lv);
                     if (actions != nullptr && !actions->empty()) {

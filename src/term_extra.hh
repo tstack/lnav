@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,40 +32,44 @@
 #ifndef term_extra_hh
 #define term_extra_hh
 
-#include <string.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <unistd.h>
-#include <sys/param.h>
-
 #include <string>
 
-#include "logfile.hh"
-#include "log_format.hh"
+#include <pwd.h>
+#include <string.h>
+#include <sys/param.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "listview_curses.hh"
+#include "log_format.hh"
+#include "logfile.hh"
 
 class term_extra {
 public:
-    term_extra() {
-        const char *term_name = getenv("TERM");
+    term_extra()
+    {
+        const char* term_name = getenv("TERM");
 
-        this->te_enabled = (term_name != nullptr && strstr(term_name, "xterm") != nullptr);
+        this->te_enabled
+            = (term_name != nullptr && strstr(term_name, "xterm") != nullptr);
 
         if (getenv("SSH_CONNECTION") != nullptr) {
             char hostname[MAXHOSTNAMELEN] = "UNKNOWN";
-            struct passwd *userent;
+            struct passwd* userent;
 
             gethostname(hostname, sizeof(hostname));
             this->te_prefix = hostname;
             if ((userent = getpwuid(getuid())) != nullptr) {
-                this->te_prefix = std::string(userent->pw_name) + "@" + this->te_prefix;
+                this->te_prefix
+                    = std::string(userent->pw_name) + "@" + this->te_prefix;
             }
             this->te_prefix += ":";
         }
     };
 
-    void update_title(listview_curses *lc) {
-        static const char *xterm_title_fmt = "\033]0;%s\007";
+    void update_title(listview_curses* lc)
+    {
+        static const char* xterm_title_fmt = "\033]0;%s\007";
 
         if (!this->te_enabled) {
             return;
@@ -75,12 +79,13 @@ public:
             string_attrs_t::const_iterator line_attr;
             std::vector<attr_line_t> rows(1);
 
-            lc->get_data_source()->listview_value_for_rows(*lc, lc->get_top(), rows);
-            string_attrs_t &sa = rows[0].get_attrs();
+            lc->get_data_source()->listview_value_for_rows(
+                *lc, lc->get_top(), rows);
+            string_attrs_t& sa = rows[0].get_attrs();
             line_attr = find_string_attr(sa, &logline::L_FILE);
             if (line_attr != sa.end()) {
-                logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;
-                const std::string &filename = lf->get_unique_path();
+                logfile* lf = (logfile*) line_attr->sa_value.sav_ptr;
+                const std::string& filename = lf->get_unique_path();
 
                 if (filename != this->te_last_title) {
                     std::string title = this->te_prefix + filename;
@@ -94,7 +99,7 @@ public:
             }
         }
 
-        const std::string &view_title = lc->get_title();
+        const std::string& view_title = lc->get_title();
 
         if (view_title != this->te_last_title) {
             std::string title = this->te_prefix + view_title;

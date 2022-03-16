@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,12 +33,11 @@
 #include <utility>
 
 template<typename F, typename FrontArg>
-decltype(auto) bind_mem(F&& f, FrontArg&& frontArg)
+decltype(auto)
+bind_mem(F&& f, FrontArg&& frontArg)
 {
-    return [f=std::forward<F>(f),
-        frontArg = std::forward<FrontArg>(frontArg)]
-        (auto&&...backArgs)
-    {
+    return [f = std::forward<F>(f),
+            frontArg = std::forward<FrontArg>(frontArg)](auto&&... backArgs) {
         return (frontArg->*f)(std::forward<decltype(backArgs)>(backArgs)...);
     };
 }
@@ -46,13 +45,23 @@ decltype(auto) bind_mem(F&& f, FrontArg&& frontArg)
 struct noop_func {
     struct anything {
         template<class T>
-        operator T(){ return {}; }
+        operator T()
+        {
+            return {};
+        }
         // optional reference support.  Somewhat evil.
         template<class T>
-        operator T&()const{ static T t{}; return t; }
+        operator T&() const
+        {
+            static T t{};
+            return t;
+        }
     };
-    template<class...Args>
-    anything operator()(Args&&...)const{return {};}
+    template<class... Args>
+    anything operator()(Args&&...) const
+    {
+        return {};
+    }
 };
 
 #endif

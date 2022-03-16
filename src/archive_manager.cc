@@ -21,35 +21,34 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file archive_manager.cc
  */
 
-#include "config.h"
-
 #include <unistd.h>
 
+#include "config.h"
+
 #if HAVE_ARCHIVE_H
-#include "archive.h"
-#include "archive_entry.h"
+#    include "archive.h"
+#    include "archive_entry.h"
 #endif
 
+#include "archive_manager.cfg.hh"
+#include "archive_manager.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
-#include "fmt/format.h"
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
-#include "base/humanize.hh"
 #include "base/paths.hh"
+#include "fmt/format.h"
 #include "lnav_util.hh"
-
-#include "archive_manager.hh"
-#include "archive_manager.cfg.hh"
 
 namespace fs = ghc::filesystem;
 
@@ -59,32 +58,37 @@ class archive_lock {
 public:
     class guard {
     public:
-
-        explicit guard(archive_lock& arc_lock) : g_lock(arc_lock) {
+        explicit guard(archive_lock& arc_lock) : g_lock(arc_lock)
+        {
             this->g_lock.lock();
         };
 
-        ~guard() {
+        ~guard()
+        {
             this->g_lock.unlock();
         };
 
     private:
-        archive_lock &g_lock;
+        archive_lock& g_lock;
     };
 
-    void lock() const {
+    void lock() const
+    {
         lockf(this->lh_fd, F_LOCK, 0);
     };
 
-    void unlock() const {
+    void unlock() const
+    {
         lockf(this->lh_fd, F_ULOCK, 0);
     };
 
-    explicit archive_lock(const fs::path& archive_path) {
+    explicit archive_lock(const fs::path& archive_path)
+    {
         auto lock_path = archive_path;
 
         lock_path += ".lck";
-        this->lh_fd = lnav::filesystem::openp(lock_path, O_CREAT | O_RDWR, 0600);
+        this->lh_fd
+            = lnav::filesystem::openp(lock_path, O_CREAT | O_RDWR, 0600);
         log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
     };
 
@@ -96,7 +100,8 @@ public:
  * Enables a subset of the supported archive formats to speed up detection,
  * since some formats, like xar are unlikely to be used.
  */
-static void enable_desired_archive_formats(archive *arc)
+static void
+enable_desired_archive_formats(archive* arc)
 {
     archive_read_support_format_7zip(arc);
     archive_read_support_format_cpio(arc);
@@ -107,7 +112,8 @@ static void enable_desired_archive_formats(archive *arc)
 }
 #endif
 
-bool is_archive(const fs::path& filename)
+bool
+is_archive(const fs::path& filename)
 {
 #if HAVE_ARCHIVE_H
     auto_mem<archive> arc(archive_read_free);
@@ -120,7 +126,7 @@ bool is_archive(const fs::path& filename)
     log_debug("read open %s", filename.c_str());
     auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
     if (r == ARCHIVE_OK) {
-        struct archive_entry *entry;
+        struct archive_entry* entry;
 
         auto format_name = archive_format_name(arc);
 
@@ -145,8 +151,8 @@ bool is_archive(const fs::path& filename)
                     return false;
                 }
             }
-            log_info("detected archive: %s -- %s",
-                     filename.c_str(), format_name);
+            log_info(
+                "detected archive: %s -- %s", filename.c_str(), format_name);
             return true;
         } else {
             log_info("archive read header failed: %s -- %s",
@@ -163,14 +169,14 @@ bool is_archive(const fs::path& filename)
     return false;
 }
 
-static
-fs::path archive_cache_path()
+static fs::path
+archive_cache_path()
 {
     return lnav::paths::workdir() / "archives";
 }
 
 fs::path
-filename_to_tmp_path(const std::string &filename)
+filename_to_tmp_path(const std::string& filename)
 {
     auto fn_path = fs::path(filename);
     auto basename = fn_path.filename().string();
@@ -195,14 +201,14 @@ filename_to_tmp_path(const std::string &filename)
 #if HAVE_ARCHIVE_H
 static walk_result_t
 copy_data(const std::string& filename,
-          struct archive *ar,
-          struct archive_entry *entry,
-          struct archive *aw,
-          const fs::path &entry_path,
-          struct extract_progress *ep)
+          struct archive* ar,
+          struct archive_entry* entry,
+          struct archive* aw,
+          const fs::path& entry_path,
+          struct extract_progress* ep)
 {
     int r;
-    const void *buff;
+    const void* buff;
     size_t size, total = 0, next_space_check = 0;
     la_int64_t offset;
 
@@ -213,7 +219,9 @@ copy_data(const std::string& filename,
 
             if (tmp_space.available < cfg.amc_min_free_space) {
                 return Err(fmt::format(
-                    FMT_STRING("available space on disk ({}) is below the minimum-free threshold ({}).  Unable to unpack '{}' to '{}'"),
+                    FMT_STRING("available space on disk ({}) is below the "
+                               "minimum-free threshold ({}).  Unable to unpack "
+                               "'{}' to '{}'"),
                     humanize::file_size(tmp_space.available),
                     humanize::file_size(cfg.amc_min_free_space),
                     entry_path.filename().string(),
@@ -244,12 +252,11 @@ copy_data(const std::string& filename,
     }
 }
 
-static walk_result_t extract(const std::string &filename, const extract_cb &cb)
+static walk_result_t
+extract(const std::string& filename, const extract_cb& cb)
 {
-    static int FLAGS = ARCHIVE_EXTRACT_TIME
-                       | ARCHIVE_EXTRACT_PERM
-                       | ARCHIVE_EXTRACT_ACL
-                       | ARCHIVE_EXTRACT_FFLAGS;
+    static int FLAGS = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
+        | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
 
     auto tmp_path = filename_to_tmp_path(filename);
     auto arc_lock = archive_lock(tmp_path);
@@ -267,9 +274,9 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
             }
         }
         if (file_count > 0) {
-            fs::last_write_time(
-                done_path, std::chrono::system_clock::now());
-            log_info("%s: archive has already been extracted!", done_path.c_str());
+            fs::last_write_time(done_path, std::chrono::system_clock::now());
+            log_info("%s: archive has already been extracted!",
+                     done_path.c_str());
             return Ok();
         } else {
             log_warning("%s: archive cache has been damaged, re-extracting",
@@ -289,17 +296,16 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, FLAGS);
     archive_write_disk_set_standard_lookup(ext);
-    if (archive_read_open_filename(arc, filename.c_str(), 10240) != ARCHIVE_OK) {
+    if (archive_read_open_filename(arc, filename.c_str(), 10240) != ARCHIVE_OK)
+    {
         return Err(fmt::format("unable to open archive: {} -- {}",
                                filename,
                                archive_error_string(arc)));
     }
 
-    log_info("extracting %s to %s",
-             filename.c_str(),
-             tmp_path.c_str());
+    log_info("extracting %s to %s", filename.c_str(), tmp_path.c_str());
     while (true) {
-        struct archive_entry *entry;
+        struct archive_entry* entry;
         auto r = archive_read_next_header(arc, &entry);
         if (r == ARCHIVE_EOF) {
             log_info("all done");
@@ -321,22 +327,21 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
             desired_pathname = fs::path(filename).filename();
         }
         auto entry_path = tmp_path / desired_pathname;
-        auto prog = cb(entry_path,
-                       archive_entry_size_is_set(entry) ?
-                       archive_entry_size(entry) : -1);
+        auto prog = cb(
+            entry_path,
+            archive_entry_size_is_set(entry) ? archive_entry_size(entry) : -1);
         archive_entry_copy_pathname(wentry, entry_path.c_str());
         auto entry_mode = archive_entry_mode(wentry);
 
         archive_entry_set_perm(
-            wentry, S_IRUSR | (S_ISDIR(entry_mode) ? S_IXUSR|S_IWUSR : 0));
+            wentry, S_IRUSR | (S_ISDIR(entry_mode) ? S_IXUSR | S_IWUSR : 0));
         r = archive_write_header(ext, wentry);
         if (r < ARCHIVE_OK) {
             return Err(fmt::format("unable to write entry: {} -- {}",
                                    entry_path.string(),
                                    archive_error_string(ext)));
-        }
-        else if (!archive_entry_size_is_set(entry) ||
-                 archive_entry_size(entry) > 0) {
+        } else if (!archive_entry_size_is_set(entry)
+                   || archive_entry_size(entry) > 0) {
             TRY(copy_data(filename, arc, entry, ext, entry_path, prog));
         }
         r = archive_write_finish_entry(ext);
@@ -355,12 +360,12 @@ static walk_result_t extract(const std::string &filename, const extract_cb &cb)
 }
 #endif
 
-walk_result_t walk_archive_files(
-    const std::string &filename,
-    const extract_cb &cb,
-    const std::function<void(
-        const fs::path&,
-        const fs::directory_entry &)>& callback)
+walk_result_t
+walk_archive_files(
+    const std::string& filename,
+    const extract_cb& cb,
+    const std::function<void(const fs::path&, const fs::directory_entry&)>&
+        callback)
 {
 #if HAVE_ARCHIVE_H
     auto tmp_path = filename_to_tmp_path(filename);
@@ -385,7 +390,8 @@ walk_result_t walk_archive_files(
 #endif
 }
 
-void cleanup_cache()
+void
+cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
         auto now = std::chrono::system_clock::now();
@@ -421,4 +427,4 @@ void cleanup_cache()
     });
 }
 
-}
+}  // namespace archive_manager

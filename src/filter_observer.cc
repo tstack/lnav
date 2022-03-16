@@ -21,22 +21,22 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "log_format.hh"
-
 #include "filter_observer.hh"
 
-void line_filter_observer::logline_new_lines(const logfile &lf,
-                                             logfile::const_iterator ll_begin,
-                                             logfile::const_iterator ll_end,
-                                             shared_buffer_ref &sbr)
+#include "config.h"
+#include "log_format.hh"
+
+void
+line_filter_observer::logline_new_lines(const logfile& lf,
+                                        logfile::const_iterator ll_begin,
+                                        logfile::const_iterator ll_end,
+                                        shared_buffer_ref& sbr)
 {
     size_t offset = std::distance(lf.begin(), ll_begin);
 
@@ -51,21 +51,23 @@ void line_filter_observer::logline_new_lines(const logfile &lf,
         if (lf.get_format() != nullptr) {
             lf.get_format()->get_subline(*ll_begin, sbr);
         }
-        for (auto &filter : this->lfo_filter_stack) {
+        for (auto& filter : this->lfo_filter_stack) {
             if (filter->lf_deleted) {
                 continue;
             }
-            if (offset >=
-                this->lfo_filter_state.tfs_filter_count[filter->get_index()]) {
+            if (offset
+                >= this->lfo_filter_state.tfs_filter_count[filter->get_index()])
+            {
                 filter->add_line(this->lfo_filter_state, ll_begin, sbr);
             }
         }
     }
 }
 
-void line_filter_observer::logline_eof(const logfile &lf)
+void
+line_filter_observer::logline_eof(const logfile& lf)
 {
-    for (auto &iter : this->lfo_filter_stack) {
+    for (auto& iter : this->lfo_filter_stack) {
         if (iter->lf_deleted) {
             continue;
         }

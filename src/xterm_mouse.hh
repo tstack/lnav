@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -32,18 +32,20 @@
 #ifndef xterm_mouse_hh
 #define xterm_mouse_hh
 
+#include "config.h"
+
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/curses.h>
+#    include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
-#  include <ncursesw.h>
+#    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/curses.h>
+#    include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
-#  include <ncurses.h>
+#    include <ncurses.h>
 #elif defined HAVE_CURSES_H
-#  include <curses.h>
+#    include <curses.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
 /**
@@ -70,26 +72,21 @@ public:
  */
 class xterm_mouse {
 public:
-    static const int XT_BUTTON1        = 0;
-    static const int XT_BUTTON2        = 1;
-    static const int XT_BUTTON3        = 2;
+    static const int XT_BUTTON1 = 0;
+    static const int XT_BUTTON2 = 1;
+    static const int XT_BUTTON3 = 2;
 
     static const int XT_DRAG_FLAG = 32;
     static const int XT_SCROLL_WHEEL_FLAG = 64;
-    static const int XT_SCROLL_UP         =
-        XT_SCROLL_WHEEL_FLAG | XT_BUTTON1;
-    static const int XT_SCROLL_DOWN =
-        XT_SCROLL_WHEEL_FLAG | XT_BUTTON2;
+    static const int XT_SCROLL_UP = XT_SCROLL_WHEEL_FLAG | XT_BUTTON1;
+    static const int XT_SCROLL_DOWN = XT_SCROLL_WHEEL_FLAG | XT_BUTTON2;
 
-    static const int XT_BUTTON__MASK =
-        XT_SCROLL_WHEEL_FLAG |
-        XT_BUTTON1 |
-        XT_BUTTON2 |
-        XT_BUTTON3;
+    static const int XT_BUTTON__MASK
+        = XT_SCROLL_WHEEL_FLAG | XT_BUTTON1 | XT_BUTTON2 | XT_BUTTON3;
 
-    static const char *XT_TERMCAP;
-    static const char *XT_TERMCAP_TRACKING;
-    static const char *XT_TERMCAP_SGR;
+    static const char* XT_TERMCAP;
+    static const char* XT_TERMCAP_TRACKING;
+    static const char* XT_TERMCAP_SGR;
 
     /**
      * @return True if the user's terminal supports xterm-mouse events.
@@ -120,12 +117,15 @@ public:
     /**
      * @param mb The delegate to send mouse events to.
      */
-    void set_behavior(mouse_behavior *mb)
+    void set_behavior(mouse_behavior* mb)
     {
         this->xm_behavior = mb;
     };
 
-    mouse_behavior *get_behavior() { return this->xm_behavior; };
+    mouse_behavior* get_behavior()
+    {
+        return this->xm_behavior;
+    };
 
     /**
      * Handle a KEY_MOUSE character from ncurses.
@@ -134,7 +134,7 @@ public:
     void handle_mouse();
 
 private:
-    bool            xm_enabled{false};
-    mouse_behavior *xm_behavior{nullptr};
+    bool xm_enabled{false};
+    mouse_behavior* xm_behavior{nullptr};
 };
 #endif

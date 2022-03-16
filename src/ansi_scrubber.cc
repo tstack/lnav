@@ -21,44 +21,46 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file ansi_scrubber.cc
  */
 
-#include "config.h"
-
 #include <algorithm>
 
-#include "base/opt_util.hh"
-#include "view_curses.hh"
-#include "pcrepp/pcrepp.hh"
 #include "ansi_scrubber.hh"
+
+#include "base/opt_util.hh"
+#include "config.h"
+#include "pcrepp/pcrepp.hh"
+#include "view_curses.hh"
 
 using namespace std;
 
-static pcrepp &ansi_regex()
+static pcrepp&
+ansi_regex()
 {
     static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])");
 
     return retval;
 }
 
-void scrub_ansi_string(std::string &str, string_attrs_t &sa)
+void
+scrub_ansi_string(std::string& str, string_attrs_t& sa)
 {
     pcre_context_static<60> context;
-    pcrepp &   regex = ansi_regex();
+    pcrepp& regex = ansi_regex();
     pcre_input pi(str);
 
     replace(str.begin(), str.end(), '\0', ' ');
     while (regex.match(context, pi)) {
-        pcre_context::capture_t *caps = context.all();
-        struct line_range        lr;
+        pcre_context::capture_t* caps = context.all();
+        struct line_range lr;
         bool has_attrs = false;
-        attr_t attrs   = 0;
+        attr_t attrs = 0;
         auto bg = nonstd::optional<int>();
         auto fg = nonstd::optional<int>();
         auto role = nonstd::optional<int>();
@@ -67,7 +69,8 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         switch (pi.get_substr_start(&caps[2])[0]) {
             case 'm':
                 for (lpc = caps[1].c_begin;
-                     lpc != string::npos && lpc < (size_t) caps[1].c_end;) {
+                     lpc != string::npos && lpc < (size_t) caps[1].c_end;)
+                {
                     int ansi_code = 0;
 
                     if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
@@ -110,9 +113,10 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
             case 'C': {
                 unsigned int spaces = 0;
 
-                if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1 &&
-                    spaces > 0) {
-                    str.insert((unsigned long) caps[0].c_end, spaces, ' ');
+                if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1
+                    && spaces > 0) {
+                    str.insert(
+                        (std::string::size_type) caps[0].c_end, spaces, ' ');
                 }
                 break;
             }
@@ -120,11 +124,13 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
             case 'H': {
                 unsigned int row = 0, spaces = 0;
 
-                if (sscanf(&(str[caps[1].c_begin]), "%u;%u", &row, &spaces) == 2 &&
-                    spaces > 1) {
+                if (sscanf(&(str[caps[1].c_begin]), "%u;%u", &row, &spaces) == 2
+                    && spaces > 1) {
                     int ispaces = spaces - 1;
                     if (ispaces > caps[0].c_begin) {
-                        str.insert((unsigned long) caps[0].c_end, ispaces - caps[0].c_begin, ' ');
+                        str.insert((unsigned long) caps[0].c_end,
+                                   ispaces - caps[0].c_begin,
+                                   ' ');
                     }
                 }
                 break;
@@ -142,8 +148,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                 break;
             }
         }
-        str.erase(str.begin() + caps[0].c_begin,
-                  str.begin() + caps[0].c_end);
+        str.erase(str.begin() + caps[0].c_begin, str.begin() + caps[0].c_end);
 
         if (has_attrs) {
             for (auto rit = sa.rbegin(); rit != sa.rend(); rit++) {
@@ -153,7 +158,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                 rit->sa_range.lr_end = caps[0].c_begin;
             }
             lr.lr_start = caps[0].c_begin;
-            lr.lr_end   = -1;
+            lr.lr_end = -1;
             if (attrs) {
                 sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
             }
@@ -172,7 +177,8 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
     }
 }
 
-void add_ansi_vars(std::map<std::string, std::string> &vars)
+void
+add_ansi_vars(std::map<std::string, std::string>& vars)
 {
     vars["ansi_csi"] = ANSI_CSI;
     vars["ansi_norm"] = ANSI_NORM;

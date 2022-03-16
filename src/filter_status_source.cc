@@ -21,18 +21,18 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
-#include "lnav.hh"
-#include "base/opt_util.hh"
 #include "filter_status_source.hh"
+
+#include "base/opt_util.hh"
+#include "config.h"
 #include "files_sub_source.hh"
+#include "lnav.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
 static auto EXIT_MSG = "Press " ANSI_BOLD("q") " to exit ";
@@ -50,9 +50,8 @@ filter_status_source::filter_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(14);
     this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
-    this->tss_fields[TSF_TITLE].set_value(
-        " " ANSI_ROLE("T") "ext Filters ",
-        view_colors::VCR_STATUS_TITLE_HOTKEY);
+    this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
+                                          view_colors::VCR_STATUS_TITLE_HOTKEY);
 
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
@@ -70,14 +69,12 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_FILES_TITLE].set_width(7);
     this->tss_fields[TSF_FILES_TITLE].set_role(
         view_colors::VCR_STATUS_DISABLED_TITLE);
-    this->tss_fields[TSF_FILES_TITLE].set_value(
-        " " ANSI_ROLE("F") "iles ",
-        view_colors::VCR_STATUS_HOTKEY);
+    this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
+                                                view_colors::VCR_STATUS_HOTKEY);
 
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_width(2);
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
-        view_colors::VCR_STATUS,
-        view_colors::VCR_STATUS);
+        view_colors::VCR_STATUS, view_colors::VCR_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
     this->tss_fields[TSF_HELP].set_width(20);
@@ -89,7 +86,8 @@ filter_status_source::filter_status_source()
     this->tss_error.set_role(view_colors::VCR_ALERT_STATUS);
 }
 
-size_t filter_status_source::statusview_fields()
+size_t
+filter_status_source::statusview_fields()
 {
     switch (lnav_data.ld_mode) {
         case LNM_SEARCH_FILTERS:
@@ -105,34 +103,30 @@ size_t filter_status_source::statusview_fields()
             break;
     }
 
-    if (lnav_data.ld_mode == LNM_FILES ||
-        lnav_data.ld_mode == LNM_SEARCH_FILES) {
+    if (lnav_data.ld_mode == LNM_FILES || lnav_data.ld_mode == LNM_SEARCH_FILES)
+    {
         this->tss_fields[TSF_FILES_TITLE].set_value(
-            " " ANSI_ROLE("F") "iles ",
-            view_colors::VCR_STATUS_TITLE_HOTKEY);
-        this->tss_fields[TSF_FILES_TITLE]
-            .set_role(view_colors::VCR_STATUS_TITLE);
+            " " ANSI_ROLE("F") "iles ", view_colors::VCR_STATUS_TITLE_HOTKEY);
+        this->tss_fields[TSF_FILES_TITLE].set_role(
+            view_colors::VCR_STATUS_TITLE);
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
             view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
             view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
-        this->tss_fields[TSF_TITLE].set_value(
-            " " ANSI_ROLE("T") "ext Filters ",
-            view_colors::VCR_STATUS_HOTKEY);
-        this->tss_fields[TSF_TITLE]
-            .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+        this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
+                                              view_colors::VCR_STATUS_HOTKEY);
+        this->tss_fields[TSF_TITLE].set_role(
+            view_colors::VCR_STATUS_DISABLED_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            view_colors::VCR_STATUS,
-            view_colors::VCR_STATUS);
+            view_colors::VCR_STATUS, view_colors::VCR_STATUS);
     } else {
         this->tss_fields[TSF_FILES_TITLE].set_value(
-            " " ANSI_ROLE("F") "iles ",
-            view_colors::VCR_STATUS_HOTKEY);
+            " " ANSI_ROLE("F") "iles ", view_colors::VCR_STATUS_HOTKEY);
         if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
-            this->tss_fields[TSF_FILES_TITLE]
-                .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+            this->tss_fields[TSF_FILES_TITLE].set_role(
+                view_colors::VCR_STATUS_DISABLED_TITLE);
         } else {
-            this->tss_fields[TSF_FILES_TITLE]
-                .set_role(view_colors::VCR_ALERT_STATUS);
+            this->tss_fields[TSF_FILES_TITLE].set_role(
+                view_colors::VCR_ALERT_STATUS);
 
             auto& fc = lnav_data.ld_active_files;
             if (fc.fc_name_to_errors.size() == 1) {
@@ -149,23 +143,22 @@ size_t filter_status_source::statusview_fields()
         this->tss_fields[TSF_TITLE].set_value(
             " " ANSI_ROLE("T") "ext Filters ",
             view_colors::VCR_STATUS_TITLE_HOTKEY);
-        this->tss_fields[TSF_TITLE]
-            .set_role(view_colors::VCR_STATUS_TITLE);
+        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
             view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
             view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
     }
 
     lnav_data.ld_view_stack.top() | [this](auto tc) {
-        text_sub_source *tss = tc->get_sub_source();
+        text_sub_source* tss = tc->get_sub_source();
         if (tss == nullptr) {
             return;
         }
 
-        filter_stack &fs = tss->get_filters();
+        filter_stack& fs = tss->get_filters();
         auto enabled_count = 0, filter_count = 0;
 
-        for (const auto &tf : fs) {
+        for (const auto& tf : fs) {
             if (tf->is_enabled()) {
                 enabled_count += 1;
             }
@@ -175,9 +168,7 @@ size_t filter_status_source::statusview_fields()
             this->tss_fields[TSF_COUNT].set_value("");
         } else {
             this->tss_fields[TSF_COUNT].set_value(
-                " " ANSI_BOLD("%d")
-                " of " ANSI_BOLD("%d")
-                " enabled ",
+                " " ANSI_BOLD("%d") " of " ANSI_BOLD("%d") " enabled ",
                 enabled_count,
                 filter_count);
         }
@@ -186,41 +177,43 @@ size_t filter_status_source::statusview_fields()
     return TSF__MAX;
 }
 
-status_field &filter_status_source::statusview_value_for_field(int field)
+status_field&
+filter_status_source::statusview_value_for_field(int field)
 {
-    if (field == TSF_FILTERED &&
-        !lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+    if (field == TSF_FILTERED
+        && !lnav_data.ld_active_files.fc_name_to_errors.empty())
+    {
         return this->tss_error;
     }
 
     return this->tss_fields[field];
 }
 
-void filter_status_source::update_filtered(text_sub_source *tss)
+void
+filter_status_source::update_filtered(text_sub_source* tss)
 {
-    status_field &sf = this->tss_fields[TSF_FILTERED];
+    status_field& sf = this->tss_fields[TSF_FILTERED];
 
     if (tss == nullptr || tss->get_filtered_count() == 0) {
         if (tss->tss_apply_filters) {
             sf.clear();
         } else {
             sf.set_value(
-                " \u2718 Filtering disabled, re-enable with "
-                ANSI_BOLD_START ":toggle-filtering" ANSI_NORM);
+                " \u2718 Filtering disabled, re-enable with " ANSI_BOLD_START
+                ":toggle-filtering" ANSI_NORM);
         }
-    }
-    else {
-        ui_periodic_timer &timer = ui_periodic_timer::singleton();
-        attr_line_t &al = sf.get_value();
+    } else {
+        ui_periodic_timer& timer = ui_periodic_timer::singleton();
+        attr_line_t& al = sf.get_value();
 
         if (tss->get_filtered_count() == this->bss_last_filtered_count) {
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(
                     view_colors::VCR_STATUS);
-                al.with_attr(string_attr(line_range{0, -1}, &view_curses::VC_STYLE, A_BOLD));
+                al.with_attr(string_attr(
+                    line_range{0, -1}, &view_curses::VC_STYLE, A_BOLD));
             }
-        }
-        else {
+        } else {
             this->tss_fields[TSF_FILTERED].set_role(
                 view_colors::VCR_ALERT_STATUS);
             this->bss_last_filtered_count = tss->get_filtered_count();
@@ -242,23 +235,24 @@ filter_help_status_source::filter_help_status_source()
     this->fss_error.set_share(1);
 }
 
-size_t filter_help_status_source::statusview_fields()
+size_t
+filter_help_status_source::statusview_fields()
 {
-    lnav_data.ld_view_stack.top() | [this] (auto tc) {
-        text_sub_source *tss = tc->get_sub_source();
+    lnav_data.ld_view_stack.top() | [this](auto tc) {
+        text_sub_source* tss = tc->get_sub_source();
         if (tss == nullptr) {
             return;
         }
 
         if (lnav_data.ld_mode == LNM_FILTER) {
-            auto &editor = lnav_data.ld_filter_source;
-            auto &lv = lnav_data.ld_filter_view;
-            auto &fs = tss->get_filters();
+            auto& editor = lnav_data.ld_filter_source;
+            auto& lv = lnav_data.ld_filter_view;
+            auto& fs = tss->get_filters();
 
             if (editor.fss_editing) {
                 auto tf = *(fs.begin() + lv.get_selection());
-                auto lang = tf->get_lang() == filter_lang_t::SQL ?
-                            "an SQL": "a regular";
+                auto lang = tf->get_lang() == filter_lang_t::SQL ? "an SQL"
+                                                                 : "a regular";
 
                 if (tf->get_type() == text_filter::type_t::INCLUDE) {
                     this->fss_help.set_value(
@@ -276,31 +270,27 @@ size_t filter_help_status_source::statusview_fields()
             } else {
                 auto tf = *(fs.begin() + lv.get_selection());
 
-                this->fss_help.set_value("  %s  %s%s  %s  %s%s  %s  %s%s",
-                                         CREATE_HELP,
-                                         ENABLE_HELP,
-                                         tf->is_enabled() ? "Disable"
-                                                          : "Enable ",
-                                         EDIT_HELP,
-                                         TOGGLE_HELP,
-                                         tf->get_type() ==
-                                         text_filter::type_t::INCLUDE ?
-                                         "OUT" : "IN ",
-                                         DELETE_HELP,
-                                         FILTERING_HELP,
-                                         tss->tss_apply_filters ?
-                                         "Disable Filtering" :
-                                         "Enable Filtering");
+                this->fss_help.set_value(
+                    "  %s  %s%s  %s  %s%s  %s  %s%s",
+                    CREATE_HELP,
+                    ENABLE_HELP,
+                    tf->is_enabled() ? "Disable" : "Enable ",
+                    EDIT_HELP,
+                    TOGGLE_HELP,
+                    tf->get_type() == text_filter::type_t::INCLUDE ? "OUT"
+                                                                   : "IN ",
+                    DELETE_HELP,
+                    FILTERING_HELP,
+                    tss->tss_apply_filters ? "Disable Filtering"
+                                           : "Enable Filtering");
             }
-        } else if (lnav_data.ld_mode == LNM_FILES &&
-                   lnav_data.ld_session_loaded) {
-            auto &lv = lnav_data.ld_files_view;
+        } else if (lnav_data.ld_mode == LNM_FILES
+                   && lnav_data.ld_session_loaded) {
+            auto& lv = lnav_data.ld_files_view;
             auto sel = files_model::from_selection(lv.get_selection());
 
             sel.match(
-                [this](files_model::no_selection) {
-                    this->fss_help.clear();
-                },
+                [this](files_model::no_selection) { this->fss_help.clear(); },
                 [this](files_model::error_selection) {
                     this->fss_help.set_value("  %s", CLOSE_HELP);
                 },
@@ -308,24 +298,24 @@ size_t filter_help_status_source::statusview_fields()
                     this->fss_help.clear();
                 },
                 [this](files_model::file_selection& fs) {
-                    auto &lss = lnav_data.ld_log_source;
+                    auto& lss = lnav_data.ld_log_source;
                     auto vis_help = "Hide";
                     auto ld_opt = lss.find_data(*fs.sb_iter);
                     if (ld_opt && !ld_opt.value()->ld_visible) {
                         vis_help = "Show";
                     }
 
-                    this->fss_help.set_value("  %s%s  %s",
-                                             ENABLE_HELP, vis_help, JUMP_HELP);
-                }
-            );
+                    this->fss_help.set_value(
+                        "  %s%s  %s", ENABLE_HELP, vis_help, JUMP_HELP);
+                });
         }
     };
 
     return 1;
 }
 
-status_field &filter_help_status_source::statusview_value_for_field(int field)
+status_field&
+filter_help_status_source::statusview_value_for_field(int field)
 {
     if (!this->fss_error.empty()) {
         return this->fss_error;

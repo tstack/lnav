@@ -21,101 +21,104 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file lnav_log.cc
  */
 
-#include "config.h"
-
-#include <time.h>
+#include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <assert.h>
+#include <signal.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <signal.h>
-#include <termios.h>
 #include <sys/resource.h>
+#include <termios.h>
+#include <time.h>
+#include <unistd.h>
+
+#include "config.h"
 
 #ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
+#    include <execinfo.h>
 #endif
 #if BACKWARD_HAS_DW == 1
-#include "backward-cpp/backward.hpp"
+#    include "backward-cpp/backward.hpp"
 #endif
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/utsname.h>
-#include <sys/wait.h>
-#include <sys/param.h>
-
+#include <algorithm>
 #include <mutex>
 #include <thread>
 #include <vector>
-#include <algorithm>
+
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
 
 #ifdef HAVE_PCRE_H
-#include <pcre.h>
+#    include <pcre.h>
 #elif HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
+#    include <pcre/pcre.h>
 #else
-#error "pcre.h not found?"
+#    error "pcre.h not found?"
 #endif
 
 #if defined HAVE_NCURSESW_CURSES_H
-#  include <ncursesw/termcap.h>
-#  include <ncursesw/curses.h>
+#    include <ncursesw/curses.h>
+#    include <ncursesw/termcap.h>
 #elif defined HAVE_NCURSESW_H
-#  include <termcap.h>
-#  include <ncursesw.h>
+#    include <ncursesw.h>
+#    include <termcap.h>
 #elif defined HAVE_NCURSES_CURSES_H
-#  include <ncurses/termcap.h>
-#  include <ncurses/curses.h>
+#    include <ncurses/curses.h>
+#    include <ncurses/termcap.h>
 #elif defined HAVE_NCURSES_H
-#  include <termcap.h>
-#  include <ncurses.h>
+#    include <ncurses.h>
+#    include <termcap.h>
 #elif defined HAVE_CURSES_H
-#  include <termcap.h>
-#  include <curses.h>
+#    include <curses.h>
+#    include <termcap.h>
 #else
-#  error "SysV or X/Open-compatible Curses header file required"
+#    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-#include "opt_util.hh"
-#include "lnav_log.hh"
-#include "enum_util.hh"
 #include "auto_mem.hh"
+#include "enum_util.hh"
+#include "lnav_log.hh"
+#include "opt_util.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LOG_LINE_SIZE = 2048;
 
-static const char *CRASH_MSG =
-    "\n"
-    "\n"
-    "==== GURU MEDITATION ====\n"
-    "Unfortunately, lnav has crashed, sorry for the inconvenience.\n"
-    "\n"
-    "You can help improve lnav by sending the following file to " PACKAGE_BUGREPORT " :\n"
-    "  %s\n"
-    "=========================\n";
+static const char* CRASH_MSG
+    = "\n"
+      "\n"
+      "==== GURU MEDITATION ====\n"
+      "Unfortunately, lnav has crashed, sorry for the inconvenience.\n"
+      "\n"
+      "You can help improve lnav by sending the following file "
+      "to " PACKAGE_BUGREPORT
+      " :\n"
+      "  %s\n"
+      "=========================\n";
 
-nonstd::optional<FILE *> lnav_log_file;
+nonstd::optional<FILE*> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
-const char *lnav_log_crash_dir;
-nonstd::optional<const struct termios *> lnav_log_orig_termios;
+const char* lnav_log_crash_dir;
+nonstd::optional<const struct termios*> lnav_log_orig_termios;
 // NOTE: This mutex is leaked so that it is not destroyed during exit.
 // Otherwise, any attempts to log will fail.
-static std::mutex *lnav_log_mutex = new std::mutex();
+static std::mutex* lnav_log_mutex = new std::mutex();
 
-static std::vector<log_state_dumper*>& DUMPER_LIST()
+static std::vector<log_state_dumper*>&
+DUMPER_LIST()
 {
     static std::vector<log_state_dumper*> retval;
 
@@ -141,14 +144,9 @@ static struct {
     off_t lr_frag_start;
     off_t lr_frag_end;
     char lr_data[BUFFER_SIZE];
-} log_ring = {
-    0,
-    BUFFER_SIZE,
-    0,
-    {}
-};
+} log_ring = {0, BUFFER_SIZE, 0, {}};
 
-static const char *LEVEL_NAMES[] = {
+static const char* LEVEL_NAMES[] = {
     "T",
     "D",
     "I",
@@ -156,38 +154,40 @@ static const char *LEVEL_NAMES[] = {
     "E",
 };
 
-static char *log_alloc()
+static char*
+log_alloc()
 {
     off_t data_end = log_ring.lr_length + MAX_LOG_LINE_SIZE;
 
-    if (data_end >= (off_t)BUFFER_SIZE) {
-        const char *new_start = &log_ring.lr_data[MAX_LOG_LINE_SIZE];
+    if (data_end >= (off_t) BUFFER_SIZE) {
+        const char* new_start = &log_ring.lr_data[MAX_LOG_LINE_SIZE];
 
-        new_start = (const char *)memchr(
+        new_start = (const char*) memchr(
             new_start, '\n', log_ring.lr_length - MAX_LOG_LINE_SIZE);
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
         log_ring.lr_frag_end = log_ring.lr_length;
         log_ring.lr_length = 0;
 
         assert(log_ring.lr_frag_start >= 0);
-        assert(log_ring.lr_frag_start <= (off_t)BUFFER_SIZE);
+        assert(log_ring.lr_frag_start <= (off_t) BUFFER_SIZE);
     } else if (data_end >= log_ring.lr_frag_start) {
-        const char *new_start = &log_ring.lr_data[log_ring.lr_frag_start];
+        const char* new_start = &log_ring.lr_data[log_ring.lr_frag_start];
 
-        new_start = (const char *)memchr(
+        new_start = (const char*) memchr(
             new_start, '\n', log_ring.lr_frag_end - log_ring.lr_frag_start);
         assert(new_start != nullptr);
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
         assert(log_ring.lr_frag_start >= 0);
-        assert(log_ring.lr_frag_start <= (off_t)BUFFER_SIZE);
+        assert(log_ring.lr_frag_start <= (off_t) BUFFER_SIZE);
     }
 
     return &log_ring.lr_data[log_ring.lr_length];
 }
 
-void log_argv(int argc, char *argv[])
+void
+log_argv(int argc, char* argv[])
 {
-    const char *log_path = getenv("LNAV_LOG_PATH");
+    const char* log_path = getenv("LNAV_LOG_PATH");
 
     if (log_path != nullptr) {
         lnav_log_file = make_optional_from_nullable(fopen(log_path, "a"));
@@ -199,15 +199,17 @@ void log_argv(int argc, char *argv[])
     }
 }
 
-void log_set_thread_prefix(std::string prefix)
+void
+log_set_thread_prefix(std::string prefix)
 {
     // thread_log_prefix = std::move(prefix);
 }
 
-void log_host_info()
+void
+log_host_info()
 {
     char cwd[MAXPATHLEN];
-    const char *jittarget;
+    const char* jittarget;
     struct utsname un;
     struct rusage ru;
     int pcre_jit;
@@ -242,8 +244,7 @@ void log_host_info()
     log_info("  egid=%d", getegid());
     if (getcwd(cwd, sizeof(cwd)) == nullptr) {
         log_info("  ERROR: getcwd failed");
-    }
-    else {
+    } else {
         log_info("  cwd=%s", cwd);
     }
     log_info("Executable:");
@@ -253,13 +254,25 @@ void log_host_info()
     log_rusage(lnav_log_level_t::INFO, ru);
 }
 
-void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru)
+void
+log_rusage_raw(enum lnav_log_level_t level,
+               const char* src_file,
+               int line_number,
+               const struct rusage& ru)
 {
     log_msg(level, src_file, line_number, "rusage:");
-    log_msg(level, src_file, line_number, "  utime=%d.%06d",
-            ru.ru_utime.tv_sec, ru.ru_utime.tv_usec);
-    log_msg(level, src_file, line_number, "  stime=%d.%06d",
-            ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
+    log_msg(level,
+            src_file,
+            line_number,
+            "  utime=%d.%06d",
+            ru.ru_utime.tv_sec,
+            ru.ru_utime.tv_usec);
+    log_msg(level,
+            src_file,
+            line_number,
+            "  stime=%d.%06d",
+            ru.ru_stime.tv_sec,
+            ru.ru_stime.tv_usec);
     log_msg(level, src_file, line_number, "  maxrss=%ld", ru.ru_maxrss);
     log_msg(level, src_file, line_number, "  ixrss=%ld", ru.ru_ixrss);
     log_msg(level, src_file, line_number, "  idrss=%ld", ru.ru_idrss);
@@ -276,8 +289,12 @@ void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_
     log_msg(level, src_file, line_number, "  nivcsw=%ld", ru.ru_nivcsw);
 }
 
-void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
-    const char *fmt, ...)
+void
+log_msg(lnav_log_level_t level,
+        const char* src_file,
+        int line_number,
+        const char* fmt,
+        ...)
 {
     struct timeval curr_time;
     struct tm localtm;
@@ -294,7 +311,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     {
         // get the base name of the file.  NB: can't use basename() since it
         // can modify its argument
-        const char *last_slash = src_file;
+        const char* last_slash = src_file;
 
         for (int lpc = 0; src_file[lpc]; lpc++) {
             if (src_file[lpc] == '/' || src_file[lpc] == '\\') {
@@ -309,20 +326,20 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
     auto line = log_alloc();
-    prefix_size = snprintf(
-        line, MAX_LOG_LINE_SIZE,
-        "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s t%u %s:%d ",
-        localtm.tm_year + 1900,
-        localtm.tm_mon + 1,
-        localtm.tm_mday,
-        localtm.tm_hour,
-        localtm.tm_min,
-        localtm.tm_sec,
-        (int)(curr_time.tv_usec / 1000),
-        LEVEL_NAMES[lnav::enums::to_underlying(level)],
-        current_thid.t_id,
-        src_file,
-        line_number);
+    prefix_size = snprintf(line,
+                           MAX_LOG_LINE_SIZE,
+                           "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s t%u %s:%d ",
+                           localtm.tm_year + 1900,
+                           localtm.tm_mon + 1,
+                           localtm.tm_mday,
+                           localtm.tm_hour,
+                           localtm.tm_min,
+                           localtm.tm_sec,
+                           (int) (curr_time.tv_usec / 1000),
+                           LEVEL_NAMES[lnav::enums::to_underlying(level)],
+                           current_thid.t_id,
+                           src_file,
+                           line_number);
 #if 0
     if (!thread_log_prefix.empty()) {
         prefix_size += snprintf(
@@ -331,9 +348,9 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
             thread_log_prefix.c_str());
     }
 #endif
-    rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
-        fmt, args);
-    if (rc >= (ssize_t)(MAX_LOG_LINE_SIZE - prefix_size)) {
+    rc = vsnprintf(
+        &line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size, fmt, args);
+    if (rc >= (ssize_t) (MAX_LOG_LINE_SIZE - prefix_size)) {
         rc = MAX_LOG_LINE_SIZE - prefix_size - 1;
     }
     line[prefix_size + rc] = '\n';
@@ -345,7 +362,8 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     va_end(args);
 }
 
-void log_msg_extra(const char *fmt, ...)
+void
+log_msg_extra(const char* fmt, ...)
 {
     std::lock_guard<std::mutex> mg(*lnav_log_mutex);
     va_list args;
@@ -361,7 +379,8 @@ void log_msg_extra(const char *fmt, ...)
     va_end(args);
 }
 
-void log_msg_extra_complete()
+void
+log_msg_extra_complete()
 {
     std::lock_guard<std::mutex> mg(*lnav_log_mutex);
     auto line = log_alloc();
@@ -375,13 +394,14 @@ void log_msg_extra_complete()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
-static void sigabrt(int sig, siginfo_t *info, void *ctx)
+static void
+sigabrt(int sig, siginfo_t* info, void* ctx)
 {
     char crash_path[1024], latest_crash_path[1024];
     int fd;
 #ifdef HAVE_EXECINFO_H
     int frame_count;
-    void *frames[128];
+    void* frames[128];
 #endif
     struct tm localtm;
     time_t curr_time;
@@ -398,45 +418,53 @@ static void sigabrt(int sig, siginfo_t *info, void *ctx)
 #endif
     curr_time = time(nullptr);
     localtime_r(&curr_time, &localtm);
-    snprintf(crash_path, sizeof(crash_path),
-        "%s/crash-%4d-%02d-%02d-%02d-%02d-%02d.%d.log",
-        lnav_log_crash_dir,
-        localtm.tm_year + 1900,
-        localtm.tm_mon + 1,
-        localtm.tm_mday,
-        localtm.tm_hour,
-        localtm.tm_min,
-        localtm.tm_sec,
-        getpid());
-    snprintf(latest_crash_path, sizeof(latest_crash_path),
-        "%s/latest-crash.log", lnav_log_crash_dir);
-    if ((fd = open(crash_path, O_CREAT|O_TRUNC|O_RDWR, 0600)) != -1) {
-        if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
-            (void)write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
-                log_ring.lr_frag_end - log_ring.lr_frag_start);
+    snprintf(crash_path,
+             sizeof(crash_path),
+             "%s/crash-%4d-%02d-%02d-%02d-%02d-%02d.%d.log",
+             lnav_log_crash_dir,
+             localtm.tm_year + 1900,
+             localtm.tm_mon + 1,
+             localtm.tm_mday,
+             localtm.tm_hour,
+             localtm.tm_min,
+             localtm.tm_sec,
+             getpid());
+    snprintf(latest_crash_path,
+             sizeof(latest_crash_path),
+             "%s/latest-crash.log",
+             lnav_log_crash_dir);
+    if ((fd = open(crash_path, O_CREAT | O_TRUNC | O_RDWR, 0600)) != -1) {
+        if (log_ring.lr_frag_start < (off_t) BUFFER_SIZE) {
+            (void) write(fd,
+                         &log_ring.lr_data[log_ring.lr_frag_start],
+                         log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
-        (void)write(fd, log_ring.lr_data, log_ring.lr_length);
+        (void) write(fd, log_ring.lr_data, log_ring.lr_length);
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
 #if BACKWARD_HAS_DW == 1
         {
-            ucontext_t *uctx = static_cast<ucontext_t *>(ctx);
-            void *error_addr = nullptr;
+            ucontext_t* uctx = static_cast<ucontext_t*>(ctx);
+            void* error_addr = nullptr;
 
-#ifdef REG_RIP // x86_64
-            error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.gregs[REG_RIP]);
-#elif defined(REG_EIP) // x86_32
-            error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.gregs[REG_EIP]);
-#endif
+#    ifdef REG_RIP  // x86_64
+            error_addr
+                = reinterpret_cast<void*>(uctx->uc_mcontext.gregs[REG_RIP]);
+#    elif defined(REG_EIP)  // x86_32
+            error_addr
+                = reinterpret_cast<void*>(uctx->uc_mcontext.gregs[REG_EIP]);
+#    endif
 
             backward::StackTrace st;
 
             if (error_addr) {
-                st.load_from(error_addr, 32, reinterpret_cast<void *>(uctx),
+                st.load_from(error_addr,
+                             32,
+                             reinterpret_cast<void*>(uctx),
                              info->si_addr);
             } else {
-                st.load_here(32, reinterpret_cast<void *>(uctx), info->si_addr);
+                st.load_here(32, reinterpret_cast<void*>(uctx), info->si_addr);
             }
             backward::TraceResolver tr;
 
@@ -445,7 +473,8 @@ static void sigabrt(int sig, siginfo_t *info, void *ctx)
                 auto trace = tr.resolve(st[lpc]);
                 char buf[1024];
 
-                snprintf(buf, sizeof(buf),
+                snprintf(buf,
+                         sizeof(buf),
                          "Frame %lu:%s:%s (%s:%d)\n",
                          lpc,
                          trace.object_filename.c_str(),
@@ -466,9 +495,10 @@ static void sigabrt(int sig, siginfo_t *info, void *ctx)
             lsd->log_state();
         }
 
-        if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
-            write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
-                    log_ring.lr_frag_end - log_ring.lr_frag_start);
+        if (log_ring.lr_frag_start < (off_t) BUFFER_SIZE) {
+            write(fd,
+                  &log_ring.lr_data[log_ring.lr_frag_start],
+                  log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
         write(fd, log_ring.lr_data, log_ring.lr_length);
         if (getenv("DUMP_CRASH") != nullptr) {
@@ -530,7 +560,6 @@ static void sigabrt(int sig, siginfo_t *info, void *ctx)
                     int status;
 
                     while (wait(&status) < 0) {
-
                     }
                     break;
                 }
@@ -543,7 +572,8 @@ static void sigabrt(int sig, siginfo_t *info, void *ctx)
 }
 #pragma GCC diagnostic pop
 
-void log_install_handlers()
+void
+log_install_handlers()
 {
     const size_t stack_size = 8 * 1024 * 1024;
     const int sigs[] = {
@@ -575,15 +605,17 @@ void log_install_handlers()
     }
 }
 
-void log_abort()
+void
+log_abort()
 {
     raise(SIGABRT);
     _exit(1);
 }
 
-void log_pipe_err(int fd)
+void
+log_pipe_err(int fd)
 {
-    std::thread reader([fd] () {
+    std::thread reader([fd]() {
         char buffer[1024];
         bool done = false;
 
@@ -596,8 +628,7 @@ void log_pipe_err(int fd)
                     done = true;
                     break;
                 default:
-                    while (buffer[rc - 1] == '\n' ||
-                           buffer[rc - 1] == '\r') {
+                    while (buffer[rc - 1] == '\n' || buffer[rc - 1] == '\r') {
                         rc -= 1;
                     }
 
