@@ -37,18 +37,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../src/data_parser.hh"
-#include "../src/view_curses.hh"
+#include "data_parser.hh"
+#include "view_curses.hh"
 #include "base/injector.hh"
 #include "config.h"
-#include "data_parser.hh"
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
-#include "textview_curses.hh"
 
 using namespace std;
 
