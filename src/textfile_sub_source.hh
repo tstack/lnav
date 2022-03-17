@@ -47,6 +47,8 @@ public:
         this->tss_supports_filtering = true;
     };
 
+    ~textfile_sub_source() = default;
+
     bool empty() const
     {
         return this->tss_files.empty();

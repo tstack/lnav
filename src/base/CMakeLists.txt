@@ -40,8 +40,8 @@ add_library(
   time_util.hh)
 
 target_include_directories(base PUBLIC . .. ../fmtlib ../third-party
-                                       ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses)
+        ${CMAKE_CURRENT_BINARY_DIR}/..)
+target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses pthread)
 
 add_executable(
   test_base

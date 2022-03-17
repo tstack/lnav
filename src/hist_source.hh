@@ -330,6 +330,8 @@ public:
         this->clear();
     };
 
+    ~hist_source2() override = default;
+
     void init();
 
     void set_time_slice(int64_t slice)

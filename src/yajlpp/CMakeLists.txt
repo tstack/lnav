@@ -16,7 +16,7 @@ target_include_directories(yajlpp PUBLIC . .. ../fmtlib
 target_link_libraries(yajlpp pcrepp yajl)
 
 add_executable(test_yajlpp test_yajlpp.cc)
-target_link_libraries(test_yajlpp base yajlpp ${lnav_LIBS})
+target_link_libraries(test_yajlpp yajlpp base ${lnav_LIBS})
 add_test(NAME test_yajlpp COMMAND test_yajlpp)
 
 add_executable(drive_json_op drive_json_op.cc)

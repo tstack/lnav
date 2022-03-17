@@ -116,6 +116,8 @@ class spectrogram_source
     , public list_overlay_source
     , public list_input_delegate {
 public:
+    ~spectrogram_source() override = default;
+
     void invalidate()
     {
         this->ss_cached_bounds.sb_count = 0;

@@ -171,6 +171,8 @@ public:
 
     logfile_sub_source();
 
+    ~logfile_sub_source() = default;
+
     void toggle_time_offset()
     {
         this->lss_flags ^= F_TIME_OFFSET;
