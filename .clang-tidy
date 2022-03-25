@@ -4,6 +4,8 @@
 Checks: "*,\
   -google-readability-todo,\
   -altera-unroll-loops,\
+  -altera-id-dependent-backward-branch,\
+  -altera-struct-pack-align,\
   -fuchsia-*,\
   fuchsia-multiple-inheritance,\
   -llvm-header-guard,\
@@ -50,15 +52,15 @@ CheckOptions:
   - key: 'readability-identifier-naming.ClassCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ClassConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.ClassMemberCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ClassMethodCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.ConstantMemberCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.ConstantParameterCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ConstantPointerParameterCase'
@@ -76,7 +78,7 @@ CheckOptions:
   - key: 'readability-identifier-naming.FunctionCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.GlobalConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.GlobalConstantPointerCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.GlobalFunctionCase'
@@ -111,14 +113,10 @@ CheckOptions:
     value: 'lower_case'
   - key: 'readability-identifier-naming.PrivateMemberCase'
     value: 'lower_case'
-  - key: 'readability-identifier-naming.PrivateMemberPrefix'
-    value: 'm_'
   - key: 'readability-identifier-naming.PrivateMethodCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ProtectedMemberCase'
     value: 'lower_case'
-  - key: 'readability-identifier-naming.ProtectedMemberPrefix'
-    value: 'm_'
   - key: 'readability-identifier-naming.ProtectedMethodCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.PublicMemberCase'
@@ -128,7 +126,7 @@ CheckOptions:
   - key: 'readability-identifier-naming.ScopedEnumConstantCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.StaticConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.StaticVariableCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.StructCase'
@@ -151,4 +149,8 @@ CheckOptions:
     value: 'lower_case'
   - key: 'readability-identifier-naming.VirtualMethodCase'
     value: 'lower_case'
+  - key: 'readability-identifier-length.MinimumVariableNameLength'
+    value: '2'
+  - key: 'readability-identifier-length.MinimumParameterNameLength'
+    value: '2'
 ...

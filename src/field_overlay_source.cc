@@ -332,16 +332,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                  orig_tv.tv_usec / 1000,
                  'T');
     if (offset_tv.tv_sec || offset_tv.tv_usec) {
-        char offset_str[32];
-
         time_str.append("  Pre-adjust Time: ");
         time_str.append(old_timestamp);
-        snprintf(offset_str,
-                 sizeof(offset_str),
-                 "  Offset: %+d.%03d",
-                 (int) offset_tv.tv_sec,
-                 (int) (offset_tv.tv_usec / 1000));
-        time_str.append(offset_str);
+        fmt::format_to(std::back_inserter(time_str),
+                       FMT_STRING("  Offset: {:+}.{:03}"),
+                       offset_tv.tv_sec,
+                       std::chrono::duration_cast<std::chrono::milliseconds>(
+                           std::chrono::microseconds(offset_tv.tv_usec))
+                           .count());
     }
 
     if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show)

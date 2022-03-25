@@ -363,7 +363,7 @@ public:
 
     virtual bool match_mime_type(const file_format_t ff) const
     {
-        if (ff == file_format_t::FF_UNKNOWN) {
+        if (ff == file_format_t::UNKNOWN) {
             return true;
         }
         return false;

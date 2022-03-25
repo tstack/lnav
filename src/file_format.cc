@@ -93,10 +93,10 @@ file_format_t
 detect_file_format(const ghc::filesystem::path& filename)
 {
     if (archive_manager::is_archive(filename)) {
-        return file_format_t::FF_ARCHIVE;
+        return file_format_t::ARCHIVE;
     }
 
-    file_format_t retval = file_format_t::FF_UNKNOWN;
+    file_format_t retval = file_format_t::UNKNOWN;
     auto_fd fd;
 
     if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) != -1) {
@@ -108,9 +108,9 @@ detect_file_format(const ghc::filesystem::path& filename)
             auto header_frag = string_fragment(buffer, 0, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
-                retval = file_format_t::FF_SQLITE_DB;
+                retval = file_format_t::SQLITE_DB;
             } else if (rc > 24 && is_pcap_header(buffer)) {
-                retval = file_format_t::FF_PCAP;
+                retval = file_format_t::PCAP;
             }
         }
     }

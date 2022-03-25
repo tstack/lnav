@@ -425,7 +425,7 @@ public:
     {
         int retval = 0;
 
-        for (auto& ld : this->lss_files) {
+        for (const auto& ld : this->lss_files) {
             retval += ld->ld_filter_state.lfo_filter_state
                           .tfs_filter_hits[filter_index];
         }
@@ -450,6 +450,8 @@ public:
         }
         return "";
     }
+
+    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter();
 
     std::string get_sql_marker_text() const
     {
@@ -588,9 +590,9 @@ public:
         bool ld_visible;
     };
 
-    typedef std::vector<std::unique_ptr<logfile_data>>::iterator iterator;
-    typedef std::vector<std::unique_ptr<logfile_data>>::const_iterator
-        const_iterator;
+    using iterator = std::vector<std::unique_ptr<logfile_data>>::iterator;
+    using const_iterator
+        = std::vector<std::unique_ptr<logfile_data>>::const_iterator;
 
     iterator begin()
     {
@@ -867,8 +869,6 @@ private:
         this->lss_line_size_cache.fill(std::make_pair(0, 0));
         this->lss_line_size_cache[0].first = -1;
     };
-
-    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter();
 
     bool check_extra_filters(iterator ld, logfile::iterator ll);
 

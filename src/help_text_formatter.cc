@@ -36,16 +36,15 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "fmt/printf.h"
 #include "readline_highlighters.hh"
-
-using namespace std;
 
 std::multimap<std::string, help_text*> help_text::TAGGED;
 
-static vector<help_text*>
+static std::vector<help_text*>
 get_related(const help_text& ht)
 {
-    vector<help_text*> retval;
+    std::vector<help_text*> retval;
 
     for (const auto& tag : ht.ht_tags) {
         auto tagged = help_text::TAGGED.equal_range(tag);
@@ -97,7 +96,7 @@ format_help_text_for_term(const help_text& ht,
                 .append(body_indent, ' ')
                 .append(":")
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
-            for (auto& param : ht.ht_parameters) {
+            for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
@@ -138,7 +137,7 @@ format_help_text_for_term(const help_text& ht,
             out.append(body_indent, ' ')
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD)
                 .append("(");
-            for (auto& param : ht.ht_parameters) {
+            for (const auto& param : ht.ht_parameters) {
                 if (!param.ht_flag_name && needs_comma) {
                     out.append(", ");
                 }
@@ -187,7 +186,7 @@ format_help_text_for_term(const help_text& ht,
                 .append(body_indent, ' ')
                 .append(";")
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
-            for (auto& param : ht.ht_parameters) {
+            for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
@@ -226,7 +225,7 @@ format_help_text_for_term(const help_text& ht,
             out.append(body_indent, ' ')
                 .append(
                     ht.ht_name, &view_curses::VC_STYLE, is_infix ? 0 : A_BOLD);
-            for (auto& param : ht.ht_parameters) {
+            for (const auto& param : ht.ht_parameters) {
                 if (break_all
                     || (int) (out.get_string().length() - start_index
                               - line_start + 10)
@@ -338,7 +337,7 @@ format_help_text_for_term(const help_text& ht,
     if (!synopsis_only && !ht.ht_parameters.empty()) {
         size_t max_param_name_width = 0;
 
-        for (auto& param : ht.ht_parameters) {
+        for (const auto& param : ht.ht_parameters) {
             max_param_name_width
                 = std::max(strlen(param.ht_name), max_param_name_width);
         }
@@ -348,7 +347,7 @@ format_help_text_for_term(const help_text& ht,
                    A_UNDERLINE)
             .append("\n");
 
-        for (auto& param : ht.ht_parameters) {
+        for (const auto& param : ht.ht_parameters) {
             if (!param.ht_summary) {
                 continue;
             }
@@ -367,7 +366,7 @@ format_help_text_for_term(const help_text& ht,
     if (!synopsis_only && !ht.ht_results.empty()) {
         size_t max_result_name_width = 0;
 
-        for (auto& result : ht.ht_results) {
+        for (const auto& result : ht.ht_results) {
             max_result_name_width
                 = std::max(strlen(result.ht_name), max_result_name_width);
         }
@@ -377,7 +376,7 @@ format_help_text_for_term(const help_text& ht,
                    A_UNDERLINE)
             .append("\n");
 
-        for (auto& result : ht.ht_results) {
+        for (const auto& result : ht.ht_results) {
             if (!result.ht_summary) {
                 continue;
             }
@@ -395,10 +394,10 @@ format_help_text_for_term(const help_text& ht,
     }
     if (!synopsis_only && !ht.ht_tags.empty()) {
         auto related_help = get_related(ht);
-        auto related_refs = vector<string>();
+        auto related_refs = std::vector<std::string>();
 
-        for (auto related : related_help) {
-            string name = related->ht_name;
+        for (const auto* related : related_help) {
+            std::string name = related->ht_name;
             switch (related->ht_context) {
                 case help_context_t::HC_COMMAND:
                     name = ":" + name;
@@ -451,7 +450,7 @@ format_example_text_for_term(const help_text& ht,
                    &view_curses::VC_STYLE,
                    A_UNDERLINE)
             .append("\n");
-        for (auto& ex : ht.ht_example) {
+        for (const auto& ex : ht.ht_example) {
             attr_line_t ex_line(ex.he_cmd);
             size_t keyword_offset = 0;
             const char* space = strchr(ex.he_cmd, ' ');
@@ -482,7 +481,7 @@ format_example_text_for_term(const help_text& ht,
             }
 
             out.append("#")
-                .append(to_string(count))
+                .append(fmt::to_string(count))
                 .append(" ")
                 .append(ex.he_description, &tws.with_indent(3))
                 .append(":\n   ")
@@ -504,7 +503,7 @@ link_name(const help_text& ht)
     const static std::regex SCRUBBER("[^\\w_]");
 
     bool is_sql_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
-    string scrubbed_name;
+    std::string scrubbed_name;
 
     if (is_sql_infix) {
         scrubbed_name = "infix";
@@ -514,7 +513,7 @@ link_name(const help_text& ht)
     if (ht.ht_function_type == help_function_type_t::HFT_AGGREGATE) {
         scrubbed_name += "_agg";
     }
-    for (auto& param : ht.ht_parameters) {
+    for (const auto& param : ht.ht_parameters) {
         if (!is_sql_infix && param.ht_name[0]) {
             continue;
         }
@@ -565,66 +564,66 @@ format_help_text_for_rst(const help_text& ht,
             break;
     }
 
-    fprintf(rst_file, "\n.. _%s:\n\n", link_name(ht).c_str());
-    out_count += fprintf(rst_file, "%s%s", prefix, ht.ht_name);
+    fmt::print(rst_file, FMT_STRING("\n.. _{}:\n\n"), link_name(ht));
+    out_count += fmt::fprintf(rst_file, "%s%s", prefix, ht.ht_name);
     if (is_sql_func) {
-        out_count += fprintf(rst_file, "(");
+        out_count += fmt::fprintf(rst_file, "(");
     }
     bool needs_comma = false;
-    for (auto& param : ht.ht_parameters) {
+    for (const auto& param : ht.ht_parameters) {
         if (needs_comma) {
             if (param.ht_flag_name) {
-                out_count += fprintf(rst_file, " ");
+                out_count += fmt::fprintf(rst_file, " ");
             } else {
-                out_count += fprintf(rst_file, ", ");
+                out_count += fmt::fprintf(rst_file, ", ");
             }
         }
         if (!is_sql_func) {
-            out_count += fprintf(rst_file, " ");
+            out_count += fmt::fprintf(rst_file, " ");
         }
 
         if (param.ht_flag_name) {
-            out_count += fprintf(rst_file, "%s ", param.ht_flag_name);
+            out_count += fmt::fprintf(rst_file, "%s ", param.ht_flag_name);
         }
         if (param.ht_name[0]) {
-            out_count += fprintf(rst_file, "*");
+            out_count += fmt::fprintf(rst_file, "*");
             if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
-                out_count += fprintf(rst_file, "\\[");
+                out_count += fmt::fprintf(rst_file, "\\[");
             }
-            out_count += fprintf(rst_file, "%s", param.ht_name);
+            out_count += fmt::fprintf(rst_file, "%s", param.ht_name);
             if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
-                out_count += fprintf(rst_file, "\\]");
+                out_count += fmt::fprintf(rst_file, "\\]");
             }
-            out_count += fprintf(rst_file, "*");
+            out_count += fmt::fprintf(rst_file, "*");
         }
         if (is_sql_func) {
             needs_comma = true;
         }
     }
     if (is_sql_func) {
-        out_count += fprintf(rst_file, ")");
+        out_count += fmt::fprintf(rst_file, ")");
     }
-    fprintf(rst_file, "\n");
-    fprintf(rst_file, "%s\n\n", string(out_count, '^').c_str());
+    fmt::fprintf(rst_file, "\n");
+    fmt::print(rst_file, FMT_STRING("{0:^^{1}}\n\n"), "", out_count);
 
-    fprintf(rst_file, "  %s\n", ht.ht_summary);
-    fprintf(rst_file, "\n");
-    if (ht.ht_description) {
-        fprintf(rst_file, "  %s\n", ht.ht_description);
+    fmt::fprintf(rst_file, "  %s\n", ht.ht_summary);
+    fmt::fprintf(rst_file, "\n");
+    if (ht.ht_description != nullptr) {
+        fmt::fprintf(rst_file, "  %s\n", ht.ht_description);
     }
 
     int param_count = 0;
-    for (auto& param : ht.ht_parameters) {
+    for (const auto& param : ht.ht_parameters) {
         if (param.ht_summary && param.ht_summary[0]) {
             param_count += 1;
         }
     }
 
     if (param_count > 0) {
-        fprintf(rst_file, "  **Parameters**\n");
-        for (auto& param : ht.ht_parameters) {
+        fmt::fprintf(rst_file, "  **Parameters**\n");
+        for (const auto& param : ht.ht_parameters) {
             if (param.ht_summary && param.ht_summary[0]) {
-                fprintf(
+                fmt::fprintf(
                     rst_file,
                     "    * **%s%s** --- %s\n",
                     param.ht_name,
@@ -632,44 +631,44 @@ format_help_text_for_rst(const help_text& ht,
                     param.ht_summary);
             }
         }
-        fprintf(rst_file, "\n");
+        fmt::fprintf(rst_file, "\n");
     }
     if (is_sql) {
         prefix = ";";
     }
     if (!ht.ht_example.empty()) {
-        fprintf(rst_file, "  **Examples**\n");
-        for (auto& example : ht.ht_example) {
-            fprintf(rst_file, "    %s:\n\n", example.he_description);
-            fprintf(rst_file,
-                    "    .. code-block::  %s\n\n",
-                    is_sql ? "custsqlite" : "lnav");
+        fmt::fprintf(rst_file, "  **Examples**\n");
+        for (const auto& example : ht.ht_example) {
+            fmt::fprintf(rst_file, "    %s:\n\n", example.he_description);
+            fmt::fprintf(rst_file,
+                         "    .. code-block::  %s\n\n",
+                         is_sql ? "custsqlite" : "lnav");
             if (ht.ht_context == help_context_t::HC_COMMAND) {
-                fprintf(rst_file,
-                        "      %s%s %s\n",
-                        prefix,
-                        ht.ht_name,
-                        example.he_cmd);
+                fmt::fprintf(rst_file,
+                             "      %s%s %s\n",
+                             prefix,
+                             ht.ht_name,
+                             example.he_cmd);
             } else {
-                fprintf(rst_file, "      %s%s\n", prefix, example.he_cmd);
+                fmt::fprintf(rst_file, "      %s%s\n", prefix, example.he_cmd);
             }
             auto result = eval(ht, example);
             if (!result.empty()) {
-                vector<attr_line_t> lines;
+                std::vector<attr_line_t> lines;
 
                 result.split_lines(lines);
-                for (auto& line : lines) {
-                    fprintf(rst_file, "      %s\n", line.get_string().c_str());
+                for (const auto& line : lines) {
+                    fmt::fprintf(rst_file, "      %s\n", line.get_string());
                 }
             }
-            fprintf(rst_file, "\n");
+            fmt::fprintf(rst_file, "\n");
         }
     }
 
     if (!ht.ht_tags.empty()) {
-        auto related_refs = vector<string>();
+        auto related_refs = std::vector<std::string>();
 
-        for (auto related : get_related(ht)) {
+        for (const auto* related : get_related(ht)) {
             related_refs.emplace_back(
                 fmt::format(":ref:`{}`", link_name(*related)));
         }
@@ -680,5 +679,5 @@ format_help_text_for_rst(const help_text& ht,
                    fmt::join(related_refs, ", "));
     }
 
-    fprintf(rst_file, "\n----\n\n");
+    fmt::fprintf(rst_file, "\n----\n\n");
 }

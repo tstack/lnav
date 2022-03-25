@@ -310,7 +310,6 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
     shared_ptr<text_filter> tf = *(fs.begin() + line);
-    char hits[32];
 
     value_out = "    ";
     switch (tf->get_type()) {
@@ -330,14 +329,13 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     if (this->fss_editing && line == tc.get_selection()) {
-        snprintf(hits, sizeof(hits), "%9s hits | ", "-");
+        fmt::format_to(
+            std::back_inserter(value_out), FMT_STRING("{:>9} hits | "), "-");
     } else {
-        snprintf(hits,
-                 sizeof(hits),
-                 "%'9d hits | ",
-                 tss->get_filtered_count_for(tf->get_index()));
+        fmt::format_to(std::back_inserter(value_out),
+                       FMT_STRING("{:>9L} hits | "),
+                       tss->get_filtered_count_for(tf->get_index()));
     }
-    value_out.append(hits);
 
     value_out.append(tf->get_id());
 }
@@ -384,6 +382,24 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
         value_out.emplace_back(
             line_range{0, -1}, &view_curses::VC_ROLE, view_colors::VCR_FOCUSED);
     }
+
+    attr_line_t content{tf->get_id()};
+    auto& content_attrs = content.get_attrs();
+
+    switch (tf->get_lang()) {
+        case filter_lang_t::REGEX:
+            readline_regex_highlighter(content, content.length());
+            break;
+        case filter_lang_t::SQL:
+            readline_sqlite_highlighter(content, content.length());
+            break;
+        case filter_lang_t::NONE:
+            break;
+    }
+
+    shift_string_attrs(content_attrs, 0, 25);
+    value_out.insert(
+        value_out.end(), content_attrs.begin(), content_attrs.end());
 }
 
 size_t

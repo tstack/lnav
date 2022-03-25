@@ -103,10 +103,7 @@ map_elements_to_json2(yajl_gen gen,
             = dp.get_element_string(iter.e_sub_elements->front());
 
         if (key_str.empty()) {
-            char buffer[32];
-
-            snprintf(buffer, sizeof(buffer), "col_%d", col);
-            key_str = buffer;
+            key_str = fmt::format(FMT_STRING("col_{}"), col);
             col += 1;
         }
         root_map.gen(key_str);

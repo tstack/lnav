@@ -151,18 +151,7 @@ struct json_path_handler_base {
         return this->jph_is_array;
     }
 
-    nonstd::optional<int> to_enum_value(const string_fragment& sf) const
-    {
-        for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
-            const enum_value_t& ev = this->jph_enum_values[lpc];
-
-            if (sf == ev.first) {
-                return ev.second;
-            }
-        }
-
-        return nonstd::nullopt;
-    };
+    nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
 
     yajl_gen_status gen(yajlpp_gen_context& ygc, yajl_gen handle) const;
     yajl_gen_status gen_schema(yajlpp_gen_context& ygc) const;
@@ -183,31 +172,7 @@ struct json_path_handler_base {
         OBJECT,
     };
 
-    std::vector<schema_type_t> get_types() const
-    {
-        std::vector<schema_type_t> retval;
-
-        if (this->jph_callbacks.yajl_boolean) {
-            retval.push_back(schema_type_t::BOOLEAN);
-        }
-        if (this->jph_callbacks.yajl_integer) {
-            retval.push_back(schema_type_t::INTEGER);
-        }
-        if (this->jph_callbacks.yajl_double || this->jph_callbacks.yajl_number)
-        {
-            retval.push_back(schema_type_t::NUMBER);
-        }
-        if (this->jph_callbacks.yajl_string) {
-            retval.push_back(schema_type_t::STRING);
-        }
-        if (this->jph_children) {
-            retval.push_back(schema_type_t::OBJECT);
-        }
-        if (retval.empty()) {
-            retval.push_back(schema_type_t::ANY);
-        }
-        return retval;
-    };
+    std::vector<schema_type_t> get_types() const;
 
     std::string jph_property;
     pcrepp jph_regex;
@@ -607,15 +572,7 @@ public:
         return this->yg_handle.in();
     };
 
-    string_fragment to_string_fragment()
-    {
-        const unsigned char* buf;
-        size_t len;
-
-        yajl_gen_get_buf(this->yg_handle.in(), &buf, &len);
-
-        return string_fragment((const char*) buf, 0, len);
-    };
+    string_fragment to_string_fragment();
 
 private:
     auto_mem<yajl_gen_t> yg_handle;

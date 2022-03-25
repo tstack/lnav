@@ -67,12 +67,10 @@ column_namer::existing_name(const std::string& in_name) const
 std::string
 column_namer::add_column(const std::string& in_name)
 {
-    std::string base_name = in_name, retval;
-    size_t buf_size;
+    auto base_name = in_name;
+    std::string retval;
     int num = 0;
 
-    buf_size = in_name.length() + 64;
-    char buffer[buf_size];
     if (in_name.empty()) {
         base_name = "col";
     }
@@ -82,8 +80,7 @@ column_namer::add_column(const std::string& in_name)
     auto counter_iter = this->cn_name_counters.find(retval);
     if (counter_iter != this->cn_name_counters.end()) {
         num = ++counter_iter->second;
-        snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-        retval = buffer;
+        retval = fmt::format(FMT_STRING("{}_{}"), base_name, num);
     }
 
     while (this->existing_name(retval)) {
@@ -92,8 +89,7 @@ column_namer::add_column(const std::string& in_name)
         }
 
         log_debug("column name already exists: %s", retval.c_str());
-        snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-        retval = buffer;
+        retval = fmt::format(FMT_STRING("{}_{}"), base_name, num);
         num += 1;
     }
 

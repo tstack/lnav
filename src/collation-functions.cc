@@ -39,7 +39,7 @@
 #include "config.h"
 #include "log_level.hh"
 
-#define MAX_ADDR_LEN 128
+constexpr int MAX_ADDR_LEN = 128;
 
 static int
 try_inet_pton(int p_len, const char* p, char* n)

@@ -56,7 +56,7 @@ public:
 
     bool empty() const
     {
-        return fr_size == 0;
+        return this->fr_size == 0;
     }
 };
 

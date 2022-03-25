@@ -36,11 +36,11 @@
 #include "ghc/filesystem.hpp"
 
 enum class file_format_t : int {
-    FF_UNKNOWN,
-    FF_SQLITE_DB,
-    FF_ARCHIVE,
-    FF_PCAP,
-    FF_REMOTE,
+    UNKNOWN,
+    SQLITE_DB,
+    ARCHIVE,
+    PCAP,
+    REMOTE,
 };
 
 file_format_t detect_file_format(const ghc::filesystem::path& filename);
@@ -53,16 +53,16 @@ struct formatter<file_format_t> : formatter<string_view> {
     {
         string_view name = "unknown";
         switch (ff) {
-            case file_format_t::FF_SQLITE_DB:
+            case file_format_t::SQLITE_DB:
                 name = "\U0001F5C2  SQLite DB";
                 break;
-            case file_format_t::FF_ARCHIVE:
+            case file_format_t::ARCHIVE:
                 name = "\U0001F5C4  Archive";
                 break;
-            case file_format_t::FF_PCAP:
+            case file_format_t::PCAP:
                 name = "\U0001F5A5  Pcap";
                 break;
-            case file_format_t::FF_REMOTE:
+            case file_format_t::REMOTE:
                 name = "\U0001F5A5  Remote";
                 break;
             default:

@@ -38,15 +38,13 @@
 
 class column_namer {
 public:
-    column_namer() : cn_builtin_names({"col"}) {}
-
     bool existing_name(const std::string& in_name) const;
 
     std::string add_column(const std::string& in_name);
 
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
-    std::unordered_map<std::string, int> cn_name_counters;
+    std::vector<std::string> cn_builtin_names{"col"};
+    std::vector<std::string> cn_names{};
+    std::unordered_map<std::string, int> cn_name_counters{};
 };
 
 #endif

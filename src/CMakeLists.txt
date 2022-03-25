@@ -211,6 +211,7 @@ add_library(
         cppfmt STATIC
         fmtlib/format.cc
         fmtlib/os.cc
+        fmtlib/fmt/args.h
         fmtlib/fmt/chrono.h
         fmtlib/fmt/color.h
         fmtlib/fmt/compile.h
@@ -220,10 +221,10 @@ add_library(
         fmtlib/fmt/locale.h
         fmtlib/fmt/os.h
         fmtlib/fmt/ostream.h
-        fmtlib/fmt/posix.h
         fmtlib/fmt/printf.h
         fmtlib/fmt/ranges.h
-        fmtlib/fmt/time.h)
+        fmtlib/fmt/xchar.h
+)
 target_include_directories(cppfmt PUBLIC fmtlib)
 
 add_library(lnavfileio STATIC
@@ -461,6 +462,7 @@ target_link_libraries(
         tailercommon
         logfmt
         yajlpp
+        cppfmt
         ${lnav_LIBS})
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 

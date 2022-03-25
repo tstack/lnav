@@ -247,7 +247,7 @@ public:
 
 class filter_stack {
 public:
-    typedef std::vector<std::shared_ptr<text_filter>>::iterator iterator;
+    using iterator = std::vector<std::shared_ptr<text_filter>>::iterator;
 
     explicit filter_stack(size_t reserved = 0) : fs_reserved(reserved) {}
 

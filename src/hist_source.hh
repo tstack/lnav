@@ -351,7 +351,7 @@ public:
 
     size_t text_line_width(textview_curses& curses) override
     {
-        return strlen(LINE_FORMAT) + 8 * 4;
+        return 48 + 8 * 4;
     };
 
     void clear();
@@ -382,8 +382,6 @@ public:
         struct timeval tv_bucket) override;
 
 private:
-    static const char* LINE_FORMAT;
-
     struct hist_value {
         double hv_value;
     };

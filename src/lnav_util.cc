@@ -42,8 +42,6 @@
 #include "fmt/format.h"
 #include "view_curses.hh"
 
-using namespace std;
-
 bool
 change_to_parent_dir()
 {

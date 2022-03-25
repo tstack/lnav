@@ -354,7 +354,6 @@ nonstd::optional<session_pair_t>
 scan_sessions()
 {
     static_root_mem<glob_t, globfree> view_info_list;
-    char view_info_pattern_base[128];
 
     cleanup_session_data();
 
@@ -367,10 +366,8 @@ scan_sessions()
 
     session_file_names.clear();
 
-    snprintf(view_info_pattern_base,
-             sizeof(view_info_pattern_base),
-             "view-info-%s.*.json",
-             session_id.value().c_str());
+    auto view_info_pattern_base
+        = fmt::format(FMT_STRING("view-info-{}.*.json"), session_id.value());
     auto view_info_pattern = lnav::paths::dotlnav() / view_info_pattern_base;
     if (glob(view_info_pattern.c_str(), 0, nullptr, view_info_list.inout())
         == 0) {
@@ -1424,7 +1421,7 @@ save_time_bookmarks()
 }
 
 static void
-save_session_with_id(const std::string session_id)
+save_session_with_id(const std::string& session_id)
 {
     auto_mem<FILE> file(fclose);
     yajl_gen handle = nullptr;
@@ -1433,14 +1430,11 @@ save_session_with_id(const std::string session_id)
 
     log_info("saving session with id: %s", session_id.c_str());
 
-    char view_base_name[256];
-    snprintf(view_base_name,
-             sizeof(view_base_name),
-             "view-info-%s.ts%ld.ppid%d.json",
-             session_id.c_str(),
-             lnav_data.ld_session_time,
-             getppid());
-
+    auto view_base_name
+        = fmt::format(FMT_STRING("view-info-{}.ts{}.ppid{}.json"),
+                      session_id,
+                      lnav_data.ld_session_time,
+                      getppid());
     auto view_file_name = lnav::paths::dotlnav() / view_base_name;
     auto view_file_tmp_name = view_file_name.string() + ".tmp";
 

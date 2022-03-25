@@ -34,6 +34,7 @@
 #endif
 
 #include "config.h"
+#include "fmt/format.h"
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp/json_ptr.hh"
 
@@ -450,10 +451,9 @@ json_ptr_walk::current_ptr()
         if (this->jpw_array_indexes[lpc] == -1) {
             retval.append(this->jpw_keys[lpc]);
         } else {
-            char num[64];
-
-            snprintf(num, sizeof(num), "%d", this->jpw_array_indexes[lpc]);
-            retval.append(num);
+            fmt::format_to(std::back_inserter(retval),
+                           FMT_STRING("{}"),
+                           this->jpw_array_indexes[lpc]);
         }
     }
 

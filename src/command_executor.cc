@@ -818,14 +818,10 @@ pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
                 .expect("Cannot create temporary file for callback")
                 .second);
         static int exec_count = 0;
-        char desc[128];
 
         lnav_data.ld_pipers.push_back(pp);
-        snprintf(desc,
-                 sizeof(desc),
-                 "[%d] Output of %s",
-                 exec_count++,
-                 cmdline.c_str());
+        auto desc = fmt::format(
+            FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
         lnav_data.ld_active_files.fc_file_names[desc]
             .with_fd(pp->get_fd())
             .with_include_in_session(false)

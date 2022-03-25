@@ -74,3 +74,39 @@ line_filter_observer::logline_eof(const logfile& lf)
         iter->end_of_message(this->lfo_filter_state);
     }
 }
+
+size_t
+line_filter_observer::get_min_count(size_t max) const
+{
+    size_t retval = max;
+
+    for (auto& filter : this->lfo_filter_stack) {
+        if (filter->lf_deleted) {
+            continue;
+        }
+        retval = std::min(
+            retval,
+            this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
+    }
+
+    return retval;
+}
+
+void
+line_filter_observer::clear_deleted_filter_state()
+{
+    uint32_t used_mask = 0;
+
+    log_debug("filter stack %p", &this->lfo_filter_stack);
+    for (auto& filter : this->lfo_filter_stack) {
+        if (filter->lf_deleted) {
+            log_debug("skipping deleted %p %d %d",
+                      filter.get(),
+                      filter->get_index(),
+                      filter->get_lang());
+            continue;
+        }
+        used_mask |= (1UL << filter->get_index());
+    }
+    this->lfo_filter_state.clear_deleted_filter_state(used_mask);
+}

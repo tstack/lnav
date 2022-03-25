@@ -50,6 +50,7 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
+#include "fmt/printf.h"
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
@@ -705,9 +706,9 @@ csv_write_string(FILE* outfile, const string& str)
     if (csv_needs_quoting(str)) {
         string quoted_str = csv_quote_string(str);
 
-        fprintf(outfile, "%s", quoted_str.c_str());
+        fmt::fprintf(outfile, "%s", quoted_str);
     } else {
-        fprintf(outfile, "%s", str.c_str());
+        fmt::fprintf(outfile, "%s", str);
     }
 }
 

@@ -31,11 +31,7 @@
 
 #include "base/math_util.hh"
 #include "config.h"
-
-using namespace std;
-
-const char* hist_source2::LINE_FORMAT
-    = " %8d normal  %8d errors  %8d warnings  %8d marks";
+#include "fmt/chrono.h"
 
 nonstd::optional<vis_line_t>
 hist_source2::row_for_time(struct timeval tv_bucket)
@@ -73,27 +69,22 @@ hist_source2::text_value_for_line(textview_curses& tc,
 {
     bucket_t& bucket = this->find_bucket(row);
     struct tm bucket_tm;
-    char tm_buffer[128];
-    char line[256];
-
-    if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
-        strftime(
-            tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S  ", &bucket_tm);
-    } else {
-        log_error("no time?");
-        tm_buffer[0] = '\0';
-    }
-    snprintf(line,
-             sizeof(line),
-             LINE_FORMAT,
-             (int) rint(bucket.b_values[HT_NORMAL].hv_value),
-             (int) rint(bucket.b_values[HT_ERROR].hv_value),
-             (int) rint(bucket.b_values[HT_WARNING].hv_value),
-             (int) rint(bucket.b_values[HT_MARK].hv_value));
 
     value_out.clear();
-    value_out.append(tm_buffer);
-    value_out.append(line);
+    if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
+        fmt::format_to(std::back_inserter(value_out),
+                       FMT_STRING(" {:%a %b %d %H:%M:%S}  "),
+                       bucket_tm);
+    } else {
+        log_error("no time?");
+    }
+    fmt::format_to(
+        std::back_inserter(value_out),
+        FMT_STRING(" {:8L} normal  {:8L} errors  {:8L} warnings  {:8L} marks"),
+        rint(bucket.b_values[HT_NORMAL].hv_value),
+        rint(bucket.b_values[HT_ERROR].hv_value),
+        rint(bucket.b_values[HT_WARNING].hv_value),
+        rint(bucket.b_values[HT_MARK].hv_value));
 }
 
 void

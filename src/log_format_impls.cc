@@ -47,7 +47,7 @@
 
 using namespace std;
 
-static pcrepp RDNS_PATTERN(
+static const pcrepp RDNS_PATTERN(
     "^(?:com|net|org|edu|[a-z][a-z])"
     "(\\.\\w+)+(.+)");
 
@@ -125,23 +125,24 @@ class generic_log_format : public log_format {
             pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] "
                         "\\(\\d+\\) (.*)"),
 
-            pcre_format()};
+            pcre_format(),
+        };
 
         return log_fmt;
     };
 
-    std::string get_pattern_regex(uint64_t line_number) const
+    std::string get_pattern_regex(uint64_t line_number) const override
     {
         int pat_index = this->pattern_index_for_line(line_number);
         return get_pcre_log_formats()[pat_index].name;
     }
 
-    const intern_string_t get_name() const
+    const intern_string_t get_name() const override
     {
         return intern_string::lookup("generic_log");
     };
 
-    void scrub(string& line)
+    void scrub(string& line) override
     {
         pcre_context_static<30> context;
         pcre_input pi(line);
@@ -161,7 +162,7 @@ class generic_log_format : public log_format {
     scan_result_t scan(logfile& lf,
                        vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr)
+                       shared_buffer_ref& sbr) override
     {
         struct exttm log_time;
         struct timeval log_tv;
@@ -201,7 +202,7 @@ class generic_log_format : public log_format {
                   shared_buffer_ref& line,
                   string_attrs_t& sa,
                   std::vector<logline_value>& values,
-                  bool annotate_module) const
+                  bool annotate_module) const override
     {
         int pat_index = this->pattern_index_for_line(line_number);
         pcre_format& fmt = get_pcre_log_formats()[pat_index];
@@ -235,7 +236,7 @@ class generic_log_format : public log_format {
         sa.emplace_back(lr, &SA_BODY);
     };
 
-    shared_ptr<log_format> specialized(int fmt_lock)
+    shared_ptr<log_format> specialized(int fmt_lock) override
     {
         return std::make_shared<generic_log_format>(*this);
     };
@@ -299,17 +300,17 @@ struct separated_string {
     size_t ss_separator_len;
 
     separated_string(const char* str, size_t len)
-        : ss_str(str), ss_len(len), ss_separator(",")
+        : ss_str(str), ss_len(len), ss_separator(","),
+          ss_separator_len(strlen(this->ss_separator))
     {
-        this->ss_separator_len = strlen(this->ss_separator);
-    };
+    }
 
     separated_string& with_separator(const char* sep)
     {
         this->ss_separator = sep;
         this->ss_separator_len = strlen(sep);
         return *this;
-    };
+    }
 
     struct iterator {
         const separated_string& i_parent;
@@ -379,12 +380,12 @@ struct separated_string {
     iterator begin()
     {
         return {*this, this->ss_str};
-    };
+    }
 
     iterator end()
     {
         return {*this, this->ss_str + this->ss_len};
-    };
+    }
 };
 
 class bro_log_format : public log_format {
@@ -423,14 +424,14 @@ public:
         this->lf_time_ordered = false;
     };
 
-    const intern_string_t get_name() const
+    const intern_string_t get_name() const override
     {
         static const intern_string_t name(intern_string::lookup("bro"));
 
         return this->blf_format_name.empty() ? name : this->blf_format_name;
     };
 
-    virtual void clear()
+    void clear() override
     {
         this->log_format::clear();
         this->blf_format_name.clear();
@@ -518,9 +519,9 @@ public:
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr)
+                       shared_buffer_ref& sbr) override
     {
-        static pcrepp SEP_RE(R"(^#separator\s+(.+))");
+        static const pcrepp SEP_RE(R"(^#separator\s+(.+))");
 
         if (!this->blf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);
@@ -583,10 +584,7 @@ public:
             } else if (directive == "#unset_field") {
                 this->blf_unset_field = intern_string::lookup(*iter);
             } else if (directive == "#path") {
-                string path = to_string(*iter);
-                char full_name[128];
-                snprintf(
-                    full_name, sizeof(full_name), "bro_%s_log", path.c_str());
+                auto full_name = fmt::format(FMT_STRING("bro_{}_log"), *iter);
                 this->blf_format_name = intern_string::lookup(full_name);
             } else if (directive == "#fields") {
                 do {
@@ -674,7 +672,7 @@ public:
                   shared_buffer_ref& sbr,
                   string_attrs_t& sa,
                   std::vector<logline_value>& values,
-                  bool annotate_module) const
+                  bool annotate_module) const override
     {
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
@@ -714,17 +712,16 @@ public:
     };
 
     const logline_value_stats* stats_for_value(
-        const intern_string_t& name) const
+        const intern_string_t& name) const override
     {
         const logline_value_stats* retval = nullptr;
 
-        for (size_t lpc = 0; lpc < this->blf_field_defs.size(); lpc++) {
-            if (this->blf_field_defs[lpc].fd_meta.lvm_name == name) {
-                if (this->blf_field_defs[lpc].fd_numeric_index < 0) {
+        for (const auto& blf_field_def : this->blf_field_defs) {
+            if (blf_field_def.fd_meta.lvm_name == name) {
+                if (blf_field_def.fd_numeric_index < 0) {
                     break;
                 }
-                retval = &this->lf_value_stats[this->blf_field_defs[lpc]
-                                                   .fd_numeric_index];
+                retval = &this->lf_value_stats[blf_field_def.fd_numeric_index];
                 break;
             }
         }
@@ -732,7 +729,7 @@ public:
         return retval;
     };
 
-    std::shared_ptr<log_format> specialized(int fmt_lock = -1)
+    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
         return make_shared<bro_log_format>(*this);
     };
@@ -782,7 +779,7 @@ public:
         return retval;
     };
 
-    std::shared_ptr<log_vtab_impl> get_vtab_impl() const
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
     {
         if (this->blf_format_name.empty()) {
             return nullptr;
@@ -802,7 +799,7 @@ public:
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message)
+                     bool full_message) override
     {
     }
 
@@ -1129,8 +1126,8 @@ public:
                        const line_info& li,
                        shared_buffer_ref& sbr) override
     {
-        static auto W3C_LOG_NAME = intern_string::lookup("w3c_log");
-        static auto X_FIELDS_NAME = intern_string::lookup("x_fields");
+        static const auto* W3C_LOG_NAME = intern_string::lookup("w3c_log");
+        static const auto* X_FIELDS_NAME = intern_string::lookup("x_fields");
         static auto X_FIELDS_IDX = 0;
 
         if (!this->wlf_format_name.empty()) {

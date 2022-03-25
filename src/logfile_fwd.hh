@@ -132,7 +132,7 @@ struct logfile_open_options {
     bool loo_non_utf_is_visible{true};
     ssize_t loo_visible_size_limit{-1};
     bool loo_tail{true};
-    file_format_t loo_file_format{file_format_t::FF_UNKNOWN};
+    file_format_t loo_file_format{file_format_t::UNKNOWN};
 };
 
 #endif

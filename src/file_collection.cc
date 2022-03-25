@@ -128,17 +128,17 @@ file_collection::regenerate_unique_file_names()
     }
     for (const auto& pair : this->fc_other_files) {
         switch (pair.second.ofd_format) {
-            case file_format_t::FF_UNKNOWN:
-            case file_format_t::FF_ARCHIVE:
-            case file_format_t::FF_PCAP:
-            case file_format_t::FF_SQLITE_DB: {
+            case file_format_t::UNKNOWN:
+            case file_format_t::ARCHIVE:
+            case file_format_t::PCAP:
+            case file_format_t::SQLITE_DB: {
                 auto bn = ghc::filesystem::path(pair.first).filename().string();
                 if (bn.length() > this->fc_largest_path_length) {
                     this->fc_largest_path_length = bn.length();
                 }
                 break;
             }
-            case file_format_t::FF_REMOTE: {
+            case file_format_t::REMOTE: {
                 if (pair.first.length() > this->fc_largest_path_length) {
                     this->fc_largest_path_length = pair.first.length();
                 }
@@ -306,11 +306,11 @@ file_collection::watch_logfile(const std::string& filename,
 
             loo.loo_file_format = ff;
             switch (ff) {
-                case file_format_t::FF_SQLITE_DB:
+                case file_format_t::SQLITE_DB:
                     retval.fc_other_files[filename].ofd_format = ff;
                     break;
 
-                case file_format_t::FF_PCAP: {
+                case file_format_t::PCAP: {
                     auto res = pcap_manager::convert(filename);
 
                     if (res.isOk()) {
@@ -363,7 +363,7 @@ file_collection::watch_logfile(const std::string& filename,
                     break;
                 }
 
-                case file_format_t::FF_ARCHIVE: {
+                case file_format_t::ARCHIVE: {
                     nonstd::optional<
                         std::list<archive_manager::extract_progress>::iterator>
                         prog_iter_opt;
@@ -516,7 +516,7 @@ file_collection::expand_filename(
 
                     isc::to<tailer::looper&, services::remote_tailer_t>().send(
                         [=](auto& tlooper) { tlooper.add_remote(rp, loo); });
-                    retval.fc_other_files[path] = file_format_t::FF_REMOTE;
+                    retval.fc_other_files[path] = file_format_t::REMOTE;
                     {
                         this->fc_progress->writeAccess()
                             ->sp_tailers[fmt::format("{}", rp.home())]

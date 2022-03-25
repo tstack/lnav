@@ -39,8 +39,6 @@ class files_sub_source
 public:
     files_sub_source();
 
-    ~files_sub_source() override = default;
-
     bool list_input_handle_key(listview_curses& lv, int ch) override;
 
     void list_input_handle_scroll_out(listview_curses& lv) override;
@@ -62,8 +60,6 @@ public:
                               int line,
                               line_flags_t raw) override;
 
-    bool fss_editing{false};
-    bool fss_filter_state{false};
     size_t fss_last_line_len{0};
 };
 

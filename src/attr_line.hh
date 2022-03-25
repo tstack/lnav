@@ -77,34 +77,9 @@ struct line_range {
         return this->contains(other.lr_start) || this->contains(other.lr_end);
     };
 
-    line_range intersection(const struct line_range& other) const
-    {
-        int actual_end;
+    line_range intersection(const struct line_range& other) const;
 
-        if (this->lr_end == -1) {
-            actual_end = other.lr_end;
-        } else if (other.lr_end == -1) {
-            actual_end = this->lr_end;
-        } else {
-            actual_end = std::min(this->lr_end, other.lr_end);
-        }
-        return line_range{std::max(this->lr_start, other.lr_start), actual_end};
-    };
-
-    line_range& shift(int32_t start, int32_t amount)
-    {
-        if (this->lr_start >= start) {
-            this->lr_start = std::max(0, this->lr_start + amount);
-        }
-        if (this->lr_end != -1 && start <= this->lr_end) {
-            this->lr_end += amount;
-            if (this->lr_end < this->lr_start) {
-                this->lr_end = this->lr_start;
-            }
-        }
-
-        return *this;
-    };
+    line_range& shift(int32_t start, int32_t amount);
 
     void ltrim(const char* str)
     {
@@ -220,7 +195,7 @@ struct string_attr {
 
     intern_string_t to_string() const
     {
-        return intern_string_t((const intern_string*) this->sa_value.sav_ptr);
+        return {(const intern_string*) this->sa_value.sav_ptr};
     };
 
     struct line_range sa_range;
@@ -230,7 +205,7 @@ struct string_attr {
 };
 
 /** A map of line ranges to attributes for that range. */
-typedef std::vector<string_attr> string_attrs_t;
+using string_attrs_t = std::vector<string_attr>;
 
 inline string_attrs_t::const_iterator
 find_string_attr(const string_attrs_t& sa,
@@ -296,11 +271,11 @@ find_string_attr(string_attrs_t& sa, const struct line_range& lr)
 inline string_attrs_t::const_iterator
 find_string_attr(const string_attrs_t& sa, size_t near)
 {
-    string_attrs_t::const_iterator iter, nearest = sa.end();
+    auto nearest = sa.end();
     ssize_t last_diff = INT_MAX;
 
-    for (iter = sa.begin(); iter != sa.end(); ++iter) {
-        auto& lr = iter->sa_range;
+    for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
+        const auto& lr = iter->sa_range;
 
         if (!lr.is_valid() || !lr.contains(near)) {
             continue;
@@ -320,11 +295,11 @@ template<typename T>
 inline string_attrs_t::const_iterator
 rfind_string_attr_if(const string_attrs_t& sa, ssize_t near, T predicate)
 {
-    string_attrs_t::const_iterator iter, nearest = sa.end();
+    auto nearest = sa.end();
     ssize_t last_diff = INT_MAX;
 
-    for (iter = sa.begin(); iter != sa.end(); ++iter) {
-        auto& lr = iter->sa_range;
+    for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
+        const auto& lr = iter->sa_range;
 
         if (lr.lr_start > near) {
             continue;
@@ -387,8 +362,6 @@ shift_string_attrs(string_attrs_t& sa, int32_t start, int32_t amount)
 }
 
 struct text_wrap_settings {
-    text_wrap_settings() : tws_indent(2), tws_width(80){};
-
     text_wrap_settings& with_indent(int indent)
     {
         this->tws_indent = indent;
@@ -401,8 +374,8 @@ struct text_wrap_settings {
         return *this;
     };
 
-    int tws_indent;
-    int tws_width;
+    int tws_indent{2};
+    int tws_width{80};
 };
 
 /**

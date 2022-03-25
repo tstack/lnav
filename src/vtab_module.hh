@@ -656,7 +656,7 @@ struct vtab_module : public vtab_module_base {
                               rowid,
                               argv,
                               std::make_index_sequence<sizeof...(Args)>{});
-        } catch (from_sqlite_conversion_error& e) {
+        } catch (const from_sqlite_conversion_error& e) {
             tab->zErrMsg = sqlite3_mprintf(
                 "Expecting an %s for column number %d", e.e_type, e.e_argi);
             return SQLITE_ERROR;

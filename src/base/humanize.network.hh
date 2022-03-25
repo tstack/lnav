@@ -42,11 +42,13 @@ template<>
 struct formatter<network::locality> {
     constexpr auto parse(format_parse_context& ctx)
     {
-        auto it = ctx.begin(), end = ctx.end();
+        const auto it = ctx.begin();
+        const auto end = ctx.end();
 
         // Check if reached the end of the range:
-        if (it != end && *it != '}')
+        if (it != end && *it != '}') {
             throw format_error("invalid format");
+        }
 
         // Return an iterator past the end of the parsed range:
         return it;
@@ -71,11 +73,13 @@ template<>
 struct formatter<network::path> {
     constexpr auto parse(format_parse_context& ctx)
     {
-        auto it = ctx.begin(), end = ctx.end();
+        const auto it = ctx.begin();
+        const auto end = ctx.end();
 
         // Check if reached the end of the range:
-        if (it != end && *it != '}')
+        if (it != end && *it != '}') {
             throw format_error("invalid format");
+        }
 
         // Return an iterator past the end of the parsed range:
         return it;

@@ -58,7 +58,8 @@ private:
     logline_value_meta alv_msg_meta;
     logline_value_meta alv_schema_meta;
     shared_buffer alv_schema_manager;
-    std::array<char, data_parser::schema_id_t::STRING_SIZE> alv_schema_buffer{};
+    fmt::basic_memory_buffer<char, data_parser::schema_id_t::STRING_SIZE>
+        alv_schema_buffer;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH

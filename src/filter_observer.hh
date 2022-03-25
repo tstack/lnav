@@ -38,23 +38,23 @@
 class line_filter_observer : public logline_observer {
 public:
     line_filter_observer(filter_stack& fs, std::shared_ptr<logfile> lf)
-        : lfo_filter_stack(fs), lfo_filter_state(lf){
+        : lfo_filter_stack(fs), lfo_filter_state(lf)
+    {
+    }
 
-                                };
-
-    void logline_restart(const logfile& lf, file_size_t rollback_size)
+    void logline_restart(const logfile& lf, file_size_t rollback_size) override
     {
         for (auto& filter : this->lfo_filter_stack) {
             filter->revert_to_last(this->lfo_filter_state, rollback_size);
         }
-    };
+    }
 
     void logline_new_lines(const logfile& lf,
                            logfile::const_iterator ll_begin,
                            logfile::const_iterator ll_end,
-                           shared_buffer_ref& sbr);
+                           shared_buffer_ref& sbr) override;
 
-    void logline_eof(const logfile& lf);
+    void logline_eof(const logfile& lf) override;
 
     bool excluded(uint32_t filter_in_mask,
                   uint32_t filter_out_mask,
@@ -65,37 +65,11 @@ public:
         bool filtered_out
             = (this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
         return !filtered_in || filtered_out;
-    };
+    }
 
-    size_t get_min_count(size_t max) const
-    {
-        size_t retval = max;
+    size_t get_min_count(size_t max) const;
 
-        for (auto& filter : this->lfo_filter_stack) {
-            if (filter->lf_deleted) {
-                continue;
-            }
-            retval = std::min(
-                retval,
-                this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
-        }
-
-        return retval;
-    };
-
-    void clear_deleted_filter_state()
-    {
-        uint32_t used_mask = 0;
-
-        for (auto& filter : this->lfo_filter_stack) {
-            if (filter->lf_deleted) {
-                log_debug("skipping deleted %d", filter->get_index());
-                continue;
-            }
-            used_mask |= (1UL << filter->get_index());
-        }
-        this->lfo_filter_state.clear_deleted_filter_state(used_mask);
-    };
+    void clear_deleted_filter_state();
 
     filter_stack& lfo_filter_stack;
     logfile_filter_state lfo_filter_state;

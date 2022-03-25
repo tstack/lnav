@@ -29,9 +29,8 @@
  * @file json-extension-functions.cc
  */
 
+#include <cstring>
 #include <string>
-
-#include <string.h>
 
 #include "config.h"
 #include "mapbox/variant.hpp"
@@ -43,17 +42,16 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
 using namespace mapbox;
 
 #define JSON_SUBTYPE 74 /* Ascii for "J" */
 
 class sql_json_op : public json_op {
 public:
-    sql_json_op(json_ptr& ptr) : json_op(ptr){};
+    explicit sql_json_op(json_ptr& ptr) : json_op(ptr){};
 
     int sjo_type{-1};
-    string sjo_str;
+    std::string sjo_str;
     int64_t sjo_int{0};
     double sjo_float{0.0};
 };
@@ -120,7 +118,7 @@ json_contains(vtab_types::nullable<const char> nullable_json_in,
         return false;
     }
 
-    auto json_in = nullable_json_in.n_value;
+    const auto* json_in = nullable_json_in.n_value;
     auto_mem<yajl_handle_t> handle(yajl_free);
     yajl_callbacks cb;
     contains_userdata cu;
@@ -220,7 +218,7 @@ gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len)
 
     if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
         sjo->sjo_type = SQLITE3_TEXT;
-        sjo->sjo_str = string((char*) stringVal, len);
+        sjo->sjo_str = std::string((char*) stringVal, len);
     } else {
         sjo->jo_ptr_error_code = yajl_gen_string(gen, stringVal, len);
     }
@@ -375,7 +373,7 @@ struct concat_context {
 static int
 concat_gen_null(void* ctx)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     if (cc->cc_depth > 0) {
         return yajl_gen_null(cc->cc_gen_handle) == yajl_gen_status_ok;
@@ -387,7 +385,7 @@ concat_gen_null(void* ctx)
 static int
 concat_gen_boolean(void* ctx, int val)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     return yajl_gen_bool(cc->cc_gen_handle, val) == yajl_gen_status_ok;
 }
@@ -395,7 +393,7 @@ concat_gen_boolean(void* ctx, int val)
 static int
 concat_gen_number(void* ctx, const char* val, size_t len)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     return yajl_gen_number(cc->cc_gen_handle, val, len) == yajl_gen_status_ok;
 }
@@ -403,7 +401,7 @@ concat_gen_number(void* ctx, const char* val, size_t len)
 static int
 concat_gen_string(void* ctx, const unsigned char* val, size_t len)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     return yajl_gen_string(cc->cc_gen_handle, val, len) == yajl_gen_status_ok;
 }
@@ -411,7 +409,7 @@ concat_gen_string(void* ctx, const unsigned char* val, size_t len)
 static int
 concat_gen_start_map(void* ctx)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     cc->cc_depth += 1;
     return yajl_gen_map_open(cc->cc_gen_handle) == yajl_gen_status_ok;
@@ -420,7 +418,7 @@ concat_gen_start_map(void* ctx)
 static int
 concat_gen_end_map(void* ctx)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     cc->cc_depth -= 1;
     return yajl_gen_map_close(cc->cc_gen_handle) == yajl_gen_status_ok;
@@ -429,7 +427,7 @@ concat_gen_end_map(void* ctx)
 static int
 concat_gen_map_key(void* ctx, const unsigned char* key, size_t len)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     return yajl_gen_string(cc->cc_gen_handle, key, len) == yajl_gen_status_ok;
 }
@@ -437,7 +435,7 @@ concat_gen_map_key(void* ctx, const unsigned char* key, size_t len)
 static int
 concat_gen_start_array(void* ctx)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     cc->cc_depth += 1;
     if (cc->cc_depth == 1) {
@@ -449,7 +447,7 @@ concat_gen_start_array(void* ctx)
 static int
 concat_gen_end_array(void* ctx)
 {
-    auto cc = static_cast<concat_context*>(ctx);
+    auto* cc = static_cast<concat_context*>(ctx);
 
     cc->cc_depth -= 1;
     if (cc->cc_depth == 0) {
@@ -480,7 +478,7 @@ concat_gen_elements(yajl_gen gen, const unsigned char* text, size_t len)
     if (yajl_parse(handle, (const unsigned char*) text, len) != yajl_status_ok
         || yajl_complete_parse(handle) != yajl_status_ok)
     {
-        unique_ptr<unsigned char, decltype(&free)> err_msg(
+        std::unique_ptr<unsigned char, decltype(&free)> err_msg(
             yajl_get_error(handle, 1, (const unsigned char*) text, len), free);
 
         throw sqlite_func_error("Invalid JSON: {}",
@@ -490,7 +488,7 @@ concat_gen_elements(yajl_gen gen, const unsigned char* text, size_t len)
 
 static json_string
 json_concat(nonstd::optional<const char*> json_in,
-            const vector<sqlite3_value*>& values)
+            const std::vector<sqlite3_value*>& values)
 {
     yajlpp_gen gen;
 
@@ -618,7 +616,7 @@ sql_json_group_object_final(sqlite3_context* context)
     json_agg_context* jac
         = (json_agg_context*) sqlite3_aggregate_context(context, 0);
 
-    if (jac == NULL) {
+    if (jac == nullptr) {
         sqlite3_result_text(context, "{}", -1, SQLITE_STATIC);
     } else {
         const unsigned char* buf;
@@ -642,8 +640,8 @@ sql_json_group_array_step(sqlite3_context* context,
     json_agg_context* jac = (json_agg_context*) sqlite3_aggregate_context(
         context, sizeof(json_agg_context));
 
-    if (jac->jac_yajl_gen == NULL) {
-        jac->jac_yajl_gen = yajl_gen_alloc(NULL);
+    if (jac->jac_yajl_gen == nullptr) {
+        jac->jac_yajl_gen = yajl_gen_alloc(nullptr);
         yajl_gen_config(jac->jac_yajl_gen, yajl_gen_beautify, false);
 
         yajl_gen_array_open(jac->jac_yajl_gen);
@@ -737,13 +735,18 @@ json_extension_functions(struct FuncDef** basic_funcs,
                               "The value(s) to add to the end of the array.")
                         .one_or_more())
                 .with_tags({"json"})
-                .with_example({"To append the number 4 to null",
-                               "SELECT json_concat(NULL, 4)"})
-                .with_example({"To append 4 and 5 to the array [1, 2, 3]",
-                               "SELECT json_concat('[1, 2, 3]', 4, 5)"})
-                .with_example(
-                    {"To concatenate two arrays together",
-                     "SELECT json_concat('[1, 2, 3]', json('[4, 5]'))"})),
+                .with_example({
+                    "To append the number 4 to null",
+                    "SELECT json_concat(NULL, 4)",
+                })
+                .with_example({
+                    "To append 4 and 5 to the array [1, 2, 3]",
+                    "SELECT json_concat('[1, 2, 3]', 4, 5)",
+                })
+                .with_example({
+                    "To concatenate two arrays together",
+                    "SELECT json_concat('[1, 2, 3]', json('[4, 5]'))",
+                })),
 
         sqlite_func_adapter<decltype(&json_contains), json_contains>::builder(
             help_text("json_contains",
@@ -814,10 +817,11 @@ json_extension_functions(struct FuncDef** basic_funcs,
                 .with_tags({"json"})
                 .with_example({"To create an object from arguments",
                                "SELECT json_group_object('a', 1, 'b', 2)"})
-                .with_example(
-                    {"To create an object from a pair of columns",
-                     "SELECT json_group_object(column1, column2) FROM "
-                     "(VALUES ('a', 1), ('b', 2))"}),
+                .with_example({
+                    "To create an object from a pair of columns",
+                    "SELECT json_group_object(column1, column2) FROM "
+                    "(VALUES ('a', 1), ('b', 2))",
+                }),
         },
         {
             "json_group_array",
@@ -833,11 +837,15 @@ json_extension_functions(struct FuncDef** basic_funcs,
                     help_text("value", "The values to append to the array")
                         .one_or_more())
                 .with_tags({"json"})
-                .with_example({"To create an array from arguments",
-                               "SELECT json_group_array('one', 2, 3.4)"})
-                .with_example({"To create an array from a column of values",
-                               "SELECT json_group_array(column1) FROM (VALUES "
-                               "(1), (2), (3))"}),
+                .with_example({
+                    "To create an array from arguments",
+                    "SELECT json_group_array('one', 2, 3.4)",
+                })
+                .with_example({
+                    "To create an array from a column of values",
+                    "SELECT json_group_array(column1) FROM (VALUES "
+                    "(1), (2), (3))",
+                }),
         },
 
         {nullptr},

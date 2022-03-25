@@ -704,7 +704,7 @@ static struct json_path_container search_table_handlers
 static const json_path_handler_base::enum_value_t MIME_TYPE_ENUM[]
     = {{
            "application/vnd.tcpdump.pcap",
-           file_format_t::FF_PCAP,
+           file_format_t::PCAP,
        },
 
        json_path_handler_base::ENUM_TERMINATOR};
@@ -885,14 +885,11 @@ write_sample_file()
         struct script_metadata meta;
         auto sf = bsf.to_string_fragment();
         auto_fd script_fd;
-        char path[2048];
         struct stat st;
 
         extract_metadata(sf.data(), sf.length(), meta);
-        snprintf(path,
-                 sizeof(path),
-                 "formats/default/%s.lnav",
-                 meta.sm_name.c_str());
+        auto path
+            = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);
         auto script_path = lnav::paths::dotlnav() / path;
         if (lnav::filesystem::statp(script_path, &st) == 0
             && st.st_size == sf.length()) {

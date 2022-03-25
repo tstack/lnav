@@ -32,10 +32,10 @@
 #ifndef lnav_date_time_scanner_hh
 #define lnav_date_time_scanner_hh
 
+#include <ctime>
 #include <string>
 
 #include <sys/types.h>
-#include <time.h>
 
 #include "time_util.hh"
 

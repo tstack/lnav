@@ -194,11 +194,8 @@ handle_paging_key(int ch)
     text_sub_source* tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type& bm = tc->get_bookmarks();
 
-    char keyseq[16];
-
-    snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
-
-    if (handle_keyseq(keyseq)) {
+    auto keyseq = fmt::format(FMT_STRING("x{:02x}"), ch);
+    if (handle_keyseq(keyseq.c_str())) {
         return true;
     }
 
@@ -739,13 +736,17 @@ handle_paging_key(int ch)
                 }
 
                 if (log_line_index != -1) {
-                    char linestr[64];
+                    fmt::memory_buffer linestr;
                     int line_number = (int) tc->get_top();
                     unsigned int row;
 
-                    snprintf(linestr, sizeof(linestr), "%d", line_number);
+                    fmt::format_to(std::back_inserter(linestr),
+                                   FMT_STRING("{}"),
+                                   line_number);
+                    linestr.push_back('\0');
                     for (row = 0; row < dls.dls_rows.size(); row++) {
-                        if (strcmp(dls.dls_rows[row][log_line_index], linestr)
+                        if (strcmp(dls.dls_rows[row][log_line_index],
+                                   linestr.data())
                             == 0) {
                             vis_line_t db_line(row);
 

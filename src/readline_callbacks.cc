@@ -129,20 +129,15 @@ rl_set_help()
         case LNM_SQL: {
             textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
             auto lss = (logfile_sub_source*) log_view.get_sub_source();
-            char example_txt[1024];
             attr_line_t example_al;
 
             if (log_view.get_inner_height() > 0) {
                 auto cl = lss->at(log_view.get_top());
                 auto lf = lss->find(cl);
-                auto format_name = lf->get_format()->get_name().get();
+                const auto* format_name = lf->get_format()->get_name().get();
 
-                snprintf(example_txt,
-                         sizeof(example_txt),
-                         SQL_EXAMPLE,
-                         format_name,
-                         format_name);
-                example_al.with_ansi_string(example_txt);
+                example_al.with_ansi_string(
+                    SQL_EXAMPLE, format_name, format_name);
                 readline_sqlite_highlighter(example_al, 0);
             }
 

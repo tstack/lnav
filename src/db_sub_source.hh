@@ -102,9 +102,9 @@ public:
     struct header_meta {
         explicit header_meta(std::string name)
             : hm_name(std::move(name)), hm_column_type(SQLITE3_TEXT),
-              hm_graphable(false), hm_log_time(false), hm_column_size(0){
-
-                                                       };
+              hm_graphable(false), hm_log_time(false), hm_column_size(0)
+        {
+        }
 
         bool operator==(const std::string& name) const
         {

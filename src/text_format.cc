@@ -39,23 +39,23 @@ text_format_t
 detect_text_format(const char* str, size_t len)
 {
     // XXX This is a pretty crude way of detecting format...
-    static pcrepp PYTHON_MATCHERS = pcrepp(
+    static const pcrepp PYTHON_MATCHERS = pcrepp(
         "(?:"
         "^\\s*def\\s+\\w+\\([^)]*\\):[^\\n]*$|"
         "^\\s*try:[^\\n]*$"
         ")",
         PCRE_MULTILINE);
 
-    static pcrepp RUST_MATCHERS = pcrepp(R"(
+    static const pcrepp RUST_MATCHERS = pcrepp(R"(
 (?:
 ^\s*use\s+[\w+:\{\}]+;$|
 ^\s*(?:pub)?\s+(?:const|enum|fn)\s+\w+.*$|
 ^\s*impl\s+\w+.*$
 )
 )",
-                                         PCRE_MULTILINE);
+                                               PCRE_MULTILINE);
 
-    static pcrepp JAVA_MATCHERS = pcrepp(
+    static const pcrepp JAVA_MATCHERS = pcrepp(
         "(?:"
         "^package\\s+|"
         "^import\\s+|"
@@ -63,7 +63,7 @@ detect_text_format(const char* str, size_t len)
         ")",
         PCRE_MULTILINE);
 
-    static pcrepp C_LIKE_MATCHERS = pcrepp(
+    static const pcrepp C_LIKE_MATCHERS = pcrepp(
         "(?:"
         "^#\\s*include\\s+|"
         "^#\\s*define\\s+|"
@@ -72,14 +72,14 @@ detect_text_format(const char* str, size_t len)
         ")",
         PCRE_MULTILINE);
 
-    static pcrepp SQL_MATCHERS = pcrepp(
+    static const pcrepp SQL_MATCHERS = pcrepp(
         "(?:"
         "select\\s+.+\\s+from\\s+|"
         "insert\\s+into\\s+.+\\s+values"
         ")",
         PCRE_MULTILINE | PCRE_CASELESS);
 
-    static pcrepp XML_MATCHERS = pcrepp(
+    static const pcrepp XML_MATCHERS = pcrepp(
         "(?:"
         R"(<\?xml(\s+\w+\s*=\s*"[^"]*")*\?>|)"
         R"(</?\w+(\s+\w+\s*=\s*"[^"]*")*\s*>)"

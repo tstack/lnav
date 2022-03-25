@@ -51,9 +51,6 @@ point::as_time_ago() const
 {
     struct timeval current_time
         = this->p_recent_point.value_or(current_timeval());
-    const char* fmt;
-    char buffer[64];
-    int amount;
 
     if (this->p_convert_to_local) {
         current_time.tv_sec = convert_log_time_to_local(current_time.tv_sec);
@@ -63,34 +60,36 @@ point::as_time_ago() const
         = std::chrono::seconds(current_time.tv_sec - this->p_past_point.tv_sec);
     if (delta < 0s) {
         return "in the future";
-    } else if (delta < 1min) {
-        return "just now";
-    } else if (delta < 2min) {
-        return "one minute ago";
-    } else if (delta < 1h) {
-        fmt = "%d minutes ago";
-        amount
-            = std::chrono::duration_cast<std::chrono::minutes>(delta).count();
-    } else if (delta < 2h) {
-        return "one hour ago";
-    } else if (delta < 24h) {
-        fmt = "%d hours ago";
-        amount = std::chrono::duration_cast<std::chrono::hours>(delta).count();
-    } else if (delta < 48h) {
-        return "one day ago";
-    } else if (delta < 365 * 24h) {
-        fmt = "%d days ago";
-        amount = delta / 24h;
-    } else if (delta < (2 * 365 * 24h)) {
-        return "over a year ago";
-    } else {
-        fmt = "over %d years ago";
-        amount = delta / (365 * 24h);
     }
-
-    snprintf(buffer, sizeof(buffer), fmt, amount);
-
-    return std::string(buffer);
+    if (delta < 1min) {
+        return "just now";
+    }
+    if (delta < 2min) {
+        return "one minute ago";
+    }
+    if (delta < 1h) {
+        return fmt::format(
+            FMT_STRING("{} minutes ago"),
+            std::chrono::duration_cast<std::chrono::minutes>(delta).count());
+    }
+    if (delta < 2h) {
+        return "one hour ago";
+    }
+    if (delta < 24h) {
+        return fmt::format(
+            FMT_STRING("{} hours ago"),
+            std::chrono::duration_cast<std::chrono::hours>(delta).count());
+    }
+    if (delta < 48h) {
+        return "one day ago";
+    }
+    if (delta < 365 * 24h) {
+        return fmt::format(FMT_STRING("{} days ago"), delta / 24h);
+    }
+    if (delta < (2 * 365 * 24h)) {
+        return "over a year ago";
+    }
+    return fmt::format(FMT_STRING("over {} years ago"), delta / (365 * 24h));
 }
 
 std::string
@@ -149,7 +148,7 @@ duration::to_string() const
         {0, "%lld%s", "d"},
     };
 
-    auto* curr_interval = intervals;
+    const auto* curr_interval = intervals;
     auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(
                      std::chrono::seconds(this->d_timeval.tv_sec))
         + std::chrono::microseconds(this->d_timeval.tv_usec);

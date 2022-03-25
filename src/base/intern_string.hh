@@ -140,7 +140,7 @@ struct string_fragment {
 
     bool startswith(const char* prefix) const
     {
-        auto iter = this->begin();
+        const auto* iter = this->begin();
 
         while (*prefix != '\0' && *prefix == *iter && iter < this->end()) {
             prefix += 1;

@@ -27,9 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
+
 #include "views_vtab.hh"
 
-#include <string.h>
 #include <unistd.h>
 
 #include "base/injector.bind.hh"
@@ -39,8 +40,6 @@
 #include "lnav.hh"
 #include "sql_util.hh"
 #include "view_curses.hh"
-
-using namespace std;
 
 template<>
 struct from_sqlite<lnav_view_t> {
@@ -67,19 +66,36 @@ struct from_sqlite<text_filter::type_t> {
 
         if (strcasecmp(type_name, "in") == 0) {
             return text_filter::INCLUDE;
-        } else if (strcasecmp(type_name, "out") == 0) {
+        }
+        if (strcasecmp(type_name, "out") == 0) {
             return text_filter::EXCLUDE;
         }
 
-        throw from_sqlite_conversion_error("filter type", argi);
+        throw from_sqlite_conversion_error("value of 'in' or 'out'", argi);
     }
 };
 
 template<>
-struct from_sqlite<pair<string, auto_mem<pcre>>> {
-    inline pair<string, auto_mem<pcre>> operator()(int argc,
-                                                   sqlite3_value** val,
-                                                   int argi)
+struct from_sqlite<filter_lang_t> {
+    inline filter_lang_t operator()(int argc, sqlite3_value** val, int argi)
+    {
+        const char* type_name = (const char*) sqlite3_value_text(val[argi]);
+
+        if (strcasecmp(type_name, "regex") == 0) {
+            return filter_lang_t::REGEX;
+        }
+        if (strcasecmp(type_name, "sql") == 0) {
+            return filter_lang_t::SQL;
+        }
+
+        throw from_sqlite_conversion_error("value of 'regex' or 'sql'", argi);
+    }
+};
+
+template<>
+struct from_sqlite<std::pair<std::string, auto_mem<pcre>>> {
+    inline std::pair<std::string, auto_mem<pcre>> operator()(
+        int argc, sqlite3_value** val, int argi)
     {
         const char* pattern = (const char*) sqlite3_value_text(val[argi]);
         const char* errptr;
@@ -87,20 +103,19 @@ struct from_sqlite<pair<string, auto_mem<pcre>>> {
         int eoff;
 
         if (pattern == nullptr || pattern[0] == '\0') {
-            throw from_sqlite_conversion_error("non-empty pattern", argi);
+            throw sqlite_func_error("Expecting a non-empty pattern value");
         }
 
         code = pcre_compile(pattern, PCRE_CASELESS, &errptr, &eoff, nullptr);
 
         if (code == nullptr) {
             throw sqlite_func_error(
-                "Invalid regular expression in column {}: {} at offset {}",
-                argi,
+                "Invalid regular expression for pattern: {} at offset {}",
                 errptr,
                 eoff);
         }
 
-        return make_pair(string(pattern), std::move(code));
+        return std::make_pair(std::string(pattern), std::move(code));
     }
 };
 
@@ -136,8 +151,8 @@ CREATE TABLE lnav_views (
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
-        lnav_view_t view_index
-            = (lnav_view_t) distance(std::begin(lnav_data.ld_views), vc.iter);
+        lnav_view_t view_index = (lnav_view_t) std::distance(
+            std::begin(lnav_data.ld_views), vc.iter);
         textview_curses& tc = *vc.iter;
         unsigned long width;
         vis_line_t height;
@@ -284,7 +299,7 @@ CREATE TABLE lnav_views (
 };
 
 struct lnav_view_stack : public tvt_iterator_cursor<lnav_view_stack> {
-    using iterator = vector<textview_curses*>::iterator;
+    using iterator = std::vector<textview_curses*>::iterator;
 
     static constexpr const char* NAME = "lnav_view_stack";
     static constexpr const char* CREATE_STMT = R"(
@@ -358,7 +373,7 @@ struct lnav_view_filter_base {
         using value_type = text_filter;
         using pointer = text_filter*;
         using reference = text_filter&;
-        using iterator_category = forward_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
 
         lnav_view_t i_view_index;
         int i_filter_index;
@@ -440,11 +455,12 @@ struct lnav_view_filters
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's filters through this table.
 CREATE TABLE lnav_view_filters (
-    view_name TEXT,                   -- The name of the view.
-    filter_id INTEGER DEFAULT 0,      -- The filter identifier.
-    enabled   INTEGER DEFAULT 1,      -- Indicates if the filter is enabled/disabled.
-    type      TEXT    DEFAULT 'out',  -- The type of filter (i.e. in/out).
-    pattern   TEXT                    -- The filter pattern.
+    view_name TEXT,                    -- The name of the view.
+    filter_id INTEGER DEFAULT 0,       -- The filter identifier.
+    enabled   INTEGER DEFAULT 1,       -- Indicates if the filter is enabled/disabled.
+    type      TEXT    DEFAULT 'out',   -- The type of filter (i.e. in/out).
+    language  TEXT    DEFAULT 'regex', -- The filter language.
+    pattern   TEXT                     -- The filter pattern.
 );
 )";
 
@@ -481,6 +497,18 @@ CREATE TABLE lnav_view_filters (
                 }
                 break;
             case 4:
+                switch (tf->get_lang()) {
+                    case filter_lang_t::REGEX:
+                        sqlite3_result_text(ctx, "regex", 5, SQLITE_STATIC);
+                        break;
+                    case filter_lang_t::SQL:
+                        sqlite3_result_text(ctx, "sql", 3, SQLITE_STATIC);
+                        break;
+                    default:
+                        ensure(0);
+                }
+                break;
+            case 5:
                 sqlite3_result_text(
                     ctx, tf->get_id().c_str(), -1, SQLITE_TRANSIENT);
                 break;
@@ -495,23 +523,75 @@ CREATE TABLE lnav_view_filters (
                    nonstd::optional<int64_t> _filter_id,
                    nonstd::optional<bool> enabled,
                    nonstd::optional<text_filter::type_t> type,
-                   pair<string, auto_mem<pcre>> pattern)
+                   nonstd::optional<filter_lang_t> lang,
+                   sqlite3_value* pattern_str)
     {
         textview_curses& tc = lnav_data.ld_views[view_index];
         text_sub_source* tss = tc.get_sub_source();
         filter_stack& fs = tss->get_filters();
-        auto filter_index = fs.next_index();
+        auto filter_index
+            = lang.value_or(filter_lang_t::REGEX) == filter_lang_t::REGEX
+            ? fs.next_index()
+            : nonstd::make_optional(size_t{0});
         if (!filter_index) {
             throw sqlite_func_error("Too many filters");
         }
-        auto pf = make_shared<pcre_filter>(
-            type.value_or(text_filter::type_t::EXCLUDE),
-            pattern.first,
-            *filter_index,
-            pattern.second.release());
-        fs.add_filter(pf);
+        std::shared_ptr<text_filter> tf;
+        switch (lang.value_or(filter_lang_t::REGEX)) {
+            case filter_lang_t::REGEX: {
+                auto pattern
+                    = from_sqlite<std::pair<std::string, auto_mem<pcre>>>()(
+                        1, &pattern_str, 0);
+                auto pf = std::make_shared<pcre_filter>(
+                    type.value_or(text_filter::type_t::EXCLUDE),
+                    pattern.first,
+                    *filter_index,
+                    pattern.second.release());
+                fs.add_filter(pf);
+                tf = pf;
+                break;
+            }
+            case filter_lang_t::SQL: {
+                if (view_index != LNV_LOG) {
+                    throw sqlite_func_error(
+                        "SQL filters are only supported in the log view");
+                }
+                auto clause = from_sqlite<std::string>()(1, &pattern_str, 0);
+                auto expr = fmt::format("SELECT 1 WHERE {}", clause);
+                auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
+                auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                                  expr.c_str(),
+                                                  expr.size(),
+                                                  SQLITE_PREPARE_PERSISTENT,
+                                                  stmt.out(),
+                                                  nullptr);
+#else
+                auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                                  expr.c_str(),
+                                                  expr.size(),
+                                                  stmt.out(),
+                                                  nullptr);
+#endif
+                if (retcode != SQLITE_OK) {
+                    const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+                    throw sqlite_func_error("Invalid SQL: {}", errmsg);
+                }
+                auto set_res = lnav_data.ld_log_source.set_sql_filter(
+                    clause, stmt.release());
+                if (set_res.isErr()) {
+                    throw sqlite_func_error("filter expression failed with: {}",
+                                            set_res.unwrapErr());
+                }
+                tf = lnav_data.ld_log_source.get_sql_filter().value();
+                break;
+            }
+            default:
+                ensure(0);
+        }
         if (!enabled.value_or(true)) {
-            pf->disable();
+            tf->disable();
         }
         tss->text_filters_changed();
         tc.set_needs_update();
@@ -545,13 +625,14 @@ CREATE TABLE lnav_view_filters (
                    int64_t new_filter_id,
                    bool enabled,
                    text_filter::type_t type,
-                   pair<string, auto_mem<pcre>> pattern)
+                   filter_lang_t lang,
+                   sqlite3_value* pattern_val)
     {
         auto view_index = lnav_view_t(rowid >> 32);
         auto filter_index = rowid & 0xffffffffLL;
         textview_curses& tc = lnav_data.ld_views[view_index];
         text_sub_source* tss = tc.get_sub_source();
-        filter_stack& fs = tss->get_filters();
+        auto& fs = tss->get_filters();
         auto iter = fs.begin();
         for (; iter != fs.end(); ++iter) {
             if ((*iter)->get_index() == (size_t) filter_index) {
@@ -559,7 +640,7 @@ CREATE TABLE lnav_view_filters (
             }
         }
 
-        shared_ptr<text_filter> tf = *iter;
+        std::shared_ptr<text_filter> tf = *iter;
 
         if (new_view_index != view_index) {
             tab->zErrMsg
@@ -567,17 +648,55 @@ CREATE TABLE lnav_view_filters (
             return SQLITE_ERROR;
         }
 
-        tf->lf_deleted = true;
-        tss->text_filters_changed();
+        if (lang == filter_lang_t::SQL && tf->get_index() == 0) {
+            if (view_index != LNV_LOG) {
+                throw sqlite_func_error(
+                    "SQL filters are only supported in the log view");
+            }
+            auto clause = from_sqlite<std::string>()(1, &pattern_val, 0);
+            auto expr = fmt::format("SELECT 1 WHERE {}", clause);
+            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+#ifdef SQLITE_PREPARE_PERSISTENT
+            auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                              expr.c_str(),
+                                              expr.size(),
+                                              SQLITE_PREPARE_PERSISTENT,
+                                              stmt.out(),
+                                              nullptr);
+#else
+            auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                              expr.c_str(),
+                                              expr.size(),
+                                              stmt.out(),
+                                              nullptr);
+#endif
+            if (retcode != SQLITE_OK) {
+                const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        auto pf = make_shared<pcre_filter>(
-            type, pattern.first, tf->get_index(), pattern.second.release());
+                throw sqlite_func_error("Invalid SQL: {}", errmsg);
+            }
+            auto set_res = lnav_data.ld_log_source.set_sql_filter(
+                clause, stmt.release());
+            if (set_res.isErr()) {
+                throw sqlite_func_error("filter expression failed with: {}",
+                                        set_res.unwrapErr());
+            }
+            *iter = lnav_data.ld_log_source.get_sql_filter().value();
+        } else {
+            tf->lf_deleted = true;
+            tss->text_filters_changed();
 
-        if (!enabled) {
-            pf->disable();
+            auto pattern
+                = from_sqlite<std::pair<std::string, auto_mem<pcre>>>()(
+                    1, &pattern_val, 0);
+            auto pf = std::make_shared<pcre_filter>(
+                type, pattern.first, tf->get_index(), pattern.second.release());
+
+            *iter = pf;
         }
-
-        *iter = pf;
+        if (!enabled) {
+            (*iter)->disable();
+        }
         tss->text_filters_changed();
         tc.set_needs_update();
 

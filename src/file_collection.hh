@@ -61,7 +61,7 @@ struct other_file_descriptor {
     file_format_t ofd_format;
     std::string ofd_description;
 
-    other_file_descriptor(file_format_t format = file_format_t::FF_UNKNOWN,
+    other_file_descriptor(file_format_t format = file_format_t::UNKNOWN,
                           std::string description = "")
         : ofd_format(format), ofd_description(std::move(description))
     {

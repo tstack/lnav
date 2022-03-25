@@ -275,11 +275,11 @@ update_installs_from_git()
     if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             char* git_dir = dirname(gl->gl_pathv[lpc]);
-            char pull_cmd[1024];
 
             printf("Updating formats in %s\n", git_dir);
-            snprintf(pull_cmd, sizeof(pull_cmd), "cd %s && git pull", git_dir);
-            int ret = system(pull_cmd);
+            auto pull_cmd
+                = fmt::format(FMT_STRING("cd '{}' && git pull"), git_dir);
+            int ret = system(pull_cmd.c_str());
             if (ret == -1) {
                 std::cerr << "Failed to spawn command "
                           << "\"" << pull_cmd << "\": " << strerror(errno)
@@ -314,7 +314,7 @@ read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-static struct json_path_container format_handlers
+static const struct json_path_container format_handlers
     = {json_path_handler("format-repos#", read_repo_path)};
 
 void
@@ -324,23 +324,17 @@ install_extra_formats()
     auto_fd fd;
 
     if (access(config_root.c_str(), R_OK) == 0) {
-        char pull_cmd[1024];
-
         printf("Updating lnav remote config repo...\n");
-        snprintf(pull_cmd,
-                 sizeof(pull_cmd),
-                 "cd '%s' && git pull",
-                 config_root.c_str());
-        log_perror(system(pull_cmd));
+        auto pull_cmd = fmt::format(FMT_STRING("cd '{}' && git pull"),
+                                    config_root.string());
+        log_perror(system(pull_cmd.c_str()));
     } else {
-        char clone_cmd[1024];
-
         printf("Cloning lnav remote config repo...\n");
-        snprintf(clone_cmd,
-                 sizeof(clone_cmd),
-                 "git clone https://github.com/tstack/lnav-config.git %s",
-                 config_root.c_str());
-        log_perror(system(clone_cmd));
+        auto clone_cmd = fmt::format(
+            FMT_STRING(
+                "git clone https://github.com/tstack/lnav-config.git {}"),
+            config_root.string());
+        log_perror(system(clone_cmd.c_str()));
     }
 
     auto config_json = config_root / "remote-config.json";
@@ -392,7 +386,7 @@ config_error_reporter(const yajlpp_parse_context& ypc,
     }
 }
 
-static struct json_path_container key_command_handlers = {
+static const struct json_path_container key_command_handlers = {
     yajlpp::property_handler("command")
         .with_synopsis("<command>")
         .with_description(
@@ -407,7 +401,7 @@ static struct json_path_container key_command_handlers = {
             "The help message to display after the key is pressed.")
         .FOR_FIELD(key_command, kc_alt_msg)};
 
-static struct json_path_container keymap_def_handlers
+static const struct json_path_container keymap_def_handlers
     = {yajlpp::pattern_property_handler("(?<key_seq>(?:x[0-9a-f]{2})+)")
            .with_synopsis("<utf8-key-code-in-hex>")
            .with_description(
@@ -431,7 +425,7 @@ static struct json_path_container keymap_def_handlers
                })
            .with_children(key_command_handlers)};
 
-static struct json_path_container keymap_defs_handlers
+static const struct json_path_container keymap_defs_handlers
     = {yajlpp::pattern_property_handler("(?<keymap_name>[\\w\\-]+)")
            .with_description("The keymap definitions")
            .with_obj_provider<key_map, _lnav_config>(
@@ -449,7 +443,7 @@ static struct json_path_container keymap_defs_handlers
                })
            .with_children(keymap_def_handlers)};
 
-static struct json_path_container global_var_handlers = {
+static const struct json_path_container global_var_handlers = {
     yajlpp::pattern_property_handler("(?<var_name>\\w+)")
         .with_synopsis("<name>")
         .with_description(
@@ -463,7 +457,7 @@ static struct json_path_container global_var_handlers = {
             })
         .FOR_FIELD(_lnav_config, lc_global_vars)};
 
-static struct json_path_container style_config_handlers =
+static const struct json_path_container style_config_handlers =
     json_path_container{
         yajlpp::property_handler("color")
             .with_synopsis("#hex|color_name")
@@ -493,7 +487,7 @@ static struct json_path_container style_config_handlers =
     }
         .with_definition_id("style");
 
-static struct json_path_container theme_styles_handlers = {
+static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("identifier")
         .with_description("Styling for identifiers in logs")
         .with_obj_provider<style_config, lnav_theme>(
@@ -601,7 +595,7 @@ static struct json_path_container theme_styles_handlers = {
             })
         .with_children(style_config_handlers)};
 
-static struct json_path_container theme_syntax_styles_handlers
+static const struct json_path_container theme_syntax_styles_handlers
     = {yajlpp::property_handler("keyword")
            .with_description("Styling for keywords in source files")
            .with_obj_provider<style_config, lnav_theme>(
@@ -697,7 +691,7 @@ static struct json_path_container theme_syntax_styles_handlers
                })
            .with_children(style_config_handlers)};
 
-static struct json_path_container theme_status_styles_handlers = {
+static const struct json_path_container theme_status_styles_handlers = {
     yajlpp::property_handler("text")
         .with_description("Styling for status bars")
         .with_obj_provider<style_config, lnav_theme>(
@@ -777,7 +771,7 @@ static struct json_path_container theme_status_styles_handlers = {
         .with_children(style_config_handlers),
 };
 
-static struct json_path_container theme_log_level_styles_handlers
+static const struct json_path_container theme_log_level_styles_handlers
     = {yajlpp::pattern_property_handler(
            "(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|"
            "warning|error|critical|fatal|invalid)")
@@ -796,7 +790,7 @@ static struct json_path_container theme_log_level_styles_handlers
                })
            .with_children(style_config_handlers)};
 
-static struct json_path_container highlighter_handlers = {
+static const struct json_path_container highlighter_handlers = {
     yajlpp::property_handler("pattern")
         .with_synopsis("regular expression")
         .with_description("The regular expression to highlight")
@@ -812,7 +806,7 @@ static struct json_path_container highlighter_handlers = {
         .with_children(style_config_handlers),
 };
 
-static struct json_path_container theme_highlights_handlers
+static const struct json_path_container theme_highlights_handlers
     = {yajlpp::pattern_property_handler("(?<highlight_name>\\w+)")
            .with_obj_provider<highlighter_config, lnav_theme>(
                [](const yajlpp_provider_context& ypc, lnav_theme* root) {
@@ -831,7 +825,7 @@ static struct json_path_container theme_highlights_handlers
                })
            .with_children(highlighter_handlers)};
 
-static struct json_path_container theme_vars_handlers
+static const struct json_path_container theme_vars_handlers
     = {yajlpp::pattern_property_handler("(?<var_name>\\w+)")
            .with_synopsis("name")
            .with_description("A theme variable definition")
@@ -843,7 +837,7 @@ static struct json_path_container theme_vars_handlers
                })
            .FOR_FIELD(lnav_theme, lt_vars)};
 
-static struct json_path_container theme_def_handlers = {
+static const struct json_path_container theme_def_handlers = {
     yajlpp::property_handler("vars")
         .with_description("Variables definitions that are used in this theme.")
         .with_children(theme_vars_handlers),
@@ -869,7 +863,7 @@ static struct json_path_container theme_def_handlers = {
         .with_children(theme_highlights_handlers),
 };
 
-static struct json_path_container theme_defs_handlers
+static const struct json_path_container theme_defs_handlers
     = {yajlpp::pattern_property_handler("(?<theme_name>[\\w\\-]+)")
            .with_description("Theme definitions")
            .with_obj_provider<lnav_theme, _lnav_config>(
@@ -888,7 +882,7 @@ static struct json_path_container theme_defs_handlers
                })
            .with_children(theme_def_handlers)};
 
-static struct json_path_container ui_handlers = {
+static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("clock-format")
         .with_synopsis("format")
         .with_description("The format for the clock displayed in "
@@ -925,7 +919,7 @@ static struct json_path_container ui_handlers = {
         .with_children(keymap_defs_handlers),
 };
 
-static struct json_path_container archive_handlers = {
+static const struct json_path_container archive_handlers = {
     yajlpp::property_handler("min-free-space")
         .with_synopsis("<bytes>")
         .with_description(
@@ -945,7 +939,7 @@ static struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
-static struct json_path_container file_vtab_handlers = {
+static const struct json_path_container file_vtab_handlers = {
     yajlpp::property_handler("max-content-size")
         .with_synopsis("<bytes>")
         .with_description(
@@ -955,7 +949,7 @@ static struct json_path_container file_vtab_handlers = {
                    &file_vtab::config::fvc_max_content_size),
 };
 
-static struct json_path_container logfile_handlers = {
+static const struct json_path_container logfile_handlers = {
     yajlpp::property_handler("max-unrecognized-lines")
         .with_synopsis("<lines>")
         .with_description("The maximum number of lines in a file to use when "
@@ -965,7 +959,7 @@ static struct json_path_container logfile_handlers = {
                    &lnav::logfile::config::lc_max_unrecognized_lines),
 };
 
-static struct json_path_container ssh_config_handlers = {
+static const struct json_path_container ssh_config_handlers = {
     yajlpp::pattern_property_handler("(?<config_name>\\w+)")
         .with_synopsis("name")
         .with_description("Set an SSH configuration value")
@@ -978,14 +972,14 @@ static struct json_path_container ssh_config_handlers = {
         .for_field(&_lnav_config::lc_tailer, &tailer::config::c_ssh_config),
 };
 
-static struct json_path_container ssh_option_handlers = {
+static const struct json_path_container ssh_option_handlers = {
     yajlpp::pattern_property_handler("(?<option_name>\\w+)")
         .with_synopsis("name")
         .with_description("Set an option to be passed to the SSH command")
         .for_field(&_lnav_config::lc_tailer, &tailer::config::c_ssh_options),
 };
 
-static struct json_path_container ssh_handlers = {
+static const struct json_path_container ssh_handlers = {
     yajlpp::property_handler("command")
         .with_synopsis("ssh-command")
         .with_description("The SSH command to execute")
@@ -1012,7 +1006,7 @@ static struct json_path_container ssh_handlers = {
         .with_children(ssh_config_handlers),
 };
 
-static struct json_path_container remote_handlers = {
+static const struct json_path_container remote_handlers = {
     yajlpp::property_handler("cache-ttl")
         .with_synopsis("<duration>")
         .with_description("The time-to-live for files copied from remote "
@@ -1028,7 +1022,7 @@ static struct json_path_container remote_handlers = {
         .with_children(ssh_handlers),
 };
 
-static struct json_path_container sysclip_impl_cmd_handlers = json_path_container{
+static const struct json_path_container sysclip_impl_cmd_handlers = json_path_container{
     yajlpp::property_handler("write")
         .with_synopsis("<command>")
         .with_description("The command used to write to the clipboard")
@@ -1043,7 +1037,7 @@ static struct json_path_container sysclip_impl_cmd_handlers = json_path_containe
     .with_description("Container for the commands used to read from and write to the system clipboard")
     .with_definition_id("clip-commands");
 
-static struct json_path_container sysclip_impl_handlers = {
+static const struct json_path_container sysclip_impl_handlers = {
     yajlpp::property_handler("test")
         .with_synopsis("<command>")
         .with_description("The command that checks")
@@ -1065,7 +1059,7 @@ static struct json_path_container sysclip_impl_handlers = {
         .with_children(sysclip_impl_cmd_handlers),
 };
 
-static struct json_path_container sysclip_impls_handlers = {
+static const struct json_path_container sysclip_impls_handlers = {
     yajlpp::pattern_property_handler("(?<clipboard_impl_name>[\\w\\-]+)")
         .with_synopsis("<name>")
         .with_description("Clipboard implementation")
@@ -1086,13 +1080,13 @@ static struct json_path_container sysclip_impls_handlers = {
         .with_children(sysclip_impl_handlers),
 };
 
-static struct json_path_container sysclip_handlers = {
+static const struct json_path_container sysclip_handlers = {
     yajlpp::property_handler("impls")
         .with_description("Clipboard implementations")
         .with_children(sysclip_impls_handlers),
 };
 
-static struct json_path_container tuning_handlers = {
+static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
         .with_children(archive_handlers),
@@ -1110,14 +1104,14 @@ static struct json_path_container tuning_handlers = {
         .with_children(sysclip_handlers),
 };
 
-static set<string> SUPPORTED_CONFIG_SCHEMAS = {
+static const set<string> SUPPORTED_CONFIG_SCHEMAS = {
     "https://lnav.org/schemas/config-v1.schema.json",
 };
 
 const char* DEFAULT_FORMAT_SCHEMA
     = "https://lnav.org/schemas/format-v1.schema.json";
 
-set<string> SUPPORTED_FORMAT_SCHEMAS = {
+const set<string> SUPPORTED_FORMAT_SCHEMAS = {
     DEFAULT_FORMAT_SCHEMA,
 };
 
@@ -1139,25 +1133,24 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-struct json_path_container lnav_config_handlers
-    = json_path_container{json_path_handler("$schema", read_id)
-                              .with_synopsis(
-                                  "The URI of the schema for this file")
-                              .with_description(
-                                  "Specifies the type of this file"),
+const auto lnav_config_handlers = json_path_container {
+        json_path_handler("$schema", read_id)
+            .with_synopsis("The URI of the schema for this file")
+            .with_description("Specifies the type of this file"),
 
-                          yajlpp::property_handler("tuning")
-                              .with_description("Internal settings")
-                              .with_children(tuning_handlers),
+        yajlpp::property_handler("tuning")
+            .with_description("Internal settings")
+            .with_children(tuning_handlers),
 
-                          yajlpp::property_handler("ui")
-                              .with_description("User-interface settings")
-                              .with_children(ui_handlers),
+        yajlpp::property_handler("ui")
+            .with_description("User-interface settings")
+            .with_children(ui_handlers),
 
-                          yajlpp::property_handler("global")
-                              .with_description("Global variable definitions")
-                              .with_children(global_var_handlers)}
-          .with_schema_id(*SUPPORTED_CONFIG_SCHEMAS.cbegin());
+        yajlpp::property_handler("global")
+            .with_description("Global variable definitions")
+            .with_children(global_var_handlers),
+}
+    .with_schema_id(*SUPPORTED_CONFIG_SCHEMAS.cbegin());
 
 class active_key_map_listener : public lnav_config_listener {
 public:
@@ -1234,13 +1227,9 @@ load_config_from(_lnav_config& lconfig,
     ypc.with_error_reporter(config_error_reporter);
     if ((fd = lnav::filesystem::openp(path, O_RDONLY)) == -1) {
         if (errno != ENOENT) {
-            char errmsg[1024];
-
-            snprintf(errmsg,
-                     sizeof(errmsg),
-                     "error: unable to open format file -- %s",
-                     path.c_str());
-            errors.emplace_back(errmsg);
+            errors.emplace_back(fmt::format(
+                FMT_STRING("error: unable to open format file -- {}"),
+                path.string()));
         }
     } else {
         auto_mem<yajl_handle_t> handle(yajl_free);
@@ -1257,8 +1246,10 @@ load_config_from(_lnav_config& lconfig,
             if (rc == 0) {
                 break;
             } else if (rc == -1) {
-                errors.push_back(path.string() + ":unable to read file -- "
-                                 + string(strerror(errno)));
+                errors.emplace_back(
+                    fmt::format(FMT_STRING("{}:unable to read file -- {}"),
+                                path.string(),
+                                strerror(errno)));
                 break;
             }
             if (ypc.parse((const unsigned char*) buffer, rc) != yajl_status_ok)
@@ -1446,19 +1437,13 @@ reload_config(vector<string>& errors)
                     return;
                 }
 
-                char msg[1024];
-
-                snprintf(msg,
-                         sizeof(msg),
-                         "%s:%d:%s",
-                         loc_iter->second.sl_source.get(),
-                         loc_iter->second.sl_line_number,
-                         errmsg.c_str());
-
-                errors.emplace_back(msg);
+                errors.emplace_back(fmt::format(FMT_STRING("{}:{}:{}"),
+                                                loc_iter->second.sl_source,
+                                                loc_iter->second.sl_line_number,
+                                                errmsg));
             };
 
-            for (auto& jph : lnav_config_handlers.jpc_children) {
+            for (const auto& jph : lnav_config_handlers.jpc_children) {
                 jph.walk(cb, &lnav_config);
             }
         };

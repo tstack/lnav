@@ -55,8 +55,8 @@ struct path {
     locality p_locality;
     std::string p_path;
 
-    path(locality l, std::string path)
-        : p_locality(std::move(l)), p_path(std::move(path))
+    path(locality loc, std::string path)
+        : p_locality(std::move(loc)), p_path(std::move(path))
     {
     }
 

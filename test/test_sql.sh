@@ -353,23 +353,23 @@ command-option:2: error: Only the top view in the stack can be deleted
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', '')" \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', '')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an empty pattern?" <<EOF
-command-option:1: error: Expecting an non-empty pattern for column number 4
+command-option:1: error: Expecting a non-empty pattern value
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'abc(')" \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', 'abc(')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid pattern?" <<EOF
-command-option:1: error: Invalid regular expression in column 4: missing ) at offset 4
+command-option:1: error: Invalid regular expression for pattern: missing ) at offset 4
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'abc')" \
+    -c ";INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid view name?" <<EOF
@@ -377,7 +377,7 @@ command-option:1: error: Expecting an lnav view name for column number 0
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'abc')" \
+    -c ";INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with a null view name?" <<EOF
@@ -385,11 +385,11 @@ command-option:1: error: Expecting an lnav view name for column number 0
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'abc')" \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid filter type?" <<EOF
-command-option:1: error: Expecting an filter type for column number 3
+command-option:1: error: Expecting an value of 'in' or 'out' for column number 3
 EOF
 
 run_test ${lnav_test} -n \
@@ -439,6 +439,14 @@ run_test ${lnav_test} -n \
 check_output "view filter stats is not working?" <<EOF
 view_name,filter_id,hits
 log,1,2
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters (view_name, language, pattern) VALUES ('log', 'sql', ':sc_bytes = 134')" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "inserted filter-out did not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
 EOF
 
 run_test ${lnav_test} -n \

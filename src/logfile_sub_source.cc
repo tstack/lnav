@@ -584,8 +584,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
         auto sql_filter_opt = this->get_sql_filter();
         if (sql_filter_opt) {
-            auto sf = (sql_filter*) sql_filter_opt.value().get();
-            int color;
+            auto* sf = (sql_filter*) sql_filter_opt.value().get();
+            log_debug("eval sql %p %p", &this->tss_filters, sf);
             auto eval_res = this->eval_sql_filter(sf->sf_filter_stmt.in(),
                                                   this->lss_token_file_data,
                                                   this->lss_token_line);
@@ -593,7 +593,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 auto msg = fmt::format(
                     "filter expression evaluation failed with -- {}",
                     eval_res.unwrapErr());
-                color = COLOR_YELLOW;
+                auto color = COLOR_YELLOW;
                 value_out.emplace_back(line_range{0, -1}, &SA_ERROR, msg);
                 value_out.emplace_back(
                     line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
@@ -1101,7 +1101,7 @@ logfile_sub_source::text_filters_changed()
     }
 
     for (auto& ld : *this) {
-        auto lf = ld->get_file_ptr();
+        auto* lf = ld->get_file_ptr();
 
         if (lf != nullptr) {
             ld->ld_filter_state.clear_deleted_filter_state();
@@ -1237,6 +1237,9 @@ logfile_sub_source::insert_file(const shared_ptr<logfile>& lf)
 Result<void, std::string>
 logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 {
+    for (auto& filt : this->tss_filters) {
+        log_debug("set filt %p %d", filt.get(), filt->lf_deleted);
+    }
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
@@ -1255,8 +1258,10 @@ logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 
     auto old_filter = this->get_sql_filter();
     if (stmt != nullptr) {
-        auto new_filter = std::make_shared<sql_filter>(*this, stmt_str, stmt);
+        auto new_filter
+            = std::make_shared<sql_filter>(*this, std::move(stmt_str), stmt);
 
+        log_debug("fstack %p new %p", &this->tss_filters, new_filter.get());
         if (old_filter) {
             auto existing_iter = std::find(this->tss_filters.begin(),
                                            this->tss_filters.end(),

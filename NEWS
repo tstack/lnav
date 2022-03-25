@@ -3,6 +3,15 @@ lnav v0.10.2:
      * Add initial support for pcap(3) files using tshark(1).
      * Add format for UniFi gateway.
 
+     Breaking Changes:
+     * Added a 'language' column to the lnav_view_filters table that
+       specifies the language of the 'pattern' column, either 'regex'
+       or 'sql'.
+
+     Fixes:
+     * Toggling enabled/disabled filters when there is a SQL expression
+       no longer causes a crash.
+
 lnav v0.10.1:
      Features:
      * Added ":show-only-this-file" command that hides all files except the

@@ -96,7 +96,8 @@ all_logs_vtab::extract(std::shared_ptr<logfile> lf,
     values.emplace_back(this->alv_msg_meta, tsb.tsb_ref);
 
     this->alv_schema_manager.invalidate_refs();
-    dp.dp_schema_id.to_string(this->alv_schema_buffer.data());
+    this->alv_schema_buffer.clear();
+    dp.dp_schema_id.to_string(std::back_inserter(this->alv_schema_buffer));
     shared_buffer_ref schema_ref;
     schema_ref.share(this->alv_schema_manager,
                      this->alv_schema_buffer.data(),

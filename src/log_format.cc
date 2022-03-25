@@ -2354,7 +2354,7 @@ external_log_format::match_name(const string& filename)
 bool
 external_log_format::match_mime_type(const file_format_t ff) const
 {
-    if (ff == file_format_t::FF_UNKNOWN && this->elf_mime_types.empty()) {
+    if (ff == file_format_t::UNKNOWN && this->elf_mime_types.empty()) {
         return true;
     }
 

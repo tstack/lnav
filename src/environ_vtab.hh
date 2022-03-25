@@ -34,6 +34,6 @@
 
 int register_environ_vtab(sqlite3* db);
 
-extern const char* ENVIRON_CREATE_STMT;
+extern const char* const ENVIRON_CREATE_STMT;
 
 #endif

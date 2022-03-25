@@ -272,3 +272,34 @@ attr_line_t::apply_hide()
         }
     }
 }
+
+line_range
+line_range::intersection(const line_range& other) const
+{
+    int actual_end;
+
+    if (this->lr_end == -1) {
+        actual_end = other.lr_end;
+    } else if (other.lr_end == -1) {
+        actual_end = this->lr_end;
+    } else {
+        actual_end = std::min(this->lr_end, other.lr_end);
+    }
+    return line_range{std::max(this->lr_start, other.lr_start), actual_end};
+}
+
+line_range&
+line_range::shift(int32_t start, int32_t amount)
+{
+    if (this->lr_start >= start) {
+        this->lr_start = std::max(0, this->lr_start + amount);
+    }
+    if (this->lr_end != -1 && start <= this->lr_end) {
+        this->lr_end += amount;
+        if (this->lr_end < this->lr_start) {
+            this->lr_end = this->lr_start;
+        }
+    }
+
+    return *this;
+}

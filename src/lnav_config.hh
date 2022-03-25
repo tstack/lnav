@@ -106,7 +106,7 @@ extern struct _lnav_config lnav_config;
 extern struct _lnav_config rollback_lnav_config;
 extern std::map<intern_string_t, source_location> lnav_config_locations;
 
-extern struct json_path_container lnav_config_handlers;
+extern const struct json_path_container lnav_config_handlers;
 
 enum class config_file_type {
     FORMAT,
@@ -126,6 +126,6 @@ void reload_config(std::vector<std::string>& errors);
 std::string save_config();
 
 extern const char* DEFAULT_FORMAT_SCHEMA;
-extern std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
+extern const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
 
 #endif

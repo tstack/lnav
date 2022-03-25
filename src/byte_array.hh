@@ -37,6 +37,7 @@
 #include <sys/types.h>
 
 #include "base/lnav_log.hh"
+#include "fmt/format.h"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
@@ -70,21 +71,21 @@ struct byte_array {
         memset(this->ba_data, 0, BYTE_COUNT);
     };
 
-    void to_string(char* buffer) const
+    template<typename OutputIt>
+    void to_string(OutputIt out) const
     {
-        require(buffer != nullptr);
-
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
-            snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
+            fmt::format_to(out, FMT_STRING("{:02x}"), this->ba_data[lpc]);
         }
-    };
+    }
 
     std::string to_string() const
     {
-        char buffer[STRING_SIZE];
+        std::string retval;
 
-        this->to_string(buffer);
-        return std::string(buffer);
+        retval.reserve(STRING_SIZE);
+        this->to_string(std::back_inserter(retval));
+        return retval;
     }
 
     const unsigned char* in() const

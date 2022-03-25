@@ -385,6 +385,46 @@ json_path_handler_base::walk(
     }
 }
 
+nonstd::optional<int>
+json_path_handler_base::to_enum_value(const string_fragment& sf) const
+{
+    for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+        const enum_value_t& ev = this->jph_enum_values[lpc];
+
+        if (sf == ev.first) {
+            return ev.second;
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
+vector<json_path_handler_base::schema_type_t>
+json_path_handler_base::get_types() const
+{
+    std::vector<schema_type_t> retval;
+
+    if (this->jph_callbacks.yajl_boolean) {
+        retval.push_back(schema_type_t::BOOLEAN);
+    }
+    if (this->jph_callbacks.yajl_integer) {
+        retval.push_back(schema_type_t::INTEGER);
+    }
+    if (this->jph_callbacks.yajl_double || this->jph_callbacks.yajl_number) {
+        retval.push_back(schema_type_t::NUMBER);
+    }
+    if (this->jph_callbacks.yajl_string) {
+        retval.push_back(schema_type_t::STRING);
+    }
+    if (this->jph_children) {
+        retval.push_back(schema_type_t::OBJECT);
+    }
+    if (retval.empty()) {
+        retval.push_back(schema_type_t::ANY);
+    }
+    return retval;
+}
+
 yajlpp_parse_context::yajlpp_parse_context(
     std::string source, const struct json_path_container* handlers)
     : ypc_source(std::move(source)), ypc_handlers(handlers)
@@ -1072,4 +1112,14 @@ dump_schema_to(const json_path_container& jpc,
         genner, yajl_gen_print_callback, schema_printer, file.get());
 
     ygc.gen_schema();
+}
+string_fragment
+yajlpp_gen::to_string_fragment()
+{
+    const unsigned char* buf;
+    size_t len;
+
+    yajl_gen_get_buf(this->yg_handle.in(), &buf, &len);
+
+    return string_fragment((const char*) buf, 0, len);
 }

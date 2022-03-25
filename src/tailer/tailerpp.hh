@@ -31,6 +31,7 @@
 #define lnav_tailerpp_hh
 
 #include <string>
+#include <vector>
 
 #include "auto_mem.hh"
 #include "base/result.h"

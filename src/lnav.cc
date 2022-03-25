@@ -951,7 +951,7 @@ update_active_files(file_collection& new_files)
     }
     for (const auto& other_pair : new_files.fc_other_files) {
         switch (other_pair.second.ofd_format) {
-            case file_format_t::FF_SQLITE_DB:
+            case file_format_t::SQLITE_DB:
                 attach_sqlite_db(lnav_data.ld_db.in(), other_pair.first);
                 break;
             default:
@@ -989,7 +989,7 @@ rescan_files(bool req)
         mlooper.get_port().process_for(delay);
         if (lnav_data.ld_flags & LNF_HEADLESS) {
             for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
-                if (pair.second.ofd_format != file_format_t::FF_REMOTE) {
+                if (pair.second.ofd_format != file_format_t::REMOTE) {
                     continue;
                 }
 
@@ -1910,7 +1910,7 @@ looper()
                         lnav_data.ld_active_files.fc_other_files.end(),
                         [](const auto& pair) {
                             return pair.second.ofd_format
-                                == file_format_t::FF_SQLITE_DB;
+                                == file_format_t::SQLITE_DB;
                         }))
                 {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
@@ -2132,7 +2132,7 @@ main(int argc, char* argv[])
     }
 
     (void) signal(SIGPIPE, SIG_IGN);
-    setlocale(LC_ALL, "");
+    std::locale::global(std::locale(""));
     umask(027);
 
     /* Disable Lnav from being able to execute external commands if
@@ -2779,12 +2779,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         .expect("Cannot create temporary file for FIFO")
                         .second);
                 auto fifo_out_fd = fifo_piper->get_fd();
-                char desc[128];
+                auto desc = fmt::format(FMT_STRING("FIFO [{}]"),
+                                        lnav_data.ld_fifo_counter++);
 
-                snprintf(desc,
-                         sizeof(desc),
-                         "FIFO [%d]",
-                         lnav_data.ld_fifo_counter++);
                 lnav_data.ld_active_files.fc_file_names[desc].with_fd(
                     fifo_out_fd);
                 lnav_data.ld_pipers.push_back(fifo_piper);

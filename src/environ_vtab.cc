@@ -40,7 +40,7 @@ using namespace std;
 
 extern char** environ;
 
-const char* ENVIRON_CREATE_STMT = R"(
+const char* const ENVIRON_CREATE_STMT = R"(
 -- Access lnav's environment variables through this table.
 CREATE TABLE environ (
     name text PRIMARY KEY,
