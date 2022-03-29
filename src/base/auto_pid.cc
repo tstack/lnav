@@ -43,7 +43,8 @@ from_fork()
     auto pid = ::fork();
 
     if (pid == -1) {
-        return Err(fmt::format("fork() failed: {}", strerror(errno)));
+        return Err(
+            fmt::format(FMT_STRING("fork() failed: {}"), strerror(errno)));
     }
 
     if (pid != 0) {

@@ -169,14 +169,15 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                 schema.gen(this->jph_description);
             }
             if (this->jph_is_pattern_property) {
-                ygc.ygc_path.emplace_back(
-                    fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
+                ygc.ygc_path.emplace_back(fmt::format(
+                    FMT_STRING("<{}>"), this->jph_regex.name_for_capture(0)));
             } else {
                 ygc.ygc_path.emplace_back(this->jph_property);
             }
             if (this->jph_children->jpc_definition_id.empty()) {
                 schema.gen("title");
-                schema.gen(fmt::format("/{}", fmt::join(ygc.ygc_path, "/")));
+                schema.gen(fmt::format(FMT_STRING("/{}"),
+                                       fmt::join(ygc.ygc_path, "/")));
                 schema.gen("type");
                 if (this->jph_is_array) {
                     if (this->jph_regex.p_pattern.find("#?") == string::npos) {
@@ -203,7 +204,8 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                 }
             } else {
                 schema.gen("title");
-                schema.gen(fmt::format("/{}", fmt::join(ygc.ygc_path, "/")));
+                schema.gen(fmt::format(FMT_STRING("/{}"),
+                                       fmt::join(ygc.ygc_path, "/")));
                 this->jph_children->gen_schema(ygc);
             }
             ygc.ygc_path.pop_back();
@@ -212,14 +214,15 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
         yajlpp_map schema(ygc.ygc_handle);
 
         if (this->jph_is_pattern_property) {
-            ygc.ygc_path.emplace_back(
-                fmt::format("<{}>", this->jph_regex.name_for_capture(0)));
+            ygc.ygc_path.emplace_back(fmt::format(
+                FMT_STRING("<{}>"), this->jph_regex.name_for_capture(0)));
         } else {
             ygc.ygc_path.emplace_back(this->jph_property);
         }
 
         schema.gen("title");
-        schema.gen(fmt::format("/{}", fmt::join(ygc.ygc_path, "/")));
+        schema.gen(
+            fmt::format(FMT_STRING("/{}"), fmt::join(ygc.ygc_path, "/")));
         if (this->jph_description && this->jph_description[0]) {
             schema.gen("description");
             schema.gen(this->jph_description);
@@ -803,15 +806,16 @@ yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
     this->ypc_json_text = nullptr;
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
-        auto msg = yajl_get_error(this->ypc_handle, 1, jsonText, jsonTextLen);
+        auto* msg = yajl_get_error(this->ypc_handle, 1, jsonText, jsonTextLen);
 
-        this->ypc_error_reporter(*this,
-                                 lnav_log_level_t::ERROR,
-                                 fmt::format("error:{}:{}:invalid json -- {}",
-                                             this->ypc_source,
-                                             this->get_line_number(),
-                                             msg)
-                                     .c_str());
+        this->ypc_error_reporter(
+            *this,
+            lnav_log_level_t::ERROR,
+            fmt::format(FMT_STRING("error:{}:{}:invalid json -- {}"),
+                        this->ypc_source,
+                        this->get_line_number(),
+                        reinterpret_cast<const char*>(msg))
+                .c_str());
         yajl_free_error(this->ypc_handle, msg);
     }
 
@@ -824,12 +828,14 @@ yajlpp_parse_context::complete_parse()
     yajl_status retval = yajl_complete_parse(this->ypc_handle);
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
-        auto msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
+        auto* msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
 
         this->ypc_error_reporter(
             *this,
             lnav_log_level_t::ERROR,
-            fmt::format("error:{}:invalid json -- {}", this->ypc_source, msg)
+            fmt::format(FMT_STRING("error:{}:invalid json -- {}"),
+                        this->ypc_source,
+                        reinterpret_cast<const char*>(msg))
                 .c_str());
         yajl_free_error(this->ypc_handle, msg);
     }
@@ -1001,7 +1007,8 @@ yajlpp_gen_context::gen_schema(const json_path_container* handlers)
                 def.gen("type");
                 def.gen("object");
                 def.gen("$$target");
-                def.gen(fmt::format("#/definitions/{}", container.first));
+                def.gen(fmt::format(FMT_STRING("#/definitions/{}"),
+                                    container.first));
                 container.second->gen_properties(*this);
             }
         }
@@ -1035,9 +1042,9 @@ json_path_container::gen_schema(yajlpp_gen_context& ygc) const
         ygc.ygc_schema_definitions[this->jpc_definition_id] = this;
 
         yajl_gen_string(ygc.ygc_handle, "$ref");
-        yajl_gen_string(
-            ygc.ygc_handle,
-            fmt::format("#/definitions/{}", this->jpc_definition_id));
+        yajl_gen_string(ygc.ygc_handle,
+                        fmt::format(FMT_STRING("#/definitions/{}"),
+                                    this->jpc_definition_id));
         return;
     }
 
@@ -1099,7 +1106,7 @@ dump_schema_to(const json_path_container& jpc,
 {
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
-    auto schema_path = fmt::format("{}/{}", internals_dir, name);
+    auto schema_path = fmt::format(FMT_STRING("{}/{}"), internals_dir, name);
     auto file = unique_ptr<FILE, decltype(&fclose)>(
         fopen(schema_path.c_str(), "w+"), fclose);
 

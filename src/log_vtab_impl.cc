@@ -578,8 +578,9 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         auto read_res = lf->read_raw_message(ll);
 
                         if (read_res.isErr()) {
-                            auto msg = fmt::format("unable to read line -- {}",
-                                                   read_res.unwrapErr());
+                            auto msg = fmt::format(
+                                FMT_STRING("unable to read line -- {}"),
+                                read_res.unwrapErr());
                             sqlite3_result_error(
                                 ctx, msg.c_str(), msg.length());
                         } else {
@@ -1002,7 +1003,8 @@ vt_update(sqlite3_vtab* tab,
             ypc.parse(log_tags, strlen((const char*) log_tags));
             ypc.complete_parse();
             if (!errors.empty()) {
-                auto all_errors = fmt::format("{}", fmt::join(errors, "\n"));
+                auto all_errors
+                    = fmt::format(FMT_STRING("{}"), fmt::join(errors, "\n"));
                 tab->zErrMsg = sqlite3_mprintf("%s", all_errors.c_str());
                 return SQLITE_ERROR;
             }
@@ -1157,7 +1159,7 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
     string retval;
 
     if (this->vm_impls.find(name) == this->vm_impls.end()) {
-        retval = fmt::format("unknown log line table -- {}", name);
+        retval = fmt::format(FMT_STRING("unknown log line table -- {}"), name);
     } else {
         auto_mem<char, sqlite3_free> sql;
         __attribute((unused)) int rc;

@@ -232,7 +232,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                 continue;
             }
 
-            auto emsg = fmt::format("   Invalid log message: {}",
+            auto emsg = fmt::format(FMT_STRING("   Invalid log message: {}"),
                                     (const char*) sattr.sa_value.sav_ptr);
             auto al = attr_line_t(emsg)
                           .with_attr(string_attr(line_range{1, 2},
@@ -518,7 +518,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         xp_call = sqlite3_mprintf(
             "xpath(%Q, %s)", xml_pair.first.second.c_str(), qname.in());
         this->fos_lines.emplace_back(
-            fmt::format("   {} = {}", xp_call, xml_pair.second));
+            fmt::format(FMT_STRING("   {} = {}"), xp_call, xml_pair.second));
         this->add_key_line_attrs(0);
     }
 
@@ -551,7 +551,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         auto& name = this->fos_log_helper.ldh_namer->cn_names[lpc];
         auto val = this->fos_log_helper.ldh_parser->get_element_string(
             iter->e_sub_elements->back());
-        attr_line_t al(fmt::format("   {} = {}", name, val));
+        attr_line_t al(fmt::format(FMT_STRING("   {} = {}"), name, val));
 
         al.with_attr(string_attr(line_range(3, 3 + name.length()),
                                  &view_curses::VC_STYLE,

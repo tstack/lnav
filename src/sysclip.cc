@@ -47,8 +47,8 @@ get_commands()
     auto& cfg = injector::get<const config&>();
 
     for (const auto& pair : cfg.c_clipboard_impls) {
-        const auto full_cmd
-            = fmt::format("{} > /dev/null 2>&1", pair.second.c_test_command);
+        const auto full_cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"),
+                                          pair.second.c_test_command);
 
         log_debug("testing clipboard impl %s using: %s",
                   pair.first.c_str(),
@@ -86,10 +86,10 @@ open(type_t type, op_t op)
 
     switch (op) {
         case op_t::WRITE:
-            cmd = fmt::format("{} > /dev/null 2>&1", cmd);
+            cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"), cmd);
             break;
         case op_t::READ:
-            cmd = fmt::format("{} < /dev/null 2>/dev/null", cmd);
+            cmd = fmt::format(FMT_STRING("{} < /dev/null 2>/dev/null"), cmd);
             break;
     }
 

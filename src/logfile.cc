@@ -70,24 +70,27 @@ logfile::open(std::string filename, logfile_open_options& loo)
 
         errno = 0;
         if (realpath(lf->lf_filename.c_str(), resolved_path) == nullptr) {
-            return Err(fmt::format("realpath({}) failed with: {}",
+            return Err(fmt::format(FMT_STRING("realpath({}) failed with: {}"),
                                    lf->lf_filename,
                                    strerror(errno)));
         }
 
         if (stat(resolved_path, &lf->lf_stat) == -1) {
-            return Err(fmt::format(
-                "stat({}) failed with: {}", lf->lf_filename, strerror(errno)));
+            return Err(fmt::format(FMT_STRING("stat({}) failed with: {}"),
+                                   lf->lf_filename,
+                                   strerror(errno)));
         }
 
         if (!S_ISREG(lf->lf_stat.st_mode)) {
-            return Err(fmt::format(
-                "{} is not a regular file", lf->lf_filename, strerror(errno)));
+            return Err(fmt::format(FMT_STRING("{} is not a regular file"),
+                                   lf->lf_filename,
+                                   strerror(errno)));
         }
 
         if ((lf->lf_options.loo_fd = ::open(resolved_path, O_RDONLY)) == -1) {
-            return Err(fmt::format(
-                "open({}) failed with: {}", lf->lf_filename, strerror(errno)));
+            return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
+                                   lf->lf_filename,
+                                   strerror(errno)));
         }
 
         lf->lf_options.loo_fd.close_on_exec();
@@ -794,5 +797,6 @@ logfile::mark_as_duplicate(const string& name)
     this->lf_indexing = false;
     this->lf_options.loo_is_visible = false;
     this->lf_notes.writeAccess()->emplace(
-        note_type::duplicate, fmt::format("hiding duplicate of {}", name));
+        note_type::duplicate,
+        fmt::format(FMT_STRING("hiding duplicate of {}"), name));
 }

@@ -109,13 +109,13 @@ point::as_precise_time_ago() const
         return "a second ago";
     } else if (diff.tv_sec < (10 * 60)) {
         if (diff.tv_sec < 60) {
-            return fmt::format("{:2} seconds ago", diff.tv_sec);
+            return fmt::format(FMT_STRING("{:2} seconds ago"), diff.tv_sec);
         }
 
         time_t seconds = diff.tv_sec % 60;
         time_t minutes = diff.tv_sec / 60;
 
-        return fmt::format("{:2} minute{} and {:2} second{} ago",
+        return fmt::format(FMT_STRING("{:2} minute{} and {:2} second{} ago"),
                            minutes,
                            minutes > 1 ? "s" : "",
                            seconds,

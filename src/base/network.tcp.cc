@@ -50,7 +50,7 @@ connect(const char* hostname, const char* servname)
     auto rc = getaddrinfo(hostname, servname, &hints, &ai);
 
     if (rc != 0) {
-        return Err(fmt::format("unable to resolve {}:{} -- {}",
+        return Err(fmt::format(FMT_STRING("unable to resolve {}:{} -- {}"),
                                hostname,
                                servname,
                                gai_strerror(rc)));
@@ -60,7 +60,7 @@ connect(const char* hostname, const char* servname)
 
     rc = ::connect(retval, ai->ai_addr, ai->ai_addrlen);
     if (rc != 0) {
-        return Err(fmt::format("unable to connect to {}:{} -- {}",
+        return Err(fmt::format(FMT_STRING("unable to connect to {}:{} -- {}"),
                                hostname,
                                servname,
                                strerror(rc)));

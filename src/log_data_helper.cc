@@ -132,8 +132,10 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                             auto node_path = lnav::pugixml::get_actual_path(
                                 xpath_node.node());
                             for (auto& attr : xpath_node.node().attributes()) {
-                                auto attr_path = fmt::format(
-                                    "{}/@{}", node_path, attr.name());
+                                auto attr_path
+                                    = fmt::format(FMT_STRING("{}/@{}"),
+                                                  node_path,
+                                                  attr.name());
 
                                 this->ldh_xml_pairs[std::make_pair(col_name,
                                                                    attr_path)]
@@ -144,8 +146,8 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                                 continue;
                             }
 
-                            auto text_path
-                                = fmt::format("{}/text()", node_path);
+                            auto text_path = fmt::format(
+                                FMT_STRING("{}/text()"), node_path);
                             this->ldh_xml_pairs[std::make_pair(col_name,
                                                                text_path)]
                                 = trim(xpath_node.node().text().get());

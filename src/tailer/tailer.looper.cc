@@ -114,7 +114,8 @@ update_tailer_description(
     std::vector<std::string> paths;
 
     for (const auto& des_pair : desired_paths) {
-        paths.emplace_back(fmt::format("{}{}", netloc, des_pair.first));
+        paths.emplace_back(
+            fmt::format(FMT_STRING("{}{}"), netloc, des_pair.first));
     }
     isc::to<main_looper&, services::main_t>().send(
         [paths, remote_uname](auto& mlooper) {
@@ -200,7 +201,7 @@ void
 tailer::looper::add_remote(const network::path& path,
                            logfile_open_options options)
 {
-    auto netloc_str = fmt::format("{}", path.home());
+    auto netloc_str = fmt::to_string(path.home());
     this->l_netlocs_to_paths[netloc_str].rpq_new_paths[path.p_path]
         = std::move(options);
 }
@@ -208,7 +209,7 @@ tailer::looper::add_remote(const network::path& path,
 void
 tailer::looper::load_preview(int64_t id, const network::path& path)
 {
-    auto netloc_str = fmt::format("{}", path.home());
+    auto netloc_str = fmt::to_string(path.home());
     auto iter = this->l_remotes.find(netloc_str);
 
     if (iter == this->l_remotes.end()) {
@@ -243,7 +244,7 @@ tailer::looper::load_preview(int64_t id, const network::path& path)
 void
 tailer::looper::complete_path(const network::path& path)
 {
-    auto netloc_str = fmt::format("{}", path.home());
+    auto netloc_str = fmt::to_string(path.home());
     auto iter = this->l_remotes.find(netloc_str);
 
     if (iter == this->l_remotes.end()) {
@@ -273,21 +274,23 @@ create_ssh_args_from_config(const std::string& dest)
         if (startswith(cfg.c_ssh_flags, "-")) {
             retval.emplace_back(cfg.c_ssh_flags);
         } else {
-            retval.emplace_back(fmt::format("-{}", cfg.c_ssh_flags));
+            retval.emplace_back(
+                fmt::format(FMT_STRING("-{}"), cfg.c_ssh_flags));
         }
     }
     for (const auto& pair : cfg.c_ssh_options) {
         if (pair.second.empty()) {
             continue;
         }
-        retval.emplace_back(fmt::format("-{}", pair.first));
+        retval.emplace_back(fmt::format(FMT_STRING("-{}"), pair.first));
         retval.emplace_back(pair.second);
     }
     for (const auto& pair : cfg.c_ssh_config) {
         if (pair.second.empty()) {
             continue;
         }
-        retval.emplace_back(fmt::format("-o{}={}", pair.first, pair.second));
+        retval.emplace_back(
+            fmt::format(FMT_STRING("-o{}={}"), pair.first, pair.second));
     }
     retval.emplace_back(dest);
 
@@ -302,12 +305,12 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
     update_tailer_progress(netloc, "Transferring tailer...");
 
     auto& cfg = injector::get<const tailer::config&>();
-    auto tailer_bin_name = fmt::format("tailer.bin.{}", getpid());
+    auto tailer_bin_name = fmt::format(FMT_STRING("tailer.bin.{}"), getpid());
 
     auto rp = humanize::network::path::from_str(netloc).value();
     auto ssh_dest = rp.p_locality.l_hostname;
     if (rp.p_locality.l_username.has_value()) {
-        ssh_dest = fmt::format("{}@{}",
+        ssh_dest = fmt::format(FMT_STRING("{}@{}"),
                                rp.p_locality.l_username.value(),
                                rp.p_locality.l_hostname);
     }
@@ -347,7 +350,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         std::thread err_reader([netloc,
                                 err = std::move(err_pipe.read_end()),
                                 &error_queue]() mutable {
-            log_set_thread_prefix(fmt::format("tailer({})", netloc));
+            log_set_thread_prefix(
+                fmt::format(FMT_STRING("tailer({})"), netloc));
             read_err_pipe(netloc, err, error_queue);
         });
 
@@ -393,7 +397,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         {
             auto error_msg = error_queue.empty() ? "unknown"
                                                  : error_queue.back();
-            return Err(fmt::format("failed to ssh to host: {}", error_msg));
+            return Err(fmt::format(FMT_STRING("failed to ssh to host: {}"),
+                                   error_msg));
         }
     }
 
@@ -415,7 +420,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         arg_strs.emplace_back(fmt::format(cfg.c_start_cmd, tailer_bin_name));
 
         fmt::print(stderr,
-                   "tailer({}): executing -- {}\n",
+                   FMT_STRING("tailer({}): executing -- {}\n"),
                    netloc,
                    fmt::join(arg_strs, " "));
         for (const auto& arg : arg_strs) {
@@ -520,8 +525,8 @@ tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
             log_warning("disconnected from host, cannot preview: %s",
                         path.c_str());
 
-            auto msg
-                = fmt::format("error: disconnected from {}", this->ht_netloc);
+            auto msg = fmt::format(FMT_STRING("error: disconnected from {}"),
+                                   this->ht_netloc);
             isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
                 if (lnav_data.ld_preview_generation != id) {
                     return;
@@ -958,8 +963,8 @@ tailer::looper::host_tailer::loop_body()
             },
             [&](const tailer::packet_possible_path& ppp) {
                 log_debug("possible path: %s", ppp.ppp_path.c_str());
-                auto full_path
-                    = fmt::format("{}{}", this->ht_netloc, ppp.ppp_path);
+                auto full_path = fmt::format(
+                    FMT_STRING("{}{}"), this->ht_netloc, ppp.ppp_path);
 
                 isc::to<main_looper&, services::main_t>().send(
                     [full_path](auto& mlooper) {
@@ -996,13 +1001,14 @@ std::string
 tailer::looper::host_tailer::get_display_path(
     const std::string& remote_path) const
 {
-    return fmt::format("{}{}", this->ht_netloc, remote_path);
+    return fmt::format(FMT_STRING("{}{}"), this->ht_netloc, remote_path);
 }
 
 void*
 tailer::looper::host_tailer::run()
 {
-    log_set_thread_prefix(fmt::format("tailer({})", this->ht_netloc));
+    log_set_thread_prefix(
+        fmt::format(FMT_STRING("tailer({})"), this->ht_netloc));
 
     return service_base::run();
 }
@@ -1051,12 +1057,14 @@ tailer::looper::remote_path_queue::send_synced_to_main(
 
     for (const auto& pair : this->rpq_new_paths) {
         if (!pair.second.loo_tail) {
-            synced_files.emplace(fmt::format("{}{}", netloc, pair.first));
+            synced_files.emplace(
+                fmt::format(FMT_STRING("{}{}"), netloc, pair.first));
         }
     }
     for (const auto& pair : this->rpq_existing_paths) {
         if (!pair.second.loo_tail) {
-            synced_files.emplace(fmt::format("{}{}", netloc, pair.first));
+            synced_files.emplace(
+                fmt::format(FMT_STRING("{}{}"), netloc, pair.first));
         }
     }
 

@@ -118,7 +118,7 @@ rgb_color::from_str(const string_fragment& sf)
                 break;
         }
 
-        return Err(fmt::format("Could not parse color: {}", sf));
+        return Err(fmt::format(FMT_STRING("Could not parse color: {}"), sf));
     }
 
     for (const auto& xc : xterm_colors()->tc_palette) {
@@ -128,9 +128,10 @@ rgb_color::from_str(const string_fragment& sf)
     }
 
     return Err(fmt::format(
-        "Unknown color: '{}'.  "
-        "See https://jonasjacek.github.io/colors/ for a list of supported "
-        "color names",
+        FMT_STRING(
+            "Unknown color: '{}'.  "
+            "See https://jonasjacek.github.io/colors/ for a list of supported "
+            "color names"),
         sf));
 }
 

@@ -61,12 +61,12 @@ get_actual_path(const pugi::xml_node& node)
                         sibling = sibling.previous_sibling(curr.name());
                     }
 
-                    name = fmt::format("{}[{}]", name, index);
+                    name = fmt::format(FMT_STRING("{}[{}]"), name, index);
                 }
                 if (retval.empty()) {
                     retval = name;
                 } else {
-                    retval = fmt::format("{}/{}", name, retval);
+                    retval = fmt::format(FMT_STRING("{}/{}"), name, retval);
                 }
                 break;
             }

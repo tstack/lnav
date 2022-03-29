@@ -2593,8 +2593,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     done = true;
                     break;
                 case SQLITE_ROW:
-                    tables_to_drop.emplace_back(fmt::format(
-                        "DROP TABLE {}", sqlite3_column_text(stmt.in(), 0)));
+                    tables_to_drop.emplace_back(
+                        fmt::format(FMT_STRING("DROP TABLE {}"),
+                                    reinterpret_cast<const char*>(
+                                        sqlite3_column_text(stmt.in(), 0))));
                     break;
             }
         } while (!done);

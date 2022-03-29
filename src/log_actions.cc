@@ -135,8 +135,9 @@ action_delegate::execute_action(const string& action_name)
                         })
                         .expect("Cannot create temporary file for action")
                         .second);
-                auto desc = fmt::format(
-                    "[{}] Output of {}", exec_count++, action.ad_cmdline[0]);
+                auto desc = fmt::format(FMT_STRING("[{}] Output of {}"),
+                                        exec_count++,
+                                        action.ad_cmdline[0]);
 
                 this->ad_piper_cb(desc, pp);
             }

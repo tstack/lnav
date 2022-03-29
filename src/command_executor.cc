@@ -862,7 +862,8 @@ exec_context::get_error_prefix()
 
     std::pair<std::string, int> source = this->ec_source.top();
 
-    return fmt::format("{}:{}: error: ", source.first, source.second);
+    return fmt::format(
+        FMT_STRING("{}:{}: error: "), source.first, source.second);
 }
 
 void

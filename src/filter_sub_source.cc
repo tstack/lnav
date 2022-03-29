@@ -463,7 +463,8 @@ filter_sub_source::rl_change(readline_curses* rc)
             break;
         }
         case filter_lang_t::SQL: {
-            auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
+            auto full_sql
+                = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), new_value);
             auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
             auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
@@ -544,7 +545,8 @@ filter_sub_source::rl_perform(readline_curses* rc)
                 break;
             }
             case filter_lang_t::SQL: {
-                auto full_sql = fmt::format("SELECT 1 WHERE {}", new_value);
+                auto full_sql
+                    = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), new_value);
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
                 auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),

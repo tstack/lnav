@@ -557,7 +557,8 @@ CREATE TABLE lnav_view_filters (
                         "SQL filters are only supported in the log view");
                 }
                 auto clause = from_sqlite<std::string>()(1, &pattern_str, 0);
-                auto expr = fmt::format("SELECT 1 WHERE {}", clause);
+                auto expr
+                    = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), clause);
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
                 auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
@@ -654,7 +655,7 @@ CREATE TABLE lnav_view_filters (
                     "SQL filters are only supported in the log view");
             }
             auto clause = from_sqlite<std::string>()(1, &pattern_val, 0);
-            auto expr = fmt::format("SELECT 1 WHERE {}", clause);
+            auto expr = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), clause);
             auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
             auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),

@@ -253,7 +253,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
             auto_mem<char> ident(sqlite3_free);
 
             ident = sql_quote_ident(lv.lv_meta.lvm_name.get());
-            auto bound_name = fmt::format(":{}", ident);
+            auto bound_name = fmt::format(FMT_STRING(":{}"), ident);
             rlc->add_possibility(context, type, bound_name);
             switch (lv.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_BOOLEAN:

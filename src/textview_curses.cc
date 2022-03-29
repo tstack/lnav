@@ -189,8 +189,9 @@ textview_curses::reload_config(error_reporter& reporter)
             {
                 reporter(
                     &hl_pair.second.hc_regex,
-                    fmt::format(
-                        "invalid highlight regex: {} at {}", errptr, eoff));
+                    fmt::format(FMT_STRING("invalid highlight regex: {} at {}"),
+                                errptr,
+                                eoff));
                 continue;
             }
 
@@ -799,7 +800,7 @@ empty_filter::matches(const logfile& lf,
 }
 
 string
-empty_filter::to_command()
+empty_filter::to_command() const
 {
     return "";
 }

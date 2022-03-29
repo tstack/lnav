@@ -1339,10 +1339,10 @@ external_log_format::get_subline(const logline& ll,
                 handle, 1, (const unsigned char*) sbr.get_data(), sbr.length());
             if (msg != nullptr) {
                 full_msg = fmt::format(
-                    "[offset: {}] {}\n{}",
+                    FMT_STRING("[offset: {}] {}\n{}"),
                     ll.get_offset(),
                     fmt::string_view{sbr.get_data(), sbr.length()},
-                    msg);
+                    reinterpret_cast<char*>(msg));
                 yajl_free_error(handle, msg);
             }
 
@@ -2125,12 +2125,12 @@ external_log_format::register_vtabs(log_vtab_manager* vtab_manager,
                                        log_search_table::pattern_options());
 
         if (re_res.isErr()) {
-            errors.push_back(
-                fmt::format("error:{}:{}:unable to compile regex '{}': {}",
-                            this->elf_name.get(),
-                            search_iter->first.get(),
-                            search_iter->second,
-                            re_res.unwrapErr().ce_msg));
+            errors.emplace_back(fmt::format(
+                FMT_STRING("error:{}:{}:unable to compile regex '{}': {}"),
+                this->elf_name.get(),
+                search_iter->first.get(),
+                search_iter->second,
+                re_res.unwrapErr().ce_msg));
             continue;
         }
 
@@ -2382,7 +2382,7 @@ std::string
 log_format::get_pattern_name(uint64_t line_number) const
 {
     int pat_index = this->pattern_index_for_line(line_number);
-    return fmt::format("builtin ({})", pat_index);
+    return fmt::format(FMT_STRING("builtin ({})"), pat_index);
 }
 
 log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,

@@ -337,7 +337,7 @@ file_collection::watch_logfile(const std::string& filename,
                                     file_error_info{
                                         st.st_mtime,
                                         fmt::format(
-                                            "{}",
+                                            FMT_STRING("{}"),
                                             fmt::join(*error_queue, "\n")),
                                     });
                             },
@@ -519,7 +519,7 @@ file_collection::expand_filename(
                     retval.fc_other_files[path] = file_format_t::REMOTE;
                     {
                         this->fc_progress->writeAccess()
-                            ->sp_tailers[fmt::format("{}", rp.home())]
+                            ->sp_tailers[fmt::to_string(rp.home())]
                             .tp_message
                             = "Initializing...";
                     }

@@ -62,17 +62,18 @@ compress(const void* input, size_t len)
     auto rc = deflateInit2(
         &zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
     if (rc != Z_OK) {
-        return Err(
-            fmt::format("unable to initialize compressor -- {}", zError(rc)));
+        return Err(fmt::format(
+            FMT_STRING("unable to initialize compressor -- {}"), zError(rc)));
     }
     rc = deflate(&zs, Z_FINISH);
     if (rc != Z_STREAM_END) {
-        return Err(fmt::format("unable to compress data -- {}", zError(rc)));
+        return Err(fmt::format(FMT_STRING("unable to compress data -- {}"),
+                               zError(rc)));
     }
     rc = deflateEnd(&zs);
     if (rc != Z_OK) {
-        return Err(
-            fmt::format("unable to finalize compression -- {}", zError(rc)));
+        return Err(fmt::format(
+            FMT_STRING("unable to finalize compression -- {}"), zError(rc)));
     }
     return Ok(std::move(retval.shrink_to(zs.total_out)));
 }
@@ -91,7 +92,7 @@ uncompress(const std::string& src, const void* buffer, size_t size)
     strm.zfree = Z_NULL;
 
     if ((err = inflateInit2(&strm, (16 + MAX_WBITS))) != Z_OK) {
-        return Err(fmt::format("invalid gzip data: {} -- {}",
+        return Err(fmt::format(FMT_STRING("invalid gzip data: {} -- {}"),
                                src,
                                strm.msg ? strm.msg : zError(err)));
     }
@@ -112,14 +113,14 @@ uncompress(const std::string& src, const void* buffer, size_t size)
             done = true;
         } else if (err != Z_OK) {
             inflateEnd(&strm);
-            return Err(fmt::format("unable to uncompress: {} -- {}",
+            return Err(fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
                                    src,
                                    strm.msg ? strm.msg : zError(err)));
         }
     }
 
     if (inflateEnd(&strm) != Z_OK) {
-        return Err(fmt::format("unable to uncompress: {} -- {}",
+        return Err(fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
                                src,
                                strm.msg ? strm.msg : zError(err)));
     }

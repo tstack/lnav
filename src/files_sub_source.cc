@@ -159,42 +159,42 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
         case 'X': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match([](files_model::no_selection) {},
-                      [&](files_model::error_selection& es) {
-                          auto& fc = lnav_data.ld_active_files;
+            sel.match(
+                [](files_model::no_selection) {},
+                [&](files_model::error_selection& es) {
+                    auto& fc = lnav_data.ld_active_files;
 
-                          fc.fc_file_names.erase(es.sb_iter->first);
+                    fc.fc_file_names.erase(es.sb_iter->first);
 
-                          auto name_iter = fc.fc_file_names.begin();
-                          while (name_iter != fc.fc_file_names.end()) {
-                              if (name_iter->first == es.sb_iter->first) {
-                                  name_iter = fc.fc_file_names.erase(name_iter);
-                                  continue;
-                              }
+                    auto name_iter = fc.fc_file_names.begin();
+                    while (name_iter != fc.fc_file_names.end()) {
+                        if (name_iter->first == es.sb_iter->first) {
+                            name_iter = fc.fc_file_names.erase(name_iter);
+                            continue;
+                        }
 
-                              auto rp_opt = humanize::network::path::from_str(
-                                  name_iter->first);
+                        auto rp_opt = humanize::network::path::from_str(
+                            name_iter->first);
 
-                              if (rp_opt) {
-                                  auto rp = *rp_opt;
+                        if (rp_opt) {
+                            auto rp = *rp_opt;
 
-                                  if (fmt::format("{}", rp.home())
-                                      == es.sb_iter->first) {
-                                      fc.fc_other_files.erase(name_iter->first);
-                                      name_iter
-                                          = fc.fc_file_names.erase(name_iter);
-                                      continue;
-                                  }
-                              }
-                              ++name_iter;
-                          }
+                            if (fmt::to_string(rp.home()) == es.sb_iter->first)
+                            {
+                                fc.fc_other_files.erase(name_iter->first);
+                                name_iter = fc.fc_file_names.erase(name_iter);
+                                continue;
+                            }
+                        }
+                        ++name_iter;
+                    }
 
-                          fc.fc_name_to_errors.erase(es.sb_iter);
-                          fc.fc_invalidate_merge = true;
-                          lv.reload_data();
-                      },
-                      [](files_model::other_selection) {},
-                      [](files_model::file_selection) {});
+                    fc.fc_name_to_errors.erase(es.sb_iter);
+                    fc.fc_invalidate_merge = true;
+                    lv.reload_data();
+                },
+                [](files_model::other_selection) {},
+                [](files_model::file_selection) {});
             return true;
         }
     }

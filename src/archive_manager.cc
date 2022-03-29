@@ -193,7 +193,7 @@ filename_to_tmp_path(const std::string& filename)
             h.update(buffer, rc);
         }
     }
-    basename = fmt::format("arc-{}-{}", h.to_string(), basename);
+    basename = fmt::format(FMT_STRING("arc-{}-{}"), h.to_string(), basename);
 
     return archive_cache_path() / basename;
 }
@@ -235,14 +235,15 @@ copy_data(const std::string& filename,
             return Ok();
         }
         if (r != ARCHIVE_OK) {
-            return Err(fmt::format("failed to read file: {} >> {} -- {}",
-                                   filename,
-                                   archive_entry_pathname_utf8(entry),
-                                   archive_error_string(ar)));
+            return Err(
+                fmt::format(FMT_STRING("failed to read file: {} >> {} -- {}"),
+                            filename,
+                            archive_entry_pathname_utf8(entry),
+                            archive_error_string(ar)));
         }
         r = archive_write_data_block(aw, buff, size, offset);
         if (r != ARCHIVE_OK) {
-            return Err(fmt::format("failed to write file: {} -- {}",
+            return Err(fmt::format(FMT_STRING("failed to write file: {} -- {}"),
                                    entry_path.string(),
                                    archive_error_string(aw)));
         }
@@ -298,7 +299,7 @@ extract(const std::string& filename, const extract_cb& cb)
     archive_write_disk_set_standard_lookup(ext);
     if (archive_read_open_filename(arc, filename.c_str(), 10240) != ARCHIVE_OK)
     {
-        return Err(fmt::format("unable to open archive: {} -- {}",
+        return Err(fmt::format(FMT_STRING("unable to open archive: {} -- {}"),
                                filename,
                                archive_error_string(arc)));
     }
@@ -312,9 +313,10 @@ extract(const std::string& filename, const extract_cb& cb)
             break;
         }
         if (r != ARCHIVE_OK) {
-            return Err(fmt::format("unable to read entry header: {} -- {}",
-                                   filename,
-                                   archive_error_string(arc)));
+            return Err(
+                fmt::format(FMT_STRING("unable to read entry header: {} -- {}"),
+                            filename,
+                            archive_error_string(arc)));
         }
 
         auto format_name = archive_format_name(arc);
@@ -337,18 +339,20 @@ extract(const std::string& filename, const extract_cb& cb)
             wentry, S_IRUSR | (S_ISDIR(entry_mode) ? S_IXUSR | S_IWUSR : 0));
         r = archive_write_header(ext, wentry);
         if (r < ARCHIVE_OK) {
-            return Err(fmt::format("unable to write entry: {} -- {}",
-                                   entry_path.string(),
-                                   archive_error_string(ext)));
+            return Err(
+                fmt::format(FMT_STRING("unable to write entry: {} -- {}"),
+                            entry_path.string(),
+                            archive_error_string(ext)));
         } else if (!archive_entry_size_is_set(entry)
                    || archive_entry_size(entry) > 0) {
             TRY(copy_data(filename, arc, entry, ext, entry_path, prog));
         }
         r = archive_write_finish_entry(ext);
         if (r != ARCHIVE_OK) {
-            return Err(fmt::format("unable to finish entry: {} -- {}",
-                                   entry_path.string(),
-                                   archive_error_string(ext)));
+            return Err(
+                fmt::format(FMT_STRING("unable to finish entry: {} -- {}"),
+                            entry_path.string(),
+                            archive_error_string(ext)));
         }
     }
     archive_read_close(arc);

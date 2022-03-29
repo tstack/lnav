@@ -214,7 +214,7 @@ public:
                          shared_buffer_ref& line)
         = 0;
 
-    virtual std::string to_command() = 0;
+    virtual std::string to_command() const = 0;
 
     bool operator==(const std::string& rhs)
     {
@@ -242,7 +242,7 @@ public:
                  logfile_const_iterator ll,
                  shared_buffer_ref& line) override;
 
-    std::string to_command() override;
+    std::string to_command() const override;
 };
 
 class filter_stack {

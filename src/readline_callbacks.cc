@@ -468,7 +468,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                     const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
                     lnav_data.ld_bottom_source.grep_error(
-                        fmt::format("sql error: {}", errmsg));
+                        fmt::format(FMT_STRING("sql error: {}"), errmsg));
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
                 }

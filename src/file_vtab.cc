@@ -94,7 +94,7 @@ CREATE TABLE lnav_file (
                 to_sqlite(ctx, name);
                 break;
             case 3:
-                to_sqlite(ctx, fmt::format("{}", lf->get_text_format()));
+                to_sqlite(ctx, fmt::to_string(lf->get_text_format()));
                 break;
             case 4:
                 to_sqlite(ctx, format_name);
@@ -122,14 +122,17 @@ CREATE TABLE lnav_file (
                     auto rc = pread(fd, buf, lf_stat.st_size, 0);
 
                     if (rc == -1) {
-                        auto errmsg = fmt::format("unable to read file: {}",
-                                                  strerror(errno));
+                        auto errmsg
+                            = fmt::format(FMT_STRING("unable to read file: {}"),
+                                          strerror(errno));
 
                         sqlite3_result_error(
                             ctx, errmsg.c_str(), errmsg.length());
                     } else if (rc != lf_stat.st_size) {
                         auto errmsg = fmt::format(
-                            "short read of file: {} < {}", rc, lf_stat.st_size);
+                            FMT_STRING("short read of file: {} < {}"),
+                            rc,
+                            lf_stat.st_size);
 
                         sqlite3_result_error(
                             ctx, errmsg.c_str(), errmsg.length());

@@ -50,12 +50,12 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
-#include "fmt/printf.h"
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
+#include "fmt/printf.h"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -507,7 +507,7 @@ com_mark_expr(exec_context& ec, string cmdline, vector<string>& args)
         return ec.make_error(":mark-expr is only supported for the LOG view");
     } else {
         auto expr = remaining_args(cmdline, args);
-        auto stmt_str = fmt::format("SELECT 1 WHERE {}", expr);
+        auto stmt_str = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), expr);
 
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
@@ -562,7 +562,7 @@ com_mark_expr_prompt(exec_context& ec, const string& cmdline)
         return "";
     }
 
-    return fmt::format("{} {}",
+    return fmt::format(FMT_STRING("{} {}"),
                        trim(cmdline),
                        trim(lnav_data.ld_log_source.get_sql_marker_text()));
 }
@@ -1800,7 +1800,7 @@ com_filter_expr(exec_context& ec, string cmdline, vector<string>& args)
         }
 
         auto expr = remaining_args(cmdline, args);
-        args[1] = fmt::format("SELECT 1 WHERE {}", expr);
+        args[1] = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), expr);
 
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
@@ -1861,7 +1861,7 @@ com_filter_expr_prompt(exec_context& ec, const string& cmdline)
         return "";
     }
 
-    return fmt::format("{} {}",
+    return fmt::format(FMT_STRING("{} {}"),
                        trim(cmdline),
                        trim(lnav_data.ld_log_source.get_sql_filter_text()));
 }
@@ -2549,7 +2549,7 @@ com_file_visibility(exec_context& ec, string cmdline, vector<string>& args)
                 [make_visible](auto ld) { ld->set_visibility(make_visible); };
             tc->get_sub_source()->text_filters_changed();
         }
-        retval = fmt::format("info: {} file -- {}",
+        retval = fmt::format(FMT_STRING("info: {} file -- {}"),
                              make_visible ? "showing" : "hiding",
                              lf->get_filename());
     } else {
@@ -3539,7 +3539,7 @@ com_toggle_field(exec_context& ec, string cmdline, vector<string>& args)
 
             if (missing_fields.empty()) {
                 auto visibility = hide ? "hiding" : "showing";
-                retval = fmt::format("info: {} field(s) -- {}",
+                retval = fmt::format(FMT_STRING("info: {} field(s) -- {}"),
                                      visibility,
                                      fmt::join(found_fields, ", "));
             } else {
@@ -3957,7 +3957,8 @@ com_config(exec_context& ec, string cmdline, vector<string>& args)
 
                     retval = help_text;
                 } else {
-                    retval = fmt::format("{} = {}", option, trim(old_value));
+                    retval = fmt::format(
+                        FMT_STRING("{} = {}"), option, trim(old_value));
                 }
             } else {
                 string value = remaining_args(cmdline, args, 2);

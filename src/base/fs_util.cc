@@ -45,9 +45,10 @@ open_temp_file(const ghc::filesystem::path& pattern)
 
     strcpy(pattern_copy, pattern_str.c_str());
     if ((fd = mkstemp(pattern_copy)) == -1) {
-        return Err(fmt::format("unable to create temporary file: {} -- {}",
-                               pattern.string(),
-                               strerror(errno)));
+        return Err(
+            fmt::format(FMT_STRING("unable to create temporary file: {} -- {}"),
+                        pattern.string(),
+                        strerror(errno)));
     }
 
     return Ok(std::make_pair(ghc::filesystem::path(pattern_copy), fd));

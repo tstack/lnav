@@ -120,7 +120,7 @@ dotlnav()
 ghc::filesystem::path
 workdir()
 {
-    auto subdir_name = fmt::format("lnav-user-{}-work", getuid());
+    auto subdir_name = fmt::format(FMT_STRING("lnav-user-{}-work"), getuid());
     auto tmp_path = ghc::filesystem::temp_directory_path();
 
     return tmp_path / ghc::filesystem::path(subdir_name);

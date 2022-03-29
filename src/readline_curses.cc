@@ -384,7 +384,8 @@ readline_context::attempted_completion(const char* text, int start, int end)
         arg_possibilities = nullptr;
         rl_completion_append_character = 0;
         if (lexer.split(prefix, scope)) {
-            auto prefix2 = fmt::format("{}", fmt::join(prefix, "\x1f"));
+            auto prefix2
+                = fmt::format(FMT_STRING("{}"), fmt::join(prefix, "\x1f"));
             auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
 
             if (prefix_iter != loaded_context->rc_prefixes.end()) {
@@ -1276,7 +1277,7 @@ readline_curses::add_prefix(int context,
                             const string& value)
 {
     char buffer[1024];
-    auto prefix_wire = fmt::format("{}", fmt::join(prefix, "\x1f"));
+    auto prefix_wire = fmt::format(FMT_STRING("{}"), fmt::join(prefix, "\x1f"));
 
     snprintf(buffer,
              sizeof(buffer),

@@ -97,7 +97,7 @@ public:
         return this->pf_pcre.match(pc, pi);
     };
 
-    std::string to_command() override
+    std::string to_command() const override
     {
         return (this->lf_type == text_filter::INCLUDE ? "filter-in "
                                                       : "filter-out ")
@@ -123,7 +123,7 @@ public:
                  logfile::const_iterator ll,
                  shared_buffer_ref& line) override;
 
-    std::string to_command() override;
+    std::string to_command() const override;
 
     auto_mem<sqlite3_stmt> sf_filter_stmt{sqlite3_finalize};
     logfile_sub_source& sf_log_source;

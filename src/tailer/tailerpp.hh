@@ -184,15 +184,16 @@ struct protocol_recv {
         tailer_packet_payload_type_t payload_type;
 
         if (readall(this->pr_fd, &payload_type, sizeof(payload_type)) == -1) {
-            return Err(fmt::format("unable to read payload type: {}",
-                                   strerror(errno)));
+            return Err(
+                fmt::format(FMT_STRING("unable to read payload type: {}"),
+                            strerror(errno)));
         }
 
         if (payload_type != PAYLOAD_TYPE) {
-            return Err(
-                fmt::format("payload-type mismatch, got: {}; expected: {}",
-                            payload_type,
-                            PAYLOAD_TYPE));
+            return Err(fmt::format(
+                FMT_STRING("payload-type mismatch, got: {}; expected: {}"),
+                payload_type,
+                PAYLOAD_TYPE));
         }
 
         return Ok(protocol_recv<PAYLOAD_TYPE, after_type>(this->pr_fd));
@@ -207,15 +208,16 @@ struct protocol_recv {
 
         if (readall(this->pr_fd, &this->pr_length, sizeof(this->pr_length))
             == -1) {
-            return Err(fmt::format("unable to read content length: {}",
-                                   strerror(errno)));
+            return Err(
+                fmt::format(FMT_STRING("unable to read content length: {}"),
+                            strerror(errno)));
         }
 
         try {
             data.resize(this->pr_length);
         } catch (...) {
-            return Err(
-                fmt::format("unable to resize data to {}", this->pr_length));
+            return Err(fmt::format(FMT_STRING("unable to resize data to {}"),
+                                   this->pr_length));
         }
 
         return Ok(protocol_recv<PAYLOAD_TYPE, recv_payload_content>(
@@ -234,7 +236,8 @@ struct protocol_recv {
         }
         if (readall(this->pr_fd, details::get_data(data), this->pr_length)
             == -1) {
-            return Err(fmt::format("unable to read "));
+            return Err(fmt::format(FMT_STRING("unable to read content -- {}"),
+                                   strerror(errno)));
         }
 
         return Ok();

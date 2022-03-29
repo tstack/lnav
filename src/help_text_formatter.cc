@@ -670,12 +670,12 @@ format_help_text_for_rst(const help_text& ht,
 
         for (const auto* related : get_related(ht)) {
             related_refs.emplace_back(
-                fmt::format(":ref:`{}`", link_name(*related)));
+                fmt::format(FMT_STRING(":ref:`{}`"), link_name(*related)));
         }
         stable_sort(related_refs.begin(), related_refs.end());
 
         fmt::print(rst_file,
-                   "  **See Also**\n    {}\n",
+                   FMT_STRING("  **See Also**\n    {}\n"),
                    fmt::join(related_refs, ", "));
     }
 

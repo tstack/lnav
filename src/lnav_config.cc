@@ -1176,7 +1176,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
     auto read_res = lnav::filesystem::read_file(path);
 
     if (read_res.isErr()) {
-        return Err(fmt::format("unable to open file: {} -- {}",
+        return Err(fmt::format(FMT_STRING("unable to open file: {} -- {}"),
                                path.string(),
                                read_res.unwrapErr()));
     }
@@ -1191,22 +1191,23 @@ detect_config_file_type(const ghc::filesystem::path& path)
         yajl_tree_parse(content.c_str(), error_buffer, sizeof(error_buffer)),
         yajl_tree_free);
     if (content_tree == nullptr) {
-        return Err(fmt::format(
-            "unable to parse file: {} -- {}", path.string(), error_buffer));
+        return Err(fmt::format(FMT_STRING("unable to parse file: {} -- {}"),
+                               path.string(),
+                               error_buffer));
     }
 
-    auto id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
+    auto* id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
     if (id_val != nullptr) {
         if (SUPPORTED_CONFIG_SCHEMAS.count(id_val->u.string)) {
             return Ok(config_file_type::CONFIG);
-        } else if (SUPPORTED_FORMAT_SCHEMAS.count(id_val->u.string)) {
-            return Ok(config_file_type::FORMAT);
-        } else {
-            return Err(fmt::format(
-                "unsupported configuration version in file: {} -- {}",
-                path.string(),
-                id_val->u.string));
         }
+        if (SUPPORTED_FORMAT_SCHEMAS.count(id_val->u.string)) {
+            return Ok(config_file_type::FORMAT);
+        }
+        return Err(fmt::format(
+            FMT_STRING("unsupported configuration version in file: {} -- {}"),
+            path.string(),
+            id_val->u.string));
     } else {
         return Ok(config_file_type::FORMAT);
     }
@@ -1311,7 +1312,7 @@ load_config(const vector<ghc::filesystem::path>& extra_paths,
 
     for (auto& bsf : lnav_config_json) {
         auto sample_path = lnav::paths::dotlnav() / "configs" / "default"
-            / fmt::format("{}.sample", bsf.get_name());
+            / fmt::format(FMT_STRING("{}.sample"), bsf.get_name());
 
         auto fd = auto_fd(lnav::filesystem::openp(
             sample_path, O_WRONLY | O_TRUNC | O_CREAT, 0644));
@@ -1383,7 +1384,7 @@ string
 save_config()
 {
     yajlpp_gen gen;
-    auto filename = fmt::format("config.json.{}.tmp", getpid());
+    auto filename = fmt::format(FMT_STRING("config.json.{}.tmp"), getpid());
     auto user_config_tmp = lnav::paths::dotlnav() / filename;
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
@@ -1403,11 +1404,11 @@ save_config()
         {
             return "error: unable to save configuration -- "
                 + string(strerror(errno));
-        } else {
-            string_fragment bits = gen.to_string_fragment();
-
-            log_perror(write(fd, bits.data(), bits.length()));
         }
+
+        string_fragment bits = gen.to_string_fragment();
+
+        log_perror(write(fd, bits.data(), bits.length()));
     }
 
     rename(user_config_tmp.c_str(), user_config.c_str());

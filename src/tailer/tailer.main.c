@@ -545,17 +545,27 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                             } else if (curr->cps_client_state == CS_INIT &&
                                        (curr->cps_client_file_offset < 0 ||
                                         bytes_read > 0)) {
-                                static unsigned char HASH_BUFFER[4 * 1024 * 1024];
+                                static unsigned char
+                                    HASH_BUFFER[4 * 1024 * 1024];
                                 BYTE hash[SHA256_BLOCK_SIZE];
                                 size_t remaining = 0;
-                                int64_t remaining_offset = file_offset + bytes_read;
+                                int64_t remaining_offset
+                                    = file_offset + bytes_read;
                                 SHA256_CTX shactx;
 
-                                if (curr->cps_client_file_size > 0 && file_offset < curr->cps_client_file_size) {
-                                    remaining = curr->cps_client_file_size - file_offset - bytes_read;
+                                if (curr->cps_client_file_size > 0
+                                    && file_offset < curr->cps_client_file_size)
+                                {
+                                    remaining = curr->cps_client_file_size
+                                        - file_offset - bytes_read;
                                 }
 
-                                fprintf(stderr, "info: prepping offer: init=%ld; remaining=%zu; %s\n", bytes_read, remaining, curr->cps_path);
+                                fprintf(stderr,
+                                        "info: prepping offer: init=%d; "
+                                        "remaining=%zu; %s\n",
+                                        bytes_read,
+                                        remaining,
+                                        curr->cps_path);
                                 sha256_init(&shactx);
                                 sha256_update(&shactx, buffer, bytes_read);
                                 while (remaining > 0) {
@@ -563,8 +573,11 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                                     if (remaining < nbytes) {
                                         nbytes = remaining;
                                     }
-                                    ssize_t remaining_bytes_read = pread(
-                                        fd, HASH_BUFFER, nbytes, remaining_offset);
+                                    ssize_t remaining_bytes_read
+                                        = pread(fd,
+                                                HASH_BUFFER,
+                                                nbytes,
+                                                remaining_offset);
                                     if (remaining_bytes_read < 0) {
                                         set_client_path_state_error(curr, "pread");
                                         break;
@@ -1023,7 +1036,10 @@ int main(int argc, char *argv[])
                                 fprintf(stderr, "info: client is tailing: %s\n", path);
                                 cps->cps_client_state = CS_TAILING;
                             } else if (type == TPT_ACK_BLOCK) {
-                                fprintf(stderr, "info: client acked: %s %zu\n", path, client_size);
+                                fprintf(stderr,
+                                        "info: client acked: %s %lld\n",
+                                        path,
+                                        client_size);
                                 if (ack_len == 0) {
                                     cps->cps_client_state = CS_TAILING;
                                 } else {

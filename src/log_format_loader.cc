@@ -251,11 +251,12 @@ read_format_field(yajlpp_parse_context* ypc,
             ypc->ypc_error_reporter(
                 *ypc,
                 lnav_log_level_t::ERROR,
-                fmt::format("error:{}:{}:invalid regular expression for "
-                            "level-pointer -- {}",
-                            ypc->ypc_source,
-                            ypc->get_line_number(),
-                            pcre_res.unwrapErr().ce_msg)
+                fmt::format(
+                    FMT_STRING("error:{}:{}:invalid regular expression for "
+                               "level-pointer -- {}"),
+                    ypc->ypc_source,
+                    ypc->get_line_number(),
+                    pcre_res.unwrapErr().ce_msg)
                     .c_str());
         } else {
             elf->elf_level_pointer = pcre_res.unwrap();
@@ -847,7 +848,8 @@ write_sample_file()
 {
     for (const auto& bsf : lnav_format_json) {
         auto sample_path = lnav::paths::dotlnav()
-            / fmt::format("formats/default/{}.sample", bsf.get_name());
+            / fmt::format(FMT_STRING("formats/default/{}.sample"),
+                          bsf.get_name());
         auto sf = bsf.to_string_fragment();
         auto_fd sample_fd;
 
@@ -865,7 +867,7 @@ write_sample_file()
 
     for (const auto& bsf : lnav_sh_scripts) {
         auto sh_path = lnav::paths::dotlnav()
-            / fmt::format("formats/default/{}", bsf.get_name());
+            / fmt::format(FMT_STRING("formats/default/{}"), bsf.get_name());
         auto sf = bsf.to_string_fragment();
         auto_fd sh_fd;
 
@@ -939,10 +941,10 @@ load_format_file(const ghc::filesystem::path& filename,
     ypc.ypc_userdata = &ud;
     ypc.with_obj(ud);
     if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
-        errors.emplace_back(
-            fmt::format("error: unable to open format file '{}' -- {}",
-                        filename.string(),
-                        strerror(errno)));
+        errors.emplace_back(fmt::format(
+            FMT_STRING("error: unable to open format file '{}' -- {}"),
+            filename.string(),
+            strerror(errno)));
     } else {
         auto_mem<yajl_handle_t> handle(yajl_free);
         char buffer[2048];
@@ -957,10 +959,10 @@ load_format_file(const ghc::filesystem::path& filename,
             if (rc == 0) {
                 break;
             } else if (rc == -1) {
-                errors.push_back(
-                    fmt::format("error:{}:unable to read file -- {}",
-                                filename.string(),
-                                strerror(errno)));
+                errors.emplace_back(fmt::format(
+                    FMT_STRING("error:{}:unable to read file -- {}"),
+                    filename.string(),
+                    strerror(errno)));
                 break;
             }
             if (offset == 0 && (rc > 2) && (buffer[0] == '#')
@@ -1042,8 +1044,9 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
             unsigned char* msg = yajl_get_error(
                 handle, 1, (const unsigned char*) sf.data(), sf.length());
 
-            errors.push_back(
-                fmt::format(FMT_STRING("builtin: invalid json -- {}"), msg));
+            errors.emplace_back(
+                fmt::format(FMT_STRING("builtin: invalid json -- {}"),
+                            reinterpret_cast<char*>(msg)));
             yajl_free_error(handle, msg);
         }
         ypc_builtin.complete_parse();
@@ -1171,10 +1174,10 @@ exec_sql_in_path(sqlite3* db,
                 sql_execute_script(
                     db, filename.c_str(), content.c_str(), errors);
             } else {
-                errors.push_back(
-                    fmt::format("error:unable to read file '{}' -- {}",
-                                filename.string(),
-                                read_res.unwrapErr()));
+                errors.emplace_back(fmt::format(
+                    FMT_STRING("error:unable to read file '{}' -- {}"),
+                    filename.string(),
+                    read_res.unwrapErr()));
             }
         }
     }

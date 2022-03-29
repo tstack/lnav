@@ -591,7 +591,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                                   this->lss_token_line);
             if (eval_res.isErr()) {
                 auto msg = fmt::format(
-                    "filter expression evaluation failed with -- {}",
+                    FMT_STRING(
+                        "filter expression evaluation failed with -- {}"),
                     eval_res.unwrapErr());
                 auto color = COLOR_YELLOW;
                 value_out.emplace_back(line_range{0, -1}, &SA_ERROR, msg);
@@ -1821,9 +1822,9 @@ sql_filter::matches(const logfile& lf,
 }
 
 std::string
-sql_filter::to_command()
+sql_filter::to_command() const
 {
-    return fmt::format("filter-expr {}", this->lf_id);
+    return fmt::format(FMT_STRING("filter-expr {}"), this->lf_id);
 }
 
 bool

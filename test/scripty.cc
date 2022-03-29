@@ -419,7 +419,7 @@ struct term_machine {
         if (this->tm_new_data || !this->tm_line_attrs.empty()) {
             // fprintf(scripty_data.sd_from_child, "flush %d\n",
             // this->tm_flush_count);
-            fprintf(stderr, "%s:flush %d\n", tstamp(), this->tm_flush_count++);
+            fprintf(stderr, "%s:flush %zu\n", tstamp(), this->tm_flush_count++);
             fprintf(
                 scripty_data.sd_from_child, "S % 3d \u250B", this->tm_cursor_y);
             for (auto uch : this->tm_line) {
