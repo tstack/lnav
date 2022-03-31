@@ -46,8 +46,6 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
-
 static auto intern_lifetime = intern_string::get_table_lifetime();
 string_attr_type logline::L_PREFIX("prefix");
 string_attr_type logline::L_TIMESTAMP("timestamp");
@@ -232,9 +230,9 @@ logline_value::to_string() const
     return {buffer};
 }
 
-vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
+std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
 
-vector<std::shared_ptr<log_format>>&
+std::vector<std::shared_ptr<log_format>>&
 log_format::get_root_formats()
 {
     return lf_root_formats;
@@ -471,7 +469,7 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
             jlu->jlu_base_line->set_level(
                 jlu->jlu_format->convert_level(pi, &level_cap));
         } else {
-            vector<pair<int64_t, log_level_t>>::iterator iter;
+            std::vector<std::pair<int64_t, log_level_t>>::iterator iter;
 
             for (iter = jlu->jlu_format->elf_level_pairs.begin();
                  iter != jlu->jlu_format->elf_level_pairs.end();
@@ -735,7 +733,8 @@ external_log_format::scan(logfile& lf,
                 log_debug("Unable to parse line at offset %d: %s",
                           li.li_file_range.fr_offset,
                           msg);
-                line_count = count(msg, msg + strlen((char*) msg), '\n') + 1;
+                line_count
+                    = std::count(msg, msg + strlen((char*) msg), '\n') + 1;
                 yajl_free_error(handle, msg);
             }
             if (!this->lf_specialized) {
@@ -836,7 +835,7 @@ external_log_format::scan(logfile& lf,
             }
 
             if (mod_index && level_cap && body_cap) {
-                auto mod_elf = dynamic_pointer_cast<external_log_format>(
+                auto mod_elf = std::dynamic_pointer_cast<external_log_format>(
                     mod_iter->second.mf_mod_format);
 
                 if (mod_elf) {
@@ -1124,9 +1123,9 @@ void
 external_log_format::rewrite(exec_context& ec,
                              shared_buffer_ref& line,
                              string_attrs_t& sa,
-                             string& value_out)
+                             std::string& value_out)
 {
-    vector<logline_value>::iterator shift_iter;
+    std::vector<logline_value>::iterator shift_iter;
     auto& values = *ec.ec_line_values;
 
     value_out.assign(line.get_data(), line.length());
@@ -1333,7 +1332,7 @@ external_log_format::get_subline(const logline& ll,
             || yajl_complete_parse(handle) != yajl_status_ok)
         {
             unsigned char* msg;
-            string full_msg;
+            std::string full_msg;
 
             msg = yajl_get_error(
                 handle, 1, (const unsigned char*) sbr.get_data(), sbr.length());
@@ -1387,7 +1386,7 @@ external_log_format::get_subline(const logline& ll,
                                           this->jlf_line_values.end(),
                                           logline_value_cmp(&jfe.jfe_value));
                         if (lv_iter != this->jlf_line_values.end()) {
-                            string str = lv_iter->to_string();
+                            auto str = lv_iter->to_string();
                             size_t nl_pos = str.find('\n');
 
                             lr.lr_start = this->jlf_cached_line.size();
@@ -1436,7 +1435,7 @@ external_log_format::get_subline(const logline& ll,
                                 this->json_append(jfe, str.c_str(), str.size());
                             }
 
-                            if (nl_pos == string::npos || full_message) {
+                            if (nl_pos == std::string::npos || full_message) {
                                 lr.lr_end = this->jlf_cached_line.size();
                             } else {
                                 lr.lr_end = lr.lr_start + nl_pos;
@@ -1628,7 +1627,7 @@ external_log_format::build(std::vector<std::string>& errors)
     if (!this->lf_timestamp_field.empty()) {
         auto& vd = this->elf_value_defs[this->lf_timestamp_field];
         if (vd.get() == nullptr) {
-            vd = make_shared<external_log_format::value_def>(
+            vd = std::make_shared<external_log_format::value_def>(
                 this->lf_timestamp_field, value_kind_t::VALUE_TEXT, -1, this);
         }
         vd->vd_meta.lvm_name = this->lf_timestamp_field;
@@ -1641,7 +1640,7 @@ external_log_format::build(std::vector<std::string>& errors)
     {
         auto& vd = this->elf_value_defs[this->elf_level_field];
         if (vd.get() == nullptr) {
-            vd = make_shared<external_log_format::value_def>(
+            vd = std::make_shared<external_log_format::value_def>(
                 this->elf_level_field, value_kind_t::VALUE_TEXT, -1, this);
         }
         vd->vd_meta.lvm_name = this->elf_level_field;
@@ -1651,7 +1650,7 @@ external_log_format::build(std::vector<std::string>& errors)
     if (!this->elf_body_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_body_field];
         if (vd.get() == nullptr) {
-            vd = make_shared<external_log_format::value_def>(
+            vd = std::make_shared<external_log_format::value_def>(
                 this->elf_body_field, value_kind_t::VALUE_TEXT, -1, this);
         }
         vd->vd_meta.lvm_name = this->elf_body_field;
@@ -1687,8 +1686,8 @@ external_log_format::build(std::vector<std::string>& errors)
             errors.push_back("error:" + this->elf_name.to_string() + ".regex["
                              + iter->first + "]" + ":" + pat.p_string);
             errors.push_back("error:" + this->elf_name.to_string() + ".regex["
-                             + iter->first + "]" + ":" + string(e.e_offset, ' ')
-                             + "^");
+                             + iter->first + "]" + ":"
+                             + std::string(e.e_offset, ' ') + "^");
             continue;
         }
         for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
@@ -1903,8 +1902,8 @@ external_log_format::build(std::vector<std::string>& errors)
                             PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
                             errors.push_back(
                                 "  format: "
-                                + string(PTIMEC_FORMATS[lpc].pf_fmt)
-                                + "; matched: " + string(ts, off));
+                                + std::string(PTIMEC_FORMATS[lpc].pf_fmt)
+                                + "; matched: " + std::string(ts, off));
                         }
                     } else {
                         for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++)
@@ -1913,9 +1912,9 @@ external_log_format::build(std::vector<std::string>& errors)
 
                             ptime_fmt(
                                 custom_formats[lpc], &tm, ts, off, ts_len);
-                            errors.push_back("  format: "
-                                             + string(custom_formats[lpc])
-                                             + "; matched: " + string(ts, off));
+                            errors.push_back(
+                                "  format: " + std::string(custom_formats[lpc])
+                                + "; matched: " + std::string(ts, off));
                         }
                     }
                 }
@@ -2094,13 +2093,13 @@ external_log_format::build(std::vector<std::string>& errors)
         if (code == nullptr) {
             errors.push_back("error:" + this->elf_name.to_string()
                              + ":highlighters/" + hd_pair.first.to_string()
-                             + ":" + string(errptr));
+                             + ":" + std::string(errptr));
             errors.push_back("error:" + this->elf_name.to_string()
                              + ":highlighters/" + hd_pair.first.to_string()
                              + ":" + pattern);
             errors.push_back("error:" + this->elf_name.to_string()
                              + ":highlighters/" + hd_pair.first.to_string()
-                             + ":" + string(eoff, ' ') + "^");
+                             + ":" + std::string(eoff, ' ') + "^");
         } else {
             this->lf_highlighters.emplace_back(code);
             this->lf_highlighters.back()
@@ -2116,8 +2115,7 @@ void
 external_log_format::register_vtabs(log_vtab_manager* vtab_manager,
                                     std::vector<std::string>& errors)
 {
-    vector<pair<intern_string_t, string>>::iterator search_iter;
-    for (search_iter = this->elf_search_tables.begin();
+    for (auto search_iter = this->elf_search_tables.begin();
          search_iter != this->elf_search_tables.end();
          ++search_iter)
     {
@@ -2136,9 +2134,7 @@ external_log_format::register_vtabs(log_vtab_manager* vtab_manager,
 
         auto lst = std::make_shared<log_search_table>(re_res.unwrap(),
                                                       search_iter->first);
-        string errmsg;
-
-        errmsg = vtab_manager->register_vtab(lst);
+        auto errmsg = vtab_manager->register_vtab(lst);
         if (!errmsg.empty()) {
             errors.push_back("error:" + this->elf_name.to_string() + ":"
                              + search_iter->first.to_string()
@@ -2148,7 +2144,7 @@ external_log_format::register_vtabs(log_vtab_manager* vtab_manager,
 }
 
 bool
-external_log_format::match_samples(const vector<sample>& samples) const
+external_log_format::match_samples(const std::vector<sample>& samples) const
 {
     for (const auto& sample_iter : samples) {
         for (const auto& pat_iter : this->elf_pattern_order) {
@@ -2175,7 +2171,7 @@ public:
     external_log_table(const external_log_format& elf)
         : log_format_vtab_impl(elf), elt_format(elf){};
 
-    void get_columns(vector<vtab_column>& cols) const
+    void get_columns(std::vector<vtab_column>& cols) const
     {
         const external_log_format& elf = this->elt_format;
 
@@ -2275,7 +2271,7 @@ public:
         return false;
     };
 
-    virtual void extract(shared_ptr<logfile> lf,
+    virtual void extract(std::shared_ptr<logfile> lf,
                          uint64_t line_number,
                          shared_buffer_ref& line,
                          std::vector<logline_value>& values)
@@ -2339,7 +2335,7 @@ external_log_format::specialized(int fmt_lock)
 }
 
 bool
-external_log_format::match_name(const string& filename)
+external_log_format::match_name(const std::string& filename)
 {
     if (this->elf_file_pattern.empty()) {
         return true;

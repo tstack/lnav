@@ -59,7 +59,7 @@ convert(const std::string& filename)
         auto dev_null = open("/dev/null", O_RDONLY);
 
         dup2(dev_null, STDIN_FILENO);
-        dup2(outfile.second, STDOUT_FILENO);
+        dup2(outfile.second.release(), STDOUT_FILENO);
         setenv("TZ", "UTC", 1);
 
         const char* args[] = {
@@ -131,7 +131,7 @@ convert(const std::string& filename)
 
     return Ok(convert_result{
         std::move(child),
-        auto_fd(outfile.second),
+        std::move(outfile.second),
         error_queue,
     });
 }

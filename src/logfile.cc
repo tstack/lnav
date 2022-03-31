@@ -33,7 +33,6 @@
 
 #include "logfile.hh"
 
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -50,8 +49,6 @@
 #include "lnav_util.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
-
-using namespace std;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -126,7 +123,7 @@ logfile::open(std::string filename, logfile_open_options& loo)
     return Ok(lf);
 }
 
-logfile::logfile(string filename, logfile_open_options& loo)
+logfile::logfile(std::string filename, logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(std::move(loo))
 {
 }
@@ -195,14 +192,13 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
                    < injector::get<const lnav::logfile::config&>()
                          .lc_max_unrecognized_lines)
     {
-        auto& root_formats = log_format::get_root_formats();
-        vector<std::shared_ptr<log_format>>::iterator iter;
+        const auto& root_formats = log_format::get_root_formats();
 
         /*
          * Try each scanner until we get a match.  Fortunately, all the formats
          * are sufficiently different that there are no ambiguities...
          */
-        for (iter = root_formats.begin();
+        for (auto iter = root_formats.begin();
              iter != root_formats.end() && (found != log_format::SCAN_MATCH);
              ++iter)
         {
@@ -647,7 +643,7 @@ logfile::read_line(logfile::iterator ll)
                 return sbr;
             });
     } catch (line_buffer::error& e) {
-        return Err(string(strerror(e.e_err)));
+        return Err(std::string(strerror(e.e_err)));
     }
 }
 
@@ -792,7 +788,7 @@ logfile::find_from_time(const timeval& tv) const
 }
 
 void
-logfile::mark_as_duplicate(const string& name)
+logfile::mark_as_duplicate(const std::string& name)
 {
     this->lf_indexing = false;
     this->lf_options.loo_is_visible = false;

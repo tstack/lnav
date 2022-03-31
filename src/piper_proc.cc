@@ -45,8 +45,6 @@
 #include "config.h"
 #include "line_buffer.hh"
 
-using namespace std;
-
 static const char* STDIN_EOF_MSG = "---- END-OF-STDIN ----";
 
 static ssize_t
@@ -64,10 +62,11 @@ write_timestamp(int fd, off_t woff)
     return pwrite(fd, time_str, strlen(time_str), woff);
 }
 
-piper_proc::piper_proc(int pipefd, bool timestamp, int filefd)
-    : pp_fd(filefd), pp_child(-1)
+piper_proc::piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd)
+    : pp_fd(std::move(filefd)), pp_child(-1)
 {
-    require(pipefd >= 0);
+    require(pipefd.get() >= 0);
+    require(this->pp_fd.get() >= 0);
 
     log_perror(fcntl(this->pp_fd.get(), F_SETFD, FD_CLOEXEC));
 
@@ -77,7 +76,6 @@ piper_proc::piper_proc(int pipefd, bool timestamp, int filefd)
             throw error(errno);
 
         case 0: {
-            auto_fd infd(pipefd);
             line_buffer lb;
             off_t woff = 0, last_woff = 0;
             file_range last_range;
@@ -101,8 +99,8 @@ piper_proc::piper_proc(int pipefd, bool timestamp, int filefd)
                     close(fd_to_close);
                 }
             }
-            log_perror(fcntl(infd.get(), F_SETFL, O_NONBLOCK));
-            lb.set_fd(infd);
+            log_perror(fcntl(pipefd.get(), F_SETFL, O_NONBLOCK));
+            lb.set_fd(pipefd);
             do {
                 struct pollfd pfd = {lb.get_fd(), POLLIN, 0};
 

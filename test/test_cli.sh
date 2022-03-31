@@ -1,7 +1,7 @@
 #! /bin/bash
 
 export TZ="UTC"
-run_test ${lnav_test} -t -n <<EOF
+run_test ${lnav_test} -d /tmp/lnav.err -t -n <<EOF
 Hello, World!
 Goodbye, World!
 EOF

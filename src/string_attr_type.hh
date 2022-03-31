@@ -30,6 +30,13 @@
 #ifndef lnav_string_attr_type_hh
 #define lnav_string_attr_type_hh
 
+#include <utility>
+
+#include <stdint.h>
+
+#include "base/intern_string.hh"
+#include "mapbox/variant.hpp"
+
 class string_attr_type {
 public:
     explicit string_attr_type(const char* name = nullptr) noexcept
@@ -37,12 +44,40 @@ public:
 
     const char* sat_name;
 };
-typedef string_attr_type* string_attr_type_t;
+using string_attr_type_t = string_attr_type*;
+
+using string_attr_value
+    = mapbox::util::variant<int64_t, const intern_string_t, std::string>;
+
+class string_attr_type_base {
+public:
+    explicit string_attr_type_base(const char* name) noexcept : sat_name(name)
+    {
+    }
+
+    const char* const sat_name;
+};
+
+template<typename T>
+class string_attr_type2 : public string_attr_type_base {
+public:
+    explicit string_attr_type2(const char* name) noexcept
+        : string_attr_type_base(name)
+    {
+    }
+
+    std::pair<string_attr_type_base*, string_attr_value> value(const T& val)
+    {
+        return std::make_pair(this, val);
+    }
+};
 
 extern string_attr_type SA_ORIGINAL_LINE;
 extern string_attr_type SA_BODY;
 extern string_attr_type SA_HIDDEN;
 extern string_attr_type SA_FORMAT;
+class intern_string;
+extern string_attr_type2<const intern_string_t> SA_FORMAT2;
 extern string_attr_type SA_REMOVED;
 extern string_attr_type SA_INVALID;
 extern string_attr_type SA_ERROR;

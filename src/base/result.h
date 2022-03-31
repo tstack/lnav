@@ -770,25 +770,29 @@ struct Result {
         return !ok_;
     }
 
-    T expect(const char* str) const {
+    T expect(const char* str)
+    {
         if (!isOk()) {
             ::fprintf(stderr, "%s\n", str);
-            std::terminate(); 
+            std::terminate();
         }
         return expect_impl(std::is_same<T, void>());
     }
 
     template<typename Func>
-    auto map(Func func) const {
+    auto map(Func func)
+    {
         using return_type = decltype(func(T{}));
 
         if (this->isOk()) {
-            auto value = this->storage().template get<T>();
-            auto res = func(value);
-            return Result<return_type, E>(types::Ok<return_type>(std::move(res)));
+            auto value = std::move(this->storage().template get<T>());
+            auto res = func(std::move(value));
+            return Result<return_type, E>(
+                types::Ok<return_type>(std::move(res)));
         }
 
-        return Result<return_type, E>(types::Err<E>(this->storage().template get<E>()));
+        return Result<return_type, E>(
+            types::Err<E>(this->storage().template get<E>()));
     }
 
     template<typename Func,
@@ -901,11 +905,9 @@ struct Result {
     }
 
     template<typename U = T>
-    typename std::enable_if<
-        std::is_same<U, void>::value,
-        U
-    >::type
-    unwrap() const {
+    typename std::enable_if<std::is_same<U, void>::value, U>::type unwrap()
+        const
+    {
         if (isOk()) {
             return;
         }
@@ -914,7 +916,8 @@ struct Result {
         std::terminate();
     }
 
-    E unwrapErr() const {
+    E unwrapErr() const
+    {
         if (isErr()) {
             return storage().template get<E>();
         }
@@ -924,8 +927,11 @@ struct Result {
     }
 
 private:
-    T expect_impl(std::true_type) const { }
-    T expect_impl(std::false_type) const { return storage_.template get<T>(); }
+    T expect_impl(std::true_type) const {}
+    T expect_impl(std::false_type)
+    {
+        return std::move(storage_.template get<T>());
+    }
 
     bool ok_;
     storage_type storage_;

@@ -248,7 +248,6 @@ private:
     status_data_source* sc_source{nullptr};
     WINDOW* sc_window{nullptr};
     int sc_top{0};
-    unsigned long sc_last_width{0};
     bool sc_enabled{true};
 };
 

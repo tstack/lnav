@@ -52,8 +52,6 @@
 #include "fmtlib/fmt/format.h"
 #include "line_buffer.hh"
 
-using namespace std;
-
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
 static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
@@ -126,7 +124,7 @@ read_le32(const unsigned char* data)
 line_buffer::gz_indexed::gz_indexed()
 {
     if ((this->inbuf = (Bytef*) malloc(Z_BUFSIZE)) == NULL) {
-        throw bad_alloc();
+        throw std::bad_alloc();
     }
 }
 
@@ -300,7 +298,7 @@ line_buffer::line_buffer()
       lb_last_line_offset(-1)
 {
     if ((this->lb_buffer = (char*) malloc(this->lb_buffer_max)) == nullptr) {
-        throw bad_alloc();
+        throw std::bad_alloc();
     }
 
     ensure(this->invariant());
@@ -548,7 +546,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                 if ((bz_file = BZ2_bzdopen(bzfd, "r")) == NULL) {
                     close(bzfd);
                     if (errno == 0) {
-                        throw bad_alloc();
+                        throw std::bad_alloc();
                     } else {
                         throw error(errno);
                     }
@@ -647,7 +645,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
     return retval;
 }
 
-Result<line_info, string>
+Result<line_info, std::string>
 line_buffer::load_next_line(file_range prev_line)
 {
     ssize_t request_size = DEFAULT_INCREMENT;
@@ -780,11 +778,11 @@ line_buffer::read_range(const file_range fr)
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
          */
-        return Err(string("out-of-bounds"));
+        return Err(std::string("out-of-bounds"));
     }
 
     if (!this->fill_range(fr.fr_offset, fr.fr_size)) {
-        return Err(string("unable to read file"));
+        return Err(std::string("unable to read file"));
     }
     line_start = this->get_range(fr.fr_offset, avail);
 

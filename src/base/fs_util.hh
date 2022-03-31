@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 
+#include "auto_fd.hh"
 #include "ghc/filesystem.hpp"
 #include "result.h"
 
@@ -57,7 +58,11 @@ openp(const ghc::filesystem::path& path, int flags, mode_t mode)
     return open(path.c_str(), flags, mode);
 }
 
-Result<std::pair<ghc::filesystem::path, int>, std::string> open_temp_file(
+Result<auto_fd, std::string> open_file(const ghc::filesystem::path& path,
+                                       int flags,
+                                       mode_t mode);
+
+Result<std::pair<ghc::filesystem::path, auto_fd>, std::string> open_temp_file(
     const ghc::filesystem::path& pattern);
 
 Result<std::string, std::string> read_file(const ghc::filesystem::path& path);

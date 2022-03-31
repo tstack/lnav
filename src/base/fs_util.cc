@@ -36,7 +36,21 @@
 namespace lnav {
 namespace filesystem {
 
-Result<std::pair<ghc::filesystem::path, int>, std::string>
+Result<auto_fd, std::string>
+open_file(const ghc::filesystem::path& path, int flags, mode_t mode)
+{
+    auto fd = openp(path, flags, mode);
+
+    if (fd == -1) {
+        return Err(fmt::format(FMT_STRING("Failed to open: {} -- {}"),
+                               path.string(),
+                               strerror(errno)));
+    }
+
+    return Ok(auto_fd(fd));
+}
+
+Result<std::pair<ghc::filesystem::path, auto_fd>, std::string>
 open_temp_file(const ghc::filesystem::path& pattern)
 {
     auto pattern_str = pattern.string();
@@ -51,7 +65,7 @@ open_temp_file(const ghc::filesystem::path& pattern)
                         strerror(errno)));
     }
 
-    return Ok(std::make_pair(ghc::filesystem::path(pattern_copy), fd));
+    return Ok(std::make_pair(ghc::filesystem::path(pattern_copy), auto_fd(fd)));
 }
 
 Result<std::string, std::string>

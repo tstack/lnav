@@ -31,8 +31,6 @@
 
 #include "pcrepp.hh"
 
-using namespace std;
-
 const int JIT_STACK_MIN_SIZE = 32 * 1024;
 const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
@@ -87,7 +85,7 @@ void
 pcrepp::find_captures(const char* pattern)
 {
     bool in_class = false, in_escape = false, in_literal = false;
-    vector<pcre_context::capture> cap_in_progress;
+    std::vector<pcre_context::capture> cap_in_progress;
 
     for (int lpc = 0; pattern[lpc]; lpc++) {
         if (in_escape) {

@@ -2,14 +2,17 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "pcap_log": {
         "json": true,
-        "description": "pcap log format",
+        "title": "Packet Capture",
+        "description": "Internal format for pcap files",
         "mime-types": [
             "application/vnd.tcpdump.pcap"
         ],
         "multiline": false,
         "convert-to-local-time": true,
         "line-format": [
-            { "field": "time" },
+            {
+                "field": "time"
+            },
             " ",
             {
                 "field": "source",
@@ -35,7 +38,9 @@
                 "align": "right"
             },
             " ",
-            { "field": "info" }
+            {
+                "field": "info"
+            }
         ],
         "level": {
             "warning": "^6291456$",

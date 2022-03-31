@@ -34,8 +34,6 @@
 #include "config.h"
 #include "spookyhash/SpookyV2.h"
 
-using namespace std;
-
 data_format data_parser::FORMAT_SEMI("semi", DT_COMMA, DT_SEMI);
 data_format data_parser::FORMAT_COMMA("comma", DT_INVALID, DT_COMMA);
 data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);

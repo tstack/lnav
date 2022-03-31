@@ -36,8 +36,6 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 
-using namespace std;
-
 extern char** environ;
 
 const char* const ENVIRON_CREATE_STMT = R"(

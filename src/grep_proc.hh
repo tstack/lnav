@@ -42,7 +42,7 @@
 #include <string>
 #include <vector>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"

@@ -43,8 +43,6 @@
 #include "shlex.hh"
 #include "view_curses.hh"
 
-using namespace std;
-
 const auto REVERSE_SEARCH_OFFSET = 2000_vl;
 
 void
@@ -143,7 +141,7 @@ textview_curses::~textview_curses()
 void
 textview_curses::reload_config(error_reporter& reporter)
 {
-    const static auto DEFAULT_THEME_NAME = string("default");
+    const static auto DEFAULT_THEME_NAME = std::string("default");
 
     for (auto iter = this->tc_highlights.begin();
          iter != this->tc_highlights.end();)
@@ -196,7 +194,7 @@ textview_curses::reload_config(error_reporter& reporter)
             }
 
             const auto& sc = hl_pair.second.hc_style;
-            string fg1, bg1, fg_color, bg_color, errmsg;
+            std::string fg1, bg1, fg_color, bg_color, errmsg;
             bool invalid = false;
             int attrs = 0;
 
@@ -334,7 +332,7 @@ textview_curses::grep_match(grep_proc<vis_line_t>& gp,
 void
 textview_curses::listview_value_for_rows(const listview_curses& lv,
                                          vis_line_t row,
-                                         vector<attr_line_t>& rows_out)
+                                         std::vector<attr_line_t>& rows_out)
 {
     for (auto& al : rows_out) {
         this->textview_value_for_row(row, al);
@@ -428,9 +426,9 @@ textview_curses::handle_mouse(mouse_event& me)
 void
 textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 {
-    string_attrs_t& sa = value_out.get_attrs();
-    string& str = value_out.get_string();
-    text_format_t source_format = this->tc_sub_source->get_text_format();
+    auto& sa = value_out.get_attrs();
+    auto& str = value_out.get_string();
+    auto source_format = this->tc_sub_source->get_text_format();
     intern_string_t format_name;
 
     this->tc_sub_source->text_value_for_line(*this, row, str);
@@ -577,7 +575,7 @@ textview_curses::execute_search(const std::string& regex_orig)
                         regex.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
                    == nullptr)
         {
-            string errmsg = string(errptr);
+            auto errmsg = std::string(errptr);
 
             regex = pcrepp::quote(regex);
 
@@ -598,8 +596,7 @@ textview_curses::execute_search(const std::string& regex_orig)
             highlight_map_t& hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
-            unique_ptr<grep_proc<vis_line_t>> gp
-                = make_unique<grep_proc<vis_line_t>>(code, *this);
+            auto gp = std::make_unique<grep_proc<vis_line_t>>(code, *this);
 
             gp->set_sink(this);
             auto top = this->get_top();
@@ -619,8 +616,8 @@ textview_curses::execute_search(const std::string& regex_orig)
 
             if (this->tc_sub_source != nullptr) {
                 this->tc_sub_source->get_grepper() | [this, code](auto pair) {
-                    shared_ptr<grep_proc<vis_line_t>> sgp
-                        = make_shared<grep_proc<vis_line_t>>(code, *pair.first);
+                    auto sgp = std::make_shared<grep_proc<vis_line_t>>(
+                        code, *pair.first);
 
                     sgp->set_sink(pair.second);
                     sgp->queue_request(0_vl);
@@ -642,7 +639,7 @@ void
 textview_curses::horiz_shift(vis_line_t start,
                              vis_line_t end,
                              int off_start,
-                             pair<int, int>& range_out)
+                             std::pair<int, int>& range_out)
 {
     highlighter& hl
         = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
@@ -799,7 +796,7 @@ empty_filter::matches(const logfile& lf,
     return false;
 }
 
-string
+std::string
 empty_filter::to_command() const
 {
     return "";

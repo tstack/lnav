@@ -41,7 +41,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "line_buffer.hh"

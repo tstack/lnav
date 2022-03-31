@@ -186,6 +186,12 @@ struct string_attr {
         require(type);
     };
 
+    string_attr(const struct line_range& lr,
+                std::pair<string_attr_type_base*, string_attr_value> value)
+        : sa_range(lr), sa_type2(value.first), sa_value2(value.second)
+    {
+    }
+
     string_attr() : sa_type(nullptr){};
 
     bool operator<(const struct string_attr& rhs) const
@@ -202,6 +208,8 @@ struct string_attr {
     string_attr_type_t sa_type;
     string_attr_value_t sa_value;
     std::string sa_str_value;
+    string_attr_type_base* sa_type2;
+    string_attr_value sa_value2;
 };
 
 /** A map of line ranges to attributes for that range. */

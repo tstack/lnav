@@ -39,8 +39,6 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 
-using namespace std;
-
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
 listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
@@ -53,7 +51,8 @@ listview_curses::reload_data()
         this->lv_left = 0;
     } else {
         if (this->lv_top >= this->get_inner_height()) {
-            this->lv_top = max(0_vl, vis_line_t(this->get_inner_height() - 1));
+            this->lv_top
+                = std::max(0_vl, vis_line_t(this->get_inner_height() - 1));
         }
         if (this->get_inner_height() == 0) {
             this->lv_selection = 0_vl;
@@ -207,8 +206,8 @@ listview_curses::do_update()
         row_count = this->get_inner_height();
         row = this->lv_top;
         bottom = y + height;
-        vector<attr_line_t> rows(
-            min((size_t) height, row_count - (int) this->lv_top));
+        std::vector<attr_line_t> rows(
+            std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
         while (y < bottom) {
             lr.lr_start = this->lv_left;
@@ -268,7 +267,7 @@ listview_curses::do_update()
 
             y = this->lv_y + (int) (progress * (double) height);
             lines = vis_line_t(
-                y + min((int) height, (int) (coverage * (double) height)));
+                y + std::min((int) height, (int) (coverage * (double) height)));
 
             for (unsigned int gutter_y = this->lv_y;
                  gutter_y < (this->lv_y + height);

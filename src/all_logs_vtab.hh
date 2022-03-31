@@ -37,6 +37,8 @@
 
 /**
  * A virtual table that provides access to all log messages from all formats.
+ *
+ * @feature f0:sql.tables.all_logs
  */
 class all_logs_vtab : public log_vtab_impl {
 public:

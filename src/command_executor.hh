@@ -36,7 +36,7 @@
 
 #include <sqlite3.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "bookmarks.hh"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
@@ -48,12 +48,11 @@ struct exec_context;
 class attr_line_t;
 class logline_value;
 
-typedef int (*sql_callback_t)(exec_context& ec, sqlite3_stmt* stmt);
+using sql_callback_t = int (*)(exec_context&, sqlite3_stmt*);
 int sql_callback(exec_context& ec, sqlite3_stmt* stmt);
 
-typedef std::future<std::string> (*pipe_callback_t)(exec_context& ec,
-                                                    const std::string& cmdline,
-                                                    auto_fd& fd);
+using pipe_callback_t
+    = std::future<std::string> (*)(exec_context&, const std::string&, auto_fd&);
 
 struct exec_context {
     enum class perm_t {

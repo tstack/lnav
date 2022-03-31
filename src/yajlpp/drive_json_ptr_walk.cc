@@ -40,8 +40,6 @@
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp.hh"
 
-using namespace std;
-
 int
 main(int argc, char* argv[])
 {
@@ -51,7 +49,7 @@ main(int argc, char* argv[])
 
     log_argv(argc, argv);
 
-    std::string json_input(std::istreambuf_iterator<char>(cin), {});
+    std::string json_input(std::istreambuf_iterator<char>(std::cin), {});
 
     status = jpw.parse(json_input.c_str(), json_input.size());
     if (status == yajl_status_error) {

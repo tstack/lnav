@@ -34,7 +34,7 @@
 #include "file_format.hh"
 
 #include "archive_manager.hh"
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"

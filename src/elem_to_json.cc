@@ -34,8 +34,6 @@
 #include "config.h"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
 static void
 element_to_json(yajl_gen gen, data_parser& dp, const data_parser::element& elem)
 {
@@ -54,7 +52,7 @@ element_to_json(yajl_gen gen, data_parser& dp, const data_parser::element& elem)
         }
         case DNT_PAIR: {
             const data_parser::element& pair_elem = elem.get_pair_elem();
-            string key_str
+            const auto key_str
                 = dp.get_element_string(pair_elem.e_sub_elements->front());
 
             if (!key_str.empty()) {
@@ -137,10 +135,10 @@ map_elements_to_json(yajl_gen gen,
                      data_parser::element_list_t* el)
 {
     bool unique_names = el->size() > 1;
-    vector<string> names;
+    std::vector<std::string> names;
 
     for (auto& iter : *el) {
-        const data_parser::element& pvalue = iter.get_pair_value();
+        const auto& pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
             log_debug("invalid!!");

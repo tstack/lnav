@@ -62,6 +62,14 @@ ghc::filesystem::path filename_to_tmp_path(const std::string& filename);
 
 using walk_result_t = Result<void, std::string>;
 
+/**
+ *
+ * @feature f0:archive
+ *
+ * @param filename
+ * @param cb
+ * @return
+ */
 walk_result_t walk_archive_files(
     const std::string& filename,
     const extract_cb& cb,

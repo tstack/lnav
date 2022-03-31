@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 
 /**
  * Creates a subprocess that reads data from a pipe and writes it to a file so
@@ -62,7 +62,7 @@ public:
      *   the lines read from pipefd.
      * @param filefd The descriptor for the backing file.
      */
-    piper_proc(int pipefd, bool timestamp, int filefd);
+    piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd);
 
     bool has_exited();
 
@@ -74,7 +74,7 @@ public:
     /** @return The file descriptor for the temporary file. */
     auto_fd get_fd()
     {
-        return std::move(this->pp_fd);
+        return this->pp_fd.dup();
     };
 
     pid_t get_child_pid() const

@@ -36,8 +36,6 @@
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
 
-using namespace std;
-
 static struct {
     const char* name;
     pcrepp pcre;

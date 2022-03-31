@@ -108,7 +108,7 @@ update_tailer_progress(const std::string& netloc, const std::string& msg)
 static void
 update_tailer_description(
     const std::string& netloc,
-    const std::map<std::string, logfile_open_options>& desired_paths,
+    const std::map<std::string, logfile_open_options_base>& desired_paths,
     const std::string& remote_uname)
 {
     std::vector<std::string> paths;
@@ -182,7 +182,7 @@ tailer::looper::loop_body()
                     for (const auto& pair : paths) {
                         log_debug("adding path to tailer -- %s",
                                   pair.first.c_str());
-                        ht.open_remote_path(pair.first, pair.second);
+                        ht.open_remote_path(pair.first, std::move(pair.second));
                     }
                 });
 
@@ -199,7 +199,7 @@ tailer::looper::loop_body()
 
 void
 tailer::looper::add_remote(const network::path& path,
-                           logfile_open_options options)
+                           logfile_open_options_base options)
 {
     auto netloc_str = fmt::to_string(path.home());
     this->l_netlocs_to_paths[netloc_str].rpq_new_paths[path.p_path]
@@ -488,7 +488,7 @@ tailer::looper::host_tailer::host_tailer(const std::string& netloc,
 
 void
 tailer::looper::host_tailer::open_remote_path(const std::string& path,
-                                              logfile_open_options loo)
+                                              logfile_open_options_base loo)
 {
     this->ht_state.match(
         [&](connected& conn) {
@@ -660,7 +660,7 @@ tailer::looper::host_tailer::loop_body()
                           pob.pob_offset,
                           pob.pob_length);
 
-                logfile_open_options loo;
+                logfile_open_options_base loo;
                 if (pob.pob_path == pob.pob_root_path) {
                     auto root_iter = conn.c_desired_paths.find(pob.pob_path);
 
@@ -670,7 +670,7 @@ tailer::looper::host_tailer::loop_body()
                         return std::move(this->ht_state);
                     }
 
-                    loo = std::move(root_iter->second);
+                    loo = root_iter->second;
                 } else {
                     auto child_iter = conn.c_child_paths.find(pob.pob_path);
                     if (child_iter == conn.c_child_paths.end()) {

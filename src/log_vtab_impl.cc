@@ -38,8 +38,6 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
-
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static struct log_cursor log_cursor_latest;
@@ -106,7 +104,7 @@ log_vtab_impl::get_table_statement()
     for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
         auto_mem<char, sqlite3_free> colname;
-        string comment;
+        std::string comment;
 
         require(!iter->vc_name.empty());
 
@@ -132,7 +130,7 @@ log_vtab_impl::get_table_statement()
     return oss.str();
 }
 
-pair<int, unsigned int>
+std::pair<int, unsigned int>
 log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
 {
     int type = 0;
@@ -164,7 +162,7 @@ log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
             ensure(0);
             break;
     }
-    return make_pair(type, subtype);
+    return std::make_pair(type, subtype);
 }
 
 struct vtab {
@@ -322,7 +320,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
     content_line_t cl(vt->lss->at(vc->log_cursor.lc_curr_line));
     uint64_t line_number;
     auto ld = vt->lss->find_data(cl, line_number);
-    shared_ptr<logfile> lf = (*ld)->get_file();
+    auto lf = (*ld)->get_file();
     auto ll = lf->begin() + line_number;
 
     require(col >= 0);
@@ -419,8 +417,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
             } else {
                 content_line_t prev_cl(
                     vt->lss->at(vis_line_t(vc->log_cursor.lc_curr_line - 1)));
-                shared_ptr<logfile> prev_lf = vt->lss->find(prev_cl);
-                logfile::iterator prev_ll = prev_lf->begin() + prev_cl;
+                auto prev_lf = vt->lss->find(prev_cl);
+                auto prev_ll = prev_lf->begin() + prev_cl;
                 uint64_t prev_time, curr_line_time;
 
                 prev_time = prev_ll->get_time() * 1000ULL;
@@ -460,8 +458,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         }
 
         case VT_COL_LOG_TAGS: {
-            const map<content_line_t, bookmark_metadata>& bm
-                = vt->lss->get_user_bookmark_metadata();
+            const auto& bm = vt->lss->get_user_bookmark_metadata();
 
             auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
             if (bm_iter == bm.end() || bm_iter->second.bm_tags.empty()) {
@@ -535,7 +532,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case 1: {
-                        const string& fn = lf->get_filename();
+                        const auto& fn = lf->get_filename();
 
                         sqlite3_result_text(
                             ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
@@ -984,7 +981,7 @@ vt_update(sqlite3_vtab* tab,
         bookmark_metadata tmp_bm;
 
         if (log_tags) {
-            vector<string> errors;
+            std::vector<std::string> errors;
             yajlpp_parse_context ypc(log_vtab_data.lvd_source, &tags_handler);
             auto_mem<yajl_handle_t> handle(yajl_free);
 
@@ -995,8 +992,8 @@ vt_update(sqlite3_vtab* tab,
                 .with_error_reporter([](const yajlpp_parse_context& ypc,
                                         lnav_log_level_t level,
                                         const char* msg) {
-                    vector<string>& errors
-                        = *((vector<string>*) ypc.ypc_userdata);
+                    auto& errors
+                        = *((std::vector<std::string>*) ypc.ypc_userdata);
                     errors.emplace_back(msg);
                 })
                 .with_obj(tmp_bm);
@@ -1026,12 +1023,12 @@ vt_update(sqlite3_vtab* tab,
 
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, true);
             if (part_name) {
-                line_meta.bm_name = string((const char*) part_name);
+                line_meta.bm_name = std::string((const char*) part_name);
             } else {
                 line_meta.bm_name.clear();
             }
             if (log_comment) {
-                line_meta.bm_comment = string((const char*) log_comment);
+                line_meta.bm_comment = std::string((const char*) log_comment);
             } else {
                 line_meta.bm_comment.clear();
             }
@@ -1125,10 +1122,10 @@ log_vtab_manager::~log_vtab_manager()
     }
 }
 
-string
+std::string
 log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
 {
-    string retval;
+    std::string retval;
 
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
         auto_mem<char, sqlite3_free> errmsg;
@@ -1153,10 +1150,10 @@ log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
     return retval;
 }
 
-string
+std::string
 log_vtab_manager::unregister_vtab(intern_string_t name)
 {
-    string retval;
+    std::string retval;
 
     if (this->vm_impls.find(name) == this->vm_impls.end()) {
         retval = fmt::format(FMT_STRING("unknown log line table -- {}"), name);

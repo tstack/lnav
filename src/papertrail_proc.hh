@@ -45,8 +45,8 @@
 #    include <sys/wait.h>
 #    include <unistd.h>
 
-#    include "auto_fd.hh"
 #    include "auto_mem.hh"
+#    include "base/auto_fd.hh"
 #    include "curl_looper.hh"
 #    include "line_buffer.hh"
 #    include "yajlpp/yajlpp.hh"
@@ -117,7 +117,7 @@ public:
 
     auto_fd copy_fd() const
     {
-        return this->ptp_fd;
+        return this->ptp_fd.dup();
     };
 
     long complete(CURLcode result);

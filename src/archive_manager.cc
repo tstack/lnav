@@ -40,8 +40,8 @@
 
 #include "archive_manager.cfg.hh"
 #include "archive_manager.hh"
-#include "auto_fd.hh"
 #include "auto_mem.hh"
+#include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/injector.hh"
@@ -87,9 +87,13 @@ public:
         auto lock_path = archive_path;
 
         lock_path += ".lck";
-        this->lh_fd
-            = lnav::filesystem::openp(lock_path, O_CREAT | O_RDWR, 0600);
-        log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
+        auto open_res
+            = lnav::filesystem::open_file(lock_path, O_CREAT | O_RDWR, 0600);
+        if (open_res.isErr()) {
+            throw std::runtime_error(open_res.unwrapErr());
+        }
+        this->lh_fd = open_res.unwrap();
+        this->lh_fd.close_on_exec();
     };
 
     auto_fd lh_fd;
@@ -103,6 +107,7 @@ public:
 static void
 enable_desired_archive_formats(archive* arc)
 {
+    /** @feature f0:archive.formats */
     archive_read_support_format_7zip(arc);
     archive_read_support_format_cpio(arc);
     archive_read_support_format_lha(arc);
@@ -126,9 +131,9 @@ is_archive(const fs::path& filename)
     log_debug("read open %s", filename.c_str());
     auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
     if (r == ARCHIVE_OK) {
-        struct archive_entry* entry;
+        struct archive_entry* entry = nullptr;
 
-        auto format_name = archive_format_name(arc);
+        const auto* format_name = archive_format_name(arc);
 
         log_debug("read next header %s %s", format_name, filename.c_str());
         if (archive_read_next_header(arc, &entry) == ARCHIVE_OK) {
@@ -146,7 +151,7 @@ is_archive(const fs::path& filename)
                     return false;
                 }
 
-                auto first_filter_name = archive_filter_name(arc, 0);
+                const auto* first_filter_name = archive_filter_name(arc, 0);
                 if (filter_count == 2 && GZ_FILTER_NAME == first_filter_name) {
                     return false;
                 }
@@ -154,11 +159,11 @@ is_archive(const fs::path& filename)
             log_info(
                 "detected archive: %s -- %s", filename.c_str(), format_name);
             return true;
-        } else {
-            log_info("archive read header failed: %s -- %s",
-                     filename.c_str(),
-                     archive_error_string(arc));
         }
+
+        log_info("archive read header failed: %s -- %s",
+                 filename.c_str(),
+                 archive_error_string(arc));
     } else {
         log_info("archive open failed: %s -- %s",
                  filename.c_str(),
@@ -214,7 +219,7 @@ copy_data(const std::string& filename,
 
     for (;;) {
         if (total >= next_space_check) {
-            auto& cfg = injector::get<const config&>();
+            const auto& cfg = injector::get<const config&>();
             auto tmp_space = fs::space(entry_path);
 
             if (tmp_space.available < cfg.amc_min_free_space) {
@@ -256,10 +261,19 @@ copy_data(const std::string& filename,
 static walk_result_t
 extract(const std::string& filename, const extract_cb& cb)
 {
-    static int FLAGS = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
+    static const int FLAGS = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
         | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
 
+    std::error_code ec;
     auto tmp_path = filename_to_tmp_path(filename);
+
+    fs::create_directories(tmp_path.parent_path(), ec);
+    if (ec) {
+        return Err(fmt::format("Unable to create directory: {} -- {}",
+                               tmp_path.parent_path().string(),
+                               ec.message()));
+    }
+
     auto arc_lock = archive_lock(tmp_path);
     auto lock_guard = archive_lock::guard(arc_lock);
     auto done_path = tmp_path;
@@ -279,10 +293,9 @@ extract(const std::string& filename, const extract_cb& cb)
             log_info("%s: archive has already been extracted!",
                      done_path.c_str());
             return Ok();
-        } else {
-            log_warning("%s: archive cache has been damaged, re-extracting",
-                        done_path.c_str());
         }
+        log_warning("%s: archive cache has been damaged, re-extracting",
+                    done_path.c_str());
 
         fs::remove(done_path);
     }
@@ -306,7 +319,7 @@ extract(const std::string& filename, const extract_cb& cb)
 
     log_info("extracting %s to %s", filename.c_str(), tmp_path.c_str());
     while (true) {
-        struct archive_entry* entry;
+        struct archive_entry* entry = nullptr;
         auto r = archive_read_next_header(arc, &entry);
         if (r == ARCHIVE_EOF) {
             log_info("all done");
@@ -319,7 +332,7 @@ extract(const std::string& filename, const extract_cb& cb)
                             archive_error_string(arc)));
         }
 
-        auto format_name = archive_format_name(arc);
+        const auto* format_name = archive_format_name(arc);
         auto filter_count = archive_filter_count(arc);
 
         auto_mem<archive_entry> wentry(archive_entry_free);
@@ -329,7 +342,7 @@ extract(const std::string& filename, const extract_cb& cb)
             desired_pathname = fs::path(filename).filename();
         }
         auto entry_path = tmp_path / desired_pathname;
-        auto prog = cb(
+        auto* prog = cb(
             entry_path,
             archive_entry_size_is_set(entry) ? archive_entry_size(entry) : -1);
         archive_entry_copy_pathname(wentry, entry_path.c_str());
@@ -343,8 +356,10 @@ extract(const std::string& filename, const extract_cb& cb)
                 fmt::format(FMT_STRING("unable to write entry: {} -- {}"),
                             entry_path.string(),
                             archive_error_string(ext)));
-        } else if (!archive_entry_size_is_set(entry)
-                   || archive_entry_size(entry) > 0) {
+        }
+
+        if (!archive_entry_size_is_set(entry) || archive_entry_size(entry) > 0)
+        {
             TRY(copy_data(filename, arc, entry, ext, entry_path, prog));
         }
         r = archive_write_finish_entry(ext);
@@ -358,7 +373,7 @@ extract(const std::string& filename, const extract_cb& cb)
     archive_read_close(arc);
     archive_write_close(ext);
 
-    auto_fd(open(done_path.c_str(), O_CREAT | O_WRONLY, 0600));
+    lnav::filesystem::open_file(done_path, O_CREAT | O_WRONLY, 0600);
 
     return Ok();
 }
@@ -400,7 +415,7 @@ cleanup_cache()
     (void) std::async(std::launch::async, []() {
         auto now = std::chrono::system_clock::now();
         auto cache_path = archive_cache_path();
-        auto& cfg = injector::get<const config&>();
+        const auto& cfg = injector::get<const config&>();
         std::vector<fs::path> to_remove;
 
         log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());

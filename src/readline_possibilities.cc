@@ -47,8 +47,6 @@
 #include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
-
 static int
 handle_collation_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
@@ -73,7 +71,7 @@ static int
 handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
-        string table_name = colvalues[0];
+        std::string table_name = colvalues[0];
 
         if (sqlite_function_help.count(table_name) == 0) {
             lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
@@ -93,7 +91,7 @@ handle_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
 
         quoted_name = sql_quote_ident(colvalues[1]);
         lnav_data.ld_rl_view->add_possibility(
-            LNM_SQL, "*", string(quoted_name));
+            LNM_SQL, "*", std::string(quoted_name));
     }
     if (strcmp(colvalues[5], "1") == 0) {
         lnav_data.ld_db_key_names.emplace_back(colvalues[1]);
@@ -120,7 +118,7 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 static void
 add_text_possibilities(readline_curses* rlc,
                        int context,
-                       const string& type,
+                       const std::string& type,
                        const std::string& str)
 {
     static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
@@ -146,7 +144,7 @@ add_text_possibilities(readline_curses* rlc,
 
         switch (context) {
             case LNM_SQL: {
-                string token_value = ds.get_input().get_substr(pc.all());
+                auto token_value = ds.get_input().get_substr(pc.all());
                 auto_mem<char, sqlite3_free> quoted_token;
 
                 quoted_token = sqlite3_mprintf("%Q", token_value.c_str());
@@ -154,7 +152,7 @@ add_text_possibilities(readline_curses* rlc,
                 break;
             }
             default: {
-                string token_value, token_value_no_dot;
+                std::string token_value, token_value_no_dot;
 
                 token_value_no_dot = token_value
                     = ds.get_input().get_substr(pc.all());
@@ -184,7 +182,7 @@ add_text_possibilities(readline_curses* rlc,
 void
 add_view_text_possibilities(readline_curses* rlc,
                             int context,
-                            const string& type,
+                            const std::string& type,
                             textview_curses* tc)
 {
     text_sub_source* tss = tc->get_sub_source();
@@ -194,7 +192,7 @@ add_view_text_possibilities(readline_curses* rlc,
     for (vis_line_t curr_line = tc->get_top(); curr_line <= tc->get_bottom();
          ++curr_line)
     {
-        string line;
+        std::string line;
 
         tss->text_value_for_line(*tc, curr_line, line, text_sub_source::RF_RAW);
 
@@ -241,7 +239,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
         auto format = lf->get_format();
         shared_buffer_ref sbr;
         string_attrs_t sa;
-        vector<logline_value> values;
+        std::vector<logline_value> values;
 
         lf->read_full_message(ll, sbr);
         format->annotate(cl, sbr, sa, values);
@@ -269,7 +267,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
 
                     str = sqlite3_mprintf(
                         "%.*Q", lv.text_length(), lv.text_value());
-                    rlc->add_possibility(context, type, string(str.in()));
+                    rlc->add_possibility(context, type, std::string(str.in()));
                     break;
                 }
             }
@@ -289,7 +287,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
             rlc->add_possibility(
                 context,
                 type,
-                string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
         }
         for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
             const FuncDefAgg& func_def = agg_funcs[lpc2];
@@ -297,7 +295,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
             rlc->add_possibility(
                 context,
                 type,
-                string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
         }
     }
 }
@@ -310,7 +308,7 @@ add_env_possibilities(int context)
 
     for (char** var = environ; *var != nullptr; var++) {
         rlc->add_possibility(
-            context, "*", "$" + string(*var, strchr(*var, '=')));
+            context, "*", "$" + std::string(*var, strchr(*var, '=')));
     }
 
     exec_context& ec = lnav_data.ld_exec_context;
@@ -400,9 +398,9 @@ void
 add_config_possibilities()
 {
     readline_curses* rc = lnav_data.ld_rl_view;
-    set<string> visited;
+    std::set<std::string> visited;
     auto cb = [rc, &visited](const json_path_handler_base& jph,
-                             const string& path,
+                             const std::string& path,
                              void* mem) {
         if (jph.jph_children) {
             if (!jph.jph_regex.p_named_count) {
@@ -423,14 +421,14 @@ add_config_possibilities()
             rc->add_possibility(LNM_COMMAND, "config-option", path);
             if (jph.jph_synopsis) {
                 rc->add_prefix(LNM_COMMAND,
-                               vector<string>{"config", path},
+                               std::vector<std::string>{"config", path},
                                jph.jph_synopsis);
             }
         }
     };
 
     rc->clear_possibilities(LNM_COMMAND, "config-option");
-    for (auto& jph : lnav_config_handlers.jpc_children) {
+    for (const auto& jph : lnav_config_handlers.jpc_children) {
         jph.walk(cb, &lnav_config);
     }
 }
@@ -449,8 +447,7 @@ add_tag_possibilities()
         logfile_sub_source& lss = lnav_data.ld_log_source;
         if (lss.text_line_count() > 0) {
             content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());
-            const map<content_line_t, bookmark_metadata>& user_meta
-                = lss.get_user_bookmark_metadata();
+            const auto& user_meta = lss.get_user_bookmark_metadata();
             auto meta_iter = user_meta.find(cl);
 
             if (meta_iter != user_meta.end()) {

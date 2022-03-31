@@ -85,14 +85,14 @@ public:
             return auto_fd{};
         }
 
-        auto new_fd = dup(fd);
+        auto new_fd = ::dup(fd);
 
         if (new_fd == -1) {
             throw std::bad_alloc();
         }
 
         return auto_fd(new_fd);
-    };
+    }
 
     /**
      * Construct an auto_fd to manage the given file descriptor.
@@ -102,7 +102,7 @@ public:
     explicit auto_fd(int fd = -1) : af_fd(fd)
     {
         require(fd >= -1);
-    };
+    }
 
     /**
      * Non-const copy constructor.  Management of the file descriptor will be
@@ -119,12 +119,18 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(const auto_fd& af) : af_fd(-1)
+    auto_fd(const auto_fd& af) = delete;
+
+    auto_fd dup() const
     {
-        if (af.af_fd != -1 && (this->af_fd = dup(af.af_fd)) == -1) {
+        int new_fd;
+
+        if (this->af_fd == -1 || (new_fd = ::dup(this->af_fd)) == -1) {
             throw std::bad_alloc();
         }
-    };
+
+        return auto_fd{new_fd};
+    }
 
     /**
      * Destructor that will close the file descriptor managed by this object.
@@ -212,7 +218,15 @@ public:
 
         if (this->af_fd != fd) {
             if (this->af_fd != -1) {
-                close(this->af_fd);
+                switch (this->af_fd) {
+                    case STDIN_FILENO:
+                    case STDOUT_FILENO:
+                    case STDERR_FILENO:
+                        break;
+                    default:
+                        close(this->af_fd);
+                        break;
+                }
             }
             this->af_fd = fd;
         }
@@ -240,7 +254,7 @@ public:
             return Err(std::string(strerror(errno)));
         }
 
-        return Ok(retval);
+        return Ok(std::move(retval));
     }
 
     explicit auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)

@@ -137,6 +137,8 @@ with the **lnav_view_filter_stats** table into a single view for ease of use.
 all_logs
 --------
 
+.. f0:sql.tables.all_logs
+
 The **all_logs** table lets you query the format derived from the **lnav**
 log message parser that is used to automatically extract data, see
 :ref:`data-ext` for more details.

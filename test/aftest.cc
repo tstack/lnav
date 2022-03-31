@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 
 void
 foo(int* fd)

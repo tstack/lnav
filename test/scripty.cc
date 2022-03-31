@@ -77,7 +77,7 @@
 #include <string>
 #include <utility>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "auto_mem.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"

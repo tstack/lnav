@@ -41,8 +41,6 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
-using namespace std;
-
 static nonstd::optional<text_auto_buffer>
 timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
 {

@@ -39,8 +39,6 @@
 #include "xml_util.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
 enum {
     XP_COL_RESULT,
     XP_COL_NODE_PATH,
@@ -104,8 +102,8 @@ CREATE TABLE xpath (
     struct cursor {
         sqlite3_vtab_cursor base;
         sqlite3_int64 c_rowid{0};
-        string c_xpath;
-        string c_value;
+        std::string c_xpath;
+        std::string c_value;
         bool c_value_as_blob{false};
         pugi::xpath_query c_query;
         pugi::xml_document c_doc;
@@ -153,7 +151,7 @@ CREATE TABLE xpath (
                 auto& xpath_node = vc.c_results[vc.c_rowid];
 
                 if (xpath_node.node()) {
-                    ostringstream oss;
+                    std::ostringstream oss;
 
                     // XXX avoid the extra allocs
                     xpath_node.node().print(oss);
@@ -356,29 +354,35 @@ register_xpath_vtab(sqlite3* db)
                     "over an XML "
                     "string and returns the selected values.")
               .sql_table_valued_function()
-              .with_parameter(
-                  {"xpath",
-                   "The XPATH expression to evaluate over the XML document."})
+              .with_parameter({
+                  "xpath",
+                  "The XPATH expression to evaluate over the XML document.",
+              })
               .with_parameter({"xmldoc", "The XML document as a string."})
               .with_result({"result", "The result of the XPATH expression."})
-              .with_result(
-                  {"node_path",
-                   "The absolute path to the node containing the result."})
+              .with_result({
+                  "node_path",
+                  "The absolute path to the node containing the result.",
+              })
               .with_result(
                   {"node_attr", "The node's attributes stored in JSON object."})
               .with_result({"node_text", "The node's text value."})
               .with_tags({"string", "xml"})
-              .with_example({"To select the XML nodes on the path '/abc/def'",
-                             "SELECT * FROM xpath('/abc/def', '<abc><def "
-                             "a=\"b\">Hello</def><def>Bye</def></abc>')"})
-              .with_example(
-                  {"To select all 'a' attributes on the path '/abc/def'",
-                   "SELECT * FROM xpath('/abc/def/@a', '<abc><def "
-                   "a=\"b\">Hello</def><def>Bye</def></abc>')"})
-              .with_example(
-                  {"To select the text nodes on the path '/abc/def'",
-                   "SELECT * FROM xpath('/abc/def/text()', '<abc><def "
-                   "a=\"b\">Hello &#x2605;</def></abc>')"});
+              .with_example({
+                  "To select the XML nodes on the path '/abc/def'",
+                  "SELECT * FROM xpath('/abc/def', '<abc><def "
+                  "a=\"b\">Hello</def><def>Bye</def></abc>')",
+              })
+              .with_example({
+                  "To select all 'a' attributes on the path '/abc/def'",
+                  "SELECT * FROM xpath('/abc/def/@a', '<abc><def "
+                  "a=\"b\">Hello</def><def>Bye</def></abc>')",
+              })
+              .with_example({
+                  "To select the text nodes on the path '/abc/def'",
+                  "SELECT * FROM xpath('/abc/def/text()', '<abc><def "
+                  "a=\"b\">Hello &#x2605;</def></abc>')",
+              });
 
     int rc;
 
@@ -386,7 +390,7 @@ register_xpath_vtab(sqlite3* db)
     XPATH_MODULE.vm_module.xFilter = rcFilter;
 
     rc = XPATH_MODULE.create(db, "xpath");
-    sqlite_function_help.insert(make_pair("xpath", &xpath_help));
+    sqlite_function_help.insert(std::make_pair("xpath", &xpath_help));
     xpath_help.index_tags();
 
     ensure(rc == SQLITE_OK);

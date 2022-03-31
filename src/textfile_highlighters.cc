@@ -33,8 +33,6 @@
 
 #include "config.h"
 
-using namespace std;
-
 static pcre*
 xpcre_compile(const char* pattern, int options = 0)
 {

@@ -36,8 +36,6 @@
 
 #include "config.h"
 
-using namespace std;
-
 void
 status_field::set_value(std::string value)
 {
@@ -157,7 +155,7 @@ statusview_curses::do_update()
             }
 
             if (val.length() > sf.get_width()) {
-                static const string ELLIPSIS = "\xE2\x8B\xAF";
+                static const std::string ELLIPSIS = "\xE2\x8B\xAF";
 
                 if (sf.get_width() > 11) {
                     size_t half_width = sf.get_width() / 2 - 1;
@@ -196,7 +194,7 @@ statusview_curses::window_change()
     int total_shares = 0;
     unsigned long width, height;
     double remaining = 0;
-    vector<status_field*> resizable;
+    std::vector<status_field*> resizable;
 
     getmaxyx(this->sc_window, height, width);
     // Silence the compiler. Remove this if height is used at a later stage.
@@ -239,6 +237,4 @@ statusview_curses::window_change()
 
         sf->set_width(actual_width);
     }
-
-    this->sc_last_width = width;
 }

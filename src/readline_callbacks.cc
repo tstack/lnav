@@ -49,8 +49,6 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
 #define STR_HELPER(x) #x
@@ -179,10 +177,10 @@ rl_sql_help(readline_curses* rc)
 
         for (const auto& ht : avail_help) {
             format_help_text_for_term(
-                *ht, min(70UL, doc_width), doc_al, help_count > 1);
+                *ht, std::min(70UL, doc_width), doc_al, help_count > 1);
             if (help_count == 1) {
                 format_example_text_for_term(
-                    *ht, eval_example, min(70UL, ex_width), ex_al);
+                    *ht, eval_example, std::min(70UL, ex_width), ex_al);
             }
         }
 
@@ -204,7 +202,7 @@ rl_sql_help(readline_curses* rc)
         auto intern_ident = intern_string::lookup(ident);
         auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
         auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
-        string ddl;
+        std::string ddl;
 
         if (vtab != nullptr) {
             ddl = trim(vtab->get_table_statement());
@@ -250,11 +248,11 @@ rl_change(readline_curses* rc)
 
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
-            static string last_command;
+            static std::string last_command;
             static int generation = 0;
 
-            string line = rc->get_line_buffer();
-            vector<string> args;
+            const auto line = rc->get_line_buffer();
+            std::vector<std::string> args;
             auto iter = lnav_commands.end();
 
             split_ws(line, args);
@@ -336,7 +334,7 @@ rl_change(readline_curses* rc)
                     attr_line_t al;
 
                     dtc.get_dimensions(height, width);
-                    format_help_text_for_term(ht, min(70UL, width), al);
+                    format_help_text_for_term(ht, std::min(70UL, width), al);
                     lnav_data.ld_doc_source.replace_with(al);
                     dtc.set_needs_update();
 
@@ -349,7 +347,7 @@ rl_change(readline_curses* rc)
 
                 if (cmd.c_prompt != nullptr && generation == 0
                     && trim(line) == args[0]) {
-                    string new_prompt
+                    const auto new_prompt
                         = cmd.c_prompt(lnav_data.ld_exec_context, line);
 
                     if (!new_prompt.empty()) {
@@ -363,9 +361,9 @@ rl_change(readline_curses* rc)
             break;
         }
         case LNM_EXEC: {
-            string line = rc->get_line_buffer();
+            const auto line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
-            string script_name = line.substr(0, name_end);
+            const auto script_name = line.substr(0, name_end);
             auto& scripts = injector::get<available_scripts&>();
             auto iter = scripts.as_scripts.find(script_name);
 
@@ -395,8 +393,8 @@ static void
 rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
 {
     textview_curses* tc = get_textview_for_mode(mode);
-    string term_val;
-    string name;
+    std::string term_val;
+    std::string name;
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
@@ -520,7 +518,7 @@ lnav_rl_abort(readline_curses* rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
 
-    vector<string> errors;
+    std::vector<std::string> errors;
     lnav_config = rollback_lnav_config;
     reload_config(errors);
 
@@ -545,7 +543,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 {
     textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
     exec_context& ec = lnav_data.ld_exec_context;
-    string alt_msg;
+    std::string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_doc_source.clear();
@@ -649,7 +647,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case LNM_SQL: {
             auto result = execute_sql(ec, rc->get_value(), alt_msg);
             db_label_source& dls = lnav_data.ld_db_row_source;
-            string prompt;
+            std::string prompt;
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
@@ -675,24 +673,25 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             tmpout = std::tmpfile();
 
             if (!tmpout) {
-                rc->set_value("Unable to open temporary output file: "
-                              + string(strerror(errno)));
+                rc->set_value(fmt::format(
+                    FMT_STRING("Unable to open temporary output file: {}"),
+                    strerror(errno)));
             } else {
                 auto fd_copy = auto_fd::dup_of(fileno(tmpout));
                 char desc[256], timestamp[32];
                 time_t current_time = time(nullptr);
-                string path_and_args = rc->get_value();
+                const auto path_and_args = rc->get_value();
 
                 {
                     exec_context::output_guard og(
                         ec, "tmp", std::make_pair(tmpout.release(), fclose));
 
-                    string result = execute_file(ec, path_and_args)
-                                        .map(ok_prefix)
-                                        .orElse(err_to_ok)
-                                        .unwrap();
-                    string::size_type lf_index = result.find('\n');
-                    if (lf_index != string::npos) {
+                    auto result = execute_file(ec, path_and_args)
+                                      .map(ok_prefix)
+                                      .orElse(err_to_ok)
+                                      .unwrap();
+                    auto lf_index = result.find('\n');
+                    if (lf_index != std::string::npos) {
                         result = result.substr(0, lf_index);
                     }
                     rc->set_value(result);
@@ -711,7 +710,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                              path_and_args.c_str(),
                              timestamp);
                     lnav_data.ld_active_files.fc_file_names[desc]
-                        .with_fd(fd_copy)
+                        .with_fd(std::move(fd_copy))
                         .with_include_in_session(false)
                         .with_detect_format(false);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0);
@@ -751,12 +750,12 @@ rl_display_matches(readline_curses* rc)
     getmaxyx(lnav_data.ld_window, height, width);
 
     max_len = rc->get_max_match_length() + 2;
-    cols = max(1UL, width / max_len);
+    cols = std::max(1UL, width / max_len);
 
     if (matches.empty()) {
         lnav_data.ld_match_source.clear();
     } else {
-        string current_match = rc->get_match_string();
+        const auto current_match = rc->get_match_string();
         int curr_col = 0;
         attr_line_t al;
         bool add_nl = false;

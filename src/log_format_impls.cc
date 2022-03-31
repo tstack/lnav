@@ -45,8 +45,6 @@
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
 static const pcrepp RDNS_PATTERN(
     "^(?:com|net|org|edu|[a-z][a-z])"
     "(\\.\\w+)+(.+)");
@@ -60,12 +58,12 @@ static const pcrepp RDNS_PATTERN(
  * @return     The scrubbed version of the input string or the original string
  *   if it is not a reverse-DNS string.
  */
-static string
-scrub_rdns(const string& str)
+static std::string
+scrub_rdns(const std::string& str)
 {
     pcre_context_static<30> context;
     pcre_input input(str);
-    string retval;
+    std::string retval;
 
     if (RDNS_PATTERN.match(context, input)) {
         pcre_context::capture_t* cap;
@@ -142,11 +140,11 @@ class generic_log_format : public log_format {
         return intern_string::lookup("generic_log");
     };
 
-    void scrub(string& line) override
+    void scrub(std::string& line) override
     {
         pcre_context_static<30> context;
         pcre_input pi(line);
-        string new_line;
+        std::string new_line;
 
         if (scrub_pattern().match(context, pi)) {
             pcre_context::capture_t* cap;
@@ -160,7 +158,7 @@ class generic_log_format : public log_format {
     };
 
     scan_result_t scan(logfile& lf,
-                       vector<logline>& dst,
+                       std::vector<logline>& dst,
                        const line_info& li,
                        shared_buffer_ref& sbr) override
     {
@@ -236,16 +234,16 @@ class generic_log_format : public log_format {
         sa.emplace_back(lr, &SA_BODY);
     };
 
-    shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
         return std::make_shared<generic_log_format>(*this);
     };
 };
 
-string
+std::string
 from_escaped_string(const char* str, size_t len)
 {
-    string retval;
+    std::string retval;
 
     for (size_t lpc = 0; lpc < len; lpc++) {
         switch (str[lpc]) {
@@ -549,7 +547,7 @@ public:
 
         this->clear();
 
-        string sep
+        auto sep
             = from_escaped_string(pi.get_substr_start(pc[0]), pc[0]->length());
         this->blf_separator = intern_string::lookup(sep);
 
@@ -624,14 +622,14 @@ public:
                     if (field_type == "time") {
                         fd.with_kind(value_kind_t::VALUE_TIMESTAMP);
                     } else if (field_type == "string") {
-                        bool ident = binary_search(begin(KNOWN_IDS),
-                                                   end(KNOWN_IDS),
-                                                   fd.fd_meta.lvm_name);
+                        bool ident = std::binary_search(std::begin(KNOWN_IDS),
+                                                        std::end(KNOWN_IDS),
+                                                        fd.fd_meta.lvm_name);
                         fd.with_kind(value_kind_t::VALUE_TEXT, ident);
                     } else if (field_type == "count") {
-                        bool ident = binary_search(begin(KNOWN_IDS),
-                                                   end(KNOWN_IDS),
-                                                   fd.fd_meta.lvm_name);
+                        bool ident = std::binary_search(std::begin(KNOWN_IDS),
+                                                        std::end(KNOWN_IDS),
+                                                        fd.fd_meta.lvm_name);
                         fd.with_kind(value_kind_t::VALUE_INTEGER, ident)
                             .with_numeric_index(numeric_count);
                         numeric_count += 1;
@@ -731,7 +729,7 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
-        return make_shared<bro_log_format>(*this);
+        return std::make_shared<bro_log_format>(*this);
     };
 
     class bro_log_table : public log_format_vtab_impl {
@@ -741,7 +739,7 @@ public:
         {
         }
 
-        void get_columns(vector<vtab_column>& cols) const override
+        void get_columns(std::vector<vtab_column>& cols) const override
         {
             for (const auto& fd : this->blt_format.blf_field_defs) {
                 std::pair<int, unsigned int> type_pair
@@ -772,9 +770,10 @@ public:
         const bro_log_format& blt_format;
     };
 
-    static map<intern_string_t, std::shared_ptr<bro_log_table>>& get_tables()
+    static std::map<intern_string_t, std::shared_ptr<bro_log_table>>&
+    get_tables()
     {
-        static map<intern_string_t, std::shared_ptr<bro_log_table>> retval;
+        static std::map<intern_string_t, std::shared_ptr<bro_log_table>> retval;
 
         return retval;
     };
@@ -808,7 +807,7 @@ public:
     intern_string_t blf_set_separator;
     intern_string_t blf_empty_field;
     intern_string_t blf_unset_field;
-    vector<field_def> blf_field_defs;
+    std::vector<field_def> blf_field_defs;
 };
 
 struct ws_separated_string {
@@ -1321,7 +1320,7 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
-        return make_shared<w3c_log_format>(*this);
+        return std::make_shared<w3c_log_format>(*this);
     };
 
     class w3c_log_table : public log_format_vtab_impl {
@@ -1331,7 +1330,7 @@ public:
         {
         }
 
-        void get_columns(vector<vtab_column>& cols) const override
+        void get_columns(std::vector<vtab_column>& cols) const override
         {
             for (const auto& fd : KNOWN_FIELDS) {
                 auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
@@ -1368,9 +1367,10 @@ public:
         const w3c_log_format& wlt_format;
     };
 
-    static map<intern_string_t, std::shared_ptr<w3c_log_table>>& get_tables()
+    static std::map<intern_string_t, std::shared_ptr<w3c_log_table>>&
+    get_tables()
     {
-        static map<intern_string_t, std::shared_ptr<w3c_log_table>> retval;
+        static std::map<intern_string_t, std::shared_ptr<w3c_log_table>> retval;
 
         return retval;
     };
@@ -1401,7 +1401,7 @@ public:
 
     date_time_scanner wlf_time_scanner;
     intern_string_t wlf_format_name;
-    vector<field_def> wlf_field_defs;
+    std::vector<field_def> wlf_field_defs;
 };
 
 static int KNOWN_FIELD_INDEX = 0;
@@ -1566,7 +1566,7 @@ public:
         {
         }
 
-        void get_columns(vector<vtab_column>& cols) const override
+        void get_columns(std::vector<vtab_column>& cols) const override
         {
             static const auto FIELDS = std::string("fields");
 
@@ -1574,7 +1574,7 @@ public:
         };
     };
 
-    shared_ptr<log_vtab_impl> get_vtab_impl() const override
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
     {
         static auto retval = std::make_shared<logfmt_log_table>(*this);
 
@@ -1582,7 +1582,7 @@ public:
     }
 
     scan_result_t scan(logfile& lf,
-                       vector<logline>& dst,
+                       std::vector<logline>& dst,
                        const line_info& li,
                        shared_buffer_ref& sbr) override
     {
@@ -1667,7 +1667,7 @@ public:
     void annotate(uint64_t line_number,
                   shared_buffer_ref& sbr,
                   string_attrs_t& sa,
-                  vector<logline_value>& values,
+                  std::vector<logline_value>& values,
                   bool annotate_module) const override
     {
         static const auto FIELDS_NAME = intern_string::lookup("fields");
@@ -1767,7 +1767,7 @@ public:
         }
     }
 
-    shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
         return std::make_shared<logfmt_format>(*this);
     };

@@ -40,8 +40,6 @@
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 
-using namespace std;
-
 json_string extract(const char* str);
 
 void
@@ -65,7 +63,7 @@ field_overlay_source::build_summary_lines(const listview_curses& lv)
         if (free_rows < 2 || !this->fos_show_status) {
             this->fos_summary_lines.clear();
         } else {
-            string time_span;
+            std::string time_span;
             double error_rate = 0.0;
 
             if (lv.get_inner_height() == 0) {
@@ -130,7 +128,7 @@ field_overlay_source::build_summary_lines(const listview_curses& lv)
                                 long computed_rate_len
                                     = lrint(ceil((recent_error_rate * 40.0)
                                                  / long_error_rate));
-                                rate_len = min(10L, computed_rate_len);
+                                rate_len = std::min(10L, computed_rate_len);
                             }
                         }
                     }
@@ -164,7 +162,7 @@ field_overlay_source::build_summary_lines(const listview_curses& lv)
                     error_rate,
                     time_span.c_str());
             }
-            string& sum_msg = sum_line.get_string();
+            const auto& sum_msg = sum_line.get_string();
             sum_line
                 .with_attr(string_attr(
                     line_range(sum_msg.find("Error rate"),
@@ -248,7 +246,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
     struct timeval curr_tv, offset_tv, orig_tv, diff_tv = {0, 0};
     attr_line_t time_line;
-    string& time_str = time_line.get_string();
+    auto& time_str = time_line.get_string();
     struct line_range time_lr;
 
     sql_strftime(curr_timestamp,
@@ -368,7 +366,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         if (!meta.lvm_struct_name.empty()) {
             this_key_size += meta.lvm_struct_name.size() + 11;
         }
-        this->fos_known_key_size = max(this->fos_known_key_size, this_key_size);
+        this->fos_known_key_size
+            = std::max(this->fos_known_key_size, this_key_size);
     }
 
     for (auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
@@ -381,7 +380,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
 
         colname = this->fos_log_helper.ldh_namer->add_column(colname);
         this->fos_unknown_key_size
-            = max(this->fos_unknown_key_size, (int) colname.length());
+            = std::max(this->fos_unknown_key_size, (int) colname.length());
     }
 
     auto lf = this->fos_log_helper.ldh_file->get_format();
@@ -408,9 +407,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
 
         auto curr_format = lv.lv_meta.lvm_format.value();
         auto curr_elf = dynamic_cast<external_log_format*>(curr_format);
-        string format_name = curr_format->get_name().to_string();
+        const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
-        string str, value_str = lv.to_string();
+        std::string str, value_str = lv.to_string();
 
         if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table "

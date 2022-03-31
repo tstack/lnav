@@ -35,7 +35,7 @@
 #include <chrono>
 #include <string>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "file_format.hh"
 
 using ui_clock = std::chrono::steady_clock;
@@ -52,20 +52,51 @@ enum class logfile_name_source {
     REMOTE,
 };
 
-struct logfile_open_options {
+struct logfile_open_options_base {
+    std::string loo_filename;
+    logfile_name_source loo_source{logfile_name_source::USER};
+    bool loo_temp_file{false};
+    dev_t loo_temp_dev{0};
+    ino_t loo_temp_ino{0};
+    bool loo_detect_format{true};
+    bool loo_include_in_session{true};
+    bool loo_is_visible{true};
+    bool loo_non_utf_is_visible{true};
+    ssize_t loo_visible_size_limit{-1};
+    bool loo_tail{true};
+    file_format_t loo_file_format{file_format_t::UNKNOWN};
+};
+
+struct logfile_open_options : public logfile_open_options_base {
+    logfile_open_options() = default;
+
+    explicit logfile_open_options(const logfile_open_options_base& base)
+        : logfile_open_options_base(base)
+    {
+    }
+
     logfile_open_options& with_filename(const std::string& val)
     {
         this->loo_filename = val;
 
         return *this;
-    };
+    }
 
     logfile_open_options& with_fd(auto_fd fd)
     {
         this->loo_fd = std::move(fd);
+        this->loo_temp_file = true;
 
         return *this;
-    };
+    }
+
+    logfile_open_options& with_stat_for_temp(const struct stat& st)
+    {
+        this->loo_temp_dev = st.st_dev;
+        this->loo_temp_ino = st.st_ino;
+
+        return *this;
+    }
 
     logfile_open_options& with_source(logfile_name_source src)
     {
@@ -79,7 +110,7 @@ struct logfile_open_options {
         this->loo_detect_format = val;
 
         return *this;
-    };
+    }
 
     logfile_open_options& with_include_in_session(bool val)
     {
@@ -123,16 +154,7 @@ struct logfile_open_options {
         return *this;
     }
 
-    std::string loo_filename;
     auto_fd loo_fd;
-    logfile_name_source loo_source{logfile_name_source::USER};
-    bool loo_detect_format{true};
-    bool loo_include_in_session{true};
-    bool loo_is_visible{true};
-    bool loo_non_utf_is_visible{true};
-    ssize_t loo_visible_size_limit{-1};
-    bool loo_tail{true};
-    file_format_t loo_file_format{file_format_t::UNKNOWN};
 };
 
 #endif

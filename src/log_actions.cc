@@ -33,18 +33,16 @@
 #include "config.h"
 #include "piper_proc.hh"
 
-using namespace std;
-
-string
-action_delegate::execute_action(const string& action_name)
+std::string
+action_delegate::execute_action(const std::string& action_name)
 {
     auto& ldh = this->ad_log_helper;
     auto value_index = this->ad_press_value;
     logline_value& lv = ldh.ldh_line_values[value_index];
-    shared_ptr<logfile> lf = ldh.ldh_file;
+    auto lf = ldh.ldh_file;
     const auto format = lf->get_format();
     pid_t child_pid;
-    string retval;
+    std::string retval;
 
     auto iter = format->lf_action_defs.find(action_name);
 
@@ -65,15 +63,16 @@ action_delegate::execute_action(const string& action_name)
 
     switch (child_pid) {
         case -1:
-            retval = "error: unable to fork child process -- "
-                + string(strerror(errno));
+            retval = fmt::format(
+                FMT_STRING("error: unable to fork child process -- {}"),
+                strerror(errno));
             break;
         case 0: {
             const char* args[action.ad_cmdline.size() + 1];
-            set<std::string> path_set(format->get_source_path());
+            std::set<std::string> path_set(format->get_source_path());
             char env_buffer[64];
             int value_line;
-            string path;
+            std::string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
@@ -96,7 +95,7 @@ action_delegate::execute_action(const string& action_name)
                 }
                 path += path_iter;
             }
-            path += ":" + string(getenv("PATH"));
+            path += ":" + std::string(getenv("PATH"));
             setenv("PATH", path.c_str(), 1);
             for (size_t lpc = 0; lpc < action.ad_cmdline.size(); lpc++) {
                 args[lpc] = action.ad_cmdline[lpc].c_str();
@@ -112,7 +111,7 @@ action_delegate::execute_action(const string& action_name)
         default: {
             static int exec_count = 0;
 
-            string value = lv.to_string();
+            const auto value = lv.to_string();
 
             this->ad_child_cb(child_pid);
 
@@ -122,8 +121,8 @@ action_delegate::execute_action(const string& action_name)
             in_pipe.close();
 
             if (out_pipe.read_end() != -1) {
-                auto pp = make_shared<piper_proc>(
-                    out_pipe.read_end(),
+                auto pp = std::make_shared<piper_proc>(
+                    std::move(out_pipe.read_end()),
                     false,
                     lnav::filesystem::open_temp_file(
                         ghc::filesystem::temp_directory_path()
@@ -209,8 +208,8 @@ action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
                 int x_offset = this->ad_line_index + mouse_left;
 
                 if (lv.lv_origin.contains(x_offset)) {
-                    shared_ptr<logfile> lf = this->ad_log_helper.ldh_file;
-                    const vector<string>* actions;
+                    auto lf = this->ad_log_helper.ldh_file;
+                    const std::vector<std::string>* actions;
 
                     actions = lf->get_format()->get_actions(lv);
                     if (actions != nullptr && !actions->empty()) {

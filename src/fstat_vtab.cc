@@ -41,8 +41,6 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
-using namespace std;
-
 enum {
     FSTAT_COL_PARENT,
     FSTAT_COL_NAME,
@@ -65,6 +63,9 @@ enum {
     FSTAT_COL_PATTERN,
 };
 
+/**
+ * @feature f0:sql.tables.fstat
+ */
 struct fstat_table {
     static constexpr const char* NAME = "fstat";
     static constexpr const char* CREATE_STMT = R"(
@@ -93,7 +94,7 @@ CREATE TABLE fstat (
 
     struct cursor {
         sqlite3_vtab_cursor base;
-        string c_pattern;
+        std::string c_pattern;
         static_root_mem<glob_t, globfree> c_glob;
         size_t c_path_index{0};
         struct stat c_stat;

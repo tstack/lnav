@@ -38,8 +38,6 @@
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp/json_ptr.hh"
 
-using namespace std;
-
 static int
 handle_null(void* ctx)
 {
@@ -70,7 +68,7 @@ handle_number(void* ctx, const char* numberVal, size_t numberLen)
     json_ptr_walk* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(
-        jpw->current_ptr(), yajl_t_number, string(numberVal, numberLen));
+        jpw->current_ptr(), yajl_t_number, std::string(numberVal, numberLen));
     jpw->inc_array_index();
 
     return 1;
@@ -79,7 +77,7 @@ handle_number(void* ctx, const char* numberVal, size_t numberLen)
 static void
 appender(void* ctx, const char* strVal, size_t strLen)
 {
-    string& str = *(string*) ctx;
+    std::string& str = *(std::string*) ctx;
 
     str.append(strVal, strLen);
 }
@@ -89,7 +87,7 @@ handle_string(void* ctx, const unsigned char* stringVal, size_t len)
 {
     json_ptr_walk* jpw = (json_ptr_walk*) ctx;
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
-    string str;
+    std::string str;
 
     gen = yajl_gen_alloc(nullptr);
     yajl_gen_config(gen.in(), yajl_gen_print_callback, appender, &str);

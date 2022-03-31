@@ -38,27 +38,26 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
 using namespace mapbox;
 
 typedef struct {
-    shared_ptr<pcrepp> re2;
+    std::shared_ptr<pcrepp> re2;
 } cache_entry;
 
 static cache_entry*
 find_re(const char* re)
 {
-    using safe_cache = safe::Safe<unordered_map<string, cache_entry>>;
+    using safe_cache = safe::Safe<std::unordered_map<std::string, cache_entry>>;
     static safe_cache CACHE;
 
     safe::WriteAccess<safe_cache> wcache(CACHE);
-    string re_str = re;
+    std::string re_str = re;
     auto iter = wcache->find(re_str);
 
     if (iter == wcache->end()) {
         cache_entry c;
 
-        c.re2 = make_shared<pcrepp>(re_str);
+        c.re2 = std::make_shared<pcrepp>(re_str);
         auto pair = wcache->insert(std::make_pair(re_str, c));
 
         iter = pair.first;
@@ -102,33 +101,34 @@ regexp_match(const char* re, const char* str)
 
         if (!cap->is_valid()) {
             return static_cast<const char*>(nullptr);
-        } else {
-            char* cap_copy = (char*) alloca(cap->length() + 1);
-            long long int i_value;
-            double d_value;
-            int end_index;
-
-            memcpy(cap_copy, cap_start, cap->length());
-            cap_copy[cap->length()] = '\0';
-
-            if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1
-                && (end_index == cap->length()))
-            {
-                return (int64_t) i_value;
-            } else if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1
-                       && (end_index == cap->length()))
-            {
-                return d_value;
-            } else {
-                return string_fragment(str, cap->c_begin, cap->c_end);
-            }
         }
+
+        char* cap_copy = (char*) alloca(cap->length() + 1);
+        long long int i_value;
+        double d_value;
+        int end_index;
+
+        memcpy(cap_copy, cap_start, cap->length());
+        cap_copy[cap->length()] = '\0';
+
+        if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1
+            && (end_index == cap->length()))
+        {
+            return (int64_t) i_value;
+        }
+        if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1
+            && (end_index == cap->length()))
+        {
+            return d_value;
+        }
+        return string_fragment(str, cap->c_begin, cap->c_end);
     } else {
         yajlpp_map root_map(gen);
         column_namer cn;
 
         for (int lpc = 0; lpc < extractor.get_capture_count(); lpc++) {
-            string colname = cn.add_column(extractor.name_for_capture(lpc));
+            std::string colname
+                = cn.add_column(extractor.name_for_capture(lpc));
             pcre_context::capture_t* cap = pc[lpc];
 
             yajl_gen_string(gen, colname);
@@ -225,7 +225,7 @@ logfmt2json(string_fragment line)
                             parse_handle.reset(yajl_alloc(
                                 &json_op::ptr_callbacks, nullptr, &jo));
 
-                            auto json_in
+                            const auto* json_in
                                 = (const unsigned char*) qv.qv_value.data();
                             auto json_len = qv.qv_value.length();
 
@@ -252,7 +252,7 @@ logfmt2json(string_fragment line)
     return json_string(gen);
 }
 
-static string
+static std::string
 regexp_replace(const char* str, const char* re, const char* repl)
 {
     cache_entry* reobj = find_re(re);
@@ -260,14 +260,14 @@ regexp_replace(const char* str, const char* re, const char* repl)
     return reobj->re2->replace(str, repl);
 }
 
-static string
-spooky_hash(const vector<const char*>& args)
+static std::string
+spooky_hash(const std::vector<const char*>& args)
 {
     byte_array<2, uint64> hash;
     SpookyHash context;
 
     context.Init(0, 0);
-    for (const auto arg : args) {
+    for (const auto* const arg : args) {
         int64_t len = arg != nullptr ? strlen(arg) : 0;
 
         context.Update(&len, sizeof(len));
@@ -288,7 +288,7 @@ sql_spooky_hash_step(sqlite3_context* context, int argc, sqlite3_value** argv)
         = (SpookyHash*) sqlite3_aggregate_context(context, sizeof(SpookyHash));
 
     for (int lpc = 0; lpc < argc; lpc++) {
-        auto value = sqlite3_value_text(argv[lpc]);
+        const auto* value = sqlite3_value_text(argv[lpc]);
         int64_t len = value != nullptr ? strlen((const char*) value) : 0;
 
         hasher->Update(&len, sizeof(len));
@@ -312,7 +312,7 @@ sql_spooky_hash_final(sqlite3_context* context)
 
         hasher->Final(hash.out(0), hash.out(1));
 
-        string hex = hash.to_string();
+        auto hex = hash.to_string();
         sqlite3_result_text(
             context, hex.c_str(), hex.length(), SQLITE_TRANSIENT);
     }
@@ -358,8 +358,8 @@ sparkline_final(sqlite3_context* context)
         return;
     }
 
-    auto retval = (char*) malloc(sc->sc_values.size() * 3 + 1);
-    auto start = retval;
+    auto* retval = (char*) malloc(sc->sc_values.size() * 3 + 1);
+    auto* start = retval;
 
     for (const auto& value : sc->sc_values) {
         auto bar = humanize::sparkline(value, sc->sc_max_value);
@@ -380,7 +380,7 @@ sql_gunzip(sqlite3_value* val)
     switch (sqlite3_value_type(val)) {
         case SQLITE3_TEXT:
         case SQLITE_BLOB: {
-            auto buffer = sqlite3_value_blob(val);
+            const auto* buffer = sqlite3_value_blob(val);
             auto len = sqlite3_value_bytes(val);
 
             if (!lnav::gzip::is_gzipped((const char*) buffer, len)) {
@@ -414,7 +414,7 @@ sql_gzip(sqlite3_value* val)
     switch (sqlite3_value_type(val)) {
         case SQLITE3_TEXT:
         case SQLITE_BLOB: {
-            auto buffer = sqlite3_value_blob(val);
+            const auto* buffer = sqlite3_value_blob(val);
             auto len = sqlite3_value_bytes(val);
             auto res = lnav::gzip::compress(buffer, len);
 
@@ -428,7 +428,6 @@ sql_gzip(sqlite3_value* val)
         case SQLITE_INTEGER:
         case SQLITE_FLOAT: {
             auto buffer = sqlite3_value_text(val);
-            log_debug("buf %s", buffer);
             auto res
                 = lnav::gzip::compress(buffer, strlen((const char*) buffer));
 

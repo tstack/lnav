@@ -343,7 +343,6 @@ add_library(
         archive_manager.hh
         archive_manager.cfg.hh
         attr_line.hh
-        auto_fd.hh
         auto_mem.hh
         big_array.hh
         bottom_status_source.hh

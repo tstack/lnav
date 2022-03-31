@@ -66,7 +66,7 @@ connect(const char* hostname, const char* servname)
                                strerror(rc)));
     }
 
-    return Ok(retval);
+    return Ok(std::move(retval));
 }
 
 }  // namespace tcp

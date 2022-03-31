@@ -35,7 +35,6 @@
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
 
-using namespace std;
 using namespace std::chrono_literals;
 
 static const struct {
@@ -333,15 +332,15 @@ relative_time::from_str(const char* str, size_t len)
                 case RTT_AT:
                     break;
                 case RTT_TIME: {
-                    string hstr = pi.get_substr(pc[0]);
-                    string mstr = pi.get_substr(pc[1]);
+                    const auto hstr = pi.get_substr(pc[0]);
+                    const auto mstr = pi.get_substr(pc[1]);
                     retval.rt_field[RTF_HOURS] = atoi(hstr.c_str());
                     retval.rt_field[RTF_MINUTES] = atoi(mstr.c_str());
                     if (pc[2]->is_valid()) {
-                        string sstr = pi.get_substr(pc[2]);
+                        const auto sstr = pi.get_substr(pc[2]);
                         retval.rt_field[RTF_SECONDS] = atoi(sstr.c_str());
                         if (pc[3]->is_valid()) {
-                            string substr = pi.get_substr(pc[3]);
+                            const auto substr = pi.get_substr(pc[3]);
 
                             switch (substr.length()) {
                                 case 3:
@@ -372,7 +371,7 @@ relative_time::from_str(const char* str, size_t len)
                         return Err(pe_out);
                     }
 
-                    string numstr = pi.get_substr(pc[0]);
+                    const auto numstr = pi.get_substr(pc[0]);
 
                     if (sscanf(numstr.c_str(), "%" PRId64, &number) != 1) {
                         pe_out.pe_msg = "Invalid number: " + numstr;

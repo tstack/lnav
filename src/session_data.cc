@@ -56,8 +56,6 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
-
 struct session_data_t session_data;
 
 static const char* LOG_METADATA_NAME = "log_metadata.db";
@@ -142,7 +140,7 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, intern_string_t ist)
 }
 
 int
-bind_to_sqlite(sqlite3_stmt* stmt, int index, const string& str)
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::string& str)
 {
     return sqlite3_bind_text(
         stmt, index, str.c_str(), str.size(), SQLITE_TRANSIENT);
@@ -189,9 +187,7 @@ bind_line(sqlite3* db,
           time_t session_time)
 {
     logfile_sub_source& lss = lnav_data.ld_log_source;
-    shared_ptr<logfile> lf;
-
-    lf = lss.find(cl);
+    auto lf = lss.find(cl);
 
     if (lf == nullptr) {
         return false;
@@ -224,7 +220,7 @@ bind_line(sqlite3* db,
 }
 
 struct session_file_info {
-    session_file_info(int timestamp, string id, string path)
+    session_file_info(int timestamp, std::string id, std::string path)
         : sfi_timestamp(timestamp), sfi_id(std::move(id)),
           sfi_path(std::move(path)){};
 
@@ -240,8 +236,8 @@ struct session_file_info {
     };
 
     int sfi_timestamp;
-    string sfi_id;
-    string sfi_path;
+    std::string sfi_id;
+    std::string sfi_path;
 };
 
 static void
@@ -249,7 +245,7 @@ cleanup_session_data()
 {
     static_root_mem<glob_t, globfree> session_file_list;
     std::list<struct session_file_info> session_info_list;
-    map<string, int> session_count;
+    std::map<std::string, int> session_count;
     auto session_file_pattern = lnav::paths::dotlnav() / "*-*.ts*.json";
 
     if (glob(
@@ -492,7 +488,7 @@ load_time_bookmarks()
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter)
     {
-        shared_ptr<logfile> lf = (*file_iter)->get_file();
+        auto lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == nullptr) {
@@ -518,7 +514,7 @@ load_time_bookmarks()
 
         date_time_scanner dts;
         bool done = false;
-        string line;
+        std::string line;
         int64_t last_mark_time = -1;
 
         while (!done) {
@@ -582,7 +578,7 @@ load_time_bookmarks()
 
                         auto sbr = read_result.unwrap();
 
-                        string line_hash
+                        auto line_hash
                             = hasher()
                                   .update(sbr.get_data(), sbr.length())
                                   .update(cl)
@@ -681,7 +677,7 @@ load_time_bookmarks()
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter)
     {
-        shared_ptr<logfile> lf = (*file_iter)->get_file();
+        auto lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == nullptr) {
@@ -707,7 +703,7 @@ load_time_bookmarks()
 
         date_time_scanner dts;
         bool done = false;
-        string line;
+        std::string line;
         int64_t last_mark_time = -1;
 
         while (!done) {
@@ -807,7 +803,7 @@ read_current_search(yajlpp_parse_context* ypc,
                     const unsigned char* str,
                     size_t len)
 {
-    string regex = std::string((const char*) str, len);
+    const auto regex = std::string((const char*) str, len);
     const char** view_name;
     int view_index;
 
@@ -1067,7 +1063,7 @@ save_user_bookmarks(sqlite3* db,
                 return;
             }
 
-            string tags;
+            std::string tags;
 
             if (!line_meta.bm_tags.empty()) {
                 yajlpp_gen gen;
@@ -1226,7 +1222,7 @@ save_time_bookmarks()
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter)
         {
-            shared_ptr<logfile> lf = (*file_iter)->get_file();
+            auto lf = (*file_iter)->get_file();
 
             if (lf == nullptr) {
                 continue;
@@ -1320,7 +1316,7 @@ save_time_bookmarks()
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter)
         {
-            shared_ptr<logfile> lf = (*file_iter)->get_file();
+            auto lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
             if (lf == nullptr) {
@@ -1366,7 +1362,7 @@ save_time_bookmarks()
         if (ls->get_file() == nullptr)
             continue;
 
-        shared_ptr<logfile> lf = ls->get_file();
+        auto lf = ls->get_file();
 
         if (!lf->is_time_adjusted()) {
             continue;
@@ -1528,7 +1524,7 @@ save_session_with_id(const std::string& session_id)
                     yajlpp_array cmd_array(handle);
 
                     for (const auto& filter : fs) {
-                        string cmd = filter->to_command();
+                        auto cmd = filter->to_command();
 
                         if (cmd.empty()) {
                             continue;
@@ -1582,13 +1578,13 @@ save_session_with_id(const std::string& session_id)
                             min_time_str, sizeof(min_time_str), min_time);
                         if (have_min_time) {
                             cmd_array.gen("hide-lines-before "
-                                          + string(min_time_str));
+                                          + std::string(min_time_str));
                         }
                         if (have_max_time) {
                             sql_strftime(
                                 max_time_str, sizeof(max_time_str), max_time);
                             cmd_array.gen("hide-lines-after "
-                                          + string(max_time_str));
+                                          + std::string(max_time_str));
                         }
 
                         auto mark_expr = lss.get_sql_marker_text();

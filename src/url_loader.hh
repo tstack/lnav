@@ -51,7 +51,7 @@ public:
 
         auto tmp_pair = tmp_res.unwrap();
         ghc::filesystem::remove(tmp_pair.first);
-        this->ul_fd = tmp_pair.second;
+        this->ul_fd = std::move(tmp_pair.second);
 
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->cr_name.c_str());
         curl_easy_setopt(this->cr_handle, CURLOPT_WRITEFUNCTION, write_cb);
@@ -66,7 +66,7 @@ public:
 
     auto_fd copy_fd() const
     {
-        return this->ul_fd;
+        return this->ul_fd.dup();
     };
 
     long complete(CURLcode result)

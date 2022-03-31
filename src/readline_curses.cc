@@ -66,8 +66,6 @@
 #include "shlex.hh"
 #include "spookyhash/SpookyV2.h"
 
-using namespace std;
-
 static int got_line = 0;
 static bool alt_done = 0;
 static sig_atomic_t got_timeout = 0;
@@ -93,8 +91,8 @@ static const char* RL_INIT[] = {
 };
 
 readline_context* readline_context::loaded_context;
-set<string>* readline_context::arg_possibilities;
-static string last_match_str;
+std::set<std::string>* readline_context::arg_possibilities;
+static std::string last_match_str;
 static bool last_match_str_valid;
 static bool arg_needs_shlex;
 static nonstd::optional<std::string> rewrite_line_start;
@@ -226,9 +224,9 @@ recvstring(int sock, char* buf, size_t len)
 char*
 readline_context::completion_generator(const char* text_in, int state)
 {
-    static vector<string> matches;
+    static std::vector<std::string> matches;
 
-    vector<string> long_matches;
+    std::vector<std::string> long_matches;
     char* retval = nullptr;
 
     if (state == 0) {
@@ -236,7 +234,7 @@ readline_context::completion_generator(const char* text_in, int state)
 
         if (arg_needs_shlex) {
             shlex arg_lexer(text_str);
-            map<string, string> scope;
+            std::map<std::string, std::string> scope;
             std::string result;
 
             if (arg_lexer.eval(result, scope)) {
@@ -281,11 +279,11 @@ readline_context::completion_generator(const char* text_in, int state)
             }
 
             if (matches.empty()) {
-                vector<pair<int, string>> fuzzy_matches;
-                vector<pair<int, string>> fuzzy_long_matches;
+                std::vector<std::pair<int, std::string>> fuzzy_matches;
+                std::vector<std::pair<int, std::string>> fuzzy_long_matches;
 
                 for (const auto& poss : (*arg_possibilities)) {
-                    string poss_str = tolower(poss);
+                    std::string poss_str = tolower(poss);
                     int score;
 
                     if (fts::fuzzy_match(
@@ -372,14 +370,14 @@ readline_context::attempted_completion(const char* text, int start, int end)
         rl_completion_append_character = loaded_context->rc_append_character;
     } else {
         char* space;
-        string cmd;
-        vector<string> prefix;
+        std::string cmd;
+        std::vector<std::string> prefix;
         int point = rl_point;
         while (point > 0 && rl_line_buffer[point] != ' ') {
             point -= 1;
         }
         shlex lexer(rl_line_buffer, point);
-        map<string, string> scope;
+        std::map<std::string, std::string> scope;
 
         arg_possibilities = nullptr;
         rl_completion_append_character = 0;
@@ -400,7 +398,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
             if (space == nullptr) {
                 space = rl_line_buffer + strlen(rl_line_buffer);
             }
-            cmd = string(rl_line_buffer, space - rl_line_buffer);
+            cmd = std::string(rl_line_buffer, space - rl_line_buffer);
 
             auto iter = loaded_context->rc_prototypes.find(cmd);
 
@@ -414,7 +412,8 @@ readline_context::attempted_completion(const char* text, int start, int end)
                         = loaded_context->rc_append_character;
                 }
             } else {
-                vector<string>& proto = loaded_context->rc_prototypes[cmd];
+                std::vector<std::string>& proto
+                    = loaded_context->rc_prototypes[cmd];
 
                 if (proto.empty()) {
                     arg_possibilities = nullptr;
@@ -428,7 +427,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
                     const auto& last_fn = fn_list.size() <= 1 ? ""
                                                               : fn_list.back();
 
-                    if (last_fn.find(':') != string::npos) {
+                    if (last_fn.find(':') != std::string::npos) {
                         auto rp_iter = loaded_context->rc_possibilities.find(
                             "remote-path");
                         if (rp_iter != loaded_context->rc_possibilities.end()) {
@@ -630,7 +629,7 @@ readline_curses::store_matches(char** matches, int num_matches, int max_len)
 
     max_len = 0;
     for (int lpc = 0; lpc <= num_matches; lpc++) {
-        max_len = max(max_len, (int) strlen(matches[lpc]));
+        max_len = std::max(max_len, (int) strlen(matches[lpc]));
     }
 
     if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0)
@@ -742,7 +741,7 @@ readline_curses::start()
         child_this = this;
     }
 
-    map<int, readline_context*>::iterator current_context;
+    std::map<int, readline_context*>::iterator current_context;
     int maxfd;
 
     require(!this->rc_contexts.empty());
@@ -751,7 +750,7 @@ readline_curses::start()
 
     current_context = this->rc_contexts.end();
 
-    maxfd = max(STDIN_FILENO, this->rc_command_pipe[RCF_SLAVE].get());
+    maxfd = std::max(STDIN_FILENO, this->rc_command_pipe[RCF_SLAVE].get());
 
     while (looping) {
         fd_set ready_rfds;
@@ -928,8 +927,9 @@ readline_curses::start()
                     {
                         require(this->rc_contexts[context] != nullptr);
 
-                        this->rc_contexts[context]->rc_prefixes[string(type)]
-                            = string(&msg[prompt_start]);
+                        this->rc_contexts[context]
+                            ->rc_prefixes[std::string(type)]
+                            = std::string(&msg[prompt_start]);
                     } else if (sscanf(msg,
                                       "ap:%d:%31[^:]:%n",
                                       &context,
@@ -939,7 +939,7 @@ readline_curses::start()
                         require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->add_possibility(
-                            string(type), string(&msg[prompt_start]));
+                            std::string(type), std::string(&msg[prompt_start]));
                         if (rl_last_func == rl_complete
                             || rl_last_func == rl_menu_complete) {
                             rl_last_func = NULL;
@@ -953,7 +953,7 @@ readline_curses::start()
                         require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->rem_possibility(
-                            string(type), string(&msg[prompt_start]));
+                            std::string(type), std::string(&msg[prompt_start]));
                     } else if (sscanf(msg, "cpre:%d", &context) == 1) {
                         this->rc_contexts[context]->rc_prefixes.clear();
                     } else if (sscanf(msg, "cp:%d:%s", &context, type)) {
@@ -1083,7 +1083,7 @@ readline_curses::line_ready(const char* line)
 }
 
 void
-readline_curses::check_poll_set(const vector<struct pollfd>& pollfds)
+readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
 {
     int rc;
 
@@ -1106,7 +1106,7 @@ readline_curses::check_poll_set(const vector<struct pollfd>& pollfds)
         rc = recvstring(
             this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
         if (rc >= 0) {
-            string old_value = this->rc_value;
+            std::string old_value = this->rc_value;
 
             msg[rc] = '\0';
             if (this->rc_matches_remaining > 0) {
@@ -1148,7 +1148,7 @@ readline_curses::check_poll_set(const vector<struct pollfd>& pollfds)
                     case 't':
                     case 'd':
                     case 'D':
-                        this->rc_value = string(&msg[2]);
+                        this->rc_value = std::string(&msg[2]);
                         break;
                 }
                 switch (msg[0]) {
@@ -1273,8 +1273,8 @@ readline_curses::abort()
 
 void
 readline_curses::add_prefix(int context,
-                            const vector<string>& prefix,
-                            const string& value)
+                            const std::vector<std::string>& prefix,
+                            const std::string& value)
 {
     char buffer[1024];
     auto prefix_wire = fmt::format(FMT_STRING("{}"), fmt::join(prefix, "\x1f"));
@@ -1309,8 +1309,8 @@ readline_curses::clear_prefixes(int context)
 
 void
 readline_curses::add_possibility(int context,
-                                 const string& type,
-                                 const string& value)
+                                 const std::string& type,
+                                 const std::string& value)
 {
     char buffer[1024];
 
@@ -1334,8 +1334,8 @@ readline_curses::add_possibility(int context,
 
 void
 readline_curses::rem_possibility(int context,
-                                 const string& type,
-                                 const string& value)
+                                 const std::string& type,
+                                 const std::string& value)
 {
     char buffer[1024];
 
@@ -1354,7 +1354,7 @@ readline_curses::rem_possibility(int context,
 }
 
 void
-readline_curses::clear_possibilities(int context, string type)
+readline_curses::clear_possibilities(int context, std::string type)
 {
     char buffer[1024];
 
@@ -1432,9 +1432,9 @@ readline_curses::do_update()
 std::string
 readline_curses::get_match_string() const
 {
-    auto len = ::min((size_t) this->vc_x, this->rc_line_buffer.size())
+    auto len = std::min((size_t) this->vc_x, this->rc_line_buffer.size())
         - this->rc_match_start;
-    auto context = this->get_active_context();
+    auto* context = this->get_active_context();
 
     if (context->get_append_character() != 0) {
         if (this->rc_line_buffer.length() > (this->rc_match_start + len - 1)

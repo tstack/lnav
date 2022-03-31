@@ -51,8 +51,6 @@
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 
-using namespace std;
-
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
  */
@@ -259,7 +257,7 @@ const char* sql_function_names[] = {
 
     nullptr};
 
-multimap<std::string, help_text*> sqlite_function_help;
+std::multimap<std::string, help_text*> sqlite_function_help;
 
 static int
 handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
@@ -394,7 +392,7 @@ static int
 schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
-    string& schema_out = *((string*) smc->smc_userdata);
+    std::string& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> attach_sql;
 
     attach_sql = sqlite3_mprintf(
@@ -409,7 +407,7 @@ static int
 schema_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
-    string& schema_out = *((string*) smc->smc_userdata);
+    std::string& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> create_sql;
 
     create_sql = sqlite3_mprintf("%s;\n", colvalues[1]);
@@ -471,9 +469,9 @@ attach_sqlite_db(sqlite3* db, const std::string& filename)
     }
 
     size_t base_start = filename.find_last_of("/\\");
-    string db_name;
+    std::string db_name;
 
-    if (base_start == string::npos) {
+    if (base_start == std::string::npos) {
         db_name = filename;
     } else {
         db_name = filename.substr(base_start + 1);
@@ -634,10 +632,10 @@ sql_quote_ident(const char* ident)
     return retval;
 }
 
-string
+std::string
 sql_safe_ident(const string_fragment& ident)
 {
-    string retval = to_string(ident);
+    std::string retval = std::to_string(ident);
 
     for (size_t lpc = 0; lpc < retval.size(); lpc++) {
         char ch = retval[lpc];
@@ -710,7 +708,7 @@ sql_execute_script(sqlite3* db,
                    const std::vector<sqlite3_stmt*>& stmts,
                    std::vector<std::string>& errors)
 {
-    map<string, string> lvars;
+    std::map<std::string, std::string> lvars;
 
     for (sqlite3_stmt* stmt : stmts) {
         bool done = false;
@@ -724,7 +722,7 @@ sql_execute_script(sqlite3* db,
 
             name = sqlite3_bind_parameter_name(stmt, lpc + 1);
             if (name[0] == '$') {
-                map<string, string>::iterator iter;
+                std::map<std::string, std::string>::iterator iter;
                 const char* env_value;
 
                 if ((iter = lvars.find(&name[1])) != lvars.end()) {
@@ -784,7 +782,7 @@ sql_execute_script(sqlite3* db,
                    const char* script,
                    std::vector<std::string>& errors)
 {
-    vector<sqlite3_stmt*> stmts;
+    std::vector<sqlite3_stmt*> stmts;
 
     sql_compile_script(db, src_name, script, stmts, errors);
     if (errors.empty()) {
@@ -808,11 +806,11 @@ static struct {
 };
 
 int
-guess_type_from_pcre(const string& pattern, std::string& collator)
+guess_type_from_pcre(const std::string& pattern, std::string& collator)
 {
     try {
         pcrepp re(pattern);
-        vector<int> matches;
+        std::vector<int> matches;
         int retval = SQLITE3_TEXT;
         int index = 0;
 
@@ -862,10 +860,10 @@ sqlite_authorizer(void* pUserData,
     return SQLITE_OK;
 }
 
-string
+std::string
 sql_keyword_re()
 {
-    string retval = "(?:";
+    std::string retval = "(?:";
     bool first = true;
 
     for (const char* kw : sql_keywords) {
@@ -896,7 +894,7 @@ string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
 void
 annotate_sql_statement(attr_line_t& al)
 {
-    static string keyword_re_str = R"(\A)" + sql_keyword_re();
+    static const std::string keyword_re_str = R"(\A)" + sql_keyword_re();
 
     static struct {
         pcrepp re;
@@ -986,12 +984,12 @@ annotate_sql_statement(attr_line_t& al)
     stable_sort(sa.begin(), sa.end());
 }
 
-vector<const help_text*>
+std::vector<const help_text*>
 find_sql_help_for_line(const attr_line_t& al, size_t x)
 {
-    vector<const help_text*> retval;
+    std::vector<const help_text*> retval;
     const auto& sa = al.get_attrs();
-    string name;
+    std::string name;
 
     x = al.nearest_text(x);
 
@@ -999,8 +997,8 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
         auto sa_opt = get_string_attr(al.get_attrs(), &SQL_COMMAND_ATTR);
 
         if (sa_opt) {
-            auto sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                             sql_cmd_map_tag>();
+            auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
+                                              sql_cmd_map_tag>();
             auto cmd_name = al.get_substring((*sa_opt)->sa_range);
             auto cmd_iter = sql_cmd_map->find(cmd_name);
 
@@ -1010,14 +1008,14 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
         }
     }
 
-    vector<string> kw;
+    std::vector<std::string> kw;
     auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
         if (sa.sa_type != &SQL_FUNCTION_ATTR && sa.sa_type != &SQL_KEYWORD_ATTR)
         {
             return false;
         }
 
-        const string& str = al.get_string();
+        const std::string& str = al.get_string();
         const line_range& lr = sa.sa_range;
         int lpc;
 
@@ -1033,7 +1031,7 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
             }
         }
 
-        string tmp_name = str.substr(lr.lr_start, lpc - lr.lr_start);
+        auto tmp_name = str.substr(lr.lr_start, lpc - lr.lr_start);
         if (sa.sa_type == &SQL_KEYWORD_ATTR) {
             tmp_name = toupper(tmp_name);
         }
@@ -1048,7 +1046,7 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
 
     if (iter != sa.end()) {
         auto func_pair = sqlite_function_help.equal_range(name);
-        size_t help_count = distance(func_pair.first, func_pair.second);
+        size_t help_count = std::distance(func_pair.first, func_pair.second);
 
         if (help_count > 1 && name != func_pair.first->second->ht_name) {
             while (func_pair.first != func_pair.second) {

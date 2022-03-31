@@ -47,6 +47,8 @@ by pressing :kbd:`t`.
 Archive Support
 ^^^^^^^^^^^^^^^
 
+.. f0:archive
+
 If **lnav** is compiled with `libarchive <https://www.libarchive.org>`_,
 any files to be opened will be examined to see if they are a supported archive
 type.  If so, the contents of the archive will be extracted to the

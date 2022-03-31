@@ -46,8 +46,6 @@
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
 const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
 const bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
 const bookmark_type_t logfile_sub_source::BM_FILES("");
@@ -77,19 +75,19 @@ pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     return 0;
 }
 
-static future<string>
-pretty_pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
+static std::future<std::string>
+pretty_pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 {
     auto retval = std::async(std::launch::async, [&]() {
         char buffer[1024];
-        ostringstream ss;
+        std::ostringstream ss;
         ssize_t rc;
 
         while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
             ss.write(buffer, rc);
         }
 
-        string retval = ss.str();
+        auto retval = ss.str();
 
         if (endswith(retval, "\n")) {
             retval.resize(retval.length() - 1);
@@ -109,11 +107,11 @@ logfile_sub_source::logfile_sub_source()
     this->clear_min_max_log_times();
 }
 
-shared_ptr<logfile>
+std::shared_ptr<logfile>
 logfile_sub_source::find(const char* fn, content_line_t& line_base)
 {
     iterator iter;
-    shared_ptr<logfile> retval = nullptr;
+    std::shared_ptr<logfile> retval = nullptr;
 
     line_base = content_line_t(0);
     for (iter = this->lss_files.begin();
@@ -153,7 +151,7 @@ logfile_sub_source::find_from_time(const struct timeval& start) const
 void
 logfile_sub_source::text_value_for_line(textview_curses& tc,
                                         int row,
-                                        string& value_out,
+                                        std::string& value_out,
                                         line_flags_t flags)
 {
     content_line_t line(0);
@@ -164,7 +162,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     line = this->at(vis_line_t(row));
 
     if (flags & RF_RAW) {
-        shared_ptr<logfile> lf = this->find(line);
+        auto lf = this->find(line);
         value_out = lf->read_line(lf->begin() + line)
                         .map([](auto sbr) { return to_string(sbr); })
                         .unwrapOr({});
@@ -221,10 +219,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     if (flags & RF_REWRITE) {
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
-        string rewritten_line;
+        std::string rewritten_line;
 
         ec.with_perms(exec_context::perm_t::READ_ONLY);
-        ec.ec_local_vars.push(map<string, string>());
+        ec.ec_local_vars.push(std::map<std::string, std::string>());
         ec.ec_top_line = vis_line_t(row);
         add_ansi_vars(ec.ec_global_vars);
         add_global_vars(ec);
@@ -438,8 +436,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             bookmark_vector<vis_line_t>& bv_search
                 = bm[&textview_curses::BM_SEARCH];
 
-            if (binary_search(
-                    ::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
+            if (binary_search(std::begin(bv_search),
+                              std::end(bv_search),
+                              vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
                 value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
@@ -502,6 +501,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     value_out.emplace_back(lr, &logline::L_FILE, this->lss_token_file.get());
     value_out.emplace_back(
         lr, &SA_FORMAT, this->lss_token_file->get_format()->get_name());
+
+    value_out.emplace_back(
+        lr, SA_FORMAT2.value(this->lss_token_file->get_format()->get_name()));
 
     {
         const auto& bv = lv.get_bookmarks()[&textview_curses::BM_META];
@@ -779,10 +781,10 @@ logfile_sub_source::rebuild_index(
             remaining += lf->size() - ld.ld_lines_indexed;
         }
 
-        auto row_iter = lower_bound(this->lss_index.begin(),
-                                    this->lss_index.end(),
-                                    *lowest_tv,
-                                    logline_cmp(*this));
+        auto row_iter = std::lower_bound(this->lss_index.begin(),
+                                         this->lss_index.end(),
+                                         *lowest_tv,
+                                         logline_cmp(*this));
         this->lss_index.shrink_to(
             std::distance(this->lss_index.begin(), row_iter));
         log_debug("new index size %ld/%ld; remain %ld",
@@ -862,7 +864,8 @@ logfile_sub_source::rebuild_index(
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(*this, 0, this->lss_index.size());
             }
-            sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
+            std::sort(
+                this->lss_index.begin(), this->lss_index.end(), line_cmper);
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(
                     *this, this->lss_index.size(), this->lss_index.size());
@@ -1011,7 +1014,7 @@ logfile_sub_source::rebuild_index(
 void
 logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
-    shared_ptr<logfile> last_file = nullptr;
+    std::shared_ptr<logfile> last_file;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();
@@ -1025,9 +1028,7 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
-        shared_ptr<logfile> lf;
-
-        lf = this->find(cl);
+        auto lf = this->find(cl);
 
         for (auto& lss_user_mark : this->lss_user_marks) {
             if (binary_search(lss_user_mark.second.begin(),
@@ -1201,15 +1202,16 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 }
 
 nonstd::optional<
-    pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
+    std::pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
 logfile_sub_source::get_grepper()
 {
-    return make_pair((grep_proc_source<vis_line_t>*) &this->lss_meta_grepper,
-                     (grep_proc_sink<vis_line_t>*) &this->lss_meta_grepper);
+    return std::make_pair(
+        (grep_proc_source<vis_line_t>*) &this->lss_meta_grepper,
+        (grep_proc_sink<vis_line_t>*) &this->lss_meta_grepper);
 }
 
 bool
-logfile_sub_source::insert_file(const shared_ptr<logfile>& lf)
+logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
 {
     iterator existing;
 
@@ -1368,7 +1370,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
     lf->read_full_message(ll, sbr);
     auto format = lf->get_format();
     string_attrs_t sa;
-    vector<logline_value> values;
+    std::vector<logline_value> values;
     format->annotate(std::distance(lf->cbegin(), ll), sbr, sa, values);
 
     sqlite3_reset(stmt);
@@ -1829,7 +1831,7 @@ sql_filter::to_command() const
 
 bool
 logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
-                                                      string& value_out)
+                                                      std::string& value_out)
 {
     content_line_t cl = this->lmg_source.at(vis_line_t(line));
     std::map<content_line_t, bookmark_metadata>& user_mark_meta

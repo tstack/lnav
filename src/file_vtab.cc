@@ -41,10 +41,8 @@
 #include "session_data.hh"
 #include "vtab_module.hh"
 
-using namespace std;
-
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
-    using iterator = vector<shared_ptr<logfile>>::iterator;
+    using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
 
     static constexpr const char* NAME = "lnav_file";
     static constexpr const char* CREATE_STMT = R"(
@@ -78,7 +76,7 @@ CREATE TABLE lnav_file (
     {
         auto lf = *vc.iter;
         const struct stat& st = lf->get_stat();
-        const string& name = lf->get_filename();
+        const auto& name = lf->get_filename();
         auto format = lf->get_format();
         const char* format_name = format != nullptr ? format->get_name().get()
                                                     : nullptr;

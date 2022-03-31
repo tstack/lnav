@@ -32,8 +32,6 @@
 #include "config.h"
 #include "spookyhash/SpookyV2.h"
 
-using namespace std;
-
 sequence_matcher::sequence_matcher(field_col_t& example)
 {
     for (field_col_t::iterator col_iter = example.begin();
@@ -63,7 +61,7 @@ sequence_matcher::sequence_matcher(field_col_t& example)
 }
 
 void
-sequence_matcher::identity(const std::vector<string>& values, id_t& id_out)
+sequence_matcher::identity(const std::vector<std::string>& values, id_t& id_out)
 {
     SpookyHash context;
     int lpc = 0;

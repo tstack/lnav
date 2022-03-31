@@ -34,8 +34,6 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
-using namespace std;
-
 enum {
     RC_COL_MATCH_INDEX,
     RC_COL_INDEX,
@@ -70,8 +68,8 @@ CREATE TABLE regexp_capture (
         sqlite3_vtab_cursor base;
         pcrepp c_pattern;
         pcre_context_static<30> c_context;
-        unique_ptr<pcre_input> c_input;
-        string c_content;
+        std::unique_ptr<pcre_input> c_input;
+        std::string c_content;
         bool c_content_as_blob{false};
         int c_index;
         int c_start_index;
@@ -247,7 +245,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_index = 0;
     pCur->c_context.set_count(0);
 
-    pCur->c_input = make_unique<pcre_input>(pCur->c_content);
+    pCur->c_input = std::make_unique<pcre_input>(pCur->c_content);
     pCur->c_matched = pCur->c_pattern.match(pCur->c_context, *(pCur->c_input));
 
     log_debug("matched %d", pCur->c_matched);
@@ -272,10 +270,11 @@ register_regexp_vtab(sqlite3* db)
               .with_parameter(
                   {"string", "The string to match against the given pattern."})
               .with_parameter({"pattern", "The regular expression to match."})
-              .with_result(
-                  {"match_index",
-                   "The match iteration.  This value will increase "
-                   "each time a new match is found in the input string."})
+              .with_result({
+                  "match_index",
+                  "The match iteration.  This value will increase "
+                  "each time a new match is found in the input string.",
+              })
               .with_result(
                   {"capture_index", "The index of the capture in the regex."})
               .with_result(
@@ -288,10 +287,12 @@ register_regexp_vtab(sqlite3* db)
                             "The stop of the capture in the input string."})
               .with_result({"content", "The captured value from the string."})
               .with_tags({"string"})
-              .with_example({"To extract the key/value pairs 'a'/1 and 'b'/2 "
-                             "from the string 'a=1; b=2'",
-                             "SELECT * FROM regexp_capture('a=1; b=2', "
-                             "'(\\w+)=(\\d+)')"});
+              .with_example({
+                  "To extract the key/value pairs 'a'/1 and 'b'/2 "
+                  "from the string 'a=1; b=2'",
+                  "SELECT * FROM regexp_capture('a=1; b=2', "
+                  "'(\\w+)=(\\d+)')",
+              });
 
     int rc;
 
@@ -300,7 +301,7 @@ register_regexp_vtab(sqlite3* db)
 
     rc = REGEXP_CAPTURE_MODULE.create(db, "regexp_capture");
     sqlite_function_help.insert(
-        make_pair("regexp_capture", &regexp_capture_help));
+        std::make_pair("regexp_capture", &regexp_capture_help));
     regexp_capture_help.index_tags();
 
     ensure(rc == SQLITE_OK);

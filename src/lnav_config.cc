@@ -46,8 +46,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "auto_fd.hh"
 #include "auto_mem.hh"
+#include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
@@ -62,7 +62,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
+using namespace std::chrono_literals;
 
 static const int MAX_CRASH_LOG_COUNT = 16;
 static const auto STDIN_CAPTURE_RETENTION = 24h;
@@ -159,7 +159,8 @@ ensure_dotlnav()
                     continue;
                 }
 
-                if (chrono::system_clock::from_time_t(st.st_mtime) > old_time) {
+                if (std::chrono::system_clock::from_time_t(st.st_mtime)
+                    > old_time) {
                     continue;
                 }
 
@@ -178,7 +179,7 @@ install_from_git(const char* repo)
     auto formats_path = lnav::paths::dotlnav() / "formats";
     auto configs_path = lnav::paths::dotlnav() / "configs";
     auto staging_path = lnav::paths::dotlnav() / "staging";
-    string local_name = std::regex_replace(repo, repo_name_converter, "_");
+    auto local_name = std::regex_replace(repo, repo_name_converter, "_");
 
     auto local_formats_path = formats_path / local_name;
     auto local_configs_path = configs_path / local_name;
@@ -307,7 +308,7 @@ update_installs_from_git()
 static int
 read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
-    string path = string((const char*) str, len);
+    auto path = std::string((const char*) str, len);
 
     install_from_git(path.c_str());
 
@@ -367,9 +368,9 @@ install_extra_formats()
 }
 
 struct userdata {
-    userdata(vector<string>& errors) : ud_errors(errors){};
+    userdata(std::vector<std::string>& errors) : ud_errors(errors){};
 
-    vector<string>& ud_errors;
+    std::vector<std::string>& ud_errors;
 };
 
 static void
@@ -418,30 +419,30 @@ static const struct json_path_container keymap_def_handlers
                    return &retval;
                })
            .with_path_provider<key_map>(
-               [](key_map* km, vector<string>& paths_out) {
+               [](key_map* km, std::vector<std::string>& paths_out) {
                    for (const auto& iter : km->km_seq_to_cmd) {
                        paths_out.emplace_back(iter.first);
                    }
                })
            .with_children(key_command_handlers)};
 
-static const struct json_path_container keymap_defs_handlers
-    = {yajlpp::pattern_property_handler("(?<keymap_name>[\\w\\-]+)")
-           .with_description("The keymap definitions")
-           .with_obj_provider<key_map, _lnav_config>(
-               [](const yajlpp_provider_context& ypc, _lnav_config* root) {
-                   key_map& retval
-                       = root->lc_ui_keymaps[ypc.ypc_extractor.get_substr(
-                           "keymap_name")];
-                   return &retval;
-               })
-           .with_path_provider<_lnav_config>(
-               [](struct _lnav_config* cfg, vector<string>& paths_out) {
-                   for (const auto& iter : cfg->lc_ui_keymaps) {
-                       paths_out.emplace_back(iter.first);
-                   }
-               })
-           .with_children(keymap_def_handlers)};
+static const struct json_path_container keymap_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<keymap_name>[\\w\\-]+)")
+        .with_description("The keymap definitions")
+        .with_obj_provider<key_map, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                key_map& retval
+                    = root->lc_ui_keymaps[ypc.ypc_extractor.get_substr(
+                        "keymap_name")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_ui_keymaps) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(keymap_def_handlers)};
 
 static const struct json_path_container global_var_handlers = {
     yajlpp::pattern_property_handler("(?<var_name>\\w+)")
@@ -450,7 +451,7 @@ static const struct json_path_container global_var_handlers = {
             "A global variable definition.  Global variables can be referenced "
             "in scripts, SQL statements, or commands.")
         .with_path_provider<_lnav_config>(
-            [](struct _lnav_config* cfg, vector<string>& paths_out) {
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
                 for (const auto& iter : cfg->lc_global_vars) {
                     paths_out.emplace_back(iter.first);
                 }
@@ -783,7 +784,7 @@ static const struct json_path_container theme_log_level_styles_handlers
                    return &sc;
                })
            .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* cfg, vector<string>& paths_out) {
+               [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
                    for (int lpc = LEVEL_TRACE; lpc < LEVEL__MAX; lpc++) {
                        paths_out.emplace_back(level_names[lpc]);
                    }
@@ -818,7 +819,7 @@ static const struct json_path_container theme_highlights_handlers
                    return &hc;
                })
            .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* cfg, vector<string>& paths_out) {
+               [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
                    for (const auto& pair : cfg->lt_highlights) {
                        paths_out.emplace_back(pair.first);
                    }
@@ -830,7 +831,7 @@ static const struct json_path_container theme_vars_handlers
            .with_synopsis("name")
            .with_description("A theme variable definition")
            .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* lt, vector<string>& paths_out) {
+               [](struct lnav_theme* lt, std::vector<std::string>& paths_out) {
                    for (const auto& iter : lt->lt_vars) {
                        paths_out.emplace_back(iter.first);
                    }
@@ -863,24 +864,24 @@ static const struct json_path_container theme_def_handlers = {
         .with_children(theme_highlights_handlers),
 };
 
-static const struct json_path_container theme_defs_handlers
-    = {yajlpp::pattern_property_handler("(?<theme_name>[\\w\\-]+)")
-           .with_description("Theme definitions")
-           .with_obj_provider<lnav_theme, _lnav_config>(
-               [](const yajlpp_provider_context& ypc, _lnav_config* root) {
-                   lnav_theme& lt
-                       = root->lc_ui_theme_defs[ypc.ypc_extractor.get_substr(
-                           "theme_name")];
+static const struct json_path_container theme_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<theme_name>[\\w\\-]+)")
+        .with_description("Theme definitions")
+        .with_obj_provider<lnav_theme, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                lnav_theme& lt
+                    = root->lc_ui_theme_defs[ypc.ypc_extractor.get_substr(
+                        "theme_name")];
 
-                   return &lt;
-               })
-           .with_path_provider<_lnav_config>(
-               [](struct _lnav_config* cfg, vector<string>& paths_out) {
-                   for (const auto& iter : cfg->lc_ui_theme_defs) {
-                       paths_out.emplace_back(iter.first);
-                   }
-               })
-           .with_children(theme_def_handlers)};
+                return &lt;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_ui_theme_defs) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(theme_def_handlers)};
 
 static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("clock-format")
@@ -1072,7 +1073,7 @@ static const struct json_path_container sysclip_impls_handlers = {
                 return &retval;
             })
         .with_path_provider<_lnav_config>(
-            [](struct _lnav_config* cfg, vector<string>& paths_out) {
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
                 for (const auto& iter : cfg->lc_sysclip.c_clipboard_impls) {
                     paths_out.emplace_back(iter.first);
                 }
@@ -1104,21 +1105,21 @@ static const struct json_path_container tuning_handlers = {
         .with_children(sysclip_handlers),
 };
 
-static const set<string> SUPPORTED_CONFIG_SCHEMAS = {
+static const std::set<std::string> SUPPORTED_CONFIG_SCHEMAS = {
     "https://lnav.org/schemas/config-v1.schema.json",
 };
 
 const char* DEFAULT_FORMAT_SCHEMA
     = "https://lnav.org/schemas/format-v1.schema.json";
 
-const set<string> SUPPORTED_FORMAT_SCHEMAS = {
+const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS = {
     DEFAULT_FORMAT_SCHEMA,
 };
 
 static int
 read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
-    auto file_id = string((const char*) str, len);
+    auto file_id = std::string((const char*) str, len);
 
     if (SUPPORTED_CONFIG_SCHEMAS.count(file_id) == 0) {
         ypc->report_error(
@@ -1176,7 +1177,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
     auto read_res = lnav::filesystem::read_file(path);
 
     if (read_res.isErr()) {
-        return Err(fmt::format(FMT_STRING("unable to open file: {} -- {}"),
+        return Err(fmt::format(FMT_STRING("unable to open file4: {} -- {}"),
                                path.string(),
                                read_res.unwrapErr()));
     }
@@ -1187,7 +1188,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
     }
 
     char error_buffer[1024];
-    auto content_tree = unique_ptr<yajl_val_s, decltype(&yajl_tree_free)>(
+    auto content_tree = std::unique_ptr<yajl_val_s, decltype(&yajl_tree_free)>(
         yajl_tree_parse(content.c_str(), error_buffer, sizeof(error_buffer)),
         yajl_tree_free);
     if (content_tree == nullptr) {
@@ -1216,7 +1217,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
 static void
 load_config_from(_lnav_config& lconfig,
                  const ghc::filesystem::path& path,
-                 vector<string>& errors)
+                 std::vector<std::string>& errors)
 {
     yajlpp_parse_context ypc(path.string(), &lnav_config_handlers);
     struct userdata ud(errors);
@@ -1269,7 +1270,7 @@ static void
 load_default_config(struct _lnav_config& config_obj,
                     const std::string& path,
                     const bin_src_file& bsf,
-                    vector<string>& errors)
+                    std::vector<std::string>& errors)
 {
     yajlpp_parse_context ypc_builtin(bsf.get_name(), &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
@@ -1297,7 +1298,7 @@ load_default_config(struct _lnav_config& config_obj,
 static void
 load_default_configs(struct _lnav_config& config_obj,
                      const std::string& path,
-                     vector<string>& errors)
+                     std::vector<std::string>& errors)
 {
     for (auto& bsf : lnav_config_json) {
         load_default_config(config_obj, path, bsf, errors);
@@ -1305,8 +1306,8 @@ load_default_configs(struct _lnav_config& config_obj,
 }
 
 void
-load_config(const vector<ghc::filesystem::path>& extra_paths,
-            vector<string>& errors)
+load_config(const std::vector<ghc::filesystem::path>& extra_paths,
+            std::vector<std::string>& errors)
 {
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
@@ -1369,7 +1370,7 @@ load_config(const vector<ghc::filesystem::path>& extra_paths,
 void
 reset_config(const std::string& path)
 {
-    vector<string> errors;
+    std::vector<std::string> errors;
 
     load_default_configs(lnav_config, path, errors);
 
@@ -1380,7 +1381,7 @@ reset_config(const std::string& path)
     }
 }
 
-string
+std::string
 save_config()
 {
     yajlpp_gen gen;
@@ -1390,7 +1391,7 @@ save_config()
 
     yajl_gen_config(gen, yajl_gen_beautify, true);
     yajlpp_gen_context ygc(gen, lnav_config_handlers);
-    vector<string> errors;
+    std::vector<std::string> errors;
 
     ygc.with_default_obj(lnav_default_config).with_obj(lnav_config);
     ygc.gen();
@@ -1403,7 +1404,7 @@ save_config()
             == -1)
         {
             return "error: unable to save configuration -- "
-                + string(strerror(errno));
+                + std::string(strerror(errno));
         }
 
         string_fragment bits = gen.to_string_fragment();
@@ -1417,7 +1418,7 @@ save_config()
 }
 
 void
-reload_config(vector<string>& errors)
+reload_config(std::vector<std::string>& errors)
 {
     lnav_config_listener* curr = lnav_config_listener::LISTENER_LIST;
 
@@ -1426,7 +1427,7 @@ reload_config(vector<string>& errors)
                                   const std::string& errmsg) {
             auto cb = [&cfg_value, &errors, &errmsg](
                           const json_path_handler_base& jph,
-                          const string& path,
+                          const std::string& path,
                           void* mem) {
                 if (mem != cfg_value) {
                     return;

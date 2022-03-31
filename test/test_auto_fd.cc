@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "config.h"
 
 int
@@ -62,7 +62,7 @@ main(int argc, char* argv[])
     assert(errno == EBADF);
 
     {
-        auto_fd fd_cp(const_cast<const auto_fd&>(fd1));
+        auto_fd fd_cp(fd1.dup());
 
         assert(fd1 == STDOUT_FILENO);
         assert(fd_cp != STDOUT_FILENO);
@@ -71,7 +71,7 @@ main(int argc, char* argv[])
         tmp = (int) fd_cp;
     }
     {
-        auto_fd fd_cp(const_cast<const auto_fd&>(fd1));
+        auto_fd fd_cp(fd1.dup());
 
         assert(fd_cp == tmp);
     }

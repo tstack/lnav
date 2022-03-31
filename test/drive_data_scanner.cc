@@ -48,8 +48,6 @@
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
 
-using namespace std;
-
 const char* TMP_NAME = "scanned.tmp";
 
 int
@@ -71,7 +69,7 @@ main(int argc, char* argv[])
 
     {
         std::vector<ghc::filesystem::path> paths;
-        vector<string> errors;
+        std::vector<std::string> errors;
 
         load_formats(paths, errors);
     }
@@ -105,14 +103,14 @@ main(int argc, char* argv[])
         retval = EXIT_FAILURE;
     } else {
         for (int lpc = 0; lpc < argc; lpc++) {
-            std::unique_ptr<ifstream> in_ptr;
-            istream* in;
+            std::unique_ptr<std::ifstream> in_ptr;
+            std::istream* in;
             FILE* out;
 
             if (strcmp(argv[lpc], "-") == 0) {
-                in = &cin;
+                in = &std::cin;
             } else {
-                auto ifs = std::make_unique<ifstream>(argv[lpc]);
+                auto ifs = std::make_unique<std::ifstream>(argv[lpc]);
 
                 if (!ifs->is_open()) {
                     fprintf(stderr, "error: unable to open file\n");
@@ -128,11 +126,11 @@ main(int argc, char* argv[])
                         "error: unable to temporary file for writing\n");
                 retval = EXIT_FAILURE;
             } else {
-                shared_ptr<log_format> format;
+                std::shared_ptr<log_format> format;
                 char* log_line;
                 bool found = false;
                 char cmd[2048];
-                string line;
+                std::string line;
                 int rc;
 
                 getline(*in, line);
@@ -142,7 +140,7 @@ main(int argc, char* argv[])
 
                 log_line = (char*) alloca(line.length());
                 strcpy(log_line, &line[13]);
-                string sub_line = line.substr(13);
+                auto sub_line = line.substr(13);
                 struct line_range body(0, sub_line.length());
                 shared_buffer share_manager;
                 shared_buffer_ref sbr;
@@ -151,8 +149,8 @@ main(int argc, char* argv[])
                     share_manager, (char*) sub_line.c_str(), sub_line.size());
 
                 auto& root_formats = log_format::get_root_formats();
-                vector<std::shared_ptr<log_format>>::iterator iter;
-                vector<logline> index;
+                std::vector<std::shared_ptr<log_format>>::iterator iter;
+                std::vector<logline> index;
 
                 if (is_log) {
                     for (iter = root_formats.begin();
@@ -175,7 +173,7 @@ main(int argc, char* argv[])
                     }
                 }
 
-                vector<logline_value> ll_values;
+                std::vector<logline_value> ll_values;
                 string_attrs_t sa;
 
                 if (format.get() != nullptr) {
@@ -187,7 +185,7 @@ main(int argc, char* argv[])
 
                 data_scanner ds(sub_line, body.lr_start, sub_line.length());
                 data_parser dp(&ds);
-                string msg_format;
+                std::string msg_format;
 
                 dp.dp_msg_format = &msg_format;
                 dp.parse();

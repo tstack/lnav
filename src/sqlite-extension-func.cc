@@ -37,8 +37,6 @@
 #include "config.h"
 #include "sql_help.hh"
 
-using namespace std;
-
 extern "C" {
 struct sqlite3_api_routines;
 
@@ -96,7 +94,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             if (fd.fd_help.ht_context != help_context_t::HC_NONE) {
                 help_text& ht = fd.fd_help;
 
-                sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+                sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
                 ht.index_tags();
             }
         }
@@ -117,7 +115,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             if (fda.fda_help.ht_context != help_context_t::HC_NONE) {
                 help_text& ht = fda.fda_help;
 
-                sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+                sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
                 ht.index_tags();
             }
         }
@@ -696,9 +694,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .sql_function()
             .with_parameter({"X", "The values to add."})
             .with_tags({"math"})
-            .with_example({"To sum all of the values in the column "
-                           "'ex_duration' from the table 'lnav_example_log'",
-                           "SELECT sum(ex_duration) FROM lnav_example_log"}),
+            .with_example({
+                "To sum all of the values in the column "
+                "'ex_duration' from the table 'lnav_example_log'",
+                "SELECT sum(ex_duration) FROM lnav_example_log",
+            }),
 
         help_text(
             "total",
@@ -706,9 +706,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .sql_function()
             .with_parameter({"X", "The values to add."})
             .with_tags({"math"})
-            .with_example({"To total all of the values in the column "
-                           "'ex_duration' from the table 'lnav_example_log'",
-                           "SELECT total(ex_duration) FROM lnav_example_log"}),
+            .with_example({
+                "To total all of the values in the column "
+                "'ex_duration' from the table 'lnav_example_log'",
+                "SELECT total(ex_duration) FROM lnav_example_log",
+            }),
 
         help_text("generate_series",
                   "A table-valued-function that returns the whole numbers "
@@ -720,16 +722,19 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 help_text("step", "The increment between each value")
                     .optional())
             .with_result({"value", "The number in the series"})
-            .with_example({"To generate the numbers in the range [10, 14]",
-                           "SELECT value FROM generate_series(10, 14)"})
-            .with_example(
-                {"To generate every other number in the range [10, 14]",
-                 "SELECT value FROM generate_series(10, 14, 2)"})
+            .with_example({
+                "To generate the numbers in the range [10, 14]",
+                "SELECT value FROM generate_series(10, 14)",
+            })
+            .with_example({
+                "To generate every other number in the range [10, 14]",
+                "SELECT value FROM generate_series(10, 14, 2)",
+            })
             .with_example({"To count down from five to 1",
                            "SELECT value FROM generate_series(1, 5, -1)"})};
 
     for (auto& ht : builtin_funcs) {
-        sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+        sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
         ht.index_tags();
     }
 
@@ -830,7 +835,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
     };
 
     for (auto& ht : builtin_win_funcs) {
-        sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+        sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
         ht.index_tags();
     }
 
@@ -995,9 +1000,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                                       "a row should be updated.")
                                 .with_flag_name("WHERE")
                                 .optional())
-            .with_example(
-                {"To mark the syslog message at line 40",
-                 "UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40"}),
+            .with_example({
+                "To mark the syslog message at line 40",
+                "UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40",
+            }),
 
         help_text("CASE",
                   "Evaluate a series of expressions in order until one "
@@ -1023,9 +1029,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                     .with_flag_name("ELSE")
                     .optional())
             .with_parameter(help_text("").with_flag_name("END"))
-            .with_example(
-                {"To evaluate the number one and return the string 'one'",
-                 "SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END"}),
+            .with_example({
+                "To evaluate the number one and return the string 'one'",
+                "SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END",
+            }),
 
         help_text("CAST",
                   "Convert the value of the given expression to a different "
@@ -1035,8 +1042,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_parameter(
                 help_text("type-name", "The name of the type to convert to.")
                     .with_flag_name("AS"))
-            .with_example({"To cast the value 1.23 as an integer",
-                           "SELECT CAST(1.23 AS INTEGER)"}),
+            .with_example({
+                "To cast the value 1.23 as an integer",
+                "SELECT CAST(1.23 AS INTEGER)",
+            }),
 
         help_text("expr", "Match an expression against a glob pattern.")
             .sql_infix()
@@ -1044,8 +1053,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_parameter(
                 help_text("pattern", "The glob pattern to match against.")
                     .with_flag_name("GLOB"))
-            .with_example({"To check if a value matches the pattern '*.log'",
-                           "SELECT 'foobar.log' GLOB '*.log'"}),
+            .with_example({
+                "To check if a value matches the pattern '*.log'",
+                "SELECT 'foobar.log' GLOB '*.log'",
+            }),
 
         help_text("expr", "Match an expression against a text pattern.")
             .sql_infix()
@@ -1053,9 +1064,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_parameter(
                 help_text("pattern", "The pattern to match against.")
                     .with_flag_name("LIKE"))
-            .with_example(
-                {"To check if a value matches the pattern 'Hello, %!'",
-                 "SELECT 'Hello, World!' LIKE 'Hello, %!'"}),
+            .with_example({
+                "To check if a value matches the pattern 'Hello, %!'",
+                "SELECT 'Hello, World!' LIKE 'Hello, %!'",
+            }),
 
         help_text("expr", "Match an expression against a regular expression.")
             .sql_infix()
@@ -1063,19 +1075,21 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_parameter(
                 help_text("pattern", "The regular expression to match against.")
                     .with_flag_name("REGEXP"))
-            .with_example(
-                {"To check if a value matches the pattern 'file-\\d+'",
-                 "SELECT 'file-23' REGEXP 'file-\\d+'"}),
+            .with_example({
+                "To check if a value matches the pattern 'file-\\d+'",
+                "SELECT 'file-23' REGEXP 'file-\\d+'",
+            }),
 
         help_text("expr", "Assign a collating sequence to the expression.")
             .sql_infix()
             .with_parameter(
                 help_text("collation-name", "The name of the collator.")
                     .with_flag_name("COLLATE"))
-            .with_example(
-                {"To change the collation method for string comparisons",
-                 "SELECT ('a2' < 'a10'), ('a2' < 'a10' COLLATE "
-                 "naturalnocase)"}),
+            .with_example({
+                "To change the collation method for string comparisons",
+                "SELECT ('a2' < 'a10'), ('a2' < 'a10' COLLATE "
+                "naturalnocase)",
+            }),
 
         help_text("expr", "Test if an expression is between two values.")
             .sql_infix()
@@ -1084,10 +1098,14 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 help_text("low", "The low point").with_flag_name("BETWEEN"))
             .with_parameter(
                 help_text("hi", "The high point").with_flag_name("AND"))
-            .with_example({"To check if 3 is between 5 and 10",
-                           "SELECT 3 BETWEEN 5 AND 10"})
-            .with_example({"To check if 10 is between 5 and 10",
-                           "SELECT 10 BETWEEN 5 AND 10"}),
+            .with_example({
+                "To check if 3 is between 5 and 10",
+                "SELECT 3 BETWEEN 5 AND 10",
+            })
+            .with_example({
+                "To check if 10 is between 5 and 10",
+                "SELECT 10 BETWEEN 5 AND 10",
+            }),
 
         help_text("OVER", "Executes the preceding function over a window")
             .sql_keyword()
@@ -1096,8 +1114,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("OVER", "Executes the preceding function over a window")
             .sql_function()
-            .with_parameter(help_text{"base-window-name",
-                                      "The name of the window definition"}
+            .with_parameter(help_text{
+                "base-window-name",
+                "The name of the window definition",
+            }
                                 .optional())
             .with_parameter(
                 help_text{"expr", "The values to use for partitioning"}
@@ -1107,9 +1127,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 "expr", "The values used to order the rows in the window"}
                                 .with_flag_name("ORDER BY")
                                 .zero_or_more())
-            .with_parameter(help_text{"frame-spec",
-                                      "Determines which output rows are read "
-                                      "by an aggregate window function"}
+            .with_parameter(help_text{
+                "frame-spec",
+                "Determines which output rows are read "
+                "by an aggregate window function",
+            }
                                 .optional()),
     };
 

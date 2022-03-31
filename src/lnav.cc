@@ -154,11 +154,10 @@
 #    define SYSCONFDIR "/usr/etc"
 #endif
 
-using namespace std;
 using namespace std::literals::chrono_literals;
 
 static bool initial_build = false;
-static multimap<lnav_flags_t, string> DEFAULT_FILES;
+static std::multimap<lnav_flags_t, std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 struct lnav_data_t lnav_data;
@@ -377,7 +376,7 @@ setup_logline_table(exec_context& ec)
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_SQL,
                     "*",
-                    string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
             }
             for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
                 const FuncDefAgg& func_def = agg_funcs[lpc2];
@@ -385,7 +384,7 @@ setup_logline_table(exec_context& ec)
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_SQL,
                     "*",
-                    string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
             }
         }
 
@@ -393,7 +392,7 @@ setup_logline_table(exec_context& ec)
             switch (pair.second->ht_context) {
                 case help_context_t::HC_SQL_FUNCTION:
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
-                    string poss = pair.first
+                    std::string poss = pair.first
                         + (pair.second->ht_parameters.empty() ? "()" : ("("));
 
                     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", poss);
@@ -423,7 +422,7 @@ class loading_observer : public logfile_observer {
 public:
     loading_observer() : lo_last_offset(0){};
 
-    indexing_result logfile_indexing(const shared_ptr<logfile>& lf,
+    indexing_result logfile_indexing(const std::shared_ptr<logfile>& lf,
                                      file_off_t off,
                                      file_size_t total) override
     {
@@ -452,7 +451,7 @@ public:
         return indexing_result::CONTINUE;
     };
 
-    static void do_update(const shared_ptr<logfile>& lf)
+    static void do_update(const std::shared_ptr<logfile>& lf)
     {
         if (isendwin()) {
             return;
@@ -546,7 +545,7 @@ class textfile_callback {
 public:
     textfile_callback() : front_file(nullptr), front_top(-1){};
 
-    void closed_files(const std::vector<shared_ptr<logfile>>& files)
+    void closed_files(const std::vector<std::shared_ptr<logfile>>& files)
     {
         for (const auto& lf : files) {
             log_info("closed text files: %s", lf->get_filename().c_str());
@@ -554,7 +553,7 @@ public:
         lnav_data.ld_active_files.close_files(files);
     };
 
-    void promote_file(const shared_ptr<logfile>& lf)
+    void promote_file(const std::shared_ptr<logfile>& lf)
     {
         if (lnav_data.ld_log_source.insert_file(lf)) {
             this->did_promotion = true;
@@ -584,7 +583,7 @@ public:
         }
     };
 
-    void scanned_file(const shared_ptr<logfile>& lf)
+    void scanned_file(const std::shared_ptr<logfile>& lf)
     {
         if (!lnav_data.ld_files_to_front.empty()
             && lnav_data.ld_files_to_front.front().first == lf->get_filename())
@@ -596,7 +595,7 @@ public:
         }
     };
 
-    shared_ptr<logfile> front_file;
+    std::shared_ptr<logfile> front_file;
     int front_top;
     bool did_promotion{false};
 };
@@ -679,7 +678,8 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
         log_view.reload_data();
 
         {
-            unordered_map<string, list<shared_ptr<logfile>>> id_to_files;
+            std::unordered_map<std::string, std::list<std::shared_ptr<logfile>>>
+                id_to_files;
             bool reload = false;
 
             for (const auto& lf : lnav_data.ld_active_files.fc_files) {
@@ -751,14 +751,14 @@ append_default_files(lnav_flags_t flag)
     if (lnav_data.ld_flags & flag) {
         auto cwd = ghc::filesystem::current_path();
 
-        pair<multimap<lnav_flags_t, string>::iterator,
-             multimap<lnav_flags_t, string>::iterator>
+        std::pair<std::multimap<lnav_flags_t, std::string>::iterator,
+                  std::multimap<lnav_flags_t, std::string>::iterator>
             range;
         for (range = DEFAULT_FILES.equal_range(flag);
              range.first != range.second;
              range.first++)
         {
-            string path = range.first->second;
+            std::string path = range.first->second;
             struct stat st;
 
             if (access(path.c_str(), R_OK) == 0) {
@@ -1551,7 +1551,8 @@ looper()
             id.id_escape_matcher = match_escape_seq;
             id.id_escape_handler = handle_keyseq;
             id.id_key_handler = handle_key;
-            id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &mouse_i);
+            id.id_mouse_handler
+                = std::bind(&xterm_mouse::handle_mouse, &mouse_i);
             id.id_unhandled_handler = [](const char* keyseq) {
                 auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
                 auto encoded_name = (char*) alloca(enc_len);
@@ -1589,7 +1590,7 @@ looper()
         log_debug("rescan started %p", &active_copy);
         active_copy.merge(lnav_data.ld_active_files);
         active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
-        future<file_collection> rescan_future
+        std::future<file_collection> rescan_future
             = std::async(std::launch::async,
                          &file_collection::rescan_files,
                          std::move(active_copy),
@@ -1607,7 +1608,7 @@ looper()
             auto loop_deadline
                 = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
 
-            vector<struct pollfd> pollfds;
+            std::vector<struct pollfd> pollfds;
             size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
             size_t changes = 0;
             int rc;
@@ -1932,7 +1933,9 @@ looper()
 
                 if (initial_build) {
                     static bool ran_cleanup = false;
-                    vector<pair<Result<string, string>, string>> cmd_results;
+                    std::vector<std::pair<Result<std::string, std::string>,
+                                          std::string>>
+                        cmd_results;
 
                     execute_init_commands(ec, cmd_results);
 
@@ -2014,8 +2017,9 @@ looper()
                     int rc, child_stat;
 
                     rc = waitpid(*iter, &child_stat, WNOHANG);
-                    if (rc == -1 || rc == 0)
+                    if (rc == -1 || rc == 0) {
                         continue;
+                    }
 
                     iter = lnav_data.ld_children.erase(iter);
                 }
@@ -2044,7 +2048,7 @@ looper()
 void
 wait_for_children()
 {
-    vector<struct pollfd> pollfds;
+    std::vector<struct pollfd> pollfds;
     struct timeval to = {0, 333000};
 
     if (lnav_data.ld_meta_search) {
@@ -2103,7 +2107,7 @@ get_textview_for_mode(ln_mode_t mode)
 }
 
 static void
-print_errors(vector<string> error_list)
+print_errors(std::vector<std::string> error_list)
 {
     for (auto& iter : error_list) {
         fprintf(stderr,
@@ -2120,10 +2124,10 @@ main(int argc, char* argv[])
     exec_context& ec = lnav_data.ld_exec_context;
     int lpc, c, retval = EXIT_SUCCESS;
 
-    shared_ptr<piper_proc> stdin_reader;
-    const char* stdin_out = nullptr;
-    int stdin_out_fd = -1;
-    bool exec_stdin = false, load_stdin = false;
+    std::shared_ptr<piper_proc> stdin_reader;
+    ghc::filesystem::path stdin_out;
+    auto_fd stdin_out_fd;
+    bool exec_stdin = false, load_stdin = false, stdin_captured = false;
     const char* LANG = getenv("LANG");
     ghc::filesystem::path stdin_tmp_path;
 
@@ -2216,7 +2220,7 @@ main(int argc, char* argv[])
                     || strcmp("/dev/stdin", optarg) == 0) {
                     exec_stdin = true;
                 }
-                lnav_data.ld_commands.push_back("|" + string(optarg));
+                lnav_data.ld_commands.push_back("|" + std::string(optarg));
                 break;
 
             case 'I':
@@ -2359,11 +2363,11 @@ main(int argc, char* argv[])
             }
             auto file_type = file_type_result.unwrap();
 
-            string dst_name;
+            std::string dst_name;
             if (file_type == config_file_type::CONFIG) {
                 dst_name = basename(argv[lpc]);
             } else {
-                vector<intern_string_t> format_list
+                std::vector<intern_string_t> format_list
                     = load_format_file(argv[lpc], loader_errors);
 
                 if (!loader_errors.empty()) {
@@ -2616,12 +2620,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (!(lnav_data.ld_flags & LNF_CHECK_CONFIG)) {
-        DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
         DEFAULT_FILES.insert(
-            make_pair(LNF_SYSLOG, string("var/log/system.log")));
-        DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
+            make_pair(LNF_SYSLOG, std::string("var/log/messages")));
         DEFAULT_FILES.insert(
-            make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
+            make_pair(LNF_SYSLOG, std::string("var/log/system.log")));
+        DEFAULT_FILES.insert(
+            make_pair(LNF_SYSLOG, std::string("var/log/syslog")));
+        DEFAULT_FILES.insert(
+            make_pair(LNF_SYSLOG, std::string("var/log/syslog.log")));
     }
 
     init_lnav_commands(lnav_commands);
@@ -2669,11 +2675,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             auto cmd_ref_path
                 = ghc::filesystem::path(internals_dir) / "cmd-ref.rst";
-            auto cmd_file = unique_ptr<FILE, decltype(&fclose)>(
+            auto cmd_file = std::unique_ptr<FILE, decltype(&fclose)>(
                 fopen(cmd_ref_path.c_str(), "w+"), fclose);
 
             if (cmd_file.get()) {
-                set<readline_context::command_t*> unique_cmds;
+                std::set<readline_context::command_t*> unique_cmds;
 
                 for (auto& cmd : lnav_commands) {
                     if (unique_cmds.find(cmd.second) != unique_cmds.end()) {
@@ -2687,9 +2693,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             auto sql_ref_path
                 = ghc::filesystem::path(internals_dir) / "sql-ref.rst";
-            auto sql_file = unique_ptr<FILE, decltype(&fclose)>(
+            auto sql_file = std::unique_ptr<FILE, decltype(&fclose)>(
                 fopen(sql_ref_path.c_str(), "w+"), fclose);
-            set<help_text*> unique_sql_help;
+            std::set<help_text*> unique_sql_help;
 
             if (sql_file.get()) {
                 for (auto& sql : sqlite_function_help) {
@@ -2767,32 +2773,31 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         strerror(errno));
                 retval = EXIT_FAILURE;
             } else {
-                auto fifo_piper = make_shared<piper_proc>(
-                    fifo_fd.release(),
-                    false,
-                    lnav::filesystem::open_temp_file(
-                        ghc::filesystem::temp_directory_path()
-                        / "lnav.fifo.XXXXXX")
-                        .map([](auto pair) {
-                            ghc::filesystem::remove(pair.first);
+                auto fifo_tmp_fd
+                    = lnav::filesystem::open_temp_file(
+                          ghc::filesystem::temp_directory_path()
+                          / "lnav.fifo.XXXXXX")
+                          .map([](auto&& pair) {
+                              ghc::filesystem::remove(pair.first);
 
-                            return pair;
-                        })
-                        .expect("Cannot create temporary file for FIFO")
-                        .second);
+                              return std::move(pair.second);
+                          })
+                          .expect("Cannot create temporary file for FIFO");
+                auto fifo_piper = std::make_shared<piper_proc>(
+                    std::move(fifo_fd), false, std::move(fifo_tmp_fd));
                 auto fifo_out_fd = fifo_piper->get_fd();
                 auto desc = fmt::format(FMT_STRING("FIFO [{}]"),
                                         lnav_data.ld_fifo_counter++);
 
                 lnav_data.ld_active_files.fc_file_names[desc].with_fd(
-                    fifo_out_fd);
+                    std::move(fifo_out_fd));
                 lnav_data.ld_pipers.push_back(fifo_piper);
             }
         } else if ((abspath = realpath(argv[lpc], nullptr)) == nullptr) {
             perror("Cannot find file");
             retval = EXIT_FAILURE;
         } else if (S_ISDIR(st.st_mode)) {
-            string dir_wild(abspath.in());
+            std::string dir_wild(abspath.in());
 
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
@@ -2837,8 +2842,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 shared_buffer_ref sbr = read_result.unwrap();
                 if (fmt->scan_for_partial(sbr, partial_len)) {
                     long line_number = distance(lf->begin(), line_iter);
-                    string full_line(sbr.get_data(), sbr.length());
-                    string partial_line(sbr.get_data(), partial_len);
+                    std::string full_line(sbr.get_data(), sbr.length());
+                    std::string partial_line(sbr.get_data(), partial_len);
 
                     fprintf(stderr,
                             "error:%s:%ld:line did not match format %s\n",
@@ -2879,7 +2884,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)
     {
-        if (stdin_out == nullptr) {
+        if (stdin_out.empty()) {
             auto pattern
                 = lnav::paths::dotlnav() / "stdin-captures/stdin.XXXXXX";
 
@@ -2893,20 +2898,25 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             auto temp_pair = open_result.unwrap();
             stdin_tmp_path = temp_pair.first;
-            stdin_out_fd = temp_pair.second;
+            stdin_out_fd = std::move(temp_pair.second);
         } else {
-            if ((stdin_out_fd
-                 = open(stdin_out, O_RDWR | O_CREAT | O_TRUNC, 0600))
-                == -1) {
-                perror("Unable to open output file for stdin");
+            auto open_res = lnav::filesystem::open_file(
+                stdin_out, O_RDWR | O_CREAT | O_TRUNC, 0600);
+            if (open_res.isErr()) {
+                fmt::print(stderr, "error: {}\n", open_res.unwrapErr());
                 return EXIT_FAILURE;
             }
+
+            stdin_out_fd = open_res.unwrap();
         }
 
-        stdin_reader = make_shared<piper_proc>(
-            STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out_fd);
+        stdin_captured = true;
+        stdin_reader
+            = std::make_shared<piper_proc>(auto_fd(STDIN_FILENO),
+                                           lnav_data.ld_flags & LNF_TIMESTAMP,
+                                           std::move(stdin_out_fd));
         lnav_data.ld_active_files.fc_file_names["stdin"]
-            .with_fd(auto_fd(stdin_out_fd))
+            .with_fd(stdin_reader->get_fd())
             .with_include_in_session(false);
         lnav_data.ld_pipers.push_back(stdin_reader);
     }
@@ -2967,7 +2977,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
-                std::vector<pair<Result<string, string>, string>> cmd_results;
+                std::vector<
+                    std::pair<Result<std::string, std::string>, std::string>>
+                    cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
                 bool output_view = true;
 
@@ -3070,7 +3082,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     for (vl = tc->get_top(); vl < tc->get_inner_height();
                          ++vl, ++y) {
                         attr_line_t al;
-                        string& line = al.get_string();
+                        auto& line = al.get_string();
                         while (los != nullptr
                                && los->list_value_for_overlay(
                                    *tc, y, tc->get_inner_height(), vl, al))
@@ -3085,7 +3097,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             ++y;
                         }
 
-                        vector<attr_line_t> rows(1);
+                        std::vector<attr_line_t> rows(1);
                         tc->listview_value_for_rows(*tc, vl, rows);
                         if (suppress_empty_lines && rows[0].empty()) {
                             continue;
@@ -3104,7 +3116,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
                     {
                         attr_line_t al;
-                        string& line = al.get_string();
+                        auto& line = al.get_string();
 
                         while (los != nullptr
                                && los->list_value_for_overlay(
@@ -3142,7 +3154,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         // When reading from stdin, tell the user where the capture file is
         // stored so they can look at it later.
-        if (stdin_out_fd != -1 && stdin_out == nullptr
+        if (stdin_captured && stdin_out.empty()
             && !(lnav_data.ld_flags & LNF_QUIET)
             && !(lnav_data.ld_flags & LNF_HEADLESS))
         {

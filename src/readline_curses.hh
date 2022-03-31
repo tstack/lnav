@@ -52,7 +52,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/func_util.hh"
 #include "base/result.h"
 #include "help_text_formatter.hh"

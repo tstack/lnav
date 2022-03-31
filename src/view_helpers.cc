@@ -40,18 +40,18 @@
 #include "view_helpers.examples.hh"
 #include "vtab_module.hh"
 
-using namespace std;
+const char* lnav_view_strings[LNV__MAX + 1] = {
+    "log",
+    "text",
+    "help",
+    "histogram",
+    "db",
+    "schema",
+    "pretty",
+    "spectro",
 
-const char* lnav_view_strings[LNV__MAX + 1] = {"log",
-                                               "text",
-                                               "help",
-                                               "histogram",
-                                               "db",
-                                               "schema",
-                                               "pretty",
-                                               "spectro",
-
-                                               nullptr};
+    nullptr,
+};
 
 nonstd::optional<lnav_view_t>
 view_from_string(const char* name)
@@ -61,13 +61,13 @@ view_from_string(const char* name)
     }
 
     auto view_name_iter
-        = find_if(::begin(lnav_view_strings),
-                  ::end(lnav_view_strings),
-                  [&](const char* v) {
-                      return v != nullptr && strcasecmp(v, name) == 0;
-                  });
+        = std::find_if(std::begin(lnav_view_strings),
+                       std::end(lnav_view_strings),
+                       [&](const char* v) {
+                           return v != nullptr && strcasecmp(v, name) == 0;
+                       });
 
-    if (view_name_iter == ::end(lnav_view_strings)) {
+    if (view_name_iter == std::end(lnav_view_strings)) {
         return nonstd::nullopt;
     }
 
@@ -78,7 +78,7 @@ static void
 open_schema_view()
 {
     textview_curses* schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
-    string schema;
+    std::string schema;
 
     dump_sqlite_schema(lnav_data.ld_db, schema);
 
@@ -123,7 +123,7 @@ open_pretty_view()
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom();
              ++vl) {
             content_line_t cl = lss.at(vl);
-            shared_ptr<logfile> lf = lss.find(cl);
+            auto lf = lss.find(cl);
             auto ll = lf->begin() + cl;
             shared_buffer_ref sbr;
 
@@ -153,7 +153,7 @@ open_pretty_view()
             data_scanner ds(orig_al.get_string());
             pretty_printer pp(&ds, orig_al.get_attrs());
             attr_line_t pretty_al;
-            vector<attr_line_t> pretty_lines;
+            std::vector<attr_line_t> pretty_lines;
 
             // TODO: dump more details of the line in the output.
             pp.append_to(pretty_al);
@@ -176,7 +176,7 @@ open_pretty_view()
             full_text.erase(full_text.length() - 1, 1);
         }
     } else if (top_tc == text_tc) {
-        shared_ptr<logfile> lf = lnav_data.ld_text_source.current_file();
+        auto lf = lnav_data.ld_text_source.current_file();
 
         for (vis_line_t vl = text_tc->get_top(); vl <= text_tc->get_bottom();
              ++vl) {
@@ -210,14 +210,14 @@ build_all_help_text()
 
     attr_line_t all_help_text;
     shlex lexer(help_txt.to_string_fragment());
-    string sub_help_text;
+    std::string sub_help_text;
 
     lexer.with_ignore_quotes(true).eval(
         sub_help_text, lnav_data.ld_exec_context.ec_global_vars);
     all_help_text.with_ansi_string(sub_help_text);
 
-    map<string, help_text*> sql_funcs;
-    map<string, help_text*> sql_keywords;
+    std::map<std::string, help_text*> sql_funcs;
+    std::map<std::string, help_text*> sql_keywords;
 
     for (const auto& iter : sqlite_function_help) {
         switch (iter.second->ht_context) {
@@ -293,7 +293,7 @@ layout_views()
         ? 0
         : lnav_data.ld_preview_source.text_line_count();
     int match_rows = lnav_data.ld_match_source.text_line_count();
-    int match_height = min((unsigned long) match_rows, (height - 4) / 2);
+    int match_height = std::min((unsigned long) match_rows, (height - 4) / 2);
 
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
@@ -376,7 +376,7 @@ layout_views()
     lnav_data.ld_rl_view->set_width(width);
 }
 
-static unordered_map<string, attr_line_t> EXAMPLE_RESULTS;
+static std::unordered_map<std::string, attr_line_t> EXAMPLE_RESULTS;
 
 void
 execute_examples()
@@ -389,7 +389,7 @@ execute_examples()
         struct help_text& ht = *(help_iter.second);
 
         for (auto& ex : ht.ht_example) {
-            string alt_msg;
+            std::string alt_msg;
             attr_line_t result;
 
             if (!ex.he_cmd) {
@@ -461,7 +461,7 @@ toggle_view(textview_curses* toggle_tc)
     textview_curses* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
     bool retval = false;
 
-    require(toggle_tc != NULL);
+    require(toggle_tc != nullptr);
     require(toggle_tc >= &lnav_data.ld_views[0]);
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
@@ -536,9 +536,11 @@ next_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
         hit_count += 1;
         if (!top_is_marked || diff > 1) {
             return new_top;
-        } else if (hit_count > 1 && std::abs(new_top - top) >= tc_height) {
+        }
+        if (hit_count > 1 && std::abs(new_top - top) >= tc_height) {
             return vis_line_t(new_top - diff);
-        } else if (diff < -1) {
+        }
+        if (diff < -1) {
             last_top = new_top;
             while ((new_top = (bv.*f)(new_top)) != -1) {
                 if ((std::abs(last_top - new_top) > 1)

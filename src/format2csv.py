@@ -15,6 +15,8 @@ def main(args):
                     value = format_dict[key]
                     if not isinstance(value, dict):
                         continue
+                    if 'title' not in value:
+                        raise Exception("format '%s' is missing 'title'" % key)
                     out.writerow((value['title'], key, value['description']))
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@
 
 #include <logfile_fwd.hh>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/isc.hh"
 #include "base/network.tcp.hh"
@@ -45,7 +45,8 @@ namespace tailer {
 
 class looper : public isc::service<looper> {
 public:
-    void add_remote(const network::path& path, logfile_open_options options);
+    void add_remote(const network::path& path,
+                    logfile_open_options_base options);
 
     void load_preview(int64_t id, const network::path& path);
 
@@ -84,7 +85,7 @@ private:
                     auto_fd err_from_child);
 
         void open_remote_path(const std::string& path,
-                              logfile_open_options loo);
+                              logfile_open_options_base loo);
 
         void load_preview(int64_t id, const std::string& path);
 
@@ -114,8 +115,8 @@ private:
             auto_pid<process_state::running> ht_child;
             auto_fd ht_to_child;
             auto_fd ht_from_child;
-            std::map<std::string, logfile_open_options> c_desired_paths;
-            std::map<std::string, logfile_open_options> c_child_paths;
+            std::map<std::string, logfile_open_options_base> c_desired_paths;
+            std::map<std::string, logfile_open_options_base> c_child_paths;
 
             auto_pid<process_state::finished> close() &&;
         };
@@ -145,8 +146,8 @@ private:
     struct remote_path_queue {
         attempt_time_point rpq_next_attempt_time{
             std::chrono::steady_clock::now()};
-        std::map<std::string, logfile_open_options> rpq_new_paths;
-        std::map<std::string, logfile_open_options> rpq_existing_paths;
+        std::map<std::string, logfile_open_options_base> rpq_new_paths;
+        std::map<std::string, logfile_open_options_base> rpq_existing_paths;
 
         void send_synced_to_main(const std::string& netloc);
     };

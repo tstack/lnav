@@ -41,9 +41,7 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 
-using namespace std;
-
-static string
+static std::string
 sql_gethostbyname(const char* name_in)
 {
     char buffer[INET6_ADDRSTRLEN];
@@ -84,7 +82,7 @@ sql_gethostbyname(const char* name_in)
     return buffer;
 }
 
-static string
+static std::string
 sql_gethostbyaddr(const char* addr_str)
 {
     union {

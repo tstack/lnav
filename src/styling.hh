@@ -130,7 +130,7 @@ public:
 
     static color_unit make_empty()
     {
-        return {rgb_color{}};
+        return color_unit{rgb_color{}};
     }
 
     bool empty() const
@@ -145,7 +145,7 @@ public:
     variants_t cu_value;
 
 private:
-    color_unit(variants_t value) : cu_value(std::move(value)) {}
+    explicit color_unit(variants_t value) : cu_value(std::move(value)) {}
 };
 
 }  // namespace styling

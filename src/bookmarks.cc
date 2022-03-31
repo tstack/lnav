@@ -33,6 +33,4 @@
 
 #include "config.h"
 
-using namespace std;
-
-set<string> bookmark_metadata::KNOWN_TAGS;
+std::set<std::string> bookmark_metadata::KNOWN_TAGS;

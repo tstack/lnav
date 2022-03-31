@@ -46,8 +46,6 @@
 #include "lnav_util.hh"
 #include "vis_line.hh"
 
-using namespace std;
-
 template<typename LineType>
 grep_proc<LineType>::grep_proc(pcre* code, grep_proc_source<LineType>& gps)
     : gp_pcre(code), gp_source(gps)
@@ -66,7 +64,7 @@ grep_proc<LineType>::~grep_proc()
 template<typename LineType>
 void
 grep_proc<LineType>::handle_match(
-    int line, string& line_value, int off, int* matches, int count)
+    int line, std::string& line_value, int off, int* matches, int count)
 {
     int lpc;
 
@@ -152,7 +150,7 @@ void
 grep_proc<LineType>::child_loop()
 {
     char outbuf[BUFSIZ * 2];
-    string line_value;
+    std::string line_value;
 
     /* Make sure buffering is on, not sure of the state in the parent. */
     if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {

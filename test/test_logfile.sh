@@ -3,6 +3,16 @@
 echo ${top_srcdir}
 echo ${top_builddir}
 
+
+run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
+    -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log' <<EOF
+2013-06-06T19:13:20.123  Hi
+EOF
+
+check_output "piping to stdin is not working?" <<EOF
+2013-06-06T19:13:20.123  Hi
+EOF
+
 if test x"${TSHARK_CMD}" != x""; then
   run_test env TZ=UTC ${lnav_test} -n ${test_dir}/dhcp.pcapng
 
@@ -19,15 +29,6 @@ EOF
 error: unable to open file: {test_dir}/dhcp-trunc.pcapng -- tshark: The file "{test_dir}/dhcp-trunc.pcapng" appears to have been cut short in the middle of a packet.
 EOF
 fi
-
-run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
-    -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log' <<EOF
-2013-06-06T19:13:20.123  Hi
-EOF
-
-check_output "piping to stdin is not working?" <<EOF
-2013-06-06T19:13:20.123  Hi
-EOF
 
 
 cp ${srcdir}/logfile_syslog.0 truncfile.0
@@ -171,7 +172,7 @@ EOF
         > test_logfile.rotmp.out
     cp test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-user-NNN-work/archives/arc-NNN-test-logs.tgz/test/logfile_access_log.0 -- ...
+error: unable to open file: /test-logs.tgz -- Unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
 EOF
 fi
 

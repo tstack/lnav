@@ -51,8 +51,6 @@
 #include "termios_guard.hh"
 #include "xterm_mouse.hh"
 
-using namespace std;
-
 class logline_helper {
 public:
     logline_helper(logfile_sub_source& lss)
@@ -101,14 +99,14 @@ public:
     {
         const char* start = this->lh_msg_buffer.get_data();
 
-        return string(&start[lr.lr_start], lr.length());
+        return std::string(&start[lr.lr_start], lr.length());
     }
 
     logfile_sub_source& lh_sub_source;
     vis_line_t lh_current_line;
     shared_buffer_ref lh_msg_buffer;
     string_attrs_t lh_string_attrs;
-    vector<logline_value> lh_line_values;
+    std::vector<logline_value> lh_line_values;
 };
 
 static int
@@ -133,7 +131,7 @@ key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         }
 
         vars[column_name]
-            = string((const char*) sqlite3_column_text(stmt, lpc));
+            = std::string((const char*) sqlite3_column_text(stmt, lpc));
     }
 
     return 0;
@@ -149,12 +147,12 @@ handle_keyseq(const char* keyseq)
         return false;
     }
 
-    vector<logline_value> values;
+    std::vector<logline_value> values;
     exec_context ec(&values, key_sql_callback, pipe_callback);
     auto& var_stack = ec.ec_local_vars;
 
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
-    var_stack.push(map<string, string>());
+    var_stack.push(std::map<std::string, std::string>());
     auto& vars = var_stack.top();
     vars["keyseq"] = keyseq;
     const auto& kc = iter->second;
@@ -166,7 +164,7 @@ handle_keyseq(const char* keyseq)
 
     if (!kc.kc_alt_msg.empty()) {
         shlex lexer(kc.kc_alt_msg);
-        string expanded_msg;
+        std::string expanded_msg;
 
         if (lexer.eval(expanded_msg,
                        {
@@ -339,7 +337,7 @@ handle_paging_key(int ch)
                 execute_command(
                     ec,
                     "zoom-to "
-                        + string(
+                        + std::string(
                             lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
@@ -351,7 +349,7 @@ handle_paging_key(int ch)
                 execute_command(
                     ec,
                     "zoom-to "
-                        + string(
+                        + std::string(
                             lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
@@ -424,10 +422,10 @@ handle_paging_key(int ch)
                 == lnav_data.ld_last_user_mark.end()) {
                 alerter::singleton().chime();
             } else {
-                int start_line = min((int) tc->get_top(),
-                                     lnav_data.ld_last_user_mark[tc] + 1);
-                int end_line = max((int) tc->get_top(),
-                                   lnav_data.ld_last_user_mark[tc] - 1);
+                int start_line = std::min((int) tc->get_top(),
+                                          lnav_data.ld_last_user_mark[tc] + 1);
+                int end_line = std::max((int) tc->get_top(),
+                                        lnav_data.ld_last_user_mark[tc] - 1);
 
                 tc->toggle_user_mark(&textview_curses::BM_USER,
                                      vis_line_t(start_line),
@@ -636,7 +634,8 @@ handle_paging_key(int ch)
                         lnav_data.ld_rl_view->set_value("");
                         tc->set_top(next_helper.lh_current_line);
                     } else {
-                        string opid_str = start_helper.to_string(opid_range);
+                        const auto opid_str
+                            = start_helper.to_string(opid_range);
 
                         lnav_data.ld_rl_view->set_value(err_prefix(
                             "No more messages found with opid: " + opid_str));
@@ -814,7 +813,7 @@ handle_paging_key(int ch)
                         lnav_data.ld_rl_view->set_value("Graphing all values");
                     },
                     [&](stacked_bar_chart_base::show_one) {
-                        string colname;
+                        std::string colname;
 
                         chart.get_ident_to_show(colname);
                         lnav_data.ld_rl_view->set_value(

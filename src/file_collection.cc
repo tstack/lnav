@@ -158,8 +158,9 @@ file_collection::merge(file_collection& other)
                                  other.fc_synced_files.end());
     this->fc_name_to_errors.insert(other.fc_name_to_errors.begin(),
                                    other.fc_name_to_errors.end());
-    this->fc_file_names.insert(other.fc_file_names.begin(),
-                               other.fc_file_names.end());
+    this->fc_file_names.insert(
+        std::make_move_iterator(other.fc_file_names.begin()),
+        std::make_move_iterator(other.fc_file_names.end()));
     if (!other.fc_files.empty()) {
         for (const auto& lf : other.fc_files) {
             this->fc_name_to_errors.erase(lf->get_filename());
@@ -229,6 +230,15 @@ file_collection::watch_logfile(const std::string& filename,
 
     if (loo.loo_fd != -1) {
         rc = fstat(loo.loo_fd, &st);
+        if (rc == 0) {
+            loo.with_stat_for_temp(st);
+        }
+    } else if (loo.loo_temp_file) {
+        memset(&st, 0, sizeof(st));
+        st.st_dev = loo.loo_temp_dev;
+        st.st_ino = loo.loo_temp_ino;
+        st.st_mode = S_IFREG;
+        rc = 0;
     } else {
         rc = stat(filename.c_str(), &st);
     }
@@ -292,7 +302,7 @@ file_collection::watch_logfile(const std::string& filename,
 
         auto func = [filename,
                      st,
-                     loo,
+                     loo2 = std::move(loo),
                      prog = this->fc_progress,
                      errs = this->fc_name_to_errors]() mutable {
             file_collection retval;
@@ -304,7 +314,7 @@ file_collection::watch_logfile(const std::string& filename,
 
             auto ff = detect_file_format(filename);
 
-            loo.loo_file_format = ff;
+            loo2.loo_file_format = ff;
             switch (ff) {
                 case file_format_t::SQLITE_DB:
                     retval.fc_other_files[filename].ofd_format = ff;
@@ -316,7 +326,7 @@ file_collection::watch_logfile(const std::string& filename,
                     if (res.isOk()) {
                         auto convert_res = res.unwrap();
 
-                        loo.loo_fd = std::move(convert_res.cr_destination);
+                        loo2.with_fd(std::move(convert_res.cr_destination));
                         retval.fc_child_pollers.emplace_back(child_poller{
                             std::move(convert_res.cr_child),
                             [filename,
@@ -342,7 +352,7 @@ file_collection::watch_logfile(const std::string& filename,
                                     });
                             },
                         });
-                        auto open_res = logfile::open(filename, loo);
+                        auto open_res = logfile::open(filename, loo2);
                         if (open_res.isOk()) {
                             retval.fc_files.push_back(open_res.unwrap());
                         } else {
@@ -368,7 +378,7 @@ file_collection::watch_logfile(const std::string& filename,
                         std::list<archive_manager::extract_progress>::iterator>
                         prog_iter_opt;
 
-                    if (loo.loo_source == logfile_name_source::ARCHIVE) {
+                    if (loo2.loo_source == logfile_name_source::ARCHIVE) {
                         // Don't try to open nested archives
                         return retval;
                     }
@@ -435,7 +445,7 @@ file_collection::watch_logfile(const std::string& filename,
                 default:
                     log_info("loading new file: filename=%s", filename.c_str());
 
-                    auto open_res = logfile::open(filename, loo);
+                    auto open_res = logfile::open(filename, loo2);
                     if (open_res.isOk()) {
                         retval.fc_files.push_back(open_res.unwrap());
                     } else {
@@ -452,16 +462,16 @@ file_collection::watch_logfile(const std::string& filename,
             return retval;
         };
 
-        return std::async(std::launch::async, func);
-    } else {
-        auto lf = *file_iter;
+        return std::async(std::launch::async, std::move(func));
+    }
 
-        if (lf->is_valid_filename() && lf->get_filename() != filename) {
-            /* The file is already loaded, but has been found under a different
-             * name.  We just need to update the stored file name.
-             */
-            retval.fc_renamed_files.emplace_back(lf, filename);
-        }
+    auto lf = *file_iter;
+
+    if (lf->is_valid_filename() && lf->get_filename() != filename) {
+        /* The file is already loaded, but has been found under a different
+         * name.  We just need to update the stored file name.
+         */
+        retval.fc_renamed_files.emplace_back(lf, filename);
     }
 
     return lnav::futures::make_ready_future(std::move(retval));
@@ -513,9 +523,12 @@ file_collection::expand_filename(
                     }
 
                     file_collection retval;
+                    logfile_open_options_base loo_base{loo};
 
                     isc::to<tailer::looper&, services::remote_tailer_t>().send(
-                        [=](auto& tlooper) { tlooper.add_remote(rp, loo); });
+                        [rp, loo_base](auto& tlooper) {
+                            tlooper.add_remote(rp, loo_base);
+                        });
                     retval.fc_other_files[path] = file_format_t::REMOTE;
                     {
                         this->fc_progress->writeAccess()
@@ -546,7 +559,7 @@ file_collection::expand_filename(
 
                 if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == nullptr)
                 {
-                    auto errmsg = strerror(errno);
+                    auto* errmsg = strerror(errno);
 
                     if (required) {
                         fprintf(stderr,
@@ -576,11 +589,11 @@ file_collection::expand_filename(
                             std::move(retval)));
                     }
                     continue;
-                } else {
-                    auto p = REALPATH_CACHE.emplace(path_str, abspath.in());
-
-                    iter = p.first;
                 }
+
+                auto p = REALPATH_CACHE.emplace(path_str, abspath.in());
+
+                iter = p.first;
             }
 
             if (required || access(iter->second.c_str(), R_OK) == 0) {
@@ -598,7 +611,7 @@ file_collection::rescan_files(bool required)
         [&retval](auto& fc) { retval.merge(fc); });
 
     for (auto& pair : this->fc_file_names) {
-        if (pair.second.loo_fd == -1) {
+        if (!pair.second.loo_temp_file) {
             this->expand_filename(fq, pair.first, pair.second, required);
             if (this->fc_rotated) {
                 std::string path = pair.first + ".*";

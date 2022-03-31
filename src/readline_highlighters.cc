@@ -38,12 +38,10 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 
-using namespace std;
-
 static void readline_sqlite_highlighter_int(attr_line_t& al, int x, int skip);
 
 static bool
-check_re_prev(const string& line, int x)
+check_re_prev(const std::string& line, int x)
 {
     bool retval = false;
 
@@ -58,7 +56,7 @@ check_re_prev(const string& line, int x)
 }
 
 static bool
-is_bracket(const string& str, int index, bool is_lit)
+is_bracket(const std::string& str, int index, bool is_lit)
 {
     if (is_lit && str[index - 1] == '\\') {
         return true;
@@ -78,7 +76,7 @@ find_matching_bracket(attr_line_t& al, int x, char left, char right)
     int missing_bracket_attrs
         = A_BOLD | A_REVERSE | vc.attrs_for_role(view_colors::VCR_ERROR);
     bool is_lit = (left == 'Q');
-    const string& line = al.get_string();
+    const std::string& line = al.get_string();
     int depth = 0;
 
     if (x < 0 || x > (int) line.length()) {
@@ -150,7 +148,7 @@ find_matching_bracket(attr_line_t& al, int x, char left, char right)
 }
 
 static char
-safe_read(const string& str, string::size_type index)
+safe_read(const std::string& str, std::string::size_type index)
 {
     if (index < str.length()) {
         return str.at(index);
@@ -178,7 +176,7 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
 
                                      nullptr};
 
-    string& line = al.get_string();
+    auto& line = al.get_string();
     bool backslash_is_quoted = false;
 
     for (size_t lpc = skip; lpc < line.length(); lpc++) {
@@ -345,14 +343,14 @@ readline_command_highlighter(attr_line_t& al, int x)
     view_colors& vc = view_colors::singleton();
     int keyword_attrs = (A_BOLD | vc.attrs_for_role(view_colors::VCR_KEYWORD));
 
-    const string& line = al.get_string();
+    const auto& line = al.get_string();
     pcre_context_static<30> pc;
     pcre_input pi(line);
     size_t ws_index;
 
     ws_index = line.find(' ');
-    string command = line.substr(0, ws_index);
-    if (ws_index != string::npos) {
+    auto command = line.substr(0, ws_index);
+    if (ws_index != std::string::npos) {
         al.get_attrs().emplace_back(
             line_range(1, ws_index), &view_curses::VC_STYLE, keyword_attrs);
     }
@@ -372,7 +370,7 @@ readline_command_highlighter(attr_line_t& al, int x)
         pi.reset(line);
         if (COLOR_RE.match(pc, pi)) {
             pcre_context::capture_t* cap = pc[0];
-            string hash_color = pi.get_substr(cap);
+            auto hash_color = pi.get_substr(cap);
 
             styling::color_unit::from_str(hash_color)
                 .then([&](const auto& rgb_fg) {
@@ -384,7 +382,7 @@ readline_command_highlighter(attr_line_t& al, int x)
         }
     }
     pi.reset(line);
-    if (IDENT_PREFIXES.match(pc, pi) && ws_index != string::npos) {
+    if (IDENT_PREFIXES.match(pc, pi) && ws_index != std::string::npos) {
         size_t start = ws_index, last;
 
         do {
@@ -398,7 +396,7 @@ readline_command_highlighter(attr_line_t& al, int x)
             };
 
             if (lr.length() > 0 && !lr.contains(x) && !lr.contains(x - 1)) {
-                string value(lr.substr(line), lr.sublen(line));
+                std::string value(lr.substr(line), lr.sublen(line));
 
                 if ((command == ":tag" || command == ":untag"
                      || command == ":delete-tags")
@@ -418,7 +416,7 @@ readline_command_highlighter(attr_line_t& al, int x)
 static void
 readline_sqlite_highlighter_int(attr_line_t& al, int x, int skip)
 {
-    static string keyword_re_str = sql_keyword_re();
+    static const auto keyword_re_str = sql_keyword_re();
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
     static pcrepp ident_pcre(
@@ -526,7 +524,7 @@ readline_shlex_highlighter(attr_line_t& al, int x)
     int special_char = (A_BOLD | vc.attrs_for_role(view_colors::VCR_SYMBOL));
     int error_attrs = vc.attrs_for_role(view_colors::VCR_ERROR) | A_REVERSE;
     int string_attrs = vc.attrs_for_role(view_colors::VCR_STRING);
-    const string& str = al.get_string();
+    const auto& str = al.get_string();
     pcre_context::capture_t cap;
     shlex_token_t token;
     int quote_start = -1;
@@ -559,8 +557,8 @@ readline_shlex_highlighter(attr_line_t& al, int x)
             case shlex_token_t::ST_VARIABLE_REF:
             case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                 int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                string ident = str.substr(cap.c_begin + 1 + extra,
-                                          cap.length() - 1 - extra * 2);
+                auto ident = str.substr(cap.c_begin + 1 + extra,
+                                        cap.length() - 1 - extra * 2);
                 int attrs = vc.attrs_for_ident(ident);
 
                 al.with_attr(string_attr(

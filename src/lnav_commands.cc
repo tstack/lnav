@@ -78,11 +78,9 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
 
-using namespace std;
-
-static string
-remaining_args(const string& cmdline,
-               const vector<string>& args,
+static std::string
+remaining_args(const std::string& cmdline,
+               const std::vector<std::string>& args,
                size_t index = 1)
 {
     size_t start_pos = 0;
@@ -98,13 +96,13 @@ remaining_args(const string& cmdline,
 
     size_t index_in_cmdline = cmdline.find(args[index], start_pos);
 
-    require(index_in_cmdline != string::npos);
+    require(index_in_cmdline != std::string::npos);
 
     return cmdline.substr(index_in_cmdline);
 }
 
-static nonstd::optional<string>
-find_arg(vector<string>& args, const string& flag)
+static nonstd::optional<std::string>
+find_arg(std::vector<std::string>& args, const std::string& flag)
 {
     auto iter = find_if(args.begin(), args.end(), [&flag](const auto elem) {
         return startswith(elem, flag);
@@ -115,7 +113,7 @@ find_arg(vector<string>& args, const string& flag)
     }
 
     auto index = iter->find('=');
-    if (index == string::npos) {
+    if (index == std::string::npos) {
         return "";
     }
 
@@ -142,10 +140,10 @@ combined_user_marks(vis_bookmarks& vb)
     return retval;
 }
 
-static string
+static std::string
 refresh_pt_search()
 {
-    string retval;
+    std::string retval;
 
     if (!lnav_data.ld_cmd_init_done) {
         return "";
@@ -183,10 +181,12 @@ refresh_pt_search()
     return retval;
 }
 
-static Result<string, string>
-com_adjust_log_time(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_adjust_log_time(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("line-time");
@@ -251,10 +251,12 @@ com_adjust_log_time(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_unix_time(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_unix_time(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
@@ -270,8 +272,8 @@ com_unix_time(exec_context& ec, string cmdline, vector<string>& args)
         log_time.tm_isdst = -1;
 
         args[1] = remaining_args(cmdline, args);
-        if ((millis = args[1].find('.')) != string::npos
-            || (millis = args[1].find(',')) != string::npos)
+        if ((millis = args[1].find('.')) != std::string::npos
+            || (millis = args[1].find(',')) != std::string::npos)
         {
             args[1] = args[1].erase(millis, 4);
         }
@@ -300,7 +302,7 @@ com_unix_time(exec_context& ec, string cmdline, vector<string>& args)
                      localtime(&u_time));
             len = strlen(ftime);
             snprintf(ftime + len, sizeof(ftime) - len, " -- %ld", u_time);
-            retval = string(ftime);
+            retval = std::string(ftime);
         } else {
             return ec.make_error("invalid unix time -- {}", args[1]);
         }
@@ -311,12 +313,14 @@ com_unix_time(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_current_time(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_current_time(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
 {
     char ftime[128];
     struct tm localtm;
-    string retval;
+    std::string retval;
     time_t u_time;
     size_t len;
 
@@ -328,20 +332,20 @@ com_current_time(exec_context& ec, string cmdline, vector<string>& args)
              localtime_r(&u_time, &localtm));
     len = strlen(ftime);
     snprintf(ftime + len, sizeof(ftime) - len, " -- %ld", u_time);
-    retval = string(ftime);
+    retval = std::string(ftime);
 
     return Ok(retval);
 }
 
-static Result<string, string>
-com_goto(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("move-time");
     } else if (args.size() > 1) {
-        string all_args = remaining_args(cmdline, args);
+        std::string all_args = remaining_args(cmdline, args);
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         auto ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
         int line_number, consumed;
@@ -426,7 +430,8 @@ com_goto(exec_context& ec, string cmdline, vector<string>& args)
 
         dst_vl | [&ec, tc, &retval](auto new_top) {
             if (ec.ec_dry_run) {
-                retval = "info: will move to line " + to_string((int) new_top);
+                retval = "info: will move to line "
+                    + std::to_string((int) new_top);
             } else {
                 tc->get_sub_source()->get_location_history() |
                     [new_top](auto lh) { lh->loc_history_append(new_top); };
@@ -440,10 +445,12 @@ com_goto(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_relative_goto(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_relative_goto(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval = "error: ";
+    std::string retval = "error: ";
 
     if (args.empty()) {
     } else if (args.size() > 1) {
@@ -460,7 +467,7 @@ com_relative_goto(exec_context& ec, string cmdline, vector<string>& args)
             }
 
             if (ec.ec_dry_run) {
-                retval = "info: shifting top by " + to_string(line_offset)
+                retval = "info: shifting top by " + std::to_string(line_offset)
                     + " lines";
             } else {
                 tc->shift_top(vis_line_t(line_offset), true);
@@ -477,10 +484,10 @@ com_relative_goto(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_mark(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty() || lnav_data.ld_view_stack.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -494,10 +501,12 @@ com_mark(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_mark_expr(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_mark_expr(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty() || lnav_data.ld_view_stack.empty()) {
         args.emplace_back("filter-expr-syms");
@@ -553,8 +562,8 @@ com_mark_expr(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static string
-com_mark_expr_prompt(exec_context& ec, const string& cmdline)
+static std::string
+com_mark_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -567,10 +576,12 @@ com_mark_expr_prompt(exec_context& ec, const string& cmdline)
                        trim(lnav_data.ld_log_source.get_sql_marker_text()));
 }
 
-static Result<string, string>
-com_clear_mark_expr(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_clear_mark_expr(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else {
@@ -582,10 +593,12 @@ com_clear_mark_expr(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_goto_mark(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_goto_mark(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("mark-type");
@@ -660,10 +673,12 @@ com_goto_mark(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_goto_location(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_goto_location(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -682,17 +697,17 @@ com_goto_location(exec_context& ec, string cmdline, vector<string>& args)
 }
 
 static bool
-csv_needs_quoting(const string& str)
+csv_needs_quoting(const std::string& str)
 {
-    return (str.find_first_of(",\"\r\n") != string::npos);
+    return (str.find_first_of(",\"\r\n") != std::string::npos);
 }
 
-static string
-csv_quote_string(const string& str)
+static std::string
+csv_quote_string(const std::string& str)
 {
     static const std::regex csv_column_quoter("\"");
 
-    string retval = std::regex_replace(str, csv_column_quoter, "\"\"");
+    std::string retval = std::regex_replace(str, csv_column_quoter, "\"\"");
 
     retval.insert(0, 1, '\"');
     retval.append(1, '\"');
@@ -701,10 +716,10 @@ csv_quote_string(const string& str)
 }
 
 static void
-csv_write_string(FILE* outfile, const string& str)
+csv_write_string(FILE* outfile, const std::string& str)
 {
     if (csv_needs_quoting(str)) {
-        string quoted_str = csv_quote_string(str);
+        std::string quoted_str = csv_quote_string(str);
 
         fmt::fprintf(outfile, "%s", quoted_str);
     } else {
@@ -841,18 +856,20 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     }
 }
 
-static Result<string, string>
-com_save_to(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_save_to(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
     FILE *outfile = nullptr, *toclose = nullptr;
     const char* mode = "";
-    string fn, retval;
+    std::string fn, retval;
     bool to_term = false;
     int (*closer)(FILE*) = fclose;
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return Ok(string());
+        return Ok(std::string());
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
@@ -861,7 +878,7 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
 
     fn = trim(remaining_args(cmdline, args));
 
-    vector<string> split_args;
+    std::vector<std::string> split_args;
     shlex lexer(fn);
 
     if (!lexer.split(split_args, ec.create_resolver())) {
@@ -1114,7 +1131,7 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
 
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
-        vector<attr_line_t> rows(bottom - top + 1);
+        std::vector<attr_line_t> rows(bottom - top + 1);
 
         tc->listview_value_for_rows(*tc, top, rows);
         for (auto& al : rows) {
@@ -1151,9 +1168,9 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
             nonstd::optional<std::pair<logfile*, content_line_t>> last_line;
             bookmark_vector<vis_line_t> visited;
             auto& lss = lnav_data.ld_log_source;
-            vector<attr_line_t> rows(1);
+            std::vector<attr_line_t> rows(1);
             size_t count = 0;
-            string line;
+            std::string line;
 
             for (auto iter = all_user_marks.begin();
                  iter != all_user_marks.end();
@@ -1200,7 +1217,7 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
                 break;
             }
 
-            string line;
+            std::string line;
 
             tss->text_value_for_line(*tc, lpc, line, text_sub_source::RF_RAW);
             fprintf(outfile, "%s\n", line.c_str());
@@ -1210,9 +1227,9 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
 
         tc->set_word_wrap(wrapped);
     } else {
-        vector<attr_line_t> rows(1);
+        std::vector<attr_line_t> rows(1);
         size_t count = 0;
-        string line;
+        std::string line;
 
         for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
              iter++, count++)
@@ -1241,7 +1258,7 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
         char buffer[32 * 1024];
         size_t rc = fread(buffer, 1, sizeof(buffer), outfile);
 
-        attr_line_t al(string(buffer, rc));
+        attr_line_t al(std::string(buffer, rc));
 
         lnav_data.ld_preview_source.replace_with(al)
             .set_text_format(detect_text_format(al.get_string()))
@@ -1249,7 +1266,7 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
         lnav_data.ld_preview_status_source.get_description().set_value(
             "First lines of file: %s", split_args[0].c_str());
     } else {
-        retval = "info: Wrote " + to_string(line_count) + " rows to "
+        retval = "info: Wrote " + std::to_string(line_count) + " rows to "
             + split_args[0];
     }
     if (toclose != nullptr) {
@@ -1260,14 +1277,16 @@ com_save_to(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_pipe_to(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return Ok(string());
+        return Ok(std::string());
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
@@ -1279,14 +1298,14 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
     }
 
     if (ec.ec_dry_run) {
-        return Ok(string());
+        return Ok(std::string());
     }
 
     auto* tc = *lnav_data.ld_view_stack.top();
     auto bv = combined_user_marks(tc->get_bookmarks());
     bool pipe_line_to = (args[0] == "pipe-line-to");
 
-    string cmd = trim(remaining_args(cmdline, args));
+    std::string cmd = trim(remaining_args(cmdline, args));
     auto_pipe in_pipe(STDIN_FILENO);
     auto_pipe out_pipe(STDOUT_FILENO);
 
@@ -1311,7 +1330,7 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
                 nullptr,
             };
             auto path_v = ec.ec_path_stack;
-            string path;
+            std::string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             path_v.emplace_back(lnav::paths::dotlnav() / "formats/default");
@@ -1323,7 +1342,7 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
 
                 ldh.parse_line(ec.ec_top_line, true);
                 auto format = ldh.ldh_file->get_format();
-                set<string> source_path = format->get_source_path();
+                auto source_path = format->get_source_path();
                 path_v.insert(
                     path_v.end(), source_path.begin(), source_path.end());
 
@@ -1344,7 +1363,7 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
                     std::string colname = ldh.ldh_parser->get_element_string(
                         iter->e_sub_elements->front());
                     colname = ldh.ldh_namer->add_column(colname);
-                    string val = ldh.ldh_parser->get_element_string(
+                    std::string val = ldh.ldh_parser->get_element_string(
                         iter->e_sub_elements->back());
                     setenv(colname.c_str(), val.c_str(), 1);
                 }
@@ -1358,14 +1377,14 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
 
         default:
             bookmark_vector<vis_line_t>::iterator iter;
-            string line;
+            std::string line;
 
             in_pipe.read_end().close_on_exec();
             in_pipe.write_end().close_on_exec();
 
             lnav_data.ld_children.push_back(child_pid);
 
-            future<string> reader;
+            std::future<std::string> reader;
 
             if (out_pipe.read_end() != -1) {
                 reader = ec.ec_pipe_callback(ec, cmdline, out_pipe.read_end());
@@ -1421,25 +1440,27 @@ com_pipe_to(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_redirect_to(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_redirect_to(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
 {
     if (args.empty()) {
         args.emplace_back("filename");
-        return Ok(string());
+        return Ok(std::string());
     }
 
     if (args.size() == 1) {
         if (ec.ec_dry_run) {
-            return Ok(string("info: redirect will be cleared"));
+            return Ok(std::string("info: redirect will be cleared"));
         }
 
         ec.clear_output();
-        return Ok(string("info: cleared redirect"));
+        return Ok(std::string("info: cleared redirect"));
     }
 
-    string fn = trim(remaining_args(cmdline, args));
-    vector<string> split_args;
+    std::string fn = trim(remaining_args(cmdline, args));
+    std::vector<std::string> split_args;
     shlex lexer(fn);
     scoped_resolver scopes = {
         &ec.ec_local_vars.top(),
@@ -1483,10 +1504,12 @@ com_redirect_to(exec_context& ec, string cmdline, vector<string>& args)
     return Ok("info: redirecting output to file -- " + split_args[0]);
 }
 
-static Result<string, string>
-com_highlight(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_highlight(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filter");
@@ -1544,10 +1567,12 @@ com_highlight(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_clear_highlight(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_clear_highlight(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("highlight");
@@ -1578,10 +1603,10 @@ com_clear_highlight(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_help(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_help(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -1591,19 +1616,20 @@ com_help(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string> com_enable_filter(exec_context& ec,
-                                                string cmdline,
-                                                vector<string>& args);
+static Result<std::string, std::string> com_enable_filter(
+    exec_context& ec, std::string cmdline, std::vector<std::string>& args);
 
-static Result<string, string>
-com_filter(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_filter(exec_context& ec,
+           std::string cmdline,
+           std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filter");
 
-        return Ok(string());
+        return Ok(std::string());
     }
 
     auto tc = *lnav_data.ld_view_stack.top();
@@ -1670,7 +1696,7 @@ com_filter(exec_context& ec, string cmdline, vector<string>& args)
             if (!filter_index) {
                 return ec.make_error("too many filters");
             }
-            auto pf = make_shared<pcre_filter>(
+            auto pf = std::make_shared<pcre_filter>(
                 lt, args[1], *filter_index, code.release());
 
             log_debug("%s [%d] %s",
@@ -1690,10 +1716,12 @@ com_filter(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_delete_filter(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_delete_filter(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("all-filters");
@@ -1718,10 +1746,12 @@ com_delete_filter(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_enable_filter(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_enable_filter(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("disabled-filter");
@@ -1729,11 +1759,11 @@ com_enable_filter(exec_context& ec, string cmdline, vector<string>& args)
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         text_sub_source* tss = tc->get_sub_source();
         filter_stack& fs = tss->get_filters();
-        shared_ptr<text_filter> lf;
+        std::shared_ptr<text_filter> lf;
 
         args[1] = remaining_args(cmdline, args);
         lf = fs.get_filter(args[1]);
-        if (lf == NULL) {
+        if (lf == nullptr) {
             return ec.make_error("no such filter -- {}", args[1]);
         } else if (lf->is_enabled()) {
             retval = "info: filter already enabled";
@@ -1751,10 +1781,12 @@ com_enable_filter(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_disable_filter(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_disable_filter(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("enabled-filter");
@@ -1762,7 +1794,7 @@ com_disable_filter(exec_context& ec, string cmdline, vector<string>& args)
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         text_sub_source* tss = tc->get_sub_source();
         filter_stack& fs = tss->get_filters();
-        shared_ptr<text_filter> lf;
+        std::shared_ptr<text_filter> lf;
 
         args[1] = remaining_args(cmdline, args);
         lf = fs.get_filter(args[1]);
@@ -1784,10 +1816,12 @@ com_disable_filter(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_filter_expr(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_filter_expr(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filter-expr-syms");
@@ -1852,8 +1886,8 @@ com_filter_expr(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static string
-com_filter_expr_prompt(exec_context& ec, const string& cmdline)
+static std::string
+com_filter_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -1866,10 +1900,12 @@ com_filter_expr_prompt(exec_context& ec, const string& cmdline)
                        trim(lnav_data.ld_log_source.get_sql_filter_text()));
 }
 
-static Result<string, string>
-com_clear_filter_expr(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_clear_filter_expr(exec_context& ec,
+                      std::string cmdline,
+                      std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else {
@@ -1882,10 +1918,12 @@ com_clear_filter_expr(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_enable_word_wrap(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_enable_word_wrap(exec_context& ec,
+                     std::string cmdline,
+                     std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -1897,10 +1935,12 @@ com_enable_word_wrap(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_disable_word_wrap(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_disable_word_wrap(exec_context& ec,
+                      std::string cmdline,
+                      std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -1912,12 +1952,14 @@ com_disable_word_wrap(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static std::set<string> custom_logline_tables;
+static std::set<std::string> custom_logline_tables;
 
-static Result<string, string>
-com_create_logline_table(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_create_logline_table(exec_context& ec,
+                         std::string cmdline,
+                         std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (args.size() == 2) {
@@ -1942,9 +1984,9 @@ com_create_logline_table(exec_context& ec, string cmdline, vector<string>& args)
                 lnav_data.ld_preview_source.replace_with(al).set_text_format(
                     text_format_t::TF_SQL);
 
-                return Ok(string());
+                return Ok(std::string());
             } else {
-                string errmsg;
+                std::string errmsg;
 
                 errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
                 if (errmsg.empty()) {
@@ -1967,10 +2009,12 @@ com_create_logline_table(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_delete_logline_table(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_delete_logline_table(exec_context& ec,
+                         std::string cmdline,
+                         std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("custom-table");
@@ -1981,10 +2025,10 @@ com_delete_logline_table(exec_context& ec, string cmdline, vector<string>& args)
         }
 
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
 
-        string rc = lnav_data.ld_vtab_manager->unregister_vtab(
+        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(
             intern_string::lookup(args[1]));
 
         if (rc.empty()) {
@@ -2003,16 +2047,18 @@ com_delete_logline_table(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static std::set<string> custom_search_tables;
+static std::set<std::string> custom_search_tables;
 
-static Result<string, string>
-com_create_search_table(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_create_search_table(exec_context& ec,
+                        std::string cmdline,
+                        std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
-        string regex;
+        std::string regex;
 
         if (args.size() >= 3) {
             regex = remaining_args(cmdline, args, 2);
@@ -2049,10 +2095,10 @@ com_create_search_table(exec_context& ec, string cmdline, vector<string>& args)
             lnav_data.ld_preview_source.replace_with(al).set_text_format(
                 text_format_t::TF_SQL);
 
-            return Ok(string());
+            return Ok(std::string());
         }
 
-        string errmsg;
+        std::string errmsg;
 
         errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
         if (errmsg.empty()) {
@@ -2072,10 +2118,12 @@ com_create_search_table(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_delete_search_table(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_delete_search_table(exec_context& ec,
+                        std::string cmdline,
+                        std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("search-table");
@@ -2085,10 +2133,10 @@ com_delete_search_table(exec_context& ec, string cmdline, vector<string>& args)
         }
 
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
 
-        string rc = lnav_data.ld_vtab_manager->unregister_vtab(
+        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(
             intern_string::lookup(args[1]));
 
         if (rc.empty()) {
@@ -2107,10 +2155,12 @@ com_delete_search_table(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_session(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_session(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (ec.ec_dry_run) {
@@ -2132,14 +2182,14 @@ com_session(exec_context& ec, string cmdline, vector<string>& args)
             auto old_file_name = lnav::paths::dotlnav() / "session";
             auto new_file_name = lnav::paths::dotlnav() / "session.tmp";
 
-            ifstream session_file(old_file_name.string());
-            ofstream new_session_file(new_file_name.string());
+            std::ifstream session_file(old_file_name.string());
+            std::ofstream new_session_file(new_file_name.string());
 
             if (!new_session_file) {
                 return ec.make_error("cannot write to session file");
             } else {
                 bool added = false;
-                string line;
+                std::string line;
 
                 if (session_file.is_open()) {
                     while (getline(session_file, line)) {
@@ -2147,11 +2197,11 @@ com_session(exec_context& ec, string cmdline, vector<string>& args)
                             added = true;
                             break;
                         }
-                        new_session_file << line << endl;
+                        new_session_file << line << std::endl;
                     }
                 }
                 if (!added) {
-                    new_session_file << saved_cmd << endl;
+                    new_session_file << saved_cmd << std::endl;
 
                     log_perror(
                         rename(new_file_name.c_str(), old_file_name.c_str()));
@@ -2169,27 +2219,27 @@ com_session(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_open(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return Ok(string());
+        return Ok(std::string());
     } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else if (args.size() < 2) {
         return ec.make_error("expecting file name to open");
     }
 
-    vector<string> word_exp;
+    std::vector<std::string> word_exp;
     size_t colon_index;
-    string pat;
+    std::string pat;
 
     pat = trim(remaining_args(cmdline, args));
 
-    vector<string> split_args;
+    std::vector<std::string> split_args;
     shlex lexer(pat);
     scoped_resolver scopes = {
         &ec.ec_local_vars.top(),
@@ -2200,12 +2250,12 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
         return ec.make_error("unable to parse arguments");
     }
 
-    map<string, logfile_open_options> file_names;
-    vector<pair<string, int>> files_to_front;
-    vector<string> closed_files;
+    std::map<std::string, logfile_open_options> file_names;
+    std::vector<std::pair<std::string, int>> files_to_front;
+    std::vector<std::string> closed_files;
 
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-        string fn = split_args[lpc];
+        std::string fn = split_args[lpc];
         int top = 0;
 
         if (startswith(fn, "pt:")) {
@@ -2218,7 +2268,7 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
         }
 
         if (access(fn.c_str(), R_OK) != 0
-            && (colon_index = fn.rfind(':')) != string::npos)
+            && (colon_index = fn.rfind(':')) != std::string::npos)
         {
             if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1) {
                 fn = fn.substr(0, colon_index);
@@ -2250,7 +2300,7 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                 retval = "error: lnav was not compiled with libcurl";
 #else
                 if (!ec.ec_dry_run) {
-                    auto ul = make_shared<url_loader>(fn);
+                    auto ul = std::make_shared<url_loader>(fn);
 
                     lnav_data.ld_active_files.fc_file_names[fn].with_fd(
                         ul->copy_fd());
@@ -2266,7 +2316,7 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                 file_names.emplace(fn, logfile_open_options());
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
-                if (fn.find(':') != string::npos) {
+                if (fn.find(':') != std::string::npos) {
                     file_names.emplace(fn, logfile_open_options());
                     retval = "info: watching -- " + fn;
                 } else {
@@ -2284,8 +2334,8 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                 } else if (ec.ec_dry_run) {
                     retval = "";
                 } else {
-                    auto fifo_piper = make_shared<piper_proc>(
-                        fifo_fd.release(),
+                    auto fifo_piper = std::make_shared<piper_proc>(
+                        std::move(fifo_fd),
                         false,
                         lnav::filesystem::open_temp_file(
                             ghc::filesystem::temp_directory_path()
@@ -2298,20 +2348,16 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                             .expect("Cannot create temporary file for FIFO")
                             .second);
                     auto fifo_out_fd = fifo_piper->get_fd();
-                    char desc[128];
-
-                    snprintf(desc,
-                             sizeof(desc),
-                             "FIFO [%d]",
-                             lnav_data.ld_fifo_counter++);
+                    auto desc = fmt::format(FMT_STRING("FIFO [{}]"),
+                                            lnav_data.ld_fifo_counter++);
                     lnav_data.ld_active_files.fc_file_names[desc].with_fd(
-                        fifo_out_fd);
+                        std::move(fifo_out_fd));
                     lnav_data.ld_pipers.push_back(fifo_piper);
                 }
             } else if ((abspath = realpath(fn.c_str(), nullptr)) == nullptr) {
                 return ec.make_error("cannot find file -- {}", fn);
             } else if (S_ISDIR(st.st_mode)) {
-                string dir_wild(abspath.in());
+                std::string dir_wild(abspath.in());
 
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
@@ -2343,10 +2389,10 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
         lnav_data.ld_preview_source.clear();
         if (!file_names.empty()) {
             auto iter = file_names.begin();
-            string fn = iter->first;
+            std::string fn = iter->first;
             auto_fd preview_fd;
 
-            if (fn.find(':') != string::npos) {
+            if (fn.find(':') != std::string::npos) {
                 auto id = lnav_data.ld_preview_generation;
                 lnav_data.ld_preview_status_source.get_description()
                     .set_cylon(true)
@@ -2373,7 +2419,7 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                     }
                     if (gl->gl_pathc > 10) {
                         al.append(" ... ")
-                            .append(to_string(gl->gl_pathc - 10),
+                            .append(std::to_string(gl->gl_pathc - 10),
                                     &view_curses::VC_STYLE,
                                     A_BOLD)
                             .append(" files not shown ...");
@@ -2386,12 +2432,12 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
                 }
             } else if ((preview_fd = open(fn.c_str(), O_RDONLY)) == -1) {
                 return ec.make_error(
-                    "unable to open file: {} -- {}", fn, strerror(errno));
+                    "unable to open file3: {} -- {}", fn, strerror(errno));
             } else {
                 line_buffer lb;
                 attr_line_t al;
                 file_range range;
-                string lines;
+                std::string lines;
 
                 lb.set_fd(preview_fd);
                 for (int lpc = 0; lpc < 10; lpc++) {
@@ -2423,8 +2469,9 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
         lnav_data.ld_files_to_front.insert(lnav_data.ld_files_to_front.end(),
                                            files_to_front.begin(),
                                            files_to_front.end());
-        lnav_data.ld_active_files.fc_file_names.insert(file_names.begin(),
-                                                       file_names.end());
+        lnav_data.ld_active_files.fc_file_names.insert(
+            std::make_move_iterator(file_names.begin()),
+            std::make_move_iterator(file_names.end()));
         for (const auto& fn : closed_files) {
             lnav_data.ld_active_files.fc_closed_files.erase(fn);
         }
@@ -2433,16 +2480,16 @@ com_open(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_close(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else {
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         nonstd::optional<ghc::filesystem::path> actual_path;
-        string fn;
+        std::string fn;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
             textfile_sub_source& tss = lnav_data.ld_text_source;
@@ -2497,12 +2544,14 @@ com_close(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_file_visibility(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_file_visibility(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
 {
     bool only_this_file = false;
     bool make_visible;
-    string retval;
+    std::string retval;
 
     if (args[0] == "show-file") {
         make_visible = true;
@@ -2515,7 +2564,7 @@ com_file_visibility(exec_context& ec, string cmdline, vector<string>& args)
 
     if (args.size() == 1 || only_this_file) {
         textview_curses* tc = *lnav_data.ld_view_stack.top();
-        shared_ptr<logfile> lf;
+        std::shared_ptr<logfile> lf;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
             textfile_sub_source& tss = lnav_data.ld_text_source;
@@ -2611,10 +2660,12 @@ com_file_visibility(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_hide_file(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_hide_file(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("visible-files");
@@ -2625,10 +2676,12 @@ com_hide_file(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_show_file(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_show_file(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("hidden-files");
@@ -2639,10 +2692,12 @@ com_show_file(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_show_only_this_file(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_show_only_this_file(exec_context& ec,
+                        std::string cmdline,
+                        std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else {
@@ -2652,16 +2707,18 @@ com_show_only_this_file(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_comment(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_comment(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2692,8 +2749,8 @@ com_comment(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static string
-com_comment_prompt(exec_context& ec, const string& cmdline)
+static std::string
+com_comment_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2713,15 +2770,17 @@ com_comment_prompt(exec_context& ec, const string& cmdline)
     return "";
 }
 
-static Result<string, string>
-com_clear_comment(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_clear_comment(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
-        return Ok(string());
+        return Ok(std::string());
     } else if (ec.ec_dry_run) {
-        return Ok(string());
+        return Ok(std::string());
     } else {
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2756,17 +2815,17 @@ com_clear_comment(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_tag(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("tag");
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2780,7 +2839,7 @@ com_tag(exec_context& ec, string cmdline, vector<string>& args)
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
         bookmark_metadata& line_meta = bm[lss.at(tc->get_top())];
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
-            string tag = args[lpc];
+            std::string tag = args[lpc];
 
             if (!startswith(tag, "#")) {
                 tag = "#" + tag;
@@ -2801,17 +2860,17 @@ com_tag(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_untag(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("line-tags");
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2828,7 +2887,7 @@ com_untag(exec_context& ec, string cmdline, vector<string>& args)
             bookmark_metadata& line_meta = iter->second;
 
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
-                string tag = args[lpc];
+                std::string tag = args[lpc];
 
                 if (!startswith(tag, "#")) {
                     tag = "#" + tag;
@@ -2853,17 +2912,19 @@ com_untag(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_delete_tags(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_delete_tags(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("tag");
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -2872,11 +2933,11 @@ com_delete_tags(exec_context& ec, string cmdline, vector<string>& args)
                 "The :delete-tag command only works in the log view");
         }
 
-        set<string>& known_tags = bookmark_metadata::KNOWN_TAGS;
-        vector<string> tags;
+        std::set<std::string>& known_tags = bookmark_metadata::KNOWN_TAGS;
+        std::vector<std::string> tags;
 
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
-            string tag = args[lpc];
+            std::string tag = args[lpc];
 
             if (!startswith(tag, "#")) {
                 tag = "#" + tag;
@@ -2926,13 +2987,15 @@ com_delete_tags(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_partition_name(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_partition_name(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() > 1) {
         if (ec.ec_dry_run) {
             retval = "";
@@ -2958,13 +3021,15 @@ com_partition_name(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_clear_partition(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_clear_partition(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
-        return Ok(string());
+        return Ok(std::string());
     } else if (args.size() == 1) {
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
@@ -2997,10 +3062,12 @@ com_clear_partition(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_pt_time(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_pt_time(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("move-time");
@@ -3015,7 +3082,8 @@ com_pt_time(exec_context& ec, string cmdline, vector<string>& args)
                       "this command to set it";
             } else {
                 ctime_r(&lnav_data.ld_pt_min_time, ftime);
-                retval = "info: papertrail minimum time is " + string(ftime);
+                retval
+                    = "info: papertrail minimum time is " + std::string(ftime);
             }
         }
         if (args[0] == "pt-max-time") {
@@ -3025,11 +3093,12 @@ com_pt_time(exec_context& ec, string cmdline, vector<string>& args)
                       "this command to set it";
             } else {
                 ctime_r(&lnav_data.ld_pt_max_time, ftime);
-                retval = "info: papertrail maximum time is " + string(ftime);
+                retval
+                    = "info: papertrail maximum time is " + std::string(ftime);
             }
         }
     } else if (args.size() >= 2) {
-        string all_args = remaining_args(cmdline, args);
+        std::string all_args = remaining_args(cmdline, args);
         struct timeval new_time = {0, 0};
         date_time_scanner dts;
         struct exttm tm;
@@ -3065,10 +3134,12 @@ com_pt_time(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_summarize(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_summarize(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("colname");
@@ -3079,15 +3150,15 @@ com_summarize(exec_context& ec, string cmdline, vector<string>& args)
         return ec.make_error("no columns specified");
     } else {
         auto_mem<char, sqlite3_free> query_frag;
-        std::vector<string> other_columns;
-        std::vector<string> num_columns;
+        std::vector<std::string> other_columns;
+        std::vector<std::string> num_columns;
         sql_progress_guard progress_guard(sql_progress,
                                           sql_progress_finished,
                                           ec.ec_source.top().first,
                                           ec.ec_source.top().second);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int retcode;
-        string query;
+        std::string query;
 
         query = "SELECT ";
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
@@ -3121,7 +3192,7 @@ com_summarize(exec_context& ec, string cmdline, vector<string>& args)
         }
 
         if (ec.ec_dry_run) {
-            return Ok(string());
+            return Ok(std::string());
         }
 
         for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
@@ -3261,10 +3332,12 @@ com_summarize(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_add_test(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_add_test(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (args.size() > 1) {
@@ -3280,7 +3353,7 @@ com_add_test(exec_context& ec, string cmdline, vector<string>& args)
         for (iter = bv.begin(); iter != bv.end(); ++iter) {
             auto_mem<FILE> file(fclose);
             char path[PATH_MAX];
-            string line;
+            std::string line;
 
             tc->grep_value_for_line(*iter, line);
 
@@ -3303,10 +3376,12 @@ com_add_test(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_switch_to_view(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_switch_to_view(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("viewname");
@@ -3334,10 +3409,12 @@ com_switch_to_view(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_toggle_filtering(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_toggle_filtering(exec_context& ec,
+                     std::string cmdline,
+                     std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -3350,10 +3427,12 @@ com_toggle_filtering(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_zoom_to(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_zoom_to(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("zoomlevel");
@@ -3416,8 +3495,10 @@ com_zoom_to(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_reset_session(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_reset_session(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -3425,11 +3506,13 @@ com_reset_session(exec_context& ec, string cmdline, vector<string>& args)
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_load_session(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_load_session(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -3437,24 +3520,28 @@ com_load_session(exec_context& ec, string cmdline, vector<string>& args)
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_save_session(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_save_session(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
         save_session();
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_set_min_log_level(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_set_min_log_level(exec_context& ec,
+                      std::string cmdline,
+                      std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("levelname");
@@ -3468,7 +3555,7 @@ com_set_min_log_level(exec_context& ec, string cmdline, vector<string>& args)
         lss.set_min_log_level(new_level);
 
         retval = ("info: minimum log level is now -- "
-                  + string(level_names[new_level]));
+                  + std::string(level_names[new_level]));
     } else {
         return ec.make_error("expecting a log level name");
     }
@@ -3476,10 +3563,12 @@ com_set_min_log_level(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_toggle_field(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_toggle_field(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("colname");
@@ -3496,14 +3585,14 @@ com_toggle_field(exec_context& ec, string cmdline, vector<string>& args)
         } else {
             logfile_sub_source& lss = lnav_data.ld_log_source;
             bool hide = args[0] == "hide-fields";
-            vector<string> found_fields, missing_fields;
+            std::vector<std::string> found_fields, missing_fields;
 
             for (int lpc = 1; lpc < (int) args.size(); lpc++) {
                 intern_string_t name;
                 std::shared_ptr<log_format> format;
                 size_t dot;
 
-                if ((dot = args[lpc].find('.')) != string::npos) {
+                if ((dot = args[lpc].find('.')) != std::string::npos) {
                     const intern_string_t format_name
                         = intern_string::lookup(args[lpc].c_str(), dot);
 
@@ -3552,10 +3641,12 @@ com_toggle_field(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_hide_line(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_hide_line(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("move-time");
@@ -3576,12 +3667,15 @@ com_hide_line(exec_context& ec, string cmdline, vector<string>& args)
                 sql_strftime(max_time_str, sizeof(max_time_str), max_time);
             }
             if (have_min_time && have_max_time) {
-                retval = "info: hiding lines before " + string(min_time_str)
-                    + " and after " + string(max_time_str);
+                retval = "info: hiding lines before "
+                    + std::string(min_time_str) + " and after "
+                    + std::string(max_time_str);
             } else if (have_min_time) {
-                retval = "info: hiding lines before " + string(min_time_str);
+                retval
+                    = "info: hiding lines before " + std::string(min_time_str);
             } else if (have_max_time) {
-                retval = "info: hiding lines after " + string(max_time_str);
+                retval
+                    = "info: hiding lines after " + std::string(max_time_str);
             } else {
                 retval
                     = "info: no lines hidden by time, pass an absolute or "
@@ -3592,7 +3686,7 @@ com_hide_line(exec_context& ec, string cmdline, vector<string>& args)
                 "hiding lines by time only works in the log view");
         }
     } else if (args.size() >= 2) {
-        string all_args = remaining_args(cmdline, args);
+        std::string all_args = remaining_args(cmdline, args);
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         logfile_sub_source& lss = lnav_data.ld_log_source;
         date_time_scanner dts;
@@ -3630,7 +3724,7 @@ com_hide_line(exec_context& ec, string cmdline, vector<string>& args)
 
         if (tv_set && !ec.ec_dry_run) {
             char time_text[256];
-            string relation;
+            std::string relation;
 
             sql_strftime(time_text, sizeof(time_text), tv);
             if (args[0] == "hide-lines-before") {
@@ -3648,10 +3742,12 @@ com_hide_line(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_show_lines(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_show_lines(exec_context& ec,
+               std::string cmdline,
+               std::vector<std::string>& args)
 {
-    string retval = "info: showing lines";
+    std::string retval = "info: showing lines";
 
     if (ec.ec_dry_run) {
         retval = "";
@@ -3667,10 +3763,12 @@ com_show_lines(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_hide_unmarked(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_hide_unmarked(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval = "info: hid unmarked lines";
+    std::string retval = "info: hid unmarked lines";
 
     if (args.empty()) {
     } else if (ec.ec_dry_run) {
@@ -3691,10 +3789,12 @@ com_hide_unmarked(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_show_unmarked(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_show_unmarked(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
 {
-    string retval = "info: showing unmarked lines";
+    std::string retval = "info: showing unmarked lines";
 
     if (ec.ec_dry_run) {
         retval = "";
@@ -3705,30 +3805,36 @@ com_show_unmarked(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_rebuild(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_rebuild(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
         rebuild_indexes_repeatedly();
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_shexec(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_shexec(exec_context& ec,
+           std::string cmdline,
+           std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
         log_perror(system(cmdline.substr(args[0].size()).c_str()));
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_poll_now(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_poll_now(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -3736,11 +3842,13 @@ com_poll_now(exec_context& ec, string cmdline, vector<string>& args)
             [](auto& clooper) { clooper.process_all(); });
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_redraw(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_redraw(exec_context& ec,
+           std::string cmdline,
+           std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (ec.ec_dry_run) {
@@ -3748,21 +3856,21 @@ com_redraw(exec_context& ec, string cmdline, vector<string>& args)
         redrawwin(lnav_data.ld_window);
     }
 
-    return Ok(string());
+    return Ok(std::string());
 }
 
-static Result<string, string>
-com_echo(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval = "error: expecting a message";
+    std::string retval = "error: expecting a message";
 
     if (args.empty()) {
     } else if (args.size() >= 1) {
         bool lf = true;
-        string src;
+        std::string src;
 
         if (args.size() > 2 && args[1] == "-n") {
-            string::size_type index_in_cmdline = cmdline.find(args[1]);
+            std::string::size_type index_in_cmdline = cmdline.find(args[1]);
 
             lf = false;
             src = cmdline.substr(index_in_cmdline + args[1].length() + 1);
@@ -3801,10 +3909,12 @@ com_echo(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_alt_msg(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_alt_msg(exec_context& ec,
+            std::string cmdline,
+            std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
     } else if (ec.ec_dry_run) {
@@ -3815,7 +3925,7 @@ com_alt_msg(exec_context& ec, string cmdline, vector<string>& args)
         }
         retval = "";
     } else {
-        string msg = remaining_args(cmdline, args);
+        std::string msg = remaining_args(cmdline, args);
 
         if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_alt_value(msg);
@@ -3827,16 +3937,16 @@ com_alt_msg(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_eval(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("*");
     } else if (args.size() > 1) {
-        string all_args = remaining_args(cmdline, args);
-        string expanded_cmd;
+        std::string all_args = remaining_args(cmdline, args);
+        std::string expanded_cmd;
         shlex lexer(all_args.c_str(), all_args.size());
 
         log_debug("Evaluating: %s", all_args.c_str());
@@ -3862,10 +3972,10 @@ com_eval(exec_context& ec, string cmdline, vector<string>& args)
 
             lnav_data.ld_preview_source.replace_with(al);
 
-            return Ok(string());
+            return Ok(std::string());
         }
 
-        string alt_msg;
+        std::string alt_msg;
         switch (expanded_cmd[0]) {
             case ':':
                 return execute_command(ec, expanded_cmd.substr(1));
@@ -3891,17 +4001,19 @@ com_eval(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_config(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_config(exec_context& ec,
+           std::string cmdline,
+           std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("config-option");
     } else if (args.size() > 1) {
         yajlpp_parse_context ypc("input", &lnav_config_handlers);
-        vector<string> errors;
-        string option = args[1];
+        std::vector<std::string> errors;
+        std::string option = args[1];
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option)
@@ -3931,7 +4043,7 @@ com_config(exec_context& ec, string cmdline, vector<string>& args)
                 jph->gen(ygc, gen);
             }
 
-            string old_value = gen.to_string_fragment().to_string();
+            std::string old_value = gen.to_string_fragment().to_string();
 
             if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
                 lnav_config = rollback_lnav_config;
@@ -3961,7 +4073,7 @@ com_config(exec_context& ec, string cmdline, vector<string>& args)
                         FMT_STRING("{} = {}"), option, trim(old_value));
                 }
             } else {
-                string value = remaining_args(cmdline, args, 2);
+                std::string value = remaining_args(cmdline, args, 2);
                 bool changed = false;
 
                 if (ec.ec_dry_run) {
@@ -4043,10 +4155,12 @@ com_config(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_reset_config(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_reset_config(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("config-option");
@@ -4054,7 +4168,7 @@ com_reset_config(exec_context& ec, string cmdline, vector<string>& args)
         return ec.make_error("expecting a configuration option to reset");
     } else {
         yajlpp_parse_context ypc("input", &lnav_config_handlers);
-        string option = args[1];
+        std::string option = args[1];
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option).with_obj(lnav_config);
@@ -4170,7 +4284,7 @@ public:
             = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
         vis_line_t end_line = lss.find_from_time(sr.sr_end_time)
                                   .value_or(lss.text_line_count());
-        vector<logline_value> values;
+        std::vector<logline_value> values;
         string_attrs_t sa;
 
         for (vis_line_t curr_line = begin_line; curr_line < end_line;
@@ -4190,7 +4304,7 @@ public:
             values.clear();
             format->annotate(cl, sbr, sa, values, false);
 
-            vector<logline_value>::iterator lv_iter;
+            std::vector<logline_value>::iterator lv_iter;
 
             lv_iter = find_if(values.begin(),
                               values.end(),
@@ -4225,7 +4339,7 @@ public:
         vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
         vis_line_t end_line
             = lss.find_from_time(end_time).value_or(lss.text_line_count());
-        vector<logline_value> values;
+        std::vector<logline_value> values;
         string_attrs_t sa;
 
         for (vis_line_t curr_line = begin_line; curr_line < end_line;
@@ -4245,7 +4359,7 @@ public:
             values.clear();
             format->annotate(cl, sbr, sa, values, false);
 
-            vector<logline_value>::iterator lv_iter;
+            std::vector<logline_value>::iterator lv_iter;
 
             lv_iter = find_if(values.begin(),
                               values.end(),
@@ -4283,7 +4397,7 @@ public:
 
 class db_spectro_value_source : public spectrogram_value_source {
 public:
-    db_spectro_value_source(string colname)
+    db_spectro_value_source(std::string colname)
         : dsvs_colname(std::move(colname)), dsvs_begin_time(0), dsvs_end_time(0)
     {
         this->update_stats();
@@ -4296,7 +4410,7 @@ public:
         this->dsvs_stats.clear();
 
         db_label_source& dls = lnav_data.ld_db_row_source;
-        stacked_bar_chart<string>& chart = dls.dls_chart;
+        stacked_bar_chart<std::string>& chart = dls.dls_chart;
         date_time_scanner dts;
 
         this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
@@ -4324,7 +4438,7 @@ public:
             return;
         }
 
-        stacked_bar_chart<string>::bucket_stats_t bs
+        stacked_bar_chart<std::string>::bucket_stats_t bs
             = chart.get_stats_for(this->dsvs_colname);
 
         this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
@@ -4373,25 +4487,27 @@ public:
                       double range_min,
                       double range_max){};
 
-    string dsvs_colname;
+    std::string dsvs_colname;
     logline_value_stats dsvs_stats;
     time_t dsvs_begin_time;
     time_t dsvs_end_time;
     int dsvs_column_index;
-    string dsvs_error_msg;
+    std::string dsvs_error_msg;
 };
 
-static Result<string, string>
-com_spectrogram(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_spectrogram(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
 {
-    string retval;
+    std::string retval;
 
     if (args.empty()) {
         args.emplace_back("numeric-colname");
     } else if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 2) {
-        string colname = remaining_args(cmdline, args);
+        std::string colname = remaining_args(cmdline, args);
         spectrogram_source& ss = lnav_data.ld_spectro_source;
         bool found = false;
 
@@ -4403,7 +4519,7 @@ com_spectrogram(exec_context& ec, string cmdline, vector<string>& args)
         ss.invalidate();
 
         if (*lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
-            unique_ptr<db_spectro_value_source> dsvs(
+            std::unique_ptr<db_spectro_value_source> dsvs(
                 new db_spectro_value_source(colname));
 
             if (!dsvs->dsvs_error_msg.empty()) {
@@ -4413,7 +4529,7 @@ com_spectrogram(exec_context& ec, string cmdline, vector<string>& args)
                 found = true;
             }
         } else {
-            unique_ptr<log_spectro_value_source> lsvs(
+            std::unique_ptr<log_spectro_value_source> lsvs(
                 new log_spectro_value_source(intern_string::lookup(colname)));
 
             if (!lsvs->lsvs_found) {
@@ -4442,18 +4558,18 @@ com_spectrogram(exec_context& ec, string cmdline, vector<string>& args)
     return Ok(retval);
 }
 
-static Result<string, string>
-com_quit(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
         lnav_data.ld_looping = false;
     }
-    return Ok(string());
+    return Ok(std::string());
 }
 
 static void
-command_prompt(vector<string>& args)
+command_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -4567,7 +4683,7 @@ command_prompt(vector<string>& args)
 }
 
 static void
-script_prompt(vector<string>& args)
+script_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     auto& scripts = injector::get<available_scripts&>();
@@ -4590,7 +4706,7 @@ script_prompt(vector<string>& args)
 }
 
 static void
-search_prompt(vector<string>& args)
+search_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
@@ -4608,7 +4724,7 @@ search_prompt(vector<string>& args)
 }
 
 static void
-search_filters_prompt(vector<string>& args)
+search_filters_prompt(std::vector<std::string>& args)
 {
     lnav_data.ld_mode = LNM_SEARCH_FILTERS;
     lnav_data.ld_filter_view.reload_data();
@@ -4626,7 +4742,7 @@ search_filters_prompt(vector<string>& args)
 }
 
 static void
-search_files_prompt(vector<string>& args)
+search_files_prompt(std::vector<std::string>& args)
 {
     static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
 
@@ -4645,7 +4761,7 @@ search_files_prompt(vector<string>& args)
 }
 
 static void
-sql_prompt(vector<string>& args)
+sql_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
@@ -4670,7 +4786,7 @@ sql_prompt(vector<string>& args)
 }
 
 static void
-user_prompt(vector<string>& args)
+user_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     lnav_data.ld_exec_context.ec_top_line = tc->get_top();
@@ -4684,18 +4800,21 @@ user_prompt(vector<string>& args)
     lnav_data.ld_status[LNS_BOTTOM].do_update();
 }
 
-static Result<string, string>
-com_prompt(exec_context& ec, string cmdline, vector<string>& args)
+static Result<std::string, std::string>
+com_prompt(exec_context& ec,
+           std::string cmdline,
+           std::vector<std::string>& args)
 {
-    static map<string, std::function<void(vector<string>&)>> PROMPT_TYPES = {
-        {"command", command_prompt},
-        {"script", script_prompt},
-        {"search", search_prompt},
-        {"search-filters", search_filters_prompt},
-        {"search-files", search_files_prompt},
-        {"sql", sql_prompt},
-        {"user", user_prompt},
-    };
+    static std::map<std::string, std::function<void(std::vector<std::string>&)>>
+        PROMPT_TYPES = {
+            {"command", command_prompt},
+            {"script", script_prompt},
+            {"search", search_prompt},
+            {"search-filters", search_filters_prompt},
+            {"search-files", search_files_prompt},
+            {"sql", sql_prompt},
+            {"user", user_prompt},
+        };
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
@@ -4720,7 +4839,7 @@ com_prompt(exec_context& ec, string cmdline, vector<string>& args)
         prompter->second(args);
         lnav_data.ld_rl_view->set_alt_focus(is_alt);
     }
-    return Ok(string());
+    return Ok(std::string());
 }
 
 readline_context::command_t STD_COMMANDS[] = {
@@ -5549,7 +5668,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":quit").with_summary("Quit lnav")}};
 
-static unordered_map<char const*, vector<char const*>> aliases
+static std::unordered_map<char const*, std::vector<char const*>> aliases
     = {{"quit", {"q", "q!"}},
        {"write-table-to",
         {

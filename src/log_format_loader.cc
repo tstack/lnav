@@ -40,7 +40,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -52,19 +52,16 @@
 #include "file_format.hh"
 #include "fmt/format.h"
 #include "lnav_config.hh"
-#include "lnav_util.hh"
 #include "log_format_ext.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-using namespace std;
-
 static void extract_metadata(const char* contents,
                              size_t len,
                              struct script_metadata& meta_out);
 
-typedef map<intern_string_t, std::shared_ptr<external_log_format>>
+typedef std::map<intern_string_t, std::shared_ptr<external_log_format>>
     log_formats_map_t;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
@@ -72,7 +69,7 @@ static log_formats_map_t LOG_FORMATS;
 
 struct userdata {
     ghc::filesystem::path ud_format_path;
-    vector<intern_string_t>* ud_format_names{nullptr};
+    std::vector<intern_string_t>* ud_format_names{nullptr};
     std::vector<std::string>* ud_errors{nullptr};
 };
 
@@ -80,7 +77,7 @@ static external_log_format*
 ensure_format(const yajlpp_provider_context& ypc, userdata* ud)
 {
     const intern_string_t name = ypc.get_substr_i(0);
-    vector<intern_string_t>* formats = ud->ud_format_names;
+    std::vector<intern_string_t>* formats = ud->ud_format_names;
     external_log_format* retval;
 
     retval = LOG_FORMATS[name].get();
@@ -105,11 +102,11 @@ ensure_format(const yajlpp_provider_context& ypc, userdata* ud)
 static external_log_format::pattern*
 pattern_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
 {
-    string regex_name = ypc.get_substr(0);
+    auto regex_name = ypc.get_substr(0);
     auto& pat = elf->elf_patterns[regex_name];
 
     if (pat.get() == nullptr) {
-        pat = make_shared<external_log_format::pattern>();
+        pat = std::make_shared<external_log_format::pattern>();
     }
 
     if (pat->p_config_path.empty()) {
@@ -126,10 +123,10 @@ value_def_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
     const intern_string_t value_name = ypc.get_substr_i(0);
 
     auto iter = elf->elf_value_defs.find(value_name);
-    shared_ptr<external_log_format::value_def> retval;
+    std::shared_ptr<external_log_format::value_def> retval;
 
     if (iter == elf->elf_value_defs.end()) {
-        retval = make_shared<external_log_format::value_def>(
+        retval = std::make_shared<external_log_format::value_def>(
             value_name, value_kind_t::VALUE_TEXT, -1, elf);
         elf->elf_value_defs[value_name] = retval;
         elf->elf_value_def_order.emplace_back(retval);
@@ -173,7 +170,7 @@ static int
 read_format_bool(yajlpp_parse_context* ypc, int val)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string field_name = ypc->get_path_fragment(1);
+    auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "convert-to-local-time")
         elf->lf_date_time.dts_local_time = val;
@@ -193,7 +190,7 @@ static int
 read_format_double(yajlpp_parse_context* ypc, double val)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string field_name = ypc->get_path_fragment(1);
+    auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
         if (val <= 0) {
@@ -213,7 +210,7 @@ static int
 read_format_int(yajlpp_parse_context* ypc, long long val)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string field_name = ypc->get_path_fragment(1);
+    auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
         if (val <= 0) {
@@ -236,8 +233,8 @@ read_format_field(yajlpp_parse_context* ypc,
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto leading_slash = len > 0 && str[0] == '/';
-    auto value = string((const char*) (leading_slash ? str + 1 : str),
-                        leading_slash ? len - 1 : len);
+    auto value = std::string((const char*) (leading_slash ? str + 1 : str),
+                             leading_slash ? len - 1 : len);
     auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "file-pattern") {
@@ -286,8 +283,8 @@ static int
 read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string regex = string((const char*) str, len);
-    string level_name_or_number = ypc->get_path_fragment(2);
+    auto regex = std::string((const char*) str, len);
+    auto level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
     elf->elf_level_patterns[level].lp_regex = regex;
 
@@ -298,7 +295,7 @@ static int
 read_level_int(yajlpp_parse_context* ypc, long long val)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string level_name_or_number = ypc->get_path_fragment(2);
+    auto level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
 
     elf->elf_level_pairs.emplace_back(val, level);
@@ -310,9 +307,9 @@ static int
 read_action_def(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string action_name = ypc->get_path_fragment(2);
-    string field_name = ypc->get_path_fragment(3);
-    string val = string((const char*) str, len);
+    auto action_name = ypc->get_path_fragment(2);
+    auto field_name = ypc->get_path_fragment(3);
+    auto val = std::string((const char*) str, len);
 
     elf->lf_action_defs[action_name].ad_name = action_name;
     if (field_name == "label")
@@ -325,8 +322,8 @@ static int
 read_action_bool(yajlpp_parse_context* ypc, int val)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string action_name = ypc->get_path_fragment(2);
-    string field_name = ypc->get_path_fragment(3);
+    auto action_name = ypc->get_path_fragment(2);
+    auto field_name = ypc->get_path_fragment(3);
 
     elf->lf_action_defs[action_name].ad_capture_output = val;
 
@@ -337,9 +334,9 @@ static int
 read_action_cmd(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    string action_name = ypc->get_path_fragment(2);
-    string field_name = ypc->get_path_fragment(3);
-    string val = string((const char*) str, len);
+    auto action_name = ypc->get_path_fragment(2);
+    auto field_name = ypc->get_path_fragment(3);
+    auto val = std::string((const char*) str, len);
 
     elf->lf_action_defs[action_name].ad_name = action_name;
     elf->lf_action_defs[action_name].ad_cmdline.push_back(val);
@@ -368,7 +365,7 @@ read_json_constant(yajlpp_parse_context* ypc,
                    const unsigned char* str,
                    size_t len)
 {
-    auto val = string((const char*) str, len);
+    auto val = std::string((const char*) str, len);
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
 
     ypc->ypc_array_index.back() += 1;
@@ -386,7 +383,7 @@ create_search_table(yajlpp_parse_context* ypc,
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     const intern_string_t table_name = ypc->get_path_fragment_i(2);
-    string regex = string((const char*) str, len);
+    auto regex = std::string((const char*) str, len);
 
     elf->elf_search_tables.emplace_back(table_name, regex);
 
@@ -810,7 +807,7 @@ struct json_path_container format_handlers = {
 static int
 read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
-    auto file_id = string((const char*) str, len);
+    auto file_id = std::string((const char*) str, len);
 
     if (find(SUPPORTED_FORMAT_SCHEMAS.begin(),
              SUPPORTED_FORMAT_SCHEMAS.end(),
@@ -927,7 +924,7 @@ format_error_reporter(const yajlpp_parse_context& ypc,
 
 std::vector<intern_string_t>
 load_format_file(const ghc::filesystem::path& filename,
-                 std::vector<string>& errors)
+                 std::vector<std::string>& errors)
 {
     std::vector<intern_string_t> retval;
     struct userdata ud;
@@ -985,7 +982,8 @@ load_format_file(const ghc::filesystem::path& filename,
 }
 
 static void
-load_from_path(const ghc::filesystem::path& path, std::vector<string>& errors)
+load_from_path(const ghc::filesystem::path& path,
+               std::vector<std::string>& errors)
 {
     auto format_path = path / "formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
@@ -999,8 +997,8 @@ load_from_path(const ghc::filesystem::path& path, std::vector<string>& errors)
                 continue;
             }
 
-            string filename(gl->gl_pathv[lpc]);
-            vector<intern_string_t> format_list;
+            std::string filename(gl->gl_pathv[lpc]);
+            std::vector<intern_string_t> format_list;
 
             format_list = load_format_file(filename, errors);
             if (format_list.empty()) {
@@ -1059,7 +1057,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 
     uint8_t mod_counter = 0;
 
-    vector<std::shared_ptr<external_log_format>> alpha_ordered_formats;
+    std::vector<std::shared_ptr<external_log_format>> alpha_ordered_formats;
     for (auto iter = LOG_FORMATS.begin(); iter != LOG_FORMATS.end(); ++iter) {
         auto& elf = iter->second;
         elf->build(errors);
@@ -1096,7 +1094,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
     auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;
 
     while (!alpha_ordered_formats.empty()) {
-        vector<intern_string_t> popped_formats;
+        std::vector<intern_string_t> popped_formats;
 
         for (auto iter = alpha_ordered_formats.begin();
              iter != alpha_ordered_formats.end();)
@@ -1156,7 +1154,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 static void
 exec_sql_in_path(sqlite3* db,
                  const ghc::filesystem::path& path,
-                 std::vector<string>& errors)
+                 std::vector<std::string>& errors)
 {
     auto format_path = path / "formats/*/*.sql";
     static_root_mem<glob_t, globfree> gl;
@@ -1216,7 +1214,7 @@ extract_metadata(const char* contents,
     if (!meta_out.sm_synopsis.empty()) {
         size_t space = meta_out.sm_synopsis.find(' ');
 
-        if (space == string::npos) {
+        if (space == std::string::npos) {
             space = meta_out.sm_synopsis.size();
         }
         meta_out.sm_name = meta_out.sm_synopsis.substr(0, space);
@@ -1253,7 +1251,7 @@ find_format_in_path(const ghc::filesystem::path& path,
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             const char* filename = basename(gl->gl_pathv[lpc]);
-            string script_name = string(filename, strlen(filename) - 5);
+            auto script_name = std::string(filename, strlen(filename) - 5);
             struct script_metadata meta;
 
             meta.sm_path = gl->gl_pathv[lpc];
@@ -1267,7 +1265,7 @@ find_format_in_path(const ghc::filesystem::path& path,
 }
 
 void
-find_format_scripts(const vector<ghc::filesystem::path>& extra_paths,
+find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
                     available_scripts& scripts)
 {
     for (const auto& extra_path : extra_paths) {

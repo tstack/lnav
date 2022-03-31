@@ -31,7 +31,7 @@
 
 #include <unistd.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "config.h"
 #include "ghc/filesystem.hpp"

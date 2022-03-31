@@ -44,7 +44,6 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 
-using namespace std;
 using namespace mapbox;
 
 static util::variant<const char*, string_fragment>
@@ -95,8 +94,8 @@ sql_dirname(const char* path_in)
     return path_in[0] == '/' ? "/" : ".";
 }
 
-static nonstd::optional<string>
-sql_joinpath(const vector<const char*>& paths)
+static nonstd::optional<std::string>
+sql_joinpath(const std::vector<const char*>& paths)
 {
     std::string full_path;
 
@@ -123,7 +122,7 @@ sql_joinpath(const vector<const char*>& paths)
     return full_path;
 }
 
-static string
+static std::string
 sql_readlink(const char* path)
 {
     struct stat st;
@@ -145,10 +144,10 @@ sql_readlink(const char* path)
             "unable to read link: {} -- {}", path, strerror(errno));
     }
 
-    return string(buf, rc);
+    return std::string(buf, rc);
 }
 
-static string
+static std::string
 sql_realpath(const char* path)
 {
     char resolved_path[PATH_MAX];

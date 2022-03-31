@@ -38,8 +38,6 @@
 #include "pcrepp/pcrepp.hh"
 #include "view_curses.hh"
 
-using namespace std;
-
 static pcrepp&
 ansi_regex()
 {
@@ -69,7 +67,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
         switch (pi.get_substr_start(&caps[2])[0]) {
             case 'm':
                 for (lpc = caps[1].c_begin;
-                     lpc != string::npos && lpc < (size_t) caps[1].c_end;)
+                     lpc != std::string::npos && lpc < (size_t) caps[1].c_end;)
                 {
                     int ansi_code = 0;
 
@@ -103,7 +101,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
                         }
                     }
                     lpc = str.find(';', lpc);
-                    if (lpc != string::npos) {
+                    if (lpc != std::string::npos) {
                         lpc += 1;
                     }
                 }

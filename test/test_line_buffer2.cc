@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "auto_fd.hh"
+#include "base/auto_fd.hh"
 #include "config.h"
 #include "line_buffer.hh"
 

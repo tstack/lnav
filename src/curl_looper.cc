@@ -38,7 +38,7 @@
 
 #    include "curl_looper.hh"
 
-using namespace std;
+using namespace std::chrono_literals;
 
 struct curl_request_eq {
     explicit curl_request_eq(const std::string& name) : cre_name(name){};
@@ -49,7 +49,7 @@ struct curl_request_eq {
     };
 
     bool operator()(
-        const pair<mstime_t, std::shared_ptr<curl_request>>& pair) const
+        const std::pair<mstime_t, std::shared_ptr<curl_request>>& pair) const
     {
         return this->cre_name == pair.second->get_name();
     };

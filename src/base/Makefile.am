@@ -19,6 +19,7 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 noinst_LIBRARIES = libbase.a
 
 noinst_HEADERS = \
+    auto_fd.hh \
     auto_pid.hh \
     date_time_scanner.hh \
     enum_util.hh \

@@ -47,11 +47,9 @@
 #include "sql_util.hh"
 #include "yajlpp/json_ptr.hh"
 
-using namespace std;
-
 exec_context INIT_EXEC_CONTEXT;
 
-static const string MSG_FORMAT_STMT = R"(
+static const std::string MSG_FORMAT_STMT = R"(
 SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
     FROM all_logs
     GROUP BY log_msg_format
@@ -103,16 +101,17 @@ sql_progress_finished()
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 
-Result<string, string> execute_from_file(exec_context& ec,
-                                         const ghc::filesystem::path& path,
-                                         int line_number,
-                                         char mode,
-                                         const string& cmdline);
+Result<std::string, std::string> execute_from_file(
+    exec_context& ec,
+    const ghc::filesystem::path& path,
+    int line_number,
+    char mode,
+    const std::string& cmdline);
 
-Result<string, string>
-execute_command(exec_context& ec, const string& cmdline)
+Result<std::string, std::string>
+execute_command(exec_context& ec, const std::string& cmdline)
 {
-    vector<string> args;
+    std::vector<std::string> args;
 
     log_info("Executing: %s", cmdline.c_str());
 
@@ -131,14 +130,14 @@ execute_command(exec_context& ec, const string& cmdline)
     return ec.make_error("no command to execute");
 }
 
-Result<string, string>
-execute_sql(exec_context& ec, const string& sql, string& alt_msg)
+Result<std::string, std::string>
+execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
     db_label_source& dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     struct timeval start_tv, end_tv;
-    string stmt_str = trim(sql);
-    string retval;
+    std::string stmt_str = trim(sql);
+    std::string retval;
     int retcode;
 
     log_info("Executing SQL: %s", sql.c_str());
@@ -146,7 +145,7 @@ execute_sql(exec_context& ec, const string& sql, string& alt_msg)
     lnav_data.ld_bottom_source.grep_error("");
 
     if (startswith(stmt_str, ".")) {
-        vector<string> args;
+        std::vector<std::string> args;
         split_ws(stmt_str, args);
 
         auto sql_cmd_map = injector::get<readline_context::command_map_t*,
@@ -164,7 +163,7 @@ execute_sql(exec_context& ec, const string& sql, string& alt_msg)
 
     ec.ec_accumulator->clear();
 
-    pair<string, int> source = ec.ec_source.top();
+    std::pair<std::string, int> source = ec.ec_source.top();
     sql_progress_guard progress_guard(
         sql_progress, sql_progress_finished, source.first, source.second);
     gettimeofday(&start_tv, nullptr);
@@ -193,7 +192,7 @@ execute_sql(exec_context& ec, const string& sql, string& alt_msg)
 
         param_count = sqlite3_bind_parameter_count(stmt.in());
         for (int lpc = 0; lpc < param_count; lpc++) {
-            map<string, string>::iterator ov_iter;
+            std::map<std::string, std::string>::iterator ov_iter;
             const char* name;
 
             name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
@@ -207,7 +206,8 @@ execute_sql(exec_context& ec, const string& sql, string& alt_msg)
             } else if (name[0] == '$') {
                 const auto& lvars = ec.ec_local_vars.top();
                 const auto& gvars = ec.ec_global_vars;
-                map<string, string>::const_iterator local_var, global_var;
+                std::map<std::string, std::string>::const_iterator local_var,
+                    global_var;
                 const char* env_value;
 
                 if (lnav_data.ld_window) {
@@ -409,7 +409,7 @@ execute_sql(exec_context& ec, const string& sql, string& alt_msg)
     return Ok(retval);
 }
 
-static Result<string, string>
+static Result<std::string, std::string>
 execute_file_contents(exec_context& ec,
                       const ghc::filesystem::path& path,
                       bool multiline)
@@ -417,7 +417,7 @@ execute_file_contents(exec_context& ec,
     static ghc::filesystem::path stdin_path("-");
     static ghc::filesystem::path dev_stdin_path("/dev/stdin");
 
-    string retval;
+    std::string retval;
     FILE* file;
 
     if (path == stdin_path || path == dev_stdin_path) {
@@ -433,7 +433,7 @@ execute_file_contents(exec_context& ec,
     auto_mem<char> line;
     size_t line_max_size;
     ssize_t line_size;
-    string cmdline;
+    std::string cmdline;
     char mode = '\0';
 
     ec.ec_path_stack.emplace_back(path.parent_path());
@@ -460,7 +460,7 @@ execute_file_contents(exec_context& ec,
 
                 starting_line_number = line_number;
                 mode = line[0];
-                cmdline = string(&line[1]);
+                cmdline = std::string(&line[1]);
                 break;
             default:
                 if (multiline) {
@@ -490,12 +490,12 @@ execute_file_contents(exec_context& ec,
     return Ok(retval);
 }
 
-Result<string, string>
-execute_file(exec_context& ec, const string& path_and_args, bool multiline)
+Result<std::string, std::string>
+execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 {
     available_scripts scripts;
-    vector<string> split_args;
-    string retval, msg;
+    std::vector<std::string> split_args;
+    std::string retval, msg;
     shlex lexer(path_and_args);
 
     log_info("Executing file: %s", path_and_args.c_str());
@@ -512,7 +512,7 @@ execute_file(exec_context& ec, const string& path_and_args, bool multiline)
     auto script_name = split_args[0];
     auto& vars = ec.ec_local_vars.top();
     char env_arg_name[32];
-    string star, open_error = "file not found";
+    std::string star, open_error = "file not found";
 
     add_ansi_vars(vars);
 
@@ -532,7 +532,7 @@ execute_file(exec_context& ec, const string& path_and_args, bool multiline)
     }
     vars["__all__"] = star;
 
-    vector<script_metadata> paths_to_exec;
+    std::vector<script_metadata> paths_to_exec;
 
     find_format_scripts(lnav_data.ld_config_paths, scripts);
     auto iter = scripts.as_scripts.find(script_name);
@@ -583,14 +583,14 @@ execute_file(exec_context& ec, const string& path_and_args, bool multiline)
     return Ok(retval);
 }
 
-Result<string, string>
+Result<std::string, std::string>
 execute_from_file(exec_context& ec,
                   const ghc::filesystem::path& path,
                   int line_number,
                   char mode,
-                  const string& cmdline)
+                  const std::string& cmdline)
 {
-    string retval, alt_msg;
+    std::string retval, alt_msg;
     auto _sg = ec.enter_source(path.string(), line_number);
 
     switch (mode) {
@@ -621,10 +621,10 @@ execute_from_file(exec_context& ec,
     return Ok(retval);
 }
 
-Result<string, string>
-execute_any(exec_context& ec, const string& cmdline_with_mode)
+Result<std::string, std::string>
+execute_any(exec_context& ec, const std::string& cmdline_with_mode)
 {
-    string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
+    std::string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
     auto _cleanup = finally([&ec] {
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
@@ -661,8 +661,9 @@ execute_any(exec_context& ec, const string& cmdline_with_mode)
 }
 
 void
-execute_init_commands(exec_context& ec,
-                      vector<pair<Result<string, string>, string> >& msgs)
+execute_init_commands(
+    exec_context& ec,
+    std::vector<std::pair<Result<std::string, std::string>, std::string>>& msgs)
 {
     if (lnav_data.ld_cmd_init_done) {
         return;
@@ -673,7 +674,7 @@ execute_init_commands(exec_context& ec,
 
     log_info("Executing initial commands");
     for (auto& cmd : lnav_data.ld_commands) {
-        string alt_msg;
+        std::string alt_msg;
 
         wait_for_children();
 
@@ -705,9 +706,10 @@ execute_init_commands(exec_context& ec,
 
     if (!lnav_data.ld_pt_search.empty()) {
 #ifdef HAVE_LIBCURL
-        auto pt = make_shared<papertrail_proc>(lnav_data.ld_pt_search.substr(3),
-                                               lnav_data.ld_pt_min_time,
-                                               lnav_data.ld_pt_max_time);
+        auto pt = std::make_shared<papertrail_proc>(
+            lnav_data.ld_pt_search.substr(3),
+            lnav_data.ld_pt_min_time,
+            lnav_data.ld_pt_max_time);
         lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search].with_fd(
             pt->copy_fd());
         isc::to<curl_looper&, services::curl_streamer_t>().send(
@@ -744,7 +746,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     if (dls.dls_headers.empty()) {
         for (lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
-            string colname = sqlite3_column_name(stmt, lpc);
+            std::string colname = sqlite3_column_name(stmt, lpc);
             bool graphable;
 
             graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT)
@@ -782,8 +784,8 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     return retval;
 }
 
-future<string>
-pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
+std::future<std::string>
+pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 {
     auto out = ec.get_output();
 
@@ -802,21 +804,20 @@ pipe_callback(exec_context& ec, const string& cmdline, auto_fd& fd)
                 fwrite(buffer, rc, 1, file);
             }
 
-            return string();
+            return std::string();
         });
     } else {
-        auto pp = make_shared<piper_proc>(
-            fd,
-            false,
-            lnav::filesystem::open_temp_file(
-                ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
-                .map([](auto pair) {
-                    ghc::filesystem::remove(pair.first);
+        auto tmp_fd
+            = lnav::filesystem::open_temp_file(
+                  ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
+                  .map([](auto pair) {
+                      ghc::filesystem::remove(pair.first);
 
-                    return pair;
-                })
-                .expect("Cannot create temporary file for callback")
-                .second);
+                      return std::move(pair.second);
+                  })
+                  .expect("Cannot create temporary file for callback");
+        auto pp = std::make_shared<piper_proc>(
+            std::move(fd), false, std::move(tmp_fd));
         static int exec_count = 0;
 
         lnav_data.ld_pipers.push_back(pp);
@@ -841,7 +842,7 @@ add_global_vars(exec_context& ec)
 {
     for (const auto& iter : lnav_config.lc_global_vars) {
         shlex subber(iter.second);
-        string str;
+        std::string str;
 
         if (!subber.eval(str, ec.ec_global_vars)) {
             log_error("Unable to evaluate global variable value: %s",
@@ -867,7 +868,9 @@ exec_context::get_error_prefix()
 }
 
 void
-exec_context::set_output(const string& name, FILE* file, int (*closer)(FILE*))
+exec_context::set_output(const std::string& name,
+                         FILE* file,
+                         int (*closer)(FILE*))
 {
     log_info("redirecting command output to: %s", name.c_str());
     this->ec_output_stack.back().second | [](auto out) {

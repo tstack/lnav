@@ -37,8 +37,6 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 
-using namespace std;
-
 filter_sub_source::filter_sub_source()
 {
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
@@ -97,7 +95,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection());
 
             fs.set_filter_enabled(tf, !tf->is_enabled());
             tss->text_filters_changed();
@@ -113,7 +111,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection());
 
             if (tf->get_type() == text_filter::INCLUDE) {
                 tf->set_type(text_filter::EXCLUDE);
@@ -134,7 +132,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection());
 
             fs.delete_filter(tf->get_id());
             lv.reload_data();
@@ -153,8 +151,8 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::INCLUDE,
-                                                *filter_index);
+            auto ef = std::make_shared<empty_filter>(
+                text_filter::type_t::INCLUDE, *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
@@ -190,8 +188,8 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::EXCLUDE,
-                                                *filter_index);
+            auto ef = std::make_shared<empty_filter>(
+                text_filter::type_t::EXCLUDE, *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
@@ -225,7 +223,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
 
-            shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection());
 
             this->fss_editing = true;
 
@@ -309,7 +307,7 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     textview_curses* top_view = *lnav_data.ld_view_stack.top();
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
-    shared_ptr<text_filter> tf = *(fs.begin() + line);
+    auto tf = *(fs.begin() + line);
 
     value_out = "    ";
     switch (tf->get_type()) {
@@ -349,7 +347,7 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
     textview_curses* top_view = *lnav_data.ld_view_stack.top();
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
-    shared_ptr<text_filter> tf = *(fs.begin() + line);
+    auto tf = *(fs.begin() + line);
     bool selected
         = lnav_data.ld_mode == LNM_FILTER && line == tc.get_selection();
 
@@ -410,7 +408,7 @@ filter_sub_source::text_size_for_line(textview_curses& tc,
     textview_curses* top_view = *lnav_data.ld_view_stack.top();
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
-    shared_ptr<text_filter> tf = *(fs.begin() + line);
+    auto tf = *(fs.begin() + line);
 
     return 8 + tf->get_id().size();
 }
@@ -426,8 +424,8 @@ filter_sub_source::rl_change(readline_curses* rc)
     }
 
     auto iter = fs.begin() + this->tss_view->get_selection();
-    shared_ptr<text_filter> tf = *iter;
-    string new_value = rc->get_line_buffer();
+    auto tf = *iter;
+    auto new_value = rc->get_line_buffer();
 
     switch (tf->get_lang()) {
         case filter_lang_t::NONE:
@@ -507,8 +505,8 @@ filter_sub_source::rl_perform(readline_curses* rc)
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
     auto iter = fs.begin() + this->tss_view->get_selection();
-    shared_ptr<text_filter> tf = *iter;
-    string new_value = rc->get_value();
+    auto tf = *iter;
+    auto new_value = rc->get_value();
 
     if (new_value.empty()) {
         this->rl_abort(rc);
@@ -534,10 +532,10 @@ filter_sub_source::rl_perform(readline_curses* rc)
                     tf->lf_deleted = true;
                     tss->text_filters_changed();
 
-                    auto pf = make_shared<pcre_filter>(tf->get_type(),
-                                                       new_value,
-                                                       tf->get_index(),
-                                                       code.release());
+                    auto pf = std::make_shared<pcre_filter>(tf->get_type(),
+                                                            new_value,
+                                                            tf->get_index(),
+                                                            code.release());
 
                     *iter = pf;
                     tss->text_filters_changed();
@@ -588,7 +586,7 @@ filter_sub_source::rl_abort(readline_curses* rc)
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
     auto iter = fs.begin() + this->tss_view->get_selection();
-    shared_ptr<text_filter> tf = *iter;
+    auto tf = *iter;
 
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
@@ -616,7 +614,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
         this->fss_match_view.set_height(0_vl);
         this->tss_view->set_needs_update();
     } else {
-        string current_match = rc->get_match_string();
+        auto current_match = rc->get_match_string();
         attr_line_t al;
         vis_line_t line, selected_line;
 
