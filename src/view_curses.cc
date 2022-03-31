@@ -276,7 +276,7 @@ view_curses::mvwattrline(WINDOW* window,
             short attr_fg = iter->sa_value.sav_int;
             if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
                 attr_fg = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                             iter->sa_range.length());
+                                             iter->sa_range.sublen(line));
             }
             std::fill(&fg_color[attr_range.lr_start],
                       &fg_color[attr_range.lr_end],
@@ -292,7 +292,7 @@ view_curses::mvwattrline(WINDOW* window,
             short attr_bg = iter->sa_value.sav_int;
             if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
                 attr_bg = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                             iter->sa_range.length());
+                                             iter->sa_range.sublen(line));
             }
             std::fill(bg_color + attr_range.lr_start,
                       bg_color + attr_range.lr_end,
@@ -346,12 +346,12 @@ view_curses::mvwattrline(WINDOW* window,
                     if (attrs & A_LEFT) {
                         pair_fg
                             = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                                 iter->sa_range.length());
+                                                 iter->sa_range.sublen(line));
                     }
                     if (attrs & A_RIGHT) {
                         pair_bg
                             = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                                 iter->sa_range.length());
+                                                 iter->sa_range.sublen(line));
                     }
                     color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
 
