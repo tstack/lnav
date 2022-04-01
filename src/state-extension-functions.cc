@@ -83,9 +83,9 @@ sql_lnav_top_file()
 
     auto top_view = top_view_opt.value();
     return top_view->map_top_row([](const auto& al) {
-        return get_string_attr(al.get_attrs(), &logline::L_FILE) |
-            [](const auto* sa) {
-                auto lf = (logfile*) sa->sa_value.sav_ptr;
+        return get_string_attr(al.get_attrs(), logline::L_FILE) |
+            [](const auto wrapper) {
+                auto lf = wrapper.get();
 
                 return nonstd::make_optional(lf->get_filename());
             };

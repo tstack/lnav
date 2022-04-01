@@ -167,20 +167,18 @@ field_overlay_source::build_summary_lines(const listview_curses& lv)
                 .with_attr(string_attr(
                     line_range(sum_msg.find("Error rate"),
                                sum_msg.find("Error rate") + rate_len),
-                    &view_curses::VC_STYLE,
-                    A_REVERSE))
+                    view_curses::VC_STYLE.value(A_REVERSE)))
+                .with_attr(
+                    string_attr(line_range(1, 2),
+                                view_curses::VC_GRAPHIC.value(ACS_ULCORNER)))
                 .with_attr(string_attr(
-                    line_range(1, 2), &view_curses::VC_GRAPHIC, ACS_ULCORNER))
-                .with_attr(string_attr(
-                    line_range(2, 6), &view_curses::VC_GRAPHIC, ACS_HLINE))
+                    line_range(2, 6), view_curses::VC_GRAPHIC.value(ACS_HLINE)))
                 .with_attr(string_attr(
                     line_range(sum_msg.length() + 1, sum_msg.length() + 5),
-                    &view_curses::VC_GRAPHIC,
-                    ACS_HLINE))
+                    view_curses::VC_GRAPHIC.value(ACS_HLINE)))
                 .with_attr(string_attr(
                     line_range(sum_msg.length() + 5, sum_msg.length() + 6),
-                    &view_curses::VC_GRAPHIC,
-                    ACS_URCORNER))
+                    view_curses::VC_GRAPHIC.value(ACS_URCORNER)))
                 .right_justify(width - 2);
         }
     }
@@ -230,15 +228,17 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                 continue;
             }
 
-            auto emsg = fmt::format(FMT_STRING("   Invalid log message: {}"),
-                                    (const char*) sattr.sa_value.sav_ptr);
+            auto emsg = fmt::format(
+                FMT_STRING("   Invalid log message: {}"),
+                sattr.sa_value.get<decltype(SA_INVALID)::value_type>());
             auto al = attr_line_t(emsg)
-                          .with_attr(string_attr(line_range{1, 2},
-                                                 &view_curses::VC_GRAPHIC,
-                                                 ACS_LLCORNER))
-                          .with_attr(string_attr(line_range{0, 22},
-                                                 &view_curses::VC_ROLE,
-                                                 view_colors::VCR_INVALID_MSG));
+                          .with_attr(string_attr(
+                              line_range{1, 2},
+                              view_curses::VC_GRAPHIC.value(ACS_LLCORNER)))
+                          .with_attr(
+                              string_attr(line_range{0, 22},
+                                          view_curses::VC_ROLE.value(
+                                              view_colors::VCR_INVALID_MSG)));
             this->fos_lines.emplace_back(al);
         }
     }
@@ -259,12 +259,12 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         time_lr.lr_start = 1;
         time_lr.lr_end = 2;
         time_line.with_attr(
-            string_attr(time_lr, &view_curses::VC_GRAPHIC, ACS_LLCORNER));
+            string_attr(time_lr, view_curses::VC_GRAPHIC.value(ACS_LLCORNER)));
         time_str.append("   Out-Of-Time-Order Message");
         time_lr.lr_start = 3;
         time_lr.lr_end = time_str.length();
         time_line.with_attr(string_attr(
-            time_lr, &view_curses::VC_ROLE, view_colors::VCR_SKEWED_TIME));
+            time_lr, view_curses::VC_ROLE.value(view_colors::VCR_SKEWED_TIME)));
         time_str.append(" --");
     }
 
@@ -272,14 +272,16 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     time_lr.lr_start = time_str.length();
     time_str.append(curr_timestamp);
     time_lr.lr_end = time_str.length();
-    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+    time_line.with_attr(
+        string_attr(time_lr, view_curses::VC_STYLE.value(A_BOLD)));
     time_str.append(" -- ");
     time_lr.lr_start = time_str.length();
     time_str.append(humanize::time::point::from_tv(ll->get_timeval())
                         .with_convert_to_local(true)
                         .as_precise_time_ago());
     time_lr.lr_end = time_str.length();
-    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+    time_line.with_attr(
+        string_attr(time_lr, view_curses::VC_STYLE.value(A_BOLD)));
 
     struct line_range time_range = find_string_attr_range(
         this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
@@ -309,7 +311,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             time_str.append(orig_timestamp);
             time_lr.lr_end = time_str.length();
             time_line.with_attr(string_attr(
-                time_lr, &view_curses::VC_ROLE, view_colors::VCR_SKEWED_TIME));
+                time_lr,
+                view_curses::VC_ROLE.value(view_colors::VCR_SKEWED_TIME)));
 
             timersub(&curr_tv, &actual_tv, &diff_tv);
             time_str.append(";  Diff: ");
@@ -318,7 +321,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                 humanize::time::duration::from_tv(diff_tv).to_string());
             time_lr.lr_end = time_str.length();
             time_line.with_attr(
-                string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+                string_attr(time_lr, view_curses::VC_STYLE.value(A_BOLD)));
         }
     }
 
@@ -405,8 +408,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             continue;
         }
 
-        auto curr_format = lv.lv_meta.lvm_format.value();
-        auto curr_elf = dynamic_cast<external_log_format*>(curr_format);
+        auto* curr_format = lv.lv_meta.lvm_format.value();
+        auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
         std::string str, value_str = lv.to_string();
@@ -414,10 +417,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table "
                                          + format_name + ":");
-            this->fos_lines.back().with_attr(
-                string_attr(line_range(32, 32 + format_name.length()),
-                            &view_curses::VC_STYLE,
-                            vc.attrs_for_ident(format_name) | A_BOLD));
+            this->fos_lines.back().with_attr(string_attr(
+                line_range(32, 32 + format_name.length()),
+                view_curses::VC_STYLE.value(vc.attrs_for_ident(format_name)
+                                            | A_BOLD)));
             last_format = curr_format;
         }
 
@@ -452,13 +455,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             auto prefix_len = field_name.length() - orig_field_name.length();
             al.with_attr(string_attr(
                 line_range(3 + prefix_len, 3 + prefix_len + field_name.size()),
-                &view_curses::VC_STYLE,
-                vc.attrs_for_ident(orig_field_name)));
+                view_curses::VC_STYLE.value(
+                    vc.attrs_for_ident(orig_field_name))));
         } else {
             al.with_attr(string_attr(
                 line_range(8, 8 + lv.lv_meta.lvm_struct_name.size()),
-                &view_curses::VC_STYLE,
-                vc.attrs_for_ident(lv.lv_meta.lvm_struct_name)));
+                view_curses::VC_STYLE.value(
+                    vc.attrs_for_ident(lv.lv_meta.lvm_struct_name))));
         }
 
         this->fos_lines.emplace_back(al);
@@ -470,8 +473,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             al.clear()
                 .append("   extract(")
                 .append(lv.lv_meta.lvm_name.get(),
-                        &view_curses::VC_STYLE,
-                        vc.attrs_for_ident(lv.lv_meta.lvm_name))
+                        view_curses::VC_STYLE.value(
+                            vc.attrs_for_ident(lv.lv_meta.lvm_name)))
                 .append(")")
                 .append(this->fos_known_key_size - lv.lv_meta.lvm_name.size()
                             - 9 + 3,
@@ -531,15 +534,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     } else {
         this->fos_lines.emplace_back(
             " Discovered fields for logline table from message format: ");
-        this->fos_lines.back().with_attr(
-            string_attr(line_range(23, 23 + 7),
-                        &view_curses::VC_STYLE,
-                        vc.attrs_for_ident("logline")));
+        this->fos_lines.back().with_attr(string_attr(
+            line_range(23, 23 + 7),
+            view_curses::VC_STYLE.value(vc.attrs_for_ident("logline"))));
         auto& al = this->fos_lines.back();
         auto& disc_str = al.get_string();
 
-        al.with_attr(string_attr(
-            line_range(disc_str.length(), -1), &view_curses::VC_STYLE, A_BOLD));
+        al.with_attr(string_attr(line_range(disc_str.length(), -1),
+                                 view_curses::VC_STYLE.value(A_BOLD)));
         disc_str.append(this->fos_log_helper.ldh_msg_format);
     }
 
@@ -552,9 +554,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             iter->e_sub_elements->back());
         attr_line_t al(fmt::format(FMT_STRING("   {} = {}"), name, val));
 
-        al.with_attr(string_attr(line_range(3, 3 + name.length()),
-                                 &view_curses::VC_STYLE,
-                                 vc.attrs_for_ident(name)));
+        al.with_attr(
+            string_attr(line_range(3, 3 + name.length()),
+                        view_curses::VC_STYLE.value(vc.attrs_for_ident(name))));
 
         this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(
@@ -583,8 +585,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             al.with_string(" + ")
                 .with_attr(string_attr(
                     line_range(1, 2),
-                    &view_curses::VC_GRAPHIC,
-                    line_meta.bm_tags.empty() ? ACS_LLCORNER : ACS_LTEE))
+                    view_curses::VC_GRAPHIC.value(
+                        line_meta.bm_tags.empty() ? ACS_LLCORNER : ACS_LTEE)))
                 .append(line_meta.bm_comment);
             al.insert(0, filename_width, ' ');
             dst.emplace_back(al);
@@ -593,10 +595,10 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             attr_line_t al;
 
             al.with_string(" +").with_attr(string_attr(
-                line_range(1, 2), &view_curses::VC_GRAPHIC, ACS_LLCORNER));
+                line_range(1, 2), view_curses::VC_GRAPHIC.value(ACS_LLCORNER)));
             for (const auto& str : line_meta.bm_tags) {
                 al.append(1, ' ').append(
-                    str, &view_curses::VC_STYLE, vc.attrs_for_ident(str));
+                    str, view_curses::VC_STYLE.value(vc.attrs_for_ident(str)));
             }
 
             const auto* tc = dynamic_cast<const textview_curses*>(&lv);

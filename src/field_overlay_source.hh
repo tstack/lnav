@@ -50,12 +50,12 @@ public:
     {
         string_attrs_t& sa = this->fos_lines.back().get_attrs();
         struct line_range lr(1, 2);
-        sa.emplace_back(
-            lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE);
+        int64_t graphic = (int64_t) (last_line ? ACS_LLCORNER : ACS_LTEE);
+        sa.emplace_back(lr, view_curses::VC_GRAPHIC.value(graphic));
 
         lr.lr_start = 3 + key_size + 3;
         lr.lr_end = -1;
-        sa.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
+        sa.emplace_back(lr, view_curses::VC_STYLE.value(A_BOLD));
     };
 
     bool list_value_for_overlay(const listview_curses& lv,

@@ -881,15 +881,15 @@ sql_keyword_re()
     return retval;
 }
 
-string_attr_type SQL_COMMAND_ATTR("sql_command");
-string_attr_type SQL_KEYWORD_ATTR("sql_keyword");
-string_attr_type SQL_IDENTIFIER_ATTR("sql_ident");
-string_attr_type SQL_FUNCTION_ATTR("sql_func");
-string_attr_type SQL_STRING_ATTR("sql_string");
-string_attr_type SQL_OPERATOR_ATTR("sql_oper");
-string_attr_type SQL_PAREN_ATTR("sql_paren");
-string_attr_type SQL_COMMA_ATTR("sql_comma");
-string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
+string_attr_type<void> SQL_COMMAND_ATTR("sql_command");
+string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
+string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
+string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
+string_attr_type<void> SQL_STRING_ATTR("sql_string");
+string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
+string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
+string_attr_type<void> SQL_COMMA_ATTR("sql_comma");
+string_attr_type<void> SQL_GARBAGE_ATTR("sql_garbage");
 
 void
 annotate_sql_statement(attr_line_t& al)
@@ -898,7 +898,7 @@ annotate_sql_statement(attr_line_t& al)
 
     static struct {
         pcrepp re;
-        string_attr_type_t type;
+        string_attr_type<void>* type;
     } PATTERNS[] = {
         {pcrepp{R"(^(\.\w+))"}, &SQL_COMMAND_ATTR},
         {pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR},
@@ -928,7 +928,7 @@ annotate_sql_statement(attr_line_t& al)
                 pcre_context::capture_t* cap = pc.all();
                 struct line_range lr(cap->c_begin, cap->c_end);
 
-                sa.emplace_back(lr, pat.type);
+                sa.emplace_back(lr, pat.type->value());
                 break;
             }
         }
@@ -974,7 +974,7 @@ annotate_sql_statement(attr_line_t& al)
             } else {
                 func_range.lr_end = piter->sa_range.lr_end - 1;
             }
-            sa.emplace_back(func_range, &SQL_FUNCTION_ATTR);
+            sa.emplace_back(func_range, SQL_FUNCTION_ATTR.value());
         }
 
         start = iter->sa_range.lr_end;

@@ -4,11 +4,11 @@ include(cmake/prelude.cmake)
 
 set(CMAKE_CXX_STANDARD 14)
 project(
-    lnav
-    VERSION 0.10.2
-    DESCRIPTION "An advanced log file viewer for the small-scale."
-    HOMEPAGE_URL "https://lnav.org/"
-    LANGUAGES CXX C
+        lnav
+        VERSION 0.10.2
+        DESCRIPTION "An advanced log file viewer for the small-scale."
+        HOMEPAGE_URL "https://lnav.org/"
+        LANGUAGES CXX C
 )
 
 include(cmake/project-is-top-level.cmake)

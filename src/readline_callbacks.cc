@@ -766,7 +766,7 @@ rl_display_matches(readline_curses* rc)
                 add_nl = false;
             }
             if (match == current_match) {
-                al.append(match, &view_curses::VC_STYLE, A_REVERSE);
+                al.append(match, view_curses::VC_STYLE.value(A_REVERSE));
             } else {
                 al.append(match);
             }

@@ -215,7 +215,7 @@ class generic_log_format : public log_format {
 
         lr.lr_start = pc[0]->c_begin;
         lr.lr_end = pc[0]->c_end;
-        sa.emplace_back(lr, &logline::L_TIMESTAMP);
+        sa.emplace_back(lr, logline::L_TIMESTAMP.value());
 
         const char* level = &line.get_data()[pc[1]->c_begin];
 
@@ -227,11 +227,11 @@ class generic_log_format : public log_format {
 
         lr.lr_start = 0;
         lr.lr_end = prefix_len;
-        sa.emplace_back(lr, &logline::L_PREFIX);
+        sa.emplace_back(lr, logline::L_PREFIX.value());
 
         lr.lr_start = prefix_len;
         lr.lr_end = line.length();
-        sa.emplace_back(lr, &SA_BODY);
+        sa.emplace_back(lr, SA_BODY.value());
     };
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
@@ -696,9 +696,9 @@ public:
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
             if (fd.fd_meta.lvm_name == TS) {
-                sa.emplace_back(lr, &logline::L_TIMESTAMP);
+                sa.emplace_back(lr, logline::L_TIMESTAMP.value());
             } else if (fd.fd_meta.lvm_name == UID) {
-                sa.emplace_back(lr, &logline::L_OPID);
+                sa.emplace_back(lr, logline::L_OPID.value());
             }
 
             if (lr.is_valid()) {
@@ -1270,8 +1270,7 @@ public:
 
             if (iter.index() >= this->wlf_field_defs.size()) {
                 sa.emplace_back(line_range{sf.sf_begin, -1},
-                                &SA_INVALID,
-                                (void*) "extra fields detected");
+                                SA_INVALID.value("extra fields detected"));
                 return;
             }
 
@@ -1732,10 +1731,10 @@ public:
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
                     if (kvp.first == "time" || kvp.first == "ts") {
-                        sa.emplace_back(value_lr, &logline::L_TIMESTAMP);
+                        sa.emplace_back(value_lr, logline::L_TIMESTAMP.value());
                     } else if (kvp.first == "level") {
                     } else if (kvp.first == "msg") {
-                        sa.emplace_back(value_lr, &SA_BODY);
+                        sa.emplace_back(value_lr, SA_BODY.value());
                     } else if (!kvp.second.is<logfmt::parser::int_value>()
                                && !kvp.second.is<logfmt::parser::bool_value>())
                     {

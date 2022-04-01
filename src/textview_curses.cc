@@ -450,9 +450,9 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         orig_line.lr_end = str.size();
     }
 
-    auto sa_iter = find_string_attr(sa, &SA_FORMAT);
-    if (sa_iter != sa.end()) {
-        format_name = sa_iter->to_string();
+    auto format_attr_opt = get_string_attr(sa, SA_FORMAT);
+    if (format_attr_opt) {
+        format_name = format_attr_opt.value().get();
     }
 
     for (auto& tc_highlight : this->tc_highlights) {
@@ -546,8 +546,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        &view_curses::VC_STYLE,
-                        A_REVERSE);
+                        view_curses::VC_STYLE.value(A_REVERSE));
     }
 }
 

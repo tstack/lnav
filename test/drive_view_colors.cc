@@ -52,8 +52,8 @@ public:
             snprintf(label, sizeof(label), "This is line: %d", lpc);
             attrs = vc.attrs_for_ident(label);
             al = label;
-            al.get_attrs().emplace_back(
-                line_range(0, -1), &view_curses::VC_STYLE, attrs);
+            al.get_attrs().emplace_back(line_range(0, -1),
+                                        view_curses::VC_STYLE.value(attrs));
             lr.lr_start = 0;
             lr.lr_end = 40;
             test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
@@ -63,11 +63,10 @@ public:
         line_range lr{0, 40};
 
         al = "before <123> after";
-        al.with_attr(
-            {line_range{8, 11},
-             &VC_STYLE,
-             (int64_t) view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
-        al.with_attr({line_range{8, 11}, &VC_STYLE, A_REVERSE});
+        al.with_attr({line_range{8, 11},
+                      VC_STYLE.value((int64_t) view_colors::ansi_color_pair(
+                          COLOR_CYAN, COLOR_BLACK))});
+        al.with_attr({line_range{8, 11}, VC_STYLE.value(A_REVERSE)});
         test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
     };
 

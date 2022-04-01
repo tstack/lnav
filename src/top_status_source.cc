@@ -90,15 +90,14 @@ top_status_source::update_filename(listview_curses* lc)
     auto& sf_filename = this->tss_fields[TSF_FILENAME];
 
     if (lc->get_inner_height() > 0) {
-        string_attrs_t::const_iterator line_attr;
         std::vector<attr_line_t> rows(1);
 
         lc->get_data_source()->listview_value_for_rows(
             *lc, lc->get_top(), rows);
         auto& sa = rows[0].get_attrs();
-        line_attr = find_string_attr(sa, &logline::L_FILE);
-        if (line_attr != sa.end()) {
-            logfile* lf = (logfile*) line_attr->sa_value.sav_ptr;
+        auto file_attr_opt = get_string_attr(sa, logline::L_FILE);
+        if (file_attr_opt) {
+            auto lf = file_attr_opt.value().get();
 
             if (lf->get_format()) {
                 sf_format.set_value("% 13s",
@@ -120,9 +119,9 @@ top_status_source::update_filename(listview_curses* lc)
             sf_filename.clear();
         }
 
-        line_attr = find_string_attr(sa, &logline::L_PARTITION);
-        if (line_attr != sa.end()) {
-            auto bm = (bookmark_metadata*) line_attr->sa_value.sav_ptr;
+        auto part_attr_opt = get_string_attr(sa, logline::L_PARTITION);
+        if (part_attr_opt) {
+            auto bm = part_attr_opt.value().get();
 
             sf_partition.set_value(bm->bm_name.c_str());
         } else {

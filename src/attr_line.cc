@@ -181,15 +181,14 @@ attr_line_t::subline(size_t start, size_t len) const
     attr_line_t retval;
 
     retval.al_string = this->al_string.substr(start, len);
-    for (auto& sa : this->al_attrs) {
+    for (const auto& sa : this->al_attrs) {
         if (!lr.intersects(sa.sa_range)) {
             continue;
         }
 
         retval.al_attrs.emplace_back(
             lr.intersection(sa.sa_range).shift(lr.lr_start, -lr.lr_start),
-            sa.sa_type,
-            sa.sa_value);
+            std::make_pair(sa.sa_type, sa.sa_value));
 
         line_range& last_lr = retval.al_attrs.back().sa_range;
 
@@ -267,7 +266,7 @@ attr_line_t::apply_hide()
             this->al_string.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
             shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
             sattr.sa_type = &view_curses::VC_ROLE;
-            sattr.sa_value.sav_int = view_colors::VCR_HIDDEN;
+            sattr.sa_value = view_colors::VCR_HIDDEN;
             lr.lr_end = lr.lr_start + 3;
         }
     }

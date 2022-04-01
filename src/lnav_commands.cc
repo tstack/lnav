@@ -832,7 +832,7 @@ write_line_to(FILE* outfile, const attr_line_t& al)
 {
     const auto& al_attrs = al.get_attrs();
     auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
-    const auto& line_meta = find_string_attr(al_attrs, &logline::L_META);
+    const auto line_meta_opt = get_string_attr(al_attrs, logline::L_META);
 
     if (lr.lr_start > 1) {
         // If the line is prefixed with some extra information, include that
@@ -843,9 +843,8 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     fwrite(lr.substr(al.get_string()), 1, lr.sublen(al.get_string()), outfile);
     fwrite("\n", 1, 1, outfile);
 
-    if (line_meta != al_attrs.end()) {
-        auto bm = static_cast<const bookmark_metadata*>(
-            line_meta->sa_value.sav_ptr);
+    if (line_meta_opt) {
+        auto bm = line_meta_opt.value().get();
 
         if (!bm->bm_comment.empty()) {
             fprintf(outfile, "  // %s\n", bm->bm_comment.c_str());
@@ -2420,8 +2419,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     if (gl->gl_pathc > 10) {
                         al.append(" ... ")
                             .append(std::to_string(gl->gl_pathc - 10),
-                                    &view_curses::VC_STYLE,
-                                    A_BOLD)
+                                    view_curses::VC_STYLE.value(A_BOLD))
                             .append(" files not shown ...");
                     }
                     lnav_data.ld_preview_status_source.get_description()

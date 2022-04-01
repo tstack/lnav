@@ -228,7 +228,7 @@ public:
 
         if (ci.ci_attrs != 0) {
             value_out.emplace_back(
-                lr, &view_curses::VC_STYLE, ci.ci_attrs | A_REVERSE);
+                lr, view_curses::VC_STYLE.value(ci.ci_attrs | A_REVERSE));
         }
     };
 

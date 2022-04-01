@@ -208,7 +208,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
               this->lss_token_value.size());
     if (this->lss_token_line->is_continued()) {
         this->lss_token_attrs.emplace_back(
-            line_range{0, (int) this->lss_token_value.length()}, &SA_BODY);
+            line_range{0, (int) this->lss_token_value.length()},
+            SA_BODY.value());
     } else {
         format->annotate(
             line, sbr, this->lss_token_attrs, this->lss_token_values);
@@ -356,12 +357,12 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
-    value_out.emplace_back(lr, &SA_ORIGINAL_LINE);
+    value_out.emplace_back(lr, SA_ORIGINAL_LINE.value());
 
     lr.lr_start = time_offset_end;
     lr.lr_end = -1;
 
-    value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+    value_out.emplace_back(lr, view_curses::VC_STYLE.value(attrs));
 
     if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
         for (auto& token_attr : this->lss_token_attrs) {
@@ -369,9 +370,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 continue;
             }
 
-            value_out.emplace_back(token_attr.sa_range,
-                                   &view_curses::VC_ROLE,
-                                   view_colors::VCR_INVALID_MSG);
+            value_out.emplace_back(
+                token_attr.sa_range,
+                view_curses::VC_ROLE.value(view_colors::VCR_INVALID_MSG));
         }
     }
 
@@ -385,7 +386,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
 
         if (line_value.lv_meta.is_hidden()) {
-            value_out.emplace_back(line_value.lv_origin, &SA_HIDDEN);
+            value_out.emplace_back(line_value.lv_origin, SA_HIDDEN.value());
         }
 
         if (!line_value.lv_meta.lvm_identifier
@@ -400,7 +401,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
 
         value_out.emplace_back(
-            ident_range, &view_curses::VC_ROLE, view_colors::VCR_IDENTIFIER);
+            ident_range,
+            view_curses::VC_ROLE.value(view_colors::VCR_IDENTIFIER));
     }
 
     if (this->lss_token_shift_size) {
@@ -430,7 +432,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         } else if (is_last_for_file) {
             graph = ACS_LLCORNER;
         }
-        value_out.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, graph));
+        value_out.emplace_back(lr, view_curses::VC_GRAPHIC.value(graph));
 
         if (!(this->lss_token_flags & RF_FULL)) {
             bookmark_vector<vis_line_t>& bv_search
@@ -441,15 +443,15 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                               vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
-                value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
+                value_out.emplace_back(lr,
+                                       view_curses::VC_STYLE.value(A_REVERSE));
             }
         }
     }
 
-    value_out.emplace_back(
-        lr,
-        &view_curses::VC_STYLE,
-        vc.attrs_for_ident(this->lss_token_file->get_filename()));
+    value_out.emplace_back(lr,
+                           view_curses::VC_STYLE.value(vc.attrs_for_ident(
+                               this->lss_token_file->get_filename())));
 
     if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
         size_t file_offset_end = (this->lss_flags & F_FILENAME)
@@ -460,10 +462,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
         lr.lr_start = 0;
         lr.lr_end = file_offset_end + 1;
-        value_out.emplace_back(
-            lr,
-            &view_curses::VC_STYLE,
-            vc.attrs_for_ident(this->lss_token_file->get_filename()));
+        value_out.emplace_back(lr,
+                               view_curses::VC_STYLE.value(vc.attrs_for_ident(
+                                   this->lss_token_file->get_filename())));
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
@@ -474,9 +475,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         shift_string_attrs(value_out, 0, time_offset_end);
 
         value_out.emplace_back(
-            lr, &view_curses::VC_ROLE, view_colors::VCR_OFFSET_TIME);
-        value_out.emplace_back(
-            line_range(12, 13), &view_curses::VC_GRAPHIC, ACS_VLINE);
+            lr, view_curses::VC_ROLE.value(view_colors::VCR_OFFSET_TIME));
+        value_out.emplace_back(line_range(12, 13),
+                               view_curses::VC_GRAPHIC.value(ACS_VLINE));
 
         view_colors::role_t bar_role = view_colors::VCR_NONE;
 
@@ -491,19 +492,16 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 break;
         }
         if (bar_role != view_colors::VCR_NONE) {
-            value_out.emplace_back(
-                line_range(12, 13), &view_curses::VC_ROLE, bar_role);
+            value_out.emplace_back(line_range(12, 13),
+                                   view_curses::VC_ROLE.value(bar_role));
         }
     }
 
     lr.lr_start = 0;
     lr.lr_end = -1;
-    value_out.emplace_back(lr, &logline::L_FILE, this->lss_token_file.get());
+    value_out.emplace_back(lr, logline::L_FILE.value(this->lss_token_file));
     value_out.emplace_back(
-        lr, &SA_FORMAT, this->lss_token_file->get_format()->get_name());
-
-    value_out.emplace_back(
-        lr, SA_FORMAT2.value(this->lss_token_file->get_format()->get_name()));
+        lr, SA_FORMAT.value(this->lss_token_file->get_format()->get_name()));
 
     {
         const auto& bv = lv.get_bookmarks()[&textview_curses::BM_META];
@@ -522,7 +520,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 lr.lr_start = 0;
                 lr.lr_end = -1;
                 value_out.emplace_back(
-                    lr, &logline::L_PARTITION, &bm_iter->second);
+                    lr, logline::L_PARTITION.value(&bm_iter->second));
             }
         }
 
@@ -532,7 +530,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         if (bm_iter != this->lss_user_mark_metadata.end()) {
             lr.lr_start = 0;
             lr.lr_end = -1;
-            value_out.emplace_back(lr, &logline::L_META, &bm_iter->second);
+            value_out.emplace_back(lr, logline::L_META.value(&bm_iter->second));
         }
     }
 
@@ -541,9 +539,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range,
-                                   &view_curses::VC_ROLE,
-                                   view_colors::VCR_ADJUSTED_TIME);
+            value_out.emplace_back(
+                time_range,
+                view_curses::VC_ROLE.value(view_colors::VCR_ADJUSTED_TIME));
         }
     }
 
@@ -552,9 +550,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range,
-                                   &view_curses::VC_ROLE,
-                                   view_colors::VCR_SKEWED_TIME);
+            value_out.emplace_back(
+                time_range,
+                view_curses::VC_ROLE.value(view_colors::VCR_SKEWED_TIME));
         }
     }
 
@@ -567,8 +565,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                         this->lss_token_line);
             if (eval_res.isErr()) {
                 color = COLOR_YELLOW;
-                value_out.emplace_back(
-                    line_range{0, -1}, &SA_ERROR, eval_res.unwrapErr());
+                value_out.emplace_back(line_range{0, -1},
+                                       SA_ERROR.value(eval_res.unwrapErr()));
             } else {
                 auto matched = eval_res.unwrap();
 
@@ -577,11 +575,11 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 } else {
                     color = COLOR_RED;
                     value_out.emplace_back(
-                        line_range{0, 1}, &view_curses::VC_STYLE, A_BLINK);
+                        line_range{0, 1}, view_curses::VC_STYLE.value(A_BLINK));
                 }
             }
-            value_out.emplace_back(
-                line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+            value_out.emplace_back(line_range{0, 1},
+                                   view_curses::VC_BACKGROUND.value(color));
         }
 
         auto sql_filter_opt = this->get_sql_filter();
@@ -597,9 +595,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                         "filter expression evaluation failed with -- {}"),
                     eval_res.unwrapErr());
                 auto color = COLOR_YELLOW;
-                value_out.emplace_back(line_range{0, -1}, &SA_ERROR, msg);
-                value_out.emplace_back(
-                    line_range{0, 1}, &view_curses::VC_BACKGROUND, color);
+                value_out.emplace_back(line_range{0, -1}, SA_ERROR.value(msg));
+                value_out.emplace_back(line_range{0, 1},
+                                       view_curses::VC_BACKGROUND.value(color));
             }
         }
     }

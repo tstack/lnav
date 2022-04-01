@@ -31,11 +31,10 @@
 
 #include "config.h"
 
-string_attr_type SA_ORIGINAL_LINE("original_line");
-string_attr_type SA_BODY("body");
-string_attr_type SA_HIDDEN("hidden");
-string_attr_type SA_FORMAT("format");
-string_attr_type2<const intern_string_t> SA_FORMAT2("format");
-string_attr_type SA_REMOVED("removed");
-string_attr_type SA_INVALID("invalid");
-string_attr_type SA_ERROR("error");
+string_attr_type<void> SA_ORIGINAL_LINE("original_line");
+string_attr_type<void> SA_BODY("body");
+string_attr_type<void> SA_HIDDEN("hidden");
+string_attr_type<const intern_string_t> SA_FORMAT("format");
+string_attr_type<void> SA_REMOVED("removed");
+string_attr_type<std::string> SA_INVALID("invalid");
+string_attr_type<std::string> SA_ERROR("error");

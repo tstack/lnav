@@ -47,13 +47,14 @@
 #include "yajlpp/yajlpp_def.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
-string_attr_type logline::L_PREFIX("prefix");
-string_attr_type logline::L_TIMESTAMP("timestamp");
-string_attr_type logline::L_FILE("file");
-string_attr_type logline::L_PARTITION("partition");
-string_attr_type logline::L_MODULE("module");
-string_attr_type logline::L_OPID("opid");
-string_attr_type logline::L_META("meta");
+
+string_attr_type<void> logline::L_PREFIX("prefix");
+string_attr_type<void> logline::L_TIMESTAMP("timestamp");
+string_attr_type<std::shared_ptr<logfile>> logline::L_FILE("file");
+string_attr_type<bookmark_metadata*> logline::L_PARTITION("partition");
+string_attr_type<void> logline::L_MODULE("module");
+string_attr_type<void> logline::L_OPID("opid");
+string_attr_type<bookmark_metadata*> logline::L_META("meta");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
@@ -1007,12 +1008,12 @@ external_log_format::annotate(uint64_t line_number,
         // A continued line still needs a body.
         lr.lr_start = 0;
         lr.lr_end = line.length();
-        sa.emplace_back(lr, &SA_BODY);
+        sa.emplace_back(lr, SA_BODY.value());
         if (!this->lf_multiline) {
             auto len = pat.p_pcre->match_partial(pi);
-            sa.emplace_back(line_range{(int) len, -1},
-                            &SA_INVALID,
-                            (void*) "Log line does not match any pattern");
+            sa.emplace_back(
+                line_range{(int) len, -1},
+                SA_INVALID.value("Log line does not match any pattern"));
         }
         return;
     }
@@ -1022,7 +1023,7 @@ external_log_format::annotate(uint64_t line_number,
         if (cap->is_valid()) {
             lr.lr_start = cap->c_begin;
             lr.lr_end = cap->c_end;
-            sa.emplace_back(lr, &logline::L_TIMESTAMP);
+            sa.emplace_back(lr, logline::L_TIMESTAMP.value());
         }
 
         if (pat.p_module_field_index != -1) {
@@ -1030,7 +1031,7 @@ external_log_format::annotate(uint64_t line_number,
             if (module_cap != nullptr && module_cap->is_valid()) {
                 lr.lr_start = module_cap->c_begin;
                 lr.lr_end = module_cap->c_end;
-                sa.emplace_back(lr, &logline::L_MODULE);
+                sa.emplace_back(lr, logline::L_MODULE.value());
             }
         }
 
@@ -1038,7 +1039,7 @@ external_log_format::annotate(uint64_t line_number,
         if (cap != nullptr && cap->is_valid()) {
             lr.lr_start = cap->c_begin;
             lr.lr_end = cap->c_end;
-            sa.emplace_back(lr, &logline::L_OPID);
+            sa.emplace_back(lr, logline::L_OPID.value());
         }
     }
 
@@ -1115,7 +1116,7 @@ external_log_format::annotate(uint64_t line_number,
             lr.lr_start = line.length();
             lr.lr_end = line.length();
         }
-        sa.emplace_back(lr, &SA_BODY);
+        sa.emplace_back(lr, SA_BODY.value());
     }
 }
 
@@ -1351,8 +1352,7 @@ external_log_format::get_subline(const logline& ll,
             this->jlf_line_values.clear();
             this->jlf_line_attrs.emplace_back(
                 line_range{0, -1},
-                &SA_INVALID,
-                (void*) "JSON line failed to parse");
+                SA_INVALID.value("JSON line failed to parse"));
         } else {
             std::vector<logline_value>::iterator lv_iter;
             bool used_values[this->jlf_line_values.size()];
@@ -1444,14 +1444,15 @@ external_log_format::get_subline(const logline& ll,
                             if (lv_iter->lv_meta.lvm_name
                                 == this->lf_timestamp_field) {
                                 this->jlf_line_attrs.emplace_back(
-                                    lr, &logline::L_TIMESTAMP);
+                                    lr, logline::L_TIMESTAMP.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_body_field) {
-                                this->jlf_line_attrs.emplace_back(lr, &SA_BODY);
+                                this->jlf_line_attrs.emplace_back(
+                                    lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_opid_field) {
                                 this->jlf_line_attrs.emplace_back(
-                                    lr, &logline::L_OPID);
+                                    lr, logline::L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
                             used_values[distance(this->jlf_line_values.begin(),
@@ -1478,7 +1479,7 @@ external_log_format::get_subline(const logline& ll,
                             this->json_append_to_cache(ts, ts_len);
                             lr.lr_end = this->jlf_cached_line.size();
                             this->jlf_line_attrs.emplace_back(
-                                lr, &logline::L_TIMESTAMP);
+                                lr, logline::L_TIMESTAMP.value());
 
                             lv_iter = find_if(
                                 this->jlf_line_values.begin(),

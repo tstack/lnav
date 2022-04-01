@@ -74,10 +74,10 @@ bottom_status_source::update_line_number(listview_curses* lc)
 
         lc->get_data_source()->listview_value_for_rows(
             *lc, lc->get_top(), rows);
-        auto& sa = rows[0].get_attrs();
-        auto iter = find_string_attr(sa, &SA_ERROR);
-        if (iter != sa.end()) {
-            this->bss_line_error.set_value(iter->sa_str_value);
+        const auto& sa = rows[0].get_attrs();
+        auto error_wrapper = get_string_attr(sa, SA_ERROR);
+        if (error_wrapper) {
+            this->bss_line_error.set_value(error_wrapper.value().get());
         } else {
             this->bss_line_error.clear();
         }

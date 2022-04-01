@@ -37,14 +37,14 @@
 #include "attr_line.hh"
 #include "help_text.hh"
 
-extern string_attr_type SQL_COMMAND_ATTR;
-extern string_attr_type SQL_KEYWORD_ATTR;
-extern string_attr_type SQL_IDENTIFIER_ATTR;
-extern string_attr_type SQL_FUNCTION_ATTR;
-extern string_attr_type SQL_STRING_ATTR;
-extern string_attr_type SQL_OPERATOR_ATTR;
-extern string_attr_type SQL_PAREN_ATTR;
-extern string_attr_type SQL_GARBAGE_ATTR;
+extern string_attr_type<void> SQL_COMMAND_ATTR;
+extern string_attr_type<void> SQL_KEYWORD_ATTR;
+extern string_attr_type<void> SQL_IDENTIFIER_ATTR;
+extern string_attr_type<void> SQL_FUNCTION_ATTR;
+extern string_attr_type<void> SQL_STRING_ATTR;
+extern string_attr_type<void> SQL_OPERATOR_ATTR;
+extern string_attr_type<void> SQL_PAREN_ATTR;
+extern string_attr_type<void> SQL_GARBAGE_ATTR;
 
 void annotate_sql_statement(attr_line_t& al_inout);
 

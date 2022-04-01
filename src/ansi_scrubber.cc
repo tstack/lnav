@@ -158,16 +158,16 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             lr.lr_start = caps[0].c_begin;
             lr.lr_end = -1;
             if (attrs) {
-                sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+                sa.emplace_back(lr, view_curses::VC_STYLE.value(attrs));
             }
             role | [&lr, &sa](int r) {
-                sa.emplace_back(lr, &view_curses::VC_ROLE, r);
+                sa.emplace_back(lr, view_curses::VC_ROLE.value(r));
             };
             fg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, &view_curses::VC_FOREGROUND, color);
+                sa.emplace_back(lr, view_curses::VC_FOREGROUND.value(color));
             };
             bg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, &view_curses::VC_BACKGROUND, color);
+                sa.emplace_back(lr, view_curses::VC_BACKGROUND.value(color));
             };
         }
 

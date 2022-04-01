@@ -297,6 +297,11 @@ public:
 
     int color_for_ident(const char* str, size_t len) const;
 
+    int color_for_ident(const string_fragment& sf) const
+    {
+        return this->color_for_ident(sf.data(), sf.length());
+    }
+
     attr_t attrs_for_ident(const char* str, size_t len);
 
     attr_t attrs_for_ident(intern_string_t str)
@@ -467,13 +472,12 @@ public:
         return this->vc_width;
     }
 
-    static string_attr_type VC_ROLE;
-    static string_attr_type VC_ROLE_FG;
-    static string_attr_type VC_STYLE;
-    static string_attr_type VC_GRAPHIC;
-    static string_attr_type VC_SELECTED;
-    static string_attr_type VC_FOREGROUND;
-    static string_attr_type VC_BACKGROUND;
+    static string_attr_type<view_colors::role_t> VC_ROLE;
+    static string_attr_type<view_colors::role_t> VC_ROLE_FG;
+    static string_attr_type<int64_t> VC_STYLE;
+    static string_attr_type<int64_t> VC_GRAPHIC;
+    static string_attr_type<int64_t> VC_FOREGROUND;
+    static string_attr_type<int64_t> VC_BACKGROUND;
 
     static void awaiting_user_input();
 

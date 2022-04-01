@@ -63,8 +63,8 @@ status_field::do_cylon()
 
     sa.emplace_back(
         lr,
-        &view_curses::VC_STYLE,
-        vc.attrs_for_role(view_colors::VCR_ACTIVE_STATUS) | A_REVERSE);
+        view_curses::VC_STYLE.value(
+            vc.attrs_for_role(view_colors::VCR_ACTIVE_STATUS) | A_REVERSE));
 
     this->sf_cylon_pos += 1;
     if (this->sf_cylon_pos > this->sf_width) {
@@ -81,10 +81,10 @@ status_field::set_stitch_value(view_colors::role_t left,
 
     this->sf_value.get_string() = "::";
     sa.clear();
-    sa.emplace_back(lr, &view_curses::VC_ROLE, left);
+    sa.emplace_back(lr, view_curses::VC_ROLE.value(left));
     lr.lr_start = 1;
     lr.lr_end = 2;
-    sa.emplace_back(lr, &view_curses::VC_ROLE, right);
+    sa.emplace_back(lr, view_curses::VC_ROLE.value(right));
 }
 
 void
@@ -126,14 +126,15 @@ statusview_curses::do_update()
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
                     if (sa.sa_type == &view_curses::VC_STYLE) {
-                        sa.sa_value.sav_int &= ~(A_REVERSE | A_COLOR);
+                        sa.sa_value = sa.sa_value.get<int64_t>()
+                            & ~(A_REVERSE | A_COLOR);
                     } else if (sa.sa_type == &view_curses::VC_ROLE) {
-                        if (sa.sa_value.sav_int
+                        if (sa.sa_value.get<int64_t>()
                             == view_colors::VCR_ALERT_STATUS) {
-                            sa.sa_value.sav_int
+                            sa.sa_value.get<int64_t>()
                                 = view_colors::VCR_INACTIVE_ALERT_STATUS;
                         } else {
-                            sa.sa_value.sav_int = view_colors::VCR_NONE;
+                            sa.sa_value = view_colors::VCR_NONE;
                         }
                     }
                 }

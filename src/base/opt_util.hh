@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 
-#include "intern_string.hh"
 #include "optional.hpp"
 
 namespace detail {

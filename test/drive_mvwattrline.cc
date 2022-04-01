@@ -68,44 +68,45 @@ main(int argc, char* argv[])
 
         al.clear()
             .with_string("\tLeading tab")
-            .with_attr(string_attr(
-                line_range(0, 1), &view_curses::VC_STYLE, A_REVERSE));
+            .with_attr(string_attr(line_range(0, 1),
+                                   view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Tab\twith text")
-            .with_attr(string_attr(
-                line_range(1, 4), &view_curses::VC_STYLE, A_REVERSE));
+            .with_attr(string_attr(line_range(1, 4),
+                                   view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Tab\twith text #2")
-            .with_attr(string_attr(
-                line_range(3, 4), &view_curses::VC_STYLE, A_REVERSE));
+            .with_attr(string_attr(line_range(3, 4),
+                                   view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Two\ttabs\twith text")
-            .with_attr(string_attr(
-                line_range(4, 6), &view_curses::VC_STYLE, A_REVERSE))
-            .with_attr(string_attr(
-                line_range(9, 13), &view_curses::VC_STYLE, A_REVERSE));
+            .with_attr(string_attr(line_range(4, 6),
+                                   view_curses::VC_STYLE.value(A_REVERSE)))
+            .with_attr(string_attr(line_range(9, 13),
+                                   view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Text with mixed attributes.")
             .with_attr(string_attr(
                 line_range(5, 9),
-                &view_curses::VC_STYLE,
-                view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK)))
-            .with_attr(string_attr(
-                line_range(7, 12), &view_curses::VC_STYLE, A_REVERSE));
+                view_curses::VC_STYLE.value(
+                    view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK))))
+            .with_attr(string_attr(line_range(7, 12),
+                                   view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         const char* text = u8"Text with unicode ▶ characters";
         int offset = strstr(text, "char") - text;
-        al.clear().with_string(text).with_attr(string_attr(
-            line_range(offset, offset + 4), &view_curses::VC_STYLE, A_REVERSE));
+        al.clear().with_string(text).with_attr(
+            string_attr(line_range(offset, offset + 4),
+                        view_curses::VC_STYLE.value(A_REVERSE)));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         wmove(win, y, 0);

@@ -827,17 +827,15 @@ handle_paging_key(int ch)
                 lnav_data.ld_filter_view.reload_data();
                 lnav_data.ld_files_view.reload_data();
                 if (tc->get_inner_height() > 0_vl) {
-                    string_attrs_t::const_iterator line_attr;
                     std::vector<attr_line_t> rows(1);
 
                     tc->get_data_source()->listview_value_for_rows(
                         *tc, tc->get_top(), rows);
                     string_attrs_t& sa = rows[0].get_attrs();
-                    line_attr = find_string_attr(sa, &logline::L_FILE);
-                    if (line_attr != sa.end()) {
+                    auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
+                    if (line_attr_opt) {
                         const auto& fc = lnav_data.ld_active_files;
-                        auto lf = ((logfile*) line_attr->sa_value.sav_ptr)
-                                      ->shared_from_this();
+                        auto lf = line_attr_opt.value().get();
                         auto iter
                             = find(fc.fc_files.begin(), fc.fc_files.end(), lf);
                         if (iter != fc.fc_files.end()) {

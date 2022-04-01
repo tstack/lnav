@@ -30,6 +30,7 @@
 #ifndef lnav_string_attr_type_hh
 #define lnav_string_attr_type_hh
 
+#include <string>
 #include <utility>
 
 #include <stdint.h>
@@ -37,17 +38,14 @@
 #include "base/intern_string.hh"
 #include "mapbox/variant.hpp"
 
-class string_attr_type {
-public:
-    explicit string_attr_type(const char* name = nullptr) noexcept
-        : sat_name(name){};
+class logfile;
+struct bookmark_metadata;
 
-    const char* sat_name;
-};
-using string_attr_type_t = string_attr_type*;
-
-using string_attr_value
-    = mapbox::util::variant<int64_t, const intern_string_t, std::string>;
+using string_attr_value = mapbox::util::variant<int64_t,
+                                                const intern_string_t,
+                                                std::string,
+                                                std::shared_ptr<logfile>,
+                                                bookmark_metadata*>;
 
 class string_attr_type_base {
 public:
@@ -59,27 +57,38 @@ public:
 };
 
 template<typename T>
-class string_attr_type2 : public string_attr_type_base {
+class string_attr_type : public string_attr_type_base {
 public:
-    explicit string_attr_type2(const char* name) noexcept
+    using value_type = T;
+
+    explicit string_attr_type(const char* name) noexcept
         : string_attr_type_base(name)
     {
     }
 
-    std::pair<string_attr_type_base*, string_attr_value> value(const T& val)
+    template<typename U = T>
+    std::enable_if_t<!std::is_void<U>::value,
+                     std::pair<const string_attr_type_base*, string_attr_value>>
+    value(const U& val) const
     {
         return std::make_pair(this, val);
     }
+
+    template<typename U = T>
+    std::enable_if_t<std::is_void<U>::value,
+                     std::pair<const string_attr_type_base*, string_attr_value>>
+    value() const
+    {
+        return std::make_pair(this, string_attr_value{});
+    }
 };
 
-extern string_attr_type SA_ORIGINAL_LINE;
-extern string_attr_type SA_BODY;
-extern string_attr_type SA_HIDDEN;
-extern string_attr_type SA_FORMAT;
-class intern_string;
-extern string_attr_type2<const intern_string_t> SA_FORMAT2;
-extern string_attr_type SA_REMOVED;
-extern string_attr_type SA_INVALID;
-extern string_attr_type SA_ERROR;
+extern string_attr_type<void> SA_ORIGINAL_LINE;
+extern string_attr_type<void> SA_BODY;
+extern string_attr_type<void> SA_HIDDEN;
+extern string_attr_type<const intern_string_t> SA_FORMAT;
+extern string_attr_type<void> SA_REMOVED;
+extern string_attr_type<std::string> SA_INVALID;
+extern string_attr_type<std::string> SA_ERROR;
 
 #endif

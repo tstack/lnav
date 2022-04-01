@@ -307,33 +307,33 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
                    std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (selected) {
-        value_out.emplace_back(
-            line_range{0, 1}, &view_curses::VC_GRAPHIC, ACS_RARROW);
+        value_out.emplace_back(line_range{0, 1},
+                               view_curses::VC_GRAPHIC.value(ACS_RARROW));
     }
 
     if (line < fc.fc_name_to_errors.size()) {
         if (selected) {
-            value_out.emplace_back(line_range{0, -1},
-                                   &view_curses::VC_ROLE,
-                                   view_colors::VCR_DISABLED_FOCUSED);
+            value_out.emplace_back(
+                line_range{0, -1},
+                view_curses::VC_ROLE.value(view_colors::VCR_DISABLED_FOCUSED));
         }
 
-        value_out.emplace_back(line_range{4 + (int) filename_width, -1},
-                               &view_curses::VC_ROLE_FG,
-                               view_colors::VCR_ERROR);
+        value_out.emplace_back(
+            line_range{4 + (int) filename_width, -1},
+            view_curses::VC_ROLE_FG.value(view_colors::VCR_ERROR));
         return;
     }
     line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
         if (selected) {
-            value_out.emplace_back(line_range{0, -1},
-                                   &view_curses::VC_ROLE,
-                                   view_colors::VCR_DISABLED_FOCUSED);
+            value_out.emplace_back(
+                line_range{0, -1},
+                view_curses::VC_ROLE.value(view_colors::VCR_DISABLED_FOCUSED));
         }
         if (line == fc.fc_other_files.size() - 1) {
-            value_out.emplace_back(
-                line_range{0, -1}, &view_curses::VC_STYLE, A_UNDERLINE);
+            value_out.emplace_back(line_range{0, -1},
+                                   view_curses::VC_STYLE.value(A_UNDERLINE));
         }
         return;
     }
@@ -342,7 +342,8 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
 
     if (selected) {
         value_out.emplace_back(
-            line_range{0, -1}, &view_curses::VC_ROLE, view_colors::VCR_FOCUSED);
+            line_range{0, -1},
+            view_curses::VC_ROLE.value(view_colors::VCR_FOCUSED));
     }
 
     auto& lss = lnav_data.ld_log_source;
@@ -353,24 +354,25 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
     if (ld_opt && !ld_opt.value()->ld_visible) {
         visible = ' ';
     }
-    value_out.emplace_back(line_range{2, 3}, &view_curses::VC_GRAPHIC, visible);
+    value_out.emplace_back(line_range{2, 3},
+                           view_curses::VC_GRAPHIC.value(visible));
     if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3},
-                               &view_curses::VC_FOREGROUND,
-                               vcolors.ansi_to_theme_color(COLOR_GREEN));
+                               view_curses::VC_FOREGROUND.value(
+                                   vcolors.ansi_to_theme_color(COLOR_GREEN)));
     }
 
     auto lr = line_range{
         (int) filename_width + 3 + 4,
         (int) filename_width + 3 + 10,
     };
-    value_out.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
+    value_out.emplace_back(lr, view_curses::VC_STYLE.value(A_BOLD));
 
     lr.lr_start = this->fss_last_line_len;
     lr.lr_end = -1;
     value_out.emplace_back(lr,
-                           &view_curses::VC_FOREGROUND,
-                           vcolors.ansi_to_theme_color(COLOR_YELLOW));
+                           view_curses::VC_FOREGROUND.value(
+                               vcolors.ansi_to_theme_color(COLOR_YELLOW)));
 }
 
 size_t

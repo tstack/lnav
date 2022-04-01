@@ -4,18 +4,21 @@
 // https://github.com/martinmoene/optional-lite
 //
 // Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// (See accompanying file LICENSE.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
 
 #ifndef NONSTD_OPTIONAL_LITE_HPP
-#define NONSTD_OPTIONAL_LITE_HPP
+#    define NONSTD_OPTIONAL_LITE_HPP
 
-#define optional_lite_MAJOR  3
-#define optional_lite_MINOR  4
-#define optional_lite_PATCH  0
+#    define optional_lite_MAJOR 3
+#    define optional_lite_MINOR 4
+#    define optional_lite_PATCH 0
 
-#define optional_lite_VERSION  optional_STRINGIFY(optional_lite_MAJOR) "." optional_STRINGIFY(optional_lite_MINOR) "." optional_STRINGIFY(optional_lite_PATCH)
+#    define optional_lite_VERSION \
+        optional_STRINGIFY(optional_lite_MAJOR) "." optional_STRINGIFY( \
+            optional_lite_MINOR) "." optional_STRINGIFY(optional_lite_PATCH)
 
 #define optional_STRINGIFY(  x )  optional_STRINGIFY_( x )
 #define optional_STRINGIFY_( x )  #x

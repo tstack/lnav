@@ -48,13 +48,12 @@
 
 using namespace std::chrono_literals;
 
-string_attr_type view_curses::VC_ROLE("role");
-string_attr_type view_curses::VC_ROLE_FG("role-fg");
-string_attr_type view_curses::VC_STYLE("style");
-string_attr_type view_curses::VC_GRAPHIC("graphic");
-string_attr_type view_curses::VC_SELECTED("selected");
-string_attr_type view_curses::VC_FOREGROUND("foreground");
-string_attr_type view_curses::VC_BACKGROUND("background");
+string_attr_type<view_colors::role_t> view_curses::VC_ROLE("role");
+string_attr_type<view_colors::role_t> view_curses::VC_ROLE_FG("role-fg");
+string_attr_type<int64_t> view_curses::VC_STYLE("style");
+string_attr_type<int64_t> view_curses::VC_GRAPHIC("graphic");
+string_attr_type<int64_t> view_curses::VC_FOREGROUND("foreground");
+string_attr_type<int64_t> view_curses::VC_BACKGROUND("background");
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
     {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
@@ -124,23 +123,16 @@ view_curses::mvwattrline(WINDOW* window,
                          const struct line_range& lr_chars,
                          view_colors::role_t base_role)
 {
-    attr_t text_attrs, attrs;
-    int line_width_chars;
-    string_attrs_t& sa = al.get_attrs();
-    std::string& line = al.get_string();
-    string_attrs_t::const_iterator iter;
+    auto& sa = al.get_attrs();
+    auto& line = al.get_string();
     std::vector<utf_to_display_adjustment> utf_adjustments;
-    int tab_count = 0;
-    char* expanded_line;
-    int exp_index = 0;
     int exp_offset = 0;
     std::string full_line;
 
     require(lr_chars.lr_end >= 0);
 
-    line_width_chars = lr_chars.length();
-    tab_count = count(line.begin(), line.end(), '\t');
-    expanded_line = (char*) alloca(line.size() + tab_count * 8 + 1);
+    auto line_width_chars = lr_chars.length();
+    std::string expanded_line;
 
     short* fg_color = (short*) alloca(line_width_chars * sizeof(short));
     bool has_fg = false;
@@ -150,24 +142,22 @@ view_curses::mvwattrline(WINDOW* window,
     int char_index = 0;
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
-        int exp_start_index = exp_index;
-        unsigned char ch = static_cast<unsigned char>(line[lpc]);
+        int exp_start_index = expanded_line.size();
+        auto ch = static_cast<unsigned char>(line[lpc]);
 
         switch (ch) {
             case '\t':
                 do {
-                    expanded_line[exp_index] = ' ';
-                    exp_index += 1;
+                    expanded_line.push_back(' ');
                     char_index += 1;
-                } while (exp_index % 8);
-                utf_adjustments.emplace_back(lpc,
-                                             exp_index - exp_start_index - 1);
+                } while (expanded_line.size() % 8);
+                utf_adjustments.emplace_back(
+                    lpc, expanded_line.size() - exp_start_index - 1);
                 break;
 
             case '\r':
             case '\n':
-                expanded_line[exp_index] = ' ';
-                exp_index += 1;
+                expanded_line.push_back(' ');
                 char_index += 1;
                 break;
 
@@ -177,13 +167,11 @@ view_curses::mvwattrline(WINDOW* window,
                 });
 
                 if (size_result.isErr()) {
-                    expanded_line[exp_index] = '?';
-                    exp_index += 1;
+                    expanded_line.push_back('?');
                 } else {
                     auto offset = 1 - (int) size_result.unwrap();
 
-                    expanded_line[exp_index] = line[lpc];
-                    exp_index += 1;
+                    expanded_line.push_back(ch);
                     if (offset) {
                         if (char_index < lr_chars.lr_start) {
                             lr_bytes.lr_start += abs(offset);
@@ -195,8 +183,7 @@ view_curses::mvwattrline(WINDOW* window,
                         utf_adjustments.emplace_back(lpc, offset);
                         for (; offset && (lpc + 1) < line.size();
                              lpc++, offset++) {
-                            expanded_line[exp_index] = line[lpc + 1];
-                            exp_index += 1;
+                            expanded_line.push_back(line[lpc + 1]);
                         }
                     }
                 }
@@ -206,12 +193,11 @@ view_curses::mvwattrline(WINDOW* window,
         }
     }
 
-    expanded_line[exp_index] = '\0';
-    full_line = std::string(expanded_line);
+    full_line = expanded_line;
 
-    view_colors& vc = view_colors::singleton();
-    text_attrs = vc.attrs_for_role(base_role);
-    attrs = text_attrs;
+    auto& vc = view_colors::singleton();
+    auto text_attrs = vc.attrs_for_role(base_role);
+    auto attrs = text_attrs;
     wmove(window, y, x);
     wattron(window, attrs);
     if (lr_bytes.lr_start < (int) full_line.size()) {
@@ -224,7 +210,7 @@ view_curses::mvwattrline(WINDOW* window,
     wattroff(window, attrs);
 
     stable_sort(sa.begin(), sa.end());
-    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+    for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
         struct line_range attr_range = iter->sa_range;
 
         require(attr_range.lr_start >= 0);
@@ -273,10 +259,9 @@ view_curses::mvwattrline(WINDOW* window,
             if (!has_fg) {
                 memset(fg_color, -1, line_width_chars * sizeof(short));
             }
-            short attr_fg = iter->sa_value.sav_int;
+            short attr_fg = iter->sa_value.get<int64_t>();
             if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_fg = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                             iter->sa_range.sublen(line));
+                attr_fg = vc.color_for_ident(al.to_string_fragment(iter));
             }
             std::fill(&fg_color[attr_range.lr_start],
                       &fg_color[attr_range.lr_end],
@@ -289,10 +274,9 @@ view_curses::mvwattrline(WINDOW* window,
             if (!has_bg) {
                 memset(bg_color, -1, line_width_chars * sizeof(short));
             }
-            short attr_bg = iter->sa_value.sav_int;
+            short attr_bg = iter->sa_value.get<int64_t>();
             if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_bg = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                             iter->sa_range.sublen(line));
+                attr_bg = vc.color_for_ident(al.to_string_fragment(iter));
             }
             std::fill(bg_color + attr_range.lr_start,
                       bg_color + attr_range.lr_end,
@@ -307,19 +291,19 @@ view_curses::mvwattrline(WINDOW* window,
             short color_pair = 0;
 
             if (iter->sa_type == &VC_GRAPHIC) {
-                graphic = iter->sa_value.sav_int;
+                graphic = iter->sa_value.get<int64_t>();
             } else if (iter->sa_type == &VC_STYLE) {
-                attrs = iter->sa_value.sav_int & ~A_COLOR;
-                color_pair = PAIR_NUMBER(iter->sa_value.sav_int);
+                attrs = iter->sa_value.get<int64_t>() & ~A_COLOR;
+                color_pair = PAIR_NUMBER(iter->sa_value.get<int64_t>());
             } else if (iter->sa_type == &VC_ROLE) {
                 attrs = vc.attrs_for_role(
-                    (view_colors::role_t) iter->sa_value.sav_int);
+                    (view_colors::role_t) iter->sa_value.get<int64_t>());
                 color_pair = PAIR_NUMBER(attrs);
                 attrs = attrs & ~A_COLOR;
             } else if (iter->sa_type == &VC_ROLE_FG) {
                 short role_fg, role_bg;
                 attrs = vc.attrs_for_role(
-                    (view_colors::role_t) iter->sa_value.sav_int);
+                    (view_colors::role_t) iter->sa_value.get<int64_t>());
                 color_pair = PAIR_NUMBER(attrs);
                 pair_content(color_pair, &role_fg, &role_bg);
                 attrs = attrs & ~A_COLOR;
@@ -345,13 +329,11 @@ view_curses::mvwattrline(WINDOW* window,
                     pair_content(color_pair, &pair_fg, &pair_bg);
                     if (attrs & A_LEFT) {
                         pair_fg
-                            = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                                 iter->sa_range.sublen(line));
+                            = vc.color_for_ident(al.to_string_fragment(iter));
                     }
                     if (attrs & A_RIGHT) {
                         pair_bg
-                            = vc.color_for_ident(&line[iter->sa_range.lr_start],
-                                                 iter->sa_range.sublen(line));
+                            = vc.color_for_ident(al.to_string_fragment(iter));
                     }
                     color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
 

@@ -184,8 +184,8 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     line.append(width - strlen(buf) - line.length() - 2, ' ');
     line.append(buf);
 
-    value_out.with_attr(
-        string_attr(line_range(0, -1), &view_curses::VC_STYLE, A_UNDERLINE));
+    value_out.with_attr(string_attr(line_range(0, -1),
+                                    view_curses::VC_STYLE.value(A_UNDERLINE)));
 
     return true;
 }
@@ -321,8 +321,8 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
             color = COLOR_RED;
         }
         value_out.emplace_back(line_range(lpc, lpc + 1),
-                               &view_curses::VC_STYLE,
-                               vc.ansi_color_pair(COLOR_BLACK, color));
+                               view_curses::VC_STYLE.value(
+                                   vc.ansi_color_pair(COLOR_BLACK, color)));
     }
 }
 

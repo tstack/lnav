@@ -77,7 +77,7 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
 
     lr.lr_start = 0;
     lr.lr_end = -1;
-    value_out.emplace_back(lr, &logline::L_FILE, this->current_file().get());
+    value_out.emplace_back(lr, logline::L_FILE.value(this->current_file()));
 }
 
 size_t

@@ -32,6 +32,7 @@
 #ifndef attr_line_hh
 #define attr_line_hh
 
+#include <new>
 #include <string>
 #include <vector>
 
@@ -60,22 +61,27 @@ struct line_range {
     int length() const
     {
         return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
-    };
+    }
+
+    int end_for_string(const std::string& str) const
+    {
+        return this->lr_end == -1 ? str.length() : this->lr_end;
+    }
 
     bool contains(int pos) const
     {
         return this->lr_start <= pos && pos < this->lr_end;
-    };
+    }
 
     bool contains(const struct line_range& other) const
     {
         return this->contains(other.lr_start) && other.lr_end <= this->lr_end;
-    };
+    }
 
     bool intersects(const struct line_range& other) const
     {
         return this->contains(other.lr_start) || this->contains(other.lr_end);
-    };
+    }
 
     line_range intersection(const struct line_range& other) const;
 
@@ -86,7 +92,7 @@ struct line_range {
         while (this->lr_start < this->lr_end && isspace(str[this->lr_start])) {
             this->lr_start += 1;
         }
-    };
+    }
 
     bool operator<(const struct line_range& rhs) const
     {
@@ -104,12 +110,12 @@ struct line_range {
             return true;
         }
         return false;
-    };
+    }
 
     bool operator==(const struct line_range& rhs) const
     {
         return (this->lr_start == rhs.lr_start && this->lr_end == rhs.lr_end);
-    };
+    }
 
     const char* substr(const std::string& str) const
     {
@@ -140,76 +146,35 @@ typedef union {
 } string_attr_value_t;
 
 struct string_attr {
-    string_attr(const struct line_range& lr, string_attr_type_t type, void* val)
-        : sa_range(lr), sa_type(type)
-    {
-        require(lr.is_valid());
-        require(type);
-        this->sa_value.sav_ptr = val;
-    };
-
-    string_attr(const struct line_range& lr,
-                string_attr_type_t type,
-                std::string val)
-        : sa_range(lr), sa_type(type), sa_str_value(std::move(val))
-    {
-        require(lr.is_valid());
-        require(type);
-    };
-
-    string_attr(const struct line_range& lr,
-                string_attr_type_t type,
-                intern_string_t val)
-        : sa_range(lr), sa_type(type)
-    {
-        require(lr.is_valid());
-        require(type);
-        this->sa_value.sav_ptr = val.unwrap();
-    };
-
-    string_attr(const struct line_range& lr,
-                string_attr_type_t type,
-                int64_t val = 0)
-        : sa_range(lr), sa_type(type)
-    {
-        require(lr.is_valid());
-        require(type);
-        this->sa_value.sav_int = val;
-    };
-
-    string_attr(const struct line_range& lr,
-                string_attr_type_t type,
-                string_attr_value_t val)
-        : sa_range(lr), sa_type(type), sa_value(val)
-    {
-        require(lr.is_valid());
-        require(type);
-    };
-
-    string_attr(const struct line_range& lr,
-                std::pair<string_attr_type_base*, string_attr_value> value)
-        : sa_range(lr), sa_type2(value.first), sa_value2(value.second)
+    string_attr(
+        const struct line_range& lr,
+        const std::pair<const string_attr_type_base*, string_attr_value>& value)
+        : sa_range(lr), sa_type(value.first), sa_value(value.second)
     {
     }
 
-    string_attr() : sa_type(nullptr){};
+    string_attr() = default;
 
     bool operator<(const struct string_attr& rhs) const
     {
         return this->sa_range < rhs.sa_range;
-    };
-
-    intern_string_t to_string() const
-    {
-        return {(const intern_string*) this->sa_value.sav_ptr};
-    };
+    }
 
     struct line_range sa_range;
-    string_attr_type_t sa_type;
-    string_attr_value_t sa_value;
-    std::string sa_str_value;
-    string_attr_type_base* sa_type2;
-    string_attr_value sa_value2;
+    const string_attr_type_base* sa_type{nullptr};
+    string_attr_value sa_value;
+};
+
+template<typename T>
+struct string_attr_wrapper {
+    explicit string_attr_wrapper(const string_attr* sa) : saw_string_attr(sa) {}
+
+    const T& get() const
+    {
+        return this->saw_string_attr->sa_value.template get<T>();
+    }
+
+    const string_attr* saw_string_attr;
 };
 
 /** A map of line ranges to attributes for that range. */
@@ -217,7 +182,7 @@ using string_attrs_t = std::vector<string_attr>;
 
 inline string_attrs_t::const_iterator
 find_string_attr(const string_attrs_t& sa,
-                 string_attr_type_t type,
+                 const string_attr_type_base* type,
                  int start = 0)
 {
     string_attrs_t::const_iterator iter;
@@ -233,7 +198,7 @@ find_string_attr(const string_attrs_t& sa,
 
 inline nonstd::optional<const string_attr*>
 get_string_attr(const string_attrs_t& sa,
-                string_attr_type_t type,
+                const string_attr_type_base* type,
                 int start = 0)
 {
     auto iter = find_string_attr(sa, type, start);
@@ -246,9 +211,24 @@ get_string_attr(const string_attrs_t& sa,
 }
 
 template<typename T>
+inline nonstd::optional<string_attr_wrapper<T>>
+get_string_attr(const string_attrs_t& sa,
+                const string_attr_type<T>& type,
+                int start = 0)
+{
+    auto iter = find_string_attr(sa, &type, start);
+
+    if (iter == sa.end()) {
+        return nonstd::nullopt;
+    }
+
+    return nonstd::make_optional(string_attr_wrapper<T>(&(*iter)));
+}
+
+template<typename T>
 inline string_attrs_t::const_iterator
 find_string_attr_containing(const string_attrs_t& sa,
-                            string_attr_type_t type,
+                            const string_attr_type_base* type,
                             T x)
 {
     string_attrs_t::const_iterator iter;
@@ -328,7 +308,7 @@ rfind_string_attr_if(const string_attrs_t& sa, ssize_t near, T predicate)
 }
 
 inline struct line_range
-find_string_attr_range(const string_attrs_t& sa, string_attr_type_t type)
+find_string_attr_range(const string_attrs_t& sa, string_attr_type_base* type)
 {
     auto iter = find_string_attr(sa, type);
 
@@ -350,7 +330,7 @@ remove_string_attr(string_attrs_t& sa, const struct line_range& lr)
 }
 
 inline void
-remove_string_attr(string_attrs_t& sa, string_attr_type_t type)
+remove_string_attr(string_attrs_t& sa, string_attr_type_base* type)
 {
     for (auto iter = sa.begin(); iter != sa.end();) {
         if (iter->sa_type == type) {
@@ -374,13 +354,13 @@ struct text_wrap_settings {
     {
         this->tws_indent = indent;
         return *this;
-    };
+    }
 
     text_wrap_settings& with_width(int width)
     {
         this->tws_width = width;
         return *this;
-    };
+    }
 
     int tws_indent{2};
     int tws_width{80};
@@ -394,46 +374,46 @@ public:
     attr_line_t()
     {
         this->al_attrs.reserve(RESERVE_SIZE);
-    };
+    }
 
     attr_line_t(std::string str) : al_string(std::move(str))
     {
         this->al_attrs.reserve(RESERVE_SIZE);
-    };
+    }
 
     attr_line_t(const char* str) : al_string(str)
     {
         this->al_attrs.reserve(RESERVE_SIZE);
-    };
+    }
 
     static inline attr_line_t from_ansi_str(const char* str)
     {
         attr_line_t retval;
 
         return retval.with_ansi_string("%s", str);
-    };
+    }
 
     /** @return The string itself. */
     std::string& get_string()
     {
         return this->al_string;
-    };
+    }
 
     const std::string& get_string() const
     {
         return this->al_string;
-    };
+    }
 
     /** @return The attributes for the string. */
     string_attrs_t& get_attrs()
     {
         return this->al_attrs;
-    };
+    }
 
     const string_attrs_t& get_attrs() const
     {
         return this->al_attrs;
-    };
+    }
 
     attr_line_t& with_string(const std::string& str)
     {
@@ -449,7 +429,7 @@ public:
     {
         this->al_attrs.push_back(sa);
         return *this;
-    };
+    }
 
     attr_line_t& ensure_space()
     {
@@ -460,28 +440,37 @@ public:
         }
 
         return *this;
-    };
+    }
 
-    template<typename S, typename T = void*>
-    attr_line_t& append(S str, string_attr_type_t type = nullptr, T val = T())
+    template<typename S>
+    attr_line_t& append(
+        S str,
+        const std::pair<const string_attr_type_base*, string_attr_value>& value)
     {
         size_t start_len = this->al_string.length();
 
         this->al_string.append(str);
-        if (type != nullptr) {
-            line_range lr{(int) start_len, (int) this->al_string.length()};
 
-            this->al_attrs.emplace_back(lr, type, val);
-        }
+        line_range lr{(int) start_len, (int) this->al_string.length()};
+
+        this->al_attrs.emplace_back(lr, value);
+
         return *this;
-    };
+    }
+
+    template<typename S>
+    attr_line_t& append(S str)
+    {
+        this->al_string.append(str);
+        return *this;
+    }
 
     attr_line_t& append(const char* str, size_t len)
     {
         this->al_string.append(str, len);
 
         return *this;
-    };
+    }
 
     attr_line_t& insert(size_t index,
                         const attr_line_t& al,
@@ -491,13 +480,13 @@ public:
                         text_wrap_settings* tws = nullptr)
     {
         return this->insert(this->al_string.length(), al, tws);
-    };
+    }
 
     attr_line_t& append(size_t len, char c)
     {
         this->al_string.append(len, c);
         return *this;
-    };
+    }
 
     attr_line_t& insert(size_t index, size_t len, char c)
     {
@@ -524,7 +513,7 @@ public:
         shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
 
         return *this;
-    };
+    }
 
     attr_line_t& erase_utf8_chars(size_t start)
     {
@@ -532,7 +521,7 @@ public:
         this->erase(byte_index);
 
         return *this;
-    };
+    }
 
     attr_line_t& right_justify(unsigned long width);
 
@@ -548,15 +537,22 @@ public:
         }
 
         return retval;
-    };
+    }
 
     std::string get_substring(const line_range& lr) const
     {
         if (!lr.is_valid()) {
             return "";
         }
-        return this->al_string.substr(lr.lr_start, lr.length());
-    };
+        return this->al_string.substr(lr.lr_start, lr.sublen(this->al_string));
+    }
+
+    string_fragment to_string_fragment(string_attrs_t::const_iterator iter)
+    {
+        return string_fragment(this->al_string.c_str(),
+                               iter->sa_range.lr_start,
+                               iter->sa_range.end_for_string(this->al_string));
+    }
 
     string_attrs_t::const_iterator find_attr(size_t near) const
     {
@@ -567,12 +563,12 @@ public:
         }
 
         return find_string_attr(this->al_attrs, near);
-    };
+    }
 
     bool empty() const
     {
         return this->length() == 0;
-    };
+    }
 
     /** Clear the string and the attributes for the string. */
     attr_line_t& clear()
@@ -581,7 +577,7 @@ public:
         this->al_attrs.clear();
 
         return *this;
-    };
+    }
 
     attr_line_t subline(size_t start, size_t len = std::string::npos) const;
 
