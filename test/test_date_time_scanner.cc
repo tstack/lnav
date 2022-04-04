@@ -43,12 +43,14 @@ static const char* GOOD_TIMES[] = {
     "05/18/2018 12:00:53 AM",
 };
 
-static const char* BAD_TIMES[] = {"1-2-3 1:2:3",
+static const char* BAD_TIMES[] = {
+    "1-2-3 1:2:3",
 
-                                  "2013-22-01 12:01:22",
-                                  "2013-00-01 12:01:22",
+    "2013-22-01 12:01:22",
+    "2013-00-01 12:01:22",
 
-                                  "@4000000043"};
+    "@4000000043",
+};
 
 int
 main(int argc, char* argv[])

@@ -1464,12 +1464,18 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_body") == 0) {
-            auto iter = find_string_attr(sa, &SA_BODY);
-            sqlite3_bind_text(stmt,
-                              lpc + 1,
-                              &(sbr.get_data()[iter->sa_range.lr_start]),
-                              iter->sa_range.length(),
-                              SQLITE_STATIC);
+            auto body_attr_opt = get_string_attr(sa, SA_BODY);
+            if (body_attr_opt) {
+                auto& sar = body_attr_opt.value().saw_string_attr->sa_range;
+
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  sbr.get_data_at(sar.lr_start),
+                                  sar.length(),
+                                  SQLITE_STATIC);
+            } else {
+                sqlite3_bind_null(stmt, lpc + 1);
+            }
             continue;
         }
         if (strcmp(name, ":log_raw_text") == 0) {
@@ -1485,7 +1491,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
-        for (auto& lv : values) {
+        for (const auto& lv : values) {
             if (lv.lv_meta.lvm_name != &name[1]) {
                 continue;
             }

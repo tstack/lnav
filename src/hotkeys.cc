@@ -95,7 +95,7 @@ public:
                          false);
     };
 
-    std::string to_string(const struct line_range& lr)
+    std::string to_string(const struct line_range& lr) const
     {
         const char* start = this->lh_msg_buffer.get_data();
 

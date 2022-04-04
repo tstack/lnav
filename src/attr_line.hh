@@ -169,7 +169,8 @@ template<typename T>
 struct string_attr_wrapper {
     explicit string_attr_wrapper(const string_attr* sa) : saw_string_attr(sa) {}
 
-    const T& get() const
+    template<typename U = T>
+    std::enable_if_t<!std::is_void<U>::value, const U&> get() const
     {
         return this->saw_string_attr->sa_value.template get<T>();
     }
