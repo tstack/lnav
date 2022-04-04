@@ -29,6 +29,8 @@
  * @file date_time_scanner.cc
  */
 
+#include <chrono>
+
 #include "date_time_scanner.hh"
 
 #include "config.h"
