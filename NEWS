@@ -7,6 +7,8 @@ lnav v0.10.2:
      * Added a 'language' column to the lnav_view_filters table that
        specifies the language of the 'pattern' column, either 'regex'
        or 'sql'.
+     * Timestamps that do not have a day or month are rewritten to a
+       full timestamp like YYYY-MM-DD HH:MM:SS.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression

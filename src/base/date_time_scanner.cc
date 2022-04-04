@@ -35,11 +35,29 @@
 #include "ptimec.hh"
 
 size_t
-date_time_scanner::ftime(char* dst, size_t len, const exttm& tm) const
+date_time_scanner::ftime(char* dst,
+                         size_t len,
+                         const char* const time_fmt[],
+                         const exttm& tm) const
 {
     off_t off = 0;
 
-    PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
+    if (time_fmt == nullptr) {
+        PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
+        if (tm.et_flags & ETF_MILLIS_SET) {
+            dst[off++] = '.';
+            ftime_L(dst, off, len, tm);
+        } else if (tm.et_flags & ETF_MICROS_SET) {
+            dst[off++] = '.';
+            ftime_f(dst, off, len, tm);
+        } else if (tm.et_flags & ETF_NANOS_SET) {
+            dst[off++] = '.';
+            ftime_N(dst, off, len, tm);
+        }
+        dst[off] = '\0';
+    } else {
+        off = ftime_fmt(dst, len, time_fmt[this->dts_fmt_lock], tm);
+    }
 
     return (size_t) off;
 }
@@ -196,13 +214,29 @@ date_time_scanner::scan(const char* time_dest,
         if (retval[0] == '.' || retval[0] == ',') {
             off_t off = (retval - time_dest) + 1;
 
-            if (ptime_f(tm_out, time_dest, off, time_len)) {
-                tv_out.tv_usec = tm_out->et_nsec / 1000;
+            if (ptime_N(tm_out, time_dest, off, time_len)) {
+                tv_out.tv_usec
+                    = std::chrono::duration_cast<std::chrono::microseconds>(
+                          std::chrono::nanoseconds{tm_out->et_nsec})
+                          .count();
+                this->dts_fmt_len += 10;
+                tm_out->et_flags |= ETF_NANOS_SET;
+                retval += 10;
+            } else if (ptime_f(tm_out, time_dest, off, time_len)) {
+                tv_out.tv_usec
+                    = std::chrono::duration_cast<std::chrono::microseconds>(
+                          std::chrono::nanoseconds{tm_out->et_nsec})
+                          .count();
                 this->dts_fmt_len += 7;
+                tm_out->et_flags |= ETF_MICROS_SET;
                 retval += 7;
             } else if (ptime_L(tm_out, time_dest, off, time_len)) {
-                tv_out.tv_usec = tm_out->et_nsec / 1000;
+                tv_out.tv_usec
+                    = std::chrono::duration_cast<std::chrono::microseconds>(
+                          std::chrono::nanoseconds{tm_out->et_nsec})
+                          .count();
                 this->dts_fmt_len += 4;
+                tm_out->et_flags |= ETF_MILLIS_SET;
                 retval += 4;
             }
         }

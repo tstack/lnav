@@ -40,7 +40,6 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "k_merge_tree.h"
-#include "lnav_util.hh"
 #include "log_accel.hh"
 #include "relative_time.hh"
 #include "sql_util.hh"
@@ -119,7 +118,7 @@ logfile_sub_source::find(const char* fn, content_line_t& line_base)
          iter++)
     {
         auto& ld = *(*iter);
-        auto lf = ld.get_file_ptr();
+        auto* lf = ld.get_file_ptr();
 
         if (lf == nullptr) {
             continue;
@@ -233,7 +232,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     if ((this->lss_token_file->is_time_adjusted()
-         || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED)
+         || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
+         || !(format->lf_timestamp_flags & ETF_DAY_SET)
+         || !(format->lf_timestamp_flags & ETF_MONTH_SET))
         && format->lf_date_time.dts_fmt_lock != -1)
     {
         auto time_attr
@@ -246,7 +247,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             const char* fmt;
             ssize_t len;
 
-            if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
+            if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
+                || !(format->lf_timestamp_flags & ETF_DAY_SET)
+                || !(format->lf_timestamp_flags & ETF_MONTH_SET))
+            {
                 format->lf_date_time.convert_to_timeval(
                     &this->lss_token_value.c_str()[time_range.lr_start],
                     time_range.length(),
@@ -254,14 +258,23 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     adjusted_time);
                 fmt = "%Y-%m-%d %H:%M:%S.%f";
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
-                adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                adjusted_tm.et_nsec
+                    = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          std::chrono::microseconds{adjusted_time.tv_usec})
+                          .count();
                 len = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
             } else {
                 adjusted_time = this->lss_token_line->get_timeval();
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
-                adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                adjusted_tm.et_nsec
+                    = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          std::chrono::microseconds{adjusted_time.tv_usec})
+                          .count();
                 len = format->lf_date_time.ftime(
-                    buffer, sizeof(buffer), adjusted_tm);
+                    buffer,
+                    sizeof(buffer),
+                    format->get_timestamp_formats(),
+                    adjusted_tm);
             }
 
             value_out.replace(
@@ -585,7 +598,6 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         auto sql_filter_opt = this->get_sql_filter();
         if (sql_filter_opt) {
             auto* sf = (sql_filter*) sql_filter_opt.value().get();
-            log_debug("eval sql %p %p", &this->tss_filters, sf);
             auto eval_res = this->eval_sql_filter(sf->sf_filter_stmt.in(),
                                                   this->lss_token_file_data,
                                                   this->lss_token_line);

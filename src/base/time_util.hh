@@ -75,6 +75,9 @@ enum exttm_bits_t {
     ETB_DAY_SET,
     ETB_MACHINE_ORIENTED,
     ETB_EPOCH_TIME,
+    ETB_MILLIS_SET,
+    ETB_MICROS_SET,
+    ETB_NANOS_SET,
 };
 
 enum exttm_flags_t {
@@ -83,6 +86,9 @@ enum exttm_flags_t {
     ETF_DAY_SET = (1UL << ETB_DAY_SET),
     ETF_MACHINE_ORIENTED = (1UL << ETB_MACHINE_ORIENTED),
     ETF_EPOCH_TIME = (1UL << ETB_EPOCH_TIME),
+    ETF_MILLIS_SET = (1UL << ETB_MILLIS_SET),
+    ETF_MICROS_SET = (1UL << ETB_MICROS_SET),
+    ETF_NANOS_SET = (1UL << ETB_NANOS_SET),
 };
 
 struct exttm {

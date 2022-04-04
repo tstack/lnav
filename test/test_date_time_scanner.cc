@@ -39,6 +39,7 @@ static const char* GOOD_TIMES[] = {
     "May 01 00:00:01",
     "May 10 12:00:01",
     "2014-02-11 16:12:34",
+    "2014-02-11 16:12:34.123",
     "05/18/2018 12:00:53 PM",
     "05/18/2018 12:00:53 AM",
 };
@@ -70,7 +71,7 @@ main(int argc, char* argv[])
         char ts[64];
 
         gmtime_r(&tv.tv_sec, &tm.et_tm);
-        dts.ftime(ts, sizeof(ts), tm);
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
         printf("orig %s\n", good_time);
         printf("loop %s\n", ts);
         assert(strcmp(ts, good_time) == 0);
@@ -85,7 +86,7 @@ main(int argc, char* argv[])
         auto rc = dts.scan(OLD_TIME, strlen(OLD_TIME), nullptr, &tm, tv);
         assert(rc != nullptr);
         char ts[64];
-        dts.ftime(ts, sizeof(ts), tm);
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
         assert(strcmp(ts, "05/18/1980 12:00:53 AM") == 0);
     }
 
@@ -143,6 +144,24 @@ main(int argc, char* argv[])
             assert(dts.scan(fr_date, strlen(fr_date), nullptr, &fr_tm, fr_tv)
                    != nullptr);
         }
+    }
+
+    {
+        const char* ts = "22:46:03.471";
+        const char* fmt[] = {
+            "%H:%M:%S.%L",
+            nullptr,
+        };
+        char buf[64];
+        date_time_scanner dts;
+        struct exttm tm;
+        struct timeval tv;
+
+        const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
+        assert(ts_end - ts == 12);
+        auto rc = dts.ftime(buf, sizeof(buf), fmt, tm);
+        assert(rc == 12);
+        assert(strcmp(ts, buf) == 0);
     }
 
     {
