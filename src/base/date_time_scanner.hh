@@ -55,7 +55,7 @@ struct date_time_scanner {
     void clear()
     {
         this->dts_base_time = 0;
-        memset(&this->dts_base_tm, 0, sizeof(this->dts_base_tm));
+        this->dts_base_tm = exttm{};
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
     };

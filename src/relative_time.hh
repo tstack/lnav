@@ -201,7 +201,6 @@ public:
         time_t now;
 
         time(&now);
-        memset(&tm, 0, sizeof(tm));
         tm.et_tm = *gmtime(&now);
         return this->adjust(tm);
     };
@@ -210,7 +209,6 @@ public:
     {
         struct exttm tm;
 
-        memset(&tm, 0, sizeof(tm));
         tm.et_tm = *gmtime(&tv.tv_sec);
         tm.et_nsec = tv.tv_usec * 1000;
         return this->adjust(tm);

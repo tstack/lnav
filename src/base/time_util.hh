@@ -97,6 +97,11 @@ struct exttm {
     unsigned int et_flags{0};
     long et_gmtoff{0};
 
+    exttm()
+    {
+        memset(&this->et_tm, 0, sizeof(this->et_tm));
+    }
+
     bool operator==(const exttm& other) const
     {
         return memcmp(this, &other, sizeof(exttm)) == 0;
