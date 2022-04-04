@@ -93,9 +93,9 @@ enum exttm_flags_t {
 
 struct exttm {
     struct tm et_tm;
-    int32_t et_nsec;
-    unsigned int et_flags;
-    long et_gmtoff;
+    int32_t et_nsec{0};
+    unsigned int et_flags{0};
+    long et_gmtoff{0};
 
     bool operator==(const exttm& other) const
     {
