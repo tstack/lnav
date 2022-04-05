@@ -1467,7 +1467,7 @@ looper()
         sb.push_back(
             bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
         vsb.push_back([](listview_curses* lv) {
-            auto tc = static_cast<textview_curses*>(lv);
+            auto* tc = dynamic_cast<textview_curses*>(lv);
 
             tc->tc_state_event_handler(*tc);
         });
@@ -1664,7 +1664,6 @@ looper()
                 }
 
                 active_copy.clear();
-                active_copy.merge(lnav_data.ld_active_files);
                 rescan_future = std::future<file_collection>{};
                 next_rescan_time = ui_clock::now() + 333ms;
             }
@@ -1672,6 +1671,8 @@ looper()
             if (!rescan_future.valid()
                 && (session_stage < 2 || ui_clock::now() >= next_rescan_time))
             {
+                active_copy.clear();
+                active_copy.merge(lnav_data.ld_active_files);
                 rescan_future = std::async(std::launch::async,
                                            &file_collection::rescan_files,
                                            std::move(active_copy),
@@ -1687,9 +1688,20 @@ looper()
             auto ui_now = ui_clock::now();
             if (initial_rescan_completed) {
                 if (ui_now >= next_rebuild_time) {
+                    auto text_file_count = lnav_data.ld_text_source.size();
                     changes += rebuild_indexes(loop_deadline);
                     if (!changes && ui_clock::now() < loop_deadline) {
                         next_rebuild_time = ui_clock::now() + 333ms;
+                    }
+                    if (changes && text_file_count
+                        && lnav_data.ld_text_source.empty()
+                        && lnav_data.ld_view_stack.top().value_or(nullptr)
+                            == &lnav_data.ld_views[LNV_TEXT])
+                    {
+                        do {
+                            lnav_data.ld_view_stack.pop_back();
+                        } while (lnav_data.ld_view_stack.top().value_or(nullptr)
+                                 != &lnav_data.ld_views[LNV_LOG]);
                     }
                 }
             } else {
@@ -1849,6 +1861,8 @@ looper()
                     [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
 
                 auto old_mode = lnav_data.ld_mode;
+                auto old_file_names_size
+                    = lnav_data.ld_active_files.fc_file_names.size();
                 rlc.check_poll_set(pollfds);
                 lnav_data.ld_filter_source.fss_editor.check_poll_set(pollfds);
                 lnav_data.ld_filter_view.check_poll_set(pollfds);
@@ -1865,6 +1879,12 @@ looper()
                         default:
                             break;
                     }
+                }
+                if (old_file_names_size
+                    != lnav_data.ld_active_files.fc_file_names.size()) {
+                    next_rescan_time = ui_clock::now();
+                    next_rebuild_time = next_rescan_time;
+                    next_status_update_time = next_rescan_time;
                 }
             }
 

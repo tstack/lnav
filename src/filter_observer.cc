@@ -97,7 +97,6 @@ line_filter_observer::clear_deleted_filter_state()
 {
     uint32_t used_mask = 0;
 
-    log_debug("filter stack %p", &this->lfo_filter_stack);
     for (auto& filter : this->lfo_filter_stack) {
         if (filter->lf_deleted) {
             log_debug("skipping deleted %p %d %d",

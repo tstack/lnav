@@ -504,8 +504,9 @@ view_colors::init()
         }
         for (int fg = 0; fg < 8; fg++) {
             for (int bg = 0; bg < 8; bg++) {
-                if (fg == 0 && bg == 0)
+                if (fg == 0 && bg == 0) {
                     continue;
+                }
 
                 if (lnav_config.lc_ui_default_colors
                     && ansi_colors_to_curses[fg] == COLOR_WHITE

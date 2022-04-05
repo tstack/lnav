@@ -314,6 +314,7 @@ handle_paging_key(int ch)
                 if (!tss.empty()) {
                     tss.rotate_left();
                 }
+                tc->reload_data();
             }
             break;
 
@@ -327,6 +328,7 @@ handle_paging_key(int ch)
                 if (!tss.empty()) {
                     tss.rotate_right();
                 }
+                tc->reload_data();
             }
             break;
 

@@ -61,6 +61,7 @@ listview_curses::reload_data()
         }
     }
     this->vc_needs_update = true;
+    this->invoke_scroll();
 }
 
 bool

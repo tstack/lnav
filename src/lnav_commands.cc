@@ -2226,15 +2226,20 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (args.empty()) {
         args.emplace_back("filename");
         return Ok(std::string());
-    } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    }
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
-    } else if (args.size() < 2) {
+    }
+
+    if (args.size() < 2) {
         return ec.make_error("expecting file name to open");
     }
 
     std::vector<std::string> word_exp;
     size_t colon_index;
     std::string pat;
+    file_collection fc;
 
     pat = trim(remaining_args(cmdline, args));
 
@@ -2249,7 +2254,6 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("unable to parse arguments");
     }
 
-    std::map<std::string, logfile_open_options> file_names;
     std::vector<std::pair<std::string, int>> files_to_front;
     std::vector<std::string> closed_files;
 
@@ -2312,11 +2316,11 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
 #endif
             } else if (is_glob(fn.c_str())) {
-                file_names.emplace(fn, logfile_open_options());
+                fc.fc_file_names.emplace(fn, logfile_open_options());
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
                 if (fn.find(':') != std::string::npos) {
-                    file_names.emplace(fn, logfile_open_options());
+                    fc.fc_file_names.emplace(fn, logfile_open_options());
                     retval = "info: watching -- " + fn;
                 } else {
                     return ec.make_error(
@@ -2361,7 +2365,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                file_names.emplace(dir_wild + "/*", logfile_open_options());
+                fc.fc_file_names.emplace(dir_wild + "/*",
+                                         logfile_open_options());
                 retval = "info: watching -- " + dir_wild;
             } else if (!S_ISREG(st.st_mode)) {
                 return ec.make_error("not a regular file or directory -- {}",
@@ -2371,7 +2376,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     "cannot read file {} -- {}", fn, strerror(errno));
             } else {
                 fn = abspath.in();
-                file_names.emplace(fn, logfile_open_options());
+                fc.fc_file_names.emplace(fn, logfile_open_options());
                 retval = "info: opened -- " + fn;
                 files_to_front.emplace_back(fn, top);
 
@@ -2386,8 +2391,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     if (ec.ec_dry_run) {
         lnav_data.ld_preview_source.clear();
-        if (!file_names.empty()) {
-            auto iter = file_names.begin();
+        if (!fc.fc_file_names.empty()) {
+            auto iter = fc.fc_file_names.begin();
             std::string fn = iter->first;
             auto_fd preview_fd;
 
@@ -2467,12 +2472,11 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         lnav_data.ld_files_to_front.insert(lnav_data.ld_files_to_front.end(),
                                            files_to_front.begin(),
                                            files_to_front.end());
-        lnav_data.ld_active_files.fc_file_names.insert(
-            std::make_move_iterator(file_names.begin()),
-            std::make_move_iterator(file_names.end()));
         for (const auto& fn : closed_files) {
-            lnav_data.ld_active_files.fc_closed_files.erase(fn);
+            fc.fc_closed_files.erase(fn);
         }
+
+        lnav_data.ld_active_files.merge(fc);
     }
 
     return Ok(retval);

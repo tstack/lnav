@@ -548,6 +548,11 @@ public:
         this->set_needs_update();
     }
 
+    iterator find(T* view) const
+    {
+        return std::find(this->begin(), this->end(), view);
+    }
+
     iterator begin()
     {
         return this->vs_views.begin();
