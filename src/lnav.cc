@@ -2156,7 +2156,11 @@ main(int argc, char* argv[])
     }
 
     (void) signal(SIGPIPE, SIG_IGN);
-    std::locale::global(std::locale(""));
+    try {
+        std::locale::global(std::locale(""));
+    } catch (const std::runtime_error& e) {
+        log_error("unable to set locale to ''");
+    }
     umask(027);
 
     /* Disable Lnav from being able to execute external commands if
