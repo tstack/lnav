@@ -251,11 +251,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 || !(format->lf_timestamp_flags & ETF_DAY_SET)
                 || !(format->lf_timestamp_flags & ETF_MONTH_SET))
             {
-                format->lf_date_time.convert_to_timeval(
-                    &this->lss_token_value.c_str()[time_range.lr_start],
-                    time_range.length(),
-                    format->get_timestamp_formats(),
-                    adjusted_time);
+                adjusted_time = this->lss_token_line->get_timeval();
                 fmt = "%Y-%m-%d %H:%M:%S.%f";
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                 adjusted_tm.et_nsec
