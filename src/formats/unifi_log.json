@@ -2,7 +2,7 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "unifi_log": {
         "title": "UniFi log",
-        "description": "The UniFi gateway logger format.",
+        "description": "The UniFi gateway messages logger format (for /var/log/messages).",
         "url": "https://www.halolinux.us/firewalls/firewall-log-messages-what-do-they-mean.html",
         "regex": {
             "kernel-udp": {
