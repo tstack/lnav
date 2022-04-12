@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "ansi_scrubber.hh"
 #include "view_curses.hh"
 
 /**
@@ -48,7 +47,7 @@ public:
      * @param role The color role for this field, defaults to VCR_STATUS.
      */
     status_field(int width = 1,
-                 view_colors::role_t role = view_colors::VCR_STATUS)
+                 role_t role = role_t::VCR_STATUS)
         : sf_width(width), sf_role(role){};
 
     virtual ~status_field() = default;
@@ -75,7 +74,7 @@ public:
         return *this;
     };
 
-    void set_stitch_value(view_colors::role_t left, view_colors::role_t right);
+    void set_stitch_value(role_t left, role_t right);
 
     void set_left_pad(size_t val)
     {
@@ -125,12 +124,12 @@ public:
     };
 
     /** @param role The color role for this field. */
-    void set_role(view_colors::role_t role)
+    void set_role(role_t role)
     {
         this->sf_role = role;
     };
     /** @return The color role for this field. */
-    view_colors::role_t get_role() const
+    role_t get_role() const
     {
         return this->sf_role;
     };
@@ -173,7 +172,7 @@ protected:
     bool sf_cylon{false};
     ssize_t sf_cylon_pos{0};
     attr_line_t sf_value; /*< The value to display for this field. */
-    view_colors::role_t sf_role; /*< The color role for this field. */
+    role_t sf_role; /*< The color role for this field. */
     int sf_share{0};
     size_t sf_left_pad{0};
 };

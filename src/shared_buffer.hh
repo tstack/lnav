@@ -39,7 +39,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 
 class shared_buffer;

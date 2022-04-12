@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "leveltest_log": {
         "description": "Log format used for testing levels",
         "regex": {

@@ -36,11 +36,13 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/result.h"
 #include "config.h"
 #include "fmt/format.h"
 #include "view_curses.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 bool
 change_to_parent_dir()
@@ -101,8 +103,249 @@ err_prefix(const std::string msg)
     return std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg;
 }
 
-Result<std::string, std::string>
-err_to_ok(const std::string msg)
+Result<std::string, lnav::console::user_message>
+err_to_ok(const lnav::console::user_message msg)
 {
-    return Ok(err_prefix(msg));
+    return Ok(msg.to_attr_line().get_string());
 }
+
+namespace lnav {
+
+static void
+to_json(yajlpp_gen& gen, const attr_line_t& al)
+{
+    {
+        yajlpp_map root_map(gen);
+
+        root_map.gen("str");
+        root_map.gen(al.get_string());
+
+        root_map.gen("attrs");
+        {
+            yajlpp_array attr_array(gen);
+
+            for (const auto& sa : al.get_attrs()) {
+                yajlpp_map elem_map(gen);
+
+                elem_map.gen("start");
+                elem_map.gen(sa.sa_range.lr_start);
+                elem_map.gen("end");
+                elem_map.gen(sa.sa_range.lr_end);
+                elem_map.gen("type");
+                elem_map.gen(sa.sa_type->sat_name);
+                elem_map.gen("value");
+                sa.sa_value.match(
+                    [&](int64_t i) { elem_map.gen(i); },
+                    [&](role_t r) {
+                        elem_map.gen(lnav::enums::to_underlying(r));
+                    },
+                    [&](const intern_string_t& str) { elem_map.gen(str); },
+                    [&](const std::string& str) { elem_map.gen(str); },
+                    [&](const std::shared_ptr<logfile>& lf) {
+                        elem_map.gen("");
+                    },
+                    [&](const bookmark_metadata* bm) { elem_map.gen(""); });
+            }
+        }
+    }
+}
+
+std::string
+to_json(const attr_line_t& al)
+{
+    yajlpp_gen gen;
+
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+    to_json(gen, al);
+
+    return gen.to_string_fragment().to_string();
+}
+
+std::string
+to_json(const lnav::console::user_message& um)
+{
+    yajlpp_gen gen;
+
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    {
+        yajlpp_map root_map(gen);
+
+        root_map.gen("level");
+        switch (um.um_level) {
+            case console::user_message::level::ok:
+                root_map.gen("ok");
+                break;
+            case console::user_message::level::info:
+                root_map.gen("info");
+                break;
+            case console::user_message::level::warning:
+                root_map.gen("warning");
+                break;
+            case console::user_message::level::error:
+                root_map.gen("error");
+                break;
+        }
+
+        root_map.gen("message");
+        to_json(gen, um.um_message);
+        root_map.gen("reason");
+        to_json(gen, um.um_reason);
+        root_map.gen("snippets");
+        {
+            yajlpp_array snippet_array(gen);
+
+            for (const auto& snip : um.um_snippets) {
+                yajlpp_map snip_map(gen);
+
+                snip_map.gen("source");
+                snip_map.gen(snip.s_source);
+                snip_map.gen("line");
+                snip_map.gen(snip.s_line);
+                snip_map.gen("column");
+                snip_map.gen(snip.s_column);
+                snip_map.gen("content");
+                to_json(gen, snip.s_content);
+            }
+        }
+        root_map.gen("help");
+        to_json(gen, um.um_help);
+    }
+
+    return gen.to_string_fragment().to_string();
+}
+
+static int
+read_string_attr_type(yajlpp_parse_context* ypc,
+                      const unsigned char* str,
+                      size_t len)
+{
+    auto* sa = (string_attr*) ypc->ypc_obj_stack.top();
+    auto type = std::string((const char*) str, len);
+
+    if (type == "role") {
+        sa->sa_type = &VC_ROLE;
+    } else {
+        ensure(false);
+    }
+    return 1;
+}
+
+static int
+read_string_attr_int_value(yajlpp_parse_context* ypc, int64_t in)
+{
+    auto sa = (string_attr*) ypc->ypc_obj_stack.top();
+
+    if (sa->sa_type == &VC_ROLE) {
+        sa->sa_value = (role_t) in;
+    }
+    return 1;
+}
+
+static const struct json_path_container string_attr_handlers = {
+    yajlpp::property_handler("start").for_field(&string_attr::sa_range,
+                                                &line_range::lr_start),
+    yajlpp::property_handler("end").for_field(&string_attr::sa_range,
+                                              &line_range::lr_end),
+    yajlpp::property_handler("type").add_cb(read_string_attr_type),
+    yajlpp::property_handler("value").add_cb(read_string_attr_int_value),
+};
+
+static const struct json_path_container attr_line_handlers = {
+    yajlpp::property_handler("str").for_field(&attr_line_t::al_string),
+    yajlpp::property_handler("attrs#")
+        .with_obj_provider<string_attr, attr_line_t>(
+            [](const yajlpp_provider_context& ypc, attr_line_t* root) {
+                root->al_attrs.resize(ypc.ypc_index + 1);
+
+                return &root->al_attrs[ypc.ypc_index];
+            })
+        .with_children(string_attr_handlers),
+};
+
+template<>
+attr_line_t
+from_json(const std::string& json)
+{
+    yajlpp_parse_context ypc("string", &attr_line_handlers);
+    auto_mem<yajl_handle_t> handle(yajl_free);
+    attr_line_t retval;
+
+    handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+    ypc.with_handle(handle);
+    ypc.with_obj(retval);
+    ypc.parse(json);
+    ypc.complete_parse();
+
+    return retval;
+}
+
+static const json_path_container snippet_handlers = {
+    yajlpp::property_handler("source").for_field(&console::snippet::s_source),
+    yajlpp::property_handler("line").for_field(&console::snippet::s_line),
+    yajlpp::property_handler("column").for_field(&console::snippet::s_column),
+    yajlpp::property_handler("content")
+        .with_obj_provider<attr_line_t, console::snippet>(
+            [](const yajlpp_provider_context& ypc, console::snippet* snip) {
+                return &snip->s_content;
+            })
+        .with_children(attr_line_handlers),
+};
+
+static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
+    {"ok", lnav::console::user_message::level::ok},
+    {"info", lnav::console::user_message::level::info},
+    {"warning", lnav::console::user_message::level::warning},
+    {"error", lnav::console::user_message::level::error},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const struct json_path_container user_message_handlers = {
+    yajlpp::property_handler("level")
+        .with_enum_values(LEVEL_ENUM)
+        .for_field(&console::user_message::um_level),
+    yajlpp::property_handler("message")
+        .with_obj_provider<attr_line_t, console::user_message>(
+            [](const yajlpp_provider_context& ypc,
+               console::user_message* root) { return &root->um_message; })
+        .with_children(attr_line_handlers),
+    yajlpp::property_handler("reason")
+        .with_obj_provider<attr_line_t, console::user_message>(
+            [](const yajlpp_provider_context& ypc,
+               console::user_message* root) { return &root->um_reason; })
+        .with_children(attr_line_handlers),
+    yajlpp::property_handler("snippets#")
+        .with_obj_provider<console::snippet, console::user_message>(
+            [](const yajlpp_provider_context& ypc,
+               console::user_message* root) {
+                root->um_snippets.resize(ypc.ypc_index + 1);
+
+                return &root->um_snippets[ypc.ypc_index];
+            })
+        .with_children(snippet_handlers),
+    yajlpp::property_handler("help")
+        .with_obj_provider<attr_line_t, console::user_message>(
+            [](const yajlpp_provider_context& ypc,
+               console::user_message* root) { return &root->um_help; })
+        .with_children(attr_line_handlers),
+};
+
+template<>
+lnav::console::user_message
+from_json(const std::string& json)
+{
+    yajlpp_parse_context ypc("string", &user_message_handlers);
+    auto_mem<yajl_handle_t> handle(yajl_free);
+    lnav::console::user_message retval;
+
+    handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+    ypc.with_handle(handle);
+    ypc.with_obj(retval);
+    ypc.parse(json);
+    ypc.complete_parse();
+
+    return retval;
+}
+
+}  // namespace lnav

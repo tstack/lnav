@@ -38,6 +38,7 @@
 #include "base/humanize.network.hh"
 #include "base/isc.hh"
 #include "base/opt_util.hh"
+#include "base/string_util.hh"
 #include "config.h"
 #include "lnav_util.hh"
 #include "logfile.hh"

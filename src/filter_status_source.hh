@@ -72,8 +72,8 @@ public:
 
     status_field& statusview_value_for_field(int field) override;
 
-    status_field fss_prompt{1024, view_colors::VCR_STATUS};
-    status_field fss_error{1024, view_colors::VCR_ALERT_STATUS};
+    status_field fss_prompt{1024, role_t::VCR_STATUS};
+    status_field fss_error{1024, role_t::VCR_ALERT_STATUS};
 
 private:
     status_field fss_help;

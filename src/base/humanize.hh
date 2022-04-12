@@ -38,13 +38,18 @@
 
 namespace humanize {
 
+enum class alignment {
+    none,
+    columnar,
+};
+
 /**
  * Format the given size as a human-friendly string.
  *
  * @param value The value to format.
  * @return The formatted string.
  */
-std::string file_size(file_ssize_t value);
+std::string file_size(file_ssize_t value, alignment align);
 
 const std::string& sparkline(double value, nonstd::optional<double> upper);
 

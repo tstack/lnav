@@ -1,0 +1,28 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "invalid_props_log": {
+        "title": "invalid properties",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d+): (?<pid>\\w+) (?<body>.*)$"
+            }
+        },
+        "timestamp-field": "ts",
+        "sample": [
+            {
+                "line": "1428634687123: 1234 abc"
+            }
+        ],
+        "highlights": {
+            "hl1": {
+                "color": "not a color",
+                "background-color": "also not a color"
+            }
+        },
+        "search-table": {
+            "bad_table_regex": {
+                "pattern": "abc(def"
+            }
+        }
+    }
+}

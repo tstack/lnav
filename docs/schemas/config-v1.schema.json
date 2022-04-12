@@ -4,8 +4,11 @@
     "properties": {
         "$schema": {
             "title": "/$schema",
-            "description": "Specifies the type of this file",
-            "type": "string"
+            "description": "The URI that specifies the schema that describes this type of file",
+            "type": "string",
+            "examples": [
+                "https://lnav.org/schemas/config-v1.schema.json"
+            ]
         },
         "tuning": {
             "description": "Internal settings",
@@ -314,6 +317,36 @@
                                             "description": "Styling for scrollbars",
                                             "title": "/ui/theme-defs/<theme_name>/styles/scrollbar",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "h1": {
+                                            "description": "Styling for top-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h1",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "h2": {
+                                            "description": "Styling for 2nd-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h2",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "h3": {
+                                            "description": "Styling for 3rd-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h3",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "h4": {
+                                            "description": "Styling for 4th-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h4",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "h5": {
+                                            "description": "Styling for 5th-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h5",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "h6": {
+                                            "description": "Styling for 6th-level headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/h6",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false
@@ -516,7 +549,7 @@
                                             "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/command",
                                             "description": "The command to execute for the given key sequence.  Use a script to execute more complicated operations.",
                                             "type": "string",
-                                            "pattern": "[:|;].*",
+                                            "pattern": "^[:|;].*",
                                             "examples": [
                                                 ":goto next hour"
                                             ]

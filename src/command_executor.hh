@@ -37,9 +37,11 @@
 #include <sqlite3.h>
 
 #include "base/auto_fd.hh"
+#include "base/lnav.console.hh"
 #include "bookmarks.hh"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
+#include "help_text.hh"
 #include "optional.hpp"
 #include "shlex.resolver.hh"
 #include "vis_line.hh"
@@ -82,14 +84,18 @@ struct exec_context {
         return *this;
     }
 
-    std::string get_error_prefix();
+    void add_error_context(lnav::console::user_message& um);
 
     template<typename... Args>
-    Result<std::string, std::string> make_error(fmt::string_view format_str,
-                                                const Args&... args)
+    Result<std::string, lnav::console::user_message> make_error(
+        fmt::string_view format_str, const Args&... args)
     {
-        return Err(this->get_error_prefix()
-                   + fmt::vformat(format_str, fmt::make_format_args(args...)));
+        auto retval = lnav::console::user_message::error(
+            fmt::vformat(format_str, fmt::make_format_args(args...)));
+
+        this->add_error_context(retval);
+
+        return Err(retval);
     }
 
     nonstd::optional<FILE*> get_output()
@@ -132,9 +138,12 @@ struct exec_context {
         exec_context& sg_context;
     };
 
-    source_guard enter_source(const std::string& path, int line_number)
+    source_guard enter_source(const std::string& path,
+                              int line_number,
+                              const std::string& content)
     {
-        this->ec_source.emplace(path, line_number);
+        this->ec_source.emplace(
+            lnav::console::snippet::from(path, content).with_line(line_number));
         return {*this};
     }
 
@@ -155,7 +164,8 @@ struct exec_context {
     std::stack<std::map<std::string, std::string>> ec_local_vars;
     std::map<std::string, std::string> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
-    std::stack<std::pair<std::string, int>> ec_source;
+    std::stack<lnav::console::snippet> ec_source;
+    help_text* ec_current_help{nullptr};
 
     std::vector<std::pair<std::string, nonstd::optional<output_t>>>
         ec_output_stack;
@@ -166,21 +176,19 @@ struct exec_context {
     pipe_callback_t ec_pipe_callback;
 };
 
-Result<std::string, std::string> execute_command(exec_context& ec,
-                                                 const std::string& cmdline);
+Result<std::string, lnav::console::user_message> execute_command(
+    exec_context& ec, const std::string& cmdline);
 
-Result<std::string, std::string> execute_sql(exec_context& ec,
-                                             const std::string& sql,
-                                             std::string& alt_msg);
-Result<std::string, std::string> execute_file(exec_context& ec,
-                                              const std::string& path_and_args,
-                                              bool multiline = true);
-Result<std::string, std::string> execute_any(exec_context& ec,
-                                             const std::string& cmdline);
+Result<std::string, lnav::console::user_message> execute_sql(
+    exec_context& ec, const std::string& sql, std::string& alt_msg);
+Result<std::string, lnav::console::user_message> execute_file(
+    exec_context& ec, const std::string& path_and_args, bool multiline = true);
+Result<std::string, lnav::console::user_message> execute_any(
+    exec_context& ec, const std::string& cmdline);
 void execute_init_commands(
     exec_context& ec,
-    std::vector<std::pair<Result<std::string, std::string>, std::string>>&
-        msgs);
+    std::vector<std::pair<Result<std::string, lnav::console::user_message>,
+                          std::string>>& msgs);
 
 std::future<std::string> pipe_callback(exec_context& ec,
                                        const std::string& cmdline,

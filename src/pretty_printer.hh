@@ -37,7 +37,7 @@
 
 #include <sys/types.h>
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
 #include "data_scanner.hh"
 
 class pretty_printer {

@@ -36,11 +36,16 @@
 
 TEST_CASE("humanize::file_size")
 {
-    CHECK(humanize::file_size(0) == "0.0 B");
-    CHECK(humanize::file_size(1) == "1.0 B");
-    CHECK(humanize::file_size(1024) == "1.0KB");
-    CHECK(humanize::file_size(1500) == "1.5KB");
-    CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL) == "42.1GB");
-    CHECK(humanize::file_size(-1LL) == "Unknown");
-    CHECK(humanize::file_size(std::numeric_limits<int64_t>::max()) == "8.0EB");
+    CHECK(humanize::file_size(0, humanize::alignment::columnar) == "0.0 B");
+    CHECK(humanize::file_size(1, humanize::alignment::columnar) == "1.0 B");
+    CHECK(humanize::file_size(1024, humanize::alignment::columnar) == "1.0KB");
+    CHECK(humanize::file_size(1500, humanize::alignment::columnar) == "1.5KB");
+    CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL,
+                              humanize::alignment::columnar)
+          == "42.1GB");
+    CHECK(humanize::file_size(-1LL, humanize::alignment::columnar)
+          == "Unknown");
+    CHECK(humanize::file_size(std::numeric_limits<int64_t>::max(),
+                              humanize::alignment::columnar)
+          == "8.0EB");
 }

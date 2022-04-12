@@ -42,9 +42,9 @@ class module_format;
 class external_log_format : public log_format {
 public:
     struct sample {
-        sample() : s_level(LEVEL_UNKNOWN){};
+        sample() : s_level(LEVEL_UNKNOWN) {}
 
-        std::string s_line;
+        positioned_property<std::string> s_line;
         log_level_t s_level;
     };
 
@@ -87,9 +87,9 @@ public:
     };
 
     struct pattern {
+        std::string p_name;
         std::string p_config_path;
-        std::string p_string;
-        std::unique_ptr<pcrepp> p_pcre;
+        std::shared_ptr<pcrepp> p_pcre;
         std::vector<indexed_value_def> p_value_by_index;
         std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index{-1};
@@ -116,12 +116,8 @@ public:
     };
 
     external_log_format(const intern_string_t name)
-        : elf_column_count(0), elf_timestamp_divisor(1.0),
-          elf_level_field(intern_string::lookup("level", -1)),
+        : elf_level_field(intern_string::lookup("level", -1)),
           elf_body_field(intern_string::lookup("body", -1)),
-          elf_container(false), elf_has_module_format(false),
-          elf_builtin_format(false), elf_type(ELF_TYPE_TEXT),
-          jlf_hide_extra(false), jlf_cached_offset(-1),
           jlf_yajl_handle(nullptr, yajl_handle_deleter()), elf_name(name)
     {
         this->jlf_line_offsets.reserve(128);
@@ -154,10 +150,10 @@ public:
                  string_attrs_t& sa,
                  std::string& value_out);
 
-    void build(std::vector<std::string>& errors);
+    void build(std::vector<lnav::console::user_message>& errors);
 
     void register_vtabs(log_vtab_manager* vtab_manager,
-                        std::vector<std::string>& errors);
+                        std::vector<lnav::console::user_message>& errors);
 
     bool match_samples(const std::vector<sample>& samples) const;
 
@@ -246,7 +242,7 @@ public:
               jfe_text_transform(transform_t::NONE){};
 
         json_log_field jfe_type;
-        intern_string_t jfe_value;
+        positioned_property<intern_string_t> jfe_value;
         std::string jfe_default_value;
         long long jfe_min_width;
         long long jfe_max_width;
@@ -263,7 +259,7 @@ public:
         bool operator()(const json_format_element& jfe) const
         {
             return (this->jfc_type == jfe.jfe_type
-                    && this->jfc_field_name == jfe.jfe_value);
+                    && this->jfc_field_name == jfe.jfe_value.pp_value);
         };
 
         json_log_field jfc_type;
@@ -273,9 +269,9 @@ public:
     struct highlighter_def {
         highlighter_def() : hd_underline(false), hd_blink(false) {}
 
-        std::string hd_pattern;
-        std::string hd_color;
-        std::string hd_background_color;
+        std::shared_ptr<pcrepp> hd_pattern;
+        positioned_property<std::string> hd_color;
+        positioned_property<std::string> hd_background_color;
         bool hd_underline;
         bool hd_blink;
     };
@@ -317,7 +313,7 @@ public:
 
     std::string get_pattern_name(uint64_t line_number) const
     {
-        if (this->elf_type != ELF_TYPE_TEXT) {
+        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "structured";
         }
         int pat_index = this->pattern_index_for_line(line_number);
@@ -326,15 +322,15 @@ public:
 
     std::string get_pattern_regex(uint64_t line_number) const
     {
-        if (this->elf_type != ELF_TYPE_TEXT) {
+        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "";
         }
         int pat_index = this->pattern_index_for_line(line_number);
-        return this->elf_pattern_order[pat_index]->p_string;
+        return this->elf_pattern_order[pat_index]->p_pcre->get_pattern();
     }
 
     log_level_t convert_level(const pcre_input& pi,
-                              pcre_context::capture_t* level_cap) const
+                              const pcre_context::capture_t* level_cap) const
     {
         log_level_t retval = LEVEL_INFO;
 
@@ -360,12 +356,13 @@ public:
         return retval;
     }
 
-    typedef std::map<intern_string_t, module_format> mod_map_t;
+    using mod_map_t = std::map<intern_string_t, module_format>;
     static mod_map_t MODULE_FORMATS;
     static std::vector<std::shared_ptr<external_log_format>>
         GRAPH_ORDERED_FORMATS;
 
     std::set<std::string> elf_source_path;
+    std::unordered_map<std::string, int> elf_format_sources;
     std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
     std::set<file_format_t> elf_mime_types;
@@ -377,8 +374,8 @@ public:
         elf_value_defs;
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
-    int elf_column_count;
-    double elf_timestamp_divisor;
+    int elf_column_count{0};
+    double elf_timestamp_divisor{1.0};
     intern_string_t elf_level_field;
     pcrepp elf_level_pointer;
     intern_string_t elf_body_field;
@@ -386,19 +383,24 @@ public:
     intern_string_t elf_opid_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;
     std::vector<std::pair<int64_t, log_level_t>> elf_level_pairs;
-    bool elf_container;
-    bool elf_has_module_format;
-    bool elf_builtin_format;
-    std::vector<std::pair<intern_string_t, std::string>> elf_search_tables;
+    bool elf_container{false};
+    bool elf_has_module_format{false};
+    bool elf_builtin_format{false};
+
+    struct search_table_def {
+        std::shared_ptr<pcrepp> std_pattern;
+    };
+
+    std::map<intern_string_t, search_table_def> elf_search_tables;
     std::map<const intern_string_t, highlighter_def> elf_highlighter_patterns;
 
-    enum elf_type_t {
+    enum class elf_type_t {
         ELF_TYPE_TEXT,
         ELF_TYPE_JSON,
         ELF_TYPE_CSV,
     };
 
-    elf_type_t elf_type;
+    elf_type_t elf_type{elf_type_t::ELF_TYPE_TEXT};
 
     void json_append_to_cache(const char* value, ssize_t len)
     {
@@ -455,12 +457,14 @@ public:
         return lvm;
     }
 
-    bool jlf_hide_extra;
+    std::vector<lnav::console::snippet> get_snippets() const;
+
+    bool jlf_hide_extra{false};
     std::vector<json_format_element> jlf_line_format;
     int jlf_line_format_init_count{0};
     std::vector<logline_value> jlf_line_values;
 
-    off_t jlf_cached_offset;
+    off_t jlf_cached_offset{-1};
     bool jlf_cached_full{false};
     std::vector<off_t> jlf_line_offsets;
     shared_buffer jlf_share_manager;

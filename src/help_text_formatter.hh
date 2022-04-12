@@ -32,7 +32,7 @@
 
 #include <functional>
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
 #include "help_text.hh"
 
 using help_example_to_attr_line_fun_t

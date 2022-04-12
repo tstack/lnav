@@ -353,8 +353,9 @@ json_path_handler_base::walk(
                 if (this->jph_children) {
                     full_path += "/";
                 }
-                json_path_container dummy
-                    = {json_path_handler(this->jph_property)};
+                json_path_container dummy{
+                    json_path_handler(this->jph_property),
+                };
                 dummy.jpc_children[0].jph_callbacks = this->jph_callbacks;
 
                 yajlpp_parse_context ypc("possibilities", &dummy);
@@ -683,74 +684,51 @@ yajlpp_parse_context::handle_unused(void* ctx)
     }
 
     const json_path_handler_base* handler = ypc->ypc_current_handler;
-
-    int line_number = ypc->get_line_number();
+    lnav::console::user_message msg;
 
     if (handler != nullptr && strlen(handler->jph_synopsis) > 0
         && strlen(handler->jph_description) > 0)
     {
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "%s:line %d",
-                          ypc->ypc_source.c_str(),
-                          line_number);
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "  unexpected data for path");
+        auto help_text = handler->get_help_text(ypc);
+        std::vector<std::string> expected_types;
 
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "    %s %s -- %s",
-                          &ypc->ypc_path[0],
-                          handler->jph_synopsis,
-                          handler->jph_description);
-    } else if (ypc->ypc_path[1]) {
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "%s:line %d",
-                          ypc->ypc_source.c_str(),
-                          line_number);
-        ypc->report_error(lnav_log_level_t::WARNING, "  unexpected path --");
-
-        ypc->report_error(
-            lnav_log_level_t::WARNING, "    %s", &ypc->ypc_path[0]);
-    } else {
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "%s:line %d\n  unexpected JSON value",
-                          ypc->ypc_source.c_str(),
-                          line_number);
-    }
-
-    if (ypc->ypc_callbacks.yajl_boolean
-            != (int (*)(void*, int)) yajlpp_parse_context::handle_unused
-        || ypc->ypc_callbacks.yajl_integer
-            != (int (*)(void*, long long)) yajlpp_parse_context::handle_unused
-        || ypc->ypc_callbacks.yajl_double
-            != (int (*)(void*, double)) yajlpp_parse_context::handle_unused
-        || ypc->ypc_callbacks.yajl_string
+        if (ypc->ypc_callbacks.yajl_boolean
+            != (int (*)(void*, int)) yajlpp_parse_context::handle_unused)
+        {
+            expected_types.emplace_back("boolean");
+        }
+        if (ypc->ypc_callbacks.yajl_integer
+            != (int (*)(void*, long long)) yajlpp_parse_context::handle_unused)
+        {
+            expected_types.emplace_back("integer");
+        }
+        if (ypc->ypc_callbacks.yajl_double
+            != (int (*)(void*, double)) yajlpp_parse_context::handle_unused)
+        {
+            expected_types.emplace_back("float");
+        }
+        if (ypc->ypc_callbacks.yajl_string
             != (int (*)(void*, const unsigned char*, size_t))
                 yajlpp_parse_context::handle_unused)
-    {
-        ypc->report_error(lnav_log_level_t::WARNING,
-                          "  expecting one of the following data types --");
-    }
-
-    if (ypc->ypc_callbacks.yajl_boolean
-        != (int (*)(void*, int)) yajlpp_parse_context::handle_unused)
-    {
-        ypc->report_error(lnav_log_level_t::WARNING, "    boolean");
-    }
-    if (ypc->ypc_callbacks.yajl_integer
-        != (int (*)(void*, long long)) yajlpp_parse_context::handle_unused)
-    {
-        ypc->report_error(lnav_log_level_t::WARNING, "    integer");
-    }
-    if (ypc->ypc_callbacks.yajl_double
-        != (int (*)(void*, double)) yajlpp_parse_context::handle_unused)
-    {
-        ypc->report_error(lnav_log_level_t::WARNING, "    float");
-    }
-    if (ypc->ypc_callbacks.yajl_string
-        != (int (*)(void*, const unsigned char*, size_t))
-            yajlpp_parse_context::handle_unused)
-    {
-        ypc->report_error(lnav_log_level_t::WARNING, "    string");
+        {
+            expected_types.emplace_back("string");
+        }
+        if (!expected_types.empty()) {
+            help_text.append("  expecting one of the following types: {}",
+                             fmt::join(expected_types, ", "));
+        }
+        msg = lnav::console::user_message::warning(
+                  attr_line_t("unexpected data for property ")
+                      .append_quoted(lnav::roles::symbol(
+                          ypc->get_full_path().to_string())))
+                  .with_help(help_text);
+    } else if (ypc->ypc_path[1]) {
+        msg = lnav::console::user_message::warning(
+            attr_line_t("unexpected value for property ")
+                .append_quoted(
+                    lnav::roles::symbol(ypc->get_full_path().to_string())));
+    } else {
+        msg = lnav::console::user_message::error("unexpected JSON value");
     }
 
     if (handler == nullptr) {
@@ -762,15 +740,35 @@ yajlpp_parse_context::handle_unused(void* ctx)
             accepted_handlers = ypc->ypc_handlers;
         }
 
-        ypc->report_error(lnav_log_level_t::WARNING, "  accepted paths --");
-        for (auto& jph : accepted_handlers->jpc_children) {
-            ypc->report_error(lnav_log_level_t::WARNING,
-                              "    %s %s -- %s",
-                              jph.jph_property.c_str(),
-                              jph.jph_synopsis,
-                              jph.jph_description);
+        attr_line_t help_text;
+
+        if (accepted_handlers->jpc_children.size() == 1
+            && accepted_handlers->jpc_children.front().jph_is_array)
+        {
+            const auto& jph = accepted_handlers->jpc_children.front();
+
+            help_text.append("expecting an array of ")
+                .append(lnav::roles::variable(jph.jph_synopsis))
+                .append(" values");
+        } else {
+            help_text.append(lnav::roles::h2("Available Properties"))
+                .append("\n");
+            for (const auto& jph : accepted_handlers->jpc_children) {
+                help_text.append("  ")
+                    .append(lnav::roles::symbol(jph.jph_property))
+                    .append(lnav::roles::symbol(
+                        jph.jph_children != nullptr ? "/" : ""))
+                    .append(" ")
+                    .append(lnav::roles::variable(jph.jph_synopsis))
+                    .append("\n");
+            }
         }
+        msg.with_help(help_text);
     }
+
+    msg.with_snippet(ypc->get_snippet());
+
+    ypc->report_error(msg);
 
     return 1;
 }
@@ -794,6 +792,7 @@ yajl_status
 yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
 {
     this->ypc_json_text = jsonText;
+    this->ypc_json_text_len = jsonTextLen;
 
     yajl_status retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
 
@@ -807,14 +806,11 @@ yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
         auto* msg = yajl_get_error(this->ypc_handle, 1, jsonText, jsonTextLen);
 
-        this->ypc_error_reporter(
-            *this,
-            lnav_log_level_t::ERROR,
-            fmt::format(FMT_STRING("error:{}:{}:invalid json -- {}"),
-                        this->ypc_source,
-                        this->get_line_number(),
-                        reinterpret_cast<const char*>(msg))
-                .c_str());
+        this->report_error(
+            lnav::console::user_message::error("invalid JSON")
+                .with_snippet(lnav::console::snippet::from(this->ypc_source,
+                                                           (const char*) msg)
+                                  .with_line(this->get_line_number())));
         yajl_free_error(this->ypc_handle, msg);
     }
 
@@ -829,15 +825,47 @@ yajlpp_parse_context::complete_parse()
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
         auto* msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
 
-        this->ypc_error_reporter(
-            *this,
-            lnav_log_level_t::ERROR,
-            fmt::format(FMT_STRING("error:{}:invalid json -- {}"),
-                        this->ypc_source,
-                        reinterpret_cast<const char*>(msg))
-                .c_str());
+        this->report_error(lnav::console::user_message::error("invalid JSON")
+                               .with_reason((const char*) msg)
+                               .with_snippet(this->get_snippet()));
         yajl_free_error(this->ypc_handle, msg);
     }
+
+    return retval;
+}
+
+bool
+yajlpp_parse_context::parse_doc(const string_fragment& sf)
+{
+    bool retval = true;
+
+    this->ypc_json_text = (const unsigned char*) sf.data();
+    this->ypc_json_text_len = sf.length();
+
+    auto rc = yajl_parse(this->ypc_handle, this->ypc_json_text, sf.length());
+    size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+    this->ypc_line_number += std::count(
+        &this->ypc_json_text[0], &this->ypc_json_text[consumed], '\n');
+
+    if (rc != yajl_status_ok) {
+        if (this->ypc_error_reporter) {
+            auto* msg = yajl_get_error(this->ypc_handle,
+                                       1,
+                                       this->ypc_json_text,
+                                       this->ypc_json_text_len);
+
+            this->report_error(
+                lnav::console::user_message::error("invalid JSON")
+                    .with_reason((const char*) msg)
+                    .with_snippet(this->get_snippet()));
+            yajl_free_error(this->ypc_handle, msg);
+        }
+        retval = false;
+    } else if (this->complete_parse() != yajl_status_ok) {
+        retval = false;
+    }
+
+    this->ypc_json_text = nullptr;
 
     return retval;
 }
@@ -1037,6 +1065,180 @@ json_path_handler::with_children(const json_path_container& container)
 {
     this->jph_children = &container;
     return *this;
+}
+
+lnav::console::snippet
+yajlpp_parse_context::get_snippet() const
+{
+    auto line_number = this->get_line_number();
+    attr_line_t content;
+
+    if (this->ypc_json_text != nullptr) {
+        auto in_text_line = line_number - this->ypc_line_number;
+        const auto* line_start = this->ypc_json_text;
+        auto text_len_remaining = this->ypc_json_text_len;
+
+        while (in_text_line > 0) {
+            const auto* line_end = (const unsigned char*) memchr(
+                line_start, '\n', text_len_remaining);
+            if (line_end == nullptr) {
+                break;
+            }
+
+            text_len_remaining -= (line_end - line_start) + 1;
+            line_start = line_end + 1;
+            in_text_line -= 1;
+        }
+
+        if (text_len_remaining > 0) {
+            const auto* line_end = (const unsigned char*) memchr(
+                line_start, '\n', text_len_remaining);
+            if (line_end) {
+                text_len_remaining = (line_end - line_start);
+            }
+            content.append((const char*) line_start, text_len_remaining);
+        }
+    }
+
+    return lnav::console::snippet::from(this->ypc_source, content)
+        .with_line(line_number);
+}
+
+void
+json_path_handler_base::report_pattern_error(yajlpp_parse_context* ypc,
+                                             const std::string& value_str) const
+{
+    ypc->report_error(
+        lnav::console::user_message::error(
+            attr_line_t()
+                .append_quoted(value_str)
+                .append(" is not a valid value for option ")
+                .append_quoted(
+                    lnav::roles::symbol(ypc->get_full_path().to_string())))
+            .with_snippet(ypc->get_snippet())
+            .with_reason(attr_line_t("value does not match pattern: ")
+                             .append(lnav::roles::symbol(this->jph_pattern_re)))
+            .with_help(this->get_help_text(ypc)));
+}
+
+attr_line_t
+json_path_handler_base::get_help_text(yajlpp_parse_context* ypc) const
+{
+    attr_line_t retval;
+
+    retval.append(lnav::roles::h2("Property Synopsis"))
+        .append("\n  ")
+        .append(lnav::roles::symbol(ypc->get_full_path().to_string()))
+        .append(" ")
+        .append(lnav::roles::variable(this->jph_synopsis))
+        .append("\n")
+        .append(lnav::roles::h2("Description"))
+        .append("\n  ")
+        .append(this->jph_description)
+        .append("\n");
+
+    if (this->jph_enum_values != nullptr) {
+        retval.append(lnav::roles::h2("Allowed Values")).append("\n  ");
+
+        for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+            const auto& ev = this->jph_enum_values[lpc];
+
+            retval.append(lpc == 0 ? "" : ", ")
+                .append(lnav::roles::symbol(ev.first));
+        }
+    }
+
+    if (!this->jph_examples.empty()) {
+        retval
+            .append(lnav::roles::h2(
+                this->jph_examples.size() == 1 ? "Example" : "Examples"))
+            .append("\n");
+
+        for (const auto& ex : this->jph_examples) {
+            retval.append("  {}\n", ex);
+        }
+    }
+
+    return retval;
+}
+
+void
+json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
+                                               long long value) const
+{
+    const auto* jph = ypc->ypc_current_handler;
+
+    ypc->report_error(
+        lnav::console::user_message::error(
+            attr_line_t()
+                .append_quoted(fmt::to_string(value))
+                .append(" is not a valid value for option ")
+                .append_quoted(
+                    lnav::roles::symbol(ypc->get_full_path().to_string())))
+            .with_reason(attr_line_t("value must be greater than or equal to ")
+                             .append(lnav::roles::number(
+                                 fmt::to_string(jph->jph_min_value))))
+            .with_snippet(ypc->get_snippet())
+            .with_help(jph->get_help_text(ypc)));
+}
+
+void
+json_path_handler_base::report_duration_error(
+    yajlpp_parse_context* ypc,
+    const std::string& value_str,
+    const relative_time::parse_error& pe) const
+{
+    ypc->report_error(lnav::console::user_message::error(
+                          attr_line_t()
+                              .append_quoted(value_str)
+                              .append(" is not a valid duration value "
+                                      "for option ")
+                              .append_quoted(lnav::roles::symbol(
+                                  ypc->get_full_path().to_string())))
+                          .with_snippet(ypc->get_snippet())
+                          .with_reason(pe.pe_msg)
+                          .with_help(this->get_help_text(ypc)));
+}
+
+void
+json_path_handler_base::report_enum_error(yajlpp_parse_context* ypc,
+                                          const std::string& value_str) const
+{
+    ypc->report_error(lnav::console::user_message::error(
+                          attr_line_t()
+                              .append_quoted(value_str)
+                              .append(" is not a valid value for option ")
+                              .append_quoted(lnav::roles::symbol(
+                                  ypc->get_full_path().to_string())))
+                          .with_snippet(ypc->get_snippet())
+                          .with_help(this->get_help_text(ypc)));
+}
+
+void
+json_path_handler_base::report_regex_value_error(
+    yajlpp_parse_context* ypc,
+    const std::string& value,
+    const pcrepp::compile_error& pcre_error) const
+{
+    attr_line_t pcre_error_content{value};
+
+    pcre_error_content.append("\n")
+        .append(pcre_error.ce_offset, ' ')
+        .append(lnav::roles::error("^ "))
+        .append(lnav::roles::error(pcre_error.ce_msg));
+    ypc->report_error(
+        lnav::console::user_message::error(
+            attr_line_t()
+                .append_quoted(value)
+                .append(" is not a valid regular expression for "
+                        "property ")
+                .append_quoted(
+                    lnav::roles::symbol(ypc->get_full_path().to_string())))
+            .with_reason(pcre_error.ce_msg)
+            .with_snippet(ypc->get_snippet())
+            .with_snippet(lnav::console::snippet::from(
+                ypc->get_full_path().to_string(), pcre_error_content))
+            .with_help(this->get_help_text(ypc)));
 }
 
 void

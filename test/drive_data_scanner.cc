@@ -69,7 +69,7 @@ main(int argc, char* argv[])
 
     {
         std::vector<ghc::filesystem::path> paths;
-        std::vector<std::string> errors;
+        std::vector<lnav::console::user_message> errors;
 
         load_formats(paths, errors);
     }

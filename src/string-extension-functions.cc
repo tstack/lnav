@@ -443,6 +443,12 @@ sql_gzip(sqlite3_value* val)
     return nonstd::nullopt;
 }
 
+std::string
+sql_humanize_file_size(file_ssize_t value)
+{
+    return humanize::file_size(value, humanize::alignment::columnar);
+}
+
 int
 string_extension_functions(struct FuncDef** basic_funcs,
                            struct FuncDefAgg** agg_funcs)
@@ -511,8 +517,8 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     "SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')",
                 })),
 
-        sqlite_func_adapter<decltype(&humanize::file_size),
-                            humanize::file_size>::
+        sqlite_func_adapter<decltype(&sql_humanize_file_size),
+                            sql_humanize_file_size>::
             builder(help_text(
                         "humanize_file_size",
                         "Format the given file size as a human-friendly string")

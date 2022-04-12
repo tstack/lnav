@@ -24,7 +24,7 @@ EOF
 
 ls -lha meta-sessions
 find meta-sessions
-cat ln.dbg
+# cat ln.dbg
 if test ! -d meta-sessions/.config/lnav; then
     echo "error: configuration not stored in .config/lnav?"
     exit 1
@@ -126,10 +126,13 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating log_tags is not working?" <<EOF
-command-option:1: error: command-option:line 1
-  unexpected JSON value
-  accepted paths --
-     <tag> -- A tag for the log line
+✘ error: invalid value for “log_tags” column of table “access_log”
+ reason: unexpected JSON value
+ |        --> access_log.log_tags:1
+ |        | 1
+ |        = help: expecting an array of tag values
+ --> command-option:1
+ | ;UPDATE access_log SET log_tags = 1 WHERE log_line = 1
 EOF
 
 run_test ${lnav_test} -n \
@@ -138,7 +141,17 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating log_tags is not working?" <<EOF
-command-option:1: error: Value does not match pattern: ^#[^\s]+$
+✘ error: invalid value for “log_tags” column of table “access_log”
+ reason: “foo” is not a valid value for option “/#”
+ |        reason: value does not match pattern: ^#[^\s]+\$
+ |        --> access_log.log_tags:1
+ |        | ["foo"]
+ |        = help: Property Synopsis
+ |                  /# tag
+ |                Description
+ |                  A tag for the log line
+ --> command-option:1
+ | ;UPDATE access_log SET log_tags = json_array('foo') WHERE log_line = 1
 EOF
 
 run_test ${lnav_test} -n \

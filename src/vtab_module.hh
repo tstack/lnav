@@ -36,7 +36,7 @@
 
 #include <sqlite3.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"

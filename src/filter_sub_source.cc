@@ -61,7 +61,7 @@ filter_sub_source::filter_sub_source()
     this->fss_match_view.set_sub_source(&this->fss_match_source);
     this->fss_match_view.set_height(0_vl);
     this->fss_match_view.set_show_scrollbar(true);
-    this->fss_match_view.set_default_role(view_colors::VCR_POPUP);
+    this->fss_match_view.set_default_role(role_t::VCR_POPUP);
 }
 
 bool
@@ -353,36 +353,35 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
 
     if (selected) {
         value_out.emplace_back(line_range{0, 1},
-                               view_curses::VC_GRAPHIC.value(ACS_RARROW));
+                               VC_GRAPHIC.value(ACS_RARROW));
     }
 
     chtype enabled = tf->is_enabled() ? ACS_DIAMOND : ' ';
 
     line_range lr{2, 3};
-    value_out.emplace_back(lr, view_curses::VC_GRAPHIC.value(enabled));
+    value_out.emplace_back(lr, VC_GRAPHIC.value(enabled));
     if (tf->is_enabled()) {
         value_out.emplace_back(lr,
-                               view_curses::VC_FOREGROUND.value(
+                               VC_FOREGROUND.value(
                                    vcolors.ansi_to_theme_color(COLOR_GREEN)));
     }
 
-    int fg_role = tf->get_type() == text_filter::INCLUDE
-        ? view_colors::VCR_OK
-        : view_colors::VCR_ERROR;
+    role_t fg_role = tf->get_type() == text_filter::INCLUDE ? role_t::VCR_OK
+                                                            : role_t::VCR_ERROR;
     value_out.emplace_back(line_range{4, 7},
-                           view_curses::VC_ROLE_FG.value(fg_role));
+                           VC_ROLE_FG.value(fg_role));
     value_out.emplace_back(line_range{4, 7},
-                           view_curses::VC_STYLE.value(A_BOLD));
+                           VC_STYLE.value(A_BOLD));
 
     value_out.emplace_back(line_range{8, 17},
-                           view_curses::VC_STYLE.value(A_BOLD));
+                           VC_STYLE.value(A_BOLD));
     value_out.emplace_back(line_range{23, 24},
-                           view_curses::VC_GRAPHIC.value(ACS_VLINE));
+                           VC_GRAPHIC.value(ACS_VLINE));
 
     if (selected) {
         value_out.emplace_back(
             line_range{0, -1},
-            view_curses::VC_ROLE.value(view_colors::VCR_FOCUSED));
+            VC_ROLE.value(role_t::VCR_FOCUSED));
     }
 
     attr_line_t content{tf->get_id()};
@@ -624,7 +623,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
 
         for (auto& match : matches) {
             if (match == current_match) {
-                al.append(match, view_curses::VC_STYLE.value(A_REVERSE));
+                al.append(match, VC_STYLE.value(A_REVERSE));
                 selected_line = line;
             } else {
                 al.append(match);

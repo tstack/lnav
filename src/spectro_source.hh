@@ -38,7 +38,6 @@
 #include <math.h>
 #include <time.h>
 
-#include "ansi_scrubber.hh"
 #include "textview_curses.hh"
 
 struct spectrogram_bounds {

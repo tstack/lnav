@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "config.h"
 
 struct my_data {

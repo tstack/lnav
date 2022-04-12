@@ -38,7 +38,7 @@
 namespace humanize {
 
 std::string
-file_size(file_ssize_t value)
+file_size(file_ssize_t value, alignment align)
 {
     static const double LN1024 = log(1024.0);
     static const std::vector<const char*> UNITS = {
@@ -56,13 +56,21 @@ file_size(file_ssize_t value)
     }
 
     if (value == 0) {
-        return "0.0 B";
+        switch (align) {
+            case alignment::none:
+                return "0B";
+            case alignment::columnar:
+                return "0.0 B";
+        }
     }
 
     auto exp
         = floor(std::min(log(value) / LN1024, (double) (UNITS.size() - 1)));
     auto divisor = pow(1024, exp);
 
+    if (align == alignment::none && divisor <= 1) {
+        return fmt::format(FMT_STRING("{}B"), value, UNITS[exp]);
+    }
     return fmt::format(FMT_STRING("{:.1f}{}B"),
                        divisor == 0 ? value : value / divisor,
                        UNITS[exp]);

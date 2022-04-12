@@ -41,6 +41,7 @@
 
 #include "archive_manager.cfg.hh"
 #include "base/file_range.hh"
+#include "base/lnav.console.hh"
 #include "base/result.h"
 #include "file_vtab.cfg.hh"
 #include "ghc/filesystem.hpp"
@@ -117,11 +118,11 @@ Result<config_file_type, std::string> detect_config_file_type(
     const ghc::filesystem::path& path);
 
 void load_config(const std::vector<ghc::filesystem::path>& extra_paths,
-                 std::vector<std::string>& errors);
+                 std::vector<lnav::console::user_message>& errors);
 
 void reset_config(const std::string& path);
 
-void reload_config(std::vector<std::string>& errors);
+void reload_config(std::vector<lnav::console::user_message>& errors);
 
 std::string save_config();
 

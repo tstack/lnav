@@ -33,6 +33,7 @@
 #define lnav_session_data_hh
 
 #include <map>
+#include <set>
 #include <string>
 
 #include "view_helpers.hh"

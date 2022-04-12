@@ -40,8 +40,8 @@
 #include <unistd.h>
 #include <zlib.h>
 
-#include "auto_mem.hh"
 #include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
 #include "base/file_range.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"

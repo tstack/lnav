@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "epoch_log": {
         "title": "epoch timestamp test",
         "regex": {

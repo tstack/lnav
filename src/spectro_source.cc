@@ -31,6 +31,7 @@
 
 #include "spectro_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/math_util.hh"
 #include "config.h"
 
@@ -155,7 +156,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
 
     if (this->ss_cached_line_count == 0) {
         value_out.with_ansi_string(ANSI_ROLE("error: no log data"),
-                                   view_colors::VCR_ERROR);
+                                   role_t::VCR_ERROR);
         return true;
     }
 
@@ -169,12 +170,12 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
              sizeof(buf),
              ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
                  "  ") " %'d+",
-             view_colors::VCR_LOW_THRESHOLD,
+             role_t::VCR_LOW_THRESHOLD,
              st.st_green_threshold - 1,
-             view_colors::VCR_MED_THRESHOLD,
+             role_t::VCR_MED_THRESHOLD,
              st.st_green_threshold,
              st.st_yellow_threshold - 1,
-             view_colors::VCR_HIGH_THRESHOLD,
+             role_t::VCR_HIGH_THRESHOLD,
              st.st_yellow_threshold);
     line.append(width / 2 - strlen(buf) / 3 - line.length(), ' ');
     line.append(buf);
@@ -185,7 +186,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     line.append(buf);
 
     value_out.with_attr(string_attr(line_range(0, -1),
-                                    view_curses::VC_STYLE.value(A_UNDERLINE)));
+                                    VC_STYLE.value(A_UNDERLINE)));
 
     return true;
 }
@@ -321,7 +322,7 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
             color = COLOR_RED;
         }
         value_out.emplace_back(line_range(lpc, lpc + 1),
-                               view_curses::VC_STYLE.value(
+                               VC_STYLE.value(
                                    vc.ansi_color_pair(COLOR_BLACK, color)));
     }
 }

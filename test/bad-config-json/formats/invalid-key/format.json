@@ -1,9 +1,27 @@
 {
-    "invalid_key_log" : {
-        "value" : {
-            "test": {
-                "identifiers" : true
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "invalid_key_log": {
+        "level-pointer": "abc(",
+        "file-pattern": "def[ghi",
+        "json": true,
+        "regex": {
+            "foo": {
+                "pattern": "jkl"
             }
-        }
+        },
+        "value": {
+            "test": {
+                "identifiers": true
+            },
+            "body": {
+                "kind": "string"
+            }
+        },
+        "line-format": [
+            {
+                "field": "non-existent"
+            }
+        ],
+        "timestamp-divisor": -1.2
     }
 }

@@ -59,6 +59,24 @@
                     "popup": {
                         "color": "$black",
                         "background-color": "Grey37"
+                    },
+                    "h1": {
+                        "underline": true
+                    },
+                    "h2": {
+                        "underline": true
+                    },
+                    "h3": {
+                        "underline": true
+                    },
+                    "h4": {
+                        "underline": true
+                    },
+                    "h5": {
+                        "underline": true
+                    },
+                    "h6": {
+                        "underline": true
                     }
                 },
                 "syntax-styles": {

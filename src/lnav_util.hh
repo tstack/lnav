@@ -48,6 +48,7 @@
 #include <time.h>
 
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/result.h"
 #include "byte_array.hh"
 #include "config.h"
@@ -229,6 +230,17 @@ finally(A act)  // deduce action type
 
 std::string ok_prefix(std::string msg);
 std::string err_prefix(std::string msg);
-Result<std::string, std::string> err_to_ok(std::string msg);
+Result<std::string, lnav::console::user_message> err_to_ok(
+    lnav::console::user_message msg);
+
+namespace lnav {
+
+std::string to_json(const lnav::console::user_message& um);
+std::string to_json(const attr_line_t& al);
+
+template<typename T>
+T from_json(const std::string& str);
+
+}  // namespace lnav
 
 #endif

@@ -90,44 +90,53 @@ public:
     void add_context(int id, readline_context& rc)
     {
         this->rc_contexts[id] = &rc;
-    };
+    }
 
     void set_focus_action(const action& va)
     {
         this->rc_focus = va;
-    };
+    }
+
     void set_change_action(const action& va)
     {
         this->rc_change = va;
-    };
+    }
+
     void set_perform_action(const action& va)
     {
         this->rc_perform = va;
-    };
+    }
+
     void set_alt_perform_action(const action& va)
     {
         this->rc_alt_perform = va;
-    };
+    }
+
     void set_timeout_action(const action& va)
     {
         this->rc_timeout = va;
-    };
+    }
+
     void set_abort_action(const action& va)
     {
         this->rc_abort = va;
-    };
+    }
+
     void set_display_match_action(const action& va)
     {
         this->rc_display_match = va;
-    };
+    }
+
     void set_display_next_action(const action& va)
     {
         this->rc_display_next = va;
-    };
+    }
+
     void set_blur_action(const action& va)
     {
         this->rc_blur = va;
-    };
+    }
+
     void set_completion_request_action(const action& va)
     {
         this->rc_completion_request = va;
@@ -141,32 +150,34 @@ public:
         }
         this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
         this->set_needs_update();
-    };
+    }
+
     std::string get_value() const
     {
         return this->rc_value;
-    };
+    }
 
     std::string get_line_buffer() const
     {
         return this->rc_line_buffer;
-    };
+    }
 
     void set_alt_value(const std::string& value)
     {
         this->rc_alt_value = value;
-    };
+    }
+
     std::string get_alt_value() const
     {
         return this->rc_alt_value;
-    };
+    }
 
     void update_poll_set(std::vector<struct pollfd>& pollfds)
     {
         pollfds.push_back((struct pollfd){this->rc_pty[RCF_MASTER], POLLIN, 0});
         pollfds.push_back(
             (struct pollfd){this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
-    };
+    }
 
     void handle_key(int ch);
 
@@ -190,7 +201,7 @@ public:
         std::map<int, readline_context*>::const_iterator iter;
         iter = this->rc_contexts.find(this->rc_active_context);
         return iter->second;
-    };
+    }
 
     void abort();
 
@@ -208,7 +219,7 @@ public:
         if (ioctl(this->rc_pty[RCF_MASTER], TIOCSWINSZ, &ws) == -1) {
             throw error(errno);
         }
-    };
+    }
 
     void line_ready(const char* line);
 
@@ -229,7 +240,7 @@ public:
         for (int lpc = 0; values[lpc]; lpc++) {
             this->add_possibility(context, type, values[lpc]);
         }
-    };
+    }
 
     void add_possibility(int context,
                          const std::string& type,
@@ -239,7 +250,7 @@ public:
         for (; first < last; first++) {
             this->add_possibility(context, type, *first);
         }
-    };
+    }
 
     template<template<typename...> class Container>
     void add_possibility(int context,
@@ -249,7 +260,7 @@ public:
         for (const auto& str : values) {
             this->add_possibility(context, type, str);
         }
-    };
+    }
 
     void rem_possibility(int context,
                          const std::string& type,
@@ -259,7 +270,7 @@ public:
     const std::vector<std::string>& get_matches() const
     {
         return this->rc_matches;
-    };
+    }
 
     int get_match_start() const
     {
@@ -271,7 +282,7 @@ public:
     int get_max_match_length() const
     {
         return this->rc_max_match_length;
-    };
+    }
 
     bool consume_ready_for_input()
     {
@@ -327,4 +338,5 @@ private:
     action rc_blur;
     action rc_completion_request;
 };
+
 #endif

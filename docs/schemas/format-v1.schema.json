@@ -419,18 +419,15 @@
                 "search-table": {
                     "description": "Search tables to automatically define for this log format",
                     "title": "/<format_name>/search-table",
-                    "type": [
-                        "string",
-                        "object"
-                    ],
+                    "type": "object",
                     "patternProperties": {
-                        "\\w+": {
+                        "(\\w+)": {
                             "description": "The set of search tables to be automatically defined",
-                            "title": "/<format_name>/search-table/<>",
+                            "title": "/<format_name>/search-table/<table_name>",
                             "type": "object",
                             "properties": {
                                 "pattern": {
-                                    "title": "/<format_name>/search-table/<>/pattern",
+                                    "title": "/<format_name>/search-table/<table_name>/pattern",
                                     "description": "The regular expression for this search table.",
                                     "type": "string"
                                 }

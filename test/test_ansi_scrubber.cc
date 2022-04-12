@@ -36,7 +36,7 @@
 
 #include <assert.h>
 
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "config.h"
 #include "view_curses.hh"
 
@@ -60,11 +60,11 @@ main(int argc, char* argv[])
 
     assert(sa[0].sa_range.lr_start == 5);
     assert(sa[0].sa_range.lr_end == 7);
-    assert(sa[0].sa_type == &view_curses::VC_BACKGROUND);
+    assert(sa[0].sa_type == &VC_BACKGROUND);
     assert(sa[0].sa_value.get<int64_t>() == COLOR_BLUE);
 
     assert(sa[1].sa_range.lr_start == 7);
     assert(sa[1].sa_range.lr_end == 12);
-    assert(sa[1].sa_type == &view_curses::VC_FOREGROUND);
+    assert(sa[1].sa_type == &VC_FOREGROUND);
     assert(sa[1].sa_value.get<int64_t>() == COLOR_YELLOW);
 }

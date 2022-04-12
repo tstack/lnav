@@ -65,7 +65,13 @@ if test x"${LIBARCHIVE_LIBS}" != x""; then
       ${srcdir}/logfile_syslog.0
 
     check_error_output "invalid min-free-space allowed?" <<EOF
-command-option:1: error: value must be greater than or equal to 0, found -1
+✘ error: “-1” is not a valid value for option “/tuning/archive-manager/min-free-space”
+ reason: value must be greater than or equal to 0
+ --> input:1
+ = help: Property Synopsis
+           /tuning/archive-manager/min-free-space <bytes>
+         Description
+           The minimum free space, in bytes, to maintain when unpacking archives
 EOF
 
     rm -rf tmp/lnav-*
@@ -87,7 +93,8 @@ EOF
             `test_err_filename` > test_logfile.big.out
         mv test_logfile.big.out `test_err_filename`
         check_error_output "decompression worked?" <<EOF
-error: unable to open file: /logfile_syslog.1.xz -- available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
+✘ error: unable to open file: /logfile_syslog.1.xz
+ reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
         run_test env TMPDIR=tmp ${lnav_test} -n \
@@ -153,11 +160,12 @@ EOF
     run_test env TMPDIR=tmp ${lnav_test} -n \
         test-logs-trunc.tgz
 
-    sed -e "s|${builddir}||g" `test_err_filename` | head -1 \
+    sed -e "s|${builddir}||g" `test_err_filename` | head -2 \
         > test_logfile.trunc.out
     mv test_logfile.trunc.out `test_err_filename`
     check_error_output "truncated tgz not reported correctly" <<EOF
-error: unable to open file: /test-logs-trunc.tgz -- failed to read file: /test-logs-trunc.tgz >> src/lnav -- truncated gzip input
+✘ error: unable to open file: /test-logs-trunc.tgz
+ reason: failed to extract 'src/lnav' from archive '/test-logs-trunc.tgz' -- truncated gzip input
 EOF
 
     mkdir -p rotmp
@@ -168,11 +176,12 @@ EOF
         -e 's|log\.0 -- .*|log\.0 -- ...|g' \
         -e "s|arc-[0-9a-z]*-test|arc-NNN-test|g" \
         -e "s|${builddir}||g" \
-        `test_err_filename` | head -1 \
+        `test_err_filename` | head -2 \
         > test_logfile.rotmp.out
     cp test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-error: unable to open file: /test-logs.tgz -- Unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
+✘ error: unable to open file: /test-logs.tgz
+ reason: unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
 EOF
 fi
 
@@ -181,12 +190,14 @@ chmod ugo-r unreadable.log
 
 run_test ${lnav_test} -n unreadable.log
 
-sed -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename` | head -1 \
+sed -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename` | head -3 \
     > test_logfile.unreadable.out
 
 mv test_logfile.unreadable.out `test_err_filename`
 check_error_output "able to read an unreadable log file?" <<EOF
-Cannot read file: unreadable.log -- Permission denied
+✘ error: cannot read file: unreadable.log
+ reason: Permission denied
+✘ error: no log files given/found
 EOF
 
 run_test ${lnav_test} -n 'unreadable.*'
@@ -559,7 +570,7 @@ run_test ${lnav_test} -C ${test_dir}/logfile_bad_access_log.0
 sed -ibak -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_err_filename`
 
 check_error_output "bad access_log line not found?" <<EOF
-error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std
+error:logfile_bad_access_log.0:1:line did not match format /access_log/regex/std
 error:logfile_bad_access_log.0:1:         line -- 192.168.202.254 [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 error:logfile_bad_access_log.0:1:partial match -- 192.168.202.254
 EOF

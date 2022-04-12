@@ -158,18 +158,18 @@ void
 bottom_status_source::update_hits(textview_curses* tc)
 {
     status_field& sf = this->bss_fields[BSF_HITS];
-    view_colors::role_t new_role;
+    role_t new_role;
 
     if (tc->is_searching()) {
         this->bss_hit_spinner += 1;
         if (this->bss_hit_spinner % 2) {
-            new_role = view_colors::VCR_ACTIVE_STATUS;
+            new_role = role_t::VCR_ACTIVE_STATUS;
         } else {
-            new_role = view_colors::VCR_ACTIVE_STATUS2;
+            new_role = role_t::VCR_ACTIVE_STATUS2;
         }
         sf.set_cylon(true);
     } else {
-        new_role = view_colors::VCR_STATUS;
+        new_role = role_t::VCR_STATUS;
         sf.set_cylon(false);
     }
     // this->bss_error.clear();
@@ -186,7 +186,7 @@ bottom_status_source::update_loading(file_off_t off, file_size_t total)
 
     if (total == 0 || (size_t) off == total) {
         sf.set_cylon(false);
-        sf.set_role(view_colors::VCR_STATUS);
+        sf.set_role(role_t::VCR_STATUS);
         if (this->bss_paused) {
             sf.set_value("\xE2\x80\x96 Paused");
         } else {
@@ -199,7 +199,7 @@ bottom_status_source::update_loading(file_off_t off, file_size_t total)
             this->bss_load_percent = pct;
 
             sf.set_cylon(true);
-            sf.set_role(view_colors::VCR_ACTIVE_STATUS2);
+            sf.set_role(role_t::VCR_ACTIVE_STATUS2);
             sf.set_value(" Loading %2d%% ", pct);
         }
     }

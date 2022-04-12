@@ -34,7 +34,7 @@
 
 #include <map>
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
 #include "help_text.hh"
 
 extern string_attr_type<void> SQL_COMMAND_ATTR;

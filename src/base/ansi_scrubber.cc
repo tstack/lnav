@@ -61,7 +61,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
         attr_t attrs = 0;
         auto bg = nonstd::optional<int>();
         auto fg = nonstd::optional<int>();
-        auto role = nonstd::optional<int>();
+        auto role = nonstd::optional<role_t>();
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
@@ -138,8 +138,10 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
                 int role_int;
 
                 if (sscanf(&(str[caps[1].c_begin]), "%d", &role_int) == 1) {
-                    if (role_int >= 0 && role_int < view_colors::VCR__MAX) {
-                        role = role_int;
+                    role_t role_tmp = (role_t) role_int;
+                    if (role_tmp > role_t::VCR_NONE
+                        && role_tmp < role_t::VCR__MAX) {
+                        role = role_tmp;
                         has_attrs = true;
                     }
                 }
@@ -158,16 +160,15 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             lr.lr_start = caps[0].c_begin;
             lr.lr_end = -1;
             if (attrs) {
-                sa.emplace_back(lr, view_curses::VC_STYLE.value(attrs));
+                sa.emplace_back(lr, VC_STYLE.value(attrs));
             }
-            role | [&lr, &sa](int r) {
-                sa.emplace_back(lr, view_curses::VC_ROLE.value(r));
-            };
+            role |
+                [&lr, &sa](role_t r) { sa.emplace_back(lr, VC_ROLE.value(r)); };
             fg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, view_curses::VC_FOREGROUND.value(color));
+                sa.emplace_back(lr, VC_FOREGROUND.value(color));
             };
             bg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, view_curses::VC_BACKGROUND.value(color));
+                sa.emplace_back(lr, VC_BACKGROUND.value(color));
             };
         }
 

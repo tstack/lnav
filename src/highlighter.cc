@@ -132,7 +132,7 @@ highlighter::annotate(attr_line_t& al, int start) const
             if (lr.lr_end > lr.lr_start
                 && (this->h_nestable
                     || find_string_attr_containing(
-                           sa, &view_curses::VC_STYLE, lr)
+                           sa, &VC_STYLE, lr)
                         == sa.end()))
             {
                 int attrs = 0;
@@ -142,20 +142,20 @@ highlighter::annotate(attr_line_t& al, int start) const
                 }
                 if (!this->h_fg.empty()) {
                     sa.emplace_back(lr,
-                                    view_curses::VC_FOREGROUND.value(
+                                    VC_FOREGROUND.value(
                                         vc.match_color(this->h_fg)));
                 }
                 if (!this->h_bg.empty()) {
                     sa.emplace_back(lr,
-                                    view_curses::VC_BACKGROUND.value(
+                                    VC_BACKGROUND.value(
                                         vc.match_color(this->h_bg)));
                 }
-                if (this->h_role != view_colors::VCR_NONE) {
+                if (this->h_role != role_t::VCR_NONE) {
                     sa.emplace_back(lr,
-                                    view_curses::VC_ROLE.value(this->h_role));
+                                    VC_ROLE.value(this->h_role));
                 }
                 if (attrs) {
-                    sa.emplace_back(lr, view_curses::VC_STYLE.value(attrs));
+                    sa.emplace_back(lr, VC_STYLE.value(attrs));
                 }
 
                 off = matches[1];

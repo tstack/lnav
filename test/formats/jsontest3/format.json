@@ -1,8 +1,9 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "json_log3": {
         "title": "Test JSON Log Format",
         "description": "Test JSON Log Format",
-        "file-pattern" : "logfile_json3\\.json",
+        "file-pattern": "logfile_json3\\.json",
         "json": true,
         "hide-extra": true,
         "line-format": [

@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
@@ -655,11 +655,11 @@ sql_compile_script(sqlite3* db,
                    const char* src_name,
                    const char* script_orig,
                    std::vector<sqlite3_stmt*>& stmts,
-                   std::vector<std::string>& errors)
+                   std::vector<lnav::console::user_message>& errors)
 {
     const char* script = script_orig;
 
-    while (script != NULL && script[0]) {
+    while (script != nullptr && script[0]) {
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int line_number = 1;
         const char* tail;
@@ -678,23 +678,23 @@ sql_compile_script(sqlite3* db,
         log_debug("retcode %d  %p %p", retcode, script, tail);
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(db);
-            auto_mem<char> full_msg;
+            attr_line_t sql_content;
 
-            if (asprintf(full_msg.out(),
-                         "error:%s:%d:%s",
-                         src_name,
-                         line_number,
-                         errmsg)
-                == -1)
-            {
-                log_error("unable to allocate error message");
-                break;
+            if (tail != nullptr) {
+                sql_content.append(script, (size_t) (tail - script));
+            } else {
+                sql_content.append(script);
             }
-            errors.emplace_back(full_msg.in());
+            errors.emplace_back(lnav::console::user_message::error(
+                                    "failed to compile SQL statement")
+                                    .with_reason(errmsg)
+                                    .with_snippet(lnav::console::snippet::from(
+                                                      src_name, sql_content)
+                                                      .with_line(line_number)));
             break;
         } else if (script == tail) {
             break;
-        } else if (stmt == NULL) {
+        } else if (stmt == nullptr) {
         } else {
             stmts.push_back(stmt.release());
         }
@@ -703,10 +703,11 @@ sql_compile_script(sqlite3* db,
     }
 }
 
-void
+static void
 sql_execute_script(sqlite3* db,
+                   const char* src_name,
                    const std::vector<sqlite3_stmt*>& stmts,
-                   std::vector<std::string>& errors)
+                   std::vector<lnav::console::user_message>& errors)
 {
     std::map<std::string, std::string> lvars;
 
@@ -766,7 +767,13 @@ sql_execute_script(sqlite3* db,
                     const char* errmsg;
 
                     errmsg = sqlite3_errmsg(db);
-                    errors.emplace_back(errmsg);
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            "failed to execute SQL statement")
+                            .with_reason(errmsg)
+                            .with_snippet(lnav::console::snippet::from(
+                                src_name, sqlite3_sql(stmt))));
+                    done = true;
                     break;
                 }
             }
@@ -780,13 +787,14 @@ void
 sql_execute_script(sqlite3* db,
                    const char* src_name,
                    const char* script,
-                   std::vector<std::string>& errors)
+                   std::vector<lnav::console::user_message>& errors)
 {
     std::vector<sqlite3_stmt*> stmts;
+    auto init_error_count = errors.size();
 
     sql_compile_script(db, src_name, script, stmts, errors);
-    if (errors.empty()) {
-        sql_execute_script(db, stmts, errors);
+    if (errors.size() == init_error_count) {
+        sql_execute_script(db, src_name, stmts, errors);
     }
 
     for (sqlite3_stmt* stmt : stmts) {

@@ -29,6 +29,7 @@
 
 #include "files_sub_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/opt_util.hh"
@@ -284,7 +285,8 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     value_out = fmt::format(FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}  {}"),
                             fn,
                             filename_width,
-                            humanize::file_size(lf->get_index_size()),
+                            humanize::file_size(lf->get_index_size(),
+                                                humanize::alignment::columnar),
                             start_time,
                             end_time,
                             fmt::join(file_notes, "; "));
@@ -308,19 +310,19 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
 
     if (selected) {
         value_out.emplace_back(line_range{0, 1},
-                               view_curses::VC_GRAPHIC.value(ACS_RARROW));
+                               VC_GRAPHIC.value(ACS_RARROW));
     }
 
     if (line < fc.fc_name_to_errors.size()) {
         if (selected) {
             value_out.emplace_back(
                 line_range{0, -1},
-                view_curses::VC_ROLE.value(view_colors::VCR_DISABLED_FOCUSED));
+                VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
         }
 
         value_out.emplace_back(
             line_range{4 + (int) filename_width, -1},
-            view_curses::VC_ROLE_FG.value(view_colors::VCR_ERROR));
+            VC_ROLE_FG.value(role_t::VCR_ERROR));
         return;
     }
     line -= fc.fc_name_to_errors.size();
@@ -329,11 +331,11 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         if (selected) {
             value_out.emplace_back(
                 line_range{0, -1},
-                view_curses::VC_ROLE.value(view_colors::VCR_DISABLED_FOCUSED));
+                VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
         }
         if (line == fc.fc_other_files.size() - 1) {
             value_out.emplace_back(line_range{0, -1},
-                                   view_curses::VC_STYLE.value(A_UNDERLINE));
+                                   VC_STYLE.value(A_UNDERLINE));
         }
         return;
     }
@@ -343,7 +345,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
     if (selected) {
         value_out.emplace_back(
             line_range{0, -1},
-            view_curses::VC_ROLE.value(view_colors::VCR_FOCUSED));
+            VC_ROLE.value(role_t::VCR_FOCUSED));
     }
 
     auto& lss = lnav_data.ld_log_source;
@@ -355,10 +357,10 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         visible = ' ';
     }
     value_out.emplace_back(line_range{2, 3},
-                           view_curses::VC_GRAPHIC.value(visible));
+                           VC_GRAPHIC.value(visible));
     if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3},
-                               view_curses::VC_FOREGROUND.value(
+                               VC_FOREGROUND.value(
                                    vcolors.ansi_to_theme_color(COLOR_GREEN)));
     }
 
@@ -366,12 +368,12 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         (int) filename_width + 3 + 4,
         (int) filename_width + 3 + 10,
     };
-    value_out.emplace_back(lr, view_curses::VC_STYLE.value(A_BOLD));
+    value_out.emplace_back(lr, VC_STYLE.value(A_BOLD));
 
     lr.lr_start = this->fss_last_line_len;
     lr.lr_end = -1;
     value_out.emplace_back(lr,
-                           view_curses::VC_FOREGROUND.value(
+                           VC_FOREGROUND.value(
                                vcolors.ansi_to_theme_color(COLOR_YELLOW)));
 }
 
@@ -417,8 +419,10 @@ files_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                                         "... {:>8}/{}",
                 PROG[spinner_index() % PROG_SIZE],
                 prog.ep_path.filename().string(),
-                humanize::file_size(prog.ep_out_size),
-                humanize::file_size(prog.ep_total_size)));
+                humanize::file_size(prog.ep_out_size,
+                                    humanize::alignment::none),
+                humanize::file_size(prog.ep_total_size,
+                                    humanize::alignment::none)));
             return true;
         }
         if (!sp->sp_tailers.empty()) {

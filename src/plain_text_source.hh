@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
 #include "textview_curses.hh"
 
 class plain_text_source
@@ -55,18 +55,18 @@ public:
             this->tds_lines.emplace_back(text.substr(start));
         }
         this->tds_longest_line = this->compute_longest_line();
-    };
+    }
 
     plain_text_source(const std::vector<std::string>& text_lines)
     {
         this->replace_with(text_lines);
-    };
+    }
 
     plain_text_source(const std::vector<attr_line_t>& text_lines)
     {
         this->tds_lines = text_lines;
         this->tds_longest_line = this->compute_longest_line();
-    };
+    }
 
     plain_text_source& replace_with(const attr_line_t& text_lines)
     {
@@ -74,23 +74,23 @@ public:
         text_lines.split_lines(this->tds_lines);
         this->tds_longest_line = this->compute_longest_line();
         return *this;
-    };
+    }
 
     plain_text_source& replace_with(const std::vector<std::string>& text_lines)
     {
-        for (auto& str : text_lines) {
+        for (const auto& str : text_lines) {
             this->tds_lines.emplace_back(str);
         }
         this->tds_longest_line = this->compute_longest_line();
         return *this;
-    };
+    }
 
     void clear()
     {
         this->tds_lines.clear();
         this->tds_longest_line = 0;
         this->tds_text_format = text_format_t::TF_UNKNOWN;
-    };
+    }
 
     plain_text_source& truncate_to(size_t max_lines)
     {
@@ -98,22 +98,22 @@ public:
             this->tds_lines.pop_back();
         }
         return *this;
-    };
+    }
 
     size_t text_line_count()
     {
         return this->tds_lines.size();
-    };
+    }
 
     bool empty() const
     {
         return this->tds_lines.empty();
-    };
+    }
 
     size_t text_line_width(textview_curses& curses)
     {
         return this->tds_longest_line;
-    };
+    }
 
     void text_value_for_line(textview_curses& tc,
                              int row,
@@ -121,30 +121,35 @@ public:
                              line_flags_t flags)
     {
         value_out = this->tds_lines[row].get_string();
-    };
+    }
 
     void text_attrs_for_line(textview_curses& tc,
                              int line,
                              string_attrs_t& value_out)
     {
         value_out = this->tds_lines[line].get_attrs();
-    };
+    }
 
     size_t text_size_for_line(textview_curses& tc, int row, line_flags_t flags)
     {
         return this->tds_lines[row].length();
-    };
+    }
 
     text_format_t get_text_format() const
     {
         return this->tds_text_format;
-    };
+    }
+
+    const std::vector<attr_line_t>& get_lines() const
+    {
+        return this->tds_lines;
+    }
 
     plain_text_source& set_text_format(text_format_t format)
     {
         this->tds_text_format = format;
         return *this;
-    };
+    }
 
     nonstd::optional<location_history*> get_location_history()
     {

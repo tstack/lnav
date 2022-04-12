@@ -34,7 +34,7 @@
 
 #include <sys/types.h>
 
-#include "attr_line.hh"
+#include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
 #include "ptimec.hh"

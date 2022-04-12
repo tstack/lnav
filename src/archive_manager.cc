@@ -40,8 +40,8 @@
 
 #include "archive_manager.cfg.hh"
 #include "archive_manager.hh"
-#include "auto_mem.hh"
 #include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/injector.hh"
@@ -227,8 +227,10 @@ copy_data(const std::string& filename,
                     FMT_STRING("available space on disk ({}) is below the "
                                "minimum-free threshold ({}).  Unable to unpack "
                                "'{}' to '{}'"),
-                    humanize::file_size(tmp_space.available),
-                    humanize::file_size(cfg.amc_min_free_space),
+                    humanize::file_size(tmp_space.available,
+                                        humanize::alignment::none),
+                    humanize::file_size(cfg.amc_min_free_space,
+                                        humanize::alignment::none),
                     entry_path.filename().string(),
                     entry_path.parent_path().string()));
             }
@@ -240,11 +242,11 @@ copy_data(const std::string& filename,
             return Ok();
         }
         if (r != ARCHIVE_OK) {
-            return Err(
-                fmt::format(FMT_STRING("failed to read file: {} >> {} -- {}"),
-                            filename,
-                            archive_entry_pathname_utf8(entry),
-                            archive_error_string(ar)));
+            return Err(fmt::format(
+                FMT_STRING("failed to extract '{}' from archive '{}' -- {}"),
+                archive_entry_pathname_utf8(entry),
+                filename,
+                archive_error_string(ar)));
         }
         r = archive_write_data_block(aw, buff, size, offset);
         if (r != ARCHIVE_OK) {
@@ -269,7 +271,7 @@ extract(const std::string& filename, const extract_cb& cb)
 
     fs::create_directories(tmp_path.parent_path(), ec);
     if (ec) {
-        return Err(fmt::format("Unable to create directory: {} -- {}",
+        return Err(fmt::format("unable to create directory: {} -- {}",
                                tmp_path.parent_path().string(),
                                ec.message()));
     }

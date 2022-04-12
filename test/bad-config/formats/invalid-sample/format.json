@@ -8,9 +8,15 @@
             },
             "semi": {
                 "pattern": "^(?<timestamp>\\d+); (?<body>\\w+)$"
+            },
+            "bad-time": {
+                "pattern": "^(?<timestamp>\\w+): (?<body>\\w+)$"
+            },
+            "with-level": {
+                "pattern": "^(?<timestamp>\\d+)\\| (?<level>\\w+) (?<body>\\w+)$"
             }
         },
-        "timestamp-format" : [
+        "timestamp-format": [
             "%i"
         ],
         "value": {
@@ -18,7 +24,15 @@
                 "kind": "foo"
             }
         },
+        "level-field": "level",
         "sample": [
+            {
+                "line": "abc: foo"
+            },
+            {
+                "line": "1428634687123| debug hello",
+                "level": "info"
+            },
             {
                 "line": "1428634687123; foo bar"
             }

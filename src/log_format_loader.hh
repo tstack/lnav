@@ -38,22 +38,24 @@
 #include <sqlite3.h>
 
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "ghc/filesystem.hpp"
 
 class log_vtab_manager;
 
 std::vector<intern_string_t> load_format_file(
-    const ghc::filesystem::path& filename, std::vector<std::string>& errors);
+    const ghc::filesystem::path& filename,
+    std::vector<lnav::console::user_message>& errors);
 
 void load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
-                  std::vector<std::string>& errors);
+                  std::vector<lnav::console::user_message>& errors);
 
 void load_format_vtabs(log_vtab_manager* vtab_manager,
-                       std::vector<std::string>& errors);
+                       std::vector<lnav::console::user_message>& errors);
 
 void load_format_extra(sqlite3* db,
                        const std::vector<ghc::filesystem::path>& extra_paths,
-                       std::vector<std::string>& errors);
+                       std::vector<lnav::console::user_message>& errors);
 
 struct script_metadata {
     ghc::filesystem::path sm_path;

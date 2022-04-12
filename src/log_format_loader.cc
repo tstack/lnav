@@ -61,16 +61,17 @@ static void extract_metadata(const char* contents,
                              size_t len,
                              struct script_metadata& meta_out);
 
-typedef std::map<intern_string_t, std::shared_ptr<external_log_format>>
-    log_formats_map_t;
+using log_formats_map_t
+    = std::map<intern_string_t, std::shared_ptr<external_log_format>>;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 static log_formats_map_t LOG_FORMATS;
 
 struct userdata {
+    yajlpp_parse_context* ud_parse_context{nullptr};
     ghc::filesystem::path ud_format_path;
     std::vector<intern_string_t>* ud_format_names{nullptr};
-    std::vector<std::string>* ud_errors{nullptr};
+    std::vector<lnav::console::user_message>* ud_errors{nullptr};
 };
 
 static external_log_format*
@@ -86,10 +87,17 @@ ensure_format(const yajlpp_provider_context& ypc, userdata* ud)
         retval = LOG_FORMATS[name].get();
         log_debug("Loading format -- %s", name.get());
     }
-    retval->elf_source_path.insert(ud->ud_format_path.filename().string());
+    retval->elf_source_path.insert(ud->ud_format_path.parent_path().string());
 
     if (find(formats->begin(), formats->end(), name) == formats->end()) {
         formats->push_back(name);
+    }
+
+    auto srcs_iter
+        = retval->elf_format_sources.find(ud->ud_format_path.string());
+    if (srcs_iter == retval->elf_format_sources.end()) {
+        retval->elf_format_sources[ud->ud_format_path.string()]
+            = ud->ud_parse_context->get_line_number();
     }
 
     if (ud->ud_format_path.empty()) {
@@ -110,8 +118,9 @@ pattern_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
     }
 
     if (pat->p_config_path.empty()) {
-        pat->p_config_path
-            = elf->get_name().to_string() + "/regex/" + regex_name;
+        pat->p_name = regex_name;
+        pat->p_config_path = fmt::format(
+            FMT_STRING("/{}/regex/{}"), elf->get_name(), regex_name);
     }
 
     return pat.get();
@@ -172,16 +181,13 @@ read_format_bool(yajlpp_parse_context* ypc, int val)
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "convert-to-local-time")
+    if (field_name == "convert-to-local-time") {
         elf->lf_date_time.dts_local_time = val;
-    else if (field_name == "json") {
+    } else if (field_name == "json") {
         if (val) {
-            elf->elf_type = external_log_format::ELF_TYPE_JSON;
+            elf->elf_type = external_log_format::elf_type_t::ELF_TYPE_JSON;
         }
-    } else if (field_name == "hide-extra")
-        elf->jlf_hide_extra = val;
-    else if (field_name == "multiline")
-        elf->lf_multiline = val;
+    }
 
     return 1;
 }
@@ -194,11 +200,16 @@ read_format_double(yajlpp_parse_context* ypc, double val)
 
     if (field_name == "timestamp-divisor") {
         if (val <= 0) {
-            fprintf(stderr,
-                    "error:%s: timestamp-divisor cannot be less "
-                    "than or equal to zero\n",
-                    ypc->get_path_fragment(0).c_str());
-            return 0;
+            ypc->report_error(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .append_quoted(fmt::to_string(val))
+                        .append(" is not a valid value for ")
+                        .append_quoted(lnav::roles::symbol(
+                            ypc->get_full_path().to_string())))
+                    .with_reason("value cannot be less than or equal to zero")
+                    .with_snippet(ypc->get_snippet())
+                    .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
         }
         elf->elf_timestamp_divisor = val;
     }
@@ -214,11 +225,16 @@ read_format_int(yajlpp_parse_context* ypc, long long val)
 
     if (field_name == "timestamp-divisor") {
         if (val <= 0) {
-            fprintf(stderr,
-                    "error:%s: timestamp-divisor cannot be less "
-                    "than or equal to zero\n",
-                    ypc->get_path_fragment(0).c_str());
-            return 0;
+            ypc->report_error(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .append_quoted(fmt::to_string(val))
+                        .append(" is not a valid value for ")
+                        .append_quoted(lnav::roles::symbol(
+                            ypc->get_full_path().to_string())))
+                    .with_reason("value cannot be less than or equal to zero")
+                    .with_snippet(ypc->get_snippet())
+                    .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
         }
         elf->elf_timestamp_divisor = val;
     }
@@ -238,37 +254,33 @@ read_format_field(yajlpp_parse_context* ypc,
     auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "file-pattern") {
-        elf->elf_file_pattern = value;
-    } else if (field_name == "level-field") {
-        elf->elf_level_field = intern_string::lookup(value);
+        try {
+            elf->elf_file_pattern = value;
+            elf->elf_filename_pcre
+                = std::make_shared<pcrepp>(elf->elf_file_pattern);
+        } catch (const pcrepp::error& e) {
+            pcrepp::compile_error ce;
+
+            ce.ce_msg = e.what();
+            ce.ce_offset = e.e_offset;
+            ypc->ypc_current_handler->report_regex_value_error(ypc, value, ce);
+        }
     } else if (field_name == "level-pointer") {
         auto pcre_res = pcrepp::from_str(value);
 
         if (pcre_res.isErr()) {
-            ypc->ypc_error_reporter(
-                *ypc,
-                lnav_log_level_t::ERROR,
-                fmt::format(
-                    FMT_STRING("error:{}:{}:invalid regular expression for "
-                               "level-pointer -- {}"),
-                    ypc->ypc_source,
-                    ypc->get_line_number(),
-                    pcre_res.unwrapErr().ce_msg)
-                    .c_str());
+            auto pcre_error = pcre_res.unwrapErr();
+
+            ypc->ypc_current_handler->report_regex_value_error(
+                ypc, value, pcre_error);
         } else {
             elf->elf_level_pointer = pcre_res.unwrap();
         }
-    } else if (field_name == "timestamp-field") {
-        elf->lf_timestamp_field = intern_string::lookup(value);
-    } else if (field_name == "body-field") {
-        elf->elf_body_field = intern_string::lookup(value);
     } else if (field_name == "timestamp-format") {
         elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
     } else if (field_name == "module-field") {
         elf->elf_module_id_field = intern_string::lookup(value);
         elf->elf_container = true;
-    } else if (field_name == "opid-field") {
-        elf->elf_opid_field = intern_string::lookup(value);
     } else if (field_name == "mime-types") {
         auto value_opt = ypc->ypc_current_handler->to_enum_value(value);
         if (value_opt) {
@@ -287,6 +299,17 @@ read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     auto level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
     elf->elf_level_patterns[level].lp_regex = regex;
+
+    try {
+        elf->elf_level_patterns[level].lp_pcre
+            = std::make_shared<pcrepp>(regex);
+    } catch (const pcrepp::error& e) {
+        pcrepp::compile_error ce;
+
+        ce.ce_msg = e.what();
+        ce.ce_offset = e.e_offset;
+        ypc->ypc_current_handler->report_regex_value_error(ypc, regex, ce);
+    }
 
     return 1;
 }
@@ -312,8 +335,9 @@ read_action_def(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     auto val = std::string((const char*) str, len);
 
     elf->lf_action_defs[action_name].ad_name = action_name;
-    if (field_name == "label")
+    if (field_name == "label") {
         elf->lf_action_defs[action_name].ad_label = val;
+    }
 
     return 1;
 }
@@ -376,39 +400,27 @@ read_json_constant(yajlpp_parse_context* ypc,
     return 1;
 }
 
-static int
-create_search_table(yajlpp_parse_context* ypc,
-                    const unsigned char* str,
-                    size_t len)
-{
-    auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    const intern_string_t table_name = ypc->get_path_fragment_i(2);
-    auto regex = std::string((const char*) str, len);
-
-    elf->elf_search_tables.emplace_back(table_name, regex);
-
-    return 1;
-}
-
 static struct json_path_container pattern_handlers = {
     yajlpp::property_handler("pattern")
         .with_synopsis("<message-regex>")
         .with_description(
             "The regular expression to match a log message and capture fields.")
         .with_min_length(1)
-        .FOR_FIELD(external_log_format::pattern, p_string),
+        .for_field(&external_log_format::pattern::p_pcre),
     yajlpp::property_handler("module-format")
         .with_synopsis("<bool>")
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
             "of container formats, like syslog")
-        .for_field(&external_log_format::pattern::p_module_format)};
+        .for_field(&external_log_format::pattern::p_module_format),
+};
 
-static const json_path_handler_base::enum_value_t ALIGN_ENUM[]
-    = {{"left", external_log_format::json_format_element::align_t::LEFT},
-       {"right", external_log_format::json_format_element::align_t::RIGHT},
+static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
+    {"left", external_log_format::json_format_element::align_t::LEFT},
+    {"right", external_log_format::json_format_element::align_t::RIGHT},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
 static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
     {"abbrev", external_log_format::json_format_element::overflow_t::ABBREV},
@@ -416,18 +428,20 @@ static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
      external_log_format::json_format_element::overflow_t::TRUNCATE},
     {"dot-dot", external_log_format::json_format_element::overflow_t::DOTDOT},
 
-    json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
-static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[]
-    = {{"none", external_log_format::json_format_element::transform_t::NONE},
-       {"uppercase",
-        external_log_format::json_format_element::transform_t::UPPERCASE},
-       {"lowercase",
-        external_log_format::json_format_element::transform_t::LOWERCASE},
-       {"capitalize",
-        external_log_format::json_format_element::transform_t::CAPITALIZE},
+static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
+    {"none", external_log_format::json_format_element::transform_t::NONE},
+    {"uppercase",
+     external_log_format::json_format_element::transform_t::UPPERCASE},
+    {"lowercase",
+     external_log_format::json_format_element::transform_t::LOWERCASE},
+    {"capitalize",
+     external_log_format::json_format_element::transform_t::CAPITALIZE},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
 static struct json_path_container line_format_handlers = {
     yajlpp::property_handler("field")
@@ -435,78 +449,83 @@ static struct json_path_container line_format_handlers = {
         .with_description(
             "The name of the field to substitute at this position")
         .with_min_length(1)
-        .FOR_FIELD(external_log_format::json_format_element, jfe_value),
+        .for_field(&external_log_format::json_format_element::jfe_value),
 
     yajlpp::property_handler("default-value")
         .with_synopsis("<string>")
         .with_description(
             "The default value for this position if the field is null")
-        .FOR_FIELD(external_log_format::json_format_element, jfe_default_value),
+        .for_field(
+            &external_log_format::json_format_element::jfe_default_value),
 
     yajlpp::property_handler("timestamp-format")
         .with_synopsis("<string>")
         .with_min_length(1)
         .with_description("The strftime(3) format for this field")
-        .FOR_FIELD(external_log_format::json_format_element, jfe_ts_format),
+        .for_field(&external_log_format::json_format_element::jfe_ts_format),
 
     yajlpp::property_handler("min-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The minimum width of the field")
-        .FOR_FIELD(external_log_format::json_format_element, jfe_min_width),
+        .for_field(&external_log_format::json_format_element::jfe_min_width),
 
     yajlpp::property_handler("max-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The maximum width of the field")
-        .FOR_FIELD(external_log_format::json_format_element, jfe_max_width),
+        .for_field(&external_log_format::json_format_element::jfe_max_width),
 
     yajlpp::property_handler("align")
         .with_synopsis("left|right")
         .with_description(
             "Align the text in the column to the left or right side")
         .with_enum_values(ALIGN_ENUM)
-        .FOR_FIELD(external_log_format::json_format_element, jfe_align),
+        .for_field(&external_log_format::json_format_element::jfe_align),
 
     yajlpp::property_handler("overflow")
         .with_synopsis("abbrev|truncate|dot-dot")
         .with_description("Overflow style")
         .with_enum_values(OVERFLOW_ENUM)
-        .FOR_FIELD(external_log_format::json_format_element, jfe_overflow),
+        .for_field(&external_log_format::json_format_element::jfe_overflow),
 
     yajlpp::property_handler("text-transform")
         .with_synopsis("none|uppercase|lowercase|capitalize")
         .with_description("Text transformation")
         .with_enum_values(TRANSFORM_ENUM)
-        .FOR_FIELD(external_log_format::json_format_element,
-                   jfe_text_transform)};
+        .for_field(
+            &external_log_format::json_format_element::jfe_text_transform),
+};
 
-static const json_path_handler_base::enum_value_t KIND_ENUM[]
-    = {{"string", value_kind_t::VALUE_TEXT},
-       {"integer", value_kind_t::VALUE_INTEGER},
-       {"float", value_kind_t::VALUE_FLOAT},
-       {"boolean", value_kind_t::VALUE_BOOLEAN},
-       {"json", value_kind_t::VALUE_JSON},
-       {"struct", value_kind_t::VALUE_STRUCT},
-       {"quoted", value_kind_t::VALUE_QUOTED},
-       {"xml", value_kind_t::VALUE_XML},
+static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
+    {"string", value_kind_t::VALUE_TEXT},
+    {"integer", value_kind_t::VALUE_INTEGER},
+    {"float", value_kind_t::VALUE_FLOAT},
+    {"boolean", value_kind_t::VALUE_BOOLEAN},
+    {"json", value_kind_t::VALUE_JSON},
+    {"struct", value_kind_t::VALUE_STRUCT},
+    {"quoted", value_kind_t::VALUE_QUOTED},
+    {"xml", value_kind_t::VALUE_XML},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
-static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[]
-    = {{"identity", scale_op_t::SO_IDENTITY},
-       {"multiply", scale_op_t::SO_MULTIPLY},
-       {"divide", scale_op_t::SO_DIVIDE},
+static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[] = {
+    {"identity", scale_op_t::SO_IDENTITY},
+    {"multiply", scale_op_t::SO_MULTIPLY},
+    {"divide", scale_op_t::SO_DIVIDE},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
-static struct json_path_container scaling_factor_handlers
-    = {yajlpp::pattern_property_handler("op")
-           .with_enum_values(SCALE_OP_ENUM)
-           .FOR_FIELD(scaling_factor, sf_op),
+static struct json_path_container scaling_factor_handlers = {
+    yajlpp::pattern_property_handler("op")
+        .with_enum_values(SCALE_OP_ENUM)
+        .for_field(&scaling_factor::sf_op),
 
-       yajlpp::pattern_property_handler("value").FOR_FIELD(scaling_factor,
-                                                           sf_value)};
+    yajlpp::pattern_property_handler("value").FOR_FIELD(scaling_factor,
+                                                        sf_value),
+};
 
 static struct json_path_container scale_handlers = {
     yajlpp::pattern_property_handler("(?<scale>[^/]+)")
@@ -519,7 +538,7 @@ static struct json_path_container unit_handlers = {
         .with_synopsis("<field-name>")
         .with_description(
             "The name of the field that contains the units for this field")
-        .FOR_FIELD(external_log_format::value_def, vd_unit_field),
+        .for_field(&external_log_format::value_def::vd_unit_field),
 
     yajlpp::property_handler("scaling-factor")
         .with_description("Transforms the numeric value by the given factor")
@@ -528,7 +547,7 @@ static struct json_path_container unit_handlers = {
 
 static struct json_path_container value_def_handlers = {
     yajlpp::property_handler("kind")
-        .with_synopsis("string|integer|float|boolean|json|quoted")
+        .with_synopsis("<data-type>")
         .with_description("The type of data in the field")
         .with_enum_values(KIND_ENUM)
         .for_field(&external_log_format::value_def::vd_meta,
@@ -537,7 +556,7 @@ static struct json_path_container value_def_handlers = {
     yajlpp::property_handler("collate")
         .with_synopsis("<function>")
         .with_description("The collating function to use for this column")
-        .FOR_FIELD(external_log_format::value_def, vd_collate),
+        .for_field(&external_log_format::value_def::vd_collate),
 
     yajlpp::property_handler("unit")
         .with_description("Unit definitions for this field")
@@ -572,30 +591,31 @@ static struct json_path_container value_def_handlers = {
         .with_synopsis("<command>")
         .with_description(
             "A command that will rewrite this field when pretty-printing")
-        .FOR_FIELD(external_log_format::value_def, vd_rewriter),
+        .for_field(&external_log_format::value_def::vd_rewriter),
 
     yajlpp::property_handler("description")
         .with_synopsis("<string>")
         .with_description("A description of the field")
-        .FOR_FIELD(external_log_format::value_def, vd_description)};
+        .for_field(&external_log_format::value_def::vd_description),
+};
 
 static struct json_path_container highlighter_def_handlers = {
     yajlpp::property_handler("pattern")
         .with_synopsis("<regex>")
         .with_description(
             "A regular expression to highlight in logs of this format.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_pattern),
+        .for_field(&external_log_format::highlighter_def::hd_pattern),
 
     yajlpp::property_handler("color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The color to use when highlighting this pattern.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_color),
+        .for_field(&external_log_format::highlighter_def::hd_color),
 
     yajlpp::property_handler("background-color")
         .with_synopsis("#<hex>|<name>")
         .with_description(
             "The background color to use when highlighting this pattern.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_background_color),
+        .for_field(&external_log_format::highlighter_def::hd_background_color),
 
     yajlpp::property_handler("underline")
         .with_synopsis("<enabled>")
@@ -605,43 +625,47 @@ static struct json_path_container highlighter_def_handlers = {
     yajlpp::property_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
-        .for_field(&external_log_format::highlighter_def::hd_blink)};
+        .for_field(&external_log_format::highlighter_def::hd_blink),
+};
 
-static const json_path_handler_base::enum_value_t LEVEL_ENUM[]
-    = {{level_names[LEVEL_TRACE], LEVEL_TRACE},
-       {level_names[LEVEL_DEBUG5], LEVEL_DEBUG5},
-       {level_names[LEVEL_DEBUG4], LEVEL_DEBUG4},
-       {level_names[LEVEL_DEBUG3], LEVEL_DEBUG3},
-       {level_names[LEVEL_DEBUG2], LEVEL_DEBUG2},
-       {level_names[LEVEL_DEBUG], LEVEL_DEBUG},
-       {level_names[LEVEL_INFO], LEVEL_INFO},
-       {level_names[LEVEL_STATS], LEVEL_STATS},
-       {level_names[LEVEL_NOTICE], LEVEL_NOTICE},
-       {level_names[LEVEL_WARNING], LEVEL_WARNING},
-       {level_names[LEVEL_ERROR], LEVEL_ERROR},
-       {level_names[LEVEL_CRITICAL], LEVEL_CRITICAL},
-       {level_names[LEVEL_FATAL], LEVEL_FATAL},
+static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
+    {level_names[LEVEL_TRACE], LEVEL_TRACE},
+    {level_names[LEVEL_DEBUG5], LEVEL_DEBUG5},
+    {level_names[LEVEL_DEBUG4], LEVEL_DEBUG4},
+    {level_names[LEVEL_DEBUG3], LEVEL_DEBUG3},
+    {level_names[LEVEL_DEBUG2], LEVEL_DEBUG2},
+    {level_names[LEVEL_DEBUG], LEVEL_DEBUG},
+    {level_names[LEVEL_INFO], LEVEL_INFO},
+    {level_names[LEVEL_STATS], LEVEL_STATS},
+    {level_names[LEVEL_NOTICE], LEVEL_NOTICE},
+    {level_names[LEVEL_WARNING], LEVEL_WARNING},
+    {level_names[LEVEL_ERROR], LEVEL_ERROR},
+    {level_names[LEVEL_CRITICAL], LEVEL_CRITICAL},
+    {level_names[LEVEL_FATAL], LEVEL_FATAL},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
-static struct json_path_container sample_handlers
-    = {yajlpp::property_handler("line")
-           .with_synopsis("<log-line>")
-           .with_description(
-               "A sample log line that should match a pattern in this format.")
-           .FOR_FIELD(external_log_format::sample, s_line),
+static struct json_path_container sample_handlers = {
+    yajlpp::property_handler("line")
+        .with_synopsis("<log-line>")
+        .with_description(
+            "A sample log line that should match a pattern in this format.")
+        .for_field(&external_log_format::sample::s_line),
 
-       yajlpp::property_handler("level")
-           .with_enum_values(LEVEL_ENUM)
-           .with_description("The expected level for this sample log line.")
-           .FOR_FIELD(external_log_format::sample, s_level)};
+    yajlpp::property_handler("level")
+        .with_enum_values(LEVEL_ENUM)
+        .with_description("The expected level for this sample log line.")
+        .for_field(&external_log_format::sample::s_level),
+};
 
-static const json_path_handler_base::enum_value_t TYPE_ENUM[]
-    = {{"text", external_log_format::elf_type_t::ELF_TYPE_TEXT},
-       {"json", external_log_format::elf_type_t::ELF_TYPE_JSON},
-       {"csv", external_log_format::elf_type_t::ELF_TYPE_CSV},
+static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
+    {"text", external_log_format::elf_type_t::ELF_TYPE_TEXT},
+    {"json", external_log_format::elf_type_t::ELF_TYPE_JSON},
+    {"csv", external_log_format::elf_type_t::ELF_TYPE_CSV},
 
-       json_path_handler_base::ENUM_TERMINATOR};
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
 static struct json_path_container regex_handlers = {
     yajlpp::pattern_property_handler(R"((?<pattern_name>[^/]+))")
@@ -659,14 +683,16 @@ static struct json_path_container level_handlers = {
         .with_description("The regular expression used to match the log text "
                           "for this level.  "
                           "For JSON logs with numeric levels, this should be "
-                          "the number for the corresponding level.")};
+                          "the number for the corresponding level."),
+};
 
-static struct json_path_container value_handlers
-    = {yajlpp::pattern_property_handler("(?<value_name>[^/]+)")
-           .with_description(
-               "The set of values captured by the log message patterns")
-           .with_obj_provider(value_def_provider)
-           .with_children(value_def_handlers)};
+static struct json_path_container value_handlers = {
+    yajlpp::pattern_property_handler("(?<value_name>[^/]+)")
+        .with_description(
+            "The set of values captured by the log message patterns")
+        .with_obj_provider(value_def_provider)
+        .with_children(value_def_handlers),
+};
 
 static struct json_path_container highlight_handlers = {
     yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
@@ -674,38 +700,54 @@ static struct json_path_container highlight_handlers = {
         .with_obj_provider<external_log_format::highlighter_def,
                            external_log_format>(
             [](const yajlpp_provider_context& ypc, external_log_format* root) {
-                return &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
+                auto* retval
+                    = &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
+
+                return retval;
             })
-        .with_children(highlighter_def_handlers)};
-
-static struct json_path_container action_def_handlers
-    = {json_path_handler("label", read_action_def),
-       json_path_handler("capture-output", read_action_bool),
-       json_path_handler("cmd#", read_action_cmd)};
-
-static struct json_path_container action_handlers
-    = {json_path_handler(pcrepp("(?<action_name>\\w+)"), read_action_def)
-           .with_children(action_def_handlers)};
-
-static struct json_path_container search_table_def_handlers = {
-    json_path_handler("pattern", create_search_table)
-        .with_synopsis("<regex>")
-        .with_description("The regular expression for this search table."),
+        .with_children(highlighter_def_handlers),
 };
 
-static struct json_path_container search_table_handlers
-    = {yajlpp::pattern_property_handler("\\w+")
-           .with_description(
-               "The set of search tables to be automatically defined")
-           .with_children(search_table_def_handlers)};
+static struct json_path_container action_def_handlers = {
+    json_path_handler("label", read_action_def),
+    json_path_handler("capture-output", read_action_bool),
+    json_path_handler("cmd#", read_action_cmd),
+};
 
-static const json_path_handler_base::enum_value_t MIME_TYPE_ENUM[]
-    = {{
-           "application/vnd.tcpdump.pcap",
-           file_format_t::PCAP,
-       },
+static struct json_path_container action_handlers = {
+    json_path_handler(pcrepp("(?<action_name>\\w+)"), read_action_def)
+        .with_children(action_def_handlers),
+};
 
-       json_path_handler_base::ENUM_TERMINATOR};
+static struct json_path_container search_table_def_handlers = {
+    json_path_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description("The regular expression for this search table.")
+        .for_field(&external_log_format::search_table_def::std_pattern),
+};
+
+static struct json_path_container search_table_handlers = {
+    yajlpp::pattern_property_handler("(?<table_name>\\w+)")
+        .with_description(
+            "The set of search tables to be automatically defined")
+        .with_obj_provider<external_log_format::search_table_def,
+                           external_log_format>(
+            [](const yajlpp_provider_context& ypc, external_log_format* root) {
+                auto* retval = &(root->elf_search_tables[ypc.get_substr_i(0)]);
+
+                return retval;
+            })
+        .with_children(search_table_def_handlers),
+};
+
+static const json_path_handler_base::enum_value_t MIME_TYPE_ENUM[] = {
+    {
+        "application/vnd.tcpdump.pcap",
+        file_format_t::PCAP,
+    },
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
 struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
@@ -721,10 +763,11 @@ struct json_path_container format_handlers = {
                           "automatically be converted to local time"),
     json_path_handler("hide-extra", read_format_bool)
         .with_description(
-            "Specifies whether extra values in JSON logs should be displayed"),
+            "Specifies whether extra values in JSON logs should be displayed")
+        .for_field(&external_log_format::jlf_hide_extra),
     json_path_handler("multiline", read_format_bool)
-        .with_description(
-            "Indicates that log messages can span multiple lines"),
+        .with_description("Indicates that log messages can span multiple lines")
+        .for_field(&log_format::lf_multiline),
     json_path_handler("timestamp-divisor", read_format_double)
         .add_cb(read_format_int)
         .with_synopsis("<number>")
@@ -738,16 +781,19 @@ struct json_path_container format_handlers = {
         .with_enum_values(MIME_TYPE_ENUM),
     json_path_handler("level-field", read_format_field)
         .with_description(
-            "The name of the level field in the log message pattern"),
+            "The name of the level field in the log message pattern")
+        .for_field(&external_log_format::elf_level_field),
     json_path_handler("level-pointer", read_format_field)
         .with_description("A regular-expression that matches the JSON-pointer "
                           "of the level property"),
     json_path_handler("timestamp-field", read_format_field)
         .with_description(
-            "The name of the timestamp field in the log message pattern"),
+            "The name of the timestamp field in the log message pattern")
+        .for_field(&log_format::lf_timestamp_field),
     json_path_handler("body-field", read_format_field)
         .with_description(
-            "The name of the body field in the log message pattern"),
+            "The name of the body field in the log message pattern")
+        .for_field(&external_log_format::elf_body_field),
     json_path_handler("url", pcrepp("url#?"))
         .add_cb(read_format_field)
         .with_description("A URL with more information about this log format"),
@@ -762,7 +808,8 @@ struct json_path_container format_handlers = {
             "The name of the module field in the log message pattern"),
     json_path_handler("opid-field", read_format_field)
         .with_description(
-            "The name of the operation-id field in the log message pattern"),
+            "The name of the operation-id field in the log message pattern")
+        .for_field(&external_log_format::elf_opid_field),
     yajlpp::property_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description(
@@ -789,7 +836,7 @@ struct json_path_container format_handlers = {
         .with_obj_provider(line_format_provider)
         .add_cb(read_json_constant)
         .with_children(line_format_handlers),
-    json_path_handler("search-table", create_search_table)
+    json_path_handler("search-table")
         .with_description(
             "Search tables to automatically define for this log format")
         .with_children(search_table_handlers),
@@ -802,7 +849,8 @@ struct json_path_container format_handlers = {
         .with_synopsis("text|json|csv")
         .with_description("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
-        .FOR_FIELD(external_log_format, elf_type)};
+        .for_field(&external_log_format::elf_type),
+};
 
 static int
 read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
@@ -814,12 +862,21 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
              file_id)
         == SUPPORTED_FORMAT_SCHEMAS.end())
     {
-        fprintf(stderr,
-                "%s:%d: error: unsupported format $schema -- %s\n",
-                ypc->ypc_source.c_str(),
-                ypc->get_line_number(),
-                file_id.c_str());
-        return 0;
+        const auto* handler = ypc->ypc_current_handler;
+        attr_line_t notes{"expecting one of the following $schema values:"};
+
+        for (const auto& schema : SUPPORTED_FORMAT_SCHEMAS) {
+            notes.append("\n").append(
+                lnav::roles::symbol(fmt::format(FMT_STRING("  {}"), schema)));
+        }
+        ypc->report_error(
+            lnav::console::user_message::error(
+                attr_line_t("'")
+                    .append(lnav::roles::symbol(file_id))
+                    .append("' is not a supported log format $schema version"))
+                .with_snippet(ypc->get_snippet())
+                .with_note(notes)
+                .with_help(handler->get_help_text(ypc)));
     }
 
     return 1;
@@ -910,38 +967,35 @@ write_sample_file()
 
 static void
 format_error_reporter(const yajlpp_parse_context& ypc,
-                      lnav_log_level_t level,
-                      const char* msg)
+                      const lnav::console::user_message& msg)
 {
-    if (level >= lnav_log_level_t::ERROR) {
-        struct userdata* ud = (userdata*) ypc.ypc_userdata;
+    struct userdata* ud = (userdata*) ypc.ypc_userdata;
 
-        ud->ud_errors->push_back(msg);
-    } else {
-        fprintf(stderr, "warning:%s\n", msg);
-    }
+    ud->ud_errors->emplace_back(msg);
 }
 
 std::vector<intern_string_t>
 load_format_file(const ghc::filesystem::path& filename,
-                 std::vector<std::string>& errors)
+                 std::vector<lnav::console::user_message>& errors)
 {
     std::vector<intern_string_t> retval;
     struct userdata ud;
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());
+    yajlpp_parse_context ypc(filename, &root_format_handler);
+    ud.ud_parse_context = &ypc;
     ud.ud_format_path = filename;
     ud.ud_format_names = &retval;
     ud.ud_errors = &errors;
-    yajlpp_parse_context ypc(filename, &root_format_handler);
     ypc.ypc_userdata = &ud;
     ypc.with_obj(ud);
     if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
-        errors.emplace_back(fmt::format(
-            FMT_STRING("error: unable to open format file '{}' -- {}"),
-            filename.string(),
-            strerror(errno)));
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("unable to open format file: ")
+                    .append(lnav::roles::file(filename.string())))
+                .with_errno_reason());
     } else {
         auto_mem<yajl_handle_t> handle(yajl_free);
         char buffer[2048];
@@ -955,11 +1009,13 @@ load_format_file(const ghc::filesystem::path& filename,
             rc = read(fd, buffer, sizeof(buffer));
             if (rc == 0) {
                 break;
-            } else if (rc == -1) {
-                errors.emplace_back(fmt::format(
-                    FMT_STRING("error:{}:unable to read file -- {}"),
-                    filename.string(),
-                    strerror(errno)));
+            }
+            if (rc == -1) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("unable to read format file: ")
+                            .append(lnav::roles::file(filename.string())))
+                        .with_errno_reason());
                 break;
             }
             if (offset == 0 && (rc > 2) && (buffer[0] == '#')
@@ -983,7 +1039,7 @@ load_format_file(const ghc::filesystem::path& filename,
 
 static void
 load_from_path(const ghc::filesystem::path& path,
-               std::vector<std::string>& errors)
+               std::vector<lnav::console::user_message>& errors)
 {
     auto format_path = path / "formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
@@ -1015,11 +1071,9 @@ load_from_path(const ghc::filesystem::path& path,
 
 void
 load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
-             std::vector<std::string>& errors)
+             std::vector<lnav::console::user_message>& errors)
 {
     auto default_source = lnav::paths::dotlnav() / "default";
-    yajlpp_parse_context ypc_builtin(default_source.string(),
-                                     &root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;
     yajl_handle handle;
@@ -1028,7 +1082,9 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 
     log_debug("Loading default formats");
     for (const auto& bsf : lnav_format_json) {
+        yajlpp_parse_context ypc_builtin(bsf.get_name(), &root_format_handler);
         handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
+        ud.ud_parse_context = &ypc_builtin;
         ud.ud_format_names = &retval;
         ud.ud_errors = &errors;
         ypc_builtin.with_obj(ud)
@@ -1043,8 +1099,10 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
                 handle, 1, (const unsigned char*) sf.data(), sf.length());
 
             errors.emplace_back(
-                fmt::format(FMT_STRING("builtin: invalid json -- {}"),
-                            reinterpret_cast<char*>(msg)));
+                lnav::console::user_message::error("invalid json")
+                    .with_snippet(lnav::console::snippet::from(
+                        ypc_builtin.ypc_source, attr_line_t((const char*) msg)))
+                    .with_errno_reason());
             yajl_free_error(handle, msg);
         }
         ypc_builtin.complete_parse();
@@ -1154,7 +1212,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 static void
 exec_sql_in_path(sqlite3* db,
                  const ghc::filesystem::path& path,
-                 std::vector<std::string>& errors)
+                 std::vector<lnav::console::user_message>& errors)
 {
     auto format_path = path / "formats/*/*.sql";
     static_root_mem<glob_t, globfree> gl;
@@ -1172,10 +1230,11 @@ exec_sql_in_path(sqlite3* db,
                 sql_execute_script(
                     db, filename.c_str(), content.c_str(), errors);
             } else {
-                errors.emplace_back(fmt::format(
-                    FMT_STRING("error:unable to read file '{}' -- {}"),
-                    filename.string(),
-                    read_res.unwrapErr()));
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("unable to read format file: ")
+                            .append(lnav::roles::file(filename.string())))
+                        .with_reason(read_res.unwrapErr()));
             }
         }
     }
@@ -1184,7 +1243,7 @@ exec_sql_in_path(sqlite3* db,
 void
 load_format_extra(sqlite3* db,
                   const std::vector<ghc::filesystem::path>& extra_paths,
-                  std::vector<std::string>& errors)
+                  std::vector<lnav::console::user_message>& errors)
 {
     for (const auto& extra_path : extra_paths) {
         exec_sql_in_path(db, extra_path, errors);
@@ -1275,7 +1334,7 @@ find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
 
 void
 load_format_vtabs(log_vtab_manager* vtab_manager,
-                  std::vector<std::string>& errors)
+                  std::vector<lnav::console::user_message>& errors)
 {
     auto& root_formats = LOG_FORMATS;
 

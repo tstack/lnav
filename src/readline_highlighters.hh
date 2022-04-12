@@ -32,7 +32,7 @@
 #ifndef readline_highlighters_hh
 #define readline_highlighters_hh
 
-#include "view_curses.hh"
+#include "base/attr_line.hh"
 
 void readline_regex_highlighter(attr_line_t& line, int x);
 

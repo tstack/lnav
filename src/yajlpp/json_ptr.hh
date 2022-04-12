@@ -40,7 +40,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
 

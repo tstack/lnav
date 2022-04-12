@@ -37,6 +37,7 @@
 
 #include <readline/history.h>
 
+#include "base/lnav.console.hh"
 #include "base/result.h"
 #include "help_text.hh"
 
@@ -52,7 +53,7 @@ typedef void (*readline_highlighter_t)(attr_line_t& line, int x);
  */
 class readline_context {
 public:
-    typedef Result<std::string, std::string> (*command_func_t)(
+    typedef Result<std::string, lnav::console::user_message> (*command_func_t)(
         exec_context& ec, std::string cmdline, std::vector<std::string>& args);
     typedef std::string (*prompt_func_t)(exec_context& ec,
                                          const std::string& cmdline);

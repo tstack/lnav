@@ -1,6 +1,8 @@
 add_library(
         base STATIC
         ../config.h.in
+        ansi_scrubber.cc
+        attr_line.cc
         auto_pid.cc
         date_time_scanner.cc
         fs_util.cc
@@ -10,14 +12,20 @@ add_library(
         intern_string.cc
         is_utf8.cc
         isc.cc
+        lnav.console.cc
         lnav.gzip.cc
         lnav_log.cc
         network.tcp.cc
         paths.cc
+        string_attr_type.cc
         string_util.cc
         strnatcmp.c
         time_util.cc
+
+        ansi_scrubber.hh
+        attr_line.hh
         auto_fd.hh
+        auto_mem.hh
         auto_pid.hh
         date_time_scanner.hh
         enum_util.hh
@@ -32,11 +40,13 @@ add_library(
         intern_string.hh
         is_utf8.hh
         isc.hh
+        lnav.console.hh
         lrucache.hpp
         math_util.hh
         network.tcp.hh
         paths.hh
         result.h
+        string_attr_type.hh
         strnatcmp.h
         time_util.hh)
 

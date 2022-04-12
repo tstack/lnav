@@ -16,7 +16,11 @@ run_test ${lnav_test} -n \
     "${test_dir}/logfile_access_log.*"
 
 check_error_output ":unix-time works without arg?" <<EOF
-command-option:1: error: expecting a unix time value
+✘ error: expecting a unix time value
+ --> command-option:1
+ | :unix-time
+ = help: Synopsis
+           :unix-time seconds - Convert epoch time to a human-readable form
 EOF
 
 
@@ -25,7 +29,11 @@ run_test ${lnav_test} -n \
     "${test_dir}/logfile_access_log.*"
 
 check_error_output ":unix-time works without arg?" <<EOF
-command-option:1: error: invalid unix time -- abc
+✘ error: invalid unix time -- abc
+ --> command-option:1
+ | :unix-time abc
+ = help: Synopsis
+           :unix-time seconds - Convert epoch time to a human-readable form
 EOF
 
 
@@ -52,7 +60,11 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     "${test_dir}/logfile_access_log.*"
 
 check_error_output "able to write without a file name" <<EOF
-command-option:1: error: expecting file name or '-' to write to the terminal
+✘ error: expecting file name or '-' to write to the terminal
+ --> command-option:1
+ | :write-to
+ = help: Synopsis
+           :write-to path - Overwrite the given file with any marked lines in the current view
 EOF
 
 
@@ -108,7 +120,11 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     "${test_dir}/logfile_multiline.0"
 
 check_error_output "filter-expr with bad SQL works?" <<EOF
-command-option:1: error: filter expression failed with: unable to parse time slice value: bad -- Unrecognized input
+✘ error: filter expression failed with: unable to parse time slice value: bad -- Unrecognized input
+ --> command-option:1
+ | :filter-expr timeslice(:log_time_msecs, 'bad') is not null
+ = help: Synopsis
+           :filter-expr expr - Set the filter expression
 EOF
 
 
@@ -147,7 +163,11 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     "${test_dir}/logfile_access_log.*"
 
 check_error_output "filter-expr error not working" <<EOF
-command-option:1: error: unrecognized token: "#"
+✘ error: unrecognized token: "#"
+ --> command-option:1
+ | :filter-expr :sc_bytes # ff
+ = help: Synopsis
+           :filter-expr expr - Set the filter expression
 EOF
 
 
@@ -244,7 +264,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "hide-fields with unknown" <<EOF
-command-option:1: error: unknown field(s) -- foobar
+✘ error: unknown field(s) -- foobar
+ --> command-option:1
+ | :hide-fields foobar
+ = help: Synopsis
+           :hide-fields field-name1 [... field-nameN] - Hide log message fields by replacing them with an ellipsis
 EOF
 
 run_test ${lnav_test} -n \
@@ -279,7 +303,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "config bad option" <<EOF
-command-option:1: error: unknown configuration option -- /bad/option
+✘ error: unknown configuration option -- /bad/option
+ --> command-option:1
+ | :config /bad/option
+ = help: Synopsis
+           :config option [value] - Read or write a configuration option
 EOF
 
 check_output "config bad option" <<EOF
@@ -345,7 +373,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "include nonexistent" <<EOF
-command-option:1: error: unknown script -- nonexistent.lnav -- file not found
+✘ error: unknown script -- nonexistent.lnav -- file not found
+ --> command-option:1
+ | |nonexistent.lnav
 EOF
 
 
@@ -427,7 +457,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is working" <<EOF
-command-option:1: error: expecting line number/percentage, timestamp, or relative time
+✘ error: expecting line number/percentage, timestamp, or relative time
+ --> command-option:1
+ | :goto invalid
+ = help: Synopsis
+           :goto line#|N%|date - Go to the given location in the top view
 EOF
 
 check_output "goto invalid is not working" <<EOF
@@ -472,7 +506,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is not working" <<EOF
-command-option:2: error: unknown bookmark type
+✘ error: unknown bookmark type
+ --> command-option:2
+ | :next-mark foobar
+ = help: Synopsis
+           :next-mark type1 [... typeN] - Move to the next bookmark of the given type in the current view
 EOF
 
 check_output "invalid mark-type is working" <<EOF
@@ -622,7 +660,11 @@ run_test eval ${lnav_test} -d /tmp/lnav.err -n \
     $TOO_MANY_FILTERS \
     ${test_dir}/logfile_filter.0
 check_error_output "able to create too many filters?" <<EOF
-command-option:32: error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
+✘ error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
+ --> command-option:32
+ | :filter-out 32
+ = help: Synopsis
+           :filter-out pattern - Remove lines that match the given regular expression in the current view
 EOF
 
 
@@ -640,7 +682,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "double close works" <<EOF
-command-option:2: error: no log files loaded
+✘ error: no log files loaded
+ --> command-option:2
+ | :close
+ = help: Synopsis
+           :close - Close the top file in the view
 EOF
 
 check_output "double close is working" <<EOF
@@ -651,7 +697,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "open does not require arg?" <<EOF
-command-option:1: error: expecting file name to open
+✘ error: expecting file name to open
+ --> command-option:1
+ | :open
+ = help: Synopsis
+           :open path1 [... pathN] - Open the given file(s) in lnav.  Opening files on machines accessible via SSH can be done using the syntax: [user@]host:/path/to/logs
 EOF
 
 run_test ${lnav_test} -n \
@@ -672,7 +722,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "open non-existent is working" <<EOF
-command-option:2: error: cannot stat file: /non-existent -- No such file or directory
+✘ error: cannot stat file: /non-existent -- No such file or directory
+ --> command-option:2
+ | :open /non-existent
+ = help: Synopsis
+           :open path1 [... pathN] - Open the given file(s) in lnav.  Opening files on machines accessible via SSH can be done using the syntax: [user@]host:/path/to/logs
 EOF
 
 check_output "open non-existent is not working" <<EOF
@@ -791,7 +845,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "We managed to bypass LNAVSECURE mode" <<EOF
-command-option:2: error: write-json-to -- unavailable in secure mode
+✘ error: write-json-to -- unavailable in secure mode
+ --> command-option:2
+ | :write-json-to -
+ = help: Synopsis
+           :write-json-to path - Write SQL results to the given file in JSON format
 EOF
 unset LNAVSECURE
 
@@ -990,7 +1048,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "clear-highlight did not report an error?" <<EOF
-command-option:1: error: highlight does not exist -- foobar
+✘ error: highlight does not exist -- foobar
+ --> command-option:1
+ | :clear-highlight foobar
+ = help: Synopsis
+           :clear-highlight pattern - Remove a previously set highlight regular expression
 EOF
 
 run_test ${lnav_test} -n \
@@ -1075,7 +1137,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_error_output ":mark-expr works without an expression?" <<EOF
-command-option:1: error: expecting an SQL expression
+✘ error: expecting an SQL expression
+ --> command-option:1
+ | :mark-expr
+ = help: Synopsis
+           :mark-expr expr - Set the bookmark expression
 EOF
 
 
@@ -1084,7 +1150,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_error_output ":mark-expr works with a bad expression?" <<EOF
-command-option:1: error: near "lik": syntax error
+✘ error: near "lik": syntax error
+ --> command-option:1
+ | :mark-expr :log_procname lik
+ = help: Synopsis
+           :mark-expr expr - Set the bookmark expression
 EOF
 
 
@@ -1115,7 +1185,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "bad zoom level is not rejected?" <<EOF
-command-option:1: error: invalid zoom level -- bad
+✘ error: invalid zoom level -- bad
+ --> command-option:1
+ | :zoom-to bad
+ = help: Synopsis
+           :zoom-to zoom-level - Zoom the histogram view to the given level
 EOF
 
 

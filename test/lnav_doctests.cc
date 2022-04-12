@@ -33,6 +33,7 @@
 #include "byte_array.hh"
 #include "doctest/doctest.h"
 #include "lnav_config.hh"
+#include "lnav_util.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
 
@@ -179,4 +180,33 @@ TEST_CASE("unique_path")
     CHECK(baz2->get_unique_path() == "[foo2]/bar");
     CHECK(log1->get_unique_path() == "[machine1]/syslog.log");
     CHECK(log2->get_unique_path() == "[machine2]/syslog.log");
+}
+
+TEST_CASE("attr_line to json")
+{
+    attr_line_t al;
+
+    al.append("Hello, ").append(lnav::roles::symbol("World")).append("!");
+
+    auto json = lnav::to_json(al);
+    auto al2 = lnav::from_json<attr_line_t>(json);
+    auto json2 = lnav::to_json(al2);
+
+    CHECK(json == json2);
+}
+
+TEST_CASE("user_message to json")
+{
+    auto um
+        = lnav::console::user_message::error("testing")
+              .with_reason("because")
+              .with_snippet(lnav::console::snippet::from("hello.c", "printf(")
+                                .with_line(1))
+              .with_help("close it");
+
+    auto json = lnav::to_json(um);
+    auto um2 = lnav::from_json<lnav::console::user_message>(json);
+    auto json2 = lnav::to_json(um2);
+
+    CHECK(json == json2);
 }

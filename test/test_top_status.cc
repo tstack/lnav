@@ -35,8 +35,6 @@
 #include "lnav_config.hh"
 #include "top_status_source.hh"
 
-using namespace std;
-
 static time_t current_time = 1;
 
 int
@@ -57,8 +55,8 @@ main(int argc, char* argv[])
 
     setenv("HOME", "/", 1);
 
-    vector<string> errors;
-    vector<ghc::filesystem::path> paths;
+    std::vector<lnav::console::user_message> errors;
+    std::vector<ghc::filesystem::path> paths;
 
     load_config(paths, errors);
 

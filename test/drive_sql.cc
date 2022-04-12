@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/injector.hh"
 #include "regexp_vtab.hh"
 #include "sqlite-extension-func.hh"

@@ -114,7 +114,7 @@ relative_time::from_str(const char* str, size_t len)
     parse_error pe_out;
     std::unordered_set<int> seen_tokens;
 
-    pe_out.pe_column = -1;
+    pe_out.pe_column = 0;
     pe_out.pe_msg.clear();
 
     while (true) {

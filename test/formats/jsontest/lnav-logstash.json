@@ -1,14 +1,14 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "logstash_dam": {
-        "title" : "Logstash Java JSON",
-        "url" : "https://github.com/logstash/logstash-logback-encoder",
-        "description" : "Log format for DAM Logstash JSON",
-        "json" : true,
-        "hide-extra" : false,
-        "file-pattern" : "\\.clog.*",
+        "title": "Logstash Java JSON",
+        "url": "https://github.com/logstash/logstash-logback-encoder",
+        "description": "Log format for DAM Logstash JSON",
+        "json": true,
+        "hide-extra": false,
+        "file-pattern": "\\.clog.*",
         "multiline": false,
-        "line-format" : 
-        [
+        "line-format": [
             { "field" : "@timestamp" },
             " ",
             { "field" : "ipaddress" },

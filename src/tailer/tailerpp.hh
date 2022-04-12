@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "auto_mem.hh"
 #include "base/result.h"
 #include "fmt/format.h"
 #include "mapbox/variant.hpp"

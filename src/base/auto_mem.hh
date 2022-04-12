@@ -40,7 +40,7 @@
 
 #include "base/result.h"
 
-typedef void (*free_func_t)(void*);
+using free_func_t = void (*)(void*);
 
 /**
  * Resource management class for memory allocated by a custom allocator.

@@ -43,6 +43,7 @@
 #include <sys/time.h>
 
 #include "archive_manager.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/future_util.hh"
 #include "base/isc.hh"
 #include "bottom_status_source.hh"
@@ -256,6 +257,10 @@ struct lnav_data_t {
     textview_curses ld_match_view;
     plain_text_source ld_preview_source;
     textview_curses ld_preview_view;
+    plain_text_source ld_user_message_source;
+    textview_curses ld_user_message_view;
+    std::chrono::time_point<std::chrono::steady_clock>
+        ld_user_message_expiration;
 
     view_stack<textview_curses> ld_view_stack;
     textview_curses* ld_last_view;

@@ -68,7 +68,7 @@ user: mailto:steve@example.com
 [2013-09-06T22:01:49.124] STATS 1 beat per secondbork bork bork
 [2013-09-06T22:01:49.124] WARNING not looking goodbork bork bork
 [2013-09-06T22:01:49.124] ERROR looking badbork bork bork
-[2013-09-06T22:01:49.124] CRITICAL sooo badbork bork bor
+[2013-09-06T22:01:49.124] CRITICAL sooo badbork bork bork
 EOF
 
 

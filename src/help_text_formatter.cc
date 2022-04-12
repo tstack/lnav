@@ -32,12 +32,14 @@
 
 #include "help_text_formatter.hh"
 
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "fmt/printf.h"
 #include "readline_highlighters.hh"
+
+using namespace lnav::roles::literals;
 
 std::multimap<std::string, help_text*> help_text::TAGGED;
 
@@ -83,7 +85,6 @@ format_help_text_for_term(const help_text& ht,
 {
     static const size_t body_indent = 2;
 
-    view_colors& vc = view_colors::singleton();
     text_wrap_settings tws;
     size_t start_index = out.get_string().length();
 
@@ -91,29 +92,27 @@ format_help_text_for_term(const help_text& ht,
 
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND: {
-            out.append("Synopsis", view_curses::VC_STYLE.value(A_UNDERLINE))
+            out.append("Synopsis"_h2)
                 .append("\n")
                 .append(body_indent, ' ')
                 .append(":")
-                .append(ht.ht_name, view_curses::VC_STYLE.value(A_BOLD));
+                .append(lnav::roles::symbol(ht.ht_name));
             for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
                 }
-                out.append(param.ht_name,
-                           view_curses::VC_STYLE.value(A_UNDERLINE));
+                out.append(lnav::roles::variable(param.ht_name));
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("]");
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
-                    out.append("1", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append("1"_variable);
                     out.append(" [");
-                    out.append("...", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append("..."_variable);
                     out.append(" ");
-                    out.append(param.ht_name,
-                               view_curses::VC_STYLE.value(A_UNDERLINE));
-                    out.append("N", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append(lnav::roles::variable(param.ht_name));
+                    out.append("N"_variable);
                     out.append("]");
                 }
             }
@@ -130,13 +129,12 @@ format_help_text_for_term(const help_text& ht,
             bool needs_comma = false;
 
             if (!synopsis_only) {
-                out.append("Synopsis", view_curses::VC_STYLE.value(A_UNDERLINE))
-                    .append("\n");
+                out.append("Synopsis"_h2).append("\n");
             }
 
             line_start = out.length();
             out.append(body_indent, ' ')
-                .append(ht.ht_name, view_curses::VC_STYLE.value(A_BOLD))
+                .append(lnav::roles::symbol(ht.ht_name))
                 .append("(");
             for (const auto& param : ht.ht_parameters) {
                 if (!param.ht_flag_name && needs_comma) {
@@ -153,15 +151,13 @@ format_help_text_for_term(const help_text& ht,
                 }
                 if (param.ht_flag_name) {
                     out.append(" ")
-                        .append(param.ht_flag_name,
-                                view_curses::VC_STYLE.value(A_BOLD))
+                        .append(lnav::roles::symbol(param.ht_flag_name))
                         .append(" ");
                 }
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
                 }
-                out.append(param.ht_name,
-                           view_curses::VC_STYLE.value(A_UNDERLINE));
+                out.append(lnav::roles::variable(param.ht_name));
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("]");
                 }
@@ -183,29 +179,27 @@ format_help_text_for_term(const help_text& ht,
             break;
         }
         case help_context_t::HC_SQL_COMMAND: {
-            out.append("Synopsis", view_curses::VC_STYLE.value(A_UNDERLINE))
+            out.append("Synopsis"_h2)
                 .append("\n")
                 .append(body_indent, ' ')
                 .append(";")
-                .append(ht.ht_name, view_curses::VC_STYLE.value(A_BOLD));
+                .append(lnav::roles::symbol(ht.ht_name));
             for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
                 }
-                out.append(param.ht_name,
-                           view_curses::VC_STYLE.value(A_UNDERLINE));
+                out.append(lnav::roles::variable(param.ht_name));
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("]");
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
-                    out.append("1", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append("1"_variable);
                     out.append(" [");
-                    out.append("...", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append("..."_variable);
                     out.append(" ");
-                    out.append(param.ht_name,
-                               view_curses::VC_STYLE.value(A_UNDERLINE));
-                    out.append("N", view_curses::VC_STYLE.value(A_UNDERLINE));
+                    out.append(lnav::roles::variable(param.ht_name));
+                    out.append("N"_variable);
                     out.append("]");
                 }
             }
@@ -222,12 +216,14 @@ format_help_text_for_term(const help_text& ht,
             bool is_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
 
             if (!synopsis_only) {
-                out.append("Synopsis", view_curses::VC_STYLE.value(A_UNDERLINE))
-                    .append("\n");
+                out.append("Synopsis"_h2).append("\n");
             }
-            out.append(body_indent, ' ')
-                .append(ht.ht_name,
-                        view_curses::VC_STYLE.value(is_infix ? 0 : A_BOLD));
+            out.append(body_indent, ' ');
+            if (is_infix) {
+                out.append(ht.ht_name);
+            } else {
+                out.append(lnav::roles::keyword(ht.ht_name));
+            }
             for (const auto& param : ht.ht_parameters) {
                 if (break_all
                     || (int) (out.get_string().length() - start_index
@@ -249,33 +245,29 @@ format_help_text_for_term(const help_text& ht,
                 }
                 if (param.ht_flag_name) {
                     out.ensure_space().append(
-                        param.ht_flag_name,
-                        view_curses::VC_STYLE.value(A_BOLD));
+                        lnav::roles::keyword(param.ht_flag_name));
                 }
                 if (param.ht_group_start) {
                     out.ensure_space().append(
-                        param.ht_group_start,
-                        view_curses::VC_STYLE.value(A_BOLD));
+                        lnav::roles::keyword(param.ht_group_start));
                 }
                 if (param.ht_name[0]) {
                     out.ensure_space().append(
-                        param.ht_name,
-                        view_curses::VC_STYLE.value(A_UNDERLINE));
+                        lnav::roles::variable(param.ht_name));
                     if (!param.ht_parameters.empty()) {
                         if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                             || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE)
                         {
-                            out.append(
-                                "1", view_curses::VC_STYLE.value(A_UNDERLINE));
+                            out.append("1"_variable);
                         }
                         if (param.ht_parameters[0].ht_flag_name) {
                             out.append(" ")
-                                .append(param.ht_parameters[0].ht_flag_name,
-                                        view_curses::VC_STYLE.value(A_BOLD))
+                                .append(lnav::roles::keyword(
+                                    param.ht_parameters[0].ht_flag_name))
                                 .append(" ");
                         }
-                        out.append(param.ht_parameters[0].ht_name,
-                                   view_curses::VC_STYLE.value(A_UNDERLINE));
+                        out.append(lnav::roles::variable(
+                            param.ht_parameters[0].ht_name));
                     }
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
@@ -284,38 +276,35 @@ format_help_text_for_term(const help_text& ht,
                     bool needs_comma = param.ht_parameters.empty()
                         || !param.ht_flag_name;
 
-                    out.append("1", view_curses::VC_STYLE.value(A_UNDERLINE))
+                    out.append("1"_variable)
                         .append(" [")
                         .append(needs_comma ? ", " : "")
                         .append("...")
                         .append(needs_comma ? "" : " ")
-                        .append((needs_comma || !param.ht_flag_name)
-                                    ? ""
-                                    : param.ht_flag_name,
-                                view_curses::VC_STYLE.value(A_BOLD))
+                        .append(lnav::roles::keyword(
+                            (needs_comma || !param.ht_flag_name)
+                                ? ""
+                                : param.ht_flag_name))
                         .append(" ")
-                        .append(param.ht_name,
-                                view_curses::VC_STYLE.value(A_UNDERLINE))
-                        .append("N", view_curses::VC_STYLE.value(A_UNDERLINE));
+                        .append(lnav::roles::variable(param.ht_name))
+                        .append("N"_variable);
                     if (!param.ht_parameters.empty()) {
                         if (param.ht_parameters[0].ht_flag_name) {
                             out.append(" ")
-                                .append(param.ht_parameters[0].ht_flag_name,
-                                        view_curses::VC_STYLE.value(A_BOLD))
+                                .append(lnav::roles::keyword(
+                                    param.ht_parameters[0].ht_flag_name))
                                 .append(" ");
                         }
 
-                        out.append(param.ht_parameters[0].ht_name,
-                                   view_curses::VC_STYLE.value(A_UNDERLINE))
-                            .append("N",
-                                    view_curses::VC_STYLE.value(A_UNDERLINE));
+                        out.append(lnav::roles::variable(
+                                       param.ht_parameters[0].ht_name))
+                            .append("N"_variable);
                     }
                     out.append("]");
                 }
                 if (param.ht_group_end) {
                     out.ensure_space().append(
-                        param.ht_group_end,
-                        view_curses::VC_STYLE.value(A_BOLD));
+                        lnav::roles::keyword(param.ht_group_end));
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                     || param.ht_nargs == help_nargs_t::HN_OPTIONAL)
@@ -345,8 +334,8 @@ format_help_text_for_term(const help_text& ht,
                 = std::max(strlen(param.ht_name), max_param_name_width);
         }
 
-        out.append(ht.ht_parameters.size() == 1 ? "Parameter" : "Parameters",
-                   view_curses::VC_STYLE.value(A_UNDERLINE))
+        out.append(ht.ht_parameters.size() == 1 ? "Parameter"_h2
+                                                : "Parameters"_h2)
             .append("\n");
 
         for (const auto& param : ht.ht_parameters) {
@@ -355,10 +344,7 @@ format_help_text_for_term(const help_text& ht,
             }
 
             out.append(body_indent, ' ')
-                .append(
-                    param.ht_name,
-                    view_curses::VC_STYLE.value(
-                        vc.attrs_for_role(view_colors::VCR_VARIABLE) | A_BOLD))
+                .append(lnav::roles::variable(param.ht_name))
                 .append(max_param_name_width - strlen(param.ht_name), ' ')
                 .append("   ")
                 .append(attr_line_t::from_ansi_str(param.ht_summary),
@@ -374,8 +360,7 @@ format_help_text_for_term(const help_text& ht,
                 = std::max(strlen(result.ht_name), max_result_name_width);
         }
 
-        out.append(ht.ht_results.size() == 1 ? "Result" : "Results",
-                   view_curses::VC_STYLE.value(A_UNDERLINE))
+        out.append(ht.ht_results.size() == 1 ? "Result"_h2 : "Results"_h2)
             .append("\n");
 
         for (const auto& result : ht.ht_results) {
@@ -384,10 +369,7 @@ format_help_text_for_term(const help_text& ht,
             }
 
             out.append(body_indent, ' ')
-                .append(
-                    result.ht_name,
-                    view_curses::VC_STYLE.value(
-                        vc.attrs_for_role(view_colors::VCR_VARIABLE) | A_BOLD))
+                .append(lnav::roles::variable(result.ht_name))
                 .append(max_result_name_width - strlen(result.ht_name), ' ')
                 .append("   ")
                 .append(attr_line_t::from_ansi_str(result.ht_summary),
@@ -416,9 +398,7 @@ format_help_text_for_term(const help_text& ht,
         }
         stable_sort(related_refs.begin(), related_refs.end());
 
-        out.append("See Also", view_curses::VC_STYLE.value(A_UNDERLINE))
-            .append("\n")
-            .append(body_indent, ' ');
+        out.append("See Also"_h2).append("\n").append(body_indent, ' ');
 
         bool first = true;
         size_t line_start = out.length();
@@ -430,7 +410,7 @@ format_help_text_for_term(const help_text& ht,
                 out.append("\n").append(body_indent, ' ');
                 line_start = out.length();
             }
-            out.append(ref, view_curses::VC_STYLE.value(A_BOLD));
+            out.append(lnav::roles::symbol(ref));
             first = false;
         }
     }
@@ -449,8 +429,7 @@ format_example_text_for_term(const help_text& ht,
     if (!ht.ht_example.empty()) {
         int count = 1;
 
-        out.append(ht.ht_example.size() == 1 ? "Example" : "Examples",
-                   view_curses::VC_STYLE.value(A_UNDERLINE))
+        out.append(ht.ht_example.size() == 1 ? "Example"_h2 : "Examples"_h2)
             .append("\n");
         for (const auto& ex : ht.ht_example) {
             attr_line_t ex_line(ex.he_cmd);

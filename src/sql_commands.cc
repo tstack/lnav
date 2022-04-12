@@ -27,7 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
@@ -40,7 +40,7 @@
 #include "sqlitepp.hh"
 #include "view_helpers.hh"
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 sql_cmd_dump(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
@@ -80,7 +80,7 @@ sql_cmd_dump(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 sql_cmd_read(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
@@ -143,7 +143,7 @@ sql_cmd_read(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 sql_cmd_schema(exec_context& ec,
                std::string cmdline,
                std::vector<std::string>& args)
@@ -159,7 +159,7 @@ sql_cmd_schema(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 sql_cmd_generic(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)

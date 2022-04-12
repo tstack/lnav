@@ -53,7 +53,7 @@ public:
             attrs = vc.attrs_for_ident(label);
             al = label;
             al.get_attrs().emplace_back(line_range(0, -1),
-                                        view_curses::VC_STYLE.value(attrs));
+                                        VC_STYLE.value(attrs));
             lr.lr_start = 0;
             lr.lr_end = 40;
             test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);

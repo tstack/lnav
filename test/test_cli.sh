@@ -1,6 +1,20 @@
 #! /bin/bash
 
 export TZ="UTC"
+
+run_test ${lnav_test} -n -c 'foo'
+
+check_error_output "invalid command not detected?" <<EOF
+✘ error: invalid value for “-c” option
+ --> arg
+ |  -c foo
+ |     ^ command type prefix is missing
+ = help: command arguments must start with one of the following symbols to denote the type of command:
+            : - an lnav command   (e.g. :goto 42)
+            ; - an SQL statement  (e.g. SELECT * FROM syslog_log)
+            | - an lnav script    (e.g. |rename-stdin foo)
+EOF
+
 run_test ${lnav_test} -d /tmp/lnav.err -t -n <<EOF
 Hello, World!
 Goodbye, World!

@@ -8,7 +8,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_empty.0
 
 check_error_output "read worked with a nonexistent file?" <<EOF
-command-option:1: error: unable to read script file: nonexistent-file -- No such file or directory
+✘ error: unable to read script file: nonexistent-file -- No such file or directory
+ --> command-option:1
+ | ;.read nonexistent-file
+ = help: Synopsis
+           ;.read path - Execute the SQLite statements in the given file
 EOF
 
 run_test ${lnav_test} -n \
@@ -150,7 +154,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "generate_series() works without params?" <<EOF
-command-option:1: error: the start parameter is required
+✘ error: the start parameter is required
+ --> command-option:1
+ | ;SELECT * FROM generate_series()
 EOF
 
 run_test ${lnav_test} -n \
@@ -158,7 +164,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "generate_series() works without stop param?" <<EOF
-command-option:1: error: the stop parameter is required
+✘ error: the stop parameter is required
+ --> command-option:1
+ | ;SELECT * FROM generate_series(1)
 EOF
 
 run_test ${lnav_test} -n \
@@ -166,7 +174,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "raise_error() does not work?" <<EOF
-command-option:1: error: oops!
+✘ error: oops!
+ --> command-option:1
+ | ;SELECT raise_error('oops!')
 EOF
 
 run_test ${lnav_test} -n \
@@ -232,18 +242,13 @@ ts
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";UPDATE lnav_file SET visible=0" \
-    ${test_dir}/logfile_access_log.0
-
-check_output "file is not hidden?" <<EOF
-EOF
-
-run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "able to change a real file's path?" <<EOF
-command-option:1: error: real file paths cannot be updated, only symbolic ones
+✘ error: real file paths cannot be updated, only symbolic ones
+ --> command-option:1
+ | ;UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')
 EOF
 
 run_test ${lnav_test} -n \
@@ -251,7 +256,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0 < /dev/null
 
 check_error_output "rename-stdin works without an argument?" <<EOF
-../test/.lnav/formats/default/rename-stdin.lnav:6: error: expecting the new name for stdin as the first argument
+✘ error: expecting the new name for stdin as the first argument
+ --> ../test/.lnav/formats/default/rename-stdin.lnav:6
+ | SELECT raise_error('expecting the new name for stdin as the first argument') WHERE \$1 IS NULL
 EOF
 
 run_test ${lnav_test} -n \
@@ -259,7 +266,10 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0 < /dev/null
 
 check_error_output "rename-stdin when there is no stdin file?" <<EOF
-../test/.lnav/formats/default/rename-stdin.lnav:7: error: no data was redirected to lnav's standard-input
+✘ error: no data was redirected to lnav's standard-input
+ --> ../test/.lnav/formats/default/rename-stdin.lnav:7
+ | SELECT raise_error('no data was redirected to lnav''s standard-input')
+ |         WHERE (SELECT count(1) FROM lnav_file WHERE filepath='stdin') = 0
 EOF
 
 run_test ${lnav_test} -n \
@@ -340,7 +350,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "able to update lnav_view_stack?" <<EOF
-command-option:1: error: The lnav_view_stack table cannot be updated
+✘ error: The lnav_view_stack table cannot be updated
+ --> command-option:1
+ | ;UPDATE lnav_view_stack SET name = 'foo'
 EOF
 
 run_test ${lnav_test} -n \
@@ -349,7 +361,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "able to delete a view in the middle of lnav_view_stack?" <<EOF
-command-option:2: error: Only the top view in the stack can be deleted
+✘ error: Only the top view in the stack can be deleted
+ --> command-option:2
+ | ;DELETE FROM lnav_view_stack WHERE name = 'log'
 EOF
 
 run_test ${lnav_test} -n \
@@ -357,7 +371,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an empty pattern?" <<EOF
-command-option:1: error: Expecting a non-empty pattern value
+✘ error: Expecting a non-empty pattern value
+ --> command-option:1
+ | ;INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', '')
 EOF
 
 run_test ${lnav_test} -n \
@@ -365,7 +381,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid pattern?" <<EOF
-command-option:1: error: Invalid regular expression for pattern: missing ) at offset 4
+✘ error: Invalid regular expression for pattern: missing ) at offset 4
+ --> command-option:1
+ | ;INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', 'abc(')
 EOF
 
 run_test ${lnav_test} -n \
@@ -373,7 +391,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid view name?" <<EOF
-command-option:1: error: Expecting an lnav view name for column number 0
+✘ error: Expecting an lnav view name for column number 0
+ --> command-option:1
+ | ;INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'regex', 'abc')
 EOF
 
 run_test ${lnav_test} -n \
@@ -381,7 +401,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with a null view name?" <<EOF
-command-option:1: error: Expecting an lnav view name for column number 0
+✘ error: Expecting an lnav view name for column number 0
+ --> command-option:1
+ | ;INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'regex', 'abc')
 EOF
 
 run_test ${lnav_test} -n \
@@ -389,7 +411,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid filter type?" <<EOF
-command-option:1: error: Expecting an value of 'in' or 'out' for column number 3
+✘ error: Expecting an value of 'in' or 'out' for column number 3
+ --> command-option:1
+ | ;INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'regex', 'abc')
 EOF
 
 run_test ${lnav_test} -n \
@@ -639,7 +663,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked without log_time?" <<EOF
-command-option:2: error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+ --> command-option:2
+ | :spectrogram sc_bytes
+ = help: Synopsis
+           :spectrogram field-name - Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -648,7 +676,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with bad column?" <<EOF
-command-option:2: error: unknown column -- sc_byes
+✘ error: unknown column -- sc_byes
+ --> command-option:2
+ | :spectrogram sc_byes
+ = help: Synopsis
+           :spectrogram field-name - Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -657,7 +689,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with non-numeric column?" <<EOF
-command-option:2: error: column is not numeric -- c_ip
+✘ error: column is not numeric -- c_ip
+ --> command-option:2
+ | :spectrogram c_ip
+ = help: Synopsis
+           :spectrogram field-name - Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -666,7 +702,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with unordered log_time?" <<EOF
-command-option:2: error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+ --> command-option:2
+ | :spectrogram sc_bytes
+ = help: Synopsis
+           :spectrogram field-name - Visualize the given message field using a spectrogram
 EOF
 
 cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times_test.0
@@ -896,7 +936,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
+✘ error: A non-empty name and value must be provided when inserting an environment variable
+ --> command-option:1
+ | ;INSERT INTO environ (name) VALUES (null)
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -908,7 +950,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
+✘ error: A non-empty name and value must be provided when inserting an environment variable
+ --> command-option:1
+ | ;INSERT INTO environ (name, value) VALUES (null, null)
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -920,7 +964,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
+✘ error: A non-empty name and value must be provided when inserting an environment variable
+ --> command-option:1
+ | ;INSERT INTO environ (name, value) VALUES ("", null)
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -932,7 +978,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-command-option:1: error: Environment variable names cannot contain an equals sign (=)
+✘ error: Environment variable names cannot contain an equals sign (=)
+ --> command-option:1
+ | ;INSERT INTO environ (name, value) VALUES ("foo=bar", "bar")
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -944,7 +992,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-command-option:1: error: An environment variable with the name 'SQL_ENV_VALUE' already exists
+✘ error: An environment variable with the name 'SQL_ENV_VALUE' already exists
+ --> command-option:1
+ | ;INSERT INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -1067,7 +1117,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating lnav_views.top_time with a bad time works?" <<EOF
-command-option:1: error: Invalid time: bad-time
+✘ error: Invalid time: bad-time
+ --> command-option:1
+ | ;UPDATE lnav_views SET top_time = 'bad-time' WHERE name = 'log'
 EOF
 
 
@@ -1134,7 +1186,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "errors are not reported" <<EOF
-command-option:1: error: no such table: nonexistent_table
+✘ error: no such table: nonexistent_table
+ --> command-option:1
+ | ;select * from nonexistent_table
 EOF
 
 check_output "errors are not reported" <<EOF
@@ -1146,7 +1200,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "errors are not reported" <<EOF
-command-option:1: error: attempt to write a readonly database
+✘ error: attempt to write a readonly database
+ --> command-option:1
+ | ;delete from access_log
 EOF
 
 check_output "errors are not reported" <<EOF
@@ -1316,6 +1372,7 @@ EOF
 
 # Create a dummy database for the next couple of tests to consume.
 touch empty
+rm simple-db.db
 run_test ${lnav_test} -n \
     -c ";ATTACH DATABASE 'simple-db.db' as 'db'" \
     -c ";CREATE TABLE IF NOT EXISTS db.person ( id integer PRIMARY KEY, first_name text, last_name, age integer )" \
@@ -1360,7 +1417,9 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed" <<EOF
-command-option:1: error: not authorized
+✘ error: not authorized
+ --> command-option:1
+ | ;attach database 'simple-db.db' as 'db'
 EOF
 
 run_test ${lnav_test} -n \
@@ -1368,7 +1427,9 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (':' adorned)" <<EOF
-command-option:1: error: not authorized
+✘ error: not authorized
+ --> command-option:1
+ | ;attach database ':memdb:' as 'db'
 EOF
 
 run_test ${lnav_test} -n \
@@ -1376,7 +1437,9 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (filepath)" <<EOF
-command-option:1: error: not authorized
+✘ error: not authorized
+ --> command-option:1
+ | ;attach database '/tmp/memdb' as 'db'
 EOF
 
 run_test ${lnav_test} -n \
@@ -1384,7 +1447,9 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (URI)" <<EOF
-command-option:1: error: not authorized
+✘ error: not authorized
+ --> command-option:1
+ | ;attach database 'file:memdb?cache=shared' as 'db'
 EOF
 
 unset LNAVSECURE
@@ -1481,7 +1546,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to delete unknown table?" <<EOF
-command-option:1: error: unknown search table -- search_test1
+✘ error: unknown search table -- search_test1
+ --> command-option:1
+ | :delete-search-table search_test1
+ = help: Synopsis
+           :delete-search-table table-name - Create an SQL table based on a regex search
 EOF
 
 run_test ${lnav_test} -n \
@@ -1490,7 +1559,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to delete logline table?" <<EOF
-command-option:2: error: unknown search table -- search_test1
+✘ error: unknown search table -- search_test1
+ --> command-option:2
+ | :delete-search-table search_test1
+ = help: Synopsis
+           :delete-search-table table-name - Create an SQL table based on a regex search
 EOF
 
 run_test ${lnav_test} -n \
@@ -1498,7 +1571,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to create table with a bad regex?" <<EOF
-command-option:1: error: missing )
+✘ error: missing )
+ --> command-option:1
+ | :create-search-table search_test1 bad(
+ = help: Synopsis
+           :create-search-table table-name [pattern] - Create an SQL table based on a regex search
 EOF
 
 NULL_GRAPH_SELECT_1=$(cat <<EOF

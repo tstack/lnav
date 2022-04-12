@@ -112,11 +112,11 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
         if (row % 2 == 0) {
-            sa.emplace_back(lr2, view_curses::VC_STYLE.value(A_BOLD));
+            sa.emplace_back(lr2, VC_STYLE.value(A_BOLD));
         }
         lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
-        sa.emplace_back(lr, view_curses::VC_GRAPHIC.value(ACS_VLINE));
+        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_VLINE));
         lr.lr_start += 1;
     }
 
@@ -344,10 +344,10 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                 string_attrs_t& sa = this->dos_lines.back().get_attrs();
                 struct line_range lr(1, 2);
 
-                sa.emplace_back(lr, view_curses::VC_GRAPHIC.value(ACS_LTEE));
+                sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
                 lr.lr_start = 3 + jpw_value.wt_ptr.size() + 3;
                 lr.lr_end = -1;
-                sa.emplace_back(lr, view_curses::VC_STYLE.value(A_BOLD));
+                sa.emplace_back(lr, VC_STYLE.value(A_BOLD));
 
                 double num_value = 0.0;
 
@@ -390,10 +390,10 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
         string_attrs_t& sa = this->dos_lines.back().get_attrs();
         struct line_range lr(1, 2);
 
-        sa.emplace_back(lr, view_curses::VC_GRAPHIC.value(ACS_LLCORNER));
+        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LLCORNER));
         lr.lr_start = 2;
         lr.lr_end = -1;
-        sa.emplace_back(lr, view_curses::VC_GRAPHIC.value(ACS_HLINE));
+        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_HLINE));
 
         retval += 1;
     }
@@ -443,12 +443,12 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             if (!this->dos_labels->dls_headers[lpc].hm_graphable) {
                 attrs = A_UNDERLINE;
             }
-            sa.emplace_back(header_range, view_curses::VC_STYLE.value(attrs));
+            sa.emplace_back(header_range, VC_STYLE.value(attrs));
         }
 
         struct line_range lr(0);
 
-        sa.emplace_back(lr, view_curses::VC_STYLE.value(A_BOLD | A_UNDERLINE));
+        sa.emplace_back(lr, VC_STYLE.value(A_BOLD | A_UNDERLINE));
         return true;
     } else if (this->dos_active && y >= 2
                && ((size_t) y) < (this->dos_lines.size() + 2))

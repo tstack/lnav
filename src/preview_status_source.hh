@@ -50,12 +50,12 @@ public:
         static const char TOGGLE_MSG[] = "Press CTRL+P to show/hide";
 
         this->tss_fields[TSF_TITLE].set_width(14);
-        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
+        this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
         this->tss_fields[TSF_TITLE].set_value(" Preview Data ");
         this->tss_fields[TSF_STITCH_TITLE].set_width(2);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+            role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_DESCRIPTION].set_share(1);
         this->tss_fields[TSF_TOGGLE].set_width(strlen(TOGGLE_MSG) + 1);
         this->tss_fields[TSF_TOGGLE].set_value(TOGGLE_MSG);

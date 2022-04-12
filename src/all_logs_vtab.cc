@@ -30,7 +30,7 @@
 #include "all_logs_vtab.hh"
 
 #include "config.h"
-#include "string_attr_type.hh"
+#include "base/attr_line.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 

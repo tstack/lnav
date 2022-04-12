@@ -19,7 +19,10 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 noinst_LIBRARIES = libbase.a
 
 noinst_HEADERS = \
+    ansi_scrubber.hh \
+    attr_line.hh \
     auto_fd.hh \
+    auto_mem.hh \
     auto_pid.hh \
     date_time_scanner.hh \
     enum_util.hh \
@@ -36,6 +39,7 @@ noinst_HEADERS = \
     is_utf8.hh \
     isc.hh \
     lnav_log.hh \
+    lnav.console.hh \
     lnav.gzip.hh \
     lrucache.hpp \
     math_util.hh \
@@ -43,11 +47,14 @@ noinst_HEADERS = \
     opt_util.hh \
     paths.hh \
     result.h \
+    string_attr_type.hh \
     string_util.hh \
     strnatcmp.h \
     time_util.hh
 
 libbase_a_SOURCES = \
+    ansi_scrubber.cc \
+    attr_line.cc \
     auto_pid.cc \
     date_time_scanner.cc \
     fs_util.cc \
@@ -57,10 +64,12 @@ libbase_a_SOURCES = \
 	intern_string.cc \
     is_utf8.cc \
     isc.cc \
+    lnav.console.cc \
     lnav.gzip.cc \
     lnav_log.cc \
     network.tcp.cc \
     paths.cc \
+    string_attr_type.cc \
     string_util.cc \
     strnatcmp.c \
     time_util.cc

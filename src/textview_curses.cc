@@ -32,7 +32,7 @@
 
 #include "textview_curses.hh"
 
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_parser.hh"
@@ -490,7 +490,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     }
 
 #if 0
-    typedef std::map<std::string, view_colors::role_t> key_map_t;
+    typedef std::map<std::string, role_t> key_map_t;
     static key_map_t key_roles;
 
     data_scanner ds(str);
@@ -546,7 +546,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        view_curses::VC_STYLE.value(A_REVERSE));
+                        VC_STYLE.value(A_REVERSE));
     }
 }
 
@@ -590,7 +590,7 @@ textview_curses::execute_search(const std::string& regex_orig)
         if (code != nullptr) {
             highlighter hl(code);
 
-            hl.with_role(view_colors::VCR_SEARCH);
+            hl.with_role(role_t::VCR_SEARCH);
 
             highlight_map_t& hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;

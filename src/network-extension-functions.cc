@@ -35,7 +35,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "config.h"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"

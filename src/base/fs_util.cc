@@ -108,5 +108,19 @@ build_path(const std::vector<ghc::filesystem::path>& paths)
     return retval;
 }
 
+Result<struct stat, std::string>
+stat_file(const ghc::filesystem::path& path)
+{
+    struct stat retval;
+
+    if (statp(path, &retval) == 0) {
+        return Ok(retval);
+    }
+
+    return Err(fmt::format(FMT_STRING("failed to find file: {} -- {}"),
+                           path.string(),
+                           strerror(errno)));
+}
+
 }  // namespace filesystem
 }  // namespace lnav

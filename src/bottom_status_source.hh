@@ -85,9 +85,9 @@ public:
     void update_loading(file_off_t off, file_size_t total);
 
 private:
-    status_field bss_prompt{1024, view_colors::VCR_STATUS};
-    status_field bss_error{1024, view_colors::VCR_ALERT_STATUS};
-    status_field bss_line_error{1024, view_colors::VCR_ALERT_STATUS};
+    status_field bss_prompt{1024, role_t::VCR_STATUS};
+    status_field bss_error{1024, role_t::VCR_ALERT_STATUS};
+    status_field bss_line_error{1024, role_t::VCR_ALERT_STATUS};
     status_field bss_fields[BSF__MAX];
     int bss_hit_spinner{0};
     int bss_load_percent{0};

@@ -58,6 +58,24 @@
                     "disabled-focused": {
                         "color": "Black",
                         "background-color": "#888"
+                    },
+                    "h1": {
+                        "underline": true
+                    },
+                    "h2": {
+                        "underline": true
+                    },
+                    "h3": {
+                        "underline": true
+                    },
+                    "h4": {
+                        "underline": true
+                    },
+                    "h5": {
+                        "underline": true
+                    },
+                    "h6": {
+                        "underline": true
                     }
                 },
                 "syntax-styles": {

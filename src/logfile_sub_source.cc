@@ -34,7 +34,7 @@
 
 #include <sqlite3.h>
 
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
@@ -371,7 +371,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     lr.lr_start = time_offset_end;
     lr.lr_end = -1;
 
-    value_out.emplace_back(lr, view_curses::VC_STYLE.value(attrs));
+    value_out.emplace_back(lr, VC_STYLE.value(attrs));
 
     if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
         for (auto& token_attr : this->lss_token_attrs) {
@@ -381,7 +381,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
             value_out.emplace_back(
                 token_attr.sa_range,
-                view_curses::VC_ROLE.value(view_colors::VCR_INVALID_MSG));
+                VC_ROLE.value(role_t::VCR_INVALID_MSG));
         }
     }
 
@@ -411,7 +411,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
         value_out.emplace_back(
             ident_range,
-            view_curses::VC_ROLE.value(view_colors::VCR_IDENTIFIER));
+            VC_ROLE.value(role_t::VCR_IDENTIFIER));
     }
 
     if (this->lss_token_shift_size) {
@@ -441,7 +441,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         } else if (is_last_for_file) {
             graph = ACS_LLCORNER;
         }
-        value_out.emplace_back(lr, view_curses::VC_GRAPHIC.value(graph));
+        value_out.emplace_back(lr, VC_GRAPHIC.value(graph));
 
         if (!(this->lss_token_flags & RF_FULL)) {
             bookmark_vector<vis_line_t>& bv_search
@@ -453,13 +453,13 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 lr.lr_start = 0;
                 lr.lr_end = 1;
                 value_out.emplace_back(lr,
-                                       view_curses::VC_STYLE.value(A_REVERSE));
+                                       VC_STYLE.value(A_REVERSE));
             }
         }
     }
 
     value_out.emplace_back(lr,
-                           view_curses::VC_STYLE.value(vc.attrs_for_ident(
+                           VC_STYLE.value(vc.attrs_for_ident(
                                this->lss_token_file->get_filename())));
 
     if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
@@ -472,7 +472,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         lr.lr_start = 0;
         lr.lr_end = file_offset_end + 1;
         value_out.emplace_back(lr,
-                               view_curses::VC_STYLE.value(vc.attrs_for_ident(
+                               VC_STYLE.value(vc.attrs_for_ident(
                                    this->lss_token_file->get_filename())));
     }
 
@@ -484,25 +484,25 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         shift_string_attrs(value_out, 0, time_offset_end);
 
         value_out.emplace_back(
-            lr, view_curses::VC_ROLE.value(view_colors::VCR_OFFSET_TIME));
+            lr, VC_ROLE.value(role_t::VCR_OFFSET_TIME));
         value_out.emplace_back(line_range(12, 13),
-                               view_curses::VC_GRAPHIC.value(ACS_VLINE));
+                               VC_GRAPHIC.value(ACS_VLINE));
 
-        view_colors::role_t bar_role = view_colors::VCR_NONE;
+        role_t bar_role = role_t::VCR_NONE;
 
         switch (this->get_line_accel_direction(vis_line_t(row))) {
             case log_accel::A_STEADY:
                 break;
             case log_accel::A_DECEL:
-                bar_role = view_colors::VCR_DIFF_DELETE;
+                bar_role = role_t::VCR_DIFF_DELETE;
                 break;
             case log_accel::A_ACCEL:
-                bar_role = view_colors::VCR_DIFF_ADD;
+                bar_role = role_t::VCR_DIFF_ADD;
                 break;
         }
-        if (bar_role != view_colors::VCR_NONE) {
+        if (bar_role != role_t::VCR_NONE) {
             value_out.emplace_back(line_range(12, 13),
-                                   view_curses::VC_ROLE.value(bar_role));
+                                   VC_ROLE.value(bar_role));
         }
     }
 
@@ -550,7 +550,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         if (time_range.lr_end != -1) {
             value_out.emplace_back(
                 time_range,
-                view_curses::VC_ROLE.value(view_colors::VCR_ADJUSTED_TIME));
+                VC_ROLE.value(role_t::VCR_ADJUSTED_TIME));
         }
     }
 
@@ -561,7 +561,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         if (time_range.lr_end != -1) {
             value_out.emplace_back(
                 time_range,
-                view_curses::VC_ROLE.value(view_colors::VCR_SKEWED_TIME));
+                VC_ROLE.value(role_t::VCR_SKEWED_TIME));
         }
     }
 
@@ -584,11 +584,11 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 } else {
                     color = COLOR_RED;
                     value_out.emplace_back(
-                        line_range{0, 1}, view_curses::VC_STYLE.value(A_BLINK));
+                        line_range{0, 1}, VC_STYLE.value(A_BLINK));
                 }
             }
             value_out.emplace_back(line_range{0, 1},
-                                   view_curses::VC_BACKGROUND.value(color));
+                                   VC_BACKGROUND.value(color));
         }
 
         auto sql_filter_opt = this->get_sql_filter();
@@ -605,7 +605,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 auto color = COLOR_YELLOW;
                 value_out.emplace_back(line_range{0, -1}, SA_ERROR.value(msg));
                 value_out.emplace_back(line_range{0, 1},
-                                       view_curses::VC_BACKGROUND.value(color));
+                                       VC_BACKGROUND.value(color));
             }
         }
     }

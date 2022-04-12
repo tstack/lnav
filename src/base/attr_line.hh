@@ -38,10 +38,10 @@
 
 #include <limits.h>
 
-#include "base/intern_string.hh"
-#include "base/lnav_log.hh"
-#include "base/string_util.hh"
+#include "fmt/format.h"
+#include "intern_string.hh"
 #include "string_attr_type.hh"
+#include "string_util.hh"
 
 /**
  * Encapsulates a range in a string.
@@ -137,18 +137,8 @@ struct line_range {
     }
 };
 
-/**
- * Container for attribute values for a substring.
- */
-typedef union {
-    const void* sav_ptr;
-    int64_t sav_int;
-} string_attr_value_t;
-
 struct string_attr {
-    string_attr(
-        const struct line_range& lr,
-        const std::pair<const string_attr_type_base*, string_attr_value>& value)
+    string_attr(const struct line_range& lr, const string_attr_pair& value)
         : sa_range(lr), sa_type(value.first), sa_value(value.second)
     {
     }
@@ -444,9 +434,7 @@ public:
     }
 
     template<typename S>
-    attr_line_t& append(
-        S str,
-        const std::pair<const string_attr_type_base*, string_attr_value>& value)
+    attr_line_t& append(S str, const string_attr_pair& value)
     {
         size_t start_len = this->al_string.length();
 
@@ -460,9 +448,74 @@ public:
     }
 
     template<typename S>
+    attr_line_t& append(const std::pair<S, string_attr_pair>& value)
+    {
+        size_t start_len = this->al_string.length();
+
+        this->al_string.append(std::move(value.first));
+
+        line_range lr{(int) start_len, (int) this->al_string.length()};
+
+        this->al_attrs.emplace_back(lr, value.second);
+
+        return *this;
+    }
+
+    template<typename S>
+    attr_line_t& append_quoted(const std::pair<S, string_attr_pair>& value)
+    {
+        this->al_string.append("\u201c");
+
+        size_t start_len = this->al_string.length();
+
+        this->al_string.append(std::move(value.first));
+
+        line_range lr{(int) start_len, (int) this->al_string.length()};
+
+        this->al_attrs.emplace_back(lr, value.second);
+
+        this->al_string.append("\u201d");
+
+        return *this;
+    }
+
+    attr_line_t& append_quoted(const intern_string_t str)
+    {
+        this->al_string.append("\u201c");
+        this->al_string.append(str.get(), str.size());
+        this->al_string.append("\u201d");
+
+        return *this;
+    }
+
+    template<typename S>
+    attr_line_t& append_quoted(S s)
+    {
+        this->al_string.append("\u201c");
+        this->al_string.append(std::move(s));
+        this->al_string.append("\u201d");
+
+        return *this;
+    }
+
+    attr_line_t& append(const intern_string_t str)
+    {
+        this->al_string.append(str.get(), str.size());
+        return *this;
+    }
+
+    template<typename S>
     attr_line_t& append(S str)
     {
         this->al_string.append(str);
+        return *this;
+    }
+
+    template<typename... Args>
+    attr_line_t& append(fmt::string_view format_str, const Args&... args)
+    {
+        this->template append(fmt::vformat(
+            format_str, fmt::make_args_checked<Args...>(format_str, args...)));
         return *this;
     }
 
@@ -507,14 +560,9 @@ public:
         return *this;
     }
 
-    attr_line_t& erase(size_t pos, size_t len = std::string::npos)
-    {
-        this->al_string.erase(pos, len);
+    attr_line_t& erase(size_t pos, size_t len = std::string::npos);
 
-        shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
-
-        return *this;
-    }
+    attr_line_t& rtrim();
 
     attr_line_t& erase_utf8_chars(size_t start)
     {
@@ -548,7 +596,8 @@ public:
         return this->al_string.substr(lr.lr_start, lr.sublen(this->al_string));
     }
 
-    string_fragment to_string_fragment(string_attrs_t::const_iterator iter)
+    string_fragment to_string_fragment(
+        string_attrs_t::const_iterator iter) const
     {
         return string_fragment(this->al_string.c_str(),
                                iter->sa_range.lr_start,
@@ -571,6 +620,11 @@ public:
         return this->length() == 0;
     }
 
+    bool blank() const
+    {
+        return is_blank(this->al_string);
+    }
+
     /** Clear the string and the attributes for the string. */
     attr_line_t& clear()
     {
@@ -584,11 +638,18 @@ public:
 
     void split_lines(std::vector<attr_line_t>& lines) const;
 
+    std::vector<attr_line_t> split_lines() const
+    {
+        std::vector<attr_line_t> retval;
+
+        this->split_lines(retval);
+        return retval;
+    }
+
     size_t nearest_text(size_t x) const;
 
     void apply_hide();
 
-private:
     const static size_t RESERVE_SIZE = 128;
 
     std::string al_string;

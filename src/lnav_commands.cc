@@ -40,9 +40,8 @@
 #include <glob.h>
 #include <sys/stat.h>
 #include <termios.h>
-#include <yajl/api/yajl_tree.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
@@ -181,7 +180,7 @@ refresh_pt_search()
     return retval;
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_adjust_log_time(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -251,7 +250,7 @@ com_adjust_log_time(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_unix_time(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -313,7 +312,7 @@ com_unix_time(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_current_time(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -337,7 +336,7 @@ com_current_time(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -445,7 +444,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_relative_goto(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -484,7 +483,7 @@ com_relative_goto(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -501,7 +500,7 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_mark_expr(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -576,7 +575,7 @@ com_mark_expr_prompt(exec_context& ec, const std::string& cmdline)
                        trim(lnav_data.ld_log_source.get_sql_marker_text()));
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_clear_mark_expr(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -593,7 +592,7 @@ com_clear_mark_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_goto_mark(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -673,7 +672,7 @@ com_goto_mark(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_goto_location(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -855,7 +854,7 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     }
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_save_to(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -1276,7 +1275,7 @@ com_save_to(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_pipe_to(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -1439,7 +1438,7 @@ com_pipe_to(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_redirect_to(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -1503,7 +1502,7 @@ com_redirect_to(exec_context& ec,
     return Ok("info: redirecting output to file -- " + split_args[0]);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_highlight(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -1566,7 +1565,7 @@ com_highlight(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_clear_highlight(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -1602,7 +1601,7 @@ com_clear_highlight(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_help(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -1615,10 +1614,10 @@ com_help(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string> com_enable_filter(
+static Result<std::string, lnav::console::user_message> com_enable_filter(
     exec_context& ec, std::string cmdline, std::vector<std::string>& args);
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_filter(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
@@ -1715,7 +1714,7 @@ com_filter(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_delete_filter(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -1745,7 +1744,7 @@ com_delete_filter(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_enable_filter(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -1780,7 +1779,7 @@ com_enable_filter(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_disable_filter(exec_context& ec,
                    std::string cmdline,
                    std::vector<std::string>& args)
@@ -1815,7 +1814,7 @@ com_disable_filter(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_filter_expr(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -1899,7 +1898,7 @@ com_filter_expr_prompt(exec_context& ec, const std::string& cmdline)
                        trim(lnav_data.ld_log_source.get_sql_filter_text()));
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_clear_filter_expr(exec_context& ec,
                       std::string cmdline,
                       std::vector<std::string>& args)
@@ -1917,7 +1916,7 @@ com_clear_filter_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_enable_word_wrap(exec_context& ec,
                      std::string cmdline,
                      std::vector<std::string>& args)
@@ -1934,7 +1933,7 @@ com_enable_word_wrap(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_disable_word_wrap(exec_context& ec,
                       std::string cmdline,
                       std::vector<std::string>& args)
@@ -1953,7 +1952,7 @@ com_disable_word_wrap(exec_context& ec,
 
 static std::set<std::string> custom_logline_tables;
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_create_logline_table(exec_context& ec,
                          std::string cmdline,
                          std::vector<std::string>& args)
@@ -2008,7 +2007,7 @@ com_create_logline_table(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_delete_logline_table(exec_context& ec,
                          std::string cmdline,
                          std::vector<std::string>& args)
@@ -2048,7 +2047,7 @@ com_delete_logline_table(exec_context& ec,
 
 static std::set<std::string> custom_search_tables;
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_create_search_table(exec_context& ec,
                         std::string cmdline,
                         std::vector<std::string>& args)
@@ -2117,7 +2116,7 @@ com_create_search_table(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_delete_search_table(exec_context& ec,
                         std::string cmdline,
                         std::vector<std::string>& args)
@@ -2154,7 +2153,7 @@ com_delete_search_table(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_session(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -2218,7 +2217,7 @@ com_session(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -2424,7 +2423,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     if (gl->gl_pathc > 10) {
                         al.append(" ... ")
                             .append(std::to_string(gl->gl_pathc - 10),
-                                    view_curses::VC_STYLE.value(A_BOLD))
+                                    VC_STYLE.value(A_BOLD))
                             .append(" files not shown ...");
                     }
                     lnav_data.ld_preview_status_source.get_description()
@@ -2482,7 +2481,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -2546,7 +2545,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_file_visibility(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -2662,7 +2661,7 @@ com_file_visibility(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_hide_file(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -2678,7 +2677,7 @@ com_hide_file(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_show_file(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -2694,7 +2693,7 @@ com_show_file(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_show_only_this_file(exec_context& ec,
                         std::string cmdline,
                         std::vector<std::string>& args)
@@ -2709,7 +2708,7 @@ com_show_only_this_file(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_comment(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -2772,7 +2771,7 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
     return "";
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_clear_comment(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -2817,7 +2816,7 @@ com_clear_comment(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -2862,7 +2861,7 @@ com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -2914,7 +2913,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_delete_tags(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -2935,7 +2934,7 @@ com_delete_tags(exec_context& ec,
                 "The :delete-tag command only works in the log view");
         }
 
-        std::set<std::string>& known_tags = bookmark_metadata::KNOWN_TAGS;
+        auto& known_tags = bookmark_metadata::KNOWN_TAGS;
         std::vector<std::string> tags;
 
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
@@ -2989,7 +2988,7 @@ com_delete_tags(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_partition_name(exec_context& ec,
                    std::string cmdline,
                    std::vector<std::string>& args)
@@ -3023,7 +3022,7 @@ com_partition_name(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_clear_partition(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -3064,7 +3063,7 @@ com_clear_partition(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_pt_time(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -3136,7 +3135,7 @@ com_pt_time(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_summarize(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -3154,10 +3153,12 @@ com_summarize(exec_context& ec,
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<std::string> other_columns;
         std::vector<std::string> num_columns;
+        const auto& top_source = ec.ec_source.top();
         sql_progress_guard progress_guard(sql_progress,
                                           sql_progress_finished,
-                                          ec.ec_source.top().first,
-                                          ec.ec_source.top().second);
+                                          top_source.s_source,
+                                          top_source.s_line,
+                                          top_source.s_content);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int retcode;
         std::string query;
@@ -3334,7 +3335,7 @@ com_summarize(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_add_test(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
@@ -3378,7 +3379,7 @@ com_add_test(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_switch_to_view(exec_context& ec,
                    std::string cmdline,
                    std::vector<std::string>& args)
@@ -3411,7 +3412,7 @@ com_switch_to_view(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_toggle_filtering(exec_context& ec,
                      std::string cmdline,
                      std::vector<std::string>& args)
@@ -3429,7 +3430,7 @@ com_toggle_filtering(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_zoom_to(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -3497,7 +3498,7 @@ com_zoom_to(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_reset_session(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -3511,7 +3512,7 @@ com_reset_session(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_load_session(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -3525,7 +3526,7 @@ com_load_session(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_save_session(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -3538,7 +3539,7 @@ com_save_session(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_set_min_log_level(exec_context& ec,
                       std::string cmdline,
                       std::vector<std::string>& args)
@@ -3565,7 +3566,7 @@ com_set_min_log_level(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_toggle_field(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -3643,7 +3644,7 @@ com_toggle_field(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_hide_line(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -3744,7 +3745,7 @@ com_hide_line(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_show_lines(exec_context& ec,
                std::string cmdline,
                std::vector<std::string>& args)
@@ -3765,7 +3766,7 @@ com_show_lines(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_hide_unmarked(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -3791,7 +3792,7 @@ com_hide_unmarked(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_show_unmarked(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -3807,7 +3808,7 @@ com_show_unmarked(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_rebuild(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -3820,7 +3821,7 @@ com_rebuild(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_shexec(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
@@ -3833,7 +3834,7 @@ com_shexec(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_poll_now(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
@@ -3847,7 +3848,7 @@ com_poll_now(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_redraw(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
@@ -3861,7 +3862,7 @@ com_redraw(exec_context& ec,
     return Ok(std::string());
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval = "error: expecting a message";
@@ -3911,7 +3912,7 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_alt_msg(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
@@ -3939,7 +3940,7 @@ com_alt_msg(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
@@ -4003,7 +4004,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_config(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
@@ -4014,16 +4015,15 @@ com_config(exec_context& ec,
         args.emplace_back("config-option");
     } else if (args.size() > 1) {
         yajlpp_parse_context ypc("input", &lnav_config_handlers);
-        std::vector<std::string> errors;
+        std::vector<lnav::console::user_message> errors;
         std::string option = args[1];
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option)
             .with_obj(lnav_config)
-            .with_error_reporter(
-                [&errors](const auto& ypc, auto level, auto* msg) {
-                    errors.push_back(msg);
-                });
+            .with_error_reporter([&errors](const auto& ypc, auto msg) {
+                errors.push_back(msg);
+            });
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
@@ -4103,7 +4103,6 @@ com_config(exec_context& ec,
 
                     auto consumed
                         = strtonum(val, value.c_str(), value.length());
-                    log_debug("got val %d", (int) val);
                     if (consumed != value.length()) {
                         return ec.make_error("expecting an integer, found: {}",
                                              value);
@@ -4124,22 +4123,24 @@ com_config(exec_context& ec,
                 }
 
                 if (!errors.empty()) {
-                    return ec.make_error(errors[0]);
+                    return Err(errors[0]);
                 }
 
                 if (changed) {
                     intern_string_t path = intern_string::lookup(option);
 
-                    lnav_config_locations[path]
-                        = {intern_string::lookup(ec.ec_source.top().first),
-                           ec.ec_source.top().second};
+                    lnav_config_locations[path] = {
+                        intern_string::lookup(ec.ec_source.top().s_source),
+                        ec.ec_source.top().s_line,
+                    };
                     reload_config(errors);
 
                     if (!errors.empty()) {
                         lnav_config = rollback_lnav_config;
                         reload_config(errors);
-                        return Err("error: " + errors[0]);
-                    } else if (!ec.ec_dry_run) {
+                        return Err(errors[0]);
+                    }
+                    if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
                         save_config();
@@ -4157,7 +4158,7 @@ com_config(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_reset_config(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -4497,7 +4498,7 @@ public:
     std::string dsvs_error_msg;
 };
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_spectrogram(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -4560,7 +4561,7 @@ com_spectrogram(exec_context& ec,
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -4802,7 +4803,7 @@ user_prompt(std::vector<std::string>& args)
     lnav_data.ld_status[LNS_BOTTOM].do_update();
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 com_prompt(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)

@@ -54,8 +54,8 @@
 #include <string>
 #include <utility>
 
-#include "ansi_scrubber.hh"
-#include "auto_mem.hh"
+#include "base/ansi_scrubber.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -1381,7 +1381,7 @@ readline_curses::do_update()
         view_colors& vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
-        wattron(this->vc_window, vc.attrs_for_role(view_colors::VCR_TEXT));
+        wattron(this->vc_window, vc.attrs_for_role(role_t::VCR_TEXT));
         whline(this->vc_window, ' ', this->vc_width);
 
         if (time(nullptr) > this->rc_value_expiration) {

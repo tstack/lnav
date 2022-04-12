@@ -47,10 +47,12 @@
 
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "json_ptr.hh"
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
+#include "relative_time.hh"
 #include "yajl/api/yajl_gen.h"
 #include "yajl/api/yajl_parse.h"
 
@@ -69,6 +71,20 @@ yajl_gen_string(yajl_gen hand, const std::string& str)
     return yajl_gen_string(
         hand, (const unsigned char*) str.c_str(), str.length());
 }
+
+template<typename T>
+struct positioned_property {
+    intern_string_t pp_path;
+    std::string pp_src;
+    int32_t pp_line_number{0};
+    T pp_value;
+
+    lnav::console::snippet to_snippet() const
+    {
+        return lnav::console::snippet::from(this->pp_src, "")
+            .with_line(this->pp_line_number);
+    }
+};
 
 class yajlpp_gen_context;
 class yajlpp_parse_context;
@@ -209,15 +225,29 @@ struct json_path_handler_base {
     std::function<int(
         yajlpp_parse_context*, const unsigned char* str, size_t len)>
         jph_str_cb;
+
+    void report_pattern_error(yajlpp_parse_context* ypc,
+                              const std::string& value_str) const;
+    void report_min_value_error(yajlpp_parse_context* ypc,
+                                long long value) const;
+    void report_duration_error(yajlpp_parse_context* ypc,
+                               const std::string& value_str,
+                               const relative_time::parse_error& pe) const;
+    void report_enum_error(yajlpp_parse_context* ypc,
+                           const std::string& value_str) const;
+    void report_regex_value_error(yajlpp_parse_context* ypc,
+                                  const std::string& value_str,
+                                  const pcrepp::compile_error& ce) const;
+
+    attr_line_t get_help_text(yajlpp_parse_context* ypc) const;
 };
 
 struct json_path_handler;
 
 class yajlpp_parse_context {
 public:
-    using error_reporter_t = std::function<void(const yajlpp_parse_context& ypc,
-                                                lnav_log_level_t level,
-                                                const char* msg)>;
+    using error_reporter_t = std::function<void(
+        const yajlpp_parse_context& ypc, const lnav::console::user_message&)>;
 
     yajlpp_parse_context(std::string source,
                          const struct json_path_container* handlers = nullptr);
@@ -297,20 +327,16 @@ public:
 
     yajl_status complete_parse();
 
-    void report_error(lnav_log_level_t level, const char* format, ...) const
+    bool parse_doc(const string_fragment& sf);
+
+    void report_error(const lnav::console::user_message& msg) const
     {
-        va_list args;
-
-        va_start(args, format);
         if (this->ypc_error_reporter) {
-            char buffer[1024];
-
-            vsnprintf(buffer, sizeof(buffer), format, args);
-
-            this->ypc_error_reporter(*this, level, buffer);
+            this->ypc_error_reporter(*this, msg);
         }
-        va_end(args);
     }
+
+    lnav::console::snippet get_snippet() const;
 
     template<typename T>
     std::vector<T>& get_lvalue(std::map<std::string, std::vector<T>>& value)
@@ -369,6 +395,7 @@ public:
     void* ypc_userdata{nullptr};
     yajl_handle ypc_handle{nullptr};
     const unsigned char* ypc_json_text{nullptr};
+    size_t ypc_json_text_len{0};
     yajl_callbacks ypc_callbacks;
     yajl_callbacks ypc_alt_callbacks;
     std::vector<char> ypc_path;

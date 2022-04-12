@@ -70,7 +70,7 @@ struct highlighter {
         return *this;
     }
 
-    highlighter& with_role(view_colors::role_t role)
+    highlighter& with_role(role_t role)
     {
         this->h_role = role;
 
@@ -123,7 +123,7 @@ struct highlighter {
     void annotate(attr_line_t& al, int start) const;
 
     std::string h_pattern;
-    view_colors::role_t h_role{view_colors::VCR_NONE};
+    role_t h_role{role_t::VCR_NONE};
     styling::color_unit h_fg{styling::color_unit::make_empty()};
     styling::color_unit h_bg{styling::color_unit::make_empty()};
     pcre* h_code;

@@ -154,11 +154,8 @@ dist_noinst_DATA = \
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
-	ansi_scrubber.hh \
 	archive_manager.hh \
 	archive_manager.cfg.hh \
-	attr_line.hh \
-	auto_mem.hh \
 	big_array.hh \
 	bin2c.hh \
 	bookmarks.hh \
@@ -256,7 +253,6 @@ noinst_HEADERS = \
 	sqlite-extension-func.hh \
 	styling.hh \
 	statusview_curses.hh \
-	string_attr_type.hh \
 	strong_int.hh \
 	sysclip.hh \
 	sysclip.cfg.hh \
@@ -306,9 +302,7 @@ THIRD_PARTY_SRCS = \
 libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \
 	all_logs_vtab.cc \
-	ansi_scrubber.cc \
 	archive_manager.cc \
-	attr_line.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
 	collation-functions.cc \
@@ -374,7 +368,6 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \
-	string_attr_type.cc \
 	styling.cc \
 	text_format.cc \
 	textfile_sub_source.cc \

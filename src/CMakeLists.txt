@@ -244,9 +244,7 @@ add_library(
         ${GEN_SRCS}
         config.h.in
         all_logs_vtab.cc
-        ansi_scrubber.cc
         archive_manager.cc
-        attr_line.cc
         bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
@@ -317,7 +315,6 @@ add_library(
         sql_util.cc
         state-extension-functions.cc
         styling.cc
-        string_attr_type.cc
         text_format.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
@@ -342,8 +339,6 @@ add_library(
         all_logs_vtab.hh
         archive_manager.hh
         archive_manager.cfg.hh
-        attr_line.hh
-        auto_mem.hh
         big_array.hh
         bottom_status_source.hh
         bound_tags.hh
@@ -369,6 +364,8 @@ add_library(
         hotkeys.hh
         input_dispatcher.hh
         k_merge_tree.h
+        lnav_config.hh
+        lnav_config_fwd.hh
         log_actions.hh
         log_data_helper.hh
         log_data_table.hh
@@ -410,7 +407,6 @@ add_library(
         sql_help.hh
         sql_util.hh
         strong_int.hh
-        string_attr_type.hh
         sysclip.hh
         sysclip.cfg.hh
         term_extra.hh

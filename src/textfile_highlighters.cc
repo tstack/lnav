@@ -94,7 +94,7 @@ setup_highlights(highlight_map_t& hm)
                                     ")"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_PYTHON)
-              .with_role(view_colors::VCR_KEYWORD);
+              .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "rust"}]
         = highlighter(xpcre_compile("(?:"
@@ -159,7 +159,7 @@ setup_highlights(highlight_map_t& hm)
                                     ")"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_RUST)
-              .with_role(view_colors::VCR_KEYWORD);
+              .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "clike"}]
         = highlighter(xpcre_compile("(?:"
@@ -245,12 +245,12 @@ setup_highlights(highlight_map_t& hm)
               .with_nestable(false)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
-              .with_role(view_colors::VCR_KEYWORD);
+              .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "sql.0.comment"}]
         = highlighter(xpcre_compile("(?:(?<=[\\s;])|^)--.*"))
               .with_text_format(text_format_t::TF_SQL)
-              .with_role(view_colors::VCR_COMMENT);
+              .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "sql.9.keyword"}]
         = highlighter(xpcre_compile("(?:"
                                     "\\bABORT\\b|"
@@ -387,42 +387,42 @@ setup_highlights(highlight_map_t& hm)
                                     PCRE_CASELESS))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_SQL)
-              .with_role(view_colors::VCR_KEYWORD);
+              .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "srcfile"}]
         = highlighter(xpcre_compile(
                           "[\\w\\-_]+\\."
                           "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
                           "\\d+"))
-              .with_role(view_colors::VCR_FILE);
+              .with_role(role_t::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "1.stringd"}]
         = highlighter(xpcre_compile(R"("(?:\\.|[^"])*")"))
-              .with_role(view_colors::VCR_STRING);
+              .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.strings"}]
         = highlighter(xpcre_compile(R"((?<![A-WY-Za-qstv-z])'(?:\\.|[^'])*')"))
-              .with_role(view_colors::VCR_STRING);
+              .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.stringb"}]
         = highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"))
-              .with_role(view_colors::VCR_STRING);
+              .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "diffp"}]
         = highlighter(xpcre_compile("^\\+.*"))
-              .with_role(view_colors::VCR_DIFF_ADD);
+              .with_role(role_t::VCR_DIFF_ADD);
     hm[{highlight_source_t::INTERNAL, "diffm"}]
         = highlighter(xpcre_compile("^(?:--- .*|-$|-[^-].*)"))
-              .with_role(view_colors::VCR_DIFF_DELETE);
+              .with_role(role_t::VCR_DIFF_DELETE);
     hm[{highlight_source_t::INTERNAL, "diffs"}]
         = highlighter(xpcre_compile("^\\@@ .*"))
-              .with_role(view_colors::VCR_DIFF_SECTION);
+              .with_role(role_t::VCR_DIFF_SECTION);
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
         = highlighter(
               xpcre_compile(
                   R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#.*|\s+#.*|dnl.*)"))
-              .with_role(view_colors::VCR_COMMENT);
+              .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]
         = highlighter(
               xpcre_compile("@(?:author|deprecated|exception|file|param|return|"
                             "see|since|throws|todo|version)"))
-              .with_role(view_colors::VCR_DOC_DIRECTIVE);
+              .with_role(role_t::VCR_DOC_DIRECTIVE);
     hm[{highlight_source_t::INTERNAL, "var"}]
         = highlighter(
               xpcre_compile("(?:"
@@ -431,27 +431,27 @@ setup_highlights(highlight_map_t& hm)
                             "(?<!\\$)\\$\\((\\w+)\\)|"
                             "(?<!\\$)\\$\\{(\\w+)\\}"
                             ")"))
-              .with_role(view_colors::VCR_VARIABLE);
+              .with_role(role_t::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "rust.sym"}]
         = highlighter(xpcre_compile("\\b[A-Z_][A-Z0-9_]+\\b"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_RUST)
-              .with_role(view_colors::VCR_SYMBOL);
+              .with_role(role_t::VCR_SYMBOL);
     hm[{highlight_source_t::INTERNAL, "rust.num"}]
         = highlighter(xpcre_compile(R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_RUST)
-              .with_role(view_colors::VCR_NUMBER);
+              .with_role(role_t::VCR_NUMBER);
     hm[{highlight_source_t::INTERNAL, "sym"}]
         = highlighter(xpcre_compile("\\b[A-Z_][A-Z0-9_]+\\b"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
-              .with_role(view_colors::VCR_SYMBOL);
+              .with_role(role_t::VCR_SYMBOL);
     hm[{highlight_source_t::INTERNAL, "num"}]
         = highlighter(xpcre_compile(R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
-              .with_role(view_colors::VCR_NUMBER);
+              .with_role(role_t::VCR_NUMBER);
 }

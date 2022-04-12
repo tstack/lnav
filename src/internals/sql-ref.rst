@@ -318,11 +318,12 @@ SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* OR
   Query the database and return zero or more rows of data.
 
   **Parameters**
+    * **result-column** --- The expression used to generate a result for this column.
     * **table** --- The table(s) to query for data
     * **cond** --- The conditions used to select the rows to return.
     * **grouping-expr** --- The expression to use when grouping rows.
     * **ordering-term** --- The values to use when ordering the result set.
-    * **limit-expr** --- The maximum number of rows to return
+    * **limit-expr** --- The maximum number of rows to return.
 
   **Examples**
     To select all of the columns from the table 'syslog_log':

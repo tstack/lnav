@@ -135,13 +135,13 @@ hist_source2::init()
 
     this->hs_chart
         .with_attrs_for_ident(HT_NORMAL,
-                              vc.attrs_for_role(view_colors::VCR_TEXT))
+                              vc.attrs_for_role(role_t::VCR_TEXT))
         .with_attrs_for_ident(HT_WARNING,
-                              vc.attrs_for_role(view_colors::VCR_WARNING))
+                              vc.attrs_for_role(role_t::VCR_WARNING))
         .with_attrs_for_ident(HT_ERROR,
-                              vc.attrs_for_role(view_colors::VCR_ERROR))
+                              vc.attrs_for_role(role_t::VCR_ERROR))
         .with_attrs_for_ident(HT_MARK,
-                              vc.attrs_for_role(view_colors::VCR_KEYWORD));
+                              vc.attrs_for_role(role_t::VCR_KEYWORD));
 }
 
 void

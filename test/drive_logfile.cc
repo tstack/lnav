@@ -79,7 +79,7 @@ main(int argc, char* argv[])
     }
 
     {
-        std::vector<std::string> errors;
+        std::vector<lnav::console::user_message> errors;
         vector<ghc::filesystem::path> paths;
 
         getenv_opt("test_dir") |

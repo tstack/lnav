@@ -45,8 +45,8 @@
 #    include <sys/wait.h>
 #    include <unistd.h>
 
-#    include "auto_mem.hh"
 #    include "base/auto_fd.hh"
+#    include "base/auto_mem.hh"
 #    include "curl_looper.hh"
 #    include "line_buffer.hh"
 #    include "yajlpp/yajlpp.hh"

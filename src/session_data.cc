@@ -913,7 +913,7 @@ static struct json_path_container view_handlers
 static struct json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
         .with_description("Indicates whether the file is visible or not")
-        .FOR_FIELD(file_state, fs_is_visible),
+        .for_field(&file_state::fs_is_visible),
 };
 
 static struct json_path_container file_states_handlers = {
@@ -928,9 +928,9 @@ static struct json_path_container file_states_handlers = {
 
 static struct json_path_container view_info_handlers = {
     yajlpp::property_handler("save-time")
-        .FOR_FIELD(session_data_t, sd_save_time),
+        .for_field(&session_data_t::sd_save_time),
     yajlpp::property_handler("time-offset")
-        .FOR_FIELD(session_data_t, sd_time_offset),
+        .for_field(&session_data_t::sd_time_offset),
     json_path_handler("files#", read_files),
     yajlpp::property_handler("file-states").with_children(file_states_handlers),
     yajlpp::property_handler("views").with_children(view_handlers),

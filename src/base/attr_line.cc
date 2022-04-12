@@ -34,7 +34,7 @@
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "config.h"
-#include "view_curses.hh"
+#include "lnav_log.hh"
 
 attr_line_t&
 attr_line_t::with_ansi_string(const char* str, ...)
@@ -257,19 +257,47 @@ attr_line_t::apply_hide()
             struct line_range& lr = sattr.sa_range;
 
             std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
-                if (attr.sa_type == &view_curses::VC_STYLE
-                    && lr.contains(attr.sa_range)) {
+                if (attr.sa_type == &VC_STYLE && lr.contains(attr.sa_range)) {
                     attr.sa_type = &SA_REMOVED;
                 }
             });
 
             this->al_string.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
             shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
-            sattr.sa_type = &view_curses::VC_ROLE;
-            sattr.sa_value = view_colors::VCR_HIDDEN;
+            sattr.sa_type = &VC_ROLE;
+            sattr.sa_value = role_t::VCR_HIDDEN;
             lr.lr_end = lr.lr_start + 3;
         }
     }
+}
+
+attr_line_t&
+attr_line_t::rtrim()
+{
+    auto index = this->al_string.length();
+
+    for (; index > 0; index--) {
+        if (!isspace(this->al_string[index - 1])) {
+            break;
+        }
+    }
+    if (index > 0 && index < this->al_string.length()) {
+        this->erase(index);
+    }
+    return *this;
+}
+
+attr_line_t&
+attr_line_t::erase(size_t pos, size_t len)
+{
+    if (len == std::string::npos) {
+        len = this->al_string.size() - pos;
+    }
+    this->al_string.erase(pos, len);
+
+    shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+
+    return *this;
 }
 
 line_range
@@ -290,13 +318,14 @@ line_range::intersection(const line_range& other) const
 line_range&
 line_range::shift(int32_t start, int32_t amount)
 {
-    if (this->lr_start >= start) {
+    if (start <= this->lr_start) {
         this->lr_start = std::max(0, this->lr_start + amount);
-    }
-    if (this->lr_end != -1 && start <= this->lr_end) {
-        this->lr_end += amount;
-        if (this->lr_end < this->lr_start) {
-            this->lr_end = this->lr_start;
+        if (this->lr_end != -1) {
+            this->lr_end = std::max(0, this->lr_end + amount);
+        }
+    } else if (this->lr_end != -1) {
+        if (start < this->lr_end) {
+            this->lr_end = std::max(this->lr_start, this->lr_end + amount);
         }
     }
 

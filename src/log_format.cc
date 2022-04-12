@@ -638,7 +638,7 @@ bool
 external_log_format::scan_for_partial(shared_buffer_ref& sbr,
                                       size_t& len_out) const
 {
-    if (this->elf_type != ELF_TYPE_TEXT) {
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         return false;
     }
 
@@ -660,13 +660,26 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
     return (int) len_out > pat->p_timestamp_end;
 }
 
+std::vector<lnav::console::snippet>
+external_log_format::get_snippets() const
+{
+    std::vector<lnav::console::snippet> retval;
+
+    for (const auto& src_pair : this->elf_format_sources) {
+        retval.emplace_back(lnav::console::snippet::from(src_pair.first, "")
+                                .with_line(src_pair.second));
+    }
+
+    return retval;
+}
+
 log_format::scan_result_t
 external_log_format::scan(logfile& lf,
                           std::vector<logline>& dst,
                           const line_info& li,
                           shared_buffer_ref& sbr)
 {
-    if (this->elf_type == ELF_TYPE_JSON) {
+    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         yajlpp_parse_context& ypc = *(this->jlf_parse_context);
         logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.get();
@@ -852,7 +865,7 @@ external_log_format::scan(logfile& lf,
                         = *mod_elf->elf_pattern_order[mod_pat_index];
 
                     if (mod_pat.p_pcre->match(mod_pc, mod_pi)) {
-                        auto mod_level_cap
+                        auto* mod_level_cap
                             = mod_pc[mod_pat.p_level_field_index];
 
                         level = mod_elf->convert_level(mod_pi, mod_level_cap);
@@ -991,7 +1004,7 @@ external_log_format::annotate(uint64_t line_number,
     struct line_range lr;
     pcre_context::capture_t *cap, *body_cap, *module_cap = nullptr;
 
-    if (this->elf_type != ELF_TYPE_TEXT) {
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         values = this->jlf_line_values;
         sa = this->jlf_line_attrs;
         return;
@@ -1152,7 +1165,9 @@ external_log_format::rewrite(exec_context& ec,
         }
 
         auto _sg = ec.enter_source(
-            this->elf_name.to_string() + ":" + vd_iter->first.to_string(), 1);
+            this->elf_name.to_string() + ":" + vd_iter->first.to_string(),
+            1,
+            vd.vd_rewriter);
         auto field_value
             = execute_any(ec, vd.vd_rewriter).orElse(err_to_ok).unwrap();
         struct line_range adj_origin
@@ -1297,7 +1312,7 @@ external_log_format::get_subline(const logline& ll,
                                  shared_buffer_ref& sbr,
                                  bool full_message)
 {
-    if (this->elf_type == ELF_TYPE_TEXT) {
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
         return;
     }
 
@@ -1382,9 +1397,10 @@ external_log_format::get_subline(const logline& ll,
                             jfe.jfe_default_value.size());
                         break;
                     case JLF_VARIABLE:
-                        lv_iter = find_if(this->jlf_line_values.begin(),
-                                          this->jlf_line_values.end(),
-                                          logline_value_cmp(&jfe.jfe_value));
+                        lv_iter = find_if(
+                            this->jlf_line_values.begin(),
+                            this->jlf_line_values.end(),
+                            logline_value_cmp(&jfe.jfe_value.pp_value));
                         if (lv_iter != this->jlf_line_values.end()) {
                             auto str = lv_iter->to_string();
                             size_t nl_pos = str.find('\n');
@@ -1458,7 +1474,7 @@ external_log_format::get_subline(const logline& ll,
                             used_values[distance(this->jlf_line_values.begin(),
                                                  lv_iter)]
                                 = true;
-                        } else if (jfe.jfe_value == ts_field) {
+                        } else if (jfe.jfe_value.pp_value == ts_field) {
                             struct line_range lr;
                             ssize_t ts_len;
                             char ts[64];
@@ -1490,7 +1506,10 @@ external_log_format::get_subline(const logline& ll,
                                     this->jlf_line_values.begin(), lv_iter)]
                                     = true;
                             }
-                        } else if (jfe.jfe_value == level_field) {
+                        } else if (jfe.jfe_value.pp_value == level_field
+                                   || jfe.jfe_value.pp_value
+                                       == this->elf_level_field)
+                        {
                             this->json_append(jfe, ll.get_level_name(), -1);
                         } else {
                             this->json_append(jfe,
@@ -1623,7 +1642,7 @@ external_log_format::get_subline(const logline& ll,
 }
 
 void
-external_log_format::build(std::vector<std::string>& errors)
+external_log_format::build(std::vector<lnav::console::user_message>& errors)
 {
     if (!this->lf_timestamp_field.empty()) {
         auto& vd = this->elf_value_defs[this->lf_timestamp_field];
@@ -1634,6 +1653,10 @@ external_log_format::build(std::vector<std::string>& errors)
         vd->vd_meta.lvm_name = this->lf_timestamp_field;
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
         vd->vd_internal = true;
+    }
+    if (startswith(this->elf_level_field.get(), "/")) {
+        this->elf_level_field
+            = intern_string::lookup(this->elf_level_field.get() + 1);
     }
     if (!this->elf_level_field.empty()
         && this->elf_value_defs.find(this->elf_level_field)
@@ -1662,35 +1685,20 @@ external_log_format::build(std::vector<std::string>& errors)
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(nullptr);
     }
-    try {
-        this->elf_filename_pcre
-            = std::make_shared<pcrepp>(this->elf_file_pattern);
-    } catch (const pcrepp::error& e) {
-        errors.push_back("error:" + this->elf_name.to_string()
-                         + ".file-pattern:" + e.what());
-    }
     for (auto iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter)
     {
         pattern& pat = *iter->second;
 
+        if (pat.p_pcre == nullptr) {
+            continue;
+        }
+
         if (pat.p_module_format) {
             this->elf_has_module_format = true;
         }
 
-        try {
-            pat.p_pcre = std::make_unique<pcrepp>(pat.p_string, PCRE_DOTALL);
-        } catch (const pcrepp::error& e) {
-            errors.push_back("error:" + this->elf_name.to_string() + ".regex["
-                             + iter->first + "]" + ":" + e.what());
-            errors.push_back("error:" + this->elf_name.to_string() + ".regex["
-                             + iter->first + "]" + ":" + pat.p_string);
-            errors.push_back("error:" + this->elf_name.to_string() + ".regex["
-                             + iter->first + "]" + ":"
-                             + std::string(e.e_offset, ' ') + "^");
-            continue;
-        }
         for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
              name_iter != pat.p_pcre->named_end();
              ++name_iter)
@@ -1772,12 +1780,18 @@ external_log_format::build(std::vector<std::string>& errors)
         this->elf_pattern_order.push_back(iter->second);
     }
 
-    if (this->elf_type != ELF_TYPE_TEXT) {
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         if (!this->elf_patterns.empty()) {
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ": structured logs cannot have regexes");
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .append_quoted(
+                            lnav::roles::symbol(this->elf_name.to_string()))
+                        .append(" is not a valid log format"))
+                    .with_reason("structured logs cannot have regexes")
+                    .with_snippets(this->get_snippets()));
         }
-        if (this->elf_type == ELF_TYPE_JSON) {
+        if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
             this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(
                 this->elf_name.to_string());
             this->jlf_yajl_handle.reset(
@@ -1791,18 +1805,13 @@ external_log_format::build(std::vector<std::string>& errors)
 
     } else {
         if (this->elf_patterns.empty()) {
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ": no regexes specified for format");
-        }
-    }
-
-    for (auto& elf_level_pattern : this->elf_level_patterns) {
-        try {
-            elf_level_pattern.second.lp_pcre = std::make_shared<pcrepp>(
-                elf_level_pattern.second.lp_regex.c_str());
-        } catch (const pcrepp::error& e) {
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ".level:" + e.what());
+            errors.emplace_back(lnav::console::user_message::error(
+                                    attr_line_t()
+                                        .append_quoted(lnav::roles::symbol(
+                                            this->elf_name.to_string()))
+                                        .append(" is not a valid log format"))
+                                    .with_reason("no regexes specified")
+                                    .with_snippets(this->get_snippets()));
         }
     }
 
@@ -1825,22 +1834,31 @@ external_log_format::build(std::vector<std::string>& errors)
         {
             if (this->lf_action_defs.find(*act_iter)
                 == this->lf_action_defs.end()) {
+#if 0
                 errors.push_back("error:" + this->elf_name.to_string() + ":"
                                  + vd->vd_meta.lvm_name.get()
                                  + ": cannot find action -- " + (*act_iter));
+#endif
             }
         }
     }
 
-    if (this->elf_type == ELF_TYPE_TEXT && this->elf_samples.empty()) {
-        errors.push_back(
-            "error:" + this->elf_name.to_string()
-            + ":no sample logs provided, all formats must have samples");
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+        && this->elf_samples.empty()) {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t()
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string()))
+                    .append(" is not a valid log format"))
+                .with_reason("log message samples must be included in a format "
+                             "definition")
+                .with_snippets(this->get_snippets()));
     }
 
     for (auto& elf_sample : this->elf_samples) {
         pcre_context_static<128> pc;
-        pcre_input pi(elf_sample.s_line);
+        pcre_input pi(elf_sample.s_line.pp_value);
         bool found = false;
 
         for (auto pat_iter = this->elf_pattern_order.begin();
@@ -1853,100 +1871,136 @@ external_log_format::build(std::vector<std::string>& errors)
                 continue;
             }
 
-            if (!pat.p_module_format
-                && pat.p_pcre->name_index(this->lf_timestamp_field.to_string())
-                    < 0)
-            {
-                errors.push_back("error:" + this->elf_name.to_string()
-                                 + ":timestamp field '"
-                                 + this->lf_timestamp_field.get()
-                                 + "' not found in pattern -- " + pat.p_string);
+            if (!pat.p_pcre->match(pc, pi)) {
+                continue;
+            }
+            found = true;
+
+            if (pat.p_module_format) {
                 continue;
             }
 
-            if (pat.p_pcre->match(pc, pi)) {
-                if (pat.p_module_format) {
-                    found = true;
-                    continue;
-                }
-                pcre_context::capture_t* ts_cap
-                    = pc[this->lf_timestamp_field.get()];
-                pcre_context::capture_t* level_cap
-                    = pc[pat.p_level_field_index];
-                const char* ts = pi.get_substr_start(ts_cap);
-                ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
-                const char* const* custom_formats
-                    = this->get_timestamp_formats();
-                date_time_scanner dts;
-                struct timeval tv;
-                struct exttm tm;
+            if (pat.p_pcre->name_index(this->lf_timestamp_field.to_string())
+                < 0) {
+                attr_line_t notes;
+                bool first_note = true;
 
-                if (ts_cap->c_begin == 0) {
-                    pat.p_timestamp_end = ts_cap->c_end;
+                if (pat.p_pcre->p_named_count > 0) {
+                    notes.append("the following captures are available:\n  ");
                 }
-                found = true;
-                if (ts_len == -1
-                    || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr)
+                for (auto name_iter = pat.p_pcre->named_begin();
+                     name_iter != pat.p_pcre->named_end();
+                     ++name_iter)
                 {
-                    errors.push_back("error:" + this->elf_name.to_string()
-                                     + ":invalid sample -- "
-                                     + elf_sample.s_line);
-                    errors.push_back("error:" + this->elf_name.to_string()
-                                     + ":unrecognized timestamp format -- "
-                                     + ts);
+                    if (!first_note) {
+                        notes.append(", ");
+                    }
+                    notes.append(lnav::roles::symbol(name_iter->pnc_name));
+                    first_note = false;
+                }
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid value for property ")
+                            .append_quoted(lnav::roles::symbol(
+                                fmt::format(FMT_STRING("/{}/timestamp-field"),
+                                            this->elf_name))))
+                        .with_reason(
+                            attr_line_t()
+                                .append_quoted(this->lf_timestamp_field)
+                                .append(" was not found in the pattern at ")
+                                .append(lnav::roles::symbol(pat.p_config_path)))
+                        .with_note(notes)
+                        .with_snippets(this->get_snippets()));
+                continue;
+            }
 
-                    if (custom_formats == nullptr) {
-                        for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != nullptr;
-                             lpc++) {
-                            off_t off = 0;
+            const auto* ts_cap = pc[this->lf_timestamp_field.get()];
+            const auto* level_cap = pc[pat.p_level_field_index];
+            const char* ts = pi.get_substr_start(ts_cap);
+            ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
+            const char* const* custom_formats = this->get_timestamp_formats();
+            date_time_scanner dts;
+            struct timeval tv;
+            struct exttm tm;
 
-                            PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
-                            errors.push_back(
-                                "  format: "
-                                + std::string(PTIMEC_FORMATS[lpc].pf_fmt)
-                                + "; matched: " + std::string(ts, off));
-                        }
-                    } else {
-                        for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++)
-                        {
-                            off_t off = 0;
+            if (ts_cap->c_begin == 0) {
+                pat.p_timestamp_end = ts_cap->c_end;
+            }
+            if (ts_len == -1
+                || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr) {
+                attr_line_t notes;
 
-                            ptime_fmt(
-                                custom_formats[lpc], &tm, ts, off, ts_len);
-                            errors.push_back(
-                                "  format: " + std::string(custom_formats[lpc])
-                                + "; matched: " + std::string(ts, off));
-                        }
+                notes.append("the following formats were tried:");
+                if (custom_formats == nullptr) {
+                    for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != nullptr;
+                         lpc++) {
+                        off_t off = 0;
+
+                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
+                        notes.append("\n  ")
+                            .append(ts, (size_t) ts_len)
+                            .append("\n")
+                            .append(2 + off, ' ')
+                            .append(lnav::roles::comment("^ "))
+                            .append_quoted(
+                                lnav::roles::symbol(PTIMEC_FORMATS[lpc].pf_fmt))
+                            .append(
+                                lnav::roles::comment(" matched up to here"));
+                    }
+                } else {
+                    for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++) {
+                        off_t off = 0;
+
+                        ptime_fmt(custom_formats[lpc], &tm, ts, off, ts_len);
+                        notes.append("\n  ")
+                            .append(ts, (size_t) ts_len)
+                            .append("\n")
+                            .append(2 + off, ' ')
+                            .append(lnav::roles::comment("^ "))
+                            .append_quoted(
+                                lnav::roles::symbol(custom_formats[lpc]))
+                            .append(
+                                lnav::roles::comment(" matched up to here"));
                     }
                 }
 
-                log_level_t level = this->convert_level(pi, level_cap);
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid sample log message ")
+                            .append_quoted(elf_sample.s_line.pp_value))
+                        .with_reason(attr_line_t("unrecognized timestamp -- ")
+                                         .append(ts, (size_t) ts_len))
+                        .with_snippet(elf_sample.s_line.to_snippet())
+                        .with_note(notes));
+            }
 
-                if (elf_sample.s_level != LEVEL_UNKNOWN) {
-                    if (elf_sample.s_level != level) {
-                        errors.push_back("error:" + this->elf_name.to_string()
-                                         + ":invalid sample -- "
-                                         + elf_sample.s_line);
-                        errors.push_back(
-                            "error:" + this->elf_name.to_string()
-                            + ":parsed level '" + level_names[level]
-                            + "' does not match expected level of '"
-                            + level_names[elf_sample.s_level] + "'");
-                    }
-                }
+            log_level_t level = this->convert_level(pi, level_cap);
+
+            if (elf_sample.s_level != LEVEL_UNKNOWN
+                && elf_sample.s_level != level) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid sample log message ")
+                            .append_quoted(elf_sample.s_line.pp_value))
+                        .with_reason(attr_line_t()
+                                         .append_quoted(lnav::roles::symbol(
+                                             level_names[level]))
+                                         .append(" does not match the expected "
+                                                 "level of ")
+                                         .append_quoted(lnav::roles::symbol(
+                                             level_names[elf_sample.s_level])))
+                        .with_snippet(elf_sample.s_line.to_snippet()));
             }
         }
 
-        if (!found) {
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ":invalid sample         -- "
-                             + elf_sample.s_line);
+        if (!found && !this->elf_pattern_order.empty()) {
+            attr_line_t notes(
+                "the following shows how each pattern matched this sample:\n");
+            size_t max_name_width = 0;
 
-            for (auto pat_iter = this->elf_pattern_order.begin();
-                 pat_iter != this->elf_pattern_order.end();
-                 ++pat_iter)
-            {
-                pattern& pat = *(*pat_iter);
+            notes.append("  ").append_quoted(elf_sample.s_line.pp_value);
+            for (const auto& pat_iter : this->elf_pattern_order) {
+                pattern& pat = *pat_iter;
 
                 if (!pat.p_pcre) {
                     continue;
@@ -1954,19 +2008,42 @@ external_log_format::build(std::vector<std::string>& errors)
 
                 size_t partial_len = pat.p_pcre->match_partial(pi);
 
-                if (partial_len > 0) {
-                    errors.push_back(
-                        "error:" + this->elf_name.to_string()
-                        + ":partial sample matched -- "
-                        + elf_sample.s_line.substr(0, partial_len));
-                    errors.push_back("error:  against pattern "
-                                     + (*pat_iter)->p_config_path + " -- "
-                                     + (*pat_iter)->p_string);
-                } else {
-                    errors.push_back("error:" + this->elf_name.to_string()
-                                     + ":no partial match found");
-                }
+                notes.append("\n   ")
+                    .append(partial_len, ' ')
+                    .append(lnav::roles::comment("^ "))
+                    .append(lnav::roles::symbol(pat.p_name))
+                    .append(lnav::roles::comment(" matched up to here"));
+
+                max_name_width = std::max(max_name_width, pat.p_name.size());
             }
+
+            attr_line_t help;
+            for (const auto& pat_iter : this->elf_pattern_order) {
+                if (!pat_iter->p_pcre) {
+                    help.append(
+                            lnav::roles::symbol(fmt::format(FMT_STRING("{:{}}"),
+                                                            pat_iter->p_name,
+                                                            max_name_width)))
+                        .append(" is invalid");
+                    continue;
+                }
+
+                help
+                    .append(lnav::roles::symbol(fmt::format(
+                        FMT_STRING("{:{}}"), pat_iter->p_name, max_name_width)))
+                    .append(" = ")
+                    .append(pat_iter->p_pcre->get_pattern())
+                    .append("\n");
+            }
+
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t("invalid sample log message ")
+                        .append_quoted(elf_sample.s_line.pp_value))
+                    .with_reason("sample does not match any patterns")
+                    .with_snippet(elf_sample.s_line.to_snippet())
+                    .with_note(notes)
+                    .with_help(help));
         }
     }
 
@@ -2002,41 +2079,48 @@ external_log_format::build(std::vector<std::string>& errors)
             = intern_string::lookup("__level__");
         json_format_element& jfe = *iter;
 
-        if (startswith(jfe.jfe_value.get(), "/")) {
-            jfe.jfe_value = intern_string::lookup(jfe.jfe_value.get() + 1);
+        if (startswith(jfe.jfe_value.pp_value.get(), "/")) {
+            jfe.jfe_value.pp_value
+                = intern_string::lookup(jfe.jfe_value.pp_value.get() + 1);
         }
         if (!jfe.jfe_ts_format.empty()) {
-            if (!jfe.jfe_value.empty() && jfe.jfe_value != ts) {
+            if (!jfe.jfe_value.pp_value.empty() && jfe.jfe_value.pp_value != ts)
+            {
                 log_warning(
                     "%s:line-format[%d]:ignoring field '%s' since "
                     "timestamp-format was used",
                     this->elf_name.get(),
                     format_index,
-                    jfe.jfe_value.get());
+                    jfe.jfe_value.pp_value.get());
             }
-            jfe.jfe_value = ts;
+            jfe.jfe_value.pp_value = ts;
         }
 
         switch (jfe.jfe_type) {
             case JLF_VARIABLE: {
-                auto vd_iter = this->elf_value_defs.find(jfe.jfe_value);
-                if (jfe.jfe_value == ts) {
+                auto vd_iter
+                    = this->elf_value_defs.find(jfe.jfe_value.pp_value);
+                if (jfe.jfe_value.pp_value == ts) {
                     this->elf_value_defs[this->lf_timestamp_field]
                         ->vd_meta.lvm_hidden
                         = true;
-                } else if (jfe.jfe_value == level_field) {
+                } else if (jfe.jfe_value.pp_value == level_field) {
                     this->elf_value_defs[this->elf_level_field]
                         ->vd_meta.lvm_hidden
                         = true;
                 } else if (vd_iter == this->elf_value_defs.end()) {
-                    char index_str[32];
-
-                    snprintf(index_str, sizeof(index_str), "%d", format_index);
-                    errors.push_back(
-                        "error:" + this->elf_name.to_string() + ":line-format["
-                        + index_str
-                        + "]:line format variable is not defined -- "
-                        + jfe.jfe_value.to_string());
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid line format element ")
+                                .append_quoted(lnav::roles::symbol(fmt::format(
+                                    FMT_STRING("/{}/line-format/{}/field"),
+                                    this->elf_name,
+                                    format_index))))
+                            .with_reason(
+                                attr_line_t()
+                                    .append_quoted(jfe.jfe_value.pp_value)
+                                    .append(" is not a defined value"))
+                            .with_snippet(jfe.jfe_value.to_snippet()));
                 }
                 break;
             }
@@ -2053,30 +2137,44 @@ external_log_format::build(std::vector<std::string>& errors)
 
     for (auto& hd_pair : this->elf_highlighter_patterns) {
         external_log_format::highlighter_def& hd = hd_pair.second;
-        const std::string& pattern = hd.hd_pattern;
         const char* errptr;
         auto fg = styling::color_unit::make_empty();
         auto bg = styling::color_unit::make_empty();
         int eoff, attrs = 0;
 
-        if (!hd.hd_color.empty()) {
-            fg = styling::color_unit::from_str(hd.hd_color)
+        if (!hd.hd_color.pp_value.empty()) {
+            fg = styling::color_unit::from_str(hd.hd_color.pp_value)
                      .unwrapOrElse([&](const auto& msg) {
-                         errors.push_back("error:" + this->elf_name.to_string()
-                                          + ":highlighters/"
-                                          + hd_pair.first.to_string()
-                                          + "/color:" + msg);
+                         errors.emplace_back(
+                             lnav::console::user_message::error(
+                                 attr_line_t()
+                                     .append_quoted(hd.hd_color.pp_value)
+                                     .append(" is not a valid color value for "
+                                             "property ")
+                                     .append_quoted(lnav::roles::symbol(
+                                         hd.hd_color.pp_path.to_string())))
+                                 .with_reason(msg)
+                                 .with_snippet(hd.hd_color.to_snippet()));
                          return styling::color_unit::make_empty();
                      });
         }
 
-        if (!hd.hd_background_color.empty()) {
-            bg = styling::color_unit::from_str(hd.hd_background_color)
+        if (!hd.hd_background_color.pp_value.empty()) {
+            bg = styling::color_unit::from_str(hd.hd_background_color.pp_value)
                      .unwrapOrElse([&](const auto& msg) {
-                         errors.push_back("error:" + this->elf_name.to_string()
-                                          + ":highlighters/"
-                                          + hd_pair.first.to_string()
-                                          + "/color:" + msg);
+                         errors.emplace_back(
+                             lnav::console::user_message::error(
+                                 attr_line_t()
+                                     .append_quoted(
+                                         hd.hd_background_color.pp_value)
+                                     .append(" is not a valid color value for "
+                                             "property ")
+                                     .append_quoted(lnav::roles::symbol(
+                                         hd.hd_background_color.pp_path
+                                             .to_string())))
+                                 .with_reason(msg)
+                                 .with_snippet(
+                                     hd.hd_background_color.to_snippet()));
                          return styling::color_unit::make_empty();
                      });
         }
@@ -2088,58 +2186,46 @@ external_log_format::build(std::vector<std::string>& errors)
             attrs |= A_BLINK;
         }
 
-        pcre* code = pcre_compile(
-            pattern.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr);
+        if (hd.hd_pattern != nullptr) {
+            pcre* code = pcre_compile(hd.hd_pattern->get_pattern().c_str(),
+                                      PCRE_CASELESS,
+                                      &errptr,
+                                      &eoff,
+                                      nullptr);
 
-        if (code == nullptr) {
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ":highlighters/" + hd_pair.first.to_string()
-                             + ":" + std::string(errptr));
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ":highlighters/" + hd_pair.first.to_string()
-                             + ":" + pattern);
-            errors.push_back("error:" + this->elf_name.to_string()
-                             + ":highlighters/" + hd_pair.first.to_string()
-                             + ":" + std::string(eoff, ' ') + "^");
-        } else {
-            this->lf_highlighters.emplace_back(code);
-            this->lf_highlighters.back()
-                .with_pattern(pattern)
-                .with_format_name(this->elf_name)
-                .with_color(fg, bg)
-                .with_attrs(attrs);
+            if (code == nullptr) {
+                log_error("unable to recompile highlighter pattern");
+            } else {
+                this->lf_highlighters.emplace_back(code);
+                this->lf_highlighters.back()
+                    .with_pattern(hd.hd_pattern->get_pattern())
+                    .with_format_name(this->elf_name)
+                    .with_color(fg, bg)
+                    .with_attrs(attrs);
+            }
         }
     }
 }
 
 void
-external_log_format::register_vtabs(log_vtab_manager* vtab_manager,
-                                    std::vector<std::string>& errors)
+external_log_format::register_vtabs(
+    log_vtab_manager* vtab_manager,
+    std::vector<lnav::console::user_message>& errors)
 {
-    for (auto search_iter = this->elf_search_tables.begin();
-         search_iter != this->elf_search_tables.end();
-         ++search_iter)
-    {
-        auto re_res = pcrepp::from_str(search_iter->second,
-                                       log_search_table::pattern_options());
-
-        if (re_res.isErr()) {
-            errors.emplace_back(fmt::format(
-                FMT_STRING("error:{}:{}:unable to compile regex '{}': {}"),
-                this->elf_name.get(),
-                search_iter->first.get(),
-                search_iter->second,
-                re_res.unwrapErr().ce_msg));
+    for (auto& elf_search_table : this->elf_search_tables) {
+        if (elf_search_table.second.std_pattern == nullptr) {
             continue;
         }
 
-        auto lst = std::make_shared<log_search_table>(re_res.unwrap(),
-                                                      search_iter->first);
+        auto lst = std::make_shared<log_search_table>(
+            *elf_search_table.second.std_pattern, elf_search_table.first);
         auto errmsg = vtab_manager->register_vtab(lst);
         if (!errmsg.empty()) {
+#if 0
             errors.push_back("error:" + this->elf_name.to_string() + ":"
                              + search_iter->first.to_string()
                              + ":unable to register table -- " + errmsg);
+#endif
         }
     }
 }
@@ -2156,7 +2242,7 @@ external_log_format::match_samples(const std::vector<sample>& samples) const
             }
 
             pcre_context_static<128> pc;
-            pcre_input pi(sample_iter.s_line);
+            pcre_input pi(sample_iter.s_line.pp_value);
 
             if (pat.p_pcre->match(pc, pi)) {
                 return true;
@@ -2317,7 +2403,7 @@ external_log_format::specialized(int fmt_lock)
         retval->lf_pattern_locks.emplace_back(0, fmt_lock);
     }
 
-    if (this->elf_type == ELF_TYPE_JSON) {
+    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(
             this->elf_name.to_string());
         this->jlf_yajl_handle.reset(

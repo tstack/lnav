@@ -297,14 +297,28 @@ layout_views()
 
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
-    if (doc_height + 14 > ((int) height - match_height - preview_height - 2)) {
+    int um_rows = lnav_data.ld_user_message_source.text_line_count();
+    if (um_rows > 0
+        && std::chrono::steady_clock::now()
+            > lnav_data.ld_user_message_expiration)
+    {
+        lnav_data.ld_user_message_source.clear();
+        um_rows = 0;
+    }
+    int um_height = std::min((unsigned long) um_rows, (height - 4) / 2);
+
+    lnav_data.ld_user_message_view.set_height(vis_line_t(um_height));
+
+    if (doc_height + 14
+        > ((int) height - match_height - um_height - preview_height - 2))
+    {
         preview_height = 0;
         preview_status_open = false;
     }
 
-    if (doc_height + 14 > ((int) height - match_height - 2)) {
+    if (doc_height + 14 > ((int) height - match_height - um_height - 2)) {
         doc_height = lnav_data.ld_doc_source.text_line_count();
-        if (doc_height + 14 > ((int) height - match_height - 2)) {
+        if (doc_height + 14 > ((int) height - match_height - um_height - 2)) {
             doc_height = 0;
         }
     }
@@ -319,7 +333,7 @@ layout_views()
 
     int bottom_height = (doc_open ? 1 : 0) + doc_height
         + (preview_status_open ? 1 : 0) + preview_height + 1  // bottom status
-        + match_height + lnav_data.ld_rl_view->get_height();
+        + match_height + um_height + lnav_data.ld_rl_view->get_height();
 
     for (auto& tc : lnav_data.ld_views) {
         tc.set_height(vis_line_t(-(bottom_height + (filter_status_open ? 1 : 0)
@@ -333,7 +347,7 @@ layout_views()
     lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open);
     lnav_data.ld_status[LNS_FILTER_HELP].set_top(
         -(bottom_height + filter_height + 1));
-    lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
+    lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + um_height + 2));
     lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
     lnav_data.ld_status[LNS_DOC].set_visible(doc_open);
     lnav_data.ld_status[LNS_PREVIEW].set_top(height - bottom_height
@@ -371,6 +385,8 @@ layout_views()
     lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
     lnav_data.ld_preview_view.set_y(height - bottom_height + 1
                                     + (doc_open ? 1 : 0) + doc_height);
+    lnav_data.ld_user_message_view.set_y(
+        height - lnav_data.ld_rl_view->get_height() - match_height - um_height);
     lnav_data.ld_match_view.set_y(height - lnav_data.ld_rl_view->get_height()
                                   - match_height);
     lnav_data.ld_rl_view->set_width(width);

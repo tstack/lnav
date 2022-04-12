@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 

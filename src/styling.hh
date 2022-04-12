@@ -206,6 +206,7 @@ struct lnav_theme {
     style_config lt_style_inactive_status;
     style_config lt_style_inactive_alert_status;
     style_config lt_style_file;
+    style_config lt_style_header[6];
     std::map<log_level_t, style_config> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

@@ -29,6 +29,7 @@
 
 #include "filter_status_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "files_sub_source.hh"
@@ -49,32 +50,32 @@ static auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
 filter_status_source::filter_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(14);
-    this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
+    this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
     this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
-                                          view_colors::VCR_STATUS_TITLE_HOTKEY);
+                                          role_t::VCR_STATUS_TITLE_HOTKEY);
 
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-        view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-        view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+        role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+        role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
 
     this->tss_fields[TSF_COUNT].set_min_width(16);
     this->tss_fields[TSF_COUNT].set_share(1);
-    this->tss_fields[TSF_COUNT].set_role(view_colors::VCR_STATUS);
+    this->tss_fields[TSF_COUNT].set_role(role_t::VCR_STATUS);
 
     this->tss_fields[TSF_FILTERED].set_min_width(20);
     this->tss_fields[TSF_FILTERED].set_share(1);
-    this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_STATUS);
+    this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_STATUS);
 
     this->tss_fields[TSF_FILES_TITLE].set_width(7);
     this->tss_fields[TSF_FILES_TITLE].set_role(
-        view_colors::VCR_STATUS_DISABLED_TITLE);
+        role_t::VCR_STATUS_DISABLED_TITLE);
     this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
-                                                view_colors::VCR_STATUS_HOTKEY);
+                                                role_t::VCR_STATUS_HOTKEY);
 
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_width(2);
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
-        view_colors::VCR_STATUS, view_colors::VCR_STATUS);
+        role_t::VCR_STATUS, role_t::VCR_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
     this->tss_fields[TSF_HELP].set_width(20);
@@ -83,7 +84,7 @@ filter_status_source::filter_status_source()
 
     this->tss_error.set_min_width(20);
     this->tss_error.set_share(1);
-    this->tss_error.set_role(view_colors::VCR_ALERT_STATUS);
+    this->tss_error.set_role(role_t::VCR_ALERT_STATUS);
 }
 
 size_t
@@ -106,27 +107,27 @@ filter_status_source::statusview_fields()
     if (lnav_data.ld_mode == LNM_FILES || lnav_data.ld_mode == LNM_SEARCH_FILES)
     {
         this->tss_fields[TSF_FILES_TITLE].set_value(
-            " " ANSI_ROLE("F") "iles ", view_colors::VCR_STATUS_TITLE_HOTKEY);
+            " " ANSI_ROLE("F") "iles ", role_t::VCR_STATUS_TITLE_HOTKEY);
         this->tss_fields[TSF_FILES_TITLE].set_role(
-            view_colors::VCR_STATUS_TITLE);
+            role_t::VCR_STATUS_TITLE);
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
-            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+            role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
-                                              view_colors::VCR_STATUS_HOTKEY);
+                                              role_t::VCR_STATUS_HOTKEY);
         this->tss_fields[TSF_TITLE].set_role(
-            view_colors::VCR_STATUS_DISABLED_TITLE);
+            role_t::VCR_STATUS_DISABLED_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            view_colors::VCR_STATUS, view_colors::VCR_STATUS);
+            role_t::VCR_STATUS, role_t::VCR_STATUS);
     } else {
         this->tss_fields[TSF_FILES_TITLE].set_value(
-            " " ANSI_ROLE("F") "iles ", view_colors::VCR_STATUS_HOTKEY);
+            " " ANSI_ROLE("F") "iles ", role_t::VCR_STATUS_HOTKEY);
         if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
             this->tss_fields[TSF_FILES_TITLE].set_role(
-                view_colors::VCR_STATUS_DISABLED_TITLE);
+                role_t::VCR_STATUS_DISABLED_TITLE);
         } else {
             this->tss_fields[TSF_FILES_TITLE].set_role(
-                view_colors::VCR_ALERT_STATUS);
+                role_t::VCR_ALERT_STATUS);
 
             auto& fc = lnav_data.ld_active_files;
             if (fc.fc_name_to_errors.size() == 1) {
@@ -138,15 +139,15 @@ filter_status_source::statusview_fields()
             }
         }
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
-            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE,
-            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL);
+            role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE,
+            role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL);
         this->tss_fields[TSF_TITLE].set_value(
             " " ANSI_ROLE("T") "ext Filters ",
-            view_colors::VCR_STATUS_TITLE_HOTKEY);
-        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
+            role_t::VCR_STATUS_TITLE_HOTKEY);
+        this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+            role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
     }
 
     lnav_data.ld_view_stack.top() | [this](auto tc) {
@@ -209,13 +210,13 @@ filter_status_source::update_filtered(text_sub_source* tss)
         if (tss->get_filtered_count() == this->bss_last_filtered_count) {
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(
-                    view_colors::VCR_STATUS);
+                    role_t::VCR_STATUS);
                 al.with_attr(string_attr(line_range{0, -1},
-                                         view_curses::VC_STYLE.value(A_BOLD)));
+                                         VC_STYLE.value(A_BOLD)));
             }
         } else {
             this->tss_fields[TSF_FILTERED].set_role(
-                view_colors::VCR_ALERT_STATUS);
+                role_t::VCR_ALERT_STATUS);
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
         }

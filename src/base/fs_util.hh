@@ -62,6 +62,8 @@ Result<auto_fd, std::string> open_file(const ghc::filesystem::path& path,
                                        int flags,
                                        mode_t mode);
 
+Result<struct stat, std::string> stat_file(const ghc::filesystem::path& path);
+
 Result<std::pair<ghc::filesystem::path, auto_fd>, std::string> open_temp_file(
     const ghc::filesystem::path& pattern);
 

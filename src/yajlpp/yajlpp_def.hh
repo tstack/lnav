@@ -34,7 +34,9 @@
 
 #include <chrono>
 
+#include "config.h"
 #include "relative_time.hh"
+#include "view_curses.hh"
 #include "yajlpp.hh"
 
 #define FOR_FIELD(T, FIELD) for_field<T, decltype(T ::FIELD), &T ::FIELD>()
@@ -182,13 +184,6 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
-    json_path_handler& with_string_validator(
-        std::function<void(const string_fragment&)> val)
-    {
-        this->jph_string_validator = val;
-        return *this;
-    };
-
     json_path_handler& with_min_value(long long val)
     {
         this->jph_min_value = val;
@@ -260,27 +255,8 @@ struct json_path_handler : public json_path_handler_base {
         if (res) {
             obj->*ENUM = (ENUM_T) res.value();
         } else {
-            ypc->report_error(lnav_log_level_t::ERROR,
-                              "error:%s:line %d\n  "
-                              "Invalid value, '%.*s', for option:",
-                              ypc->ypc_source.c_str(),
-                              ypc->get_line_number(),
-                              len,
-                              str);
-
-            ypc->report_error(lnav_log_level_t::ERROR,
-                              "    %s %s -- %s\n",
-                              &ypc->ypc_path[0],
-                              handler->jph_synopsis,
-                              handler->jph_description);
-            ypc->report_error(lnav_log_level_t::ERROR, "  Allowed values: ");
-            for (int lpc = 0; handler->jph_enum_values[lpc].first; lpc++) {
-                const json_path_handler::enum_value_t& ev
-                    = handler->jph_enum_values[lpc];
-
-                ypc->report_error(
-                    lnav_log_level_t::ERROR, "    %s\n", ev.first);
-            }
+            handler->report_enum_error(ypc,
+                                       std::string((const char*) str, len));
         }
 
         return 1;
@@ -330,32 +306,39 @@ struct json_path_handler : public json_path_handler_base {
         auto& field_ptr = ypc.get_rvalue(ypc.get_obj_member<T, STR_T, STR>());
 
         if (jph.jph_pattern) {
-            string_fragment sf = to_string_fragment(field_ptr);
+            auto sf = to_string_fragment(field_ptr);
             pcre_input pi(sf);
             pcre_context_static<30> pc;
 
             if (!jph.jph_pattern->match(pc, pi)) {
-                ypc.report_error(lnav_log_level_t::ERROR,
-                                 "Value does not match pattern: %s",
-                                 jph.jph_pattern_re);
-            }
-        }
-        if (jph.jph_string_validator) {
-            try {
-                jph.jph_string_validator(to_string_fragment(field_ptr));
-            } catch (const std::exception& e) {
-                ypc.report_error(lnav_log_level_t::ERROR, "%s", e.what());
+                jph.report_pattern_error(&ypc, sf.to_string());
             }
         }
         if (field_ptr.empty() && jph.jph_min_length > 0) {
-            ypc.report_error(lnav_log_level_t::ERROR,
-                             "value must not be empty");
+            ypc.report_error(
+                lnav::console::user_message::error(
+                    attr_line_t("invalid value for option ")
+                        .template append_quoted(lnav::roles::symbol(
+                            ypc.get_full_path().to_string())))
+                    .with_reason("empty values are not allowed")
+                    .with_snippet(ypc.get_snippet())
+                    .with_help(jph.get_help_text(&ypc)));
         } else if (field_ptr.size() < jph.jph_min_length) {
-            ypc.report_error(lnav_log_level_t::ERROR,
-                             "value must be at least %lu characters long",
-                             jph.jph_min_length);
+            ypc.report_error(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .template append_quoted(field_ptr)
+                        .append(" is not a valid value for option ")
+                        .append_quoted(lnav::roles::symbol(
+                            ypc.get_full_path().to_string())))
+                    .with_reason(attr_line_t("value must be at least ")
+                                     .append(lnav::roles::number(
+                                         fmt::to_string(jph.jph_min_length)))
+                                     .append(" characters long"))
+                    .with_snippet(ypc.get_snippet())
+                    .with_help(jph.get_help_text(&ypc)));
         }
-    };
+    }
 
     template<typename T, typename NUM_T, NUM_T T::*NUM>
     static void number_field_validator(yajlpp_parse_context& ypc,
@@ -364,9 +347,7 @@ struct json_path_handler : public json_path_handler_base {
         auto& field_ptr = ypc.get_rvalue(ypc.get_obj_member<T, NUM_T, NUM>());
 
         if (field_ptr < jph.jph_min_value) {
-            ypc.report_error(lnav_log_level_t::ERROR,
-                             "value must be greater than %lld",
-                             jph.jph_min_value);
+            jph.report_min_value_error(&ypc, field_ptr);
         }
     }
 
@@ -589,6 +570,11 @@ struct json_path_handler : public json_path_handler_base {
 
             return gen(field);
         };
+        this->jph_field_getter
+            = [args...](void* root, nonstd::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
+
         return *this;
     }
 
@@ -648,9 +634,134 @@ struct json_path_handler : public json_path_handler_base {
                                      const unsigned char* str,
                                      size_t len) {
             auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
+
+            if (jph->jph_pattern) {
+                pcre_input pi(value_str);
+                pcre_context_static<30> pc;
+
+                if (!jph->jph_pattern->match(pc, pi)) {
+                    jph->report_pattern_error(ypc, value_str);
+                }
+            }
+
+            json_path_handler::get_field(obj, args...) = std::move(value_str);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field);
+        };
+        this->jph_field_getter
+            = [args...](void* root, nonstd::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<
+                 LastIs<positioned_property<std::string>, Args...>::value,
+                 bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
+
+            if (jph->jph_pattern) {
+                pcre_input pi(value_str);
+                pcre_context_static<30> pc;
+
+                if (!jph->jph_pattern->match(pc, pi)) {
+                    jph->report_pattern_error(ypc, value_str);
+                }
+            }
+
+            auto& field = json_path_handler::get_field(obj, args...);
+
+            field.pp_path = ypc->get_full_path();
+            field.pp_src = ypc->ypc_source;
+            field.pp_line_number = ypc->get_line_number();
+            field.pp_value = std::move(value_str);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field.pp_value == field_def.pp_value) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field.pp_value);
+        };
+        return *this;
+    }
+
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<intern_string_t, Args...>::value, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
+
+            if (jph->jph_pattern) {
+                pcre_input pi(value_str);
+                pcre_context_static<30> pc;
+
+                if (!jph->jph_pattern->match(pc, pi)) {
+                    jph->report_pattern_error(ypc, value_str);
+                }
+            }
 
             json_path_handler::get_field(obj, args...)
-                = std::string((const char*) str, len);
+                = intern_string::lookup(value_str);
 
             return 1;
         };
@@ -681,24 +792,85 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsNumber<Args...>::value, bool> = true>
+             std::enable_if_t<
+                 LastIs<positioned_property<intern_string_t>, Args...>::value,
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
-        this->add_cb(int_field_cb);
-        this->jph_integer_cb = [args...](yajlpp_parse_context* ypc,
-                                         long long val) {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
             auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
 
-            if (val < ypc->ypc_current_handler->jph_min_value) {
-                ypc->report_error(
-                    lnav_log_level_t::ERROR,
-                    "value must be greater than or equal to %lld, found %lld",
-                    ypc->ypc_current_handler->jph_min_value,
-                    val);
-                return 1;
+            if (jph->jph_pattern) {
+                pcre_input pi(value_str);
+                pcre_context_static<30> pc;
+
+                if (!jph->jph_pattern->match(pc, pi)) {
+                    jph->report_pattern_error(ypc, value_str);
+                }
             }
 
-            json_path_handler::get_field(obj, args...) = val;
+            auto& field = json_path_handler::get_field(obj, args...);
+            field.pp_path = ypc->get_full_path();
+            field.pp_src = ypc->ypc_source;
+            field.pp_line_number = ypc->get_line_number();
+            field.pp_value = intern_string::lookup(value_str);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field.pp_value == field_def.pp_value) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field.pp_value);
+        };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<LastIs<std::shared_ptr<pcrepp>, Args...>::value,
+                              bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
+
+            try {
+                auto re = std::make_unique<pcrepp>(value_str);
+                json_path_handler::get_field(obj, args...) = std::move(re);
+            } catch (const pcrepp::error& e) {
+                pcrepp::compile_error ce;
+
+                ce.ce_msg = e.what();
+                ce.ce_offset = e.e_offset;
+                jph->report_regex_value_error(ypc, value_str, ce);
+            }
 
             return 1;
         };
@@ -723,8 +895,57 @@ struct json_path_handler : public json_path_handler_base {
 
             yajlpp_generator gen(handle);
 
+            return gen(field->get_pattern());
+        };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<LastIsNumber<Args...>::value, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(int_field_cb);
+        this->jph_integer_cb
+            = [args...](yajlpp_parse_context* ypc, long long val) {
+                  auto jph = ypc->ypc_current_handler;
+                  auto* obj = ypc->ypc_obj_stack.top();
+
+                  if (val < jph->jph_min_value) {
+                      jph->report_min_value_error(ypc, val);
+                      return 1;
+                  }
+
+                  json_path_handler::get_field(obj, args...) = val;
+
+                  return 1;
+              };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
             return gen(field);
         };
+        this->jph_field_getter
+            = [args...](void* root, nonstd::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
 
         return *this;
     }
@@ -743,19 +964,10 @@ struct json_path_handler : public json_path_handler_base {
             auto parse_res = relative_time::from_str((const char*) str, len);
 
             if (parse_res.isErr()) {
-                ypc->report_error(lnav_log_level_t::ERROR,
-                                  "error:%s:line %d\n"
-                                  "  Invalid duration: '%.*s' -- %s",
-                                  ypc->ypc_source.c_str(),
-                                  ypc->get_line_number(),
-                                  len,
-                                  str,
-                                  parse_res.unwrapErr().pe_msg.c_str());
-                ypc->report_error(lnav_log_level_t::ERROR,
-                                  "    for option: %s %s -- %s\n",
-                                  &ypc->ypc_path[0],
-                                  handler->jph_synopsis,
-                                  handler->jph_description);
+                auto parse_error = parse_res.unwrapErr();
+                auto value_str = std::string((const char*) str, len);
+
+                handler->report_duration_error(ypc, value_str, parse_error);
                 return 1;
             }
 
@@ -813,32 +1025,16 @@ struct json_path_handler : public json_path_handler_base {
                     = (decltype(json_path_handler::get_field(
                         obj, args...))) res.value();
             } else {
-                ypc->report_error(lnav_log_level_t::ERROR,
-                                  "error:%s:line %d\n  "
-                                  "Invalid value, '%.*s', for option:",
-                                  ypc->ypc_source.c_str(),
-                                  ypc->get_line_number(),
-                                  len,
-                                  str);
-
-                ypc->report_error(lnav_log_level_t::ERROR,
-                                  "    %s %s -- %s\n",
-                                  &ypc->ypc_path[0],
-                                  handler->jph_synopsis,
-                                  handler->jph_description);
-                ypc->report_error(lnav_log_level_t::ERROR,
-                                  "  Allowed values: ");
-                for (int lpc = 0; handler->jph_enum_values[lpc].first; lpc++) {
-                    const json_path_handler::enum_value_t& ev
-                        = handler->jph_enum_values[lpc];
-
-                    ypc->report_error(
-                        lnav_log_level_t::ERROR, "    %s\n", ev.first);
-                }
+                handler->report_enum_error(ypc,
+                                           std::string((const char*) str, len));
             }
 
             return 1;
         };
+        this->jph_field_getter
+            = [args...](void* root, nonstd::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
 
         return *this;
     };

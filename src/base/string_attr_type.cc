@@ -38,3 +38,10 @@ string_attr_type<const intern_string_t> SA_FORMAT("format");
 string_attr_type<void> SA_REMOVED("removed");
 string_attr_type<std::string> SA_INVALID("invalid");
 string_attr_type<std::string> SA_ERROR("error");
+
+string_attr_type<role_t> VC_ROLE("role");
+string_attr_type<role_t> VC_ROLE_FG("role-fg");
+string_attr_type<int64_t> VC_STYLE("style");
+string_attr_type<int64_t> VC_GRAPHIC("graphic");
+string_attr_type<int64_t> VC_FOREGROUND("foreground");
+string_attr_type<int64_t> VC_BACKGROUND("background");

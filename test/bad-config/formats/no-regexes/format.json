@@ -1,0 +1,7 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "no_regexes_log": {
+        "value": {
+        }
+    }
+}

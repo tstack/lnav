@@ -1,14 +1,15 @@
 {
-    "zblued_log" : {
-        "title" : "blued",
-        "regex" : {
-            "std" : {
-                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))? blued(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*)$"
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "zblued_log": {
+        "title": "blued",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))? blued(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*)$"
             }
         },
-        "level-field" : "body",
-        "level" : {
-            "error" : "(?:failed|failure|error)",
+        "level-field": "body",
+        "level": {
+            "error": "(?:failed|failure|error)",
             "warning" : "(?:warn|not responding|init: cannot execute)"
         },
         "value" : {

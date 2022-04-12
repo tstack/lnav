@@ -34,51 +34,26 @@
 
 #include <algorithm>
 #include <map>
-#include <set>
+#include <unordered_set>
 #include <string>
 #include <vector>
 
 #include "base/lnav_log.hh"
 
 struct bookmark_metadata {
-    static std::set<std::string> KNOWN_TAGS;
+    static std::unordered_set<std::string> KNOWN_TAGS;
 
     std::string bm_name;
     std::string bm_comment;
     std::vector<std::string> bm_tags;
 
-    void add_tag(const std::string& tag)
-    {
-        if (std::find(this->bm_tags.begin(), this->bm_tags.end(), tag)
-            == this->bm_tags.end())
-        {
-            this->bm_tags.push_back(tag);
-        }
-    };
+    void add_tag(const std::string& tag);
 
-    bool remove_tag(const std::string& tag)
-    {
-        auto iter = std::find(this->bm_tags.begin(), this->bm_tags.end(), tag);
-        bool retval = false;
+    bool remove_tag(const std::string& tag);
 
-        if (iter != this->bm_tags.end()) {
-            this->bm_tags.erase(iter);
-            retval = true;
-        }
-        return retval;
-    };
+    bool empty() const;
 
-    bool empty() const
-    {
-        return this->bm_name.empty() && this->bm_comment.empty()
-            && this->bm_tags.empty();
-    };
-
-    void clear()
-    {
-        this->bm_comment.clear();
-        this->bm_tags.clear();
-    };
+    void clear();
 };
 
 /**
@@ -96,12 +71,12 @@ struct bookmark_metadata {
  */
 template<typename LineType>
 class bookmark_vector : public std::vector<LineType> {
-    typedef std::vector<LineType> base_vector;
+    using base_vector = std::vector<LineType>;
 
 public:
-    typedef typename base_vector::size_type size_type;
-    typedef typename base_vector::iterator iterator;
-    typedef typename base_vector::const_iterator const_iterator;
+    using size_type = typename base_vector::size_type;
+    using iterator = typename base_vector::iterator;
+    using const_iterator = typename base_vector::const_iterator;
 
     /**
      * Insert a bookmark into this vector, but only if it is not already in the
@@ -111,11 +86,11 @@ public:
      */
     iterator insert_once(LineType vl)
     {
-        iterator lb, retval;
+        iterator retval;
 
         require(vl >= 0);
 
-        lb = std::lower_bound(this->begin(), this->end(), vl);
+        auto lb = std::lower_bound(this->begin(), this->end(), vl);
         if (lb == this->end() || *lb != vl) {
             this->insert(lb, vl);
             retval = this->end();
@@ -132,11 +107,11 @@ public:
 
         if (stop == LineType(-1)) {
             return std::make_pair(lb, this->end());
-        } else {
-            auto up = std::upper_bound(this->begin(), this->end(), stop);
-
-            return std::make_pair(lb, up);
         }
+
+        auto up = std::upper_bound(this->begin(), this->end(), stop);
+
+        return std::make_pair(lb, up);
     };
 
     /**
@@ -164,45 +139,36 @@ public:
  */
 class bookmark_type_t {
 public:
-    typedef std::vector<bookmark_type_t*>::iterator type_iterator;
+    using type_iterator = std::vector<bookmark_type_t*>::iterator;
 
     static type_iterator type_begin()
     {
         return get_all_types().begin();
-    };
+    }
 
     static type_iterator type_end()
     {
         return get_all_types().end();
-    };
+    }
 
-    static bookmark_type_t* find_type(const std::string& name)
-    {
-        auto iter = find_if(type_begin(), type_end(), mark_eq(name));
-        bookmark_type_t* retval = nullptr;
-
-        if (iter != type_end()) {
-            retval = (*iter);
-        }
-        return retval;
-    };
+    static bookmark_type_t* find_type(const std::string& name);
 
     static std::vector<bookmark_type_t*>& get_all_types()
     {
         static std::vector<bookmark_type_t*> all_types;
 
         return all_types;
-    };
+    }
 
     explicit bookmark_type_t(std::string name) : bt_name(std::move(name))
     {
         get_all_types().push_back(this);
-    };
+    }
 
     const std::string& get_name() const
     {
         return this->bt_name;
-    };
+    }
 
 private:
     struct mark_eq {
@@ -227,7 +193,7 @@ bookmark_vector<LineType>::next(LineType start) const
 
     require(start >= -1);
 
-    auto ub = upper_bound(this->cbegin(), this->cend(), start);
+    auto ub = std::upper_bound(this->cbegin(), this->cend(), start);
     if (ub != this->cend()) {
         retval = *ub;
     }
@@ -245,7 +211,7 @@ bookmark_vector<LineType>::prev(LineType start) const
 
     require(start >= 0);
 
-    auto lb = lower_bound(this->cbegin(), this->cend(), start);
+    auto lb = std::lower_bound(this->cbegin(), this->cend(), start);
     if (lb != this->cbegin()) {
         lb -= 1;
         retval = *lb;
@@ -261,7 +227,7 @@ bookmark_vector<LineType>::prev(LineType start) const
  */
 template<typename LineType>
 struct bookmarks {
-    typedef std::map<const bookmark_type_t*, bookmark_vector<LineType> > type;
+    using type = std::map<const bookmark_type_t*, bookmark_vector<LineType>>;
 };
 
 #endif

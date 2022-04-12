@@ -39,8 +39,8 @@ public:
                                          int start,
                                          int end,
                                          chtype& ch,
-                                         view_colors::role_t& role_out,
-                                         view_colors::role_t& bar_role_out)
+                                         role_t& role_out,
+                                         role_t& bar_role_out)
     {
         textview_curses* tc = (textview_curses*) &lv;
         vis_bookmarks& bm = tc->get_bookmarks();
@@ -63,13 +63,13 @@ public:
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
-            role_out = view_colors::VCR_ERROR;
-            bar_role_out = view_colors::VCR_SCROLLBAR_ERROR;
+            role_out = role_t::VCR_ERROR;
+            bar_role_out = role_t::VCR_SCROLLBAR_ERROR;
         } else {
             next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
             if (next != -1 && next <= end) {
-                role_out = view_colors::VCR_WARNING;
-                bar_role_out = view_colors::VCR_SCROLLBAR_WARNING;
+                role_out = role_t::VCR_WARNING;
+                bar_role_out = role_t::VCR_SCROLLBAR_WARNING;
             }
         }
     };

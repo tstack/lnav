@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "base/auto_mem.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "config.h"

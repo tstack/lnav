@@ -31,7 +31,7 @@
 
 #include "sqlite-extension-func.hh"
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
@@ -942,7 +942,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
             .sql_keyword()
-            .with_parameter(help_text("result-column", "").one_or_more())
+            .with_parameter(
+                help_text(
+                    "result-column",
+                    "The expression used to generate a result for this column.")
+                    .one_or_more())
             .with_parameter(help_text("table", "The table(s) to query for data")
                                 .with_flag_name("FROM")
                                 .zero_or_more())
@@ -962,7 +966,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                     .with_flag_name("ORDER BY")
                     .zero_or_more())
             .with_parameter(
-                help_text("limit-expr", "The maximum number of rows to return")
+                help_text("limit-expr", "The maximum number of rows to return.")
                     .with_flag_name("LIMIT")
                     .zero_or_more())
             .with_example(

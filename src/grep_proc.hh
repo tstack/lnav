@@ -32,18 +32,18 @@
 #ifndef grep_proc_hh
 #define grep_proc_hh
 
-#include <poll.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <deque>
 #include <exception>
 #include <string>
 #include <vector>
 
+#include <poll.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "base/auto_fd.hh"
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"
 #include "pcrepp/pcrepp.hh"

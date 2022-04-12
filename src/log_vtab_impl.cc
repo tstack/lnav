@@ -32,17 +32,20 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "lnav_util.hh"
 #include "logfile_sub_source.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace lnav::roles::literals;
+
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static struct log_cursor log_cursor_latest;
 
-struct _log_vtab_data log_vtab_data;
+thread_local _log_vtab_data log_vtab_data;
 
 static const char* LOG_COLUMNS = R"(  (
   log_line        INTEGER  PRIMARY KEY,            -- The line number for the log message
@@ -947,12 +950,13 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     return SQLITE_OK;
 }
 
-static struct json_path_container tags_handler
-    = {json_path_handler("#")
-           .with_synopsis("<tag>")
-           .with_description("A tag for the log line")
-           .with_pattern(R"(^#[^\s]+$)")
-           .FOR_FIELD(bookmark_metadata, bm_tags)};
+static struct json_path_container tags_handler = {
+    json_path_handler("#")
+        .with_synopsis("tag")
+        .with_description("A tag for the log line")
+        .with_pattern(R"(^#[^\s]+$)")
+        .FOR_FIELD(bookmark_metadata, bm_tags),
+};
 
 static int
 vt_update(sqlite3_vtab* tab,
@@ -972,17 +976,17 @@ vt_update(sqlite3_vtab* tab,
 
         std::map<content_line_t, bookmark_metadata>& bm
             = vt->lss->get_user_bookmark_metadata();
-        const unsigned char* part_name
-            = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
-        const unsigned char* log_comment
+        const auto* part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
+        const auto* log_comment
             = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
-        const unsigned char* log_tags
-            = sqlite3_value_text(argv[2 + VT_COL_LOG_TAGS]);
+        const auto* log_tags = sqlite3_value_text(argv[2 + VT_COL_LOG_TAGS]);
         bookmark_metadata tmp_bm;
 
         if (log_tags) {
-            std::vector<std::string> errors;
-            yajlpp_parse_context ypc(log_vtab_data.lvd_source, &tags_handler);
+            std::vector<lnav::console::user_message> errors;
+            yajlpp_parse_context ypc(
+                fmt::format(FMT_STRING("{}.log_tags"), vt->vi->get_name()),
+                &tags_handler);
             auto_mem<yajl_handle_t> handle(yajl_free);
 
             handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
@@ -990,19 +994,31 @@ vt_update(sqlite3_vtab* tab,
             ypc.ypc_line_number = log_vtab_data.lvd_line_number;
             ypc.with_handle(handle)
                 .with_error_reporter([](const yajlpp_parse_context& ypc,
-                                        lnav_log_level_t level,
-                                        const char* msg) {
-                    auto& errors
-                        = *((std::vector<std::string>*) ypc.ypc_userdata);
+                                        auto msg) {
+                    auto& errors = *((std::vector<lnav::console::user_message>*)
+                                         ypc.ypc_userdata);
                     errors.emplace_back(msg);
                 })
                 .with_obj(tmp_bm);
-            ypc.parse(log_tags, strlen((const char*) log_tags));
-            ypc.complete_parse();
+            ypc.parse_doc(string_fragment{log_tags});
             if (!errors.empty()) {
-                auto all_errors
-                    = fmt::format(FMT_STRING("{}"), fmt::join(errors, "\n"));
-                tab->zErrMsg = sqlite3_mprintf("%s", all_errors.c_str());
+                auto top_error
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid value for ")
+                              .append_quoted("log_tags"_symbol)
+                              .append(" column of table ")
+                              .append_quoted(lnav::roles::symbol(
+                                  vt->vi->get_name().to_string())))
+                          .with_reason(errors[0].to_attr_line({}))
+                          .with_snippet(
+                              lnav::console::snippet::from(
+                                  log_vtab_data.lvd_source,
+                                  log_vtab_data.lvd_content)
+                                  .with_line(log_vtab_data.lvd_line_number));
+                auto json_error = lnav::to_json(top_error);
+                tab->zErrMsg
+                    = sqlite3_mprintf("lnav-error:%s", json_error.c_str());
+                log_debug("dump %s", json_error.c_str());
                 return SQLITE_ERROR;
             }
         }

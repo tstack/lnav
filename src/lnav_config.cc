@@ -46,8 +46,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "auto_mem.hh"
 #include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
@@ -59,6 +59,7 @@
 #include "config.h"
 #include "default-config.h"
 #include "styling.hh"
+#include "view_curses.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -124,7 +125,7 @@ ensure_dotlnav()
 
     auto path = lnav::paths::dotlnav();
 
-    for (auto sub_path : subdirs) {
+    for (const auto* sub_path : subdirs) {
         auto full_path = path / sub_path;
 
         log_perror(mkdir(full_path.c_str(), 0755));
@@ -164,7 +165,7 @@ ensure_dotlnav()
                     continue;
                 }
 
-                log_debug("Removing old stdin capture: %s", gl->gl_pathv[lpc]);
+                log_info("Removing old stdin capture: %s", gl->gl_pathv[lpc]);
                 log_perror(remove(gl->gl_pathv[lpc]));
             }
         }
@@ -315,8 +316,9 @@ read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-static const struct json_path_container format_handlers
-    = {json_path_handler("format-repos#", read_repo_path)};
+static const struct json_path_container format_handlers = {
+    json_path_handler("format-repos#", read_repo_path),
+};
 
 void
 install_extra_formats()
@@ -351,7 +353,7 @@ install_extra_formats()
         yajl_config(jhandle, yajl_allow_comments, 1);
         while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
             if (yajl_parse(jhandle, buffer, rc) != yajl_status_ok) {
-                auto msg = yajl_get_error(jhandle, 1, buffer, rc);
+                auto* msg = yajl_get_error(jhandle, 1, buffer, rc);
                 fprintf(
                     stderr, "Unable to parse remote-config.json -- %s", msg);
                 yajl_free_error(jhandle, msg);
@@ -359,7 +361,7 @@ install_extra_formats()
             }
         }
         if (yajl_complete_parse(jhandle) != yajl_status_ok) {
-            auto msg = yajl_get_error(jhandle, 1, buffer, rc);
+            auto* msg = yajl_get_error(jhandle, 1, buffer, rc);
 
             fprintf(stderr, "Unable to parse remote-config.json -- %s", msg);
             yajl_free_error(jhandle, msg);
@@ -368,23 +370,19 @@ install_extra_formats()
 }
 
 struct userdata {
-    userdata(std::vector<std::string>& errors) : ud_errors(errors){};
+    explicit userdata(std::vector<lnav::console::user_message>& errors)
+        : ud_errors(errors){};
 
-    std::vector<std::string>& ud_errors;
+    std::vector<lnav::console::user_message>& ud_errors;
 };
 
 static void
 config_error_reporter(const yajlpp_parse_context& ypc,
-                      lnav_log_level_t level,
-                      const char* msg)
+                      const lnav::console::user_message& msg)
 {
-    if (level >= lnav_log_level_t::ERROR) {
-        struct userdata* ud = (userdata*) ypc.ypc_userdata;
+    auto* ud = (userdata*) ypc.ypc_userdata;
 
-        ud->ud_errors.emplace_back(msg);
-    } else {
-        fprintf(stderr, "warning:%s\n", msg);
-    }
+    ud->ud_errors.emplace_back(msg);
 }
 
 static const struct json_path_container key_command_handlers = {
@@ -393,38 +391,40 @@ static const struct json_path_container key_command_handlers = {
         .with_description(
             "The command to execute for the given key sequence.  Use a script "
             "to execute more complicated operations.")
-        .with_pattern("[:|;].*")
+        .with_pattern("^[:|;].*")
         .with_example(":goto next hour")
-        .FOR_FIELD(key_command, kc_cmd),
+        .for_field(&key_command::kc_cmd),
     yajlpp::property_handler("alt-msg")
         .with_synopsis("<msg>")
         .with_description(
             "The help message to display after the key is pressed.")
-        .FOR_FIELD(key_command, kc_alt_msg)};
+        .for_field<>(&key_command::kc_alt_msg),
+};
 
-static const struct json_path_container keymap_def_handlers
-    = {yajlpp::pattern_property_handler("(?<key_seq>(?:x[0-9a-f]{2})+)")
-           .with_synopsis("<utf8-key-code-in-hex>")
-           .with_description(
-               "Map of key codes to commands to execute.  The field names are "
-               "the keys to be mapped using as a hexadecimal representation of "
-               "the UTF-8 encoding.  Each byte of the UTF-8 should start with "
-               "an 'x' followed by the hexadecimal representation of the byte.")
-           .with_obj_provider<key_command, key_map>(
-               [](const yajlpp_provider_context& ypc, key_map* km) {
-                   key_command& retval
-                       = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr(
-                           "key_seq")];
+static const struct json_path_container keymap_def_handlers = {
+    yajlpp::pattern_property_handler("(?<key_seq>(?:x[0-9a-f]{2})+)")
+        .with_synopsis("<utf8-key-code-in-hex>")
+        .with_description(
+            "Map of key codes to commands to execute.  The field names are "
+            "the keys to be mapped using as a hexadecimal representation of "
+            "the UTF-8 encoding.  Each byte of the UTF-8 should start with "
+            "an 'x' followed by the hexadecimal representation of the byte.")
+        .with_obj_provider<key_command, key_map>(
+            [](const yajlpp_provider_context& ypc, key_map* km) {
+                key_command& retval
+                    = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr(
+                        "key_seq")];
 
-                   return &retval;
-               })
-           .with_path_provider<key_map>(
-               [](key_map* km, std::vector<std::string>& paths_out) {
-                   for (const auto& iter : km->km_seq_to_cmd) {
-                       paths_out.emplace_back(iter.first);
-                   }
-               })
-           .with_children(key_command_handlers)};
+                return &retval;
+            })
+        .with_path_provider<key_map>(
+            [](key_map* km, std::vector<std::string>& paths_out) {
+                for (const auto& iter : km->km_seq_to_cmd) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(key_command_handlers),
+};
 
 static const struct json_path_container keymap_defs_handlers = {
     yajlpp::pattern_property_handler("(?<keymap_name>[\\w\\-]+)")
@@ -442,7 +442,8 @@ static const struct json_path_container keymap_defs_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
-        .with_children(keymap_def_handlers)};
+        .with_children(keymap_def_handlers),
+};
 
 static const struct json_path_container global_var_handlers = {
     yajlpp::pattern_property_handler("(?<var_name>\\w+)")
@@ -456,7 +457,8 @@ static const struct json_path_container global_var_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
-        .FOR_FIELD(_lnav_config, lc_global_vars)};
+        .FOR_FIELD(_lnav_config, lc_global_vars),
+};
 
 static const struct json_path_container style_config_handlers =
     json_path_container{
@@ -469,7 +471,7 @@ static const struct json_path_container style_config_handlers =
             .with_example("#fff")
             .with_example("Green")
             .with_example("$black")
-            .FOR_FIELD(style_config, sc_color),
+            .for_field(&style_config::sc_color),
         yajlpp::property_handler("background-color")
             .with_synopsis("#hex|color_name")
             .with_description(
@@ -478,13 +480,13 @@ static const struct json_path_container style_config_handlers =
                 "variable reference.")
             .with_example("#2d2a2e")
             .with_example("Green")
-            .FOR_FIELD(style_config, sc_background_color),
+            .for_field(&style_config::sc_background_color),
         yajlpp::property_handler("underline")
             .with_description("Indicates that the text should be underlined.")
-            .FOR_FIELD(style_config, sc_underline),
+            .for_field(&style_config::sc_underline),
         yajlpp::property_handler("bold")
             .with_description("Indicates that the text should be bolded.")
-            .FOR_FIELD(style_config, sc_bold),
+            .for_field(&style_config::sc_bold),
     }
         .with_definition_id("style");
 
@@ -594,103 +596,147 @@ static const struct json_path_container theme_styles_handlers = {
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
                 return &root->lt_style_scrollbar;
             })
-        .with_children(style_config_handlers)};
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h1")
+        .with_description("Styling for top-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[0];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h2")
+        .with_description("Styling for 2nd-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[1];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h3")
+        .with_description("Styling for 3rd-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[2];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h4")
+        .with_description("Styling for 4th-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[3];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h5")
+        .with_description("Styling for 5th-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[4];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("h6")
+        .with_description("Styling for 6th-level headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_header[5];
+            })
+        .with_children(style_config_handlers),
+};
 
-static const struct json_path_container theme_syntax_styles_handlers
-    = {yajlpp::property_handler("keyword")
-           .with_description("Styling for keywords in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_keyword;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("string")
-           .with_description("Styling for single/double-quoted strings in text")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_string;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("comment")
-           .with_description("Styling for comments in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_comment;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("doc-directive")
-           .with_description(
-               "Styling for documentation directives in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_doc_directive;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("variable")
-           .with_description("Styling for variables in text")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_variable;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("symbol")
-           .with_description("Styling for symbols in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_symbol;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("number")
-           .with_description("Styling for numbers in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_number;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("re-special")
-           .with_description(
-               "Styling for special characters in regular expressions")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_re_special;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("re-repeat")
-           .with_description("Styling for repeats in regular expressions")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_re_repeat;
-               })
-           .with_children(style_config_handlers),
+static const struct json_path_container theme_syntax_styles_handlers = {
+    yajlpp::property_handler("keyword")
+        .with_description("Styling for keywords in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_keyword;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("string")
+        .with_description("Styling for single/double-quoted strings in text")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_string;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("comment")
+        .with_description("Styling for comments in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_comment;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("doc-directive")
+        .with_description(
+            "Styling for documentation directives in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_doc_directive;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("variable")
+        .with_description("Styling for variables in text")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_variable;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("symbol")
+        .with_description("Styling for symbols in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_symbol;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("number")
+        .with_description("Styling for numbers in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_number;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("re-special")
+        .with_description(
+            "Styling for special characters in regular expressions")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_re_special;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("re-repeat")
+        .with_description("Styling for repeats in regular expressions")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_re_repeat;
+            })
+        .with_children(style_config_handlers),
 
-       yajlpp::property_handler("diff-delete")
-           .with_description("Styling for deleted lines in diffs")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_diff_delete;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("diff-add")
-           .with_description("Styling for added lines in diffs")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_diff_add;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("diff-section")
-           .with_description("Styling for diffs")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_diff_section;
-               })
-           .with_children(style_config_handlers),
-       yajlpp::property_handler("file")
-           .with_description("Styling for file names in source files")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   return &root->lt_style_file;
-               })
-           .with_children(style_config_handlers)};
+    yajlpp::property_handler("diff-delete")
+        .with_description("Styling for deleted lines in diffs")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_diff_delete;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("diff-add")
+        .with_description("Styling for added lines in diffs")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_diff_add;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("diff-section")
+        .with_description("Styling for diffs")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_diff_section;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("file")
+        .with_description("Styling for file names in source files")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_file;
+            })
+        .with_children(style_config_handlers),
+};
 
 static const struct json_path_container theme_status_styles_handlers = {
     yajlpp::property_handler("text")
@@ -772,24 +818,25 @@ static const struct json_path_container theme_status_styles_handlers = {
         .with_children(style_config_handlers),
 };
 
-static const struct json_path_container theme_log_level_styles_handlers
-    = {yajlpp::pattern_property_handler(
-           "(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|"
-           "warning|error|critical|fatal|invalid)")
-           .with_obj_provider<style_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   style_config& sc = root->lt_level_styles[string2level(
-                       ypc.ypc_extractor.get_substr_i("level").get())];
+static const struct json_path_container theme_log_level_styles_handlers = {
+    yajlpp::pattern_property_handler(
+        "(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|"
+        "warning|error|critical|fatal|invalid)")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                style_config& sc = root->lt_level_styles[string2level(
+                    ypc.ypc_extractor.get_substr_i("level").get())];
 
-                   return &sc;
-               })
-           .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
-                   for (int lpc = LEVEL_TRACE; lpc < LEVEL__MAX; lpc++) {
-                       paths_out.emplace_back(level_names[lpc]);
-                   }
-               })
-           .with_children(style_config_handlers)};
+                return &sc;
+            })
+        .with_path_provider<lnav_theme>(
+            [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
+                for (int lpc = LEVEL_TRACE; lpc < LEVEL__MAX; lpc++) {
+                    paths_out.emplace_back(level_names[lpc]);
+                }
+            })
+        .with_children(style_config_handlers),
+};
 
 static const struct json_path_container highlighter_handlers = {
     yajlpp::property_handler("pattern")
@@ -807,36 +854,38 @@ static const struct json_path_container highlighter_handlers = {
         .with_children(style_config_handlers),
 };
 
-static const struct json_path_container theme_highlights_handlers
-    = {yajlpp::pattern_property_handler("(?<highlight_name>\\w+)")
-           .with_obj_provider<highlighter_config, lnav_theme>(
-               [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                   highlighter_config& hc
-                       = root->lt_highlights[ypc.ypc_extractor
-                                                 .get_substr_i("highlight_name")
-                                                 .get()];
+static const struct json_path_container theme_highlights_handlers = {
+    yajlpp::pattern_property_handler("(?<highlight_name>\\w+)")
+        .with_obj_provider<highlighter_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                highlighter_config& hc
+                    = root->lt_highlights[ypc.ypc_extractor
+                                              .get_substr_i("highlight_name")
+                                              .get()];
 
-                   return &hc;
-               })
-           .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
-                   for (const auto& pair : cfg->lt_highlights) {
-                       paths_out.emplace_back(pair.first);
-                   }
-               })
-           .with_children(highlighter_handlers)};
+                return &hc;
+            })
+        .with_path_provider<lnav_theme>(
+            [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& pair : cfg->lt_highlights) {
+                    paths_out.emplace_back(pair.first);
+                }
+            })
+        .with_children(highlighter_handlers),
+};
 
-static const struct json_path_container theme_vars_handlers
-    = {yajlpp::pattern_property_handler("(?<var_name>\\w+)")
-           .with_synopsis("name")
-           .with_description("A theme variable definition")
-           .with_path_provider<lnav_theme>(
-               [](struct lnav_theme* lt, std::vector<std::string>& paths_out) {
-                   for (const auto& iter : lt->lt_vars) {
-                       paths_out.emplace_back(iter.first);
-                   }
-               })
-           .FOR_FIELD(lnav_theme, lt_vars)};
+static const struct json_path_container theme_vars_handlers = {
+    yajlpp::pattern_property_handler("(?<var_name>\\w+)")
+        .with_synopsis("name")
+        .with_description("A theme variable definition")
+        .with_path_provider<lnav_theme>(
+            [](struct lnav_theme* lt, std::vector<std::string>& paths_out) {
+                for (const auto& iter : lt->lt_vars) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .FOR_FIELD(lnav_theme, lt_vars),
+};
 
 static const struct json_path_container theme_def_handlers = {
     yajlpp::property_handler("vars")
@@ -881,7 +930,8 @@ static const struct json_path_container theme_defs_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
-        .with_children(theme_def_handlers)};
+        .with_children(theme_def_handlers),
+};
 
 static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("clock-format")
@@ -889,13 +939,13 @@ static const struct json_path_container ui_handlers = {
         .with_description("The format for the clock displayed in "
                           "the top-left corner using strftime(3) conversions")
         .with_example("%a %b %d %H:%M:%S %Z")
-        .FOR_FIELD(_lnav_config, lc_ui_clock_format),
+        .for_field(&_lnav_config::lc_ui_clock_format),
     yajlpp::property_handler("dim-text")
         .with_synopsis("bool")
         .with_description("Reduce the brightness of text (useful for xterms). "
                           "This setting can be useful when running in an xterm "
                           "where the white color is very bright.")
-        .FOR_FIELD(_lnav_config, lc_ui_dim_text),
+        .for_field(&_lnav_config::lc_ui_dim_text),
     yajlpp::property_handler("default-colors")
         .with_synopsis("bool")
         .with_description(
@@ -903,15 +953,15 @@ static const struct json_path_container ui_handlers = {
             "instead of black and white for all text coloring.  This setting "
             "can be useful when transparent background or alternate color "
             "theme terminal is used.")
-        .FOR_FIELD(_lnav_config, lc_ui_default_colors),
+        .for_field(&_lnav_config::lc_ui_default_colors),
     yajlpp::property_handler("keymap")
         .with_synopsis("keymap_name")
         .with_description("The name of the keymap to use.")
-        .FOR_FIELD(_lnav_config, lc_ui_keymap),
+        .for_field(&_lnav_config::lc_ui_keymap),
     yajlpp::property_handler("theme")
         .with_synopsis("theme_name")
         .with_description("The name of the theme to use.")
-        .FOR_FIELD(_lnav_config, lc_ui_theme),
+        .for_field(&_lnav_config::lc_ui_theme),
     yajlpp::property_handler("theme-defs")
         .with_description("Theme definitions.")
         .with_children(theme_defs_handlers),
@@ -1105,8 +1155,11 @@ static const struct json_path_container tuning_handlers = {
         .with_children(sysclip_handlers),
 };
 
+const char* DEFAULT_CONFIG_SCHEMA
+    = "https://lnav.org/schemas/config-v1.schema.json";
+
 static const std::set<std::string> SUPPORTED_CONFIG_SCHEMAS = {
-    "https://lnav.org/schemas/config-v1.schema.json",
+    DEFAULT_CONFIG_SCHEMA,
 };
 
 const char* DEFAULT_FORMAT_SCHEMA
@@ -1122,13 +1175,22 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     auto file_id = std::string((const char*) str, len);
 
     if (SUPPORTED_CONFIG_SCHEMAS.count(file_id) == 0) {
+        const auto* handler = ypc->ypc_current_handler;
+        attr_line_t notes{"expecting one of the following $schema values:"};
+
+        for (const auto& schema : SUPPORTED_CONFIG_SCHEMAS) {
+            notes.append("\n").append(
+                lnav::roles::symbol(fmt::format(FMT_STRING("  {}"), schema)));
+        }
         ypc->report_error(
-            lnav_log_level_t::ERROR,
-            "%s:%d: error: unsupported configuration $schema -- %s\n",
-            ypc->ypc_source.c_str(),
-            ypc->get_line_number(),
-            file_id.c_str());
-        return 0;
+            lnav::console::user_message::error(
+                attr_line_t("'")
+                    .append(lnav::roles::symbol(file_id))
+                    .append(
+                        "' is not a supported configuration $schema version"))
+                .with_snippet(ypc->get_snippet())
+                .with_note(notes)
+                .with_help(handler->get_help_text(ypc)));
     }
 
     return 1;
@@ -1136,8 +1198,9 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 
 const json_path_container lnav_config_handlers = json_path_container {
         json_path_handler("$schema", read_id)
-            .with_synopsis("The URI of the schema for this file")
-            .with_description("Specifies the type of this file"),
+            .with_synopsis("<schema-uri>")
+            .with_description("The URI that specifies the schema that describes this type of file")
+            .with_example(DEFAULT_CONFIG_SCHEMA),
 
         yajlpp::property_handler("tuning")
             .with_description("Internal settings")
@@ -1174,15 +1237,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
 {
     static const char* id_path[] = {"$schema", nullptr};
 
-    auto read_res = lnav::filesystem::read_file(path);
-
-    if (read_res.isErr()) {
-        return Err(fmt::format(FMT_STRING("unable to open file4: {} -- {}"),
-                               path.string(),
-                               read_res.unwrapErr()));
-    }
-
-    auto content = read_res.unwrap();
+    auto content = TRY(lnav::filesystem::read_file(path));
     if (startswith(content, "#")) {
         content.insert(0, "//");
     }
@@ -1192,9 +1247,8 @@ detect_config_file_type(const ghc::filesystem::path& path)
         yajl_tree_parse(content.c_str(), error_buffer, sizeof(error_buffer)),
         yajl_tree_free);
     if (content_tree == nullptr) {
-        return Err(fmt::format(FMT_STRING("unable to parse file: {} -- {}"),
-                               path.string(),
-                               error_buffer));
+        return Err(
+            fmt::format(FMT_STRING("JSON parsing failed -- {}"), error_buffer));
     }
 
     auto* id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
@@ -1206,18 +1260,16 @@ detect_config_file_type(const ghc::filesystem::path& path)
             return Ok(config_file_type::FORMAT);
         }
         return Err(fmt::format(
-            FMT_STRING("unsupported configuration version in file: {} -- {}"),
-            path.string(),
+            FMT_STRING("unsupported configuration version in file -- {}"),
             id_val->u.string));
-    } else {
-        return Ok(config_file_type::FORMAT);
     }
+    return Ok(config_file_type::FORMAT);
 }
 
 static void
 load_config_from(_lnav_config& lconfig,
                  const ghc::filesystem::path& path,
-                 std::vector<std::string>& errors)
+                 std::vector<lnav::console::user_message>& errors)
 {
     yajlpp_parse_context ypc(path.string(), &lnav_config_handlers);
     struct userdata ud(errors);
@@ -1229,14 +1281,15 @@ load_config_from(_lnav_config& lconfig,
     ypc.with_error_reporter(config_error_reporter);
     if ((fd = lnav::filesystem::openp(path, O_RDONLY)) == -1) {
         if (errno != ENOENT) {
-            errors.emplace_back(fmt::format(
-                FMT_STRING("error: unable to open format file -- {}"),
-                path.string()));
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t("unable to open configuration file: ")
+                        .append(lnav::roles::file(path)))
+                    .with_errno_reason());
         }
     } else {
         auto_mem<yajl_handle_t> handle(yajl_free);
         char buffer[2048];
-        off_t offset = 0;
         ssize_t rc = -1;
 
         handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
@@ -1247,18 +1300,19 @@ load_config_from(_lnav_config& lconfig,
             rc = read(fd, buffer, sizeof(buffer));
             if (rc == 0) {
                 break;
-            } else if (rc == -1) {
+            }
+            if (rc == -1) {
                 errors.emplace_back(
-                    fmt::format(FMT_STRING("{}:unable to read file -- {}"),
-                                path.string(),
-                                strerror(errno)));
+                    lnav::console::user_message::error(
+                        attr_line_t("unable to read format file: ")
+                            .append(lnav::roles::file(path)))
+                        .with_errno_reason());
                 break;
             }
             if (ypc.parse((const unsigned char*) buffer, rc) != yajl_status_ok)
             {
                 break;
             }
-            offset += rc;
         }
         if (rc == 0) {
             ypc.complete_parse();
@@ -1270,7 +1324,7 @@ static void
 load_default_config(struct _lnav_config& config_obj,
                     const std::string& path,
                     const bin_src_file& bsf,
-                    std::vector<std::string>& errors)
+                    std::vector<lnav::console::user_message>& errors)
 {
     yajlpp_parse_context ypc_builtin(bsf.get_name(), &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
@@ -1298,7 +1352,7 @@ load_default_config(struct _lnav_config& config_obj,
 static void
 load_default_configs(struct _lnav_config& config_obj,
                      const std::string& path,
-                     std::vector<std::string>& errors)
+                     std::vector<lnav::console::user_message>& errors)
 {
     for (auto& bsf : lnav_config_json) {
         load_default_config(config_obj, path, bsf, errors);
@@ -1307,7 +1361,7 @@ load_default_configs(struct _lnav_config& config_obj,
 
 void
 load_config(const std::vector<ghc::filesystem::path>& extra_paths,
-            std::vector<std::string>& errors)
+            std::vector<lnav::console::user_message>& errors)
 {
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
@@ -1370,14 +1424,14 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
 void
 reset_config(const std::string& path)
 {
-    std::vector<std::string> errors;
+    std::vector<lnav::console::user_message> errors;
 
     load_default_configs(lnav_config, path, errors);
 
     reload_config(errors);
 
-    for (auto& err : errors) {
-        log_debug("reset %s", err.c_str());
+    for (const auto& err : errors) {
+        log_debug("reset %s", err.um_message.get_string().c_str());
     }
 }
 
@@ -1418,7 +1472,7 @@ save_config()
 }
 
 void
-reload_config(std::vector<std::string>& errors)
+reload_config(std::vector<lnav::console::user_message>& errors)
 {
     lnav_config_listener* curr = lnav_config_listener::LISTENER_LIST;
 
@@ -1439,10 +1493,16 @@ reload_config(std::vector<std::string>& errors)
                     return;
                 }
 
-                errors.emplace_back(fmt::format(FMT_STRING("{}:{}:{}"),
-                                                loc_iter->second.sl_source,
-                                                loc_iter->second.sl_line_number,
-                                                errmsg));
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t()
+                            .append("invalid value for property ")
+                            .append_quoted(lnav::roles::symbol(path)))
+                        .with_reason(errmsg)
+                        .with_snippet(
+                            lnav::console::snippet::from(
+                                loc_iter->second.sl_source.to_string(), "")
+                                .with_line(loc_iter->second.sl_line_number)));
             };
 
             for (const auto& jph : lnav_config_handlers.jpc_children) {

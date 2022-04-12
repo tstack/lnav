@@ -32,8 +32,6 @@
 #ifndef curl_looper_hh
 #define curl_looper_hh
 
-#include "config.h"
-
 #include <atomic>
 #include <map>
 #include <string>
@@ -41,6 +39,7 @@
 #include <vector>
 
 #include "base/isc.hh"
+#include "config.h"
 
 #if !defined(HAVE_LIBCURL)
 
@@ -67,7 +66,7 @@ public:
 
 #    include <curl/curl.h>
 
-#    include "auto_mem.hh"
+#    include "base/auto_mem.hh"
 #    include "base/lnav_log.hh"
 #    include "base/time_util.hh"
 

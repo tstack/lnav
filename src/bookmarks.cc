@@ -33,4 +33,53 @@
 
 #include "config.h"
 
-std::set<std::string> bookmark_metadata::KNOWN_TAGS;
+std::unordered_set<std::string> bookmark_metadata::KNOWN_TAGS;
+
+void
+bookmark_metadata::add_tag(const std::string& tag)
+{
+    if (std::find(this->bm_tags.begin(), this->bm_tags.end(), tag)
+        == this->bm_tags.end())
+    {
+        this->bm_tags.push_back(tag);
+    }
+}
+
+bool
+bookmark_metadata::remove_tag(const std::string& tag)
+{
+    auto iter = std::find(this->bm_tags.begin(), this->bm_tags.end(), tag);
+    bool retval = false;
+
+    if (iter != this->bm_tags.end()) {
+        this->bm_tags.erase(iter);
+        retval = true;
+    }
+    return retval;
+}
+
+bool
+bookmark_metadata::empty() const
+{
+    return this->bm_name.empty() && this->bm_comment.empty()
+        && this->bm_tags.empty();
+}
+
+void
+bookmark_metadata::clear()
+{
+    this->bm_comment.clear();
+    this->bm_tags.clear();
+}
+
+bookmark_type_t*
+bookmark_type_t::find_type(const std::string& name)
+{
+    auto iter = std::find_if(type_begin(), type_end(), mark_eq(name));
+    bookmark_type_t* retval = nullptr;
+
+    if (iter != type_end()) {
+        retval = (*iter);
+    }
+    return retval;
+}

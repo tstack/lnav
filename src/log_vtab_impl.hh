@@ -207,25 +207,30 @@ protected:
 typedef int (*sql_progress_callback_t)(const log_cursor& lc);
 typedef void (*sql_progress_finished_callback_t)();
 
-extern struct _log_vtab_data {
+struct _log_vtab_data {
     sql_progress_callback_t lvd_progress;
     sql_progress_finished_callback_t lvd_finished;
     std::string lvd_source;
     int lvd_line_number{0};
-} log_vtab_data;
+    attr_line_t lvd_content;
+};
+
+extern thread_local _log_vtab_data log_vtab_data;
 
 class sql_progress_guard {
 public:
     sql_progress_guard(sql_progress_callback_t cb,
                        sql_progress_finished_callback_t fcb,
                        const std::string& source,
-                       int line_number)
+                       int line_number,
+                       const attr_line_t& content)
     {
         log_vtab_data.lvd_progress = cb;
         log_vtab_data.lvd_finished = fcb;
         log_vtab_data.lvd_source = source;
         log_vtab_data.lvd_line_number = line_number;
-    };
+        log_vtab_data.lvd_content = content;
+    }
 
     ~sql_progress_guard()
     {
@@ -236,7 +241,8 @@ public:
         log_vtab_data.lvd_finished = nullptr;
         log_vtab_data.lvd_source.clear();
         log_vtab_data.lvd_line_number = 0;
-    };
+        log_vtab_data.lvd_content.clear();
+    }
 };
 
 class log_vtab_manager {

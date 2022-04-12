@@ -41,6 +41,7 @@
 #include <time.h>
 
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/time_util.hh"
 #include "sqlitepp.hh"
 
@@ -94,16 +95,12 @@ void sql_compile_script(sqlite3* db,
                         const char* src_name,
                         const char* script,
                         std::vector<sqlite3_stmt*>& stmts,
-                        std::vector<std::string>& errors);
-
-void sql_execute_script(sqlite3* db,
-                        const std::vector<sqlite3_stmt*>& stmts,
-                        std::vector<std::string>& errors);
+                        std::vector<lnav::console::user_message>& errors);
 
 void sql_execute_script(sqlite3* db,
                         const char* src_name,
                         const char* script,
-                        std::vector<std::string>& errors);
+                        std::vector<lnav::console::user_message>& errors);
 
 int guess_type_from_pcre(const std::string& pattern, std::string& collator);
 

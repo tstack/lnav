@@ -59,7 +59,8 @@
 #include <string>
 #include <vector>
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
+#include "base/enum_util.hh"
 #include "base/lnav_log.hh"
 #include "base/lrucache.hpp"
 #include "base/opt_util.hh"
@@ -193,70 +194,6 @@ class view_colors {
 public:
     static constexpr unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
 
-    /** Roles that can be mapped to curses attributes using attrs_for_role() */
-    typedef enum {
-        VCR_NONE = -1,
-
-        VCR_TEXT, /*< Raw text. */
-        VCR_IDENTIFIER,
-        VCR_SEARCH, /*< A search hit. */
-        VCR_OK,
-        VCR_ERROR, /*< An error message. */
-        VCR_WARNING, /*< A warning message. */
-        VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
-        VCR_HIDDEN,
-        VCR_ADJUSTED_TIME,
-        VCR_SKEWED_TIME,
-        VCR_OFFSET_TIME,
-        VCR_INVALID_MSG,
-        VCR_STATUS, /*< Normal status line text. */
-        VCR_WARN_STATUS,
-        VCR_ALERT_STATUS, /*< Alert status line text. */
-        VCR_ACTIVE_STATUS, /*< */
-        VCR_ACTIVE_STATUS2, /*< */
-        VCR_STATUS_TITLE,
-        VCR_STATUS_SUBTITLE,
-        VCR_STATUS_STITCH_TITLE_TO_SUB,
-        VCR_STATUS_STITCH_SUB_TO_TITLE,
-        VCR_STATUS_STITCH_SUB_TO_NORMAL,
-        VCR_STATUS_STITCH_NORMAL_TO_SUB,
-        VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-        VCR_STATUS_STITCH_NORMAL_TO_TITLE,
-        VCR_STATUS_TITLE_HOTKEY,
-        VCR_STATUS_DISABLED_TITLE,
-        VCR_STATUS_HOTKEY,
-        VCR_INACTIVE_STATUS,
-        VCR_INACTIVE_ALERT_STATUS,
-        VCR_SCROLLBAR,
-        VCR_SCROLLBAR_ERROR,
-        VCR_SCROLLBAR_WARNING,
-        VCR_FOCUSED,
-        VCR_DISABLED_FOCUSED,
-        VCR_POPUP,
-        VCR_COLOR_HINT,
-
-        VCR_KEYWORD,
-        VCR_STRING,
-        VCR_COMMENT,
-        VCR_DOC_DIRECTIVE,
-        VCR_VARIABLE,
-        VCR_SYMBOL,
-        VCR_NUMBER,
-        VCR_RE_SPECIAL,
-        VCR_RE_REPEAT,
-        VCR_FILE,
-
-        VCR_DIFF_DELETE, /*< Deleted line in a diff. */
-        VCR_DIFF_ADD, /*< Added line in a diff. */
-        VCR_DIFF_SECTION, /*< Section marker in a diff. */
-
-        VCR_LOW_THRESHOLD,
-        VCR_MED_THRESHOLD,
-        VCR_HIGH_THRESHOLD,
-
-        VCR__MAX
-    } role_t;
-
     /** @return A reference to the singleton. */
     static view_colors& singleton();
 
@@ -276,23 +213,24 @@ public:
      */
     attr_t attrs_for_role(role_t role, bool selected = false) const
     {
-        if (role == VCR_NONE) {
+        if (role == role_t::VCR_NONE) {
             return 0;
         }
 
-        require(role >= 0);
-        require(role < VCR__MAX);
+        require(role > role_t::VCR_NONE);
+        require(role < role_t::VCR__MAX);
 
-        return selected ? this->vc_role_colors[role].second
-                        : this->vc_role_colors[role].first;
+        return selected
+            ? this->vc_role_colors[lnav::enums::to_underlying(role)].second
+            : this->vc_role_colors[lnav::enums::to_underlying(role)].first;
     };
 
     attr_t reverse_attrs_for_role(role_t role) const
     {
-        require(role >= 0);
-        require(role < VCR__MAX);
+        require(role > role_t::VCR_NONE);
+        require(role < role_t::VCR__MAX);
 
-        return this->vc_role_reverse_colors[role];
+        return this->vc_role_reverse_colors[lnav::enums::to_underlying(role)];
     };
 
     int color_for_ident(const char* str, size_t len) const;
@@ -351,6 +289,10 @@ public:
         return this->vc_ansi_to_theme[ansi_fg];
     }
 
+    struct roles {
+        static string_attr_pair file();
+    };
+
     static bool initialized;
 
 private:
@@ -364,9 +306,10 @@ private:
     };
 
     /** Map of role IDs to attribute values. */
-    std::pair<attr_t, attr_t> vc_role_colors[VCR__MAX];
+    std::pair<attr_t, attr_t>
+        vc_role_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
     /** Map of role IDs to reverse-video attribute values. */
-    attr_t vc_role_reverse_colors[VCR__MAX];
+    attr_t vc_role_reverse_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
     short vc_ansi_to_theme[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
     int vc_color_pair_end{0};
@@ -447,7 +390,7 @@ public:
         return *this;
     }
 
-    void set_default_role(view_colors::role_t role)
+    void set_default_role(role_t role)
     {
         this->vc_default_role = role;
     }
@@ -472,13 +415,6 @@ public:
         return this->vc_width;
     }
 
-    static string_attr_type<view_colors::role_t> VC_ROLE;
-    static string_attr_type<view_colors::role_t> VC_ROLE_FG;
-    static string_attr_type<int64_t> VC_STYLE;
-    static string_attr_type<int64_t> VC_GRAPHIC;
-    static string_attr_type<int64_t> VC_FOREGROUND;
-    static string_attr_type<int64_t> VC_BACKGROUND;
-
     static void awaiting_user_input();
 
     static void mvwattrline(WINDOW* window,
@@ -486,8 +422,7 @@ public:
                             int x,
                             attr_line_t& al,
                             const struct line_range& lr,
-                            view_colors::role_t base_role
-                            = view_colors::VCR_TEXT);
+                            role_t base_role = role_t::VCR_TEXT);
 
 protected:
     bool vc_visible{true};
@@ -495,7 +430,7 @@ protected:
     bool vc_needs_update{true};
     long vc_width;
     std::vector<view_curses*> vc_children;
-    view_colors::role_t vc_default_role{view_colors::VCR_TEXT};
+    role_t vc_default_role{role_t::VCR_TEXT};
 };
 
 template<class T>
@@ -507,9 +442,8 @@ public:
     {
         if (this->vs_views.empty()) {
             return nonstd::nullopt;
-        } else {
-            return this->vs_views.back();
         }
+        return this->vs_views.back();
     }
 
     void do_update() override
@@ -563,12 +497,12 @@ public:
         return this->vs_views.end();
     }
 
-    size_t size()
+    size_t size() const
     {
         return this->vs_views.size();
     }
 
-    bool empty()
+    bool empty() const
     {
         return this->vs_views.empty();
     }

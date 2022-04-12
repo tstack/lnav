@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "no_sample_log": {
         "title": "invalid sample test",
         "regex": {
@@ -9,7 +10,7 @@
                 "pattern": "^(?<timestamp>\\d+); (?<body>\\w+)$"
             }
         },
-        "timestamp-format" : [
+        "timestamp-format": [
             "%i"
         ]
     }

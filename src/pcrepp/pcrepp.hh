@@ -59,7 +59,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "auto_mem.hh"
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
 

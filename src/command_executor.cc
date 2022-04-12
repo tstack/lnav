@@ -31,12 +31,14 @@
 
 #include "command_executor.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "db_sub_source.hh"
+#include "help_text_formatter.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -101,14 +103,14 @@ sql_progress_finished()
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 
-Result<std::string, std::string> execute_from_file(
+Result<std::string, lnav::console::user_message> execute_from_file(
     exec_context& ec,
     const ghc::filesystem::path& path,
     int line_number,
     char mode,
     const std::string& cmdline);
 
-Result<std::string, std::string>
+Result<std::string, lnav::console::user_message>
 execute_command(exec_context& ec, const std::string& cmdline)
 {
     std::vector<std::string> args;
@@ -122,15 +124,18 @@ execute_command(exec_context& ec, const std::string& cmdline)
 
         if ((iter = lnav_commands.find(args[0])) == lnav_commands.end()) {
             return ec.make_error("unknown command - {}", args[0]);
-        } else {
-            return iter->second->c_func(ec, cmdline, args);
         }
+
+        ec.ec_current_help = &iter->second->c_help;
+        auto retval = iter->second->c_func(ec, cmdline, args);
+        ec.ec_current_help = nullptr;
+        return retval;
     }
 
     return ec.make_error("no command to execute");
 }
 
-Result<std::string, std::string>
+Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
     db_label_source& dls = lnav_data.ld_db_row_source;
@@ -153,7 +158,11 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
-            return cmd_iter->second->c_func(ec, stmt_str, args);
+            ec.ec_current_help = &cmd_iter->second->c_help;
+            auto retval = cmd_iter->second->c_func(ec, stmt_str, args);
+            ec.ec_current_help = nullptr;
+
+            return retval;
         }
     }
 
@@ -163,9 +172,12 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     ec.ec_accumulator->clear();
 
-    std::pair<std::string, int> source = ec.ec_source.top();
-    sql_progress_guard progress_guard(
-        sql_progress, sql_progress_finished, source.first, source.second);
+    auto source = ec.ec_source.top();
+    sql_progress_guard progress_guard(sql_progress,
+                                      sql_progress_finished,
+                                      source.s_source,
+                                      source.s_line,
+                                      source.s_content);
     gettimeofday(&start_tv, nullptr);
     retcode = sqlite3_prepare_v2(
         lnav_data.ld_db.in(), stmt_str.c_str(), -1, stmt.out(), nullptr);
@@ -174,7 +186,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         alt_msg = "";
         return ec.make_error("{}", errmsg);
-    } else if (stmt == nullptr) {
+    }
+    if (stmt == nullptr) {
         alt_msg = "";
         return ec.make_error("No statement given");
     }
@@ -301,8 +314,11 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
                     log_error("sqlite3_step error code: %d", retcode);
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    if (startswith(errmsg, "lnav-error:")) {
+                        return Err(lnav::from_json<lnav::console::user_message>(
+                            &errmsg[11]));
+                    }
                     return ec.make_error("{}", errmsg);
-                    break;
                 }
             }
         }
@@ -409,7 +425,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     return Ok(retval);
 }
 
-static Result<std::string, std::string>
+static Result<std::string, lnav::console::user_message>
 execute_file_contents(exec_context& ec,
                       const ghc::filesystem::path& path,
                       bool multiline)
@@ -490,7 +506,7 @@ execute_file_contents(exec_context& ec,
     return Ok(retval);
 }
 
-Result<std::string, std::string>
+Result<std::string, lnav::console::user_message>
 execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 {
     available_scripts scripts;
@@ -583,7 +599,7 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
     return Ok(retval);
 }
 
-Result<std::string, std::string>
+Result<std::string, lnav::console::user_message>
 execute_from_file(exec_context& ec,
                   const ghc::filesystem::path& path,
                   int line_number,
@@ -591,7 +607,7 @@ execute_from_file(exec_context& ec,
                   const std::string& cmdline)
 {
     std::string retval, alt_msg;
-    auto _sg = ec.enter_source(path.string(), line_number);
+    auto _sg = ec.enter_source(path.string(), line_number, cmdline);
 
     switch (mode) {
         case ':':
@@ -621,7 +637,7 @@ execute_from_file(exec_context& ec,
     return Ok(retval);
 }
 
-Result<std::string, std::string>
+Result<std::string, lnav::console::user_message>
 execute_any(exec_context& ec, const std::string& cmdline_with_mode)
 {
     std::string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
@@ -663,7 +679,8 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
 void
 execute_init_commands(
     exec_context& ec,
-    std::vector<std::pair<Result<std::string, std::string>, std::string>>& msgs)
+    std::vector<std::pair<Result<std::string, lnav::console::user_message>,
+                          std::string>>& msgs)
 {
     if (lnav_data.ld_cmd_init_done) {
         return;
@@ -678,29 +695,30 @@ execute_init_commands(
 
         wait_for_children();
 
-        ec.ec_source.emplace("command-option", option_index++);
-        switch (cmd.at(0)) {
-            case ':':
-                msgs.emplace_back(execute_command(ec, cmd.substr(1)), alt_msg);
-                break;
-            case '/':
-                lnav_data.ld_view_stack.top() |
-                    [cmd](auto tc) { tc->execute_search(cmd.substr(1)); };
-                break;
-            case ';':
-                setup_logline_table(ec);
-                msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg),
-                                  alt_msg);
-                break;
-            case '|':
-                msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
-                break;
+        {
+            auto _sg = ec.enter_source("command-option", option_index++, cmd);
+            switch (cmd.at(0)) {
+                case ':':
+                    msgs.emplace_back(execute_command(ec, cmd.substr(1)),
+                                      alt_msg);
+                    break;
+                case '/':
+                    lnav_data.ld_view_stack.top() |
+                        [cmd](auto tc) { tc->execute_search(cmd.substr(1)); };
+                    break;
+                case ';':
+                    setup_logline_table(ec);
+                    msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg),
+                                      alt_msg);
+                    break;
+                case '|':
+                    msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
+                    break;
+            }
+
+            rescan_files();
+            rebuild_indexes_repeatedly();
         }
-
-        rescan_files();
-        rebuild_indexes_repeatedly();
-
-        ec.ec_source.pop();
     }
     lnav_data.ld_commands.clear();
 
@@ -854,19 +872,6 @@ add_global_vars(exec_context& ec)
     }
 }
 
-std::string
-exec_context::get_error_prefix()
-{
-    if (this->ec_source.size() <= 1) {
-        return "error: ";
-    }
-
-    std::pair<std::string, int> source = this->ec_source.top();
-
-    return fmt::format(
-        FMT_STRING("{}:{}: error: "), source.first, source.second);
-}
-
 void
 exec_context::set_output(const std::string& name,
                          FILE* file,
@@ -903,8 +908,26 @@ exec_context::exec_context(std::vector<logline_value>* line_values,
 {
     this->ec_local_vars.push(std::map<std::string, std::string>());
     this->ec_path_stack.emplace_back(".");
-    this->ec_source.emplace("command", 1);
+    this->ec_source.emplace(
+        lnav::console::snippet::from("command", "").with_line(1));
     this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
+}
+
+void
+exec_context::add_error_context(lnav::console::user_message& um)
+{
+    if (!this->ec_source.empty()) {
+        auto source = this->ec_source.top();
+
+        um.with_snippet(source);
+    }
+
+    if (this->ec_current_help != nullptr) {
+        attr_line_t help;
+
+        format_help_text_for_term(*this->ec_current_help, -1, help, true);
+        um.with_help(help);
+    }
 }
 
 exec_context::output_guard::output_guard(exec_context& context,

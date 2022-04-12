@@ -74,14 +74,16 @@
 #endif
 
 #include "all_logs_vtab.hh"
-#include "ansi_scrubber.hh"
+#include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/func_util.hh"
 #include "base/future_util.hh"
+#include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
 #include "base/isc.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -155,6 +157,7 @@
 #endif
 
 using namespace std::literals::chrono_literals;
+using namespace lnav::roles::literals;
 
 static bool initial_build = false;
 static std::multimap<lnav_flags_t, std::string> DEFAULT_FILES;
@@ -177,18 +180,20 @@ const int ZOOM_LEVELS[] = {
 
 const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
-const char* lnav_zoom_strings[] = {"1-second",
-                                   "30-second",
-                                   "1-minute",
-                                   "5-minute",
-                                   "15-minute",
-                                   "1-hour",
-                                   "4-hour",
-                                   "8-hour",
-                                   "1-day",
-                                   "1-week",
+const char* lnav_zoom_strings[] = {
+    "1-second",
+    "30-second",
+    "1-minute",
+    "5-minute",
+    "15-minute",
+    "1-hour",
+    "4-hour",
+    "8-hour",
+    "1-day",
+    "1-week",
 
-                                   nullptr};
+    nullptr,
+};
 
 static const char* view_titles[LNV__MAX] = {
     "LOG",
@@ -299,12 +304,14 @@ bool
 setup_logline_table(exec_context& ec)
 {
     // Hidden columns don't show up in the table_info pragma.
-    static const char* hidden_table_columns[] = {"log_time_msecs",
-                                                 "log_path",
-                                                 "log_text",
-                                                 "log_body",
+    static const char* hidden_table_columns[] = {
+        "log_time_msecs",
+        "log_path",
+        "log_text",
+        "log_body",
 
-                                                 nullptr};
+        nullptr,
+    };
 
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
     bool retval = false;
@@ -751,15 +758,11 @@ append_default_files(lnav_flags_t flag)
     if (lnav_data.ld_flags & flag) {
         auto cwd = ghc::filesystem::current_path();
 
-        std::pair<std::multimap<lnav_flags_t, std::string>::iterator,
-                  std::multimap<lnav_flags_t, std::string>::iterator>
-            range;
-        for (range = DEFAULT_FILES.equal_range(flag);
+        for (auto range = DEFAULT_FILES.equal_range(flag);
              range.first != range.second;
              range.first++)
         {
-            std::string path = range.first->second;
-            struct stat st;
+            auto path = range.first->second;
 
             if (access(path.c_str(), R_OK) == 0) {
                 auto_mem<char> abspath;
@@ -770,11 +773,13 @@ append_default_files(lnav_flags_t flag)
                 } else {
                     lnav_data.ld_active_files.fc_file_names[abspath.in()];
                 }
-            } else if (stat(path.c_str(), &st) == 0) {
-                fprintf(stderr,
-                        "error: cannot read -- %s%s\n",
-                        cwd.c_str(),
-                        path.c_str());
+            } else if (lnav::filesystem::stat_file(path).isOk()) {
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        attr_line_t("default syslog file is not readable -- ")
+                            .append(lnav::roles::file(cwd))
+                            .append(lnav::roles::file(path))));
                 retval = false;
             }
         }
@@ -841,6 +846,27 @@ rl_blur(readline_curses* rc)
 }
 
 readline_context::command_map_t lnav_commands;
+
+static attr_line_t
+command_arg_help()
+{
+    return attr_line_t()
+        .append(
+            "command arguments must start with one of the following symbols "
+            "to denote the type of command:\n")
+        .append("   ")
+        .append(":"_symbol)
+        .append(" - ")
+        .append("an lnav command   (e.g. :goto 42)\n")
+        .append("   ")
+        .append(";"_symbol)
+        .append(" - ")
+        .append("an SQL statement  (e.g. SELECT * FROM syslog_log)\n")
+        .append("   ")
+        .append("|"_symbol)
+        .append(" - ")
+        .append("an lnav script    (e.g. |rename-stdin foo)\n");
+}
 
 static void
 usage()
@@ -1045,9 +1071,7 @@ public:
         me.me_y = y - tc->get_y() - 1;
 
         tc->handle_mouse(me);
-    };
-
-private:
+    }
 };
 
 static bool
@@ -1512,6 +1536,8 @@ looper()
             highlight_source_t::THEME);
         lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
+        lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (auto& sc : lnav_data.ld_status) {
@@ -1530,6 +1556,7 @@ looper()
             &lnav_data.ld_preview_status_source);
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
+        lnav_data.ld_user_message_view.set_show_bottom_border(true);
 
         for (auto& sc : lnav_data.ld_status) {
             sc.window_change();
@@ -1713,6 +1740,7 @@ looper()
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_preview_view.do_update();
+            lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 for (auto& sc : lnav_data.ld_status) {
                     sc.do_update();
@@ -1823,6 +1851,8 @@ looper()
                             lnav_data.ld_key_repeat_history.update(
                                 ch, tc->get_top());
                         };
+
+                        lnav_data.ld_user_message_source.clear();
 
                         if (!lnav_data.ld_looping) {
                             // No reason to keep processing input after the
@@ -1953,8 +1983,9 @@ looper()
 
                 if (initial_build) {
                     static bool ran_cleanup = false;
-                    std::vector<std::pair<Result<std::string, std::string>,
-                                          std::string>>
+                    std::vector<std::pair<
+                        Result<std::string, lnav::console::user_message>,
+                        std::string>>
                         cmd_results;
 
                     execute_init_commands(ec, cmd_results);
@@ -2024,6 +2055,7 @@ looper()
                 lnav_data.ld_match_view.set_needs_update();
                 lnav_data.ld_filter_view.set_needs_update();
                 lnav_data.ld_files_view.set_needs_update();
+                lnav_data.ld_user_message_view.set_needs_update();
             }
 
             if (lnav_data.ld_child_terminated) {
@@ -2127,20 +2159,18 @@ get_textview_for_mode(ln_mode_t mode)
 }
 
 static void
-print_errors(std::vector<std::string> error_list)
+print_errors(std::vector<lnav::console::user_message> error_list)
 {
     for (auto& iter : error_list) {
-        fprintf(stderr,
-                "%s%s",
-                iter.c_str(),
-                iter[iter.size() - 1] == '\n' ? "" : "\n");
+        lnav::console::print(stderr, iter);
     }
 }
 
 int
 main(int argc, char* argv[])
 {
-    std::vector<std::string> config_errors, loader_errors;
+    std::vector<lnav::console::user_message> config_errors;
+    std::vector<lnav::console::user_message> loader_errors;
     exec_context& ec = lnav_data.ld_exec_context;
     int lpc, c, retval = EXIT_SUCCESS;
 
@@ -2223,15 +2253,22 @@ main(int argc, char* argv[])
                         }
                         break;
                     default:
-                        fprintf(
+                        lnav::console::print(
                             stderr,
-                            "error: command arguments should start with a "
-                            "colon, semi-colon, or pipe-symbol to denote:\n");
-                        fprintf(stderr,
-                                "error: a built-in command, SQL query, "
-                                "or a file path that contains commands to "
-                                "execute\n");
-                        usage();
+                            lnav::console::user_message::error(
+                                attr_line_t("invalid value for ")
+                                    .append_quoted("-c"_symbol)
+                                    .append(" option"))
+                                .with_snippet(lnav::console::snippet::from(
+                                    "arg",
+                                    attr_line_t(" -c ")
+                                        .append(optarg)
+                                        .append("\n")
+                                        .append(4, ' ')
+                                        .append(lnav::roles::error(
+                                            "^ command type prefix "
+                                            "is missing"))))
+                                .with_help(command_arg_help()));
                         exit(EXIT_FAILURE);
                         break;
                 }
@@ -2244,12 +2281,18 @@ main(int argc, char* argv[])
                     || strcmp("/dev/stdin", optarg) == 0) {
                     exec_stdin = true;
                 }
-                lnav_data.ld_commands.push_back("|" + std::string(optarg));
+                lnav_data.ld_commands.emplace_back(
+                    fmt::format(FMT_STRING("|{}"), optarg));
                 break;
 
             case 'I':
                 if (access(optarg, X_OK) != 0) {
-                    perror("invalid config path");
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid configuration directory: ")
+                                .append(lnav::roles::file(optarg)))
+                            .with_errno_reason());
                     exit(EXIT_FAILURE);
                 }
                 lnav_data.ld_config_paths.emplace_back(optarg);
@@ -2305,14 +2348,15 @@ main(int argc, char* argv[])
                 if (isatty(STDIN_FILENO) && read(STDIN_FILENO, &b, 1) == -1) {
                     perror("Read key from STDIN");
                 }
-            } break;
+                break;
+            }
 
             case 'v':
                 lnav_data.ld_flags |= LNF_VERBOSE;
                 break;
 
             case 'V':
-                printf("%s\n", VCS_PACKAGE_STRING);
+                fmt::print("{}\n", VCS_PACKAGE_STRING);
                 exit(0);
                 break;
 
@@ -2361,7 +2405,26 @@ main(int argc, char* argv[])
             = lnav::paths::dotlnav() / "configs/installed";
 
         if (argc == 0) {
-            fprintf(stderr, "error: expecting file format paths\n");
+            const auto install_reason
+                = attr_line_t("the ")
+                      .append("-i"_symbol)
+                      .append(
+                          " option expects one or more log format definition "
+                          "files to install in your lnav configuration "
+                          "directory");
+            const auto install_help
+                = attr_line_t(
+                      "log format definitions are JSON files that tell lnav "
+                      "how to understand log files\n")
+                      .append(
+                          "See: https://docs.lnav.org/en/latest/formats.html");
+
+            lnav::console::print(stderr,
+                                 lnav::console::user_message::error(
+                                     "missing format files to install")
+                                     .with_reason(install_reason)
+                                     .with_help(install_help));
+            usage();
             return EXIT_FAILURE;
         }
 
@@ -2380,27 +2443,35 @@ main(int argc, char* argv[])
 
             auto file_type_result = detect_config_file_type(argv[lpc]);
             if (file_type_result.isErr()) {
-                fprintf(stderr,
-                        "error: %s\n",
-                        file_type_result.unwrapErr().c_str());
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        attr_line_t("unable to open configuration file: ")
+                            .append(lnav::roles::file(argv[lpc])))
+                        .with_reason(file_type_result.unwrapErr()));
                 return EXIT_FAILURE;
             }
             auto file_type = file_type_result.unwrap();
 
-            std::string dst_name;
+            auto src_path = ghc::filesystem::path(argv[lpc]);
+            ghc::filesystem::path dst_name;
             if (file_type == config_file_type::CONFIG) {
-                dst_name = basename(argv[lpc]);
+                dst_name = src_path.filename();
             } else {
-                std::vector<intern_string_t> format_list
-                    = load_format_file(argv[lpc], loader_errors);
+                auto format_list = load_format_file(src_path, loader_errors);
 
                 if (!loader_errors.empty()) {
                     print_errors(loader_errors);
                     return EXIT_FAILURE;
                 }
                 if (format_list.empty()) {
-                    fprintf(
-                        stderr, "error: format file is empty: %s\n", argv[lpc]);
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid format file: ")
+                                .append(lnav::roles::file(src_path.string())))
+                            .with_reason("there must be at least one format "
+                                         "definition in the file"));
                     return EXIT_FAILURE;
                 }
 
@@ -2442,7 +2513,11 @@ main(int argc, char* argv[])
                     }
                 }
 
-                fprintf(stderr, "info: installed: %s\n", dst_path.c_str());
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::ok(
+                        attr_line_t("installed -- ")
+                            .append(lnav::roles::file(dst_path))));
             }
         }
         return EXIT_SUCCESS;
@@ -2541,6 +2616,8 @@ main(int argc, char* argv[])
         .add_child_view(&lnav_data.ld_filter_source.fss_editor);
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
+    lnav_data.ld_user_message_view.set_sub_source(
+        &lnav_data.ld_user_message_source);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
@@ -2775,26 +2852,31 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 lnav_data.ld_active_files.fc_file_names[argv[lpc]].with_tail(
                     !(lnav_data.ld_flags & LNF_HEADLESS));
             } else {
-                fprintf(stderr,
-                        "Cannot stat file: %s -- %s\n",
-                        argv[lpc],
-                        strerror(errno));
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        attr_line_t("unable to open file: ")
+                            .append(lnav::roles::file(argv[lpc])))
+                        .with_errno_reason());
                 retval = EXIT_FAILURE;
             }
         } else if (access(argv[lpc], R_OK) == -1) {
-            fprintf(stderr,
-                    "Cannot read file: %s -- %s\n",
-                    argv[lpc],
-                    strerror(errno));
+            lnav::console::print(stderr,
+                                 lnav::console::user_message::error(
+                                     attr_line_t("cannot read file: ")
+                                         .append(lnav::roles::file(argv[lpc])))
+                                     .with_errno_reason());
             retval = EXIT_FAILURE;
         } else if (S_ISFIFO(st.st_mode)) {
             auto_fd fifo_fd;
 
             if ((fifo_fd = open(argv[lpc], O_RDONLY)) == -1) {
-                fprintf(stderr,
-                        "Cannot open fifo: %s -- %s\n",
-                        argv[lpc],
-                        strerror(errno));
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        attr_line_t("cannot open fifo: ")
+                            .append(lnav::roles::file(argv[lpc])))
+                        .with_errno_reason());
                 retval = EXIT_FAILURE;
             } else {
                 auto fifo_tmp_fd
@@ -2901,7 +2983,15 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     if (!(lnav_data.ld_flags & (LNF_HEADLESS | LNF_CHECK_CONFIG))
         && !isatty(STDOUT_FILENO))
     {
-        fprintf(stderr, "error: stdout is not a tty.\n");
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::error(
+                "unable to display interactive text UI")
+                .with_reason("stdout is not a TTY")
+                .with_help(attr_line_t("pass the ")
+                               .append("-n"_symbol)
+                               .append(" option to run lnav in headless mode "
+                                       "or don't redirect stdout")));
         retval = EXIT_FAILURE;
     }
 
@@ -2955,7 +3045,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         && lnav_data.ld_commands.empty() && lnav_data.ld_pt_search.empty()
         && !(lnav_data.ld_flags & (LNF_HELP | LNF_NO_DEFAULT)))
     {
-        fprintf(stderr, "error: no log files given/found.\n");
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::error("no log files given/found"));
         retval = EXIT_FAILURE;
     }
 
@@ -3002,7 +3094,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 std::vector<
-                    std::pair<Result<std::string, std::string>, std::string>>
+                    std::pair<Result<std::string, lnav::console::user_message>,
+                              std::string>>
                     cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
                 bool output_view = true;
@@ -3012,10 +3105,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair :
                          lnav_data.ld_active_files.fc_name_to_errors) {
-                        fprintf(stderr,
-                                "error: unable to open file: %s -- %s\n",
-                                pair.first.c_str(),
-                                pair.second.fei_description.c_str());
+                        lnav::console::print(
+                            stderr,
+                            lnav::console::user_message::error(
+                                attr_line_t("unable to open file: ")
+                                    .append(lnav::roles::file(pair.first)))
+                                .with_reason(pair.second.fei_description));
                     }
 
                     return EXIT_FAILURE;
@@ -3064,7 +3159,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 for (auto& pair : cmd_results) {
                     if (pair.first.isErr()) {
-                        fprintf(stderr, "%s\n", pair.first.unwrapErr().c_str());
+                        lnav::console::print(stderr, pair.first.unwrapErr());
                         output_view = false;
                     } else {
                         auto msg = pair.first.unwrap();
@@ -3182,27 +3277,36 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             && !(lnav_data.ld_flags & LNF_QUIET)
             && !(lnav_data.ld_flags & LNF_HEADLESS))
         {
-            if (ghc::filesystem::file_size(stdin_tmp_path)
-                > MAX_STDIN_CAPTURE_SIZE) {
+            ghc::filesystem::permissions(stdin_tmp_path,
+                                         ghc::filesystem::perms::owner_read);
+            auto stdin_size = ghc::filesystem::file_size(stdin_tmp_path);
+            if (stdin_size > MAX_STDIN_CAPTURE_SIZE) {
                 log_info("not saving large stdin capture -- %s",
                          stdin_tmp_path.c_str());
                 ghc::filesystem::remove(stdin_tmp_path);
             } else {
-                auto home = getenv("HOME");
+                auto home = getenv_opt("HOME");
                 auto path_str = stdin_tmp_path.string();
 
-                if (home != nullptr && startswith(path_str, home)) {
-                    path_str = path_str.substr(strlen(home));
+                if (home && startswith(path_str, home.value())) {
+                    path_str = path_str.substr(strlen(home.value()));
                     if (path_str[0] != '/') {
                         path_str.insert(0, 1, '/');
                     }
                     path_str.insert(0, 1, '~');
                 }
 
-                fprintf(stderr,
-                        "info: stdin was captured, you can reopen it using -- "
-                        "lnav %s\n",
-                        path_str.c_str());
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::info(
+                        attr_line_t()
+                            .append(lnav::roles::number(humanize::file_size(
+                                stdin_size, humanize::alignment::none)))
+                            .append(" of data from stdin was captured and "
+                                    "will be saved for one day.  You can "
+                                    "reopen it by running:\n")
+                            .append("   {} ", lnav_data.ld_program_name)
+                            .append(lnav::roles::file(path_str))));
             }
         }
     }

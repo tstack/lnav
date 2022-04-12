@@ -59,9 +59,9 @@ public:
             this->tss_fields[lpc].set_width(5);
             this->tss_fields[lpc].set_value(names[lpc]);
         }
-        this->tss_fields[TSF_CPU].set_role(view_colors::VCR_WARN_STATUS);
-        this->tss_fields[TSF_MEM].set_role(view_colors::VCR_ALERT_STATUS);
-        this->tss_fields[TSF_TRAF].set_role(view_colors::VCR_ACTIVE_STATUS);
+        this->tss_fields[TSF_CPU].set_role(role_t::VCR_WARN_STATUS);
+        this->tss_fields[TSF_MEM].set_role(role_t::VCR_ALERT_STATUS);
+        this->tss_fields[TSF_TRAF].set_role(role_t::VCR_ACTIVE_STATUS);
     };
 
     size_t statusview_fields()

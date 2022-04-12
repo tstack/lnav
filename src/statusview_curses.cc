@@ -34,6 +34,7 @@
 
 #include "statusview_curses.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "config.h"
 
 void
@@ -56,15 +57,15 @@ status_field::do_cylon()
 {
     string_attrs_t& sa = this->sf_value.get_attrs();
 
-    remove_string_attr(sa, &view_curses::VC_STYLE);
+    remove_string_attr(sa, &VC_STYLE);
 
     struct line_range lr(this->sf_cylon_pos, this->sf_width);
     view_colors& vc = view_colors::singleton();
 
     sa.emplace_back(
         lr,
-        view_curses::VC_STYLE.value(
-            vc.attrs_for_role(view_colors::VCR_ACTIVE_STATUS) | A_REVERSE));
+        VC_STYLE.value(
+            vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS) | A_REVERSE));
 
     this->sf_cylon_pos += 1;
     if (this->sf_cylon_pos > this->sf_width) {
@@ -73,18 +74,18 @@ status_field::do_cylon()
 }
 
 void
-status_field::set_stitch_value(view_colors::role_t left,
-                               view_colors::role_t right)
+status_field::set_stitch_value(role_t left,
+                               role_t right)
 {
     string_attrs_t& sa = this->sf_value.get_attrs();
     struct line_range lr(0, 1);
 
     this->sf_value.get_string() = "::";
     sa.clear();
-    sa.emplace_back(lr, view_curses::VC_ROLE.value(left));
+    sa.emplace_back(lr, VC_ROLE.value(left));
     lr.lr_start = 1;
     lr.lr_end = 2;
-    sa.emplace_back(lr, view_curses::VC_ROLE.value(right));
+    sa.emplace_back(lr, VC_ROLE.value(right));
 }
 
 void
@@ -104,8 +105,8 @@ statusview_curses::do_update()
     top = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
     attrs = vc.attrs_for_role(this->sc_enabled
-                                  ? view_colors::VCR_STATUS
-                                  : view_colors::VCR_INACTIVE_STATUS);
+                                  ? role_t::VCR_STATUS
+                                  : role_t::VCR_INACTIVE_STATUS);
 
     wattron(this->sc_window, attrs);
     wmove(this->sc_window, top, 0);
@@ -125,16 +126,16 @@ statusview_curses::do_update()
             val = sf.get_value();
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
-                    if (sa.sa_type == &view_curses::VC_STYLE) {
+                    if (sa.sa_type == &VC_STYLE) {
                         sa.sa_value = sa.sa_value.get<int64_t>()
                             & ~(A_REVERSE | A_COLOR);
-                    } else if (sa.sa_type == &view_curses::VC_ROLE) {
-                        if (sa.sa_value.get<int64_t>()
-                            == view_colors::VCR_ALERT_STATUS) {
-                            sa.sa_value.get<int64_t>()
-                                = view_colors::VCR_INACTIVE_ALERT_STATUS;
+                    } else if (sa.sa_type == &VC_ROLE) {
+                        if (sa.sa_value.get<role_t>()
+                            == role_t::VCR_ALERT_STATUS) {
+                            sa.sa_value.get<role_t>()
+                                = role_t::VCR_INACTIVE_ALERT_STATUS;
                         } else {
-                            sa.sa_value = view_colors::VCR_NONE;
+                            sa.sa_value = role_t::VCR_NONE;
                         }
                     }
                 }
@@ -171,10 +172,10 @@ statusview_curses::do_update()
 
             auto default_role = sf.get_role();
             if (!this->sc_enabled) {
-                if (default_role == view_colors::VCR_ALERT_STATUS) {
-                    default_role = view_colors::VCR_INACTIVE_ALERT_STATUS;
+                if (default_role == role_t::VCR_ALERT_STATUS) {
+                    default_role = role_t::VCR_INACTIVE_ALERT_STATUS;
                 } else {
-                    default_role = view_colors::VCR_INACTIVE_STATUS;
+                    default_role = role_t::VCR_INACTIVE_STATUS;
                 }
             }
 

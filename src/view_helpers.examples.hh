@@ -32,7 +32,7 @@
 #ifndef lnav_view_helpers_examples_hh
 #define lnav_view_helpers_examples_hh
 
-#include "attr_line.hh"
+#include "base/attr_line.hh"
 #include "help_text.hh"
 
 void execute_examples();

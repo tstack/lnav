@@ -29,6 +29,8 @@
 
 #include "tailerpp.hh"
 
+#include <unistd.h>
+
 namespace tailer {
 
 int

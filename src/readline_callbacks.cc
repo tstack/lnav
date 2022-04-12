@@ -49,6 +49,8 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
+using namespace std::chrono_literals;
+
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
 #define STR_HELPER(x) #x
@@ -126,7 +128,7 @@ rl_set_help()
         }
         case LNM_SQL: {
             textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
-            auto lss = (logfile_sub_source*) log_view.get_sub_source();
+            auto* lss = (logfile_sub_source*) log_view.get_sub_source();
             attr_line_t example_al;
 
             if (log_view.get_inner_height() > 0) {
@@ -241,6 +243,7 @@ rl_change(readline_curses* rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    lnav_data.ld_user_message_source.clear();
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description()
         .set_cylon(false)
@@ -266,9 +269,9 @@ rl_change(readline_curses* rc)
                 generation += 1;
             }
 
-            auto os = tc->get_overlay_source();
+            auto* os = tc->get_overlay_source();
             if (!args.empty() && os != nullptr) {
-                auto fos = dynamic_cast<field_overlay_source*>(os);
+                auto* fos = dynamic_cast<field_overlay_source*>(os);
 
                 if (fos != nullptr) {
                     if (generation == 0) {
@@ -400,6 +403,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     tc->reload_data();
+    lnav_data.ld_user_message_source.clear();
 
     switch (mode) {
         case LNM_SEARCH:
@@ -436,7 +440,8 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 }
             } else {
                 lnav_data.ld_bottom_source.set_prompt("");
-                lnav_data.ld_bottom_source.grep_error(result.unwrapErr());
+                lnav_data.ld_bottom_source.grep_error(
+                    result.unwrapErr().um_message.get_string());
             }
 
             lnav_data.ld_preview_view.reload_data();
@@ -518,7 +523,7 @@ lnav_rl_abort(readline_curses* rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
 
-    std::vector<std::string> errors;
+    std::vector<lnav::console::user_message> errors;
     lnav_config = rollback_lnav_config;
     reload_config(errors);
 
@@ -577,13 +582,30 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             require(0);
             break;
 
-        case LNM_COMMAND:
+        case LNM_COMMAND: {
             rc->set_alt_value("");
-            rc->set_value(execute_command(ec, rc->get_value())
-                              .map(ok_prefix)
-                              .orElse(err_to_ok)
-                              .unwrap());
+            ec.ec_source.top().s_content
+                = fmt::format(FMT_STRING(":{}"), rc->get_value());
+            auto exec_res = execute_command(ec, rc->get_value());
+            if (exec_res.isOk()) {
+                rc->set_value(exec_res.unwrap());
+            } else {
+                auto um = exec_res.unwrapErr();
+
+                lnav_data.ld_user_message_source.replace_with(
+                    um.to_attr_line().rtrim());
+                for (const auto& line :
+                     lnav_data.ld_user_message_source.get_lines()) {
+                    log_debug("line -- %s", lnav::to_json(line).c_str());
+                }
+                lnav_data.ld_user_message_view.reload_data();
+                lnav_data.ld_user_message_expiration
+                    = std::chrono::steady_clock::now() + 20s;
+                rc->set_value("");
+            }
+            ec.ec_source.top().s_content.clear();
             break;
+        }
 
         case LNM_USER:
             rc->set_alt_value("");
@@ -645,6 +667,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
 
         case LNM_SQL: {
+            ec.ec_source.top().s_content = rc->get_value();
             auto result = execute_sql(ec, rc->get_value(), alt_msg);
             db_label_source& dls = lnav_data.ld_db_row_source;
             std::string prompt;
@@ -659,8 +682,14 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     }
                 }
             } else {
-                prompt = result.orElse(err_to_ok).unwrap();
+                auto um = result.unwrapErr();
+                lnav_data.ld_user_message_source.replace_with(
+                    um.to_attr_line().rtrim());
+                lnav_data.ld_user_message_view.reload_data();
+                lnav_data.ld_user_message_expiration
+                    = std::chrono::steady_clock::now() + 20s;
             }
+            ec.ec_source.top().s_content.clear();
 
             rc->set_value(prompt);
             rc->set_alt_value(alt_msg);
@@ -766,7 +795,7 @@ rl_display_matches(readline_curses* rc)
                 add_nl = false;
             }
             if (match == current_match) {
-                al.append(match, view_curses::VC_STYLE.value(A_REVERSE));
+                al.append(match, VC_STYLE.value(A_REVERSE));
             } else {
                 al.append(match);
             }

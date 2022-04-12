@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <iterator>
 #include <regex>
 #include <sstream>
@@ -251,6 +252,13 @@ strtonum(T& num_out, const char* string, size_t len)
     num_out *= sign;
 
     return retval;
+}
+
+bool
+is_blank(const std::string& str)
+{
+    return std::all_of(
+        str.begin(), str.end(), [](const auto ch) { return isspace(ch); });
 }
 
 template size_t strtonum<long long>(long long& num_out,

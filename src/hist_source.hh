@@ -62,7 +62,7 @@ struct stacked_bar_chart_base {
         explicit show_one(int so_index) : so_index(so_index) {}
     };
 
-    typedef mapbox::util::variant<show_none, show_all, show_one> show_state;
+    using show_state = mapbox::util::variant<show_none, show_all, show_one>;
 
     enum class direction {
         forward,
@@ -228,7 +228,7 @@ public:
 
         if (ci.ci_attrs != 0) {
             value_out.emplace_back(
-                lr, view_curses::VC_STYLE.value(ci.ci_attrs | A_REVERSE));
+                lr, VC_STYLE.value(ci.ci_attrs | A_REVERSE));
         }
     };
 
@@ -328,7 +328,7 @@ public:
     hist_source2()
     {
         this->clear();
-    };
+    }
 
     ~hist_source2() override = default;
 
@@ -337,22 +337,22 @@ public:
     void set_time_slice(int64_t slice)
     {
         this->hs_time_slice = slice;
-    };
+    }
 
     int64_t get_time_slice() const
     {
         return this->hs_time_slice;
-    };
+    }
 
     size_t text_line_count() override
     {
         return this->hs_line_count;
-    };
+    }
 
     size_t text_line_width(textview_curses& curses) override
     {
         return 48 + 8 * 4;
-    };
+    }
 
     void clear();
 
@@ -374,7 +374,7 @@ public:
                               line_flags_t flags) override
     {
         return 0;
-    };
+    }
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 
@@ -397,7 +397,7 @@ private:
         bucket_block()
         {
             memset(this->bb_buckets, 0, sizeof(this->bb_buckets));
-        };
+        }
 
         unsigned int bb_used{0};
         bucket_t bb_buckets[BLOCK_SIZE];

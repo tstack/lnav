@@ -90,8 +90,8 @@ public:
         int start,
         int end,
         chtype& ch_out,
-        view_colors::role_t& role_out,
-        view_colors::role_t& bar_role_out)
+        role_t& role_out,
+        role_t& bar_role_out)
     {
         ch_out = ACS_VLINE;
     };
