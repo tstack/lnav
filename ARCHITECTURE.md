@@ -33,17 +33,16 @@ The following goals drive the design and implementation of lnav:
 ## Overview
 
 The whole of lnav consists of a
-[log file parser](https://lnav.readthedocs.io/en/latest/formats.html),
-[text UI](https://lnav.readthedocs.io/en/latest/ui.html),
-[integrations with SQLite](https://lnav.readthedocs.io/en/latest/sqlext.html),
-[command-line interface](https://lnav.readthedocs.io/en/latest/cli.html),
-and
-[commands for operating on logs](https://lnav.readthedocs.io/en/latest/commands.html).
+[log file parser](https://docs.lnav.org/en/latest/formats.html),
+[text UI](https://docs.lnav.org/en/latest/ui.html),
+[integrations with SQLite](https://docs.lnav.org/en/latest/sqlext.html),
+[command-line interface](https://docs.lnav.org/en/latest/cli.html), and
+[commands for operating on logs](https://docs.lnav.org/en/latest/commands.html).
 Since the majority of lnav's operations center around logs, the core
-data-structure is the combined log message index.  The message index
-is populated when new messages are read from log files.  The text UI
-displays a subset of messages from the index.  The SQLite virtual-tables
-allow for programmatic access to the messages and lnav's internal state.
+data-structure is the combined log message index. The message index is populated
+when new messages are read from log files. The text UI displays a subset of
+messages from the index. The SQLite virtual-tables allow for programmatic access
+to the messages and lnav's internal state.
 
 [![lnav architecture](docs/lnav-architecture.png)](https://whimsical.com/lnav-architecture-UM594Qo4G3nt2XWaSZA1mh)
 
@@ -82,11 +81,11 @@ to generate parsers for several [common formats](src/time_formats.am).
 ## Log Formats
 
 [log_format](src/log_format.hh) instances are used to parse lines from files
-into `logline` objects.  The majority of log formats are
+into `logline` objects. The majority of log formats are
 [external_log_format](src/log_format_ext.hh) objects that are create from
-[JSON format definitions](https://lnav.readthedocs.io/en/latest/formats.html).
-The built-in definitions are located in the [formats](src/formats) directory.
-Log formats that cannot be handled through a simple regular expression are
+[JSON format definitions](https://docs.lnav.org/en/latest/formats.html). The
+built-in definitions are located in the [formats](src/formats) directory. Log
+formats that cannot be handled through a simple regular expression are
 implemented in the [log_format_impls.cc](src/log_format_impls.cc) file.
 
 ## User Interface
