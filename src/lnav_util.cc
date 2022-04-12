@@ -232,7 +232,7 @@ read_string_attr_type(yajlpp_parse_context* ypc,
 }
 
 static int
-read_string_attr_int_value(yajlpp_parse_context* ypc, int64_t in)
+read_string_attr_int_value(yajlpp_parse_context* ypc, long long in)
 {
     auto sa = (string_attr*) ypc->ypc_obj_stack.top();
 
