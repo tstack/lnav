@@ -98,8 +98,8 @@ used.  Instead, the following custom components are built on top of the ncurses
 primitives:
 
 - [view_curses](src/view_curses.hh) - Provides the basics for text roles, which
-  allows for themes to color and style text.  The `mvwattrline()` function does
-  all the heavy lifting of drawing ["attributed" lines](src/attr_line.hh),
+  allows for themes to color and style text. The `mvwattrline()` function does
+  all the heavy lifting of drawing ["attributed" lines](src/base/attr_line.hh),
   which are strings that have attributes associated with a given range of
   characters.
 - [listview_curses](src/listview_curses.hh) - Displays a list of items that are
