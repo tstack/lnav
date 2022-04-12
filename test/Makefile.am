@@ -204,11 +204,16 @@ dist_noinst_SCRIPTS = \
 
 dist_noinst_DATA = \
 	ansi-colors.0.in \
+	bad-config/formats/invalid-properties/format.json \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \
+	bad-config/formats/invalid-schema/format.json \
 	bad-config/formats/invalid-sql/init.sql \
+	bad-config/formats/invalid-sql/init2.sql \
+	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
 	bad-config2/formats/invalid-config/config.json \
+	bad-config2/formats/invalid-config/config.bad-schema.json \
 	bad-config2/formats/invalid-config/config.malformed.json \
 	bad-config2/formats/invalid-config/config.truncated.json \
 	bad-config-json/formats/invalid-json/format.json \
