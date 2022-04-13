@@ -70,7 +70,7 @@ check_error_output "invalid format not detected?" <<EOF
  --> {test_dir}/bad-config-json/formats/invalid-key/format.json:22
 EOF
 
-run_test ${lnav_test} -C \
+run_test env LC_ALL=C ${lnav_test} -C \
     -I ${test_dir}/bad-config
 
 check_error_output "invalid format not detected?" <<EOF
