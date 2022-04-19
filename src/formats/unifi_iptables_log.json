@@ -1,0 +1,154 @@
+{
+  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+  "unifi_iptables_log": {
+    "title": "UniFi iptables log",
+    "description": "The UniFi gateway iptables logger format (for /var/log/iptables).",
+    "url": "https://www.halolinux.us/firewalls/firewall-log-messages-what-do-they-mean.html",
+    "regex": {
+      "kernel-udp": {
+        "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+)\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?DESCR=\"(?<DESCR>.*?)\"?\\sIN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+)))? SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) ((?<DF>(?:DF)) )?PROTO=(?<PROTO>UDP) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) LEN=(?<LEN_UDP>\\d+)\\s*(?<body>.*)$"
+      },
+      "kernel-tcp": {
+        "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+)\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?DESCR=\"(?<DESCR>.*?)\"?\\sIN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+))) SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) ((?<DF>(?:DF)) )?PROTO=(?<PROTO>TCP) SPT=(?<SPT>\\d+) DPT=(?<DPT>\\d+) SEQ=(?<SEQ>\\d+) ACK=(?<ACK>\\d+) WINDOW=(?<WINDOW>\\d+) (?<body>.*)$"
+      },
+      "kernel-other-proto": {
+        "pattern": "^(?<timestamp>[A-Z][a-z]{2}\\s+\\d+\\s+\\d+:\\d+:\\d+) (?<host>[^\\s]+)\\s(?:\\[(?<rule_name>[^\\]]+)\\]\\s*)?(?:ALIEN BLOCK: )?DESCR=\"(?<DESCR>.*?)\"?\\sIN=(?<IP_IN>(?:\\d|\\w)*) OUT=(?<IP_OUT>(?:\\d|\\w)*) MAC=(?:(?<MAC>(?:[0-9a-f]{2}:){5}[0-9a-f]{2})(?::(?<MAC_SRC>[^\\s]+)))? SRC=(?<SRC>(?:[\\d\\.])+) DST=(?<DST>(?:[\\d\\.])+) LEN=(?<LEN>(?:\\d+)) TOS=(?<TOS>(?:[0-9A-F])+) PREC=(?<PREC>0x(?:[0-9A-F])+) TTL=(?<TTL>\\d+) ID=(?<ID>\\d+) ((?<DF>(?:DF)) )?PROTO=(?<PROTO>(?!TCP|UDP)(?:\\w+))(?<body>.*)$"
+      }
+    },
+    "opid-field": "SEQ",
+    "multiline": false,
+    "timestamp-format": [
+      "%b %d %H:%M:%S"
+    ],
+    "value": {
+      "host" : {
+        "kind": "string",
+        "identifier": true,
+        "hidden": true
+      },
+      "rule_name" : {
+        "kind": "string",
+        "identifier": true
+      },
+      "DESCR" : {
+        "kind": "string",
+        "identifier": false
+      },
+      "dhcp_op" : {
+        "kind": "string",
+        "identifier": true
+      },
+      "dhcp_mac" : {
+        "kind": "string",
+        "identifier": true
+      },
+      "dhcp_iface" : {
+        "kind": "string"
+      },
+      "dhcp_ip" : {
+        "kind": "string",
+        "collate": "ipaddress",
+        "identifier": true
+      },
+      "SEQ" : {
+        "kind": "integer",
+        "identifier": true
+      },
+      "IP_IN" : {
+        "kind": "string",
+        "identifier": false
+      },
+      "IP_OUT" : {
+        "kind": "string",
+        "identifier": false
+      },
+      "MAC" : {
+        "kind": "string",
+        "identifier": true,
+        "hidden": true
+      },
+      "MAC_SRC" : {
+        "kind": "string",
+        "identifier": false,
+        "hidden": true
+      },
+      "SRC" : {
+        "kind": "string",
+        "collate": "ipaddress",
+        "identifier": true
+      },
+      "SPT" : {
+        "kind": "integer",
+        "identifier": true
+      },
+      "DST" : {
+        "kind": "string",
+        "collate": "ipaddress",
+        "identifier": true
+      },
+      "DPT" : {
+        "kind": "integer",
+        "identifier": true
+      },
+      "LEN" : {
+        "kind": "integer"
+      },
+      "TOS" : {
+        "kind": "string",
+        "hidden": true
+      },
+      "PREC" : {
+        "kind": "string",
+        "hidden": true
+      },
+      "TTL" : {
+        "kind": "integer",
+        "hidden": true
+      },
+      "PROTO" : {
+        "kind": "string",
+        "identifier": true
+      },
+      "LEN_UDP" : {
+        "kind": "integer"
+      },
+      "WINDOW" : {
+        "kind": "integer",
+        "hidden": true
+      },
+      "RES" : {
+        "kind": "string",
+        "hidden": true
+      },
+      "SYN" : {
+        "kind": "string",
+        "hidden": true
+      },
+      "URGP" : {
+        "kind": "integer",
+        "hidden": true
+      },
+      "body" : {
+        "kind": "string"
+      }
+    },
+    "highlights": {
+      "rule_name": {
+        "pattern": "(\\[.*-[DR]-.*\\])",
+        "color": "Red",
+        "underline": true
+      }
+    },
+    "sample": [
+      {
+        "line": "Apr  7 21:49:03 UDM-Pro [WAN_IN-RET-3006] DESCR=\"[WAN_IN] PortForward Allow [HTTPS (cli IN=eth8 OUT=br96 MAC=24:5a:4c:a2:b1:09:48:2c:d0:ab:93:3f:08:00 SRC=194.230.158.35 DST=192.168.96.10 LEN=60 TOS=00 PREC=0x00 TTL=49 ID=51880 DF PROTO=TCP SPT=38618 DPT=10443 SEQ=2560518888 ACK=0 WINDOW=65535 SYN URGP=0 MARK=0"
+      },
+      {
+        "line": "Apr  7 23:24:35 UDM-Pro [PREROUTING-DNAT-13] DESCR=\"PortForward DNAT [HTTPS (client-cer IN=eth8 OUT= MAC=24:5a:4c:a2:b1:09:48:2c:d0:ab:93:3f:08:00 SRC=103.203.57.14 DST=192.168.10.2 LEN=40 TOS=00 PREC=0x00 TTL=241 ID=54321 PROTO=TCP SPT=43609 DPT=443 SEQ=3913455798 ACK=0 WINDOW=65535 SYN URGP=0 MARK=0"
+      },
+      {
+        "line": "Apr  7 21:40:58 UDM-Pro [LAN_IN-D-4001] DESCR=\"🛑Drop all InterVLAN traffic\" IN=br96 OUT=tlprt0 MAC=24:5a:4c:a2:b1:0b:24:5e:be:46:df:c8:08:00 SRC=192.168.96.10 DST=192.168.2.1 LEN=40 TOS=00 PREC=0x00 TTL=63 ID=50760 DF PROTO=TCP SPT=8084 DPT=55504 SEQ=1967017102 ACK=3747652110 WINDOW=131 ACK FIN URGP=0 MARK=0"
+      }
+    ]
+  }
+}
