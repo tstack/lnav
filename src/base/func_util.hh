@@ -30,6 +30,7 @@
 #ifndef lnav_func_util_hh
 #define lnav_func_util_hh
 
+#include <functional>
 #include <utility>
 
 template<typename F, typename FrontArg>
