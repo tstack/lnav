@@ -3,6 +3,7 @@
 #define lnav_itertools_hh
 
 #include <algorithm>
+#include <memory>
 #include <type_traits>
 #include <vector>
 
