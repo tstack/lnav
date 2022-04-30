@@ -88,9 +88,9 @@ run_test() {
 
 run_cap_test() {
     LAST_CAP_TEST=("test: $@")
-    local full_cmd=$(echo "${LAST_CAP_TEST[@]}" | sed -e "s;${test_dir};{test_dir};g")
-    export test_hash=$(echo "${full_cmd}" | shasum | cut -f 1 -d ' ')
-    echo "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
+    local full_cmd=$(printf "%s" "${LAST_CAP_TEST[@]}" | sed -e "s;${test_dir};{test_dir};g")
+    export test_hash=$(printf "%s" "${full_cmd}" | shasum | cut -f 1 -d ' ')
+    printf "%s" "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
     "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
 
     sed -ibak \
@@ -112,9 +112,11 @@ run_cap_test() {
        if test $? -ne 0; then
            echo OUT: "${full_cmd}"
            cat ${test_file_base}_${test_hash}.diff
+           echo "FAIL! EXPECTED OUT DIFF"
            export has_errors="yes"
        fi
     else
+       echo "FAIL! EXPECTED OUT MISSING"
        export has_errors="yes"
     fi
 
@@ -134,9 +136,11 @@ run_cap_test() {
        if test $? -ne 0; then
            echo ERR: "${full_cmd}"
            cat ${test_file_base}_${test_hash}.err.diff
+           echo "FAIL! EXPECTED ERR DIFF"
            export has_errors="yes"
        fi
     else
+       echo "FAIL! EXPECTED ERR MISSING"
        export has_errors="yes"
     fi
 }

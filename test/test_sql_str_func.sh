@@ -34,13 +34,19 @@ run_cap_test ./drive_sql "select regexp('[e-z]+', 'ea')"
 
 run_cap_test ./drive_sql "select regexp_replace('test 1 2 3', '\\d+', 'N')"
 
-run_cap_test ./drive_sql "select regexp_replace('test 1 2 3', '\\s+', '{\\0}') as repl"
+run_cap_test env TEST_COMMENT=regexp_replace_with_bs1 ./drive_sql <<'EOF'
+select regexp_replace('test 1 2 3', '\s+', '{\0}') as repl
+EOF
 
-run_cap_test ./drive_sql "select regexp_replace('test 1 2 3', '\\w*', '{\\0}') as repl"
+run_cap_test env TEST_COMMENT=regexp_replace_with_bs2 ./drive_sql <<'EOF'
+select regexp_replace('test 1 2 3', '\w*', '{\0}') as repl
+EOF
 
 run_cap_test ./drive_sql "select regexp_replace('123 abc', '(\w*)', '<\3>') as repl"
 
-run_cap_test ./drive_sql "select regexp_replace('123 abc', '(\w*)', '<\\\\>') as repl"
+run_cap_test env TEST_COMMENT=regexp_replace_with_bs3 ./drive_sql <<'EOF'
+select regexp_replace('123 abc', '(\w*)', '<\\>') as repl
+EOF
 
 run_cap_test ./drive_sql "select regexp_replace('abc: def', '(\w*):\s*(.*)', '\1=\2') as repl"
 
