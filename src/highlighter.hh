@@ -46,7 +46,7 @@ struct highlighter {
     {
         pcre_refcount(this->h_code, 1);
         this->study();
-    };
+    }
 
     highlighter(const highlighter& other);
 
@@ -59,7 +59,7 @@ struct highlighter {
             this->h_code = nullptr;
         }
         free(this->h_code_extra);
-    };
+    }
 
     void study();
 
@@ -75,14 +75,14 @@ struct highlighter {
         this->h_role = role;
 
         return *this;
-    };
+    }
 
     highlighter& with_attrs(int attrs)
     {
         this->h_attrs = attrs;
 
         return *this;
-    };
+    }
 
     highlighter& with_text_format(text_format_t tf)
     {
@@ -96,7 +96,7 @@ struct highlighter {
         this->h_format_name = name;
 
         return *this;
-    };
+    }
 
     highlighter& with_color(const styling::color_unit& fg,
                             const styling::color_unit& bg)
@@ -105,7 +105,7 @@ struct highlighter {
         this->h_bg = bg;
 
         return *this;
-    };
+    }
 
     highlighter& with_nestable(bool val)
     {
@@ -118,7 +118,7 @@ struct highlighter {
         ensure(this->h_attrs != -1);
 
         return this->h_attrs;
-    };
+    }
 
     void annotate(attr_line_t& al, int start) const;
 

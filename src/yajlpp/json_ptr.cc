@@ -275,20 +275,20 @@ json_ptr::expect_map(int32_t& depth, int32_t& index)
 {
     bool retval;
 
-    if (this->jp_state == MS_DONE) {
+    if (this->jp_state == match_state_t::DONE) {
         retval = true;
     } else if (depth != this->jp_depth) {
         retval = true;
     } else if (this->reached_end()) {
         retval = true;
-    } else if (this->jp_state == MS_VALUE
+    } else if (this->jp_state == match_state_t::VALUE
                && (this->jp_array_index == -1
                    || ((index - 1) == this->jp_array_index)))
     {
         if (this->jp_pos[0] == '/') {
             this->jp_pos += 1;
             this->jp_depth += 1;
-            this->jp_state = MS_VALUE;
+            this->jp_state = match_state_t::VALUE;
             this->jp_array_index = -1;
             index = -1;
         }
@@ -307,7 +307,7 @@ json_ptr::at_key(int32_t depth, const char* component, ssize_t len)
     const char* component_end;
     int lpc;
 
-    if (this->jp_state == MS_DONE || depth != this->jp_depth) {
+    if (this->jp_state == match_state_t::DONE || depth != this->jp_depth) {
         return true;
     }
 
@@ -328,7 +328,7 @@ json_ptr::at_key(int32_t depth, const char* component, ssize_t len)
                     ch = '/';
                     break;
                 default:
-                    this->jp_state = MS_ERR_INVALID_ESCAPE;
+                    this->jp_state = match_state_t::ERR_INVALID_ESCAPE;
                     return false;
             }
             lpc += 1;
@@ -342,7 +342,7 @@ json_ptr::at_key(int32_t depth, const char* component, ssize_t len)
     }
 
     this->jp_pos += lpc;
-    this->jp_state = MS_VALUE;
+    this->jp_state = match_state_t::VALUE;
 
     return true;
 }
@@ -351,11 +351,11 @@ void
 json_ptr::exit_container(int32_t& depth, int32_t& index)
 {
     depth -= 1;
-    if (this->jp_state == MS_VALUE && depth == this->jp_depth
+    if (this->jp_state == match_state_t::VALUE && depth == this->jp_depth
         && (index == -1 || (index - 1 == this->jp_array_index))
         && this->reached_end())
     {
-        this->jp_state = MS_DONE;
+        this->jp_state = match_state_t::DONE;
         index = -1;
     }
 }
@@ -365,7 +365,7 @@ json_ptr::expect_array(int32_t& depth, int32_t& index)
 {
     bool retval;
 
-    if (this->jp_state == MS_DONE) {
+    if (this->jp_state == match_state_t::DONE) {
         retval = true;
     } else if (depth != this->jp_depth) {
         retval = true;
@@ -378,20 +378,20 @@ json_ptr::expect_array(int32_t& depth, int32_t& index)
 
         if (sscanf(this->jp_pos, "/%d%n", &this->jp_array_index, &offset) != 1)
         {
-            this->jp_state = MS_ERR_INVALID_INDEX;
+            this->jp_state = match_state_t::ERR_INVALID_INDEX;
             retval = true;
         } else if (this->jp_pos[offset] != '\0' && this->jp_pos[offset] != '/')
         {
-            this->jp_state = MS_ERR_INVALID_INDEX;
+            this->jp_state = match_state_t::ERR_INVALID_INDEX;
             retval = true;
         } else {
             index = 0;
             this->jp_pos += offset;
-            this->jp_state = MS_VALUE;
+            this->jp_state = match_state_t::VALUE;
             retval = true;
         }
     } else {
-        this->jp_state = MS_ERR_NO_SLASH;
+        this->jp_state = match_state_t::ERR_NO_SLASH;
         retval = true;
     }
 
@@ -405,7 +405,7 @@ json_ptr::at_index(int32_t& depth, int32_t& index, bool primitive)
 {
     bool retval;
 
-    if (this->jp_state == MS_DONE) {
+    if (this->jp_state == match_state_t::DONE) {
         retval = false;
     } else if (depth < this->jp_depth) {
         retval = false;
@@ -414,7 +414,7 @@ json_ptr::at_index(int32_t& depth, int32_t& index, bool primitive)
             if (this->jp_array_index == -1) {
                 retval = this->reached_end();
                 if (primitive && retval) {
-                    this->jp_state = MS_DONE;
+                    this->jp_state = match_state_t::DONE;
                 }
             } else {
                 retval = false;
@@ -424,7 +424,7 @@ json_ptr::at_index(int32_t& depth, int32_t& index, bool primitive)
             this->jp_array_index = -1;
             index = -1;
             if (primitive && retval) {
-                this->jp_state = MS_DONE;
+                this->jp_state = match_state_t::DONE;
             }
         } else {
             index += 1;
@@ -437,6 +437,26 @@ json_ptr::at_index(int32_t& depth, int32_t& index, bool primitive)
     }
 
     return retval;
+}
+
+std::string
+json_ptr::error_msg() const
+{
+    switch (this->jp_state) {
+        case match_state_t::ERR_INVALID_ESCAPE:
+            return fmt::format(FMT_STRING("invalid escape sequence near -- {}"),
+                               this->jp_pos);
+        case match_state_t::ERR_INVALID_INDEX:
+            return fmt::format(FMT_STRING("expecting array index at -- {}"),
+                               this->jp_pos);
+        case match_state_t::ERR_INVALID_TYPE:
+            return fmt::format(FMT_STRING("expecting container at -- {}"),
+                               this->jp_pos);
+        default:
+            break;
+    }
+
+    return "";
 }
 
 std::string
@@ -457,5 +477,47 @@ json_ptr_walk::current_ptr()
 
     this->jpw_max_ptr_len = std::max(this->jpw_max_ptr_len, retval.size());
 
+    return retval;
+}
+
+void
+json_ptr_walk::update_error_msg(yajl_status status,
+                                const char* buffer,
+                                ssize_t len)
+{
+    switch (status) {
+        case yajl_status_ok:
+            break;
+        case yajl_status_client_canceled:
+            this->jpw_error_msg = "internal error";
+            break;
+        case yajl_status_error: {
+            auto* msg = yajl_get_error(
+                this->jpw_handle, 1, (const unsigned char*) buffer, len);
+            this->jpw_error_msg = std::string((const char*) msg);
+
+            yajl_free_error(this->jpw_handle, msg);
+            break;
+        }
+    }
+}
+
+yajl_status
+json_ptr_walk::complete_parse()
+{
+    yajl_status retval;
+
+    retval = yajl_complete_parse(this->jpw_handle);
+    this->update_error_msg(retval, nullptr, -1);
+    return retval;
+}
+
+yajl_status
+json_ptr_walk::parse(const char* buffer, ssize_t len)
+{
+    yajl_status retval;
+
+    retval = yajl_parse(this->jpw_handle, (const unsigned char*) buffer, len);
+    this->update_error_msg(retval, buffer, len);
     return retval;
 }

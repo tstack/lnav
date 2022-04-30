@@ -1,0 +1,6 @@
+Row 0:
+  Column     result: <def>Hello &gt;</def>
+
+  Column  node_path: /abc/def
+  Column  node_attr: {}
+  Column  node_text: Hello >

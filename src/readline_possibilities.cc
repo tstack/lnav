@@ -51,7 +51,8 @@ static int
 handle_collation_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
+        lnav_data.ld_rl_view->add_possibility(
+            ln_mode_t::SQL, "*", colvalues[1]);
     }
 
     return 0;
@@ -61,7 +62,8 @@ static int
 handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
+        lnav_data.ld_rl_view->add_possibility(
+            ln_mode_t::SQL, "*", colvalues[1]);
     }
 
     return 0;
@@ -74,7 +76,8 @@ handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
         std::string table_name = colvalues[0];
 
         if (sqlite_function_help.count(table_name) == 0) {
-            lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL, "*", colvalues[0]);
         }
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
@@ -91,7 +94,7 @@ handle_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
 
         quoted_name = sql_quote_ident(colvalues[1]);
         lnav_data.ld_rl_view->add_possibility(
-            LNM_SQL, "*", std::string(quoted_name));
+            ln_mode_t::SQL, "*", std::string(quoted_name));
     }
     if (strcmp(colvalues[5], "1") == 0) {
         lnav_data.ld_db_key_names.emplace_back(colvalues[1]);
@@ -119,7 +122,8 @@ static void
 add_text_possibilities(readline_curses* rlc,
                        int context,
                        const std::string& type,
-                       const std::string& str)
+                       const std::string& str,
+                       text_quoting tq)
 {
     static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
     static const std::regex re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
@@ -142,8 +146,8 @@ add_text_possibilities(readline_curses* rlc,
                 break;
         }
 
-        switch (context) {
-            case LNM_SQL: {
+        switch (tq) {
+            case text_quoting::sql: {
                 auto token_value = ds.get_input().get_substr(pc.all());
                 auto_mem<char, sqlite3_free> quoted_token;
 
@@ -171,7 +175,7 @@ add_text_possibilities(readline_curses* rlc,
         switch (dt) {
             case DT_QUOTED_STRING:
                 add_text_possibilities(
-                    rlc, context, type, ds.get_input().get_substr(pc[0]));
+                    rlc, context, type, ds.get_input().get_substr(pc[0]), tq);
                 break;
             default:
                 break;
@@ -183,7 +187,8 @@ void
 add_view_text_possibilities(readline_curses* rlc,
                             int context,
                             const std::string& type,
-                            textview_curses* tc)
+                            textview_curses* tc,
+                            text_quoting tq)
 {
     text_sub_source* tss = tc->get_sub_source();
 
@@ -196,7 +201,7 @@ add_view_text_possibilities(readline_curses* rlc,
 
         tss->text_value_for_line(*tc, curr_line, line, text_sub_source::RF_RAW);
 
-        add_text_possibilities(rlc, context, type, line);
+        add_text_possibilities(rlc, context, type, line, tq);
     }
 
     rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);
@@ -301,7 +306,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
 }
 
 void
-add_env_possibilities(int context)
+add_env_possibilities(ln_mode_t context)
 {
     extern char** environ;
     readline_curses* rlc = lnav_data.ld_rl_view;
@@ -336,15 +341,17 @@ add_filter_possibilities(textview_curses* tc)
     text_sub_source* tss = tc->get_sub_source();
     filter_stack& fs = tss->get_filters();
 
-    rc->clear_possibilities(LNM_COMMAND, "all-filters");
-    rc->clear_possibilities(LNM_COMMAND, "disabled-filter");
-    rc->clear_possibilities(LNM_COMMAND, "enabled-filter");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "all-filters");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "disabled-filter");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "enabled-filter");
     for (const auto& tf : fs) {
-        rc->add_possibility(LNM_COMMAND, "all-filters", tf->get_id());
+        rc->add_possibility(ln_mode_t::COMMAND, "all-filters", tf->get_id());
         if (tf->is_enabled()) {
-            rc->add_possibility(LNM_COMMAND, "enabled-filter", tf->get_id());
+            rc->add_possibility(
+                ln_mode_t::COMMAND, "enabled-filter", tf->get_id());
         } else {
-            rc->add_possibility(LNM_COMMAND, "disabled-filter", tf->get_id());
+            rc->add_possibility(
+                ln_mode_t::COMMAND, "disabled-filter", tf->get_id());
         }
     }
 }
@@ -356,8 +363,8 @@ add_file_possibilities()
 
     readline_curses* rc = lnav_data.ld_rl_view;
 
-    rc->clear_possibilities(LNM_COMMAND, "visible-files");
-    rc->clear_possibilities(LNM_COMMAND, "hidden-files");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "visible-files");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "hidden-files");
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         if (lf.get() == nullptr) {
             continue;
@@ -368,7 +375,7 @@ add_file_possibilities()
                 = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
 
             rc->add_possibility(
-                LNM_COMMAND,
+                ln_mode_t::COMMAND,
                 ld->is_visible() ? "visible-files" : "hidden-files",
                 escaped_fn);
         };
@@ -380,7 +387,7 @@ add_mark_possibilities()
 {
     readline_curses* rc = lnav_data.ld_rl_view;
 
-    rc->clear_possibilities(LNM_COMMAND, "mark-type");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "mark-type");
     for (auto iter = bookmark_type_t::type_begin();
          iter != bookmark_type_t::type_end();
          ++iter)
@@ -390,7 +397,7 @@ add_mark_possibilities()
         if (bt->get_name().empty()) {
             continue;
         }
-        rc->add_possibility(LNM_COMMAND, "mark-type", bt->get_name());
+        rc->add_possibility(ln_mode_t::COMMAND, "mark-type", bt->get_name());
     }
 }
 
@@ -404,30 +411,32 @@ add_config_possibilities()
                              void* mem) {
         if (jph.jph_children) {
             if (!jph.jph_regex.p_named_count) {
-                rc->add_possibility(LNM_COMMAND, "config-option", path);
+                rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             }
             for (auto named_iter = jph.jph_regex.named_begin();
                  named_iter != jph.jph_regex.named_end();
                  ++named_iter)
             {
                 if (visited.count(named_iter->pnc_name) == 0) {
-                    rc->clear_possibilities(LNM_COMMAND, named_iter->pnc_name);
+                    rc->clear_possibilities(ln_mode_t::COMMAND,
+                                            named_iter->pnc_name);
                     visited.insert(named_iter->pnc_name);
                 }
 
-                rc->add_possibility(LNM_COMMAND, named_iter->pnc_name, path);
+                rc->add_possibility(
+                    ln_mode_t::COMMAND, named_iter->pnc_name, path);
             }
         } else {
-            rc->add_possibility(LNM_COMMAND, "config-option", path);
+            rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             if (jph.jph_synopsis) {
-                rc->add_prefix(LNM_COMMAND,
+                rc->add_prefix(ln_mode_t::COMMAND,
                                std::vector<std::string>{"config", path},
                                jph.jph_synopsis);
             }
         }
     };
 
-    rc->clear_possibilities(LNM_COMMAND, "config-option");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "config-option");
     for (const auto& jph : lnav_config_handlers.jpc_children) {
         jph.walk(cb, &lnav_config);
     }
@@ -438,9 +447,10 @@ add_tag_possibilities()
 {
     readline_curses* rc = lnav_data.ld_rl_view;
 
-    rc->clear_possibilities(LNM_COMMAND, "tag");
-    rc->clear_possibilities(LNM_COMMAND, "line-tags");
-    rc->add_possibility(LNM_COMMAND, "tag", bookmark_metadata::KNOWN_TAGS);
+    rc->clear_possibilities(ln_mode_t::COMMAND, "tag");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "line-tags");
+    rc->add_possibility(
+        ln_mode_t::COMMAND, "tag", bookmark_metadata::KNOWN_TAGS);
     if (lnav_data.ld_view_stack.top().value_or(nullptr)
         == &lnav_data.ld_views[LNV_LOG])
     {
@@ -452,8 +462,23 @@ add_tag_possibilities()
 
             if (meta_iter != user_meta.end()) {
                 rc->add_possibility(
-                    LNM_COMMAND, "line-tags", meta_iter->second.bm_tags);
+                    ln_mode_t::COMMAND, "line-tags", meta_iter->second.bm_tags);
             }
         }
     }
+}
+
+void
+add_recent_netlocs_possibilities()
+{
+    readline_curses* rc = lnav_data.ld_rl_view;
+
+    rc->clear_possibilities(ln_mode_t::COMMAND, "recent-netlocs");
+    std::set<std::string> netlocs;
+
+    isc::to<tailer::looper&, services::remote_tailer_t>().send_and_wait(
+        [&netlocs](auto& tlooper) { netlocs = tlooper.active_netlocs(); });
+    netlocs.insert(session_data.sd_recent_netlocs.begin(),
+                   session_data.sd_recent_netlocs.end());
+    rc->add_possibility(ln_mode_t::COMMAND, "recent-netlocs", netlocs);
 }

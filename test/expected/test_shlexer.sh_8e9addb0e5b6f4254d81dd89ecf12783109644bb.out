@@ -1,0 +1,7 @@
+    "abc $DEF 123"
+dst ^
+ref      ^--^
+den              ^
+eval -- "abc xyz 123"
+split:
+  0 -- abc xyz 123

@@ -38,14 +38,24 @@ pcre_context::capture_t*
 pcre_context::operator[](const char* name) const
 {
     capture_t* retval = nullptr;
-    int index;
-
-    index = this->pc_pcre->name_index(name);
+    auto index = this->pc_pcre->name_index(name);
     if (index != PCRE_ERROR_NOSUBSTRING) {
         retval = &this->pc_captures[index + 1];
     }
 
     return retval;
+}
+
+pcre_context::capture_t*
+pcre_context::first_valid() const
+{
+    for (int lpc = 1; lpc < this->pc_count; lpc++) {
+        if (this->pc_captures[lpc].is_valid()) {
+            return &this->pc_captures[lpc];
+        }
+    }
+
+    return nullptr;
 }
 
 std::string
@@ -85,7 +95,7 @@ void
 pcrepp::find_captures(const char* pattern)
 {
     bool in_class = false, in_escape = false, in_literal = false;
-    std::vector<pcre_context::capture> cap_in_progress;
+    std::vector<pcre_context::capture_t> cap_in_progress;
 
     for (int lpc = 0; pattern[lpc]; lpc++) {
         if (in_escape) {
@@ -118,7 +128,7 @@ pcrepp::find_captures(const char* pattern)
                     break;
                 case ')': {
                     if (!cap_in_progress.empty()) {
-                        pcre_context::capture& cap = cap_in_progress.back();
+                        auto& cap = cap_in_progress.back();
                         char first = '\0', second = '\0', third = '\0';
                         bool is_cap = false;
 
@@ -342,6 +352,60 @@ pcrepp::jit_stack()
     return retval;
 }
 
+size_t
+pcrepp::match_partial(pcre_input& pi) const
+{
+    size_t length = pi.pi_length;
+    int rc;
+
+    do {
+        rc = pcre_exec(this->p_code,
+                       this->p_code_extra.in(),
+                       pi.get_string(),
+                       length,
+                       pi.pi_offset,
+                       PCRE_PARTIAL,
+                       nullptr,
+                       0);
+        switch (rc) {
+            case 0:
+            case PCRE_ERROR_PARTIAL:
+                return length;
+        }
+        if (length > 0) {
+            length -= 1;
+        }
+    } while (length > 0);
+
+    return length;
+}
+
+const char*
+pcrepp::name_for_capture(int index) const
+{
+    for (pcre_named_capture::iterator iter = this->named_begin();
+         iter != this->named_end();
+         ++iter)
+    {
+        if (iter->index() == index) {
+            return iter->pnc_name;
+        }
+    }
+    return "";
+}
+
+int
+pcrepp::name_index(const char* name) const
+{
+    int retval = pcre_get_stringnumber(this->p_code, name);
+
+    if (retval == PCRE_ERROR_NOSUBSTRING) {
+        return retval;
+    }
+
+    return retval - 1;
+}
+
 #else
 #    warning "pcrejit is not available, search performance will be degraded"
 
@@ -351,3 +415,11 @@ pcrepp::pcre_free_study(pcre_extra* extra)
     free(extra);
 }
 #endif
+
+void
+pcre_context::capture_t::ltrim(const char* str)
+{
+    while (this->c_begin < this->c_end && isspace(str[this->c_begin])) {
+        this->c_begin += 1;
+    }
+}

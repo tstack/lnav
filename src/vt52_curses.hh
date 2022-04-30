@@ -54,26 +54,14 @@
 class vt52_curses : public view_curses {
 public:
     /** @param win The curses window this view is attached to. */
-    void set_window(WINDOW* win)
-    {
-        this->vc_window = win;
-    };
+    void set_window(WINDOW* win) { this->vc_window = win; }
 
     /** @return The curses window this view is attached to. */
-    WINDOW* get_window()
-    {
-        return this->vc_window;
-    };
+    WINDOW* get_window() { return this->vc_window; }
 
-    void set_left(int left)
-    {
-        this->vc_left = left;
-    };
+    void set_left(int left) { this->vc_left = left; }
 
-    int get_left() const
-    {
-        return this->vc_left;
-    }
+    int get_left() const { return this->vc_left; }
 
     /**
      * Set the Y position of this view on the display.  A value greater than
@@ -82,28 +70,16 @@ public:
      *
      * @param y The Y position of the cursor on the curses display.
      */
-    void set_y(int y)
-    {
-        this->vc_y = y;
-    };
+    void set_y(int y) { this->vc_y = y; }
 
     /** @return The abs/rel Y position of the cursor on the curses display. */
-    int get_y() const
-    {
-        return this->vc_y;
-    };
+    int get_y() const { return this->vc_y; }
 
     /** @param x The X position of the cursor on the curses display. */
-    void set_x(int x)
-    {
-        this->vc_x = x;
-    };
+    void set_x(int x) { this->vc_x = x; }
 
     /** @return The X position of the cursor on the curses display. */
-    int get_x() const
-    {
-        return this->vc_x;
-    };
+    int get_x() const { return this->vc_x; }
 
     /**
      * @return The height of this view, which consists of a single line for
@@ -111,19 +87,10 @@ public:
      * position for this view.
      * @todo Kinda hardwired to the way readline works.
      */
-    int get_height()
-    {
-        return 1;
-    };
+    int get_height() { return 1; }
 
-    void set_max_height(int mh)
-    {
-        this->vc_max_height = mh;
-    };
-    int get_max_height() const
-    {
-        return this->vc_max_height;
-    };
+    void set_max_height(int mh) { this->vc_max_height = mh; }
+    int get_max_height() const { return this->vc_max_height; }
 
     /**
      * Map an ncurses input keycode to a vt52 sequence.
@@ -167,7 +134,7 @@ protected:
         }
 
         return retval;
-    };
+    }
 
     WINDOW* vc_window{nullptr}; /*< The window that contains this view. */
     int vc_left{0};

@@ -55,6 +55,35 @@ own formats or if you need to modify existing ones.  Format directories can
 also contain '.sql' and '.lnav' script files that can be used automate log file
 analysis.
 
+Creating a Format Using Regex101.com (v0.10.2+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For plain-text log files, the easiest way to create a log format definition is
+to create the regular expression that recognizes log messages using
+https://regex101.com .  Simply copy a log line into the test string input box
+on the site and then start editing the regular expression.  When building the
+regular expression, you'll want to use named captures for the structured parts
+of the log message.  Any raw message text should be matched by a captured named
+"body".  Once you have a regex that matches the whole log message, you can use
+**lnav**'s "management CLI" to create a skeleton format file.  The skeleton
+will be populated with the regular expression from the site and the test
+string, along with any unit tests, will be added to the "samples" list.  The
+"regex101 import" management command is used to create the skeleton and has
+the following form:
+
+.. prompt:: bash
+
+   lnav -m regex101 import <regex101-url> <format-name> [<regex-name>]
+
+If the import was successful, the path to the new format file should be
+printed out.  The skeleton will most likely need some changes to make it
+fully functional.  For example, the :code:`kind` properties for captured values
+default to :code:`string`, but you'll want to change them to the appropriate
+type.
+
+Format File Reference
+^^^^^^^^^^^^^^^^^^^^^
+
 An **lnav** format file must contain a single JSON object, preferably with a
 :code:`$schema` property that refers to the
 `format-v1.schema <https://lnav.org/schemas/format-v1.schema.json>`_,
@@ -309,8 +338,8 @@ Example format:
         }
     }
 
-Modifying an Existing Format
-----------------------------
+Patching an Existing Format
+---------------------------
 
 When loading log formats from files, **lnav** will overlay any new data over
 previously loaded data.  This feature allows you to override existing value or

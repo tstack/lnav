@@ -55,17 +55,14 @@ public:
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_DESCRIPTION].set_share(1);
         this->tss_fields[TSF_DESCRIPTION].set_role(role_t::VCR_STATUS);
-    };
+    }
 
-    size_t statusview_fields() override
-    {
-        return TSF__MAX;
-    };
+    size_t statusview_fields() override { return TSF__MAX; }
 
     status_field& statusview_value_for_field(int field) override
     {
         return this->tss_fields[field];
-    };
+    }
 
     void set_title(const std::string& title)
     {

@@ -65,19 +65,15 @@ class index_delegate {
 public:
     virtual ~index_delegate() = default;
 
-    virtual void index_start(logfile_sub_source& lss){
-
-    };
+    virtual void index_start(logfile_sub_source& lss) {}
 
     virtual void index_line(logfile_sub_source& lss,
                             logfile* lf,
-                            logfile::iterator ll){
+                            logfile::iterator ll)
+    {
+    }
 
-    };
-
-    virtual void index_complete(logfile_sub_source& lss){
-
-    };
+    virtual void index_complete(logfile_sub_source& lss) {}
 };
 
 class pcre_filter : public text_filter {
@@ -95,14 +91,14 @@ public:
         pcre_input pi(line.get_data(), 0, line.length());
 
         return this->pf_pcre.match(pc, pi);
-    };
+    }
 
     std::string to_command() const override
     {
         return (this->lf_type == text_filter::INCLUDE ? "filter-in "
                                                       : "filter-out ")
             + this->lf_id;
-    };
+    }
 
 protected:
     pcrepp pf_pcre;
@@ -177,7 +173,7 @@ public:
     {
         this->lss_flags ^= F_TIME_OFFSET;
         this->clear_line_size_cache();
-    };
+    }
 
     void increase_line_context()
     {
@@ -194,7 +190,7 @@ public:
         if (old_flags != this->lss_flags) {
             this->clear_line_size_cache();
         }
-    };
+    }
 
     bool decrease_line_context()
     {
@@ -213,7 +209,7 @@ public:
         }
 
         return false;
-    };
+    }
 
     size_t get_filename_offset() const
     {
@@ -233,27 +229,24 @@ public:
         else
             this->lss_flags &= ~F_TIME_OFFSET;
         this->clear_line_size_cache();
-    };
+    }
 
     bool is_time_offset_enabled() const
     {
         return (bool) (this->lss_flags & F_TIME_OFFSET);
-    };
+    }
 
     bool is_filename_enabled() const
     {
         return (bool) (this->lss_flags & F_FILENAME);
-    };
+    }
 
     bool is_basename_enabled() const
     {
         return (bool) (this->lss_flags & F_BASENAME);
-    };
+    }
 
-    log_level_t get_min_log_level() const
-    {
-        return this->lss_min_log_level;
-    };
+    log_level_t get_min_log_level() const { return this->lss_min_log_level; }
 
     void set_force_rebuild()
     {
@@ -266,14 +259,14 @@ public:
             this->lss_min_log_level = level;
             this->text_filters_changed();
         }
-    };
+    }
 
     bool get_min_log_time(struct timeval& tv_out) const
     {
         tv_out = this->lss_min_log_time;
         return (this->lss_min_log_time.tv_sec != 0
                 || this->lss_min_log_time.tv_usec != 0);
-    };
+    }
 
     void set_min_log_time(const struct timeval& tv)
     {
@@ -281,7 +274,7 @@ public:
             this->lss_min_log_time = tv;
             this->text_filters_changed();
         }
-    };
+    }
 
     bool get_max_log_time(struct timeval& tv_out) const
     {
@@ -289,7 +282,7 @@ public:
         return (this->lss_max_log_time.tv_sec
                     != std::numeric_limits<time_t>::max()
                 || this->lss_max_log_time.tv_usec != 0);
-    };
+    }
 
     void set_max_log_time(struct timeval& tv)
     {
@@ -297,7 +290,7 @@ public:
             this->lss_max_log_time = tv;
             this->text_filters_changed();
         }
-    };
+    }
 
     void clear_min_max_log_times()
     {
@@ -312,7 +305,7 @@ public:
             this->lss_max_log_time.tv_usec = 0;
             this->text_filters_changed();
         }
-    };
+    }
 
     bool list_input_handle_key(listview_curses& lv, int ch);
 
@@ -322,22 +315,16 @@ public:
             this->lss_marked_only = val;
             this->text_filters_changed();
         }
-    };
+    }
 
-    bool get_marked_only()
-    {
-        return this->lss_marked_only;
-    };
+    bool get_marked_only() { return this->lss_marked_only; }
 
-    size_t text_line_count()
-    {
-        return this->lss_filtered_index.size();
-    };
+    size_t text_line_count() { return this->lss_filtered_index.size(); }
 
     size_t text_line_width(textview_curses& curses)
     {
         return this->lss_longest_line;
-    };
+    }
 
     size_t file_count() const
     {
@@ -353,10 +340,7 @@ public:
         return retval;
     }
 
-    bool empty() const
-    {
-        return this->lss_filtered_index.empty();
-    };
+    bool empty() const { return this->lss_filtered_index.empty(); }
 
     void text_value_for_line(textview_curses& tc,
                              int row,
@@ -404,22 +388,22 @@ public:
     void set_user_mark(const bookmark_type_t* bm, content_line_t cl)
     {
         this->lss_user_marks[bm].insert_once(cl);
-    };
+    }
 
     bookmarks<content_line_t>::type& get_user_bookmarks()
     {
         return this->lss_user_marks;
-    };
+    }
 
     std::map<content_line_t, bookmark_metadata>& get_user_bookmark_metadata()
     {
         return this->lss_user_mark_metadata;
-    };
+    }
 
     int get_filtered_count() const
     {
         return this->lss_index.size() - this->lss_filtered_index.size();
-    };
+    }
 
     int get_filtered_count_for(size_t filter_index) const
     {
@@ -468,7 +452,7 @@ public:
         line = content_line_t(line % MAX_LINES_PER_FILE);
 
         return retval;
-    };
+    }
 
     logfile* find_file_ptr(content_line_t& line)
     {
@@ -477,7 +461,7 @@ public:
         line = content_line_t(line % MAX_LINES_PER_FILE);
 
         return retval;
-    };
+    }
 
     logline* find_line(content_line_t line) const
     {
@@ -491,7 +475,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     nonstd::optional<vis_line_t> find_from_time(
         const struct timeval& start) const;
@@ -501,12 +485,12 @@ public:
         struct timeval tv = {start, 0};
 
         return this->find_from_time(tv);
-    };
+    }
 
     nonstd::optional<vis_line_t> find_from_time(const exttm& etm) const
     {
         return this->find_from_time(etm.to_timeval());
-    };
+    }
 
     nonstd::optional<vis_line_t> find_from_content(content_line_t cl);
 
@@ -516,17 +500,17 @@ public:
             return this->find_line(this->at(row))->get_timeval();
         }
         return nonstd::nullopt;
-    };
+    }
 
     nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket)
     {
         return this->find_from_time(time_bucket);
-    };
+    }
 
     content_line_t at(vis_line_t vl)
     {
         return this->lss_index[this->lss_filtered_index[vl]];
-    };
+    }
 
     content_line_t at_base(vis_line_t vl)
     {
@@ -535,7 +519,7 @@ public:
         }
 
         return this->at(vl);
-    };
+    }
 
     log_accel::direction_t get_line_accel_direction(vis_line_t vl);
 
@@ -551,28 +535,25 @@ public:
               ld_visible(lf->is_indexing())
         {
             lf->set_logline_observer(&this->ld_filter_state);
-        };
+        }
 
-        void clear()
-        {
-            this->ld_filter_state.lfo_filter_state.clear();
-        };
+        void clear() { this->ld_filter_state.lfo_filter_state.clear(); }
 
         void set_file(const std::shared_ptr<logfile>& lf)
         {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             lf->set_logline_observer(&this->ld_filter_state);
-        };
+        }
 
         std::shared_ptr<logfile> get_file() const
         {
             return this->ld_filter_state.lfo_filter_state.tfs_logfile;
-        };
+        }
 
         logfile* get_file_ptr() const
         {
             return this->ld_filter_state.lfo_filter_state.tfs_logfile.get();
-        };
+        }
 
         bool is_visible() const
         {
@@ -594,25 +575,13 @@ public:
     using const_iterator
         = std::vector<std::unique_ptr<logfile_data>>::const_iterator;
 
-    iterator begin()
-    {
-        return this->lss_files.begin();
-    };
+    iterator begin() { return this->lss_files.begin(); }
 
-    iterator end()
-    {
-        return this->lss_files.end();
-    };
+    iterator end() { return this->lss_files.end(); }
 
-    const_iterator cbegin() const
-    {
-        return this->lss_files.begin();
-    };
+    const_iterator cbegin() const { return this->lss_files.begin(); }
 
-    const_iterator cend() const
-    {
-        return this->lss_files.end();
-    };
+    const_iterator cend() const { return this->lss_files.end(); }
 
     iterator find_data(content_line_t& line)
     {
@@ -621,7 +590,7 @@ public:
         line = content_line_t(line % MAX_LINES_PER_FILE);
 
         return retval;
-    };
+    }
 
     iterator find_data(content_line_t line, uint64_t& offset_out)
     {
@@ -630,7 +599,7 @@ public:
         offset_out = line % MAX_LINES_PER_FILE;
 
         return retval;
-    };
+    }
 
     nonstd::optional<logfile_data*> find_data(
         const std::shared_ptr<logfile>& lf)
@@ -659,7 +628,7 @@ public:
         ssize_t index = std::distance(this->begin(), iter);
 
         return content_line_t(index * MAX_LINES_PER_FILE);
-    };
+    }
 
     void set_index_delegate(index_delegate* id)
     {
@@ -667,12 +636,12 @@ public:
             this->lss_index_delegate = id;
             this->reload_index_delegate();
         }
-    };
+    }
 
     index_delegate* get_index_delegate() const
     {
         return this->lss_index_delegate;
-    };
+    }
 
     void reload_index_delegate();
 
@@ -712,7 +681,7 @@ public:
     nonstd::optional<location_history*> get_location_history()
     {
         return &this->lss_location_history;
-    };
+    }
 
     Result<bool, std::string> eval_sql_filter(sqlite3_stmt* stmt,
                                               iterator ld,
@@ -757,19 +726,14 @@ private:
     };
 
     struct __attribute__((__packed__)) indexed_content {
-        indexed_content(){
+        indexed_content() {}
 
-        };
-
-        indexed_content(content_line_t cl)
-            : ic_value(cl){
-
-            };
+        indexed_content(content_line_t cl) : ic_value(cl) {}
 
         operator content_line_t() const
         {
             return content_line_t(this->ic_value);
-        };
+        }
 
         uint64_t ic_value : 40;
     };
@@ -783,7 +747,7 @@ private:
             logline* ll_rhs = this->llss_controller.find_line(rhs);
 
             return (*ll_lhs) < (*ll_rhs);
-        };
+        }
 
         bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
         {
@@ -795,7 +759,7 @@ private:
             logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
             return (*ll_lhs) < (*ll_rhs);
-        };
+        }
 #if 0
         bool operator()(const indexed_content &lhs, const indexed_content &rhs)
         {
@@ -803,21 +767,23 @@ private:
             logline *ll_rhs = this->llss_controller.find_line(rhs.ic_value);
 
             return (*ll_lhs) < (*ll_rhs);
-        };
+        }
 #endif
+
         bool operator()(const content_line_t& lhs, const time_t& rhs) const
         {
             logline* ll_lhs = this->llss_controller.find_line(lhs);
 
             return *ll_lhs < rhs;
-        };
+        }
+
         bool operator()(const content_line_t& lhs,
                         const struct timeval& rhs) const
         {
             logline* ll_lhs = this->llss_controller.find_line(lhs);
 
             return *ll_lhs < rhs;
-        };
+        }
 
         logfile_sub_source& llss_controller;
     };
@@ -835,7 +801,7 @@ private:
             logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
             return (*ll_lhs) < (*ll_rhs);
-        };
+        }
 
         bool operator()(const uint32_t& lhs, const struct timeval& rhs) const
         {
@@ -844,7 +810,7 @@ private:
             logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
 
             return (*ll_lhs) < rhs;
-        };
+        }
 
         const logfile_sub_source& llss_controller;
     };

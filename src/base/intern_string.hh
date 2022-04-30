@@ -33,6 +33,7 @@
 #define intern_string_hh
 
 #include <string>
+#include <vector>
 
 #include <string.h>
 #include <sys/types.h>
@@ -239,13 +240,12 @@ struct string_fragment {
             });
     }
 
+    std::vector<string_fragment> split_lines() const;
+
     struct tag1 {
         const char t_value;
 
-        bool operator()(char ch) const
-        {
-            return this->t_value == ch;
-        }
+        bool operator()(char ch) const { return this->t_value == ch; }
     };
 
     struct quoted_string_body {
@@ -367,20 +367,11 @@ public:
     {
     }
 
-    const intern_string* unwrap() const
-    {
-        return this->ist_interned_string;
-    }
+    const intern_string* unwrap() const { return this->ist_interned_string; }
 
-    void clear()
-    {
-        this->ist_interned_string = nullptr;
-    };
+    void clear() { this->ist_interned_string = nullptr; };
 
-    bool empty() const
-    {
-        return this->ist_interned_string == nullptr;
-    }
+    bool empty() const { return this->ist_interned_string == nullptr; }
 
     const char* get() const
     {
@@ -390,15 +381,11 @@ public:
         return this->ist_interned_string->get();
     }
 
-    iterator begin() const
-    {
-        return this->get();
-    }
+    const char* c_str() const { return this->get(); }
 
-    iterator end() const
-    {
-        return this->get() + this->size();
-    }
+    iterator begin() const { return this->get(); }
+
+    iterator end() const { return this->get() + this->size(); }
 
     size_t size() const
     {
@@ -454,6 +441,11 @@ public:
     bool operator!=(const char* rhs) const
     {
         return strcmp(this->get(), rhs) != 0;
+    }
+
+    static bool case_lt(const intern_string_t& lhs, const intern_string_t& rhs)
+    {
+        return strnatcasecmp(lhs.size(), lhs.get(), rhs.size(), rhs.get()) < 0;
     }
 
 private:

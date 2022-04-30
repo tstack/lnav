@@ -324,7 +324,7 @@ check_output "config clock-format 1" <<EOF
 /ui/clock-format = "%a %b %d %H:%M:%S %Z"
 EOF
 
-run_test ${lnav_test} -nvq \
+run_test ${lnav_test} -nv \
     -c ":config /ui/clock-format" \
     -c ":config /ui/clock-format abc" \
     -c ":config /ui/clock-format" \
@@ -339,7 +339,7 @@ info: changed config option -- /ui/clock-format
 /ui/clock-format = "abc"
 EOF
 
-run_test ${lnav_test} -nvq \
+run_test ${lnav_test} -nv \
     -c ":config /ui/clock-format abc" \
     -c ":reset-config /ui/clock-format" \
     -c ":config /ui/clock-format" \
@@ -506,7 +506,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is not working" <<EOF
-✘ error: unknown bookmark type
+✘ error: unknown bookmark type: foobar
  --> command-option:2
  | :next-mark foobar
  = help: Synopsis

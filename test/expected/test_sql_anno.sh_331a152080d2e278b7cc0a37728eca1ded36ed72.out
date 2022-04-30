@@ -1,0 +1,5 @@
+                 SELECT 'hello, world!' FROM "my table"
+     sql_keyword ------
+      sql_string        ---------------
+     sql_keyword                        ----
+       sql_ident                             ----------

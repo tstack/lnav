@@ -1,0 +1,2 @@
+Row 0:
+  Column json_concat(json('[null, true, 0]'), 1.0, 2.0): [null,true,0,1.0,2.0]

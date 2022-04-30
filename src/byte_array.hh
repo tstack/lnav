@@ -44,32 +44,29 @@ struct byte_array {
     static constexpr size_t BYTE_COUNT = COUNT * sizeof(T);
     static constexpr size_t STRING_SIZE = BYTE_COUNT * 2 + 1;
 
-    byte_array(){};
+    byte_array() {}
 
     byte_array(const byte_array& other)
     {
         memcpy(this->ba_data, other.ba_data, BYTE_COUNT);
-    };
+    }
 
     bool operator<(const byte_array& other) const
     {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
-    };
+    }
 
     bool operator!=(const byte_array& other) const
     {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
-    };
+    }
 
     bool operator==(const byte_array& other) const
     {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) == 0;
-    };
+    }
 
-    void clear()
-    {
-        memset(this->ba_data, 0, BYTE_COUNT);
-    };
+    void clear() { memset(this->ba_data, 0, BYTE_COUNT); }
 
     template<typename OutputIt>
     void to_string(OutputIt out) const
@@ -88,17 +85,14 @@ struct byte_array {
         return retval;
     }
 
-    const unsigned char* in() const
-    {
-        return this->ba_data;
-    };
+    const unsigned char* in() const { return this->ba_data; }
 
     T* out(int offset = 0)
     {
         T* ptr = (T*) this->ba_data;
 
         return &ptr[offset];
-    };
+    }
 
     unsigned char ba_data[BYTE_COUNT];
 };

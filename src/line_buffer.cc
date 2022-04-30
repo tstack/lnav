@@ -800,3 +800,40 @@ line_buffer::get_available()
 {
     return {this->lb_file_offset, this->lb_buffer_size};
 }
+
+line_buffer::gz_indexed::indexDict::indexDict(const z_stream& s,
+                                              const file_size_t size)
+{
+    assert((s.data_type & GZ_END_OF_BLOCK_MASK));
+    assert(!(s.data_type & GZ_END_OF_FILE_MASK));
+    assert(size >= s.avail_out + GZ_WINSIZE);
+    this->bits = s.data_type & GZ_BORROW_BITS_MASK;
+    this->in = s.total_in;
+    this->out = s.total_out;
+    auto last_byte_in = s.next_in[-1];
+    this->in_bits = last_byte_in >> (8 - this->bits);
+    // Copy the last 32k uncompressed data (sliding window) to our
+    // index
+    memcpy(this->index, s.next_out - GZ_WINSIZE, GZ_WINSIZE);
+}
+
+int
+line_buffer::gz_indexed::indexDict::apply(z_streamp s)
+{
+    s->zalloc = Z_NULL;
+    s->zfree = Z_NULL;
+    s->opaque = Z_NULL;
+    s->avail_in = 0;
+    s->next_in = Z_NULL;
+    auto ret = inflateInit2(s, GZ_RAW_MODE);
+    if (ret != Z_OK) {
+        return ret;
+    }
+    if (this->bits) {
+        inflatePrime(s, this->bits, this->in_bits);
+    }
+    s->total_in = this->in;
+    s->total_out = this->out;
+    inflateSetDictionary(s, this->index, GZ_WINSIZE);
+    return ret;
+}

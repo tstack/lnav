@@ -40,6 +40,7 @@
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
 #include "lnav.hh"
+#include "lnav.indexing.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
@@ -175,8 +176,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     auto source = ec.ec_source.top();
     sql_progress_guard progress_guard(sql_progress,
                                       sql_progress_finished,
-                                      source.s_source,
-                                      source.s_line,
+                                      source.s_location,
                                       source.s_content);
     gettimeofday(&start_tv, nullptr);
     retcode = sqlite3_prepare_v2(
@@ -315,8 +315,17 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     log_error("sqlite3_step error code: %d", retcode);
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     if (startswith(errmsg, "lnav-error:")) {
-                        return Err(lnav::from_json<lnav::console::user_message>(
-                            &errmsg[11]));
+                        auto from_res
+                            = lnav::from_json<lnav::console::user_message>(
+                                &errmsg[11]);
+
+                        if (from_res.isOk()) {
+                            return Err(from_res.unwrap());
+                        }
+
+                        return ec.make_error(
+                            "internal error: {}",
+                            from_res.unwrapErr()[0].um_message.get_string());
                     }
                     return ec.make_error("{}", errmsg);
                 }
@@ -344,7 +353,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         }
 
         if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_value("");
+            lnav_data.ld_rl_view->clear_value();
         }
     }
 
@@ -607,7 +616,8 @@ execute_from_file(exec_context& ec,
                   const std::string& cmdline)
 {
     std::string retval, alt_msg;
-    auto _sg = ec.enter_source(path.string(), line_number, cmdline);
+    auto _sg = ec.enter_source(
+        intern_string::lookup(path.string()), line_number, cmdline);
 
     switch (mode) {
         case ':':
@@ -691,12 +701,15 @@ execute_init_commands(
 
     log_info("Executing initial commands");
     for (auto& cmd : lnav_data.ld_commands) {
+        static const auto COMMAND_OPTION_SRC
+            = intern_string::lookup("command-option");
+
         std::string alt_msg;
 
         wait_for_children();
 
         {
-            auto _sg = ec.enter_source("command-option", option_index++, cmd);
+            auto _sg = ec.enter_source(COMMAND_OPTION_SRC, option_index++, cmd);
             switch (cmd.at(0)) {
                 case ':':
                     msgs.emplace_back(execute_command(ec, cmd.substr(1)),
@@ -906,10 +919,12 @@ exec_context::exec_context(std::vector<logline_value>* line_values,
       ec_accumulator(std::make_unique<attr_line_t>()),
       ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
 {
+    static const auto COMMAND_SRC = intern_string::lookup("command");
+
     this->ec_local_vars.push(std::map<std::string, std::string>());
     this->ec_path_stack.emplace_back(".");
     this->ec_source.emplace(
-        lnav::console::snippet::from("command", "").with_line(1));
+        lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
     this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
 }
 

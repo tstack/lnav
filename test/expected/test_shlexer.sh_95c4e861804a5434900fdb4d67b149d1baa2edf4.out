@@ -1,0 +1,5 @@
+    $FOO
+ref ^--^
+eval -- bar
+split:
+  0 -- bar

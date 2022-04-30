@@ -109,6 +109,8 @@ enum class role_t : int32_t {
     VCR_H5,
     VCR_H6,
 
+    VCR_LIST_GLYPH,
+
     VCR__MAX
 };
 
@@ -162,6 +164,7 @@ extern string_attr_type<const intern_string_t> SA_FORMAT;
 extern string_attr_type<void> SA_REMOVED;
 extern string_attr_type<std::string> SA_INVALID;
 extern string_attr_type<std::string> SA_ERROR;
+extern string_attr_type<int64_t> SA_LEVEL;
 
 extern string_attr_type<role_t> VC_ROLE;
 extern string_attr_type<role_t> VC_ROLE_FG;
@@ -310,11 +313,25 @@ inline std::pair<std::string, string_attr_pair> operator"" _symbol(
                           VC_ROLE.template value(role_t::VCR_SYMBOL));
 }
 
+inline std::pair<std::string, string_attr_pair> operator"" _keyword(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_KEYWORD));
+}
+
 inline std::pair<std::string, string_attr_pair> operator"" _variable(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_VARIABLE));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _comment(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_COMMENT));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h1(const char* str,
@@ -336,6 +353,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _h3(const char* str,
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_H3));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _list_glyph(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_LIST_GLYPH));
 }
 
 }  // namespace literals

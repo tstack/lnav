@@ -1,0 +1,64 @@
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 1
+  Column range_stop: 2
+  Column    content: 1
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_name: 
+  Column capture_count: 2
+  Column range_start: 1
+  Column range_stop: 2
+  Column    content: 1
+Row 2:
+  Column match_index: 1
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 3
+  Column range_stop: 4
+  Column    content: 2
+Row 3:
+  Column match_index: 1
+  Column capture_index: 1
+  Column capture_name: 
+  Column capture_count: 2
+  Column range_start: 3
+  Column range_stop: 4
+  Column    content: 2
+Row 4:
+  Column match_index: 2
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 5
+  Column range_stop: 6
+  Column    content: 3
+Row 5:
+  Column match_index: 2
+  Column capture_index: 1
+  Column capture_name: 
+  Column capture_count: 2
+  Column range_start: 5
+  Column range_stop: 6
+  Column    content: 3
+Row 6:
+  Column match_index: 3
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 7
+  Column range_stop: 9
+  Column    content: 45
+Row 7:
+  Column match_index: 3
+  Column capture_index: 1
+  Column capture_name: 
+  Column capture_count: 2
+  Column range_start: 7
+  Column range_stop: 9
+  Column    content: 45

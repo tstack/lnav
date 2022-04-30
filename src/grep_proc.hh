@@ -79,12 +79,9 @@ public:
             return highest;
         }
         return start;
-    };
+    }
 
-    virtual void grep_next_line(LineType& line)
-    {
-        line = line + LineType(1);
-    };
+    virtual void grep_next_line(LineType& line) { line = line + LineType(1); }
 
     grep_proc<LineType>* gps_proc;
 };
@@ -97,7 +94,7 @@ public:
     virtual ~grep_proc_control() = default;
 
     /** @param msg The error encountered while attempting the grep. */
-    virtual void grep_error(const std::string& msg){};
+    virtual void grep_error(const std::string& msg) {}
 };
 
 /**
@@ -114,10 +111,10 @@ public:
                             LineType stop){};
 
     /** Called periodically between grep_begin and grep_end. */
-    virtual void grep_end_batch(grep_proc<LineType>& gp){};
+    virtual void grep_end_batch(grep_proc<LineType>& gp) {}
 
     /** Called at the end of a grep run. */
-    virtual void grep_end(grep_proc<LineType>& gp){};
+    virtual void grep_end(grep_proc<LineType>& gp) {}
 
     /**
      * Called when a match is found on 'line' and between [start, end).
@@ -183,24 +180,15 @@ public:
     virtual ~grep_proc();
 
     /** @param gpd The sink to send resuls to. */
-    void set_sink(grep_proc_sink<LineType>* gpd)
-    {
-        this->gp_sink = gpd;
-    };
+    void set_sink(grep_proc_sink<LineType>* gpd) { this->gp_sink = gpd; }
 
     grep_proc& invalidate();
 
     /** @param gpd The sink to send results to. */
-    void set_control(grep_proc_control* gpc)
-    {
-        this->gp_control = gpc;
-    };
+    void set_control(grep_proc_control* gpc) { this->gp_control = gpc; }
 
     /** @return The sink to send results to. */
-    grep_proc_sink<LineType>* get_sink()
-    {
-        return this->gp_sink;
-    };
+    grep_proc_sink<LineType>* get_sink() { return this->gp_sink; }
 
     /**
      * Queue a request to search the input between the given line numbers.
@@ -221,7 +209,7 @@ public:
         }
 
         return *this;
-    };
+    }
 
     /**
      * Start the search requests that have been queued up with queue_request.
@@ -237,7 +225,7 @@ public:
         if (this->gp_err_pipe != -1) {
             pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
         }
-    };
+    }
 
     /**
      * Check the fd_set to see if there is any new data to be processed.
@@ -259,7 +247,7 @@ public:
         }
 
         return true;
-    };
+    }
 
 protected:
     /**
@@ -277,15 +265,9 @@ protected:
 
     virtual void child_init(){};
 
-    virtual void child_batch()
-    {
-        fflush(stdout);
-    };
+    virtual void child_batch() { fflush(stdout); }
 
-    virtual void child_term()
-    {
-        fflush(stdout);
-    };
+    virtual void child_term() { fflush(stdout); }
 
     virtual void handle_match(
         int line, std::string& line_value, int off, int* matches, int count);
@@ -319,4 +301,5 @@ protected:
     grep_proc_sink<LineType>* gp_sink{nullptr}; /*< The sink delegate. */
     grep_proc_control* gp_control{nullptr}; /*< The control delegate. */
 };
+
 #endif

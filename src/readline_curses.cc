@@ -284,7 +284,7 @@ readline_context::completion_generator(const char* text_in, int state)
 
                 for (const auto& poss : (*arg_possibilities)) {
                     std::string poss_str = tolower(poss);
-                    int score;
+                    int score = 0;
 
                     if (fts::fuzzy_match(
                             text_str.c_str(), poss_str.c_str(), score)
@@ -1106,8 +1106,6 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
         rc = recvstring(
             this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
         if (rc >= 0) {
-            std::string old_value = this->rc_value;
-
             msg[rc] = '\0';
             if (this->rc_matches_remaining > 0) {
                 this->rc_matches.emplace_back(msg);
@@ -1377,7 +1375,7 @@ readline_curses::do_update()
     if (this->rc_active_context == -1) {
         int alt_start = -1;
         struct line_range lr(0, 0);
-        attr_line_t al, alt_al;
+        attr_line_t alt_al;
         view_colors& vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
@@ -1388,9 +1386,6 @@ readline_curses::do_update()
             this->rc_value.clear();
         }
 
-        al.get_string() = this->rc_value;
-        scrub_ansi_string(al.get_string(), al.get_attrs());
-
         if (!this->rc_alt_value.empty()) {
             alt_al.get_string() = this->rc_alt_value;
             scrub_ansi_string(alt_al.get_string(), alt_al.get_attrs());
@@ -1398,15 +1393,18 @@ readline_curses::do_update()
             alt_start = getmaxx(this->vc_window) - alt_al.get_string().size();
         }
 
-        if (alt_start >= (int) (al.get_string().length() + 5)) {
+        if (alt_start >= (int) (this->rc_value.length() + 5)) {
             lr.lr_end = alt_al.get_string().length();
             view_curses::mvwattrline(
                 this->vc_window, this->get_actual_y(), alt_start, alt_al, lr);
         }
 
-        lr.lr_end = al.get_string().length();
-        view_curses::mvwattrline(
-            this->vc_window, this->get_actual_y(), this->vc_left, al, lr);
+        lr.lr_end = this->rc_value.length();
+        view_curses::mvwattrline(this->vc_window,
+                                 this->get_actual_y(),
+                                 this->vc_left,
+                                 this->rc_value,
+                                 lr);
         this->set_x(0);
     }
 
@@ -1452,4 +1450,21 @@ readline_curses::get_match_string() const
     }
 
     return this->rc_line_buffer.substr(this->rc_match_start, len);
+}
+
+void
+readline_curses::set_value(const std::string& value)
+{
+    this->set_attr_value(attr_line_t::from_ansi_str(value.c_str()));
+}
+
+void
+readline_curses::set_attr_value(const attr_line_t& value)
+{
+    this->rc_value = value;
+    if (this->rc_value.length() > 1024) {
+        this->rc_value = this->rc_value.subline(0, 1024);
+    }
+    this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
+    this->set_needs_update();
 }

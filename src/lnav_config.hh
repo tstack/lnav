@@ -69,7 +69,7 @@ bool check_experimental(const char* feature_name);
  */
 void ensure_dotlnav();
 
-bool install_from_git(const char* repo);
+bool install_from_git(const std::string& repo);
 bool update_installs_from_git();
 
 void install_extra_formats();

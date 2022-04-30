@@ -32,6 +32,7 @@
 #include "db_sub_source.hh"
 
 #include "base/date_time_scanner.hh"
+#include "base/itertools.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "yajlpp/json_ptr.hh"
@@ -261,17 +262,10 @@ db_label_source::clear()
     this->dls_cell_width.clear();
 }
 
-long
+nonstd::optional<size_t>
 db_label_source::column_name_to_index(const std::string& name) const
 {
-    std::vector<header_meta>::const_iterator iter;
-
-    iter = std::find(this->dls_headers.begin(), this->dls_headers.end(), name);
-    if (iter == this->dls_headers.end()) {
-        return -1;
-    }
-
-    return std::distance(this->dls_headers.begin(), iter);
+    return this->dls_headers | lnav::itertools::find(name);
 }
 
 nonstd::optional<vis_line_t>

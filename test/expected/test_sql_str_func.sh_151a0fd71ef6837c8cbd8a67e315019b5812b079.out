@@ -1,0 +1,8 @@
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 1
+  Column range_start: 1
+  Column range_stop: 4
+  Column    content: foo

@@ -39,6 +39,8 @@
 #include <vector>
 
 #include "base/isc.hh"
+#include "base/lnav.console.hh"
+#include "base/result.h"
 #include "config.h"
 
 #if !defined(HAVE_LIBCURL)
@@ -73,8 +75,7 @@ public:
 class curl_request {
 public:
     curl_request(std::string name)
-        : cr_name(std::move(name)), cr_open(true), cr_handle(curl_easy_cleanup),
-          cr_completions(0)
+        : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
     {
         this->cr_handle.reset(curl_easy_init());
         curl_easy_setopt(this->cr_handle, CURLOPT_NOSIGNAL, 1);
@@ -91,34 +92,39 @@ public:
 #    endif
                                  CURLSSH_AUTH_PASSWORD);
         }
-    };
+    }
 
     virtual ~curl_request() = default;
 
     const std::string& get_name() const
     {
         return this->cr_name;
-    };
+    }
 
     virtual void close()
     {
         this->cr_open = false;
-    };
+    }
 
     bool is_open() const
     {
         return this->cr_open;
-    };
+    }
 
     CURL* get_handle() const
     {
         return this->cr_handle;
-    };
+    }
+
+    operator CURL*() const
+    {
+        return this->cr_handle;
+    }
 
     int get_completions() const
     {
         return this->cr_completions;
-    };
+    }
 
     virtual long complete(CURLcode result)
     {
@@ -136,17 +142,42 @@ public:
             "%s: download_speed=%f", this->cr_name.c_str(), download_speed);
 
         return -1;
-    };
+    }
+
+    Result<std::string, CURLcode> perform()
+    {
+        std::string response;
+
+        curl_easy_setopt(this->get_handle(), CURLOPT_WRITEFUNCTION, string_cb);
+        curl_easy_setopt(this->get_handle(), CURLOPT_WRITEDATA, &response);
+
+        auto rc = curl_easy_perform(this->get_handle());
+        if (rc == CURLE_OK) {
+            return Ok(response);
+        }
+
+        return Err(rc);
+    }
+
+    long get_response_code() const
+    {
+        long retval;
+
+        curl_easy_getinfo(this->get_handle(), CURLINFO_RESPONSE_CODE, &retval);
+        return retval;
+    }
 
 protected:
     static int debug_cb(
         CURL* handle, curl_infotype type, char* data, size_t size, void* userp);
 
+    static size_t string_cb(void* data, size_t size, size_t nmemb, void* userp);
+
     const std::string cr_name;
-    bool cr_open;
+    bool cr_open{true};
     auto_mem<CURL> cr_handle;
     char cr_error_buffer[CURL_ERROR_SIZE];
-    int cr_completions;
+    int cr_completions{0};
 };
 
 class curl_looper : public isc::service<curl_looper> {
@@ -154,20 +185,9 @@ public:
     curl_looper() : cl_curl_multi(curl_multi_cleanup)
     {
         this->cl_curl_multi.reset(curl_multi_init());
-    };
+    }
 
-    void process_all()
-    {
-        this->check_for_new_requests();
-
-        this->requeue_requests(LONG_MAX);
-
-        while (!this->cl_handle_to_request.empty()) {
-            this->perform_io();
-
-            this->check_for_finished_requests();
-        }
-    };
+    void process_all();
 
     void add_request(const std::shared_ptr<curl_request>& cr)
     {
@@ -175,12 +195,12 @@ public:
 
         this->cl_all_requests.emplace_back(cr);
         this->cl_new_requests.emplace_back(cr);
-    };
+    }
 
     void close_request(const std::string& name)
     {
         this->cl_close_requests.emplace_back(name);
-    };
+    }
 
 protected:
     void loop_body() override;

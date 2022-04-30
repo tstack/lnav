@@ -31,6 +31,7 @@
 
 #include "config.h"
 #include "fmt/format.h"
+#include "itertools.hh"
 #include "opt_util.hh"
 
 namespace lnav {
@@ -87,25 +88,56 @@ read_file(const ghc::filesystem::path& path)
     }
 }
 
+Result<void, std::string>
+write_file(const ghc::filesystem::path& path, const string_fragment& content)
+{
+    auto tmp_pattern = path;
+    tmp_pattern += ".XXXXXX";
+
+    auto tmp_pair = TRY(open_temp_file(tmp_pattern));
+    auto bytes_written
+        = write(tmp_pair.second.get(), content.data(), content.length());
+    if (bytes_written < 0) {
+        return Err(
+            fmt::format(FMT_STRING("unable to write to temporary file {}: {}"),
+                        tmp_pair.first.string(),
+                        strerror(errno)));
+    }
+    if (bytes_written != content.length()) {
+        return Err(fmt::format(FMT_STRING("short write to file {}: {} < {}"),
+                               tmp_pair.first.string(),
+                               bytes_written,
+                               content.length()));
+    }
+    std::error_code ec;
+    ghc::filesystem::rename(tmp_pair.first, path, ec);
+    if (ec) {
+        return Err(
+            fmt::format(FMT_STRING("unable to move temporary file {}: {}"),
+                        tmp_pair.first.string(),
+                        ec.message()));
+    }
+
+    return Ok();
+}
+
 std::string
 build_path(const std::vector<ghc::filesystem::path>& paths)
 {
-    std::string retval;
-
-    for (const auto& path : paths) {
-        if (path.empty()) {
-            continue;
-        }
-        if (!retval.empty()) {
-            retval += ":";
-        }
-        retval += path.string();
-    }
-    auto env_path = getenv_opt("PATH");
-    if (env_path) {
-        retval += ":" + std::string(*env_path);
-    }
-    return retval;
+    return paths
+        | lnav::itertools::map(
+               static_cast<std::string (ghc::filesystem::path::*)() const>(
+                   &ghc::filesystem::path::string))
+        | lnav::itertools::append(getenv_opt("PATH").value_or(""))
+        | lnav::itertools::filter_out(&std::string::empty)
+        | lnav::itertools::fold(
+               [](const auto& elem, auto& accum) {
+                   if (!accum.empty()) {
+                       accum.push_back(':');
+                   }
+                   return accum.append(elem);
+               },
+               std::string());
 }
 
 Result<struct stat, std::string>

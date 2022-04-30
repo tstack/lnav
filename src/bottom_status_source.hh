@@ -53,20 +53,17 @@ public:
 
     bottom_status_source();
 
-    status_field& get_field(field_t id)
-    {
-        return this->bss_fields[id];
-    };
+    status_field& get_field(field_t id) { return this->bss_fields[id]; }
 
     void set_prompt(const std::string& prompt)
     {
         this->bss_prompt.set_value(prompt);
-    };
+    }
 
     void grep_error(const std::string& msg) override
     {
         this->bss_error.set_value(msg);
-    };
+    }
 
     size_t statusview_fields() override;
 

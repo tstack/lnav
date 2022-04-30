@@ -579,22 +579,19 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
         size_t filename_width = this->fos_lss.get_filename_offset();
 
         if (!line_meta.bm_comment.empty()) {
+            const auto* lead = line_meta.bm_tags.empty() ? " \u2514 "
+                                                         : " \u251c ";
             attr_line_t al;
 
-            al.with_string(" + ")
-                .with_attr(string_attr(
-                    line_range(1, 2),
-                    VC_GRAPHIC.value(
-                        line_meta.bm_tags.empty() ? ACS_LLCORNER : ACS_LTEE)))
-                .append(line_meta.bm_comment);
+            al.with_string(lead).append(
+                lnav::roles::comment(line_meta.bm_comment));
             al.insert(0, filename_width, ' ');
             dst.emplace_back(al);
         }
         if (!line_meta.bm_tags.empty()) {
             attr_line_t al;
 
-            al.with_string(" +").with_attr(string_attr(
-                line_range(1, 2), VC_GRAPHIC.value(ACS_LLCORNER)));
+            al.with_string(" \u2514");
             for (const auto& str : line_meta.bm_tags) {
                 al.append(1, ' ').append(
                     str, VC_STYLE.value(vc.attrs_for_ident(str)));
@@ -613,4 +610,54 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             dst.emplace_back(al);
         }
     }
+}
+
+void
+field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
+{
+    string_attrs_t& sa = this->fos_lines.back().get_attrs();
+    struct line_range lr(1, 2);
+    int64_t graphic = (int64_t) (last_line ? ACS_LLCORNER : ACS_LTEE);
+    sa.emplace_back(lr, VC_GRAPHIC.value(graphic));
+
+    lr.lr_start = 3 + key_size + 3;
+    lr.lr_end = -1;
+    sa.emplace_back(lr, VC_STYLE.value(A_BOLD));
+}
+
+bool
+field_overlay_source::list_value_for_overlay(const listview_curses& lv,
+                                             int y,
+                                             int bottom,
+                                             vis_line_t row,
+                                             attr_line_t& value_out)
+{
+    if (y == 0) {
+        this->build_field_lines(lv);
+        this->build_summary_lines(lv);
+        return false;
+    }
+
+    if (1 <= y && y <= (int) this->fos_lines.size()) {
+        value_out = this->fos_lines[y - 1];
+        return true;
+    }
+
+    if (!this->fos_summary_lines.empty() && y == (bottom - 1)) {
+        value_out = this->fos_summary_lines[0];
+        return true;
+    }
+
+    if (!this->fos_meta_lines.empty()) {
+        value_out = this->fos_meta_lines.front();
+        this->fos_meta_lines.erase(this->fos_meta_lines.begin());
+
+        return true;
+    }
+
+    if (row < lv.get_inner_height()) {
+        this->build_meta_line(lv, this->fos_meta_lines, row);
+    }
+
+    return false;
 }

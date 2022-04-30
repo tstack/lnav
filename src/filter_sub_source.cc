@@ -41,13 +41,10 @@ filter_sub_source::filter_sub_source()
 {
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(
-        lnav::enums::to_underlying(filter_lang_t::REGEX),
-        this->fss_regex_context);
+    this->fss_editor.add_context(filter_lang_t::REGEX, this->fss_regex_context);
     this->fss_sql_context.set_highlighter(readline_sqlite_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(lnav::enums::to_underlying(filter_lang_t::SQL),
-                                 this->fss_sql_context);
+    this->fss_editor.add_context(filter_lang_t::SQL, this->fss_sql_context);
     this->fss_editor.set_change_action(
         bind_mem(&filter_sub_source::rl_change, this));
     this->fss_editor.set_perform_action(
@@ -80,8 +77,8 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
     switch (ch) {
         case 'f': {
-            auto top_view = *lnav_data.ld_view_stack.top();
-            auto tss = top_view->get_sub_source();
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* tss = top_view->get_sub_source();
 
             tss->toggle_apply_filters();
             break;
@@ -159,19 +156,18 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(
-                &this->fss_editor,
-                lnav::enums::to_underlying(filter_lang_t::REGEX),
-                "*",
-                top_view);
+            add_view_text_possibilities(&this->fss_editor,
+                                        filter_lang_t::REGEX,
+                                        "*",
+                                        top_view,
+                                        text_quoting::regex);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y()
                                    + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(
-                lnav::enums::to_underlying(filter_lang_t::REGEX), "", "");
+            this->fss_editor.focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -196,19 +192,18 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(
-                &this->fss_editor,
-                lnav::enums::to_underlying(filter_lang_t::REGEX),
-                "*",
-                top_view);
+            add_view_text_possibilities(&this->fss_editor,
+                                        filter_lang_t::REGEX,
+                                        "*",
+                                        top_view,
+                                        text_quoting::regex);
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y()
                                    + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(
-                lnav::enums::to_underlying(filter_lang_t::REGEX), "", "");
+            this->fss_editor.focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -227,23 +222,20 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             this->fss_editing = true;
 
+            auto tq = tf->get_lang() == filter_lang_t::SQL
+                ? text_quoting::sql
+                : text_quoting::regex;
             add_view_text_possibilities(
-                &this->fss_editor,
-                lnav::enums::to_underlying(filter_lang_t::REGEX),
-                "*",
-                top_view);
+                &this->fss_editor, tf->get_lang(), "*", top_view, tq);
             add_filter_expr_possibilities(
-                &this->fss_editor,
-                lnav::enums::to_underlying(filter_lang_t::SQL),
-                "*");
+                &this->fss_editor, filter_lang_t::SQL, "*");
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y()
                                    + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(25);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(lnav::enums::to_underlying(tf->get_lang()),
-                                   "");
+            this->fss_editor.focus(tf->get_lang(), "");
             this->fss_editor.rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
             tf->disable();
@@ -349,7 +341,7 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
     filter_stack& fs = tss->get_filters();
     auto tf = *(fs.begin() + line);
     bool selected
-        = lnav_data.ld_mode == LNM_FILTER && line == tc.get_selection();
+        = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
 
     if (selected) {
         value_out.emplace_back(line_range{0, 1},
@@ -509,7 +501,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
     filter_stack& fs = tss->get_filters();
     auto iter = fs.begin() + this->tss_view->get_selection();
     auto tf = *iter;
-    auto new_value = rc->get_value();
+    auto new_value = rc->get_value().get_string();
 
     if (new_value.empty()) {
         this->rl_abort(rc);
@@ -663,6 +655,6 @@ filter_sub_source::rl_display_next(readline_curses* rc)
 void
 filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
-    lnav_data.ld_mode = LNM_PAGING;
+    lnav_data.ld_mode = ln_mode_t::PAGING;
     lnav_data.ld_filter_view.reload_data();
 }

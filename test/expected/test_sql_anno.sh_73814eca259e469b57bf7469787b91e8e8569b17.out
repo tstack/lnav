@@ -1,0 +1,7 @@
+                 SELECT (1 + 2) AS three
+     sql_keyword ------
+     sql_garbage         -
+        sql_oper           -
+     sql_garbage             -
+     sql_keyword                --
+       sql_ident                   -----

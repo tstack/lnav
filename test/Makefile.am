@@ -185,6 +185,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
+	test_regex101.sh \
 	test_remote.sh \
 	test_scripts.sh \
 	test_sessions.sh \
@@ -202,7 +203,10 @@ dist_noinst_SCRIPTS = \
 	test_vt52_curses.sh \
 	test_pretty_print.sh
 
+include expected/expected.am
+
 dist_noinst_DATA = \
+    $(EXPECTED_FILES) \
 	ansi-colors.0.in \
 	bad-config/formats/invalid-properties/format.json \
 	bad-config/formats/invalid-regex/format.json \
@@ -373,6 +377,7 @@ TESTS = \
 	test_json_format.sh \
 	test_log_accel \
 	test_logfile.sh \
+    test_regex101.sh \
 	test_reltime \
 	test_scripts.sh \
 	test_sessions.sh \
@@ -403,7 +408,9 @@ TESTS += \
 endif
 
 DISTCLEANFILES = \
+	*.cmd \
 	*.dat \
+	*.out \
 	*.err \
 	*.db \
 	*.dpt \
@@ -412,6 +419,7 @@ DISTCLEANFILES = \
 	*.tmp \
 	*.gz \
 	*.bz2 \
+	*.outbak \
 	*.errbak \
 	*.tmpbak \
 	*.xz \
@@ -450,4 +458,10 @@ distclean-local:
 	$(RM_V)rm -rf nested
 	$(RM_V)rm -rf test-config
 	$(RM_V)rm -rf .lnav
+	$(RM_V)rm -rf regex101-home
 	$(RM_V)rm -rf ../installer-test-home
+
+expected:
+	$(top_srcdir)/update_expected_output.sh $(srcdir) $(builddir)
+
+.PHONY: expected

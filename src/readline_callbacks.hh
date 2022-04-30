@@ -39,6 +39,8 @@ void rl_alt_callback(readline_curses* rc);
 void rl_display_matches(readline_curses* rc);
 void rl_display_next(readline_curses* rc);
 void rl_completion_request(readline_curses* rc);
+void rl_focus(readline_curses* rc);
+void rl_blur(readline_curses* rc);
 
 extern const char* RE_HELP;
 extern const char* RE_EXAMPLE;

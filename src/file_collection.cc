@@ -37,6 +37,7 @@
 
 #include "base/humanize.network.hh"
 #include "base/isc.hh"
+#include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
 #include "config.h"
@@ -280,21 +281,19 @@ file_collection::watch_logfile(const std::string& filename,
         return lnav::futures::make_ready_future(std::move(retval));
     }
 
-    auto stat_iter = find_if(this->fc_new_stats.begin(),
-                             this->fc_new_stats.end(),
-                             [&st](auto& elem) {
-                                 return st.st_ino == elem.st_ino
-                                     && st.st_dev == elem.st_dev;
-                             });
-    if (stat_iter != this->fc_new_stats.end()) {
+    if (this->fc_new_stats | lnav::itertools::find_if([&st](const auto& elem) {
+            return st.st_ino == elem.st_ino && st.st_dev == elem.st_dev;
+        }))
+    {
         // this file is probably a link that we have already scanned in this
         // pass.
         return lnav::futures::make_ready_future(std::move(retval));
     }
 
     this->fc_new_stats.emplace_back(st);
-    auto file_iter
-        = find_if(this->fc_files.begin(), this->fc_files.end(), same_file(st));
+
+    auto file_iter = std::find_if(
+        this->fc_files.begin(), this->fc_files.end(), same_file(st));
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
@@ -313,7 +312,8 @@ file_collection::watch_logfile(const std::string& filename,
                 return retval;
             }
 
-            auto ff = detect_file_format(filename);
+            auto ff = loo2.loo_temp_file ? file_format_t::UNKNOWN
+                                         : detect_file_format(filename);
 
             loo2.loo_file_format = ff;
             switch (ff) {
@@ -619,7 +619,7 @@ file_collection::rescan_files(bool required)
 
                 this->expand_filename(fq, path, pair.second, false);
             }
-        } else {
+        } else if (pair.second.loo_fd.get() != -1) {
             fq.push_back(watch_logfile(pair.first, pair.second, required));
         }
 

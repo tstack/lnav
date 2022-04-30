@@ -42,6 +42,8 @@ test_file_base=`basename $1`
 # The current test number for shell based tests.
 test_num=0
 
+test_hash=""
+
 lnav_test="${top_builddir}/src/lnav-test"
 export lnav_test
 
@@ -61,6 +63,10 @@ export HAVE_SQLITE3_VALUE_SUBTYPE
 
 LAST_TEST=""
 
+LAST_CAP_TEST=()
+
+has_errors=""
+
 #
 # Run a test case and capture its standard out and standard err.
 #
@@ -73,9 +79,66 @@ LAST_TEST=""
 #     run_test rktimes -V
 #
 run_test() {
-    LAST_TEST="test: $@"
+    printf "%s \033[0;35m=============================================================\033[0m\n" $(date -Iseconds)
+    LAST_TEST=("test: $@")
+    echo "${LAST_TEST[@]}"
     export test_num=`expr ${test_num} \+ 1`
     "$@" > ${test_file_base}_${test_num}.tmp 2> ${test_file_base}_${test_num}.err
+}
+
+run_cap_test() {
+    LAST_CAP_TEST=("test: $@")
+    local full_cmd=$(echo "${LAST_CAP_TEST[@]}" | sed -e "s;${test_dir};{test_dir};g")
+    export test_hash=$(echo "${full_cmd}" | shasum | cut -f 1 -d ' ')
+    echo "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
+    "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
+
+    sed -ibak \
+        -e "s;${builddir};{builddir};g" \
+        -e "s;${test_dir};{test_dir};g" \
+        -e "s;${top_srcdir};{top_srcdir};g" \
+        ${test_file_base}_${test_hash}.out
+    echo
+    printf "%s \033[0;35m=============================================================\033[0m\n" $(date -Iseconds)
+    printf '\033[0;35mCommand\033[0m: %s\n' "${full_cmd}"
+    printf '\033[0;32mBEGIN\033[0m %s\n' "${test_file_base}_${test_hash}.out"
+    cat "${test_file_base}_${test_hash}.out"
+    printf '\033[0;32mEND\033[0m   %s\n' "${test_file_base}_${test_hash}.out"
+    if test -f ${srcdir}/expected/${test_file_base}_${test_hash}.out; then
+       diff -w -u \
+           ${srcdir}/expected/${test_file_base}_${test_hash}.out \
+           ${test_file_base}_${test_hash}.out \
+           > ${test_file_base}_${test_hash}.diff
+       if test $? -ne 0; then
+           echo OUT: "${full_cmd}"
+           cat ${test_file_base}_${test_hash}.diff
+           export has_errors="yes"
+       fi
+    else
+       export has_errors="yes"
+    fi
+
+    sed -ibak -E \
+        -e "s;${builddir};{builddir};g" \
+        -e "s;${test_dir};{test_dir};g" \
+        -e "s;${top_srcdir};{top_srcdir};g" \
+        -e 's;"errorId":".+";;g' \
+        ${test_file_base}_${test_hash}.err
+    printf '\033[0;31mBEGIN\033[0m %s\n' "${test_file_base}_${test_hash}.err"
+    cat "${test_file_base}_${test_hash}.err"
+    printf '\033[0;31mEND\033[0m   %s\n' "${test_file_base}_${test_hash}.err"
+    if test -f ${srcdir}/expected/${test_file_base}_${test_hash}.err; then
+       diff -w -u ${srcdir}/expected/${test_file_base}_${test_hash}.err \
+           ${test_file_base}_${test_hash}.err \
+           > ${test_file_base}_${test_hash}.err.diff
+       if test $? -ne 0; then
+           echo ERR: "${full_cmd}"
+           cat ${test_file_base}_${test_hash}.err.diff
+           export has_errors="yes"
+       fi
+    else
+       export has_errors="yes"
+    fi
 }
 
 #
@@ -100,7 +163,7 @@ check_output() {
         ${test_file_base}_${test_num}.tmp
     diff -w -u - ${test_file_base}_${test_num}.tmp > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
-        echo $LAST_TEST
+        echo "${LAST_TEST[@]}"
         echo $1
         cat ${test_file_base}_${test_num}.diff
 	    exit 1
@@ -110,7 +173,7 @@ check_output() {
 check_output_ws() {
     diff -u - ${test_file_base}_${test_num}.tmp > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
-        echo $LAST_TEST
+        echo "${LAST_TEST[@]}"
         echo $1
         cat ${test_file_base}_${test_num}.diff
 	    exit 1
@@ -133,7 +196,7 @@ check_error_output() {
     diff -w -u - ${test_file_base}_${test_num}.err \
         > ${test_file_base}_${test_num}.err.diff
     if test $? -ne 0; then
-        echo $LAST_TEST
+        echo "${LAST_TEST[@]}"
         echo $1
         cat ${test_file_base}_${test_num}.err.diff
         exit 1
@@ -191,3 +254,11 @@ else
     shift
     . ${test_file}
 fi
+
+cleanup() {
+  if test "${has_errors}"x = "yes"x; then
+    exit 1
+  fi
+}
+
+trap "cleanup" EXIT

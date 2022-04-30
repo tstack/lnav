@@ -47,9 +47,9 @@
 
 struct from_sqlite_conversion_error : std::exception {
     from_sqlite_conversion_error(const char* type, int argi)
-        : e_type(type), e_argi(argi){
-
-                        };
+        : e_type(type), e_argi(argi)
+    {
+    }
 
     const char* e_type;
     int e_argi;
@@ -412,7 +412,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
             sqlite3_result_error(
                 context, "Function threw an unexpected exception", -1);
         }
-    };
+    }
 
     static void func1(sqlite3_context* context, int argc, sqlite3_value** argv)
     {
@@ -455,7 +455,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
         }
 
         func2(context, argc, argv, std::make_index_sequence<sizeof...(Args)>{});
-    };
+    }
 
     static FuncDef builder(help_text ht)
     {
@@ -469,7 +469,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
             func1,
             ht,
         };
-    };
+    }
 };
 
 extern std::string vtab_module_schemas;
@@ -478,7 +478,9 @@ extern std::map<intern_string_t, std::string> vtab_module_ddls;
 class vtab_index_constraints {
 public:
     vtab_index_constraints(const sqlite3_index_info* index_info)
-        : vic_index_info(*index_info){};
+        : vic_index_info(*index_info)
+    {
+    }
 
     struct const_iterator {
         const_iterator(vtab_index_constraints* parent, int index = 0)
@@ -490,7 +492,7 @@ public:
             {
                 this->i_index += 1;
             }
-        };
+        }
 
         const_iterator& operator++()
         {
@@ -502,37 +504,31 @@ public:
                         .usable);
 
             return *this;
-        };
+        }
 
         const sqlite3_index_info::sqlite3_index_constraint& operator*() const
         {
             return this->i_parent->vic_index_info.aConstraint[this->i_index];
-        };
+        }
 
         const sqlite3_index_info::sqlite3_index_constraint* operator->() const
         {
             return &this->i_parent->vic_index_info.aConstraint[this->i_index];
-        };
+        }
 
         bool operator!=(const const_iterator& rhs) const
         {
             return this->i_parent != rhs.i_parent
                 || this->i_index != rhs.i_index;
-        };
+        }
 
         const vtab_index_constraints* i_parent;
         int i_index;
     };
 
-    const_iterator begin()
-    {
-        return {this};
-    };
+    const_iterator begin() { return {this}; }
 
-    const_iterator end()
-    {
-        return {this, this->vic_index_info.nConstraint};
-    };
+    const_iterator end() { return {this, this->vic_index_info.nConstraint}; }
 
 private:
     const sqlite3_index_info& vic_index_info;
@@ -541,17 +537,16 @@ private:
 class vtab_index_usage {
 public:
     vtab_index_usage(sqlite3_index_info* index_info)
-        : viu_index_info(*index_info), viu_used_column_count(0),
-          viu_max_column(0){
-
-          };
+        : viu_index_info(*index_info)
+    {
+    }
 
     void column_used(const vtab_index_constraints::const_iterator& iter)
     {
         this->viu_max_column = std::max(iter->iColumn, this->viu_max_column);
         this->viu_index_info.idxNum |= (1L << iter.i_index);
         this->viu_used_column_count += 1;
-    };
+    }
 
     void allocate_args(int expected)
     {
@@ -582,12 +577,12 @@ public:
         }
         this->viu_index_info.estimatedCost = 1.0;
         this->viu_index_info.estimatedRows = 1;
-    };
+    }
 
 private:
     sqlite3_index_info& viu_index_info;
-    int viu_used_column_count;
-    int viu_max_column;
+    int viu_used_column_count{0};
+    int viu_max_column{0};
 };
 
 struct vtab_module_base {
@@ -599,12 +594,9 @@ struct vtab_module_base {
 template<typename T>
 struct vtab_module : public vtab_module_base {
     struct vtab {
-        explicit vtab(T& impl) : v_impl(impl){};
+        explicit vtab(T& impl) : v_impl(impl) {}
 
-        explicit operator sqlite3_vtab*()
-        {
-            return &this->base;
-        };
+        explicit operator sqlite3_vtab*() { return &this->base; }
 
         sqlite3_vtab v_base{};
         T& v_impl;
@@ -623,7 +615,7 @@ struct vtab_module : public vtab_module_base {
         *pp_vt = (sqlite3_vtab*) &vt->v_base;
 
         return sqlite3_declare_vtab(db, T::CREATE_STMT);
-    };
+    }
 
     template<typename... Args, size_t... Idx>
     static int apply_impl(T& obj,
@@ -722,7 +714,7 @@ struct vtab_module : public vtab_module_base {
         auto* p_cur = (typename T::cursor*) cur;
 
         return p_cur->get_rowid(*p_rowid);
-    };
+    }
 
     static int tvt_column(sqlite3_vtab_cursor* cur,
                           sqlite3_context* ctx,
@@ -732,12 +724,12 @@ struct vtab_module : public vtab_module_base {
         auto* p_cur = (typename T::cursor*) cur;
 
         return mod_vt->v_impl.get_column(*p_cur, ctx, col);
-    };
+    }
 
     static int vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     {
         return SQLITE_OK;
-    };
+    }
 
     static int vt_filter(sqlite3_vtab_cursor* p_vtc,
                          int idxNum,
@@ -783,13 +775,13 @@ struct vtab_module : public vtab_module_base {
 
         return vtab_module<T>::apply(
             mod_vt->v_impl, &T::update_row, tab, index, argc - 2, argv + 2);
-    };
+    }
 
     template<typename U>
     auto addUpdate(U u) -> decltype(&U::delete_row, void())
     {
         this->vm_module.xUpdate = tvt_update;
-    };
+    }
 
     template<typename U>
     void addUpdate(...){};
@@ -812,7 +804,7 @@ struct vtab_module : public vtab_module_base {
         this->vm_module.xFilter = vt_filter;
         this->vm_module.xColumn = tvt_column;
         this->addUpdate<T>(this->vm_impl);
-    };
+    }
 
     ~vtab_module() override = default;
 
@@ -830,7 +822,7 @@ struct vtab_module : public vtab_module_base {
         auto create_stmt = fmt::format(
             FMT_STRING("CREATE VIRTUAL TABLE {} USING {}()"), name, impl_name);
         return sqlite3_exec(db, create_stmt.c_str(), nullptr, nullptr, nullptr);
-    };
+    }
 
     int create(sqlite3* db) override
     {
@@ -854,14 +846,14 @@ struct tvt_iterator_cursor {
 
             this->base.pVtab = vt;
             this->iter = mod_vt->v_impl.begin();
-        };
+        }
 
         int reset()
         {
             this->iter = get_handler().begin();
 
             return SQLITE_OK;
-        };
+        }
 
         int next()
         {
@@ -870,12 +862,9 @@ struct tvt_iterator_cursor {
             }
 
             return SQLITE_OK;
-        };
+        }
 
-        int eof()
-        {
-            return this->iter == get_handler().end();
-        };
+        int eof() { return this->iter == get_handler().end(); }
 
         template<bool cond, typename U>
         using resolvedType = typename std::enable_if<cond, U>::type;
@@ -922,20 +911,20 @@ struct tvt_no_update : public T {
     {
         vt->zErrMsg = sqlite3_mprintf("Rows cannot be deleted from this table");
         return SQLITE_ERROR;
-    };
+    }
 
     int insert_row(sqlite3_vtab* tab, sqlite3_int64& rowid_out)
     {
         tab->zErrMsg
             = sqlite3_mprintf("Rows cannot be inserted into this table");
         return SQLITE_ERROR;
-    };
+    }
 
     int update_row(sqlite3_vtab* tab, sqlite3_int64& rowid_out)
     {
         tab->zErrMsg = sqlite3_mprintf("Rows cannot be updated in this table");
         return SQLITE_ERROR;
-    };
+    }
 };
 
 #endif

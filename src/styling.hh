@@ -71,7 +71,7 @@ struct rgb_color {
 };
 
 struct lab_color {
-    lab_color() : lc_l(0), lc_a(0), lc_b(0){};
+    lab_color() : lc_l(0), lc_a(0), lc_b(0) {}
 
     explicit lab_color(const rgb_color& rgb);
 
@@ -84,7 +84,7 @@ struct lab_color {
         this->lc_b = other.lc_b;
 
         return *this;
-    };
+    }
 
     bool operator==(const lab_color& rhs) const;
 
@@ -112,7 +112,7 @@ struct term_color {
 };
 
 struct term_color_palette {
-    explicit term_color_palette(const string_fragment& json);
+    term_color_palette(const char* name, const string_fragment& json);
 
     short match_color(const lab_color& to_match);
 
@@ -207,6 +207,7 @@ struct lnav_theme {
     style_config lt_style_inactive_alert_status;
     style_config lt_style_file;
     style_config lt_style_header[6];
+    style_config lt_style_list_glyph;
     std::map<log_level_t, style_config> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

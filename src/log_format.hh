@@ -51,7 +51,6 @@
 #include "base/date_time_scanner.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
-#include "byte_array.hh"
 #include "file_format.hh"
 #include "highlighter.hh"
 #include "line_buffer.hh"
@@ -73,8 +72,6 @@ enum class scale_op_t {
 };
 
 struct scaling_factor {
-    scaling_factor() : sf_op(scale_op_t::SO_IDENTITY), sf_value(1){};
-
     template<typename T>
     void scale(T& val) const
     {
@@ -90,8 +87,8 @@ struct scaling_factor {
         }
     }
 
-    scale_op_t sf_op;
-    double sf_value;
+    scale_op_t sf_op{scale_op_t::SO_IDENTITY};
+    double sf_value{1};
 };
 
 enum class value_kind_t : int {
@@ -227,10 +224,7 @@ public:
 };
 
 struct logline_value_stats {
-    logline_value_stats()
-    {
-        this->clear();
-    };
+    logline_value_stats() { this->clear(); }
 
     void clear()
     {
@@ -238,40 +232,11 @@ struct logline_value_stats {
         this->lvs_total = 0;
         this->lvs_min_value = std::numeric_limits<double>::max();
         this->lvs_max_value = -std::numeric_limits<double>::max();
-    };
+    }
 
-    void merge(const logline_value_stats& other)
-    {
-        if (other.lvs_count == 0) {
-            return;
-        }
+    void merge(const logline_value_stats& other);
 
-        require(other.lvs_min_value <= other.lvs_max_value);
-
-        if (other.lvs_min_value < this->lvs_min_value) {
-            this->lvs_min_value = other.lvs_min_value;
-        }
-        if (other.lvs_max_value > this->lvs_max_value) {
-            this->lvs_max_value = other.lvs_max_value;
-        }
-        this->lvs_count += other.lvs_count;
-        this->lvs_total += other.lvs_total;
-
-        ensure(this->lvs_count >= 0);
-        ensure(this->lvs_min_value <= this->lvs_max_value);
-    };
-
-    void add_value(double value)
-    {
-        if (value < this->lvs_min_value) {
-            this->lvs_min_value = value;
-        }
-        if (value > this->lvs_max_value) {
-            this->lvs_max_value = value;
-        }
-        this->lvs_count += 1;
-        this->lvs_total += value;
-    };
+    void add_value(double value);
 
     int64_t lvs_count;
     double lvs_total;
@@ -282,9 +247,9 @@ struct logline_value_stats {
 struct logline_value_cmp {
     explicit logline_value_cmp(const intern_string_t* name = nullptr,
                                int col = -1)
-        : lvc_name(name), lvc_column(col){
-
-                          };
+        : lvc_name(name), lvc_column(col)
+    {
+    }
 
     bool operator()(const logline_value& lv) const
     {
@@ -298,7 +263,7 @@ struct logline_value_cmp {
         }
 
         return retval;
-    };
+    }
 
     const intern_string_t* lvc_name;
     int lvc_column;
@@ -316,29 +281,18 @@ public:
      */
     static std::vector<std::shared_ptr<log_format>>& get_root_formats();
 
-    static std::shared_ptr<log_format> find_root_format(const char* name)
-    {
-        auto& fmts = get_root_formats();
-        for (auto& lf : fmts) {
-            if (lf->get_name() == name) {
-                return lf;
-            }
-        }
-        return nullptr;
-    }
+    static std::shared_ptr<log_format> find_root_format(const char* name);
 
     struct action_def {
         std::string ad_name;
         std::string ad_label;
         std::vector<std::string> ad_cmdline;
-        bool ad_capture_output;
-
-        action_def() : ad_capture_output(false){};
+        bool ad_capture_output{false};
 
         bool operator<(const action_def& rhs) const
         {
             return this->ad_name < rhs.ad_name;
-        };
+        }
     };
 
     virtual ~log_format() = default;
@@ -347,7 +301,7 @@ public:
     {
         this->lf_pattern_locks.clear();
         this->lf_date_time.clear();
-    };
+    }
 
     /**
      * Get the name of this log format.
@@ -356,10 +310,7 @@ public:
      */
     virtual const intern_string_t get_name() const = 0;
 
-    virtual bool match_name(const std::string& filename)
-    {
-        return true;
-    };
+    virtual bool match_name(const std::string& filename) { return true; }
 
     virtual bool match_mime_type(const file_format_t ff) const
     {
@@ -367,7 +318,7 @@ public:
             return true;
         }
         return false;
-    };
+    }
 
     enum scan_result_t {
         SCAN_MATCH,
@@ -393,7 +344,7 @@ public:
     virtual bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const
     {
         return false;
-    };
+    }
 
     /**
      * Remove redundant data from the log line string.
@@ -409,7 +360,9 @@ public:
                           shared_buffer_ref& sbr,
                           string_attrs_t& sa,
                           std::vector<logline_value>& values,
-                          bool annotate_module = true) const {};
+                          bool annotate_module = true) const
+    {
+    }
 
     virtual void rewrite(exec_context& ec,
                          shared_buffer_ref& line,
@@ -417,20 +370,20 @@ public:
                          std::string& value_out)
     {
         value_out.assign(line.get_data(), line.length());
-    };
+    }
 
     virtual const logline_value_stats* stats_for_value(
         const intern_string_t& name) const
     {
         return nullptr;
-    };
+    }
 
     virtual std::shared_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
     virtual std::shared_ptr<log_vtab_impl> get_vtab_impl() const
     {
         return nullptr;
-    };
+    }
 
     virtual void get_subline(const logline& ll,
                              shared_buffer_ref& sbr,
@@ -440,7 +393,7 @@ public:
         const logline_value& lv) const
     {
         return nullptr;
-    };
+    }
 
     virtual std::set<std::string> get_source_path() const
     {
@@ -449,12 +402,12 @@ public:
         retval.insert("default");
 
         return retval;
-    };
+    }
 
     virtual bool hide_field(const intern_string_t field_name, bool val)
     {
         return false;
-    };
+    }
 
     const char* const* get_timestamp_formats() const
     {
@@ -463,7 +416,7 @@ public:
         }
 
         return &this->lf_timestamp_format[0];
-    };
+    }
 
     void check_for_new_year(std::vector<logline>& dst,
                             exttm log_tv,
@@ -474,7 +427,7 @@ public:
     virtual std::string get_pattern_regex(uint64_t line_number) const
     {
         return "";
-    };
+    }
 
     struct pattern_for_lines {
         pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);
@@ -494,6 +447,18 @@ public:
 
     int pattern_index_for_line(uint64_t line_number) const;
 
+    bool operator<(const log_format& rhs) const
+    {
+        return this->get_name() < rhs.get_name();
+    }
+
+    static bool name_lt(const std::shared_ptr<const log_format>& lhs,
+                        const std::shared_ptr<const log_format>& rhs)
+    {
+        return intern_string_t::case_lt(lhs->get_name(), rhs->get_name());
+    }
+
+    std::string lf_description;
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     date_time_scanner lf_date_time;
@@ -515,9 +480,9 @@ protected:
         pcre_format(const char* regex) : name(regex), pcre(regex)
         {
             this->pf_timestamp_index = this->pcre.name_index("timestamp");
-        };
+        }
 
-        pcre_format() : name(nullptr), pcre(""){};
+        pcre_format() : name(nullptr), pcre("") {}
 
         const char* name;
         pcrepp pcre;

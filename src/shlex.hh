@@ -131,7 +131,7 @@ public:
         result.append(&this->s_str[last_index], this->s_len - last_index);
 
         return true;
-    };
+    }
 
     template<typename Resolver>
     bool split(std::vector<std::string>& result, const Resolver& vars)
@@ -202,7 +202,7 @@ public:
     {
         this->s_index = 0;
         this->s_state = state_t::STATE_NORMAL;
-    };
+    }
 
     void scan_variable_ref(pcre_context::capture_t& cap_out,
                            shlex_token_t& token_out);

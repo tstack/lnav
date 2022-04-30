@@ -52,7 +52,7 @@ struct FuncDef {
     {
         this->eTextRep = flags;
         return *this;
-    };
+    }
 };
 
 struct FuncDefAgg {

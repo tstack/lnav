@@ -113,7 +113,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                           }
 
                           lv.reload_data();
-                          lnav_data.ld_mode = LNM_PAGING;
+                          lnav_data.ld_mode = ln_mode_t::PAGING;
                       });
 
             return true;
@@ -205,7 +205,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 void
 files_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
-    lnav_data.ld_mode = LNM_PAGING;
+    lnav_data.ld_mode = ln_mode_t::PAGING;
     lnav_data.ld_filter_view.reload_data();
 }
 
@@ -300,7 +300,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
                                       string_attrs_t& value_out)
 {
     bool selected
-        = lnav_data.ld_mode == LNM_FILES && line == tc.get_selection();
+        = lnav_data.ld_mode == ln_mode_t::FILES && line == tc.get_selection();
     const auto& fc = lnav_data.ld_active_files;
     auto& vcolors = view_colors::singleton();
     const auto dim = tc.get_dimensions();

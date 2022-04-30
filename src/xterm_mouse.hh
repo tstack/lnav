@@ -98,7 +98,7 @@ public:
         if (this->is_enabled()) {
             set_enabled(false);
         }
-    };
+    }
 
     /**
      * @param enabled True if xterm mouse support should be enabled in the
@@ -109,23 +109,14 @@ public:
     /**
      * @return True if xterm mouse support is enabled, false otherwise.
      */
-    bool is_enabled() const
-    {
-        return this->xm_enabled;
-    };
+    bool is_enabled() const { return this->xm_enabled; }
 
     /**
      * @param mb The delegate to send mouse events to.
      */
-    void set_behavior(mouse_behavior* mb)
-    {
-        this->xm_behavior = mb;
-    };
+    void set_behavior(mouse_behavior* mb) { this->xm_behavior = mb; }
 
-    mouse_behavior* get_behavior()
-    {
-        return this->xm_behavior;
-    };
+    mouse_behavior* get_behavior() { return this->xm_behavior; }
 
     /**
      * Handle a KEY_MOUSE character from ncurses.

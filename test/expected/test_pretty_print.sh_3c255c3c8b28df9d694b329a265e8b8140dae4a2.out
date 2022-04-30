@@ -1,0 +1,8 @@
+{
+    "wrapper": [
+            {"message":""
+            select Id from Account where id = $sfid
+                                             ^
+            ERROR at Row:1:Column:34
+            line 1:34 no viable alternative at character '$'
+""}]}

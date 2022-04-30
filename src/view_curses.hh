@@ -82,22 +82,13 @@ class view_curses;
  */
 class screen_curses : public log_crash_recoverer {
 public:
-    void log_crash_recover() override
-    {
-        endwin();
-    };
+    void log_crash_recover() override { endwin(); }
 
-    screen_curses() : sc_main_window(initscr()){};
+    screen_curses() : sc_main_window(initscr()) {}
 
-    virtual ~screen_curses()
-    {
-        endwin();
-    };
+    virtual ~screen_curses() { endwin(); }
 
-    WINDOW* get_window()
-    {
-        return this->sc_main_window;
-    };
+    WINDOW* get_window() { return this->sc_main_window; }
 
 private:
     WINDOW* sc_main_window;
@@ -127,12 +118,12 @@ public:
             return true;
         }
         return false;
-    };
+    }
 
     void start_fade(sig_atomic_t& counter, size_t decay) const
     {
         counter = this->upt_counter + decay;
-    };
+    }
 
     int fade_diff(sig_atomic_t& counter) const
     {
@@ -140,7 +131,7 @@ public:
             return 0;
         }
         return counter - this->upt_counter;
-    };
+    }
 
 private:
     ui_periodic_timer();
@@ -154,10 +145,7 @@ class alerter {
 public:
     static alerter& singleton();
 
-    void enabled(bool enable)
-    {
-        this->a_enabled = enable;
-    };
+    void enabled(bool enable) { this->a_enabled = enable; }
 
     bool chime()
     {
@@ -171,7 +159,7 @@ public:
         }
         this->a_do_flash = false;
         return retval;
-    };
+    }
 
     void new_input(int ch)
     {
@@ -179,7 +167,7 @@ public:
             this->a_do_flash = true;
         }
         this->a_last_input = ch;
-    };
+    }
 
 private:
     bool a_enabled{true};
@@ -223,7 +211,7 @@ public:
         return selected
             ? this->vc_role_colors[lnav::enums::to_underlying(role)].second
             : this->vc_role_colors[lnav::enums::to_underlying(role)].first;
-    };
+    }
 
     attr_t reverse_attrs_for_role(role_t role) const
     {
@@ -231,7 +219,7 @@ public:
         require(role < role_t::VCR__MAX);
 
         return this->vc_role_reverse_colors[lnav::enums::to_underlying(role)];
-    };
+    }
 
     int color_for_ident(const char* str, size_t len) const;
 
@@ -250,7 +238,7 @@ public:
     attr_t attrs_for_ident(const std::string& str)
     {
         return this->attrs_for_ident(str.c_str(), str.length());
-    };
+    }
 
     int ensure_color_pair(short fg, short bg);
 
@@ -265,12 +253,12 @@ public:
     static inline int ansi_color_pair_index(int fg, int bg)
     {
         return VC_ANSI_START + ((fg * 8) + bg);
-    };
+    }
 
     static inline attr_t ansi_color_pair(int fg, int bg)
     {
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
-    };
+    }
 
     static const int VC_ANSI_START = 0;
     static const int VC_ANSI_END = VC_ANSI_START + (8 * 8);
@@ -340,7 +328,7 @@ struct mouse_event {
         : me_button(button), me_state(state), me_x(x), me_y(y)
     {
         memset(&this->me_time, 0, sizeof(this->me_time));
-    };
+    }
 
     mouse_button_t me_button;
     mouse_button_state_t me_state;
@@ -368,12 +356,9 @@ public:
         for (auto child : this->vc_children) {
             child->do_update();
         }
-    };
+    }
 
-    virtual bool handle_mouse(mouse_event& me)
-    {
-        return false;
-    };
+    virtual bool handle_mouse(mouse_event& me) { return false; }
 
     void set_needs_update()
     {
@@ -381,7 +366,7 @@ public:
         for (auto child : this->vc_children) {
             child->set_needs_update();
         }
-    };
+    }
 
     view_curses& add_child_view(view_curses* child)
     {

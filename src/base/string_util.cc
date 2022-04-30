@@ -153,7 +153,7 @@ truncate_to(std::string& str, size_t max_char_len)
 }
 
 bool
-is_url(const char* fn)
+is_url(const std::string& fn)
 {
     static const auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
 

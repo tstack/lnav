@@ -76,6 +76,9 @@
                     },
                     "h6": {
                         "underline": true
+                    },
+                    "list-glyph": {
+                        "color": "Yellow"
                     }
                 },
                 "syntax-styles": {

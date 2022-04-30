@@ -759,6 +759,24 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
 }
 
 void
+textview_curses::redo_search()
+{
+    if (this->tc_search_child) {
+        grep_proc<vis_line_t>* gp = this->tc_search_child->get_grep_proc();
+
+        gp->invalidate();
+        this->match_reset();
+        gp->queue_request(0_vl).start();
+
+        if (this->tc_source_search_child) {
+            this->tc_source_search_child->invalidate()
+                .queue_request(0_vl)
+                .start();
+        }
+    }
+}
+
+void
 text_time_translator::scroll_invoked(textview_curses* tc)
 {
     if (tc->get_inner_height() > 0) {
@@ -799,4 +817,158 @@ std::string
 empty_filter::to_command() const
 {
     return "";
+}
+
+nonstd::optional<size_t>
+filter_stack::next_index()
+{
+    bool used[32];
+
+    memset(used, 0, sizeof(used));
+    for (auto& iter : *this) {
+        if (iter->lf_deleted) {
+            continue;
+        }
+
+        size_t index = iter->get_index();
+
+        require(used[index] == false);
+
+        used[index] = true;
+    }
+    for (size_t lpc = this->fs_reserved;
+         lpc < logfile_filter_state::MAX_FILTERS;
+         lpc++)
+    {
+        if (!used[lpc]) {
+            return lpc;
+        }
+    }
+    return nonstd::nullopt;
+}
+
+std::shared_ptr<text_filter>
+filter_stack::get_filter(const std::string& id)
+{
+    auto iter = this->fs_filters.begin();
+    std::shared_ptr<text_filter> retval;
+
+    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {
+    }
+    if (iter != this->fs_filters.end()) {
+        retval = *iter;
+    }
+
+    return retval;
+}
+
+bool
+filter_stack::delete_filter(const std::string& id)
+{
+    auto iter = this->fs_filters.begin();
+
+    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {
+    }
+    if (iter != this->fs_filters.end()) {
+        this->fs_filters.erase(iter);
+        return true;
+    }
+
+    return false;
+}
+
+void
+filter_stack::get_mask(uint32_t& filter_mask)
+{
+    filter_mask = 0;
+    for (auto& iter : *this) {
+        std::shared_ptr<text_filter> tf = iter;
+
+        if (tf->lf_deleted) {
+            continue;
+        }
+        if (tf->is_enabled()) {
+            uint32_t bit = (1UL << tf->get_index());
+
+            switch (tf->get_type()) {
+                case text_filter::EXCLUDE:
+                case text_filter::INCLUDE:
+                    filter_mask |= bit;
+                    break;
+                default:
+                    ensure(0);
+                    break;
+            }
+        }
+    }
+}
+
+void
+filter_stack::get_enabled_mask(uint32_t& filter_in_mask,
+                               uint32_t& filter_out_mask)
+{
+    filter_in_mask = filter_out_mask = 0;
+    for (auto& iter : *this) {
+        std::shared_ptr<text_filter> tf = iter;
+
+        if (tf->lf_deleted) {
+            continue;
+        }
+        if (tf->is_enabled()) {
+            uint32_t bit = (1UL << tf->get_index());
+
+            switch (tf->get_type()) {
+                case text_filter::EXCLUDE:
+                    filter_out_mask |= bit;
+                    break;
+                case text_filter::INCLUDE:
+                    filter_in_mask |= bit;
+                    break;
+                default:
+                    ensure(0);
+                    break;
+            }
+        }
+    }
+}
+
+void
+vis_location_history::loc_history_append(vis_line_t top)
+{
+    auto iter = this->vlh_history.begin();
+    iter += this->vlh_history.size() - this->lh_history_position;
+    this->vlh_history.erase_from(iter);
+    this->lh_history_position = 0;
+    this->vlh_history.push_back(top);
+}
+
+nonstd::optional<vis_line_t>
+vis_location_history::loc_history_back(vis_line_t current_top)
+{
+    if (this->lh_history_position == 0) {
+        vis_line_t history_top = this->current_position();
+        if (history_top != current_top) {
+            return history_top;
+        }
+    }
+
+    if (this->lh_history_position + 1 >= this->vlh_history.size()) {
+        return nonstd::nullopt;
+    }
+
+    this->lh_history_position += 1;
+
+    return this->current_position();
+}
+
+nonstd::optional<vis_line_t>
+vis_location_history::loc_history_forward(vis_line_t current_top)
+{
+    if (this->lh_history_position == 0) {
+        return nonstd::nullopt;
+    }
+
+    this->lh_history_position -= 1;
+
+    return this->current_position();
 }

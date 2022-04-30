@@ -173,7 +173,7 @@ ensure_dotlnav()
 }
 
 bool
-install_from_git(const char* repo)
+install_from_git(const std::string& repo)
 {
     static const std::regex repo_name_converter("[^\\w]");
 
@@ -197,18 +197,18 @@ install_from_git(const char* repo)
     auto git_cmd = fork_res.unwrap();
     if (git_cmd.in_child()) {
         if (ghc::filesystem::is_directory(local_formats_path)) {
-            printf("Updating format repo: %s\n", repo);
+            fmt::print("Updating format repo: {}\n", repo);
             log_perror(chdir(local_formats_path.c_str()));
             execlp("git", "git", "pull", nullptr);
         } else if (ghc::filesystem::is_directory(local_configs_path)) {
-            printf("Updating config repo: %s\n", repo);
+            fmt::print("Updating config repo: {}\n", repo);
             log_perror(chdir(local_configs_path.c_str()));
             execlp("git", "git", "pull", nullptr);
         } else {
             execlp("git",
                    "git",
                    "clone",
-                   repo,
+                   repo.c_str(),
                    local_staging_path.c_str(),
                    nullptr);
         }
@@ -344,7 +344,8 @@ install_extra_formats()
     if ((fd = lnav::filesystem::openp(config_json, O_RDONLY)) == -1) {
         perror("Unable to open remote-config.json");
     } else {
-        yajlpp_parse_context ypc_config(config_root.string(), &format_handlers);
+        yajlpp_parse_context ypc_config(
+            intern_string::lookup(config_root.string()), &format_handlers);
         auto_mem<yajl_handle_t> jhandle(yajl_free);
         unsigned char buffer[4096];
         ssize_t rc;
@@ -637,6 +638,13 @@ static const struct json_path_container theme_styles_handlers = {
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
                 return &root->lt_style_header[5];
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("list-glyph")
+        .with_description("Styling for glyphs that prefix a list item")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_list_glyph;
             })
         .with_children(style_config_handlers),
 };
@@ -1271,7 +1279,8 @@ load_config_from(_lnav_config& lconfig,
                  const ghc::filesystem::path& path,
                  std::vector<lnav::console::user_message>& errors)
 {
-    yajlpp_parse_context ypc(path.string(), &lnav_config_handlers);
+    yajlpp_parse_context ypc(intern_string::lookup(path.string()),
+                             &lnav_config_handlers);
     struct userdata ud(errors);
     auto_fd fd;
 
@@ -1326,7 +1335,8 @@ load_default_config(struct _lnav_config& config_obj,
                     const bin_src_file& bsf,
                     std::vector<lnav::console::user_message>& errors)
 {
-    yajlpp_parse_context ypc_builtin(bsf.get_name(), &lnav_config_handlers);
+    yajlpp_parse_context ypc_builtin(intern_string::lookup(bsf.get_name()),
+                                     &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
     struct userdata ud(errors);
 
@@ -1501,7 +1511,7 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                         .with_reason(errmsg)
                         .with_snippet(
                             lnav::console::snippet::from(
-                                loc_iter->second.sl_source.to_string(), "")
+                                loc_iter->second.sl_source, "")
                                 .with_line(loc_iter->second.sl_line_number)));
             };
 

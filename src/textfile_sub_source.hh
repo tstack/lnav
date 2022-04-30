@@ -42,22 +42,13 @@ class textfile_sub_source
 public:
     typedef std::deque<std::shared_ptr<logfile>>::iterator file_iterator;
 
-    textfile_sub_source()
-    {
-        this->tss_supports_filtering = true;
-    };
+    textfile_sub_source() { this->tss_supports_filtering = true; }
 
     ~textfile_sub_source() = default;
 
-    bool empty() const
-    {
-        return this->tss_files.empty();
-    }
+    bool empty() const { return this->tss_files.empty(); }
 
-    size_t size() const
-    {
-        return this->tss_files.size();
-    }
+    size_t size() const { return this->tss_files.size(); }
 
     size_t text_line_count();
 
@@ -66,7 +57,7 @@ public:
         return this->tss_files.empty()
             ? 0
             : this->current_file()->get_longest_line_length();
-    };
+    }
 
     void text_value_for_line(textview_curses& tc,
                              int line,
@@ -88,7 +79,7 @@ public:
         }
 
         return this->tss_files.front();
-    };
+    }
 
     std::string text_source_name(const textview_curses& tv)
     {
@@ -97,7 +88,7 @@ public:
         }
 
         return this->tss_files.front()->get_filename();
-    };
+    }
 
     void to_front(const std::shared_ptr<logfile>& lf);
 
@@ -186,7 +177,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     void text_filters_changed();
 
@@ -207,7 +198,7 @@ private:
         auto* lfo = (line_filter_observer*) lf->get_logline_observer();
         lf->set_logline_observer(nullptr);
         delete lfo;
-    };
+    }
 
     std::deque<std::shared_ptr<logfile>> tss_files;
     std::deque<std::shared_ptr<logfile>> tss_hidden_files;

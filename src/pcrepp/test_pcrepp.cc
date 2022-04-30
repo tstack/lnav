@@ -98,18 +98,20 @@ main(int argc, char* argv[])
     }
 
     {
-        pcre_context::capture cap(1, 4);
+        pcre_context::capture_t cap(1, 4);
         pcre_input pi("\0foo", 0, 4);
 
         assert("foo" == pi.get_substr(&cap));
     }
 
-    const char* empty_cap_regexes[] = {"foo (?:bar)",
-                                       "foo [(]",
-                                       "foo \\Q(bar)\\E",
-                                       "(?i)",
+    const char* empty_cap_regexes[] = {
+        "foo (?:bar)",
+        "foo [(]",
+        "foo \\Q(bar)\\E",
+        "(?i)",
 
-                                       NULL};
+        nullptr,
+    };
 
     for (int lpc = 0; empty_cap_regexes[lpc]; lpc++) {
         pcrepp re(empty_cap_regexes[lpc]);

@@ -1,8 +1,16 @@
-
 .. _cli:
 
 Command Line Interface
 ======================
+
+There are two command-line interfaces provided by **lnav**, one for viewing
+files and one for managing **lnav**'s configuration.  The file viewing mode is
+the default and is all that most people will need.  The management mode can
+be useful for those that are developing log file formats and is activated by
+passing the :option:`-m` option as the first argument.
+
+File Viewing Mode
+-----------------
 
 The following options can be used when starting **lnav**.  There are not
 many flags because the majority of the functionality is accessed using
@@ -10,7 +18,7 @@ the :option:`-c` option to execute :ref:`commands<commands>` or
 :ref:`SQL queries<sql-ext>`.
 
 Options
--------
+^^^^^^^
 
 .. option:: -h
 
@@ -84,6 +92,32 @@ Options
 
    Do not print the log messages after executing all of the commands.
 
+
+Management Mode (v0.10.2+)
+--------------------------
+
+Options
+^^^^^^^
+
+.. option:: -m
+
+   Switch to management mode.  This must be the first option passed on the
+   command-line.
+
+Subcommands
+^^^^^^^^^^^
+
+.. option:: regex101 import <regex101-url> <format-name> [<regex-name>]
+
+   Convert a regex101.com entry into a skeleton log format file.
+
+.. option:: format <format-name> regex <regex-name> push
+
+   Push a log format regular expression to regex101.com .
+
+.. option:: format <format-name> regex <regex-name> pull
+
+   Pull changes to a regex that was previously pushed to regex101.com .
 
 Environment Variables
 ---------------------

@@ -31,6 +31,7 @@
 
 #include "bookmarks.hh"
 
+#include "base/itertools.hh"
 #include "config.h"
 
 std::unordered_set<std::string> bookmark_metadata::KNOWN_TAGS;
@@ -38,10 +39,8 @@ std::unordered_set<std::string> bookmark_metadata::KNOWN_TAGS;
 void
 bookmark_metadata::add_tag(const std::string& tag)
 {
-    if (std::find(this->bm_tags.begin(), this->bm_tags.end(), tag)
-        == this->bm_tags.end())
-    {
-        this->bm_tags.push_back(tag);
+    if (!(this->bm_tags | lnav::itertools::find(tag))) {
+        this->bm_tags.emplace_back(tag);
     }
 }
 
@@ -72,14 +71,18 @@ bookmark_metadata::clear()
     this->bm_tags.clear();
 }
 
-bookmark_type_t*
+nonstd::optional<bookmark_type_t*>
 bookmark_type_t::find_type(const std::string& name)
 {
-    auto iter = std::find_if(type_begin(), type_end(), mark_eq(name));
-    bookmark_type_t* retval = nullptr;
+    return get_all_types()
+        | lnav::itertools::find_if(
+               [&name](const auto& elem) { return elem->bt_name == name; });
+}
 
-    if (iter != type_end()) {
-        retval = (*iter);
-    }
-    return retval;
+std::vector<bookmark_type_t*>&
+bookmark_type_t::get_all_types()
+{
+    static std::vector<bookmark_type_t*> all_types;
+
+    return all_types;
 }

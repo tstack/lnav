@@ -33,10 +33,24 @@
 
 #include "config.h"
 #include "fmt/color.h"
+#include "itertools.hh"
+#include "log_level_enum.hh"
 #include "view_curses.hh"
+
+using namespace lnav::roles::literals;
 
 namespace lnav {
 namespace console {
+
+user_message
+user_message::raw(const attr_line_t& al)
+{
+    user_message retval;
+
+    retval.um_level = level::raw;
+    retval.um_message.append(al);
+    return retval;
+}
 
 user_message
 user_message::error(const attr_line_t& al)
@@ -81,10 +95,17 @@ user_message::warning(const attr_line_t& al)
 attr_line_t
 user_message::to_attr_line(std::set<render_flags> flags) const
 {
+    auto indent = 1;
     attr_line_t retval;
+
+    if (this->um_level == level::warning) {
+        indent = 3;
+    }
 
     if (flags.count(render_flags::prefix)) {
         switch (this->um_level) {
+            case level::raw:
+                break;
             case level::ok:
                 retval.append(lnav::roles::ok("\u2714 "));
                 break;
@@ -105,13 +126,18 @@ user_message::to_attr_line(std::set<render_flags> flags) const
     if (!this->um_reason.empty()) {
         bool first_line = true;
         for (const auto& line : this->um_reason.split_lines()) {
+            auto role = this->um_level == level::error ? role_t::VCR_ERROR
+                                                       : role_t::VCR_WARNING;
             attr_line_t prefix;
 
             if (first_line) {
-                prefix.append(lnav::roles::error(" reason")).append(": ");
+                prefix.append(indent, ' ')
+                    .append("reason", VC_ROLE.value(role))
+                    .append(": ");
                 first_line = false;
             } else {
-                prefix.append(lnav::roles::error(" |       "));
+                prefix.append(" |      ", VC_ROLE.value(role))
+                    .append(indent, ' ');
             }
             retval.append(prefix).append(line).append("\n");
         }
@@ -120,35 +146,34 @@ user_message::to_attr_line(std::set<render_flags> flags) const
         for (const auto& snip : this->um_snippets) {
             attr_line_t header;
 
-            header.append(lnav::roles::comment(" --> "))
-                .append(lnav::roles::file(snip.s_source));
-            if (snip.s_line > 0) {
-                header.append(":").append(FMT_STRING("{}"), snip.s_line);
-                if (snip.s_column > 0) {
-                    header.append(":").append(FMT_STRING("{}"), snip.s_column);
-                }
+            header.append(" --> "_comment)
+                .append(lnav::roles::file(snip.s_location.sl_source.get()));
+            if (snip.s_location.sl_line_number > 0) {
+                header.append(":").append(FMT_STRING("{}"),
+                                          snip.s_location.sl_line_number);
             }
             retval.append(header).append("\n");
             if (!snip.s_content.blank()) {
                 for (const auto& line : snip.s_content.split_lines()) {
-                    retval.append(lnav::roles::comment(" | "))
-                        .append(line)
-                        .append("\n");
+                    retval.append(" | "_comment).append(line).append("\n");
                 }
             }
         }
     }
     if (!this->um_notes.empty()) {
-        bool first_line = true;
         for (const auto& note : this->um_notes) {
+            bool first_line = true;
             for (const auto& line : note.split_lines()) {
                 attr_line_t prefix;
 
                 if (first_line) {
-                    prefix.append(lnav::roles::comment(" = note")).append(": ");
+                    prefix.append(" ="_comment)
+                        .append(indent, ' ')
+                        .append("note"_comment)
+                        .append(": ");
                     first_line = false;
                 } else {
-                    prefix.append("         ");
+                    prefix.append("        ").append(indent, ' ');
                 }
 
                 retval.append(prefix).append(line).append("\n");
@@ -161,7 +186,10 @@ user_message::to_attr_line(std::set<render_flags> flags) const
             attr_line_t prefix;
 
             if (first_line) {
-                prefix.append(lnav::roles::comment(" = help")).append(": ");
+                prefix.append(" ="_comment)
+                    .append(indent, ' ')
+                    .append("help"_comment)
+                    .append(": ");
                 first_line = false;
             } else {
                 prefix.append("         ");
@@ -174,85 +202,152 @@ user_message::to_attr_line(std::set<render_flags> flags) const
     return retval;
 }
 
+fmt::terminal_color
+curses_color_to_terminal_color(int curses_color)
+{
+    switch (curses_color) {
+        case COLOR_BLACK:
+            return fmt::terminal_color::black;
+        case COLOR_CYAN:
+            return fmt::terminal_color::cyan;
+        case COLOR_WHITE:
+            return fmt::terminal_color::white;
+        case COLOR_MAGENTA:
+            return fmt::terminal_color::magenta;
+        case COLOR_BLUE:
+            return fmt::terminal_color::blue;
+        case COLOR_YELLOW:
+            return fmt::terminal_color::yellow;
+        case COLOR_GREEN:
+            return fmt::terminal_color::green;
+        case COLOR_RED:
+            return fmt::terminal_color::red;
+    }
+
+    ensure(false);
+}
+
 void
 println(FILE* file, const attr_line_t& al)
 {
     const auto& str = al.get_string();
 
-    if (!isatty(fileno(file))) {
+    if (getenv("NO_COLOR") != nullptr
+        || (!isatty(fileno(file)) && getenv("YES_COLOR") == nullptr))
+    {
         fmt::print(file, "{}\n", str);
         return;
     }
 
-    string_attrs_t style_attrs;
+    std::set<int> points = {0, (int) al.length()};
 
-    for (const auto& sa : al.get_attrs()) {
-        if (sa.sa_type != &VC_ROLE) {
+    for (const auto& attr : al.get_attrs()) {
+        if (!attr.sa_range.is_valid()) {
             continue;
         }
-
-        style_attrs.emplace_back(sa);
-    }
-
-    std::sort(style_attrs.begin(), style_attrs.end(), [](auto lhs, auto rhs) {
-        return lhs.sa_range < rhs.sa_range;
-    });
-
-    auto start = size_t{0};
-    for (const auto& attr : style_attrs) {
-        fmt::print(
-            file, "{}", str.substr(start, attr.sa_range.lr_start - start));
-        if (attr.sa_type == &VC_ROLE) {
-            auto saw = string_attr_wrapper<role_t>(&attr);
-            auto role = saw.get();
-            auto line_style = fmt::text_style();
-
-            switch (role) {
-                case role_t::VCR_ERROR:
-                    line_style = fmt::fg(fmt::terminal_color::red);
-                    break;
-                case role_t::VCR_WARNING:
-                    line_style = fmt::fg(fmt::terminal_color::yellow);
-                    break;
-                case role_t::VCR_COMMENT:
-                    line_style = fmt::fg(fmt::terminal_color::cyan);
-                    break;
-                case role_t::VCR_OK:
-                    line_style = fmt::emphasis::bold
-                        | fmt::fg(fmt::terminal_color::red);
-                    break;
-                case role_t::VCR_STATUS:
-                    line_style = fmt::emphasis::bold
-                        | fmt::fg(fmt::terminal_color::magenta);
-                    break;
-                case role_t::VCR_VARIABLE:
-                    line_style = fmt::emphasis::underline;
-                    break;
-                case role_t::VCR_SYMBOL:
-                case role_t::VCR_NUMBER:
-                case role_t::VCR_FILE:
-                    line_style = fmt::emphasis::bold;
-                    break;
-                case role_t::VCR_H1:
-                case role_t::VCR_H2:
-                case role_t::VCR_H3:
-                case role_t::VCR_H4:
-                case role_t::VCR_H5:
-                case role_t::VCR_H6:
-                    line_style = fmt::emphasis::underline;
-                    break;
-                default:
-                    break;
-            }
-            fmt::print(
-                file,
-                line_style,
-                "{}",
-                str.substr(attr.sa_range.lr_start, attr.sa_range.length()));
+        points.insert(attr.sa_range.lr_start);
+        if (attr.sa_range.lr_end > 0) {
+            points.insert(attr.sa_range.lr_end);
         }
-        start = attr.sa_range.lr_end;
     }
-    fmt::print(file, "{}\n", str.substr(start));
+
+    nonstd::optional<int> last_point;
+    for (const auto& point : points) {
+        if (last_point) {
+            auto line_style = fmt::text_style{};
+            auto fg_style = fmt::text_style{};
+            auto start = last_point.value();
+
+            for (const auto& attr : al.get_attrs()) {
+                if (!attr.sa_range.contains(start)
+                    && !attr.sa_range.contains(point - 1)) {
+                    continue;
+                }
+
+                if (attr.sa_type == &VC_BACKGROUND) {
+                    auto saw = string_attr_wrapper<int64_t>(&attr);
+                    auto color = saw.get();
+
+                    if (color >= 0) {
+                        line_style
+                            |= fmt::bg(curses_color_to_terminal_color(color));
+                    }
+                } else if (attr.sa_type == &VC_FOREGROUND) {
+                    auto saw = string_attr_wrapper<int64_t>(&attr);
+                    auto color = saw.get();
+
+                    if (color >= 0) {
+                        fg_style
+                            = fmt::fg(curses_color_to_terminal_color(color));
+                    }
+                } else if (attr.sa_type == &VC_ROLE) {
+                    auto saw = string_attr_wrapper<role_t>(&attr);
+                    auto role = saw.get();
+
+                    switch (role) {
+                        case role_t::VCR_ERROR:
+                            line_style |= fmt::fg(fmt::terminal_color::red);
+                            break;
+                        case role_t::VCR_WARNING:
+                            line_style |= fmt::fg(fmt::terminal_color::yellow);
+                            break;
+                        case role_t::VCR_COMMENT:
+                            line_style |= fmt::fg(fmt::terminal_color::cyan);
+                            break;
+                        case role_t::VCR_OK:
+                            line_style |= fmt::emphasis::bold
+                                | fmt::fg(fmt::terminal_color::green);
+                            break;
+                        case role_t::VCR_STATUS:
+                            line_style |= fmt::emphasis::bold
+                                | fmt::fg(fmt::terminal_color::magenta);
+                            break;
+                        case role_t::VCR_KEYWORD:
+                            line_style |= fmt::emphasis::bold
+                                | fmt::fg(fmt::terminal_color::blue);
+                            break;
+                        case role_t::VCR_VARIABLE:
+                            line_style |= fmt::emphasis::underline;
+                            break;
+                        case role_t::VCR_SYMBOL:
+                        case role_t::VCR_NUMBER:
+                        case role_t::VCR_FILE:
+                            line_style |= fmt::emphasis::bold;
+                            break;
+                        case role_t::VCR_H1:
+                            line_style |= fmt::emphasis::bold
+                                | fmt::fg(fmt::terminal_color::magenta);
+                            break;
+                        case role_t::VCR_H2:
+                            line_style |= fmt::emphasis::bold;
+                            break;
+                        case role_t::VCR_H3:
+                        case role_t::VCR_H4:
+                        case role_t::VCR_H5:
+                        case role_t::VCR_H6:
+                            line_style |= fmt::emphasis::underline;
+                            break;
+                        case role_t::VCR_LIST_GLYPH:
+                            line_style |= fmt::fg(fmt::terminal_color::yellow);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            if (!line_style.has_foreground() && fg_style.has_foreground()) {
+                line_style |= fg_style;
+            }
+
+            fmt::print(file,
+                       line_style,
+                       FMT_STRING("{}"),
+                       str.substr(start, point - start));
+        }
+        last_point = point;
+    }
+    fmt::print(file, "\n");
 }
 
 void

@@ -38,9 +38,11 @@ noinst_HEADERS = \
 	intern_string.hh \
     is_utf8.hh \
     isc.hh \
+    itertools.hh \
     lnav_log.hh \
     lnav.console.hh \
     lnav.gzip.hh \
+    log_level_enum.hh \
     lrucache.hpp \
     math_util.hh \
     network.tcp.hh \
@@ -78,6 +80,7 @@ check_PROGRAMS = \
     test_base
 
 test_base_SOURCES = \
+    fs_util.tests.cc \
     humanize.file_size.tests.cc \
     humanize.network.tests.cc \
     humanize.time.tests.cc \

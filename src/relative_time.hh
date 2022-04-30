@@ -121,10 +121,7 @@ public:
 
     static relative_time from_usecs(std::chrono::microseconds usecs);
 
-    relative_time()
-    {
-        this->clear();
-    };
+    relative_time() { this->clear(); }
 
     void clear()
     {
@@ -132,7 +129,7 @@ public:
         this->rt_next = false;
         this->rt_previous = false;
         this->rt_absolute_field_end = 0;
-    };
+    }
 
     void negate()
     {
@@ -151,7 +148,7 @@ public:
                 this->rt_field[lpc].value = -this->rt_field[lpc].value;
             }
         }
-    };
+    }
 
     bool is_negative() const
     {
@@ -164,18 +161,18 @@ public:
             }
         }
         return false;
-    };
+    }
 
     bool is_absolute() const
     {
         return !this->rt_included_days.empty()
             || this->rt_absolute_field_end > 0;
-    };
+    }
 
     bool is_absolute(rt_field_type rft) const
     {
         return rft < this->rt_absolute_field_end;
-    };
+    }
 
     bool is_relative() const
     {
@@ -193,7 +190,7 @@ public:
             }
         }
         return true;
-    };
+    }
 
     struct exttm adjust_now() const
     {
@@ -203,7 +200,7 @@ public:
         time(&now);
         tm.et_tm = *gmtime(&now);
         return this->adjust(tm);
-    };
+    }
 
     struct exttm adjust(const struct timeval& tv) const
     {
@@ -226,7 +223,7 @@ public:
 
         tv_out.tv_sec = us / (1000 * 1000);
         tv_out.tv_usec = us % (1000 * 1000);
-    };
+    }
 
     struct timeval to_timeval() const
     {
@@ -236,7 +233,7 @@ public:
         retval.tv_sec = us / (1000 * 1000);
         retval.tv_usec = us % (1000 * 1000);
         return retval;
-    };
+    }
 
     std::string to_string() const;
 
@@ -245,9 +242,9 @@ public:
     static const char FIELD_CHARS[RTF__MAX];
 
     struct _rt_field {
-        _rt_field(int64_t value) : value(value), is_set(true){};
+        _rt_field(int64_t value) : value(value), is_set(true) {}
 
-        _rt_field() : value(0), is_set(false){};
+        _rt_field() : value(0), is_set(false) {}
 
         void clear()
         {

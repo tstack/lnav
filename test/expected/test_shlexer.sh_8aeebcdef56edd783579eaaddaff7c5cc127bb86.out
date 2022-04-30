@@ -1,0 +1,6 @@
+    'abc $DEF 123'
+sst ^
+sen              ^
+eval -- 'abc $DEF 123'
+split:
+  0 -- abc $DEF 123

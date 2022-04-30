@@ -55,7 +55,7 @@ public:
             && tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
             perror("tcgetattr");
         }
-    };
+    }
 
     /**
      * Restore the TTY termios settings that were captured when this object was
@@ -68,12 +68,9 @@ public:
         {
             perror("tcsetattr");
         }
-    };
+    }
 
-    const struct termios* get_termios() const
-    {
-        return &this->gt_termios;
-    };
+    const struct termios* get_termios() const { return &this->gt_termios; }
 
 private:
     const int gt_fd;

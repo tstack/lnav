@@ -91,12 +91,12 @@ size_t
 filter_status_source::statusview_fields()
 {
     switch (lnav_data.ld_mode) {
-        case LNM_SEARCH_FILTERS:
-        case LNM_SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_FILES:
             this->tss_fields[TSF_HELP].set_value("");
             break;
-        case LNM_FILTER:
-        case LNM_FILES:
+        case ln_mode_t::FILTER:
+        case ln_mode_t::FILES:
             this->tss_fields[TSF_HELP].set_value(EXIT_MSG);
             break;
         default:
@@ -104,12 +104,12 @@ filter_status_source::statusview_fields()
             break;
     }
 
-    if (lnav_data.ld_mode == LNM_FILES || lnav_data.ld_mode == LNM_SEARCH_FILES)
+    if (lnav_data.ld_mode == ln_mode_t::FILES
+        || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
     {
         this->tss_fields[TSF_FILES_TITLE].set_value(
             " " ANSI_ROLE("F") "iles ", role_t::VCR_STATUS_TITLE_HOTKEY);
-        this->tss_fields[TSF_FILES_TITLE].set_role(
-            role_t::VCR_STATUS_TITLE);
+        this->tss_fields[TSF_FILES_TITLE].set_role(role_t::VCR_STATUS_TITLE);
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
@@ -245,7 +245,7 @@ filter_help_status_source::statusview_fields()
             return;
         }
 
-        if (lnav_data.ld_mode == LNM_FILTER) {
+        if (lnav_data.ld_mode == ln_mode_t::FILTER) {
             auto& editor = lnav_data.ld_filter_source;
             auto& lv = lnav_data.ld_filter_view;
             auto& fs = tss->get_filters();
@@ -285,7 +285,7 @@ filter_help_status_source::statusview_fields()
                     tss->tss_apply_filters ? "Disable Filtering"
                                            : "Enable Filtering");
             }
-        } else if (lnav_data.ld_mode == LNM_FILES
+        } else if (lnav_data.ld_mode == ln_mode_t::FILES
                    && lnav_data.ld_session_loaded) {
             auto& lv = lnav_data.ld_files_view;
             auto sel = files_model::from_selection(lv.get_selection());

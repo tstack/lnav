@@ -48,7 +48,7 @@ class piper_proc {
 public:
     class error : public std::exception {
     public:
-        error(int err) : e_err(err){};
+        error(int err) : e_err(err) {}
 
         int e_err;
     };
@@ -72,15 +72,9 @@ public:
     virtual ~piper_proc();
 
     /** @return The file descriptor for the temporary file. */
-    auto_fd get_fd()
-    {
-        return this->pp_fd.dup();
-    };
+    auto_fd get_fd() { return this->pp_fd.dup(); }
 
-    pid_t get_child_pid() const
-    {
-        return this->pp_child;
-    };
+    pid_t get_child_pid() const { return this->pp_child; }
 
 private:
     /** A file descriptor that refers to the temporary file. */

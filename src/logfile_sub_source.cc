@@ -36,6 +36,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
+#include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -349,8 +350,6 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
     value_out = this->lss_token_attrs;
 
-    attrs = vc.vc_level_attrs[this->lss_token_line->get_msg_level()].first;
-
     if ((row + 1) < (int) this->lss_filtered_index.size()) {
         next_line = this->find_line(this->at(vis_line_t(row + 1)));
     }
@@ -367,6 +366,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
     value_out.emplace_back(lr, SA_ORIGINAL_LINE.value());
+    value_out.emplace_back(
+        lr, SA_LEVEL.value(this->lss_token_line->get_msg_level()));
 
     lr.lr_start = time_offset_end;
     lr.lr_end = -1;
@@ -1731,15 +1732,9 @@ logfile_sub_source::reload_index_delegate()
 nonstd::optional<std::shared_ptr<text_filter>>
 logfile_sub_source::get_sql_filter()
 {
-    auto iter
-        = std::find_if(this->tss_filters.begin(),
-                       this->tss_filters.end(),
-                       [](const auto& filt) { return filt->get_index() == 0; });
-
-    if (iter != this->tss_filters.end()) {
-        return *iter;
-    }
-    return nonstd::nullopt;
+    return this->tss_filters | lnav::itertools::find_if([](const auto& filt) {
+               return filt->get_index() == 0;
+           });
 }
 
 void

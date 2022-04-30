@@ -138,7 +138,7 @@ struct exec_context {
         exec_context& sg_context;
     };
 
-    source_guard enter_source(const std::string& path,
+    source_guard enter_source(intern_string_t path,
                               int line_number,
                               const std::string& content)
     {

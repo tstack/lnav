@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- Uneven number of arguments to json_group_object(), expecting key and value pairs

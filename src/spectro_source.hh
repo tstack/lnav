@@ -54,7 +54,7 @@ struct spectrogram_thresholds {
 };
 
 struct spectrogram_request {
-    explicit spectrogram_request(spectrogram_bounds& sb) : sr_bounds(sb){};
+    explicit spectrogram_request(spectrogram_bounds& sb) : sr_bounds(sb) {}
 
     spectrogram_bounds& sr_bounds;
     unsigned long sr_width{0};
@@ -70,10 +70,8 @@ struct spectrogram_row {
     }
 
     struct row_bucket {
-        row_bucket() : rb_counter(0), rb_marks(0){};
-
-        int rb_counter;
-        int rb_marks;
+        int rb_counter{0};
+        int rb_marks{0};
     };
 
     row_bucket* sr_values{nullptr};
@@ -89,7 +87,7 @@ struct spectrogram_row {
         if (marked) {
             this->sr_values[index].rb_marks += 1;
         }
-    };
+    }
 };
 
 class spectrogram_value_source {
@@ -122,7 +120,7 @@ public:
         this->ss_cached_bounds.sb_count = 0;
         this->ss_row_cache.clear();
         this->ss_cursor_column = -1;
-    };
+    }
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
 
@@ -141,7 +139,7 @@ public:
                               line_flags_t flags) override
     {
         return 0;
-    };
+    }
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 

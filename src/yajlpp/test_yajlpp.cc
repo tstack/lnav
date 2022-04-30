@@ -65,16 +65,20 @@ read_const(yajlpp_parse_context* ypc, long long value)
 int
 main(int argc, char* argv[])
 {
-    struct json_path_container test_obj_handler
-        = {json_path_handler("foo", read_foo)};
+    static const auto TEST_SRC = intern_string::lookup("test_data");
+
+    struct json_path_container test_obj_handler = {
+        json_path_handler("foo", read_foo),
+    };
 
     {
-        struct json_path_container test_array_handlers
-            = {json_path_handler("#")
-                   .add_cb(read_const)
-                   .with_children(test_obj_handler)};
+        struct json_path_container test_array_handlers = {
+            json_path_handler("#")
+                .add_cb(read_const)
+                .with_children(test_obj_handler),
+        };
 
-        yajlpp_parse_context ypc("test_data", &test_array_handlers);
+        yajlpp_parse_context ypc(TEST_SRC, &test_array_handlers);
         auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
         ypc.with_handle(handle);
         ypc.parse((const unsigned char*) TEST_DATA, strlen(TEST_DATA));
@@ -87,7 +91,7 @@ main(int argc, char* argv[])
     {
         FOO_COUNT = 0;
 
-        yajlpp_parse_context ypc("test_data", &test_obj_handler);
+        yajlpp_parse_context ypc(TEST_SRC, &test_obj_handler);
         auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
         ypc.with_handle(handle);
 

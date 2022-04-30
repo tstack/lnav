@@ -65,7 +65,7 @@ public:
             }
             this->te_prefix += ":";
         }
-    };
+    }
 
     void update_title(listview_curses* lc)
     {
@@ -108,7 +108,7 @@ public:
 
             this->te_last_title = view_title;
         }
-    };
+    }
 
 private:
     bool te_enabled;

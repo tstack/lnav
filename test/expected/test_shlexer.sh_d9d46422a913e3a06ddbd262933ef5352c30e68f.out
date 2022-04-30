@@ -1,0 +1,9 @@
+    abc $DEF  123
+wsp    ^
+ref     ^--^
+wsp         ^^
+eval -- abc xyz  123
+split:
+  0 -- abc
+  1 -- xyz
+  2 -- 123

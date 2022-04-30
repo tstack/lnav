@@ -59,7 +59,7 @@ static struct {
 static void
 rl_callback(readline_curses* rc)
 {
-    string line = rc->get_value();
+    string line = rc->get_value().get_string();
 
     if (line == "quit")
         drive_data.dd_looping = false;

@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- unable to parse time slice value: blah -- Unrecognized input

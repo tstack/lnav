@@ -796,3 +796,49 @@ logfile::mark_as_duplicate(const std::string& name)
         note_type::duplicate,
         fmt::format(FMT_STRING("hiding duplicate of {}"), name));
 }
+
+void
+logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
+{
+    struct timeval old_time = this->lf_time_offset;
+
+    this->lf_time_offset_line = line;
+    if (abs_offset) {
+        this->lf_time_offset = tv;
+    } else {
+        timeradd(&old_time, &tv, &this->lf_time_offset);
+    }
+    for (auto& iter : *this) {
+        struct timeval curr, diff, new_time;
+
+        curr = iter.get_timeval();
+        timersub(&curr, &old_time, &diff);
+        timeradd(&diff, &this->lf_time_offset, &new_time);
+        iter.set_time(new_time);
+    }
+    this->lf_sort_needed = true;
+}
+
+void
+logfile::set_filename(const std::string& filename)
+{
+    if (this->lf_filename != filename) {
+        this->lf_filename = filename;
+        ghc::filesystem::path p(filename);
+        this->lf_basename = p.filename();
+    }
+}
+
+struct timeval
+logfile::original_line_time(logfile::iterator ll)
+{
+    if (this->is_time_adjusted()) {
+        struct timeval line_time = ll->get_timeval();
+        struct timeval retval;
+
+        timersub(&line_time, &this->lf_time_offset, &retval);
+        return retval;
+    }
+
+    return ll->get_timeval();
+}

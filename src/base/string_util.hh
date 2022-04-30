@@ -106,6 +106,17 @@ trim(const std::string& str)
 }
 
 inline std::string
+rtrim(const std::string& str)
+{
+    std::string::size_type end;
+
+    for (end = str.size(); end > 0 && isspace(str[end - 1]); end--)
+        ;
+
+    return str.substr(0, end);
+}
+
+inline std::string
 tolower(const char* str)
 {
     std::string retval;
@@ -186,7 +197,7 @@ utf8_string_length(const std::string& str)
     return utf8_string_length(str.c_str(), str.length());
 }
 
-bool is_url(const char* fn);
+bool is_url(const std::string& fn);
 
 bool is_blank(const std::string& str);
 
@@ -200,5 +211,15 @@ std::string center_str(const std::string& subject, size_t width);
 
 template<typename T>
 size_t strtonum(T& num_out, const char* data, size_t len);
+
+inline std::string
+on_blank(const std::string& str, const std::string& def)
+{
+    if (is_blank(str)) {
+        return def;
+    }
+
+    return str;
+}
 
 #endif

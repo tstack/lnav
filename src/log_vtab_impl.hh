@@ -107,61 +107,40 @@ public:
         value_kind_t kind);
 
     log_vtab_impl(const intern_string_t name)
-        : vi_supports_indexes(true), vi_name(name)
+        : vi_name(name), vi_tags_name(intern_string::lookup(
+                             fmt::format(FMT_STRING("{}.log_tags"), name)))
     {
         this->vi_attrs.resize(128);
-    };
+    }
+
     virtual ~log_vtab_impl() = default;
 
-    const intern_string_t get_name() const
-    {
-        return this->vi_name;
-    };
+    const intern_string_t get_name() const { return this->vi_name; }
+
+    intern_string_t get_tags_name() const { return this->vi_tags_name; }
 
     std::string get_table_statement();
 
-    virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss)
-    {
-        content_line_t cl(lss.at(lc.lc_curr_line));
-        std::shared_ptr<logfile> lf = lss.find(cl);
-        auto lf_iter = lf->begin() + cl;
-
-        if (!lf_iter->is_message()) {
-            return false;
-        }
-
-        return true;
-    };
+    virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss);
 
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column>& cols) const {};
 
-    virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const
-    {
-        keys_inout.emplace_back("log_line");
-        keys_inout.emplace_back("min(log_line)");
-        keys_inout.emplace_back("log_mark");
-        keys_inout.emplace_back("log_time_msecs");
-    };
+    virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const;
 
     virtual void extract(std::shared_ptr<logfile> lf,
                          uint64_t line_number,
                          shared_buffer_ref& line,
-                         std::vector<logline_value>& values)
-    {
-        auto format = lf->get_format();
+                         std::vector<logline_value>& values);
 
-        this->vi_attrs.clear();
-        format->annotate(line_number, line, this->vi_attrs, values, false);
-    };
-
-    bool vi_supports_indexes;
+    bool vi_supports_indexes{true};
     int vi_column_count;
     string_attrs_t vi_attrs;
 
 protected:
     const intern_string_t vi_name;
+    const intern_string_t vi_tags_name;
 };
 
 class log_format_vtab_impl : public log_vtab_impl {
@@ -171,34 +150,7 @@ public:
     {
     }
 
-    virtual bool next(log_cursor& lc, logfile_sub_source& lss)
-    {
-        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
-        lc.lc_sub_index = 0;
-
-        if (lc.is_eof()) {
-            return true;
-        }
-
-        auto cl = content_line_t(lss.at(lc.lc_curr_line));
-        auto lf = lss.find(cl);
-        auto lf_iter = lf->begin() + cl;
-        uint8_t mod_id = lf_iter->get_module_id();
-
-        if (!lf_iter->is_message()) {
-            return false;
-        }
-
-        auto format = lf->get_format();
-        if (format->get_name() == this->lfvi_format.get_name()) {
-            return true;
-        } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
-            // XXX
-            return true;
-        }
-
-        return false;
-    };
+    virtual bool next(log_cursor& lc, logfile_sub_source& lss);
 
 protected:
     const log_format& lfvi_format;
@@ -210,8 +162,7 @@ typedef void (*sql_progress_finished_callback_t)();
 struct _log_vtab_data {
     sql_progress_callback_t lvd_progress;
     sql_progress_finished_callback_t lvd_finished;
-    std::string lvd_source;
-    int lvd_line_number{0};
+    source_location lvd_location;
     attr_line_t lvd_content;
 };
 
@@ -221,14 +172,12 @@ class sql_progress_guard {
 public:
     sql_progress_guard(sql_progress_callback_t cb,
                        sql_progress_finished_callback_t fcb,
-                       const std::string& source,
-                       int line_number,
+                       source_location loc,
                        const attr_line_t& content)
     {
         log_vtab_data.lvd_progress = cb;
         log_vtab_data.lvd_finished = fcb;
-        log_vtab_data.lvd_source = source;
-        log_vtab_data.lvd_line_number = line_number;
+        log_vtab_data.lvd_location = loc;
         log_vtab_data.lvd_content = content;
     }
 
@@ -239,8 +188,7 @@ public:
         }
         log_vtab_data.lvd_progress = nullptr;
         log_vtab_data.lvd_finished = nullptr;
-        log_vtab_data.lvd_source.clear();
-        log_vtab_data.lvd_line_number = 0;
+        log_vtab_data.lvd_location = source_location{};
         log_vtab_data.lvd_content.clear();
     }
 };
@@ -253,15 +201,9 @@ public:
     log_vtab_manager(sqlite3* db, textview_curses& tc, logfile_sub_source& lss);
     ~log_vtab_manager();
 
-    textview_curses* get_view() const
-    {
-        return &this->vm_textview;
-    };
+    textview_curses* get_view() const { return &this->vm_textview; }
 
-    logfile_sub_source* get_source()
-    {
-        return &this->vm_source;
-    };
+    logfile_sub_source* get_source() { return &this->vm_source; }
 
     std::string register_vtab(std::shared_ptr<log_vtab_impl> vi);
     std::string unregister_vtab(intern_string_t name);
@@ -274,17 +216,11 @@ public:
             return iter->second;
         }
         return nullptr;
-    };
+    }
 
-    iterator begin() const
-    {
-        return this->vm_impls.begin();
-    };
+    iterator begin() const { return this->vm_impls.begin(); }
 
-    iterator end() const
-    {
-        return this->vm_impls.end();
-    };
+    iterator end() const { return this->vm_impls.end(); }
 
 private:
     sqlite3* vm_db;

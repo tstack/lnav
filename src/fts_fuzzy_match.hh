@@ -35,10 +35,6 @@
 #define FTS_FUZZY_MATCH_H
 
 #include <cstdint>  // uint8_t
-#include <cstdio>
-#include <cstring>  // memcpy
-
-#include <ctype.h>  // ::tolower, ::toupper
 
 // Public interface
 namespace fts {

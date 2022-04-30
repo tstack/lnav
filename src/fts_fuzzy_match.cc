@@ -4,7 +4,11 @@
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
 //   publish, and distribute this file as you see fit.
 
+#include <cstring>  // memcpy
+
 #include "fts_fuzzy_match.hh"
+
+#include <ctype.h>  // ::tolower, ::toupper
 
 #include "config.h"
 

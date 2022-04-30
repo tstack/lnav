@@ -73,7 +73,7 @@ public:
           ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
-    };
+    }
 
     logline(file_off_t off,
             const struct timeval& tv,
@@ -85,69 +85,48 @@ public:
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
-    };
+    }
 
     /** @return The offset of the line in the file. */
-    file_off_t get_offset() const
-    {
-        return this->ll_offset;
-    };
+    file_off_t get_offset() const { return this->ll_offset; }
 
-    uint16_t get_sub_offset() const
-    {
-        return this->ll_sub_offset;
-    };
+    uint16_t get_sub_offset() const { return this->ll_sub_offset; }
 
-    void set_sub_offset(uint16_t suboff)
-    {
-        this->ll_sub_offset = suboff;
-    };
+    void set_sub_offset(uint16_t suboff) { this->ll_sub_offset = suboff; }
 
     /** @return The timestamp for the line. */
-    time_t get_time() const
-    {
-        return this->ll_time;
-    };
+    time_t get_time() const { return this->ll_time; }
 
     void to_exttm(struct exttm& tm_out) const
     {
         tm_out.et_tm = *gmtime(&this->ll_time);
         tm_out.et_nsec = this->ll_millis * 1000 * 1000;
-    };
+    }
 
-    void set_time(time_t t)
-    {
-        this->ll_time = t;
-    };
+    void set_time(time_t t) { this->ll_time = t; }
 
     /** @return The millisecond timestamp for the line. */
-    uint16_t get_millis() const
-    {
-        return this->ll_millis;
-    };
+    uint16_t get_millis() const { return this->ll_millis; }
 
-    void set_millis(uint16_t m)
-    {
-        this->ll_millis = m;
-    };
+    void set_millis(uint16_t m) { this->ll_millis = m; }
 
     uint64_t get_time_in_millis() const
     {
         return (this->ll_time * 1000ULL + (uint64_t) this->ll_millis);
-    };
+    }
 
     struct timeval get_timeval() const
     {
         struct timeval retval = {this->ll_time, this->ll_millis * 1000};
 
         return retval;
-    };
+    }
 
     void set_time(const struct timeval& tv)
     {
         this->ll_time = tv.tv_sec;
         this->ll_millis = tv.tv_usec / 1000;
-    };
+    }
 
     void set_ignore(bool val)
     {
@@ -156,7 +135,7 @@ public:
         } else {
             this->ll_level &= ~LEVEL_IGNORE;
         }
-    };
+    }
 
     bool is_ignored() const
     {
@@ -170,22 +149,13 @@ public:
         } else {
             this->ll_level &= ~LEVEL_MARK;
         }
-    };
+    }
 
-    bool is_marked() const
-    {
-        return this->ll_level & LEVEL_MARK;
-    };
+    bool is_marked() const { return this->ll_level & LEVEL_MARK; }
 
-    void set_expr_mark(bool val)
-    {
-        this->ll_expr_mark = val;
-    };
+    void set_expr_mark(bool val) { this->ll_expr_mark = val; }
 
-    bool is_expr_marked() const
-    {
-        return this->ll_expr_mark;
-    };
+    bool is_expr_marked() const { return this->ll_expr_mark; }
 
     void set_time_skew(bool val)
     {
@@ -194,22 +164,13 @@ public:
         } else {
             this->ll_level &= ~LEVEL_TIME_SKEW;
         }
-    };
-
-    bool is_time_skewed() const
-    {
-        return this->ll_level & LEVEL_TIME_SKEW;
-    };
-
-    void set_valid_utf(bool v)
-    {
-        this->ll_valid_utf = v;
     }
 
-    bool is_valid_utf() const
-    {
-        return this->ll_valid_utf;
-    }
+    bool is_time_skewed() const { return this->ll_level & LEVEL_TIME_SKEW; }
+
+    void set_valid_utf(bool v) { this->ll_valid_utf = v; }
+
+    bool is_valid_utf() const { return this->ll_valid_utf; }
 
     /** @param l The logging level. */
     void set_level(log_level_t l)
@@ -221,42 +182,30 @@ public:
     log_level_t get_level_and_flags() const
     {
         return (log_level_t) this->ll_level;
-    };
+    }
 
     log_level_t get_msg_level() const
     {
         return (log_level_t) (this->ll_level & ~LEVEL__FLAGS);
-    };
+    }
 
     const char* get_level_name() const
     {
         return level_names[this->ll_level & ~LEVEL__FLAGS];
-    };
+    }
 
     bool is_message() const
     {
         return (this->ll_level & (LEVEL_IGNORE | LEVEL_CONTINUED)) == 0;
     }
 
-    bool is_continued() const
-    {
-        return this->ll_level & LEVEL_CONTINUED;
-    };
+    bool is_continued() const { return this->ll_level & LEVEL_CONTINUED; }
 
-    uint8_t get_module_id() const
-    {
-        return this->ll_module_id;
-    };
+    uint8_t get_module_id() const { return this->ll_module_id; }
 
-    void set_opid(uint8_t opid)
-    {
-        this->ll_opid = opid;
-    };
+    void set_opid(uint8_t opid) { this->ll_opid = opid; }
 
-    uint8_t get_opid() const
-    {
-        return this->ll_opid;
-    };
+    uint8_t get_opid() const { return this->ll_opid; }
 
     /**
      * @return  True if there is a schema value set for this log line.
@@ -264,7 +213,7 @@ public:
     bool has_schema() const
     {
         return (this->ll_schema[0] != 0 || this->ll_schema[1] != 0);
-    };
+    }
 
     /**
      * Set the "schema" for this log line.  The schema ID is used to match log
@@ -276,12 +225,9 @@ public:
     void set_schema(const byte_array<2, uint64_t>& ba)
     {
         memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
-    };
+    }
 
-    char get_schema() const
-    {
-        return this->ll_schema[0];
-    };
+    char get_schema() const { return this->ll_schema[0]; }
 
     /**
      * Perform a partial match of the given schema against this log line.
@@ -309,26 +255,23 @@ public:
             || (this->ll_time == rhs.ll_time && this->ll_millis == rhs.ll_millis
                 && this->ll_offset == rhs.ll_offset
                 && this->ll_sub_offset < rhs.ll_sub_offset);
-    };
+    }
 
-    bool operator<(const time_t& rhs) const
-    {
-        return this->ll_time < rhs;
-    };
+    bool operator<(const time_t& rhs) const { return this->ll_time < rhs; }
 
     bool operator<(const struct timeval& rhs) const
     {
         return ((this->ll_time < rhs.tv_sec)
                 || ((this->ll_time == rhs.tv_sec)
                     && (this->ll_millis < (rhs.tv_usec / 1000))));
-    };
+    }
 
     bool operator<=(const struct timeval& rhs) const
     {
         return ((this->ll_time < rhs.tv_sec)
                 || ((this->ll_time == rhs.tv_sec)
                     && (this->ll_millis <= (rhs.tv_usec / 1000))));
-    };
+    }
 
 private:
     file_off_t ll_offset;

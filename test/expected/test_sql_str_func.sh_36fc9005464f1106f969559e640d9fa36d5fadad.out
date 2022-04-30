@@ -1,0 +1,2 @@
+Row 0:
+  Column regexp_replace('test 1 2 3', '\d+', 'N'): test N N N

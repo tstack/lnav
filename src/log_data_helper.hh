@@ -48,10 +48,7 @@
 
 class log_data_helper {
 public:
-    explicit log_data_helper(logfile_sub_source& lss)
-        : ldh_log_source(lss){
-
-        };
+    explicit log_data_helper(logfile_sub_source& lss) : ldh_log_source(lss) {}
 
     void clear();
 
@@ -70,7 +67,7 @@ public:
         return std::count(this->ldh_msg.get_data(),
                           this->ldh_msg.get_data() + lv.lv_origin.lr_start,
                           '\n');
-    };
+    }
 
     std::string format_json_getter(const intern_string_t field, int index);
 

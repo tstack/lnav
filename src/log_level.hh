@@ -34,37 +34,7 @@
 
 #include <sys/types.h>
 
-/**
- * The logging level identifiers for a line(s).
- */
-enum log_level_t : int {
-    LEVEL_UNKNOWN,
-    LEVEL_TRACE,
-    LEVEL_DEBUG5,
-    LEVEL_DEBUG4,
-    LEVEL_DEBUG3,
-    LEVEL_DEBUG2,
-    LEVEL_DEBUG,
-    LEVEL_INFO,
-    LEVEL_STATS,
-    LEVEL_NOTICE,
-    LEVEL_WARNING,
-    LEVEL_ERROR,
-    LEVEL_CRITICAL,
-    LEVEL_FATAL,
-    LEVEL_INVALID,
-
-    LEVEL__MAX,
-
-    LEVEL_IGNORE = 0x10, /*< Ignore */
-    LEVEL_TIME_SKEW = 0x20, /*< Received after timestamp. */
-    LEVEL_MARK = 0x40, /*< Bookmarked line. */
-    LEVEL_CONTINUED = 0x80, /*< Continuation of multiline entry. */
-
-    /** Mask of flags for the level field. */
-    LEVEL__FLAGS
-        = (LEVEL_IGNORE | LEVEL_TIME_SKEW | LEVEL_MARK | LEVEL_CONTINUED)
-};
+#include "base/log_level_enum.hh"
 
 extern const char* level_names[LEVEL__MAX + 1];
 

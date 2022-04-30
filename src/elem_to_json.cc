@@ -31,6 +31,7 @@
 
 #include "elem_to_json.hh"
 
+#include "base/itertools.hh"
 #include "config.h"
 #include "yajlpp/yajlpp.hh"
 
@@ -150,7 +151,7 @@ map_elements_to_json(yajl_gen gen,
         if (key_str.empty()) {
             continue;
         }
-        if (find(names.begin(), names.end(), key_str) != names.end()) {
+        if (names | lnav::itertools::find(key_str)) {
             unique_names = false;
             break;
         } else {

@@ -1,33 +1,24 @@
 #! /bin/bash
 
-lnav_test="${top_builddir}/src/lnav-test"
-
 export HOME="./sessions"
 unset XDG_CONFIG_HOME
 rm -rf "./sessions"
 mkdir -p $HOME
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":reset-session" \
     -c ":goto 0" \
     -c ":hide-file" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.*
 
-check_output "hiding file is not working" <<EOF
-10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
-EOF
-
-run_test ${lnav_test} -n \
+# hidden file saved in session
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     ${test_dir}/logfile_access_log.*
 
-check_output "hidden file was not saved in session" <<EOF
-10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
-EOF
-
-
-run_test ${lnav_test} -nq \
+# setting log_mark
+run_cap_test ${lnav_test} -nq \
     -c ":reset-session" \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ":goto 1" \
@@ -35,98 +26,63 @@ run_test ${lnav_test} -nq \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "setting log_mark is not working" <<EOF
-EOF
-
-run_test ${lnav_test} -n \
+# log mark was not saved in session
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     -c ':write-to -' \
     ${test_dir}/logfile_access_log.0
 
-check_output "log mark was not saved in session" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
-run_test ${lnav_test} -n \
+# file was not closed
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     -c ":close" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "file was not closed" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+# partition name was not saved in session
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     -c ';select log_line,log_part from access_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
-check_output "partition name was not saved in session" <<EOF
-log_line,log_part
-0,<NULL>
-1,middle
-2,middle
-EOF
-
-
-run_test ${lnav_test} -nq \
+# adjust time is not working
+run_cap_test ${lnav_test} -nq \
     -c ":adjust-log-time 2010-01-01T00:00:00" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "adjust time is not working" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+# adjust time is not saved in session
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
+    -c ":test-comment adjust time in session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "adjust time is not saved in session" <<EOF
-192.168.202.254 - - [01/Jan/2010:00:00:00 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [01/Jan/2010:00:00:03 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [01/Jan/2010:00:00:03 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
-
+# hiding fields failed
 rm -rf ./sessions
 mkdir -p $HOME
-run_test ${lnav_test} -nq -d /tmp/lnav.err \
+run_cap_test ${lnav_test} -nq -d /tmp/lnav.err \
     -c ":hide-fields c_ip" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "hiding fields failed" <<EOF
-EOF
-
-run_test ${lnav_test} -n \
+# restoring hidden fields failed
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
+    -c ":test-comment restoring hidden fields" \
     ${test_dir}/logfile_access_log.0
 
-check_output "restoring hidden fields failed" <<EOF
-⋮ - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-⋮ - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-⋮ - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
+# hiding fields failed
 rm -rf ./sessions
 mkdir -p $HOME
-run_test ${lnav_test} -nq -d /tmp/lnav.err \
+run_cap_test ${lnav_test} -nq -d /tmp/lnav.err \
     -c ":hide-lines-before 2009-07-20 22:59:29" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
-check_output "hiding fields failed" <<EOF
-EOF
-
-run_test ${lnav_test} -n -d /tmp/lnav.err \
-    -c ":load-session" \
-    ${test_dir}/logfile_access_log.0
-
 # XXX we don't actually check
-check_output "restoring hidden fields failed" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
+# restoring hidden fields failed
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":load-session" \
+    -c ":test-comment restore hidden lines" \
+    ${test_dir}/logfile_access_log.0

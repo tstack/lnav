@@ -112,7 +112,7 @@ TEST_CASE("ptime_roundtrip")
     };
     time_t now = time(nullptr);
 
-    for (auto fmt : fmts) {
+    for (const auto* fmt : fmts) {
         for (time_t sec = now; sec < (now + (24 * 60 * 60)); sec++) {
             char ftime_result[128];
             char strftime_result[128];
@@ -189,7 +189,7 @@ TEST_CASE("attr_line to json")
     al.append("Hello, ").append(lnav::roles::symbol("World")).append("!");
 
     auto json = lnav::to_json(al);
-    auto al2 = lnav::from_json<attr_line_t>(json);
+    auto al2 = lnav::from_json<attr_line_t>(json).unwrap();
     auto json2 = lnav::to_json(al2);
 
     CHECK(json == json2);
@@ -197,15 +197,15 @@ TEST_CASE("attr_line to json")
 
 TEST_CASE("user_message to json")
 {
-    auto um
-        = lnav::console::user_message::error("testing")
-              .with_reason("because")
-              .with_snippet(lnav::console::snippet::from("hello.c", "printf(")
-                                .with_line(1))
-              .with_help("close it");
+    auto um = lnav::console::user_message::error("testing")
+                  .with_reason("because")
+                  .with_snippet(lnav::console::snippet::from(
+                                    intern_string::lookup("hello.c"), "printf(")
+                                    .with_line(1))
+                  .with_help("close it");
 
     auto json = lnav::to_json(um);
-    auto um2 = lnav::from_json<lnav::console::user_message>(json);
+    auto um2 = lnav::from_json<lnav::console::user_message>(json).unwrap();
     auto json2 = lnav::to_json(um2);
 
     CHECK(json == json2);

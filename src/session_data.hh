@@ -35,7 +35,10 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
+#include "mapbox/variant.hpp"
+#include "optional.hpp"
 #include "view_helpers.hh"
 
 struct file_state {
@@ -61,5 +64,36 @@ void load_session();
 void load_time_bookmarks();
 void save_session();
 void reset_session();
+
+namespace lnav {
+namespace session {
+namespace regex101 {
+
+struct entry {
+    std::string re_format_name;
+    std::string re_regex_name;
+    std::string re_permalink;
+    std::string re_delete_code;
+};
+
+void insert_entry(const entry& ei);
+
+struct no_entry {};
+
+struct error {
+    std::string e_msg;
+};
+
+using get_result_t = mapbox::util::variant<entry, no_entry, error>;
+
+get_result_t get_entry(const std::string& format_name,
+                       const std::string& regex_name);
+void delete_entry(const std::string& format_name,
+                  const std::string& regex_name);
+Result<std::vector<entry>, std::string> get_entries();
+
+}  // namespace regex101
+}  // namespace session
+}  // namespace lnav
 
 #endif

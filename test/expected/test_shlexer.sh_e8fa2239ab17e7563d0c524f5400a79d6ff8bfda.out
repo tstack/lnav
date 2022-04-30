@@ -1,0 +1,6 @@
+    "'"
+dst ^
+den   ^
+eval -- "'"
+split:
+  0 -- '

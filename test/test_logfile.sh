@@ -3,6 +3,9 @@
 echo ${top_srcdir}
 echo ${top_builddir}
 
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT * FROM logline' \
+    ${test_dir}/logfile_block.1
 
 run_test ${lnav_test} -d /tmp/lnav.err -n -w logfile_stdin.0.log \
     -c ':shexec sleep 1 && touch -t 200711030923 logfile_stdin.0.log' <<EOF

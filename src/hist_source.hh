@@ -73,31 +73,25 @@ struct stacked_bar_chart_base {
 template<typename T>
 class stacked_bar_chart : public stacked_bar_chart_base {
 public:
-    stacked_bar_chart()
-        : sbc_do_stacking(true), sbc_left(0), sbc_right(0),
-          sbc_show_state(show_all()){
-
-          };
-
     stacked_bar_chart& with_stacking_enabled(bool enabled)
     {
         this->sbc_do_stacking = enabled;
         return *this;
-    };
+    }
 
     stacked_bar_chart& with_attrs_for_ident(const T& ident, int attrs)
     {
         struct chart_ident& ci = this->find_ident(ident);
         ci.ci_attrs = attrs;
         return *this;
-    };
+    }
 
     stacked_bar_chart& with_margins(unsigned long left, unsigned long right)
     {
         this->sbc_left = left;
         this->sbc_right = right;
         return *this;
-    };
+    }
 
     show_state show_next_ident(direction dir)
     {
@@ -152,7 +146,7 @@ public:
             });
 
         return this->sbc_show_state;
-    };
+    }
 
     void get_ident_to_show(T& ident_out) const
     {
@@ -162,7 +156,7 @@ public:
             [&](const show_one& one) {
                 ident_out = this->sbc_idents[one.so_index].ci_ident;
             });
-    };
+    }
 
     void chart_attrs_for_value(const listview_curses& lc,
                                int& left,
@@ -230,20 +224,20 @@ public:
             value_out.emplace_back(
                 lr, VC_STYLE.value(ci.ci_attrs | A_REVERSE));
         }
-    };
+    }
 
     void clear()
     {
         this->sbc_idents.clear();
         this->sbc_ident_lookup.clear();
         this->sbc_show_state = show_all();
-    };
+    }
 
     void add_value(const T& ident, double amount = 1.0)
     {
         struct chart_ident& ci = this->find_ident(ident);
         ci.ci_stats.update(amount);
-    };
+    }
 
     struct bucket_stats_t {
         bucket_stats_t()
@@ -281,11 +275,11 @@ public:
         const chart_ident& ci = this->find_ident(ident);
 
         return ci.ci_stats;
-    };
+    }
 
 protected:
     struct chart_ident {
-        chart_ident(const T& ident) : ci_ident(ident){};
+        chart_ident(const T& ident) : ci_ident(ident) {}
 
         T ci_ident;
         int ci_attrs{0};
@@ -303,13 +297,13 @@ protected:
             return this->sbc_idents.back();
         }
         return this->sbc_idents[iter->second];
-    };
+    }
 
-    bool sbc_do_stacking;
-    unsigned long sbc_left, sbc_right;
+    bool sbc_do_stacking{true};
+    unsigned long sbc_left{0}, sbc_right{0};
     std::vector<struct chart_ident> sbc_idents;
     std::map<T, unsigned int> sbc_ident_lookup;
-    show_state sbc_show_state;
+    show_state sbc_show_state{show_all()};
 };
 
 class hist_source2

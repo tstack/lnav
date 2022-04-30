@@ -210,7 +210,7 @@ view_curses::mvwattrline(WINDOW* window,
 
         if (!(iter->sa_type == &VC_ROLE || iter->sa_type == &VC_ROLE_FG
               || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC
-              || iter->sa_type == &VC_FOREGROUND
+              || iter->sa_type == &SA_LEVEL || iter->sa_type == &VC_FOREGROUND
               || iter->sa_type == &VC_BACKGROUND))
         {
             continue;
@@ -287,6 +287,10 @@ view_curses::mvwattrline(WINDOW* window,
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<int64_t>() & ~A_COLOR;
                 color_pair = PAIR_NUMBER(iter->sa_value.get<int64_t>());
+            } else if (iter->sa_type == &SA_LEVEL) {
+                attrs = vc.vc_level_attrs[iter->sa_value.get<int64_t>()].first;
+                color_pair = PAIR_NUMBER(attrs);
+                attrs = attrs & ~A_COLOR;
             } else if (iter->sa_type == &VC_ROLE) {
                 attrs = vc.attrs_for_role(iter->sa_value.get<role_t>());
                 color_pair = PAIR_NUMBER(attrs);
@@ -875,6 +879,12 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(color_pair_base,
                          lt,
                          lt.lt_style_header[5],
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_LIST_GLYPH)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_list_glyph,
                          lt.lt_style_text,
                          reporter);
 

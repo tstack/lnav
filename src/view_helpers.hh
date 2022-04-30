@@ -34,9 +34,12 @@
 
 #include "bookmarks.hh"
 #include "help_text.hh"
+#include "logfile_fwd.hh"
 #include "vis_line.hh"
 
 class textview_curses;
+class hist_source2;
+class logfile_sub_source;
 
 /** The different views available. */
 typedef enum {
@@ -52,7 +55,23 @@ typedef enum {
     LNV__MAX
 } lnav_view_t;
 
+/** The command modes that are available while viewing a file. */
+enum class ln_mode_t : int {
+    PAGING,
+    FILTER,
+    FILES,
+    COMMAND,
+    SEARCH,
+    SEARCH_FILTERS,
+    SEARCH_FILES,
+    CAPTURE,
+    SQL,
+    EXEC,
+    USER,
+};
+
 extern const char* lnav_view_strings[LNV__MAX + 1];
+extern const char* lnav_view_titles[LNV__MAX];
 
 nonstd::optional<lnav_view_t> view_from_string(const char* name);
 
@@ -60,6 +79,7 @@ bool ensure_view(textview_curses* expected_tc);
 bool ensure_view(lnav_view_t expected);
 bool toggle_view(textview_curses* toggle_tc);
 void layout_views();
+void update_hits(textview_curses* tc);
 
 nonstd::optional<vis_line_t> next_cluster(
     vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
@@ -71,5 +91,6 @@ bool moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t)
                     vis_line_t top);
 void previous_cluster(const bookmark_type_t* bt, textview_curses* tc);
 vis_line_t search_forward_from(textview_curses* tc);
+textview_curses* get_textview_for_mode(ln_mode_t mode);
 
 #endif

@@ -40,7 +40,9 @@ add_library(
         intern_string.hh
         is_utf8.hh
         isc.hh
+        itertools.hh
         lnav.console.hh
+        log_level_enum.hh
         lrucache.hpp
         math_util.hh
         network.tcp.hh
@@ -56,6 +58,7 @@ target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses pthread)
 
 add_executable(
         test_base
+        fs_util.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc
         humanize.time.tests.cc

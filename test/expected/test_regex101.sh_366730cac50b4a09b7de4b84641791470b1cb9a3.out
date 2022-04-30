@@ -1,0 +1,10 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "unit_test_log": {
+        "regex": {
+            "std": {
+                "pattern": "\\[(?<timestamp>\\d+\\/\\d+\\/\\d+ \\d+:\\d+:\\d+) (?<jobserver>[\\w.]+) (?<workqueue>[\\w.]+) (?<processid>\\d+)\\] (?<body>.*)$"
+            }
+        }
+    }
+}

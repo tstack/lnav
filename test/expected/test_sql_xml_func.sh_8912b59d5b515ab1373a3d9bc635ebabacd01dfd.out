@@ -1,0 +1,6 @@
+Row 0:
+  Column     result: <def a="b">ghi</def>
+
+  Column  node_path: /abc/def[2]
+  Column  node_attr: {"a":"b"}
+  Column  node_text: ghi

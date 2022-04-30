@@ -53,6 +53,7 @@
 #include <sys/types.h>
 
 #include "base/auto_fd.hh"
+#include "base/enum_util.hh"
 #include "base/func_util.hh"
 #include "base/result.h"
 #include "help_text_formatter.hh"
@@ -75,7 +76,7 @@ public:
 
     class error : public std::exception {
     public:
-        error(int err) : e_err(err){};
+        error(int err) : e_err(err) {}
 
         int e_err;
     };
@@ -92,15 +93,17 @@ public:
         this->rc_contexts[id] = &rc;
     }
 
-    void set_focus_action(const action& va)
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void add_context(T context, Args&... args)
     {
-        this->rc_focus = va;
+        this->add_context(lnav::enums::to_underlying(context), args...);
     }
 
-    void set_change_action(const action& va)
-    {
-        this->rc_change = va;
-    }
+    void set_focus_action(const action& va) { this->rc_focus = va; }
+
+    void set_change_action(const action& va) { this->rc_change = va; }
 
     void set_perform_action(const action& va)
     {
@@ -132,45 +135,26 @@ public:
         this->rc_display_next = va;
     }
 
-    void set_blur_action(const action& va)
-    {
-        this->rc_blur = va;
-    }
+    void set_blur_action(const action& va) { this->rc_blur = va; }
 
     void set_completion_request_action(const action& va)
     {
         this->rc_completion_request = va;
     }
 
-    void set_value(const std::string& value)
-    {
-        this->rc_value = value;
-        if (this->rc_value.length() > 1024) {
-            this->rc_value = this->rc_value.substr(0, 1024);
-        }
-        this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
-        this->set_needs_update();
-    }
+    void set_value(const std::string& value);
 
-    std::string get_value() const
-    {
-        return this->rc_value;
-    }
+    void set_attr_value(const attr_line_t& al);
 
-    std::string get_line_buffer() const
-    {
-        return this->rc_line_buffer;
-    }
+    void clear_value() { this->rc_value.clear(); }
 
-    void set_alt_value(const std::string& value)
-    {
-        this->rc_alt_value = value;
-    }
+    const attr_line_t& get_value() const { return this->rc_value; }
 
-    std::string get_alt_value() const
-    {
-        return this->rc_alt_value;
-    }
+    std::string get_line_buffer() const { return this->rc_line_buffer; }
+
+    void set_alt_value(const std::string& value) { this->rc_alt_value = value; }
+
+    std::string get_alt_value() const { return this->rc_alt_value; }
 
     void update_poll_set(std::vector<struct pollfd>& pollfds)
     {
@@ -187,10 +171,15 @@ public:
                const std::string& prompt,
                const std::string& initial = "");
 
-    void set_alt_focus(bool alt_focus)
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void focus(T context, const Args&... args)
     {
-        this->rc_is_alt_focus = alt_focus;
+        this->focus(lnav::enums::to_underlying(context), args...);
     }
+
+    void set_alt_focus(bool alt_focus) { this->rc_is_alt_focus = alt_focus; }
 
     void rewrite_line(int pos, const std::string& value);
 
@@ -228,6 +217,20 @@ public:
                     const std::string& value);
 
     void clear_prefixes(int context);
+
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void add_prefix(T context, const Args&... args)
+    {
+        this->add_prefix(lnav::enums::to_underlying(context), args...);
+    }
+
+    template<typename T, std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void clear_prefixes(T context)
+    {
+        this->clear_prefixes(lnav::enums::to_underlying(context));
+    }
 
     void add_possibility(int context,
                          const std::string& type,
@@ -267,15 +270,36 @@ public:
                          const std::string& value);
     void clear_possibilities(int context, std::string type);
 
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void add_possibility(T context, Args... args)
+    {
+        this->add_possibility(lnav::enums::to_underlying(context), args...);
+    }
+
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void rem_possibility(T context, const Args&... args)
+    {
+        this->rem_possibility(lnav::enums::to_underlying(context), args...);
+    }
+
+    template<typename T,
+             typename... Args,
+             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    void clear_possibilities(T context, Args... args)
+    {
+        this->clear_possibilities(lnav::enums::to_underlying(context), args...);
+    }
+
     const std::vector<std::string>& get_matches() const
     {
         return this->rc_matches;
     }
 
-    int get_match_start() const
-    {
-        return this->rc_match_start;
-    }
+    int get_match_start() const { return this->rc_match_start; }
 
     std::string get_match_string() const;
 
@@ -314,7 +338,7 @@ private:
     auto_fd rc_pty[2];
     auto_fd rc_command_pipe[2];
     std::map<int, readline_context*> rc_contexts;
-    std::string rc_value;
+    attr_line_t rc_value;
     std::string rc_line_buffer;
     time_t rc_value_expiration{0};
     std::string rc_alt_value;

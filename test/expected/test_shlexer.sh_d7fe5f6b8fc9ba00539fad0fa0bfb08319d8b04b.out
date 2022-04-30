@@ -1,0 +1,6 @@
+    'abc'
+sst ^
+sen     ^
+eval -- 'abc'
+split:
+  0 -- abc

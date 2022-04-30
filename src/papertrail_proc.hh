@@ -55,11 +55,8 @@ class papertrail_proc : public curl_request {
 public:
     papertrail_proc(const std::string& search, time_t min_time, time_t max_time)
         : curl_request("papertrailapp.com"),
-          ptp_jcontext(this->cr_name, &FORMAT_HANDLERS), ptp_jhandle(yajl_free),
-          ptp_gen(yajl_gen_free), ptp_search(search),
-          ptp_quoted_search(curl_free), ptp_header_list(curl_slist_free_all),
-          ptp_partial_read(false), ptp_min_time(min_time),
-          ptp_max_time(max_time)
+          ptp_jcontext(intern_string::lookup(this->cr_name), &FORMAT_HANDLERS),
+          ptp_search(search), ptp_min_time(min_time), ptp_max_time(max_time)
     {
         char piper_tmpname[PATH_MAX];
         const char* tmpdir;
@@ -111,14 +108,11 @@ public:
             this->cr_handle, CURLOPT_HTTPHEADER, this->ptp_header_list.in());
 
         this->set_url();
-    };
+    }
 
     ~papertrail_proc() {}
 
-    auto_fd copy_fd() const
-    {
-        return this->ptp_fd.dup();
-    };
+    auto_fd copy_fd() const { return this->ptp_fd.dup(); }
 
     long complete(CURLcode result);
 
@@ -149,7 +143,7 @@ public:
                             base_url,
                             this->ptp_quoted_search.in()));
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->ptp_url.in());
-    };
+    }
 
     static size_t write_cb(void* contents,
                            size_t size,
@@ -164,17 +158,17 @@ public:
     static const char* PT_SEARCH_URL;
 
     yajlpp_parse_context ptp_jcontext;
-    auto_mem<yajl_handle_t> ptp_jhandle;
-    auto_mem<yajl_gen_t> ptp_gen;
+    auto_mem<yajl_handle_t> ptp_jhandle{yajl_free};
+    auto_mem<yajl_gen_t> ptp_gen{yajl_gen_free};
     const char* ptp_api_key;
     const std::string ptp_search;
-    auto_mem<const char> ptp_quoted_search;
+    auto_mem<const char> ptp_quoted_search{curl_free};
     auto_mem<char> ptp_url;
     auto_mem<char> ptp_token_header;
-    auto_mem<struct curl_slist> ptp_header_list;
+    auto_mem<struct curl_slist> ptp_header_list{curl_slist_free_all};
     auto_fd ptp_fd;
     std::string ptp_last_max_id;
-    bool ptp_partial_read;
+    bool ptp_partial_read{false};
     std::string ptp_error;
     time_t ptp_min_time;
     time_t ptp_max_time;

@@ -132,26 +132,14 @@ to_string(const char* s)
 }  // namespace std
 
 inline bool
-is_glob(const char* fn)
+is_glob(const std::string& fn)
 {
-    return (strchr(fn, '*') != nullptr || strchr(fn, '?') != nullptr
-            || strchr(fn, '[') != nullptr);
+    return (fn.find('*') != std::string::npos
+            || fn.find('?') != std::string::npos
+            || fn.find('[') != std::string::npos);
 };
 
-inline short
-pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
-{
-    auto iter
-        = std::find_if(pollfds.begin(), pollfds.end(), [fd](const auto& entry) {
-              return entry.fd == fd;
-          });
-
-    if (iter == pollfds.end()) {
-        return 0;
-    }
-
-    return iter->revents;
-}
+short pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd);
 
 inline bool
 pollfd_ready(const std::vector<struct pollfd>& pollfds,
@@ -233,13 +221,17 @@ std::string err_prefix(std::string msg);
 Result<std::string, lnav::console::user_message> err_to_ok(
     lnav::console::user_message msg);
 
+void write_line_to(FILE* outfile, const attr_line_t& al);
+
 namespace lnav {
 
+std::string to_json(const std::string& str);
 std::string to_json(const lnav::console::user_message& um);
 std::string to_json(const attr_line_t& al);
 
 template<typename T>
-T from_json(const std::string& str);
+Result<T, std::vector<lnav::console::user_message>> from_json(
+    const std::string& json);
 
 }  // namespace lnav
 

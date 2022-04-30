@@ -93,11 +93,14 @@ ensure_format(const yajlpp_provider_context& ypc, userdata* ud)
         formats->push_back(name);
     }
 
-    auto srcs_iter
-        = retval->elf_format_sources.find(ud->ud_format_path.string());
-    if (srcs_iter == retval->elf_format_sources.end()) {
-        retval->elf_format_sources[ud->ud_format_path.string()]
-            = ud->ud_parse_context->get_line_number();
+    if (!ud->ud_format_path.empty()) {
+        auto i_src_path = intern_string::lookup(ud->ud_format_path.string());
+        auto srcs_iter = retval->elf_format_sources.find(i_src_path);
+        if (srcs_iter == retval->elf_format_sources.end()) {
+            retval->elf_format_source_order.emplace_back(ud->ud_format_path);
+            retval->elf_format_sources[i_src_path]
+                = ud->ud_parse_context->get_line_number();
+        }
     }
 
     if (ud->ud_format_path.empty()) {
@@ -170,7 +173,7 @@ line_format_provider(const yajlpp_provider_context& ypc,
 {
     auto& jfe = ensure_json_format_element(elf, ypc.ypc_index);
 
-    jfe.jfe_type = external_log_format::JLF_VARIABLE;
+    jfe.jfe_type = external_log_format::json_log_field::VARIABLE;
 
     return &jfe;
 }
@@ -394,7 +397,7 @@ read_json_constant(yajlpp_parse_context* ypc,
 
     ypc->ypc_array_index.back() += 1;
     auto& jfe = ensure_json_format_element(elf, ypc->ypc_array_index.back());
-    jfe.jfe_type = external_log_format::JLF_CONSTANT;
+    jfe.jfe_type = external_log_format::json_log_field::CONSTANT;
     jfe.jfe_default_value = val;
 
     return 1;
@@ -647,6 +650,10 @@ static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
 };
 
 static struct json_path_container sample_handlers = {
+    yajlpp::property_handler("description")
+        .with_synopsis("<text>")
+        .with_description("A description of this sample.")
+        .for_field(&external_log_format::sample::s_description),
     yajlpp::property_handler("line")
         .with_synopsis("<log-line>")
         .with_description(
@@ -800,7 +807,8 @@ struct json_path_container format_handlers = {
     json_path_handler("title", read_format_field)
         .with_description("The human-readable name for this log format"),
     json_path_handler("description", read_format_field)
-        .with_description("A longer description of this log format"),
+        .with_description("A longer description of this log format")
+        .for_field(&external_log_format::lf_description),
     json_path_handler("timestamp-format#", read_format_field)
         .with_description("An array of strptime(3)-like timestamp formats"),
     json_path_handler("module-field", read_format_field)
@@ -983,7 +991,8 @@ load_format_file(const ghc::filesystem::path& filename,
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());
-    yajlpp_parse_context ypc(filename, &root_format_handler);
+    yajlpp_parse_context ypc(intern_string::lookup(filename.string()),
+                             &root_format_handler);
     ud.ud_parse_context = &ypc;
     ud.ud_format_path = filename;
     ud.ud_format_names = &retval;
@@ -1082,7 +1091,8 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 
     log_debug("Loading default formats");
     for (const auto& bsf : lnav_format_json) {
-        yajlpp_parse_context ypc_builtin(bsf.get_name(), &root_format_handler);
+        yajlpp_parse_context ypc_builtin(intern_string::lookup(bsf.get_name()),
+                                         &root_format_handler);
         handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
         ud.ud_parse_context = &ypc_builtin;
         ud.ud_format_names = &retval;
@@ -1140,13 +1150,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
             }
         }
 
-        if (errors.empty()) {
-            alpha_ordered_formats.push_back(elf);
-        }
-    }
-
-    if (!errors.empty()) {
-        return;
+        alpha_ordered_formats.push_back(elf);
     }
 
     auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;

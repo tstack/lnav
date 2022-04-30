@@ -121,12 +121,12 @@ void
 rl_set_help()
 {
     switch (lnav_data.ld_mode) {
-        case LNM_SEARCH: {
+        case ln_mode_t::SEARCH: {
             lnav_data.ld_doc_source.replace_with(RE_HELP);
             lnav_data.ld_example_source.replace_with(RE_EXAMPLE);
             break;
         }
-        case LNM_SQL: {
+        case ln_mode_t::SQL: {
             textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
             auto* lss = (logfile_sub_source*) log_view.get_sub_source();
             attr_line_t example_al;
@@ -250,7 +250,7 @@ rl_change(readline_curses* rc)
         .clear();
 
     switch (lnav_data.ld_mode) {
-        case LNM_COMMAND: {
+        case ln_mode_t::COMMAND: {
             static std::string last_command;
             static int generation = 0;
 
@@ -302,7 +302,8 @@ rl_change(readline_curses* rc)
                 lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
             } else if (args[0] == "config" && args.size() > 1) {
-                yajlpp_parse_context ypc("input", &lnav_config_handlers);
+                static const auto INPUT_SRC = intern_string::lookup("input");
+                yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
 
                 ypc.set_path(args[1]).with_obj(lnav_config);
                 ypc.update_callbacks();
@@ -363,7 +364,7 @@ rl_change(readline_curses* rc)
             }
             break;
         }
-        case LNM_EXEC: {
+        case ln_mode_t::EXEC: {
             const auto line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
             const auto script_name = line.substr(0, name_end);
@@ -406,18 +407,18 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
     lnav_data.ld_user_message_source.clear();
 
     switch (mode) {
-        case LNM_SEARCH:
-        case LNM_SEARCH_FILTERS:
-        case LNM_SEARCH_FILES:
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_FILES:
             name = "$search";
             break;
 
-        case LNM_CAPTURE:
+        case ln_mode_t::CAPTURE:
             require(0);
             name = "$capture";
             break;
 
-        case LNM_COMMAND: {
+        case ln_mode_t::COMMAND: {
             lnav_data.ld_exec_context.ec_dry_run = true;
 
             lnav_data.ld_preview_generation += 1;
@@ -425,8 +426,8 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 .set_cylon(false)
                 .clear();
             lnav_data.ld_preview_source.clear();
-            auto result
-                = execute_command(lnav_data.ld_exec_context, rc->get_value());
+            auto result = execute_command(lnav_data.ld_exec_context,
+                                          rc->get_value().get_string());
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
@@ -450,8 +451,8 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             return;
         }
 
-        case LNM_SQL: {
-            term_val = trim(rc->get_value() + ";");
+        case ln_mode_t::SQL: {
+            term_val = trim(rc->get_value().get_string() + ";");
 
             if (!term_val.empty() && term_val[0] == '.') {
                 lnav_data.ld_bottom_source.grep_error("");
@@ -462,11 +463,12 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
                 int retcode;
 
-                retcode = sqlite3_prepare_v2(lnav_data.ld_db,
-                                             rc->get_value().c_str(),
-                                             -1,
-                                             stmt.out(),
-                                             nullptr);
+                retcode
+                    = sqlite3_prepare_v2(lnav_data.ld_db,
+                                         rc->get_value().get_string().c_str(),
+                                         -1,
+                                         stmt.out(),
+                                         nullptr);
                 if (retcode != SQLITE_OK) {
                     const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -484,18 +486,18 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             return;
         }
 
-        case LNM_PAGING:
-        case LNM_FILTER:
-        case LNM_FILES:
-        case LNM_EXEC:
-        case LNM_USER:
+        case ln_mode_t::PAGING:
+        case ln_mode_t::FILTER:
+        case ln_mode_t::FILES:
+        case ln_mode_t::EXEC:
+        case ln_mode_t::USER:
             return;
     }
 
     if (!complete) {
         tc->set_top(lnav_data.ld_search_start_line);
     }
-    tc->execute_search(rc->get_value());
+    tc->execute_search(rc->get_value().get_string());
 }
 
 void
@@ -529,18 +531,18 @@ lnav_rl_abort(readline_curses* rc)
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
-        case LNM_SEARCH:
+        case ln_mode_t::SEARCH:
             tc->set_top(lnav_data.ld_search_start_line);
             tc->revert_search();
             break;
-        case LNM_SQL:
+        case ln_mode_t::SQL:
             tc->reload_data();
             break;
         default:
             break;
     }
     lnav_data.ld_rl_view->set_value("");
-    lnav_data.ld_mode = LNM_PAGING;
+    lnav_data.ld_mode = ln_mode_t::PAGING;
 }
 
 static void
@@ -561,14 +563,14 @@ rl_callback_int(readline_curses* rc, bool is_alt)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
 
-    auto new_mode = LNM_PAGING;
+    auto new_mode = ln_mode_t::PAGING;
 
     switch (lnav_data.ld_mode) {
-        case LNM_SEARCH_FILTERS:
-            new_mode = LNM_FILTER;
+        case ln_mode_t::SEARCH_FILTERS:
+            new_mode = ln_mode_t::FILTER;
             break;
-        case LNM_SEARCH_FILES:
-            new_mode = LNM_FILES;
+        case ln_mode_t::SEARCH_FILES:
+            new_mode = ln_mode_t::FILES;
             break;
         default:
             break;
@@ -576,17 +578,17 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
     auto old_mode = std::exchange(lnav_data.ld_mode, new_mode);
     switch (old_mode) {
-        case LNM_PAGING:
-        case LNM_FILTER:
-        case LNM_FILES:
+        case ln_mode_t::PAGING:
+        case ln_mode_t::FILTER:
+        case ln_mode_t::FILES:
             require(0);
             break;
 
-        case LNM_COMMAND: {
+        case ln_mode_t::COMMAND: {
             rc->set_alt_value("");
             ec.ec_source.top().s_content
-                = fmt::format(FMT_STRING(":{}"), rc->get_value());
-            auto exec_res = execute_command(ec, rc->get_value());
+                = fmt::format(FMT_STRING(":{}"), rc->get_value().get_string());
+            auto exec_res = execute_command(ec, rc->get_value().get_string());
             if (exec_res.isOk()) {
                 rc->set_value(exec_res.unwrap());
             } else {
@@ -607,16 +609,16 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
         }
 
-        case LNM_USER:
+        case ln_mode_t::USER:
             rc->set_alt_value("");
-            ec.ec_local_vars.top()["value"] = rc->get_value();
+            ec.ec_local_vars.top()["value"] = rc->get_value().get_string();
             rc->set_value("");
             break;
 
-        case LNM_SEARCH:
-        case LNM_SEARCH_FILTERS:
-        case LNM_SEARCH_FILES:
-        case LNM_CAPTURE:
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::CAPTURE:
             rl_search_internal(rc, old_mode, true);
             if (!rc->get_value().empty()) {
                 auto_mem<FILE> pfile(pclose);
@@ -627,7 +629,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
                 pfile = sysclip::open(sysclip::type_t::FIND);
                 if (pfile.in() != nullptr) {
-                    fprintf(pfile, "%s", rc->get_value().c_str());
+                    fmt::print(
+                        pfile, FMT_STRING("{}"), rc->get_value().get_string());
                 }
                 if (vl != -1_vl) {
                     tc->set_top(vl);
@@ -660,15 +663,17 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         return true;
                     });
                 }
-                rc->set_value("search: " + rc->get_value());
+                rc->set_attr_value(
+                    attr_line_t("search: ").append(rc->get_value()));
                 rc->set_alt_value(HELP_MSG_2(
                     n, N, "to move forward/backward through search results"));
             }
             break;
 
-        case LNM_SQL: {
+        case ln_mode_t::SQL: {
             ec.ec_source.top().s_content = rc->get_value();
-            auto result = execute_sql(ec, rc->get_value(), alt_msg);
+            auto result
+                = execute_sql(ec, rc->get_value().get_string(), alt_msg);
             db_label_source& dls = lnav_data.ld_db_row_source;
             std::string prompt;
 
@@ -696,7 +701,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
         }
 
-        case LNM_EXEC: {
+        case ln_mode_t::EXEC: {
             auto_mem<FILE> tmpout(fclose);
 
             tmpout = std::tmpfile();
@@ -715,7 +720,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     exec_context::output_guard og(
                         ec, "tmp", std::make_pair(tmpout.release(), fclose));
 
-                    auto result = execute_file(ec, path_and_args)
+                    auto result = execute_file(ec, path_and_args.get_string())
                                       .map(ok_prefix)
                                       .orElse(err_to_ok)
                                       .unwrap();
@@ -736,7 +741,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     snprintf(desc,
                              sizeof(desc),
                              "Output of %s (%s)",
-                             path_and_args.c_str(),
+                             path_and_args.get_string().c_str(),
                              timestamp);
                     lnav_data.ld_active_files.fc_file_names[desc]
                         .with_fd(std::move(fd_copy))
@@ -838,4 +843,23 @@ rl_completion_request(readline_curses* rc)
                 tlooper.complete_path(*rp_opt);
             }
         });
+}
+
+void
+rl_focus(readline_curses* rc)
+{
+    auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
+                   .get_overlay_source();
+
+    fos->fos_contexts.emplace("", false, true);
+}
+
+void
+rl_blur(readline_curses* rc)
+{
+    auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
+                   .get_overlay_source();
+
+    fos->fos_contexts.pop();
+    lnav_data.ld_preview_generation += 1;
 }

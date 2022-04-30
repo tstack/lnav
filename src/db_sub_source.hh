@@ -48,20 +48,14 @@ public:
         this->clear();
     }
 
-    bool has_log_time_column() const
-    {
-        return !this->dls_time_column.empty();
-    };
+    bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
-    size_t text_line_count()
-    {
-        return this->dls_rows.size();
-    };
+    size_t text_line_count() { return this->dls_rows.size(); }
 
     size_t text_size_for_line(textview_curses& tc, int line, line_flags_t flags)
     {
         return this->text_line_width(tc);
-    };
+    }
 
     size_t text_line_width(textview_curses& curses)
     {
@@ -71,7 +65,7 @@ public:
             retval += dls_header.hm_column_size + 1;
         }
         return retval;
-    };
+    }
 
     void text_value_for_line(textview_curses& tc,
                              int row,
@@ -86,7 +80,8 @@ public:
 
     void clear();
 
-    long column_name_to_index(const std::string& name) const;
+    nonstd::optional<size_t> column_name_to_index(
+        const std::string& name) const;
 
     nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket);
 
@@ -97,26 +92,22 @@ public:
         }
 
         return this->dls_time_column[row];
-    };
+    }
 
     struct header_meta {
-        explicit header_meta(std::string name)
-            : hm_name(std::move(name)), hm_column_type(SQLITE3_TEXT),
-              hm_graphable(false), hm_log_time(false), hm_column_size(0)
-        {
-        }
+        explicit header_meta(std::string name) : hm_name(std::move(name)) {}
 
         bool operator==(const std::string& name) const
         {
             return this->hm_name == name;
-        };
+        }
 
         std::string hm_name;
-        int hm_column_type;
+        int hm_column_type{SQLITE3_TEXT};
         unsigned int hm_sub_type{0};
-        bool hm_graphable;
-        bool hm_log_time;
-        size_t hm_column_size;
+        bool hm_graphable{false};
+        bool hm_log_time{false};
+        size_t hm_column_size{0};
     };
 
     stacked_bar_chart<std::string> dls_chart;

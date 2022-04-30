@@ -75,53 +75,17 @@
 #include "top_status_source.hh"
 #include "view_helpers.hh"
 
-/** The command modes that are available while viewing a file. */
-typedef enum {
-    LNM_PAGING,
-    LNM_FILTER,
-    LNM_FILES,
-    LNM_COMMAND,
-    LNM_SEARCH,
-    LNM_SEARCH_FILTERS,
-    LNM_SEARCH_FILES,
-    LNM_CAPTURE,
-    LNM_SQL,
-    LNM_EXEC,
-    LNM_USER,
-} ln_mode_t;
-
 enum {
-    LNB_SYSLOG,
-    LNB__MAX,
-
-    LNB_TIMESTAMP,
-    LNB_HELP,
     LNB_HEADLESS,
-    LNB_QUIET,
-    LNB_CHECK_CONFIG,
-    LNB_INSTALL,
-    LNB_UPDATE_FORMATS,
-    LNB_VERBOSE,
+    LNB_MANAGEMENT,
     LNB_SECURE_MODE,
-    LNB_NO_DEFAULT,
 };
 
 /** Flags set on the lnav command-line. */
 typedef enum {
-    LNF_SYSLOG = (1L << LNB_SYSLOG),
-
-    LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
-    LNF_HELP = (1L << LNB_HELP),
     LNF_HEADLESS = (1L << LNB_HEADLESS),
-    LNF_QUIET = (1L << LNB_QUIET),
-    LNF_CHECK_CONFIG = (1L << LNB_CHECK_CONFIG),
-    LNF_INSTALL = (1L << LNB_INSTALL),
-    LNF_UPDATE_FORMATS = (1L << LNB_UPDATE_FORMATS),
-    LNF_VERBOSE = (1L << LNB_VERBOSE),
+    LNF_MANAGEMENT = (1L << LNB_MANAGEMENT),
     LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
-    LNF_NO_DEFAULT = (1L << LNB_NO_DEFAULT),
-
-    LNF__ALL = (LNF_SYSLOG | LNF_HELP),
 } lnav_flags_t;
 
 extern const char* lnav_zoom_strings[];
@@ -138,17 +102,17 @@ typedef enum {
     LNS__MAX
 } lnav_status_t;
 
-typedef std::pair<int, int> ppid_time_pair_t;
-typedef std::pair<ppid_time_pair_t, ghc::filesystem::path> session_pair_t;
+using ppid_time_pair_t = std::pair<int, int>;
+using session_pair_t = std::pair<ppid_time_pair_t, ghc::filesystem::path>;
 
 class input_state_tracker : public log_state_dumper {
 public:
-    input_state_tracker() : ist_index(0)
+    input_state_tracker()
     {
         memset(this->ist_recent_key_presses,
                0,
                sizeof(this->ist_recent_key_presses));
-    };
+    }
 
     void log_state() override
     {
@@ -159,19 +123,19 @@ public:
                           this->ist_recent_key_presses[lpc]);
         }
         log_msg_extra_complete();
-    };
+    }
 
     void push_back(int ch)
     {
         this->ist_recent_key_presses[this->ist_index % COUNT] = ch;
         this->ist_index = (this->ist_index + 1) % COUNT;
-    };
+    }
 
 private:
     static const int COUNT = 10;
 
     int ist_recent_key_presses[COUNT];
-    size_t ist_index;
+    size_t ist_index{0};
 };
 
 struct key_repeat_history {
@@ -209,7 +173,7 @@ struct lnav_data_t {
     time_t ld_session_time;
     time_t ld_session_load_time;
     const char* ld_program_name;
-    const char* ld_debug_log_name;
+    std::string ld_debug_log_name;
 
     std::list<std::string> ld_commands;
     bool ld_cmd_init_done;
@@ -228,7 +192,7 @@ struct lnav_data_t {
     unsigned long ld_flags;
     WINDOW* ld_window;
     ln_mode_t ld_mode;
-    ln_mode_t ld_last_config_mode{LNM_FILTER};
+    ln_mode_t ld_last_config_mode{ln_mode_t::FILTER};
 
     statusview_curses ld_status[LNS__MAX];
     top_status_source ld_top_source;
@@ -301,6 +265,9 @@ struct lnav_data_t {
     int ld_fifo_counter;
 
     struct key_repeat_history ld_key_repeat_history;
+
+    bool ld_initial_build{false};
+    bool ld_show_help_view{false};
 };
 
 struct static_service {
@@ -322,18 +289,7 @@ extern const ssize_t ZOOM_COUNT;
 
 #define HELP_MSG_2(x, y, msg) "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
-void rebuild_hist();
-size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline
-                       = nonstd::nullopt);
-void rebuild_indexes_repeatedly();
-
 bool setup_logline_table(exec_context& ec);
-
-bool rescan_files(bool required = false);
-bool update_active_files(file_collection& new_files);
-
 void wait_for_children();
-
-textview_curses* get_textview_for_mode(ln_mode_t mode);
 
 #endif

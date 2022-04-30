@@ -1,0 +1,2 @@
+Row 0:
+  Column '192.168.1.10' < '192.168.1.12' collate ipaddress: 1

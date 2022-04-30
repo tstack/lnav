@@ -89,6 +89,9 @@
                     },
                     "h6": {
                         "underline": true
+                    },
+                    "list-glyph": {
+                        "color": "$yellow"
                     }
                 },
                 "syntax-styles": {

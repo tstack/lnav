@@ -1,0 +1,4 @@
+log_line  log_comment  log_tags 
+       0 Hello, World! ["#foo"] 
+       1 <NULL>        <NULL>   
+       2 <NULL>        <NULL>   

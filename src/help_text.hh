@@ -100,56 +100,56 @@ struct help_text {
             this->ht_context = help_context_t::HC_COMMAND;
             this->ht_name = &name[1];
         }
-    };
+    }
 
     help_text& command() noexcept
     {
         this->ht_context = help_context_t::HC_COMMAND;
         return *this;
-    };
+    }
 
     help_text& sql_function() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_FUNCTION;
         return *this;
-    };
+    }
 
     help_text& sql_agg_function() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_FUNCTION;
         this->ht_function_type = help_function_type_t::HFT_AGGREGATE;
         return *this;
-    };
+    }
 
     help_text& sql_table_valued_function() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_TABLE_VALUED_FUNCTION;
         return *this;
-    };
+    }
 
     help_text& sql_command() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_COMMAND;
         return *this;
-    };
+    }
 
     help_text& sql_keyword() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_KEYWORD;
         return *this;
-    };
+    }
 
     help_text& sql_infix() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_INFIX;
         return *this;
-    };
+    }
 
     help_text& with_summary(const char* summary) noexcept
     {
         this->ht_summary = summary;
         return *this;
-    };
+    }
 
     help_text& with_flag_name(const char* flag) noexcept
     {
@@ -181,19 +181,19 @@ struct help_text {
     {
         this->ht_nargs = help_nargs_t::HN_OPTIONAL;
         return *this;
-    };
+    }
 
     help_text& zero_or_more() noexcept
     {
         this->ht_nargs = help_nargs_t::HN_ZERO_OR_MORE;
         return *this;
-    };
+    }
 
     help_text& one_or_more() noexcept
     {
         this->ht_nargs = help_nargs_t::HN_ONE_OR_MORE;
         return *this;
-    };
+    }
 
     help_text& with_format(help_parameter_format_t format) noexcept
     {

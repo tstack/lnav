@@ -46,9 +46,10 @@ public:
      * @param width The maximum width of the field in characters.
      * @param role The color role for this field, defaults to VCR_STATUS.
      */
-    status_field(int width = 1,
-                 role_t role = role_t::VCR_STATUS)
-        : sf_width(width), sf_role(role){};
+    status_field(int width = 1, role_t role = role_t::VCR_STATUS)
+        : sf_width(width), sf_role(role)
+    {
+    }
 
     virtual ~status_field() = default;
 
@@ -72,98 +73,53 @@ public:
         va_end(args);
 
         return *this;
-    };
+    }
 
     void set_stitch_value(role_t left, role_t right);
 
-    void set_left_pad(size_t val)
-    {
-        this->sf_left_pad = val;
-    };
-    size_t get_left_pad() const
-    {
-        return this->sf_left_pad;
-    };
+    void set_left_pad(size_t val) { this->sf_left_pad = val; }
+
+    size_t get_left_pad() const { return this->sf_left_pad; }
 
     /** @return The string value for this field. */
-    attr_line_t& get_value()
-    {
-        return this->sf_value;
-    };
+    attr_line_t& get_value() { return this->sf_value; }
 
-    void right_justify(bool yes)
-    {
-        this->sf_right_justify = yes;
-    };
-    bool is_right_justified() const
-    {
-        return this->sf_right_justify;
-    };
+    void right_justify(bool yes) { this->sf_right_justify = yes; }
+    bool is_right_justified() const { return this->sf_right_justify; }
 
     status_field& set_cylon(bool yes)
     {
         this->sf_cylon = yes;
         return *this;
-    };
-    bool is_cylon() const
-    {
-        return this->sf_cylon;
-    };
+    }
+
+    bool is_cylon() const { return this->sf_cylon; }
 
     void do_cylon();
 
     /** @return True if this field's value is an empty string. */
-    bool empty() const
-    {
-        return this->sf_value.get_string().empty();
-    };
+    bool empty() const { return this->sf_value.get_string().empty(); }
 
-    void clear()
-    {
-        this->sf_value.clear();
-    };
+    void clear() { this->sf_value.clear(); }
 
     /** @param role The color role for this field. */
-    void set_role(role_t role)
-    {
-        this->sf_role = role;
-    };
+    void set_role(role_t role) { this->sf_role = role; }
     /** @return The color role for this field. */
-    role_t get_role() const
-    {
-        return this->sf_role;
-    };
+    role_t get_role() const { return this->sf_role; }
 
     /** @param width The maximum display width, in characters. */
-    void set_width(ssize_t width)
-    {
-        this->sf_width = width;
-    };
+    void set_width(ssize_t width) { this->sf_width = width; }
     /** @param width The maximum display width, in characters. */
-    ssize_t get_width() const
-    {
-        return this->sf_width;
-    };
+    ssize_t get_width() const { return this->sf_width; }
 
     /** @param width The maximum display width, in characters. */
-    void set_min_width(int width)
-    {
-        this->sf_min_width = width;
-    };
+    void set_min_width(int width) { this->sf_min_width = width; }
     /** @param width The maximum display width, in characters. */
-    size_t get_min_width() const
-    {
-        return this->sf_min_width;
-    };
+    size_t get_min_width() const { return this->sf_min_width; }
 
-    void set_share(int share)
-    {
-        this->sf_share = share;
-    };
-    int get_share() const
-    {
-        return this->sf_share;
-    };
+    void set_share(int share) { this->sf_share = share; }
+
+    int get_share() const { return this->sf_share; }
 
 protected:
     ssize_t sf_width; /*< The maximum display width, in chars. */
@@ -203,41 +159,17 @@ public:
  */
 class statusview_curses : public view_curses {
 public:
-    void set_data_source(status_data_source* src)
-    {
-        this->sc_source = src;
-    };
-    status_data_source* get_data_source()
-    {
-        return this->sc_source;
-    };
+    void set_data_source(status_data_source* src) { this->sc_source = src; }
+    status_data_source* get_data_source() { return this->sc_source; }
 
-    void set_top(int top)
-    {
-        this->sc_top = top;
-    };
-    int get_top() const
-    {
-        return this->sc_top;
-    };
+    void set_top(int top) { this->sc_top = top; }
+    int get_top() const { return this->sc_top; }
 
-    void set_window(WINDOW* win)
-    {
-        this->sc_window = win;
-    };
-    WINDOW* get_window()
-    {
-        return this->sc_window;
-    };
+    void set_window(WINDOW* win) { this->sc_window = win; }
+    WINDOW* get_window() { return this->sc_window; }
 
-    void set_enabled(bool value)
-    {
-        this->sc_enabled = value;
-    };
-    bool get_enabled() const
-    {
-        return this->sc_enabled;
-    };
+    void set_enabled(bool value) { this->sc_enabled = value; }
+    bool get_enabled() const { return this->sc_enabled; }
 
     void window_change();
 

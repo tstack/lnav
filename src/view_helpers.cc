@@ -33,11 +33,13 @@
 #include "environ_vtab.hh"
 #include "help-txt.h"
 #include "lnav.hh"
+#include "lnav.indexing.hh"
 #include "pretty_printer.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "view_helpers.examples.hh"
+#include "view_helpers.hist.hh"
 #include "vtab_module.hh"
 
 const char* lnav_view_strings[LNV__MAX + 1] = {
@@ -51,6 +53,17 @@ const char* lnav_view_strings[LNV__MAX + 1] = {
     "spectro",
 
     nullptr,
+};
+
+const char* lnav_view_titles[LNV__MAX] = {
+    "LOG",
+    "TEXT",
+    "HELP",
+    "HIST",
+    "DB",
+    "SCHEMA",
+    "PRETTY",
+    "SPECTRO",
 };
 
 nonstd::optional<lnav_view_t>
@@ -324,10 +337,10 @@ layout_views()
     }
 
     bool doc_open = doc_height > 0;
-    bool filters_open
-        = (lnav_data.ld_mode == LNM_FILTER || lnav_data.ld_mode == LNM_FILES
-           || lnav_data.ld_mode == LNM_SEARCH_FILTERS
-           || lnav_data.ld_mode == LNM_SEARCH_FILES)
+    bool filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
+                         || lnav_data.ld_mode == ln_mode_t::FILES
+                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
+                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
         && !preview_status_open && !doc_open;
     int filter_height = filters_open ? 5 : 0;
 
@@ -390,6 +403,89 @@ layout_views()
     lnav_data.ld_match_view.set_y(height - lnav_data.ld_rl_view->get_height()
                                   - match_height);
     lnav_data.ld_rl_view->set_width(width);
+}
+
+void
+update_hits(textview_curses* tc)
+{
+    if (isendwin()) {
+        return;
+    }
+
+    auto top_tc = lnav_data.ld_view_stack.top();
+
+    if (top_tc && tc == *top_tc) {
+        lnav_data.ld_bottom_source.update_hits(tc);
+
+        if (lnav_data.ld_mode == ln_mode_t::SEARCH) {
+            const auto MAX_MATCH_COUNT = 10_vl;
+            const auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
+
+            int preview_count = 0;
+
+            vis_bookmarks& bm = tc->get_bookmarks();
+            const auto& bv = bm[&textview_curses::BM_SEARCH];
+            auto vl = tc->get_top();
+            unsigned long width;
+            vis_line_t height;
+            attr_line_t all_matches;
+            char linebuf[64];
+            int last_line = tc->get_inner_height();
+            int max_line_width;
+
+            snprintf(linebuf, sizeof(linebuf), "%d", last_line);
+            max_line_width = strlen(linebuf);
+
+            tc->get_dimensions(height, width);
+            vl += height;
+            if (vl > PREVIEW_SIZE) {
+                vl -= PREVIEW_SIZE;
+            }
+
+            auto prev_vl = bv.prev(tc->get_top());
+
+            if (prev_vl != -1_vl) {
+                attr_line_t al;
+
+                tc->textview_value_for_row(prev_vl, al);
+                if (preview_count > 0) {
+                    all_matches.append("\n");
+                }
+                snprintf(linebuf,
+                         sizeof(linebuf),
+                         "L%*d: ",
+                         max_line_width,
+                         (int) prev_vl);
+                all_matches.append(linebuf).append(al);
+                preview_count += 1;
+            }
+
+            while ((vl = bv.next(vl)) != -1_vl
+                   && preview_count < MAX_MATCH_COUNT) {
+                attr_line_t al;
+
+                tc->textview_value_for_row(vl, al);
+                if (preview_count > 0) {
+                    all_matches.append("\n");
+                }
+                snprintf(linebuf,
+                         sizeof(linebuf),
+                         "L%*d: ",
+                         max_line_width,
+                         (int) vl);
+                all_matches.append(linebuf).append(al);
+                preview_count += 1;
+            }
+
+            if (preview_count > 0) {
+                lnav_data.ld_preview_status_source.get_description().set_value(
+                    "Matching lines for search");
+                lnav_data.ld_preview_source.replace_with(all_matches)
+                    .set_text_format(text_format_t::TF_UNKNOWN);
+                lnav_data.ld_preview_view.set_needs_update();
+            }
+        }
+    }
 }
 
 static std::unordered_map<std::string, attr_line_t> EXAMPLE_RESULTS;
@@ -660,4 +756,67 @@ search_forward_from(textview_curses* tc)
     }
 
     return retval;
+}
+
+textview_curses*
+get_textview_for_mode(ln_mode_t mode)
+{
+    switch (mode) {
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::FILTER:
+            return &lnav_data.ld_filter_view;
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::FILES:
+            return &lnav_data.ld_files_view;
+        default:
+            return *lnav_data.ld_view_stack.top();
+    }
+}
+
+hist_index_delegate::hist_index_delegate(hist_source2& hs, textview_curses& tc)
+    : hid_source(hs), hid_view(tc)
+{
+}
+
+void
+hist_index_delegate::index_start(logfile_sub_source& lss)
+{
+    this->hid_source.clear();
+}
+
+void
+hist_index_delegate::index_line(logfile_sub_source& lss,
+                                logfile* lf,
+                                logfile::iterator ll)
+{
+    if (ll->is_continued() || ll->get_time() == 0) {
+        return;
+    }
+
+    hist_source2::hist_type_t ht;
+
+    switch (ll->get_msg_level()) {
+        case LEVEL_FATAL:
+        case LEVEL_CRITICAL:
+        case LEVEL_ERROR:
+            ht = hist_source2::HT_ERROR;
+            break;
+        case LEVEL_WARNING:
+            ht = hist_source2::HT_WARNING;
+            break;
+        default:
+            ht = hist_source2::HT_NORMAL;
+            break;
+    }
+
+    this->hid_source.add_value(ll->get_time(), ht);
+    if (ll->is_marked() || ll->is_expr_marked()) {
+        this->hid_source.add_value(ll->get_time(), hist_source2::HT_MARK);
+    }
+}
+
+void
+hist_index_delegate::index_complete(logfile_sub_source& lss)
+{
+    this->hid_view.reload_data();
 }

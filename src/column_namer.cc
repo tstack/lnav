@@ -33,6 +33,7 @@
 
 #include "column_namer.hh"
 
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
@@ -47,17 +48,11 @@ column_namer::existing_name(const std::string& in_name) const
         return true;
     }
 
-    if (std::find(this->cn_builtin_names.begin(),
-                  this->cn_builtin_names.end(),
-                  in_name)
-        != this->cn_builtin_names.end())
-    {
+    if (this->cn_builtin_names | lnav::itertools::find(in_name)) {
         return true;
     }
 
-    if (std::find(this->cn_names.begin(), this->cn_names.end(), in_name)
-        != this->cn_names.end())
-    {
+    if (this->cn_names | lnav::itertools::find(in_name)) {
         return true;
     }
 

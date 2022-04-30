@@ -35,6 +35,7 @@
 
 #include "auto_fd.hh"
 #include "ghc/filesystem.hpp"
+#include "intern_string.hh"
 #include "result.h"
 
 namespace lnav {
@@ -68,6 +69,9 @@ Result<std::pair<ghc::filesystem::path, auto_fd>, std::string> open_temp_file(
     const ghc::filesystem::path& pattern);
 
 Result<std::string, std::string> read_file(const ghc::filesystem::path& path);
+
+Result<void, std::string> write_file(const ghc::filesystem::path& path,
+                                     const string_fragment& content);
 
 std::string build_path(const std::vector<ghc::filesystem::path>& paths);
 

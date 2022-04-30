@@ -65,7 +65,7 @@ public:
     {
         return this->jo_ptr.at_index(
             this->jo_depth, this->jo_array_index, primitive);
-    };
+    }
 
     int jo_depth{0};
     int jo_array_index{-1};

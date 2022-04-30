@@ -42,57 +42,17 @@ class field_overlay_source : public list_overlay_source {
 public:
     explicit field_overlay_source(logfile_sub_source& lss,
                                   textfile_sub_source& tss)
-        : fos_lss(lss), fos_tss(tss), fos_log_helper(lss){
-
-                                      };
-
-    void add_key_line_attrs(int key_size, bool last_line = false)
+        : fos_lss(lss), fos_tss(tss), fos_log_helper(lss)
     {
-        string_attrs_t& sa = this->fos_lines.back().get_attrs();
-        struct line_range lr(1, 2);
-        int64_t graphic = (int64_t) (last_line ? ACS_LLCORNER : ACS_LTEE);
-        sa.emplace_back(lr, VC_GRAPHIC.value(graphic));
+    }
 
-        lr.lr_start = 3 + key_size + 3;
-        lr.lr_end = -1;
-        sa.emplace_back(lr, VC_STYLE.value(A_BOLD));
-    };
+    void add_key_line_attrs(int key_size, bool last_line = false);
 
     bool list_value_for_overlay(const listview_curses& lv,
                                 int y,
                                 int bottom,
                                 vis_line_t row,
-                                attr_line_t& value_out) override
-    {
-        if (y == 0) {
-            this->build_field_lines(lv);
-            this->build_summary_lines(lv);
-            return false;
-        }
-
-        if (1 <= y && y <= (int) this->fos_lines.size()) {
-            value_out = this->fos_lines[y - 1];
-            return true;
-        }
-
-        if (!this->fos_summary_lines.empty() && y == (bottom - 1)) {
-            value_out = this->fos_summary_lines[0];
-            return true;
-        }
-
-        if (!this->fos_meta_lines.empty()) {
-            value_out = this->fos_meta_lines.front();
-            this->fos_meta_lines.erase(this->fos_meta_lines.begin());
-
-            return true;
-        }
-
-        if (row < lv.get_inner_height()) {
-            this->build_meta_line(lv, this->fos_meta_lines, row);
-        }
-
-        return false;
-    };
+                                attr_line_t& value_out) override;
 
     void build_field_lines(const listview_curses& lv);
     void build_summary_lines(const listview_curses& lv);

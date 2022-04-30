@@ -1,0 +1,10 @@
+                 SELECT * FROM (SELECT foo, bar FROM baz)
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+     sql_keyword                ------
+       sql_ident                       ---
+       sql_comma                          -
+       sql_ident                            ---
+     sql_keyword                                ----
+       sql_ident                                     ---

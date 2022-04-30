@@ -190,7 +190,7 @@ attr_line_t::subline(size_t start, size_t len) const
             lr.intersection(sa.sa_range).shift(lr.lr_start, -lr.lr_start),
             std::make_pair(sa.sa_type, sa.sa_value));
 
-        line_range& last_lr = retval.al_attrs.back().sa_range;
+        const auto& last_lr = retval.al_attrs.back().sa_range;
 
         ensure(last_lr.lr_end <= (int) retval.al_string.length());
     }
@@ -296,6 +296,18 @@ attr_line_t::erase(size_t pos, size_t len)
     this->al_string.erase(pos, len);
 
     shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+
+    return *this;
+}
+
+attr_line_t&
+attr_line_t::pad_to(size_t size)
+{
+    const auto curr_len = this->length();
+
+    if (curr_len < size) {
+        this->append((size - curr_len), ' ');
+    }
 
     return *this;
 }

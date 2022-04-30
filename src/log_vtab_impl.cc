@@ -168,6 +168,41 @@ log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
     return std::make_pair(type, subtype);
 }
 
+void
+log_vtab_impl::get_foreign_keys(std::vector<std::string>& keys_inout) const
+{
+    keys_inout.emplace_back("log_line");
+    keys_inout.emplace_back("min(log_line)");
+    keys_inout.emplace_back("log_mark");
+    keys_inout.emplace_back("log_time_msecs");
+}
+
+void
+log_vtab_impl::extract(std::shared_ptr<logfile> lf,
+                       uint64_t line_number,
+                       shared_buffer_ref& line,
+                       std::vector<logline_value>& values)
+{
+    auto format = lf->get_format();
+
+    this->vi_attrs.clear();
+    format->annotate(line_number, line, this->vi_attrs, values, false);
+}
+
+bool
+log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
+{
+    content_line_t cl(lss.at(lc.lc_curr_line));
+    std::shared_ptr<logfile> lf = lss.find(cl);
+    auto lf_iter = lf->begin() + cl;
+
+    if (!lf_iter->is_message()) {
+        return false;
+    }
+
+    return true;
+}
+
 struct vtab {
     sqlite3_vtab base;
     sqlite3* db;
@@ -984,14 +1019,12 @@ vt_update(sqlite3_vtab* tab,
 
         if (log_tags) {
             std::vector<lnav::console::user_message> errors;
-            yajlpp_parse_context ypc(
-                fmt::format(FMT_STRING("{}.log_tags"), vt->vi->get_name()),
-                &tags_handler);
+            yajlpp_parse_context ypc(vt->vi->get_tags_name(), &tags_handler);
             auto_mem<yajl_handle_t> handle(yajl_free);
 
             handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
             ypc.ypc_userdata = &errors;
-            ypc.ypc_line_number = log_vtab_data.lvd_line_number;
+            ypc.ypc_line_number = log_vtab_data.lvd_location.sl_line_number;
             ypc.with_handle(handle)
                 .with_error_reporter([](const yajlpp_parse_context& ypc,
                                         auto msg) {
@@ -1002,19 +1035,16 @@ vt_update(sqlite3_vtab* tab,
                 .with_obj(tmp_bm);
             ypc.parse_doc(string_fragment{log_tags});
             if (!errors.empty()) {
-                auto top_error
-                    = lnav::console::user_message::error(
-                          attr_line_t("invalid value for ")
-                              .append_quoted("log_tags"_symbol)
-                              .append(" column of table ")
-                              .append_quoted(lnav::roles::symbol(
-                                  vt->vi->get_name().to_string())))
-                          .with_reason(errors[0].to_attr_line({}))
-                          .with_snippet(
-                              lnav::console::snippet::from(
-                                  log_vtab_data.lvd_source,
-                                  log_vtab_data.lvd_content)
-                                  .with_line(log_vtab_data.lvd_line_number));
+                auto top_error = lnav::console::user_message::error(
+                                     attr_line_t("invalid value for ")
+                                         .append_quoted("log_tags"_symbol)
+                                         .append(" column of table ")
+                                         .append_quoted(lnav::roles::symbol(
+                                             vt->vi->get_name().to_string())))
+                                     .with_reason(errors[0].to_attr_line({}))
+                                     .with_snippet(lnav::console::snippet::from(
+                                         log_vtab_data.lvd_location,
+                                         log_vtab_data.lvd_content));
                 auto json_error = lnav::to_json(top_error);
                 tab->zErrMsg
                     = sqlite3_mprintf("lnav-error:%s", json_error.c_str());
@@ -1184,4 +1214,34 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
     }
 
     return retval;
+}
+
+bool
+log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
+{
+    lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+    lc.lc_sub_index = 0;
+
+    if (lc.is_eof()) {
+        return true;
+    }
+
+    auto cl = content_line_t(lss.at(lc.lc_curr_line));
+    auto lf = lss.find(cl);
+    auto lf_iter = lf->begin() + cl;
+    uint8_t mod_id = lf_iter->get_module_id();
+
+    if (!lf_iter->is_message()) {
+        return false;
+    }
+
+    auto format = lf->get_format();
+    if (format->get_name() == this->lfvi_format.get_name()) {
+        return true;
+    } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
+        // XXX
+        return true;
+    }
+
+    return false;
 }

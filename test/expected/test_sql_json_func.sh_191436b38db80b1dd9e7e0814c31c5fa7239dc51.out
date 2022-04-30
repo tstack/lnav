@@ -1,0 +1,3 @@
+Row 0:
+  Column         id: 1
+  Column      stack: {"key1":10,"key2":20,"key3":30}

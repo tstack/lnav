@@ -1,0 +1,3 @@
+[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/default/styles/text/color[0m”
+ [31mreason[0m: Could not parse color: #f
+[36m --> [0m[1mcommand-option[0m:1

@@ -34,6 +34,10 @@
                 "level": "info"
             },
             {
+                "line": "1428634687123| debug hello\ngoodbye",
+                "level": "debug"
+            },
+            {
                 "line": "1428634687123; foo bar"
             }
         ]

@@ -314,6 +314,11 @@
                     "items": {
                         "type": "object",
                         "properties": {
+                            "description": {
+                                "title": "/<format_name>/sample/description",
+                                "description": "A description of this sample.",
+                                "type": "string"
+                            },
                             "line": {
                                 "title": "/<format_name>/sample/line",
                                 "description": "A sample log line that should match a pattern in this format.",

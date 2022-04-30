@@ -1,0 +1,7 @@
+[31m✘ error[0m: invalid value for “[1mlog_tags[0m” column of table “[1maccess_log[0m”
+ [31mreason[0m: unexpected JSON value
+[31m |      [0m [36m --> [0m[1maccess_log.log_tags[0m:1
+[31m |      [0m [36m | [0m1
+[31m |      [0m [36m =[0m [36mhelp[0m: expecting an array of [4mtag[0m values
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m;UPDATE access_log SET log_tags = 1 WHERE log_line = 1

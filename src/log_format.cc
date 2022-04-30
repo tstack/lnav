@@ -46,6 +46,8 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace lnav::roles::literals;
+
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 string_attr_type<void> logline::L_PREFIX("prefix");
@@ -1165,9 +1167,7 @@ external_log_format::rewrite(exec_context& ec,
         }
 
         auto _sg = ec.enter_source(
-            this->elf_name.to_string() + ":" + vd_iter->first.to_string(),
-            1,
-            vd.vd_rewriter);
+            vd_iter->second->vd_rewrite_src_name, 1, vd.vd_rewriter);
         auto field_value
             = execute_any(ec, vd.vd_rewriter).orElse(err_to_ok).unwrap();
         struct line_range adj_origin
@@ -1391,12 +1391,12 @@ external_log_format::get_subline(const logline& ll,
                 size_t begin_size = this->jlf_cached_line.size();
 
                 switch (jfe.jfe_type) {
-                    case JLF_CONSTANT:
+                    case json_log_field::CONSTANT:
                         this->json_append_to_cache(
                             jfe.jfe_default_value.c_str(),
                             jfe.jfe_default_value.size());
                         break;
-                    case JLF_VARIABLE:
+                    case json_log_field::VARIABLE:
                         lv_iter = find_if(
                             this->jlf_line_values.begin(),
                             this->jlf_line_values.end(),
@@ -1792,8 +1792,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_snippets(this->get_snippets()));
         }
         if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-            this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(
-                this->elf_name.to_string());
+            this->jlf_parse_context
+                = std::make_shared<yajlpp_parse_context>(this->elf_name);
             this->jlf_yajl_handle.reset(
                 yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
                            nullptr,
@@ -1820,6 +1820,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     for (auto& vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
 
+        vd->vd_meta.lvm_format = this;
         if (!vd->vd_internal && vd->vd_meta.lvm_column == -1) {
             vd->vd_meta.lvm_column = this->elf_column_count++;
         }
@@ -1841,6 +1842,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 #endif
             }
         }
+
+        vd->set_rewrite_src_name();
     }
 
     if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
@@ -1857,8 +1860,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     for (auto& elf_sample : this->elf_samples) {
+        auto sample_lines
+            = string_fragment(elf_sample.s_line.pp_value).split_lines();
         pcre_context_static<128> pc;
-        pcre_input pi(elf_sample.s_line.pp_value);
+        pcre_input pi(sample_lines[0]);
         bool found = false;
 
         for (auto pat_iter = this->elf_pattern_order.begin();
@@ -1930,8 +1935,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr) {
                 attr_line_t notes;
 
-                notes.append("the following formats were tried:");
                 if (custom_formats == nullptr) {
+                    notes.append("the following built-in formats were tried:");
                     for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != nullptr;
                          lpc++) {
                         off_t off = 0;
@@ -1941,13 +1946,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             .append(ts, (size_t) ts_len)
                             .append("\n")
                             .append(2 + off, ' ')
-                            .append(lnav::roles::comment("^ "))
+                            .append("^ "_comment)
                             .append_quoted(
                                 lnav::roles::symbol(PTIMEC_FORMATS[lpc].pf_fmt))
-                            .append(
-                                lnav::roles::comment(" matched up to here"));
+                            .append(" matched up to here"_comment);
                     }
                 } else {
+                    notes.append("the following custom formats were tried:");
                     for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++) {
                         off_t off = 0;
 
@@ -1956,22 +1961,26 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             .append(ts, (size_t) ts_len)
                             .append("\n")
                             .append(2 + off, ' ')
-                            .append(lnav::roles::comment("^ "))
+                            .append("^ "_comment)
                             .append_quoted(
                                 lnav::roles::symbol(custom_formats[lpc]))
-                            .append(
-                                lnav::roles::comment(" matched up to here"));
+                            .append(" matched up to here"_comment);
                     }
                 }
 
                 errors.emplace_back(
                     lnav::console::user_message::error(
-                        attr_line_t("invalid sample log message ")
-                            .append_quoted(elf_sample.s_line.pp_value))
+                        attr_line_t("invalid sample log message: ")
+                            .append(lnav::to_json(elf_sample.s_line.pp_value)))
                         .with_reason(attr_line_t("unrecognized timestamp -- ")
                                          .append(ts, (size_t) ts_len))
                         .with_snippet(elf_sample.s_line.to_snippet())
-                        .with_note(notes));
+                        .with_note(notes)
+                        .with_help(attr_line_t("If the timestamp format is not "
+                                               "supported by default, you can "
+                                               "add a custom format with the ")
+                                       .append_quoted("timestamp-format"_symbol)
+                                       .append(" property")));
             }
 
             log_level_t level = this->convert_level(pi, level_cap);
@@ -1980,8 +1989,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 && elf_sample.s_level != level) {
                 errors.emplace_back(
                     lnav::console::user_message::error(
-                        attr_line_t("invalid sample log message ")
-                            .append_quoted(elf_sample.s_line.pp_value))
+                        attr_line_t("invalid sample log message: ")
+                            .append(lnav::to_json(elf_sample.s_line.pp_value)))
                         .with_reason(attr_line_t()
                                          .append_quoted(lnav::roles::symbol(
                                              level_names[level]))
@@ -1991,14 +2000,35 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                              level_names[elf_sample.s_level])))
                         .with_snippet(elf_sample.s_line.to_snippet()));
             }
+
+            {
+                pcre_context_static<128> pc_full;
+                pcre_input pi_full(elf_sample.s_line.pp_value);
+
+                if (!pat.p_pcre->match(pc_full, pi_full)
+                    || pc_full.all()->length()
+                        != elf_sample.s_line.pp_value.length())
+                {
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid pattern: ")
+                                .append_quoted(lnav::roles::symbol(pat.p_name)))
+                            .with_reason("pattern does not match entire "
+                                         "multiline message")
+                            .with_snippet(elf_sample.s_line.to_snippet())
+                            .with_help(attr_line_t("using ")
+                                           .append_quoted(".*")
+                                           .append(" when capturing the body "
+                                                   "will match new-lines")));
+                }
+            }
         }
 
         if (!found && !this->elf_pattern_order.empty()) {
-            attr_line_t notes(
-                "the following shows how each pattern matched this sample:\n");
+            std::vector<std::pair<ssize_t, std::string>> partial_indexes;
+            attr_line_t notes;
             size_t max_name_width = 0;
 
-            notes.append("  ").append_quoted(elf_sample.s_line.pp_value);
             for (const auto& pat_iter : this->elf_pattern_order) {
                 pattern& pat = *pat_iter;
 
@@ -2006,21 +2036,37 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     continue;
                 }
 
-                size_t partial_len = pat.p_pcre->match_partial(pi);
-
-                notes.append("\n   ")
-                    .append(partial_len, ' ')
-                    .append(lnav::roles::comment("^ "))
-                    .append(lnav::roles::symbol(pat.p_name))
-                    .append(lnav::roles::comment(" matched up to here"));
-
+                partial_indexes.emplace_back(pat.p_pcre->match_partial(pi),
+                                             pat.p_name);
                 max_name_width = std::max(max_name_width, pat.p_name.size());
             }
+            for (const auto& line_frag : sample_lines) {
+                auto src_line = line_frag.to_string();
+                if (!endswith(src_line, "\n")) {
+                    src_line.append("\n");
+                }
+                notes.append("   ").append(src_line);
+                for (auto& part_pair : partial_indexes) {
+                    if (part_pair.first >= 0
+                        && part_pair.first < line_frag.length()) {
+                        notes.append("   ")
+                            .append(part_pair.first, ' ')
+                            .append("^ "_comment)
+                            .append(lnav::roles::symbol(part_pair.second))
+                            .append(" matched up to here"_comment)
+                            .append("\n");
+                    }
+                    part_pair.first -= line_frag.length();
+                }
+            }
+            notes.add_header(
+                "the following shows how each pattern matched this sample:\n");
 
-            attr_line_t help;
+            attr_line_t regex_note;
             for (const auto& pat_iter : this->elf_pattern_order) {
                 if (!pat_iter->p_pcre) {
-                    help.append(
+                    regex_note
+                        .append(
                             lnav::roles::symbol(fmt::format(FMT_STRING("{:{}}"),
                                                             pat_iter->p_name,
                                                             max_name_width)))
@@ -2028,22 +2074,22 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     continue;
                 }
 
-                help
+                regex_note
                     .append(lnav::roles::symbol(fmt::format(
                         FMT_STRING("{:{}}"), pat_iter->p_name, max_name_width)))
                     .append(" = ")
-                    .append(pat_iter->p_pcre->get_pattern())
+                    .append_quoted(pat_iter->p_pcre->get_pattern())
                     .append("\n");
             }
 
             errors.emplace_back(
                 lnav::console::user_message::error(
-                    attr_line_t("invalid sample log message ")
-                        .append_quoted(elf_sample.s_line.pp_value))
+                    attr_line_t("invalid sample log message: ")
+                        .append(lnav::to_json(elf_sample.s_line.pp_value)))
                     .with_reason("sample does not match any patterns")
                     .with_snippet(elf_sample.s_line.to_snippet())
-                    .with_note(notes)
-                    .with_help(help));
+                    .with_note(notes.rtrim())
+                    .with_note(regex_note));
         }
     }
 
@@ -2097,7 +2143,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         switch (jfe.jfe_type) {
-            case JLF_VARIABLE: {
+            case json_log_field::VARIABLE: {
                 auto vd_iter
                     = this->elf_value_defs.find(jfe.jfe_value.pp_value);
                 if (jfe.jfe_value.pp_value == ts) {
@@ -2124,7 +2170,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 }
                 break;
             }
-            case JLF_CONSTANT:
+            case json_log_field::CONSTANT:
                 this->jlf_line_format_init_count
                     += std::count(jfe.jfe_default_value.begin(),
                                   jfe.jfe_default_value.end(),
@@ -2404,8 +2450,8 @@ external_log_format::specialized(int fmt_lock)
     }
 
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-        this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(
-            this->elf_name.to_string());
+        this->jlf_parse_context
+            = std::make_shared<yajlpp_parse_context>(this->elf_name);
         this->jlf_yajl_handle.reset(
             yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
                        nullptr,
@@ -2444,6 +2490,103 @@ external_log_format::match_mime_type(const file_format_t ff) const
     return this->elf_mime_types.count(ff) == 1;
 }
 
+long
+external_log_format::value_line_count(const intern_string_t ist,
+                                      bool top_level,
+                                      const unsigned char* str,
+                                      ssize_t len) const
+{
+    const auto iter = this->elf_value_defs.find(ist);
+    long line_count
+        = (str != nullptr) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
+
+    if (iter == this->elf_value_defs.end()) {
+        return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
+    }
+
+    if (iter->second->vd_meta.lvm_hidden) {
+        return 0;
+    }
+
+    if (std::find_if(this->jlf_line_format.begin(),
+                     this->jlf_line_format.end(),
+                     json_field_cmp(json_log_field::VARIABLE, ist))
+        != this->jlf_line_format.end())
+    {
+        return line_count - 1;
+    }
+
+    return line_count;
+}
+
+log_level_t
+external_log_format::convert_level(
+    const pcre_input& pi, const pcre_context::capture_t* level_cap) const
+{
+    log_level_t retval = LEVEL_INFO;
+
+    if (level_cap != nullptr && level_cap->is_valid()) {
+        pcre_context_static<128> pc_level;
+        pcre_input pi_level(
+            pi.get_substr_start(level_cap), 0, level_cap->length());
+
+        if (this->elf_level_patterns.empty()) {
+            retval = string2level(pi_level.get_string(), level_cap->length());
+        } else {
+            for (const auto& elf_level_pattern : this->elf_level_patterns) {
+                if (elf_level_pattern.second.lp_pcre->match(pc_level, pi_level))
+                {
+                    retval = elf_level_pattern.first;
+                    break;
+                }
+            }
+        }
+    }
+
+    return retval;
+}
+
+logline_value_meta
+external_log_format::get_value_meta(intern_string_t field_name,
+                                    value_kind_t kind)
+{
+    auto iter = this->elf_value_defs.find(field_name);
+
+    if (iter == this->elf_value_defs.end()) {
+        auto retval = logline_value_meta(field_name, kind, -1, this);
+
+        retval.lvm_hidden = this->jlf_hide_extra;
+        return retval;
+    }
+
+    auto lvm = iter->second->vd_meta;
+
+    lvm.lvm_kind = kind;
+    return lvm;
+}
+
+void
+external_log_format::json_append(
+    const external_log_format::json_format_element& jfe,
+    const char* value,
+    ssize_t len)
+{
+    if (len == -1) {
+        len = strlen(value);
+    }
+    if (jfe.jfe_align == json_format_element::align_t::RIGHT) {
+        if (len < jfe.jfe_min_width) {
+            this->json_append_to_cache(jfe.jfe_min_width - len);
+        }
+    }
+    this->json_append_to_cache(value, len);
+    if (jfe.jfe_align == json_format_element::align_t::LEFT) {
+        if (len < jfe.jfe_min_width) {
+            this->json_append_to_cache(jfe.jfe_min_width - len);
+        }
+    }
+}
+
 int
 log_format::pattern_index_for_line(uint64_t line_number) const
 {
@@ -2468,10 +2611,57 @@ log_format::get_pattern_name(uint64_t line_number) const
     return fmt::format(FMT_STRING("builtin ({})"), pat_index);
 }
 
+std::shared_ptr<log_format>
+log_format::find_root_format(const char* name)
+{
+    auto& fmts = get_root_formats();
+    for (auto& lf : fmts) {
+        if (lf->get_name() == name) {
+            return lf;
+        }
+    }
+    return nullptr;
+}
+
 log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,
                                                  uint32_t pfl_pat_index)
     : pfl_line(pfl_line), pfl_pat_index(pfl_pat_index)
 {
+}
+
+void
+logline_value_stats::merge(const logline_value_stats& other)
+{
+    if (other.lvs_count == 0) {
+        return;
+    }
+
+    require(other.lvs_min_value <= other.lvs_max_value);
+
+    if (other.lvs_min_value < this->lvs_min_value) {
+        this->lvs_min_value = other.lvs_min_value;
+    }
+    if (other.lvs_max_value > this->lvs_max_value) {
+        this->lvs_max_value = other.lvs_max_value;
+    }
+    this->lvs_count += other.lvs_count;
+    this->lvs_total += other.lvs_total;
+
+    ensure(this->lvs_count >= 0);
+    ensure(this->lvs_min_value <= this->lvs_max_value);
+}
+
+void
+logline_value_stats::add_value(double value)
+{
+    if (value < this->lvs_min_value) {
+        this->lvs_min_value = value;
+    }
+    if (value > this->lvs_max_value) {
+        this->lvs_max_value = value;
+    }
+    this->lvs_count += 1;
+    this->lvs_total += value;
 }
 
 /* XXX */

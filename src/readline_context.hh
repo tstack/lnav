@@ -69,10 +69,13 @@ public:
                    help_text help = {},
                    prompt_func_t prompt = nullptr) noexcept
             : c_name(name), c_func(func), c_help(std::move(help)),
-              c_prompt(prompt){};
+              c_prompt(prompt)
+        {
+        }
 
-        _command_t(command_func_t func) noexcept
-            : c_name("anon"), c_func(func){};
+        _command_t(command_func_t func) noexcept : c_name("anon"), c_func(func)
+        {
+        }
     } command_t;
     typedef std::map<std::string, command_t*> command_map_t;
 
@@ -80,10 +83,7 @@ public:
                      command_map_t* commands = nullptr,
                      bool case_sensitive = true);
 
-    const std::string& get_name() const
-    {
-        return this->rc_name;
-    };
+    const std::string& get_name() const { return this->rc_name; }
 
     void load();
 
@@ -92,29 +92,26 @@ public:
     void add_possibility(const std::string& type, const std::string& value)
     {
         this->rc_possibilities[type].insert(value);
-    };
+    }
 
     void rem_possibility(const std::string& type, const std::string& value)
     {
         this->rc_possibilities[type].erase(value);
-    };
+    }
 
     void clear_possibilities(const std::string& type)
     {
         this->rc_possibilities[type].clear();
-    };
+    }
 
-    bool is_case_sensitive() const
-    {
-        return this->rc_case_sensitive;
-    };
+    bool is_case_sensitive() const { return this->rc_case_sensitive; }
 
     readline_context& set_append_character(int ch)
     {
         this->rc_append_character = ch;
 
         return *this;
-    };
+    }
 
     int get_append_character() const
     {
@@ -125,26 +122,26 @@ public:
     {
         this->rc_highlighter = hl;
         return *this;
-    };
+    }
 
     readline_context& set_quote_chars(const char* qc)
     {
         this->rc_quote_chars = qc;
 
         return *this;
-    };
+    }
 
     readline_context& with_readline_var(char** var, const char* val)
     {
         this->rc_vars.emplace_back(var, val);
 
         return *this;
-    };
+    }
 
     readline_highlighter_t get_highlighter() const
     {
         return this->rc_highlighter;
-    };
+    }
 
     static int command_complete(int, int);
 

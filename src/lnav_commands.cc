@@ -55,6 +55,7 @@
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
+#include "lnav.indexing.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -613,11 +614,12 @@ com_goto_mark(exec_context& ec,
 
         if (args.size() > 1) {
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
-                auto bt = bookmark_type_t::find_type(args[lpc]);
-                if (bt == nullptr) {
-                    return ec.make_error("unknown bookmark type");
+                auto bt_opt = bookmark_type_t::find_type(args[lpc]);
+                if (!bt_opt) {
+                    return ec.make_error("unknown bookmark type: {}",
+                                         args[lpc]);
                 }
-                mark_types.insert(bt);
+                mark_types.insert(bt_opt.value());
             }
         } else {
             mark_types = DEFAULT_TYPES;
@@ -822,34 +824,6 @@ json_write_row(yajl_gen handle, int row)
             default:
                 obj_map.gen(dls.dls_rows[row][col]);
                 break;
-        }
-    }
-}
-
-static void
-write_line_to(FILE* outfile, const attr_line_t& al)
-{
-    const auto& al_attrs = al.get_attrs();
-    auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
-    const auto line_meta_opt = get_string_attr(al_attrs, logline::L_META);
-
-    if (lr.lr_start > 1) {
-        // If the line is prefixed with some extra information, include that
-        // in the output.  For example, the log file name or time offset.
-        lr = line_range{0, -1};
-    }
-
-    fwrite(lr.substr(al.get_string()), 1, lr.sublen(al.get_string()), outfile);
-    fwrite("\n", 1, 1, outfile);
-
-    if (line_meta_opt) {
-        auto bm = line_meta_opt.value().get();
-
-        if (!bm->bm_comment.empty()) {
-            fprintf(outfile, "  // %s\n", bm->bm_comment.c_str());
-        }
-        if (!bm->bm_tags.empty()) {
-            fmt::print(outfile, "  -- {}\n", fmt::join(bm->bm_tags, " "));
         }
     }
 }
@@ -1129,13 +1103,33 @@ com_save_to(exec_context& ec,
 
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
+        auto y = 0_vl;
         std::vector<attr_line_t> rows(bottom - top + 1);
+        attr_line_t ov_al;
 
+        auto* los = tc->get_overlay_source();
         tc->listview_value_for_rows(*tc, top, rows);
-        for (auto& al : rows) {
+        for (const auto& al : rows) {
+            while (los != nullptr
+                   && los->list_value_for_overlay(
+                       *tc, y, tc->get_inner_height(), top, ov_al))
+            {
+                write_line_to(outfile, ov_al);
+                ++y;
+            }
             write_line_to(outfile, al);
 
             line_count += 1;
+            ++top;
+            ++y;
+        }
+        while (los != nullptr
+               && los->list_value_for_overlay(
+                   *tc, y, tc->get_inner_height(), top, ov_al)
+               && !ov_al.empty())
+        {
+            write_line_to(outfile, ov_al);
+            ++y;
         }
 
         tc->set_word_wrap(wrapped);
@@ -1225,9 +1219,10 @@ com_save_to(exec_context& ec,
 
         tc->set_word_wrap(wrapped);
     } else {
+        auto* los = tc->get_overlay_source();
         std::vector<attr_line_t> rows(1);
+        attr_line_t ov_al;
         size_t count = 0;
-        std::string line;
 
         for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
              iter++, count++)
@@ -1237,6 +1232,15 @@ com_save_to(exec_context& ec,
             }
             tc->listview_value_for_rows(*tc, *iter, rows);
             write_line_to(outfile, rows[0]);
+
+            auto y = 1_vl;
+            while (los != nullptr
+                   && los->list_value_for_overlay(
+                       *tc, y, tc->get_inner_height(), *iter, ov_al))
+            {
+                write_line_to(outfile, ov_al);
+                ++y;
+            }
 
             line_count += 1;
         }
@@ -1551,7 +1555,7 @@ com_highlight(exec_context& ec,
 
                 if (lnav_data.ld_rl_view != nullptr) {
                     lnav_data.ld_rl_view->add_possibility(
-                        LNM_COMMAND, "highlight", args[1]);
+                        ln_mode_t::COMMAND, "highlight", args[1]);
                 }
 
                 retval = "info: highlight pattern now active";
@@ -1591,7 +1595,7 @@ com_clear_highlight(exec_context& ec,
 
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "highlight", args[1]);
+                    ln_mode_t::COMMAND, "highlight", args[1]);
             }
         }
     } else {
@@ -1991,7 +1995,7 @@ com_create_logline_table(exec_context& ec,
                     custom_logline_tables.insert(args[1]);
                     if (lnav_data.ld_rl_view != NULL) {
                         lnav_data.ld_rl_view->add_possibility(
-                            LNM_COMMAND, "custom-table", args[1]);
+                            ln_mode_t::COMMAND, "custom-table", args[1]);
                     }
                     retval = "info: created new log table -- " + args[1];
                 } else {
@@ -2032,7 +2036,7 @@ com_delete_logline_table(exec_context& ec,
         if (rc.empty()) {
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "custom-table", args[1]);
+                    ln_mode_t::COMMAND, "custom-table", args[1]);
             }
             retval = "info: deleted logline table";
         } else {
@@ -2103,7 +2107,7 @@ com_create_search_table(exec_context& ec,
             custom_search_tables.insert(args[1]);
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "search-table", args[1]);
+                    ln_mode_t::COMMAND, "search-table", args[1]);
             }
             retval = "info: created new search table -- " + args[1];
         } else {
@@ -2140,7 +2144,7 @@ com_delete_search_table(exec_context& ec,
         if (rc.empty()) {
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "search-table", args[1]);
+                    ln_mode_t::COMMAND, "search-table", args[1]);
             }
             retval = "info: deleted search table";
         } else {
@@ -3156,8 +3160,7 @@ com_summarize(exec_context& ec,
         const auto& top_source = ec.ec_source.top();
         sql_progress_guard progress_guard(sql_progress,
                                           sql_progress_finished,
-                                          top_source.s_source,
-                                          top_source.s_line,
+                                          top_source.s_location,
                                           top_source.s_content);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int retcode;
@@ -3849,6 +3852,14 @@ com_poll_now(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_test_comment(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    return Ok(std::string());
+}
+
+static Result<std::string, lnav::console::user_message>
 com_redraw(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
@@ -4014,7 +4025,9 @@ com_config(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("config-option");
     } else if (args.size() > 1) {
-        yajlpp_parse_context ypc("input", &lnav_config_handlers);
+        static const auto INPUT_SRC = intern_string::lookup("input");
+
+        yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
         std::vector<lnav::console::user_message> errors;
         std::string option = args[1];
 
@@ -4129,10 +4142,7 @@ com_config(exec_context& ec,
                 if (changed) {
                     intern_string_t path = intern_string::lookup(option);
 
-                    lnav_config_locations[path] = {
-                        intern_string::lookup(ec.ec_source.top().s_source),
-                        ec.ec_source.top().s_line,
-                    };
+                    lnav_config_locations[path] = ec.ec_source.top().s_location;
                     reload_config(errors);
 
                     if (!errors.empty()) {
@@ -4170,7 +4180,9 @@ com_reset_config(exec_context& ec,
     } else if (args.size() == 1) {
         return ec.make_error("expecting a configuration option to reset");
     } else {
-        yajlpp_parse_context ypc("input", &lnav_config_handlers);
+        static const auto INPUT_SRC = intern_string::lookup("input");
+
+        yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
         std::string option = args[1];
 
         lnav_config = rollback_lnav_config;
@@ -4401,10 +4413,10 @@ public:
 class db_spectro_value_source : public spectrogram_value_source {
 public:
     db_spectro_value_source(std::string colname)
-        : dsvs_colname(std::move(colname)), dsvs_begin_time(0), dsvs_end_time(0)
+        : dsvs_colname(std::move(colname))
     {
         this->update_stats();
-    };
+    }
 
     void update_stats()
     {
@@ -4425,12 +4437,12 @@ public:
             return;
         }
 
-        if (this->dsvs_column_index == -1) {
+        if (!this->dsvs_column_index) {
             this->dsvs_error_msg = "unknown column -- " + this->dsvs_colname;
             return;
         }
 
-        if (!dls.dls_headers[this->dsvs_column_index].hm_graphable) {
+        if (!dls.dls_headers[this->dsvs_column_index.value()].hm_graphable) {
             this->dsvs_error_msg
                 = "column is not numeric -- " + this->dsvs_colname;
             return;
@@ -4449,9 +4461,9 @@ public:
         this->dsvs_stats.lvs_min_value = bs.bs_min_value;
         this->dsvs_stats.lvs_max_value = bs.bs_max_value;
         this->dsvs_stats.lvs_count = dls.dls_rows.size();
-    };
+    }
 
-    void spectro_bounds(spectrogram_bounds& sb_out)
+    void spectro_bounds(spectrogram_bounds& sb_out) override
     {
         db_label_source& dls = lnav_data.ld_db_row_source;
 
@@ -4466,9 +4478,9 @@ public:
         sb_out.sb_min_value_out = this->dsvs_stats.lvs_min_value;
         sb_out.sb_max_value_out = this->dsvs_stats.lvs_max_value;
         sb_out.sb_count = this->dsvs_stats.lvs_count;
-    };
+    }
 
-    void spectro_row(spectrogram_request& sr, spectrogram_row& row_out)
+    void spectro_row(spectrogram_request& sr, spectrogram_row& row_out) override
     {
         db_label_source& dls = lnav_data.ld_db_row_source;
         auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
@@ -4478,23 +4490,25 @@ public:
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
             double value = 0.0;
 
-            sscanf(dls.dls_rows[lpc][this->dsvs_column_index], "%lf", &value);
+            sscanf(dls.dls_rows[lpc][this->dsvs_column_index.value()],
+                   "%lf",
+                   &value);
 
             row_out.add_value(sr, value, false);
         }
-    };
+    }
 
     void spectro_mark(textview_curses& tc,
                       time_t begin_time,
                       time_t end_time,
                       double range_min,
-                      double range_max){};
+                      double range_max) override{};
 
     std::string dsvs_colname;
     logline_value_stats dsvs_stats;
-    time_t dsvs_begin_time;
-    time_t dsvs_end_time;
-    int dsvs_column_index;
+    time_t dsvs_begin_time{0};
+    time_t dsvs_end_time{0};
+    nonstd::optional<size_t> dsvs_column_index;
     std::string dsvs_error_msg;
 };
 
@@ -4589,9 +4603,10 @@ command_prompt(std::vector<std::string>& args)
 
         lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
-        lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND,
+        lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::COMMAND,
                                                   "numeric-colname");
-        lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
+        lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::COMMAND,
+                                                  "colname");
 
         ldh.parse_line(log_view.get_top(), true);
 
@@ -4604,7 +4619,7 @@ command_prompt(std::vector<std::string>& args)
                 }
 
                 lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "numeric-colname", dls_header.hm_name);
+                    ln_mode_t::COMMAND, "numeric-colname", dls_header.hm_name);
             }
         } else {
             for (auto& ldh_line_value : ldh.ldh_line_values) {
@@ -4622,67 +4637,74 @@ command_prompt(std::vector<std::string>& args)
                 }
 
                 lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "numeric-colname", meta.lvm_name.to_string());
+                    ln_mode_t::COMMAND,
+                    "numeric-colname",
+                    meta.lvm_name.to_string());
             }
         }
 
         for (auto& cn_name : ldh.ldh_namer->cn_names) {
             lnav_data.ld_rl_view->add_possibility(
-                LNM_COMMAND, "colname", cn_name);
+                ln_mode_t::COMMAND, "colname", cn_name);
         }
         for (const auto& iter : ldh.ldh_namer->cn_builtin_names) {
             if (iter == "col") {
                 continue;
             }
-            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", iter);
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::COMMAND, "colname", iter);
         }
 
         ldh.clear();
 
         readline_curses* rlc = lnav_data.ld_rl_view;
 
-        rlc->clear_possibilities(LNM_COMMAND, "move-time");
-        rlc->add_possibility(LNM_COMMAND, "move-time", MOVE_TIMES);
-        rlc->clear_possibilities(LNM_COMMAND, "line-time");
+        rlc->clear_possibilities(ln_mode_t::COMMAND, "move-time");
+        rlc->add_possibility(ln_mode_t::COMMAND, "move-time", MOVE_TIMES);
+        rlc->clear_possibilities(ln_mode_t::COMMAND, "line-time");
         {
             struct timeval tv = lf->get_time_offset();
             char buffer[64];
 
             sql_strftime(
                 buffer, sizeof(buffer), ll->get_time(), ll->get_millis(), 'T');
-            rlc->add_possibility(LNM_COMMAND, "line-time", buffer);
-            rlc->add_possibility(LNM_COMMAND, "move-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);
             sql_strftime(buffer,
                          sizeof(buffer),
                          ll->get_time() - tv.tv_sec,
                          ll->get_millis() - (tv.tv_usec / 1000),
                          'T');
-            rlc->add_possibility(LNM_COMMAND, "line-time", buffer);
-            rlc->add_possibility(LNM_COMMAND, "move-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);
         }
     }
 
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
-    add_view_text_possibilities(
-        lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
+    add_view_text_possibilities(lnav_data.ld_rl_view,
+                                ln_mode_t::COMMAND,
+                                "filter",
+                                tc,
+                                text_quoting::none);
     lnav_data.ld_rl_view->add_possibility(
-        LNM_COMMAND, "filter", tc->get_current_search());
+        ln_mode_t::COMMAND, "filter", tc->get_current_search());
     add_filter_possibilities(tc);
     add_mark_possibilities();
     add_config_possibilities();
-    add_env_possibilities(LNM_COMMAND);
+    add_env_possibilities(ln_mode_t::COMMAND);
     add_tag_possibilities();
     add_file_possibilities();
     add_recent_netlocs_possibilities();
 
     if (tc == &lnav_data.ld_views[LNV_LOG]) {
         add_filter_expr_possibilities(
-            lnav_data.ld_rl_view, LNM_COMMAND, "filter-expr-syms");
+            lnav_data.ld_rl_view, ln_mode_t::COMMAND, "filter-expr-syms");
     }
-    lnav_data.ld_mode = LNM_COMMAND;
-    lnav_data.ld_rl_view->focus(
-        LNM_COMMAND, cget(args, 2).value_or(":"), cget(args, 3).value_or(""));
+    lnav_data.ld_mode = ln_mode_t::COMMAND;
+    lnav_data.ld_rl_view->focus(ln_mode_t::COMMAND,
+                                cget(args, 2).value_or(":"),
+                                cget(args, 3).value_or(""));
 }
 
 static void
@@ -4691,19 +4713,21 @@ script_prompt(std::vector<std::string>& args)
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     auto& scripts = injector::get<available_scripts&>();
 
-    lnav_data.ld_mode = LNM_EXEC;
+    lnav_data.ld_mode = ln_mode_t::EXEC;
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_top();
-    lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
+    lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::EXEC, "__command");
     find_format_scripts(lnav_data.ld_config_paths, scripts);
     for (const auto& iter : scripts.as_scripts) {
         lnav_data.ld_rl_view->add_possibility(
-            LNM_EXEC, "__command", iter.first);
+            ln_mode_t::EXEC, "__command", iter.first);
     }
-    add_view_text_possibilities(lnav_data.ld_rl_view, LNM_EXEC, "*", tc);
-    add_env_possibilities(LNM_EXEC);
-    lnav_data.ld_rl_view->focus(
-        LNM_EXEC, cget(args, 2).value_or("|"), cget(args, 3).value_or(""));
+    add_view_text_possibilities(
+        lnav_data.ld_rl_view, ln_mode_t::EXEC, "*", tc, text_quoting::regex);
+    add_env_possibilities(ln_mode_t::EXEC);
+    lnav_data.ld_rl_view->focus(ln_mode_t::EXEC,
+                                cget(args, 2).value_or("|"),
+                                cget(args, 3).value_or(""));
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
 }
@@ -4713,11 +4737,13 @@ search_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
-    lnav_data.ld_mode = LNM_SEARCH;
+    lnav_data.ld_mode = ln_mode_t::SEARCH;
     lnav_data.ld_search_start_line = tc->get_top();
-    add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SEARCH, "*", tc);
-    lnav_data.ld_rl_view->focus(
-        LNM_SEARCH, cget(args, 2).value_or("/"), cget(args, 3).value_or(""));
+    add_view_text_possibilities(
+        lnav_data.ld_rl_view, ln_mode_t::SEARCH, "*", tc, text_quoting::regex);
+    lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH,
+                                cget(args, 2).value_or("/"),
+                                cget(args, 3).value_or(""));
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
     rl_set_help();
     lnav_data.ld_bottom_source.set_prompt(
@@ -4729,13 +4755,14 @@ search_prompt(std::vector<std::string>& args)
 static void
 search_filters_prompt(std::vector<std::string>& args)
 {
-    lnav_data.ld_mode = LNM_SEARCH_FILTERS;
+    lnav_data.ld_mode = ln_mode_t::SEARCH_FILTERS;
     lnav_data.ld_filter_view.reload_data();
     add_view_text_possibilities(lnav_data.ld_rl_view,
-                                LNM_SEARCH_FILTERS,
+                                ln_mode_t::SEARCH_FILTERS,
                                 "*",
-                                &lnav_data.ld_filter_view);
-    lnav_data.ld_rl_view->focus(LNM_SEARCH_FILTERS,
+                                &lnav_data.ld_filter_view,
+                                text_quoting::regex);
+    lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH_FILTERS,
                                 cget(args, 2).value_or("/"),
                                 cget(args, 3).value_or(""));
     lnav_data.ld_bottom_source.set_prompt(
@@ -4749,12 +4776,13 @@ search_files_prompt(std::vector<std::string>& args)
 {
     static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
 
-    lnav_data.ld_mode = LNM_SEARCH_FILES;
+    lnav_data.ld_mode = ln_mode_t::SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         auto path = pcrepp::quote(lf->get_unique_path());
-        lnav_data.ld_rl_view->add_possibility(LNM_SEARCH_FILES, "*", path);
+        lnav_data.ld_rl_view->add_possibility(
+            ln_mode_t::SEARCH_FILES, "*", path);
     }
-    lnav_data.ld_rl_view->focus(LNM_SEARCH_FILES,
+    lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH_FILES,
                                 cget(args, 2).value_or("/"),
                                 cget(args, 3).value_or(""));
     lnav_data.ld_bottom_source.set_prompt(
@@ -4771,10 +4799,11 @@ sql_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
-    lnav_data.ld_mode = LNM_SQL;
+    lnav_data.ld_mode = ln_mode_t::SQL;
     setup_logline_table(lnav_data.ld_exec_context);
-    lnav_data.ld_rl_view->focus(
-        LNM_SQL, cget(args, 2).value_or(";"), cget(args, 3).value_or(""));
+    lnav_data.ld_rl_view->focus(ln_mode_t::SQL,
+                                cget(args, 2).value_or(";"),
+                                cget(args, 3).value_or(""));
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
     rl_set_help();
@@ -4794,10 +4823,11 @@ user_prompt(std::vector<std::string>& args)
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
-    lnav_data.ld_mode = LNM_USER;
+    lnav_data.ld_mode = ln_mode_t::USER;
     setup_logline_table(lnav_data.ld_exec_context);
-    lnav_data.ld_rl_view->focus(
-        LNM_USER, cget(args, 2).value_or("? "), cget(args, 3).value_or(""));
+    lnav_data.ld_rl_view->focus(ln_mode_t::USER,
+                                cget(args, 2).value_or("? "),
+                                cget(args, 3).value_or(""));
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -5700,10 +5730,12 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
     }
     if (getenv("lnav_test") != nullptr) {
         static readline_context::command_t rebuild(com_rebuild),
-            shexec(com_shexec), poll_now(com_poll_now);
+            shexec(com_shexec), poll_now(com_poll_now),
+            test_comment(com_test_comment);
 
         cmd_map["rebuild"] = &rebuild;
         cmd_map["shexec"] = &shexec;
         cmd_map["poll-now"] = &poll_now;
+        cmd_map["test-comment"] = &test_comment;
     }
 }

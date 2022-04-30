@@ -51,15 +51,12 @@ public:
 
     top_status_source();
 
-    size_t statusview_fields() override
-    {
-        return TSF__MAX;
-    };
+    size_t statusview_fields() override { return TSF__MAX; }
 
     status_field& statusview_value_for_field(int field) override
     {
         return this->tss_fields[field];
-    };
+    }
 
     void update_time(const struct timeval& current_time);
 

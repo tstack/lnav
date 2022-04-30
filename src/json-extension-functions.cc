@@ -185,7 +185,7 @@ gen_handle_null(void* ctx)
     sql_json_op* sjo = (sql_json_op*) ctx;
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
 
-    if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
+    if (sjo->jo_ptr.jp_state == json_ptr::match_state_t::DONE) {
         sjo->sjo_type = SQLITE_NULL;
     } else {
         sjo->jo_ptr_error_code = yajl_gen_null(gen);
@@ -200,7 +200,7 @@ gen_handle_boolean(void* ctx, int boolVal)
     sql_json_op* sjo = (sql_json_op*) ctx;
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
 
-    if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
+    if (sjo->jo_ptr.jp_state == json_ptr::match_state_t::DONE) {
         sjo->sjo_type = SQLITE_INTEGER;
         sjo->sjo_int = boolVal;
     } else {
@@ -216,7 +216,7 @@ gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len)
     sql_json_op* sjo = (sql_json_op*) ctx;
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
 
-    if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
+    if (sjo->jo_ptr.jp_state == json_ptr::match_state_t::DONE) {
         sjo->sjo_type = SQLITE3_TEXT;
         sjo->sjo_str = std::string((char*) stringVal, len);
     } else {
@@ -232,7 +232,7 @@ gen_handle_number(void* ctx, const char* numval, size_t numlen)
     sql_json_op* sjo = (sql_json_op*) ctx;
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
 
-    if (sjo->jo_ptr.jp_state == json_ptr::MS_DONE) {
+    if (sjo->jo_ptr.jp_state == json_ptr::match_state_t::DONE) {
         if (strtonum(sjo->sjo_int, numval, numlen) == numlen) {
             sjo->sjo_type = SQLITE_INTEGER;
         } else {
@@ -298,7 +298,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
             return;
         }
         case yajl_status_client_canceled:
-            if (jo.jo_ptr.jp_state == json_ptr::MS_ERR_INVALID_ESCAPE) {
+            if (jo.jo_ptr.jp_state
+                == json_ptr::match_state_t::ERR_INVALID_ESCAPE) {
                 sqlite3_result_error(
                     context, jo.jo_ptr.error_msg().c_str(), -1);
             } else {
@@ -320,7 +321,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
             return;
         }
         case yajl_status_client_canceled:
-            if (jo.jo_ptr.jp_state == json_ptr::MS_ERR_INVALID_ESCAPE) {
+            if (jo.jo_ptr.jp_state
+                == json_ptr::match_state_t::ERR_INVALID_ESCAPE) {
                 sqlite3_result_error(
                     context, jo.jo_ptr.error_msg().c_str(), -1);
             } else {

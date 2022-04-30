@@ -1,0 +1,5 @@
+    \a
+esc ^^
+eval -- a
+split:
+  0 -- a

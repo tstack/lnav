@@ -69,7 +69,7 @@ public:
                0,
                sizeof(this->tfs_last_lines_for_message));
         this->tfs_mask.reserve(64 * 1024);
-    };
+    }
 
     void clear()
     {
@@ -88,7 +88,7 @@ public:
                sizeof(this->tfs_last_lines_for_message));
         this->tfs_mask.clear();
         this->tfs_index.clear();
-    };
+    }
 
     void clear_filter_state(size_t index)
     {
@@ -98,7 +98,7 @@ public:
         this->tfs_lines_for_message[index] = 0;
         this->tfs_last_message_matched[index] = false;
         this->tfs_last_lines_for_message[index] = 0;
-    };
+    }
 
     void clear_deleted_filter_state(uint32_t used_mask)
     {
@@ -122,7 +122,7 @@ public:
                    0,
                    sizeof(uint32_t) * (newsize - old_mask_size));
         }
-    };
+    }
 
     const static int MAX_FILTERS = 32;
 
@@ -159,47 +159,17 @@ public:
         : lf_type(type), lf_lang(lang), lf_id(std::move(id)), lf_index(index){};
     virtual ~text_filter() = default;
 
-    type_t get_type() const
-    {
-        return this->lf_type;
-    }
-    filter_lang_t get_lang() const
-    {
-        return this->lf_lang;
-    }
-    void set_type(type_t t)
-    {
-        this->lf_type = t;
-    };
-    std::string get_id() const
-    {
-        return this->lf_id;
-    };
-    void set_id(std::string id)
-    {
-        this->lf_id = std::move(id);
-    }
-    size_t get_index() const
-    {
-        return this->lf_index;
-    };
+    type_t get_type() const { return this->lf_type; }
+    filter_lang_t get_lang() const { return this->lf_lang; }
+    void set_type(type_t t) { this->lf_type = t; }
+    std::string get_id() const { return this->lf_id; }
+    void set_id(std::string id) { this->lf_id = std::move(id); }
+    size_t get_index() const { return this->lf_index; }
 
-    bool is_enabled() const
-    {
-        return this->lf_enabled;
-    };
-    void enable()
-    {
-        this->lf_enabled = true;
-    };
-    void disable()
-    {
-        this->lf_enabled = false;
-    };
-    void set_enabled(bool value)
-    {
-        this->lf_enabled = value;
-    }
+    bool is_enabled() const { return this->lf_enabled; }
+    void enable() { this->lf_enabled = true; }
+    void disable() { this->lf_enabled = false; }
+    void set_enabled(bool value) { this->lf_enabled = value; }
 
     void revert_to_last(logfile_filter_state& lfs, size_t rollback_size);
 
@@ -216,10 +186,7 @@ public:
 
     virtual std::string to_command() const = 0;
 
-    bool operator==(const std::string& rhs)
-    {
-        return this->lf_id == rhs;
-    };
+    bool operator==(const std::string& rhs) const { return this->lf_id == rhs; }
 
     bool lf_deleted{false};
 
@@ -248,28 +215,23 @@ public:
 class filter_stack {
 public:
     using iterator = std::vector<std::shared_ptr<text_filter>>::iterator;
+    using const_iterator
+        = std::vector<std::shared_ptr<text_filter>>::const_iterator;
+    using value_type = std::shared_ptr<text_filter>;
 
     explicit filter_stack(size_t reserved = 0) : fs_reserved(reserved) {}
 
-    iterator begin()
-    {
-        return this->fs_filters.begin();
-    }
+    iterator begin() { return this->fs_filters.begin(); }
 
-    iterator end()
-    {
-        return this->fs_filters.end();
-    }
+    iterator end() { return this->fs_filters.end(); }
 
-    size_t size() const
-    {
-        return this->fs_filters.size();
-    }
+    const_iterator begin() const { return this->fs_filters.begin(); }
 
-    bool empty() const
-    {
-        return this->fs_filters.empty();
-    };
+    const_iterator end() const { return this->fs_filters.end(); }
+
+    size_t size() const { return this->fs_filters.size(); }
+
+    bool empty() const { return this->fs_filters.empty(); };
 
     bool full() const
     {
@@ -277,44 +239,19 @@ public:
             == logfile_filter_state::MAX_FILTERS;
     }
 
-    nonstd::optional<size_t> next_index()
-    {
-        bool used[32];
-
-        memset(used, 0, sizeof(used));
-        for (auto& iter : *this) {
-            if (iter->lf_deleted) {
-                continue;
-            }
-
-            size_t index = iter->get_index();
-
-            require(used[index] == false);
-
-            used[index] = true;
-        }
-        for (size_t lpc = this->fs_reserved;
-             lpc < logfile_filter_state::MAX_FILTERS;
-             lpc++)
-        {
-            if (!used[lpc]) {
-                return lpc;
-            }
-        }
-        return nonstd::nullopt;
-    };
+    nonstd::optional<size_t> next_index();
 
     void add_filter(const std::shared_ptr<text_filter>& filter)
     {
         this->fs_filters.push_back(filter);
-    };
+    }
 
     void clear_filters()
     {
         while (!this->fs_filters.empty()) {
             this->fs_filters.pop_back();
         }
-    };
+    }
 
     void set_filter_enabled(const std::shared_ptr<text_filter>& filter,
                             bool enabled)
@@ -326,87 +263,13 @@ public:
         }
     }
 
-    std::shared_ptr<text_filter> get_filter(const std::string& id)
-    {
-        auto iter = this->fs_filters.begin();
-        std::shared_ptr<text_filter> retval;
+    std::shared_ptr<text_filter> get_filter(const std::string& id);
 
-        for (; iter != this->fs_filters.end() && (*iter)->get_id() != id;
-             iter++) {
-        }
-        if (iter != this->fs_filters.end()) {
-            retval = *iter;
-        }
+    bool delete_filter(const std::string& id);
 
-        return retval;
-    };
+    void get_mask(uint32_t& filter_mask);
 
-    bool delete_filter(const std::string& id)
-    {
-        auto iter = this->fs_filters.begin();
-
-        for (; iter != this->fs_filters.end() && (*iter)->get_id() != id;
-             iter++) {
-        }
-        if (iter != this->fs_filters.end()) {
-            this->fs_filters.erase(iter);
-            return true;
-        }
-
-        return false;
-    };
-
-    void get_mask(uint32_t& filter_mask)
-    {
-        filter_mask = 0;
-        for (auto& iter : *this) {
-            std::shared_ptr<text_filter> tf = iter;
-
-            if (tf->lf_deleted) {
-                continue;
-            }
-            if (tf->is_enabled()) {
-                uint32_t bit = (1UL << tf->get_index());
-
-                switch (tf->get_type()) {
-                    case text_filter::EXCLUDE:
-                    case text_filter::INCLUDE:
-                        filter_mask |= bit;
-                        break;
-                    default:
-                        ensure(0);
-                        break;
-                }
-            }
-        }
-    }
-
-    void get_enabled_mask(uint32_t& filter_in_mask, uint32_t& filter_out_mask)
-    {
-        filter_in_mask = filter_out_mask = 0;
-        for (auto& iter : *this) {
-            std::shared_ptr<text_filter> tf = iter;
-
-            if (tf->lf_deleted) {
-                continue;
-            }
-            if (tf->is_enabled()) {
-                uint32_t bit = (1UL << tf->get_index());
-
-                switch (tf->get_type()) {
-                    case text_filter::EXCLUDE:
-                        filter_out_mask |= bit;
-                        break;
-                    case text_filter::INCLUDE:
-                        filter_in_mask |= bit;
-                        break;
-                    default:
-                        ensure(0);
-                        break;
-                }
-            }
-        }
-    };
+    void get_enabled_mask(uint32_t& filter_in_mask, uint32_t& filter_out_mask);
 
 private:
     const size_t fs_reserved;
@@ -478,20 +341,14 @@ public:
     {
     }
 
-    void register_view(textview_curses* tc)
-    {
-        this->tss_view = tc;
-    };
+    void register_view(textview_curses* tc) { this->tss_view = tc; }
 
     /**
      * @return The total number of lines available from the source.
      */
     virtual size_t text_line_count() = 0;
 
-    virtual size_t text_line_width(textview_curses& curses)
-    {
-        return INT_MAX;
-    };
+    virtual size_t text_line_width(textview_curses& curses) { return INT_MAX; }
 
     /**
      * Get the value for a line.
@@ -560,31 +417,20 @@ public:
     virtual std::string text_source_name(const textview_curses& tv)
     {
         return "";
-    };
-
-    filter_stack& get_filters()
-    {
-        return this->tss_filters;
-    };
-
-    virtual void text_filters_changed(){
-
-    };
-
-    virtual int get_filtered_count() const
-    {
-        return 0;
-    };
-
-    virtual int get_filtered_count_for(size_t filter_index) const
-    {
-        return 0;
     }
+
+    filter_stack& get_filters() { return this->tss_filters; }
+
+    virtual void text_filters_changed() {}
+
+    virtual int get_filtered_count() const { return 0; }
+
+    virtual int get_filtered_count_for(size_t filter_index) const { return 0; }
 
     virtual text_format_t get_text_format() const
     {
         return text_format_t::TF_UNKNOWN;
-    };
+    }
 
     virtual nonstd::optional<
         std::pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
@@ -620,45 +466,13 @@ public:
     {
     }
 
-    void loc_history_append(vis_line_t top) override
-    {
-        auto iter = this->vlh_history.begin();
-        iter += this->vlh_history.size() - this->lh_history_position;
-        this->vlh_history.erase_from(iter);
-        this->lh_history_position = 0;
-        this->vlh_history.push_back(top);
-    }
+    void loc_history_append(vis_line_t top) override;
 
     nonstd::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top) override
-    {
-        if (this->lh_history_position == 0) {
-            vis_line_t history_top = this->current_position();
-            if (history_top != current_top) {
-                return history_top;
-            }
-        }
-
-        if (this->lh_history_position + 1 >= this->vlh_history.size()) {
-            return nonstd::nullopt;
-        }
-
-        this->lh_history_position += 1;
-
-        return this->current_position();
-    }
+        vis_line_t current_top) override;
 
     nonstd::optional<vis_line_t> loc_history_forward(
-        vis_line_t current_top) override
-    {
-        if (this->lh_history_position == 0) {
-            return nonstd::nullopt;
-        }
-
-        this->lh_history_position -= 1;
-
-        return this->current_position();
-    }
+        vis_line_t current_top) override;
 
     nonstd::ring_span<vis_line_t> vlh_history;
 
@@ -679,12 +493,12 @@ class text_delegate {
 public:
     virtual ~text_delegate() = default;
 
-    virtual void text_overlay(textview_curses& tc){};
+    virtual void text_overlay(textview_curses& tc) {}
 
     virtual bool text_handle_mouse(textview_curses& tc, mouse_event& me)
     {
         return false;
-    };
+    }
 };
 
 /**
@@ -719,20 +533,11 @@ public:
         }
     }
 
-    bool is_paused() const
-    {
-        return this->tc_paused;
-    }
+    bool is_paused() const { return this->tc_paused; }
 
-    vis_bookmarks& get_bookmarks()
-    {
-        return this->tc_bookmarks;
-    };
+    vis_bookmarks& get_bookmarks() { return this->tc_bookmarks; }
 
-    const vis_bookmarks& get_bookmarks() const
-    {
-        return this->tc_bookmarks;
-    };
+    const vis_bookmarks& get_bookmarks() const { return this->tc_bookmarks; }
 
     void toggle_user_mark(const bookmark_type_t* bm,
                           vis_line_t start_line,
@@ -748,24 +553,21 @@ public:
         }
         this->reload_data();
         return *this;
-    };
+    }
 
-    text_sub_source* get_sub_source() const
-    {
-        return this->tc_sub_source;
-    };
+    text_sub_source* get_sub_source() const { return this->tc_sub_source; }
 
     textview_curses& set_delegate(std::shared_ptr<text_delegate> del)
     {
         this->tc_delegate = del;
 
         return *this;
-    };
+    }
 
     std::shared_ptr<text_delegate> get_delegate() const
     {
         return this->tc_delegate;
-    };
+    }
 
     void horiz_shift(vis_line_t start,
                      vis_line_t end,
@@ -785,14 +587,14 @@ public:
         return this->tc_sub_source == nullptr
             ? 0
             : this->tc_sub_source->text_line_count();
-    };
+    }
 
     size_t listview_width(const listview_curses& lv)
     {
         return this->tc_sub_source == nullptr
             ? 0
             : this->tc_sub_source->text_line_width(*this);
-    };
+    }
 
     void listview_value_for_rows(const listview_curses& lv,
                                  vis_line_t line,
@@ -803,14 +605,14 @@ public:
     size_t listview_size_for_row(const listview_curses& lv, vis_line_t row)
     {
         return this->tc_sub_source->text_size_for_line(*this, row);
-    };
+    }
 
     std::string listview_source_name(const listview_curses& lv)
     {
         return this->tc_sub_source == nullptr
             ? ""
             : this->tc_sub_source->text_source_name(*this);
-    };
+    }
 
     bool grep_value_for_line(vis_line_t line, std::string& value_out)
     {
@@ -824,7 +626,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,
@@ -834,10 +636,7 @@ public:
                     int start,
                     int end);
 
-    bool is_searching() const
-    {
-        return this->tc_searching > 0;
-    };
+    bool is_searching() const { return this->tc_searching > 0; }
 
     void set_follow_search_for(int64_t ms_to_deadline,
                                std::function<bool()> func)
@@ -850,12 +649,9 @@ public:
         timeradd(&now, &tv, &this->tc_follow_deadline);
         this->tc_follow_top = this->get_top();
         this->tc_follow_func = func;
-    };
+    }
 
-    size_t get_match_count()
-    {
-        return this->tc_bookmarks[&BM_SEARCH].size();
-    };
+    size_t get_match_count() { return this->tc_bookmarks[&BM_SEARCH].size(); }
 
     void match_reset()
     {
@@ -863,17 +659,14 @@ public:
         if (this->tc_sub_source != nullptr) {
             this->tc_sub_source->text_clear_marks(&BM_SEARCH);
         }
-    };
+    }
 
-    highlight_map_t& get_highlights()
-    {
-        return this->tc_highlights;
-    };
+    highlight_map_t& get_highlights() { return this->tc_highlights; }
 
     const highlight_map_t& get_highlights() const
     {
         return this->tc_highlights;
-    };
+    }
 
     std::set<highlight_source_t>& get_disabled_highlights()
     {
@@ -890,7 +683,7 @@ public:
         if (this->tc_delegate != nullptr) {
             this->tc_delegate->text_overlay(*this);
         }
-    };
+    }
 
     bool toggle_hide_fields()
     {
@@ -899,7 +692,7 @@ public:
         this->tc_hide_fields = !this->tc_hide_fields;
 
         return retval;
-    };
+    }
 
     bool get_hide_fields() const
     {
@@ -908,22 +701,7 @@ public:
 
     void execute_search(const std::string& regex_orig);
 
-    void redo_search()
-    {
-        if (this->tc_search_child) {
-            grep_proc<vis_line_t>* gp = this->tc_search_child->get_grep_proc();
-
-            gp->invalidate();
-            this->match_reset();
-            gp->queue_request(0_vl).start();
-
-            if (this->tc_source_search_child) {
-                this->tc_source_search_child->invalidate()
-                    .queue_request(0_vl)
-                    .start();
-            }
-        }
-    };
+    void redo_search();
 
     void search_range(vis_line_t start, vis_line_t stop = -1_vl)
     {
@@ -999,18 +777,20 @@ protected:
                          std::string hl_name,
                          highlight_map_t& hl_map)
             : gh_grep_proc(std::move(gp)), gh_hl_source(source),
-              gh_hl_name(std::move(hl_name)), gh_hl_map(hl_map){};
+              gh_hl_name(std::move(hl_name)), gh_hl_map(hl_map)
+        {
+        }
 
         ~grep_highlighter()
         {
             this->gh_hl_map.erase(
                 this->gh_hl_map.find({this->gh_hl_source, this->gh_hl_name}));
-        };
+        }
 
         grep_proc<vis_line_t>* get_grep_proc()
         {
             return this->gh_grep_proc.get();
-        };
+        }
 
     private:
         std::unique_ptr<grep_proc<vis_line_t>> gh_grep_proc;

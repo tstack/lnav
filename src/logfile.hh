@@ -111,10 +111,7 @@ public:
 
     ~logfile() override;
 
-    const logfile_activity& get_activity() const
-    {
-        return this->lf_activity;
-    };
+    const logfile_activity& get_activity() const { return this->lf_activity; }
 
     nonstd::optional<ghc::filesystem::path> get_actual_path() const
     {
@@ -122,128 +119,63 @@ public:
     }
 
     /** @return The filename as given in the constructor. */
-    const std::string& get_filename() const
-    {
-        return this->lf_filename;
-    };
+    const std::string& get_filename() const { return this->lf_filename; }
 
     /** @return The filename as given in the constructor, excluding the path
      * prefix. */
-    const std::string& get_basename() const
-    {
-        return this->lf_basename;
-    };
+    const std::string& get_basename() const { return this->lf_basename; }
 
-    int get_fd() const
-    {
-        return this->lf_line_buffer.get_fd();
-    };
+    int get_fd() const { return this->lf_line_buffer.get_fd(); }
 
     /** @param filename The new filename for this log file. */
-    void set_filename(const std::string& filename)
-    {
-        if (this->lf_filename != filename) {
-            this->lf_filename = filename;
-            ghc::filesystem::path p(filename);
-            this->lf_basename = p.filename();
-        }
-    };
+    void set_filename(const std::string& filename);
 
-    const std::string& get_content_id() const
-    {
-        return this->lf_content_id;
-    };
+    const std::string& get_content_id() const { return this->lf_content_id; }
 
     /** @return The inode for this log file. */
-    const struct stat& get_stat() const
-    {
-        return this->lf_stat;
-    };
+    const struct stat& get_stat() const { return this->lf_stat; }
 
-    size_t get_longest_line_length() const
-    {
-        return this->lf_longest_line;
-    }
+    size_t get_longest_line_length() const { return this->lf_longest_line; }
 
-    bool is_compressed() const
-    {
-        return this->lf_line_buffer.is_compressed();
-    };
+    bool is_compressed() const { return this->lf_line_buffer.is_compressed(); }
 
-    bool is_valid_filename() const
-    {
-        return this->lf_valid_filename;
-    };
+    bool is_valid_filename() const { return this->lf_valid_filename; }
 
-    file_off_t get_index_size() const
-    {
-        return this->lf_index_size;
-    }
+    file_off_t get_index_size() const { return this->lf_index_size; }
 
     /**
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.
      */
-    std::shared_ptr<log_format> get_format() const
-    {
-        return this->lf_format;
-    };
+    std::shared_ptr<log_format> get_format() const { return this->lf_format; }
 
     intern_string_t get_format_name() const;
 
-    text_format_t get_text_format() const
-    {
-        return this->lf_text_format;
-    }
+    text_format_t get_text_format() const { return this->lf_text_format; }
 
     /**
      * @return The last modified time of the file when the file was last
      * indexed.
      */
-    time_t get_modified_time() const
-    {
-        return this->lf_index_time;
-    };
+    time_t get_modified_time() const { return this->lf_index_time; }
 
-    int get_time_offset_line() const
-    {
-        return this->lf_time_offset_line;
-    };
+    int get_time_offset_line() const { return this->lf_time_offset_line; }
 
     const struct timeval& get_time_offset() const
     {
         return this->lf_time_offset;
-    };
+    }
 
     void adjust_content_time(int line,
                              const struct timeval& tv,
-                             bool abs_offset = true)
-    {
-        struct timeval old_time = this->lf_time_offset;
-
-        this->lf_time_offset_line = line;
-        if (abs_offset) {
-            this->lf_time_offset = tv;
-        } else {
-            timeradd(&old_time, &tv, &this->lf_time_offset);
-        }
-        for (auto& iter : *this) {
-            struct timeval curr, diff, new_time;
-
-            curr = iter.get_timeval();
-            timersub(&curr, &old_time, &diff);
-            timeradd(&diff, &this->lf_time_offset, &new_time);
-            iter.set_time(new_time);
-        }
-        this->lf_sort_needed = true;
-    };
+                             bool abs_offset = true);
 
     void clear_time_offset()
     {
         struct timeval tv = {0, 0};
 
         this->adjust_content_time(-1, tv);
-    };
+    }
 
     void mark_as_duplicate(const std::string& name);
 
@@ -299,46 +231,20 @@ public:
     nonstd::optional<const_iterator> find_from_time(
         const struct timeval& tv) const;
 
-    logline& operator[](int index)
-    {
-        return this->lf_index[index];
-    };
+    logline& operator[](int index) { return this->lf_index[index]; }
 
-    logline& front()
-    {
-        return this->lf_index.front();
-    }
+    logline& front() { return this->lf_index.front(); }
 
-    logline& back()
-    {
-        return this->lf_index.back();
-    };
+    logline& back() { return this->lf_index.back(); }
 
     /** @return True if this log file still exists. */
     bool exists() const;
 
-    void close()
-    {
-        this->lf_is_closed = true;
-    };
+    void close() { this->lf_is_closed = true; }
 
-    bool is_closed() const
-    {
-        return this->lf_is_closed;
-    };
+    bool is_closed() const { return this->lf_is_closed; }
 
-    struct timeval original_line_time(iterator ll)
-    {
-        if (this->is_time_adjusted()) {
-            struct timeval line_time = ll->get_timeval();
-            struct timeval retval;
-
-            timersub(&line_time, &this->lf_time_offset, &retval);
-            return retval;
-        }
-
-        return ll->get_timeval();
-    };
+    struct timeval original_line_time(iterator ll);
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
@@ -351,7 +257,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     iterator message_start(iterator ll)
     {
@@ -370,8 +276,10 @@ public:
 
     file_range get_file_range(const_iterator ll, bool include_continues = true)
     {
-        return {ll->get_offset(),
-                (file_ssize_t) this->line_length(ll, include_continues)};
+        return {
+            ll->get_offset(),
+            (file_ssize_t) this->line_length(ll, include_continues),
+        };
     }
 
     void read_full_message(const_iterator ll,
@@ -402,14 +310,14 @@ public:
     void set_logfile_observer(logfile_observer* lo)
     {
         this->lf_logfile_observer = lo;
-    };
+    }
 
     void set_logline_observer(logline_observer* llo);
 
     logline_observer* get_logline_observer() const
     {
         return this->lf_logline_observer;
-    };
+    }
 
     bool operator<(const logfile& rhs) const
     {
@@ -424,7 +332,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     bool is_indexing() const
     {

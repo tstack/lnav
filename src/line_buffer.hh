@@ -99,7 +99,7 @@ public:
             return this->gz_fd != -1;
         }
 
-        uLong get_source_offset()
+        uLong get_source_offset() const
         {
             return !!*this ? this->strm.total_in + this->strm.avail_in : 0;
         }
@@ -123,40 +123,9 @@ public:
             unsigned char bits = 0;
             unsigned char in_bits = 0;
             Bytef index[GZ_WINSIZE];
-            indexDict(z_stream const& s, const file_size_t size)
-            {
-                assert((s.data_type & GZ_END_OF_BLOCK_MASK));
-                assert(!(s.data_type & GZ_END_OF_FILE_MASK));
-                assert(size >= s.avail_out + GZ_WINSIZE);
-                this->bits = s.data_type & GZ_BORROW_BITS_MASK;
-                this->in = s.total_in;
-                this->out = s.total_out;
-                auto last_byte_in = s.next_in[-1];
-                this->in_bits = last_byte_in >> (8 - this->bits);
-                // Copy the last 32k uncompressed data (sliding window) to our
-                // index
-                memcpy(this->index, s.next_out - GZ_WINSIZE, GZ_WINSIZE);
-            }
+            indexDict(z_stream const& s, const file_size_t size);
 
-            int apply(z_streamp s)
-            {
-                s->zalloc = Z_NULL;
-                s->zfree = Z_NULL;
-                s->opaque = Z_NULL;
-                s->avail_in = 0;
-                s->next_in = Z_NULL;
-                auto ret = inflateInit2(s, GZ_RAW_MODE);
-                if (ret != Z_OK) {
-                    return ret;
-                }
-                if (this->bits) {
-                    inflatePrime(s, this->bits, this->in_bits);
-                }
-                s->total_in = this->in;
-                s->total_out = this->out;
-                inflateSetDictionary(s, this->index, GZ_WINSIZE);
-                return ret;
-            }
+            int apply(z_streamp s);
         };
 
     private:
@@ -181,12 +150,12 @@ public:
     int get_fd() const
     {
         return this->lb_fd;
-    };
+    }
 
     time_t get_file_time() const
     {
         return this->lb_file_time;
-    };
+    }
 
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
@@ -194,22 +163,22 @@ public:
     file_ssize_t get_file_size() const
     {
         return this->lb_file_size;
-    };
+    }
 
     bool is_pipe() const
     {
         return !this->lb_seekable;
-    };
+    }
 
     bool is_pipe_closed() const
     {
         return !this->lb_seekable && (this->lb_file_size != -1);
-    };
+    }
 
     bool is_compressed() const
     {
         return this->lb_gz_file || this->lb_bz_file;
-    };
+    }
 
     file_off_t get_read_offset(file_off_t off) const
     {
@@ -218,7 +187,7 @@ public:
         } else {
             return off;
         }
-    };
+    }
 
     bool is_data_available(file_off_t off, file_off_t stat_size) const
     {
@@ -226,7 +195,7 @@ public:
             return (this->lb_file_size == -1 || off < this->lb_file_size);
         }
         return off < stat_size;
-    };
+    }
 
     /**
      * Attempt to load the next line into the buffer.
@@ -244,7 +213,7 @@ public:
     void clear()
     {
         this->lb_buffer_size = 0;
-    };
+    }
 
     /** Release any resources held by this object. */
     void reset()
@@ -255,16 +224,16 @@ public:
         this->lb_file_size = (ssize_t) -1;
         this->lb_buffer_size = 0;
         this->lb_last_line_offset = -1;
-    };
+    }
 
     /** Check the invariants for this object. */
-    bool invariant()
+    bool invariant() const
     {
         require(this->lb_buffer != nullptr);
         require(this->lb_buffer_size <= this->lb_buffer_max);
 
         return true;
-    };
+    }
 
 private:
     /**
@@ -275,7 +244,7 @@ private:
     {
         return this->lb_file_offset <= off
             && off < (this->lb_file_offset + this->lb_buffer_size);
-    };
+    }
 
     void resize_buffer(size_t new_max);
 
@@ -325,7 +294,7 @@ private:
         avail_out = this->lb_buffer_size - buffer_offset;
 
         return retval;
-    };
+    }
 
     shared_buffer lb_share_manager;
 

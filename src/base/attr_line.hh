@@ -526,6 +526,23 @@ public:
         return *this;
     }
 
+    template<typename C>
+    attr_line_t& join(const C& container,
+                      const string_attr_pair& sap,
+                      const char* fill)
+    {
+        bool init = true;
+        for (const auto& elem : container) {
+            if (!init) {
+                this->append(fill);
+            }
+            this->append(std::make_pair(elem, sap));
+            init = false;
+        }
+
+        return *this;
+    }
+
     attr_line_t& insert(size_t index,
                         const attr_line_t& al,
                         text_wrap_settings* tws = nullptr);
@@ -560,6 +577,26 @@ public:
         return *this;
     }
 
+    template<typename... Args>
+    attr_line_t& add_header(Args... args)
+    {
+        if (!this->blank()) {
+            this->insert(0, args...);
+        }
+        return *this;
+    }
+
+    template<typename... Args>
+    attr_line_t& with_default(Args... args)
+    {
+        if (this->blank()) {
+            this->clear();
+            this->append(args...);
+        }
+
+        return *this;
+    }
+
     attr_line_t& erase(size_t pos, size_t len = std::string::npos);
 
     attr_line_t& rtrim();
@@ -573,6 +610,8 @@ public:
     }
 
     attr_line_t& right_justify(unsigned long width);
+
+    attr_line_t& pad_to(size_t size);
 
     ssize_t length() const
     {

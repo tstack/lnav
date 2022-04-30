@@ -5,15 +5,15 @@
         "description": "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})\\s*(?<body>.*)$"
             },
             "sq-brackets": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,6})?)Z?\\](?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,6})?)Z?\\]\\s*(?<body>.*)$"
             }
         },
         "sample": [
             {
-                "line": "Sat Apr 27 03:33:07 PDT 2013"
+                "line": "Sat Apr 27 03:33:07 PDT 2013\nHello, World"
             },
             {
                 "line": "[2021-05-21T21:58:57.022497Z]"

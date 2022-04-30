@@ -46,9 +46,9 @@ public:
         std::function<void(const std::string&, std::shared_ptr<piper_proc>)>
             piper_cb)
         : ad_log_helper(lss), ad_child_cb(std::move(child_cb)),
-          ad_piper_cb(std::move(piper_cb)){
-
-          };
+          ad_piper_cb(std::move(piper_cb))
+    {
+    }
 
     bool text_handle_mouse(textview_curses& tc, mouse_event& me) override;
 

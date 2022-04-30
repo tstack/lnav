@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- wrong number of arguments to function humanize_file_size()

@@ -68,12 +68,6 @@ rebuild_indexes_repeatedly()
 {
 }
 
-textview_curses*
-get_textview_for_mode(ln_mode_t mode)
-{
-    return nullptr;
-}
-
 readline_context::command_map_t lnav_commands;
 
 namespace injector {
@@ -86,6 +80,12 @@ force_linking(sqlite_db_tag anno)
 template<>
 void
 force_linking(services::curl_streamer_t anno)
+{
+}
+
+template<>
+void
+force_linking(services::remote_tailer_t anno)
 {
 }
 }  // namespace injector

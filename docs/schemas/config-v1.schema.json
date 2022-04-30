@@ -347,6 +347,11 @@
                                             "description": "Styling for 6th-level headers",
                                             "title": "/ui/theme-defs/<theme_name>/styles/h6",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "list-glyph": {
+                                            "description": "Styling for glyphs that prefix a list item",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/list-glyph",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false

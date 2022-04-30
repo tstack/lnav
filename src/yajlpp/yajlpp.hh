@@ -75,14 +75,12 @@ yajl_gen_string(yajl_gen hand, const std::string& str)
 template<typename T>
 struct positioned_property {
     intern_string_t pp_path;
-    std::string pp_src;
-    int32_t pp_line_number{0};
+    source_location pp_location;
     T pp_value;
 
     lnav::console::snippet to_snippet() const
     {
-        return lnav::console::snippet::from(this->pp_src, "")
-            .with_line(this->pp_line_number);
+        return lnav::console::snippet::from(this->pp_location, "");
     }
 };
 
@@ -104,7 +102,7 @@ struct yajlpp_provider_context {
             cap->length());
 
         return intern_string::lookup(path, len);
-    };
+    }
 
     template<typename T>
     std::string get_substr(T name) const
@@ -117,7 +115,7 @@ struct yajlpp_provider_context {
             cap->length());
 
         return {path, len};
-    };
+    }
 };
 
 class yajlpp_error : public std::exception {
@@ -168,6 +166,7 @@ struct json_path_handler_base {
     }
 
     nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
+    const char* to_enum_string(int value) const;
 
     yajl_gen_status gen(yajlpp_gen_context& ygc, yajl_gen handle) const;
     yajl_gen_status gen_schema(yajlpp_gen_context& ygc) const;
@@ -205,6 +204,7 @@ struct json_path_handler_base {
         jph_obj_provider;
     std::function<void(void* root, std::vector<std::string>& paths_out)>
         jph_path_provider;
+    std::function<size_t(void* root)> jph_size_provider;
     const char* jph_synopsis{""};
     const char* jph_description{""};
     const json_path_container* jph_children{nullptr};
@@ -249,7 +249,7 @@ public:
     using error_reporter_t = std::function<void(
         const yajlpp_parse_context& ypc, const lnav::console::user_message&)>;
 
-    yajlpp_parse_context(std::string source,
+    yajlpp_parse_context(intern_string_t source,
                          const struct json_path_container* handlers = nullptr);
 
     const char* get_path_fragment(int offset,
@@ -264,7 +264,7 @@ public:
 
         frag = this->get_path_fragment(offset, fragbuf, len);
         return intern_string::lookup(frag, len);
-    };
+    }
 
     std::string get_path_fragment(int offset) const
     {
@@ -274,7 +274,7 @@ public:
 
         frag = this->get_path_fragment(offset, fragbuf, len);
         return std::string(frag, len);
-    };
+    }
 
     const intern_string_t get_path() const;
 
@@ -283,7 +283,7 @@ public:
     bool is_level(size_t level) const
     {
         return this->ypc_path_index_stack.size() == level;
-    };
+    }
 
     yajlpp_parse_context& set_path(const std::string& path);
 
@@ -296,13 +296,13 @@ public:
     {
         this->ypc_obj_stack.push(&obj);
         return *this;
-    };
+    }
 
     yajlpp_parse_context& with_handle(yajl_handle handle)
     {
         this->ypc_handle = handle;
         return *this;
-    };
+    }
 
     yajlpp_parse_context& with_error_reporter(error_reporter_t err)
     {
@@ -342,43 +342,43 @@ public:
     std::vector<T>& get_lvalue(std::map<std::string, std::vector<T>>& value)
     {
         return value[this->get_path_fragment(-2)];
-    };
+    }
 
     template<typename T>
     T& get_lvalue(std::map<std::string, T>& value)
     {
         return value[this->get_path_fragment(-1)];
-    };
+    }
 
     template<typename T>
     T& get_lvalue(T& lvalue)
     {
         return lvalue;
-    };
+    }
 
     template<typename T>
     T& get_rvalue(std::map<std::string, std::vector<T>>& value)
     {
         return value[this->get_path_fragment(-2)].back();
-    };
+    }
 
     template<typename T>
     T& get_rvalue(std::map<std::string, T>& value)
     {
         return value[this->get_path_fragment(-1)];
-    };
+    }
 
     template<typename T>
     T& get_rvalue(std::vector<T>& value)
     {
         return value.back();
-    };
+    }
 
     template<typename T>
     T& get_rvalue(T& lvalue)
     {
         return lvalue;
-    };
+    }
 
     template<typename T, typename MEM_T, MEM_T T::*MEM>
     auto& get_obj_member()
@@ -386,9 +386,9 @@ public:
         auto obj = (T*) this->ypc_obj_stack.top();
 
         return obj->*MEM;
-    };
+    }
 
-    const std::string ypc_source;
+    const intern_string_t ypc_source;
     int ypc_line_number{1};
     const struct json_path_container* ypc_handlers;
     std::stack<void*> ypc_obj_stack;
@@ -437,41 +437,41 @@ public:
     yajl_gen_status operator()(const std::string& str)
     {
         return yajl_gen_string(this->yg_handle, str);
-    };
+    }
 
     yajl_gen_status operator()(const char* str)
     {
         return yajl_gen_string(
             this->yg_handle, (const unsigned char*) str, strlen(str));
-    };
+    }
 
     yajl_gen_status operator()(const char* str, size_t len)
     {
         return yajl_gen_string(
             this->yg_handle, (const unsigned char*) str, len);
-    };
+    }
 
     yajl_gen_status operator()(const intern_string_t& str)
     {
         return yajl_gen_string(
             this->yg_handle, (const unsigned char*) str.get(), str.size());
-    };
+    }
 
     yajl_gen_status operator()(const string_fragment& str)
     {
         return yajl_gen_string(
             this->yg_handle, (const unsigned char*) str.data(), str.length());
-    };
+    }
 
     yajl_gen_status operator()(bool value)
     {
         return yajl_gen_bool(this->yg_handle, value);
-    };
+    }
 
     yajl_gen_status operator()(double value)
     {
         return yajl_gen_double(this->yg_handle, value);
-    };
+    }
 
     template<typename T>
     yajl_gen_status operator()(
@@ -481,7 +481,7 @@ public:
         = 0)
     {
         return yajl_gen_integer(this->yg_handle, value);
-    };
+    }
 
     template<typename T>
     yajl_gen_status operator()(
@@ -500,12 +500,12 @@ public:
         yajl_gen_array_close(this->yg_handle);
 
         return yajl_gen_status_ok;
-    };
+    }
 
     yajl_gen_status operator()()
     {
         return yajl_gen_null(this->yg_handle);
-    };
+    }
 
 private:
     yajl_gen yg_handle;
@@ -526,12 +526,12 @@ public:
     yajlpp_map(yajl_gen handle) : yajlpp_container_base(handle)
     {
         yajl_gen_map_open(handle);
-    };
+    }
 
     ~yajlpp_map()
     {
         yajl_gen_map_close(this->ycb_handle);
-    };
+    }
 };
 
 class yajlpp_array : public yajlpp_container_base {
@@ -539,12 +539,12 @@ public:
     yajlpp_array(yajl_gen handle) : yajlpp_container_base(handle)
     {
         yajl_gen_array_open(handle);
-    };
+    }
 
     ~yajlpp_array()
     {
         yajl_gen_array_close(this->ycb_handle);
-    };
+    }
 };
 
 class yajlpp_gen_context {
@@ -558,14 +558,14 @@ public:
     {
         this->ygc_default_stack.push(&obj);
         return *this;
-    };
+    }
 
     template<typename T>
     yajlpp_gen_context& with_obj(T& obj)
     {
         this->ygc_obj_stack.push(&obj);
         return *this;
-    };
+    }
 
     yajlpp_gen_context& with_context(yajlpp_parse_context& ypc);
 
@@ -587,17 +587,17 @@ public:
     yajlpp_gen() : yg_handle(yajl_gen_free)
     {
         this->yg_handle = yajl_gen_alloc(nullptr);
-    };
+    }
 
     yajl_gen get_handle() const
     {
         return this->yg_handle.in();
-    };
+    }
 
     operator yajl_gen()
     {
         return this->yg_handle.in();
-    };
+    }
 
     string_fragment to_string_fragment();
 
@@ -614,7 +614,7 @@ struct json_string {
 
         this->js_content = (const unsigned char*) malloc(this->js_len);
         memcpy((void*) this->js_content.in(), buf, this->js_len);
-    };
+    }
 
     auto_mem<const unsigned char> js_content;
     size_t js_len{0};

@@ -141,47 +141,23 @@ class bookmark_type_t {
 public:
     using type_iterator = std::vector<bookmark_type_t*>::iterator;
 
-    static type_iterator type_begin()
-    {
-        return get_all_types().begin();
-    }
+    static type_iterator type_begin() { return get_all_types().begin(); }
 
-    static type_iterator type_end()
-    {
-        return get_all_types().end();
-    }
+    static type_iterator type_end() { return get_all_types().end(); }
 
-    static bookmark_type_t* find_type(const std::string& name);
+    static nonstd::optional<bookmark_type_t*> find_type(
+        const std::string& name);
 
-    static std::vector<bookmark_type_t*>& get_all_types()
-    {
-        static std::vector<bookmark_type_t*> all_types;
-
-        return all_types;
-    }
+    static std::vector<bookmark_type_t*>& get_all_types();
 
     explicit bookmark_type_t(std::string name) : bt_name(std::move(name))
     {
         get_all_types().push_back(this);
     }
 
-    const std::string& get_name() const
-    {
-        return this->bt_name;
-    }
+    const std::string& get_name() const { return this->bt_name; }
 
 private:
-    struct mark_eq {
-        explicit mark_eq(const std::string& name) : me_name(name){};
-
-        bool operator()(bookmark_type_t* bt)
-        {
-            return bt->bt_name == this->me_name;
-        };
-
-        const std::string& me_name;
-    };
-
     const std::string bt_name;
 };
 

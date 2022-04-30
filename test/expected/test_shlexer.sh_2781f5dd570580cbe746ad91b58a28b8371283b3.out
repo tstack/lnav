@@ -1,0 +1,7 @@
+    ~nonexistent/bar baz
+til ^----------^
+wsp                 ^
+eval -- ~nonexistent/bar baz
+split:
+  0 -- ~nonexistent/bar
+  1 -- baz

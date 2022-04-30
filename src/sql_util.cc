@@ -685,12 +685,14 @@ sql_compile_script(sqlite3* db,
             } else {
                 sql_content.append(script);
             }
-            errors.emplace_back(lnav::console::user_message::error(
-                                    "failed to compile SQL statement")
-                                    .with_reason(errmsg)
-                                    .with_snippet(lnav::console::snippet::from(
-                                                      src_name, sql_content)
-                                                      .with_line(line_number)));
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    "failed to compile SQL statement")
+                    .with_reason(errmsg)
+                    .with_snippet(
+                        lnav::console::snippet::from(
+                            intern_string::lookup(src_name), sql_content)
+                            .with_line(line_number)));
             break;
         } else if (script == tail) {
             break;
@@ -772,7 +774,8 @@ sql_execute_script(sqlite3* db,
                             "failed to execute SQL statement")
                             .with_reason(errmsg)
                             .with_snippet(lnav::console::snippet::from(
-                                src_name, sqlite3_sql(stmt))));
+                                intern_string::lookup(src_name),
+                                sqlite3_sql(stmt))));
                     done = true;
                     break;
                 }

@@ -185,3 +185,20 @@ string_fragment::consume_n(int amount) const
         this->sf_end,
     };
 }
+
+std::vector<string_fragment>
+string_fragment::split_lines() const
+{
+    std::vector<string_fragment> retval;
+    int start = this->sf_begin;
+
+    for (auto index = start; index < this->sf_end; index++) {
+        if ((*this)[index] == '\n') {
+            retval.emplace_back(this->sf_string, start, index + 1);
+            start = index + 1;
+        }
+    }
+    retval.emplace_back(this->sf_string, start, this->sf_end);
+
+    return retval;
+}

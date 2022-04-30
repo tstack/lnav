@@ -31,6 +31,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/injector.hh"
+#include "base/itertools.hh"
 #include "base/math_util.hh"
 #include "base/opt_util.hh"
 #include "bookmarks.hh"
@@ -160,8 +161,17 @@ handle_keyseq(const char* keyseq)
 
     log_debug("executing key sequence %s: %s", keyseq, kc.kc_cmd.c_str());
     auto result = execute_any(ec, kc.kc_cmd);
-    lnav_data.ld_rl_view->set_value(
-        result.map(ok_prefix).orElse(err_to_ok).unwrap());
+    if (result.isOk()) {
+        lnav_data.ld_rl_view->set_value(result.unwrap());
+    } else {
+        auto um = result.unwrapErr();
+
+        um.um_snippets.clear();
+        um.um_reason.clear();
+        um.um_notes.clear();
+        um.um_help.clear();
+        lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
+    }
 
     if (!kc.kc_alt_msg.empty()) {
         shlex lexer(kc.kc_alt_msg);
@@ -731,13 +741,13 @@ handle_paging_key(int ch)
             db_label_source& dls = lnav_data.ld_db_row_source;
 
             if (toggle_view(db_tc)) {
-                long log_line_index = dls.column_name_to_index("log_line");
+                auto log_line_index = dls.column_name_to_index("log_line");
 
-                if (log_line_index == -1) {
+                if (!log_line_index) {
                     log_line_index = dls.column_name_to_index("min(log_line)");
                 }
 
-                if (log_line_index != -1) {
+                if (log_line_index) {
                     fmt::memory_buffer linestr;
                     int line_number = (int) tc->get_top();
                     unsigned int row;
@@ -747,7 +757,7 @@ handle_paging_key(int ch)
                                    line_number);
                     linestr.push_back('\0');
                     for (row = 0; row < dls.dls_rows.size(); row++) {
-                        if (strcmp(dls.dls_rows[row][log_line_index],
+                        if (strcmp(dls.dls_rows[row][log_line_index.value()],
                                    linestr.data())
                             == 0) {
                             vis_line_t db_line(row);
@@ -761,16 +771,16 @@ handle_paging_key(int ch)
             } else if (db_tc->get_inner_height() > 0) {
                 int db_row = db_tc->get_top();
                 tc = &lnav_data.ld_views[LNV_LOG];
-                long log_line_index = dls.column_name_to_index("log_line");
+                auto log_line_index = dls.column_name_to_index("log_line");
 
-                if (log_line_index == -1) {
+                if (!log_line_index) {
                     log_line_index = dls.column_name_to_index("min(log_line)");
                 }
 
-                if (log_line_index != -1) {
+                if (log_line_index) {
                     unsigned int line_number;
 
-                    if (sscanf(dls.dls_rows[db_row][log_line_index],
+                    if (sscanf(dls.dls_rows[db_row][log_line_index.value()],
                                "%d",
                                &line_number)
                         && line_number < tc->listview_rows(*tc))
@@ -839,11 +849,10 @@ handle_paging_key(int ch)
                     if (line_attr_opt) {
                         const auto& fc = lnav_data.ld_active_files;
                         auto lf = line_attr_opt.value().get();
-                        auto iter
-                            = find(fc.fc_files.begin(), fc.fc_files.end(), lf);
-                        if (iter != fc.fc_files.end()) {
-                            auto index = distance(fc.fc_files.begin(), iter);
-                            auto index_vl = vis_line_t(index);
+                        auto index_opt
+                            = fc.fc_files | lnav::itertools::find(lf);
+                        if (index_opt) {
+                            auto index_vl = vis_line_t(index_opt.value());
 
                             lnav_data.ld_files_view.set_top(index_vl);
                             lnav_data.ld_files_view.set_selection(index_vl);

@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/file_range.hh"
 
 namespace lnav {
 namespace console {
@@ -41,40 +42,44 @@ namespace console {
 void println(FILE* file, const attr_line_t& al);
 
 struct snippet {
-    static snippet from(std::string src, const attr_line_t& content)
+    static snippet from(intern_string_t src, const attr_line_t& content)
     {
         snippet retval;
 
-        retval.s_source = std::move(src);
+        retval.s_location.sl_source = src;
+        retval.s_content = content;
+        return retval;
+    }
+
+    static snippet from(source_location loc, const attr_line_t& content)
+    {
+        snippet retval;
+
+        retval.s_location = loc;
         retval.s_content = content;
         return retval;
     }
 
     snippet& with_line(int32_t line)
     {
-        this->s_line = line;
+        this->s_location.sl_line_number = line;
         return *this;
     }
 
-    snippet& with_column(int32_t column)
-    {
-        this->s_column = column;
-        return *this;
-    }
-
-    std::string s_source;
-    int32_t s_line{0};
-    int32_t s_column{0};
+    source_location s_location;
     attr_line_t s_content;
 };
 
 struct user_message {
     enum class level {
+        raw,
         ok,
         info,
         warning,
         error,
     };
+
+    static user_message raw(const attr_line_t& al);
 
     static user_message error(const attr_line_t& al);
 
@@ -89,6 +94,11 @@ struct user_message {
         this->um_reason = al;
         this->um_reason.rtrim();
         return *this;
+    }
+
+    user_message& with_reason(const user_message& um)
+    {
+        return this->with_reason(um.to_attr_line({}));
     }
 
     user_message& with_errno_reason()
@@ -113,15 +123,21 @@ struct user_message {
 
     user_message& with_note(const attr_line_t& al)
     {
-        this->um_notes.emplace_back(al);
+        if (!al.blank()) {
+            this->um_notes.emplace_back(al);
+        }
 
         return *this;
     }
 
     user_message& with_help(const attr_line_t& al)
     {
-        this->um_help = al;
-        this->um_help.rtrim();
+        if (al.blank()) {
+            this->um_help.clear();
+        } else {
+            this->um_help = al;
+            this->um_help.rtrim();
+        }
 
         return *this;
     }

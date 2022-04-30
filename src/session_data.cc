@@ -53,6 +53,7 @@
 #include "service_tags.hh"
 #include "sql_util.hh"
 #include "tailer/tailer.looper.hh"
+#include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -60,7 +61,7 @@ struct session_data_t session_data;
 
 static const char* LOG_METADATA_NAME = "log_metadata.db";
 
-static const char* BOOKMARK_TABLE_DEF = R"(
+static const char* META_TABLE_DEF = R"(
 CREATE TABLE IF NOT EXISTS bookmarks (
     log_time datetime,
     log_format varchar(64),
@@ -92,6 +93,20 @@ CREATE TABLE IF NOT EXISTS recent_netlocs (
     access_time datetime DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (netloc)
+);
+
+CREATE TABLE IF NOT EXISTS regex101_entries (
+    format_name text NOT NULL,
+    regex_name text NOT NULL,
+    permalink text NOT NULL,
+    delete_code text NOT NULL,
+
+    PRIMARY KEY (format_name, regex_name),
+
+    CHECK(
+       format_name  <> '' AND
+       regex_name   <> '' AND
+       permalink    <> '')
 );
 )";
 
@@ -178,6 +193,79 @@ bind_values(sqlite3_stmt* stmt, Args... args)
 {
     return bind_values_helper(
         stmt, std::make_index_sequence<sizeof...(Args)>(), args...);
+}
+
+struct prepared_stmt {
+    prepared_stmt(auto_mem<sqlite3_stmt> stmt) : ps_stmt(std::move(stmt)) {}
+
+    Result<void, std::string> execute()
+    {
+        auto rc = sqlite3_step(this->ps_stmt.in());
+        if (rc == SQLITE_OK && rc == SQLITE_DONE) {
+            return Ok();
+        }
+
+        auto msg = std::string(
+            sqlite3_errmsg(sqlite3_db_handle(this->ps_stmt.in())));
+        return Err(msg);
+    }
+
+    struct end_of_rows {};
+    struct fetch_error {
+        std::string fe_msg;
+    };
+
+    template<typename T>
+    using fetch_result = mapbox::util::variant<T, end_of_rows, fetch_error>;
+
+    template<typename T>
+    fetch_result<T> fetch_row()
+    {
+        auto rc = sqlite3_step(this->ps_stmt.in());
+        if (rc == SQLITE_OK || rc == SQLITE_DONE) {
+            return end_of_rows{};
+        }
+
+        if (rc == SQLITE_ROW) {
+            const auto argc = sqlite3_column_count(this->ps_stmt.in());
+            sqlite3_value* argv[argc];
+
+            for (int lpc = 0; lpc < argc; lpc++) {
+                argv[lpc] = sqlite3_column_value(this->ps_stmt.in(), lpc);
+            }
+
+            return from_sqlite<T>()(argc, argv, 0);
+        }
+
+        return fetch_error{
+            sqlite3_errmsg(sqlite3_db_handle(this->ps_stmt.in())),
+        };
+    }
+
+    auto_mem<sqlite3_stmt> ps_stmt;
+};
+
+template<typename... Args>
+static Result<prepared_stmt, std::string>
+prepare_stmt(sqlite3* db, const char* sql, Args... args)
+{
+    auto_mem<sqlite3_stmt> retval(sqlite3_finalize);
+
+    if (sqlite3_prepare_v2(db, sql, -1, retval.out(), nullptr) != SQLITE_OK) {
+        return Err(
+            fmt::format(FMT_STRING("unable to prepare SQL statement: {}"),
+                        sqlite3_errmsg(db)));
+    }
+
+    if (bind_values(retval.in(), args...) != SQLITE_OK) {
+        return Err(
+            fmt::format(FMT_STRING("unable to prepare SQL statement: {}"),
+                        sqlite3_errmsg(db)));
+    }
+
+    return Ok(prepared_stmt{
+        std::move(retval),
+    });
 }
 
 static bool
@@ -455,7 +543,7 @@ load_time_bookmarks()
         while (!done) {
             switch (sqlite3_step(stmt.in())) {
                 case SQLITE_ROW: {
-                    auto netloc = sqlite3_column_text(stmt.in(), 0);
+                    const auto* netloc = sqlite3_column_text(stmt.in(), 0);
 
                     session_data.sd_recent_netlocs.insert((const char*) netloc);
                     break;
@@ -948,7 +1036,8 @@ load_session()
         session_data.sd_save_time = pair.first.second;
         const auto& view_info_path = pair.second;
 
-        yajlpp_parse_context ypc(view_info_path, &view_info_handlers);
+        yajlpp_parse_context ypc(intern_string::lookup(view_info_path.string()),
+                                 &view_info_handlers);
         ypc.with_obj(session_data);
         handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
 
@@ -1115,8 +1204,7 @@ save_time_bookmarks()
         return;
     }
 
-    if (sqlite3_exec(
-            db.in(), BOOKMARK_TABLE_DEF, nullptr, nullptr, errmsg.out())
+    if (sqlite3_exec(db.in(), META_TABLE_DEF, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {
         log_error("unable to make bookmark table -- %s", errmsg.in());
@@ -1688,4 +1776,167 @@ reset_session()
             vd.second->vd_meta.lvm_user_hidden = false;
         }
     }
+}
+
+void
+lnav::session::regex101::insert_entry(const lnav::session::regex101::entry& ei)
+{
+    constexpr const char* STMT = R"(
+       INSERT INTO regex101_entries
+          (format_name, regex_name, permalink, delete_code)
+          VALUES (?, ?, ?, ?);
+)";
+
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return;
+    }
+
+    auto_mem<char, sqlite3_free> errmsg;
+    if (sqlite3_exec(db.in(), META_TABLE_DEF, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
+        log_error("unable to make bookmark table -- %s", errmsg.in());
+        return;
+    }
+
+    auto prep_res = prepare_stmt(db.in(),
+                                 STMT,
+                                 ei.re_format_name,
+                                 ei.re_regex_name,
+                                 ei.re_permalink,
+                                 ei.re_delete_code);
+
+    if (prep_res.isErr()) {
+        return;
+    }
+
+    auto ps = prep_res.unwrap();
+
+    ps.execute();
+}
+
+template<>
+struct from_sqlite<lnav::session::regex101::entry> {
+    inline lnav::session::regex101::entry operator()(int argc,
+                                                     sqlite3_value** argv,
+                                                     int argi)
+    {
+        return {
+            from_sqlite<std::string>()(argc, argv, argi + 0),
+            from_sqlite<std::string>()(argc, argv, argi + 1),
+            from_sqlite<std::string>()(argc, argv, argi + 2),
+            from_sqlite<std::string>()(argc, argv, argi + 3),
+        };
+    }
+};
+
+Result<std::vector<lnav::session::regex101::entry>, std::string>
+lnav::session::regex101::get_entries()
+{
+    constexpr const char* STMT = R"(
+       SELECT * FROM regex101_entries;
+)";
+
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return Err(std::string());
+    }
+
+    auto_mem<char, sqlite3_free> errmsg;
+    if (sqlite3_exec(db.in(), META_TABLE_DEF, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
+        log_error("unable to make bookmark table -- %s", errmsg.in());
+        return Err(std::string(errmsg));
+    }
+
+    auto ps = TRY(prepare_stmt(db.in(), STMT));
+    bool done = false;
+    std::vector<entry> retval;
+
+    while (!done) {
+        auto fetch_res = ps.fetch_row<entry>();
+
+        if (fetch_res.is<prepared_stmt::fetch_error>()) {
+            return Err(fetch_res.get<prepared_stmt::fetch_error>().fe_msg);
+        }
+
+        fetch_res.match(
+            [&done](const prepared_stmt::end_of_rows&) { done = true; },
+            [](const prepared_stmt::fetch_error&) {},
+            [&retval](entry en) { retval.emplace_back(en); });
+    }
+    return Ok(retval);
+}
+
+void
+lnav::session::regex101::delete_entry(const std::string& format_name,
+                                      const std::string& regex_name)
+{
+    constexpr const char* STMT = R"(
+       DELETE FROM regex101_entries WHERE
+          format_name = ? AND regex_name = ?;
+)";
+
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return;
+    }
+
+    auto prep_res = prepare_stmt(db.in(), STMT, format_name, regex_name);
+
+    if (prep_res.isErr()) {
+        return;
+    }
+
+    auto ps = prep_res.unwrap();
+
+    ps.execute();
+}
+
+lnav::session::regex101::get_result_t
+lnav::session::regex101::get_entry(const std::string& format_name,
+                                   const std::string& regex_name)
+{
+    constexpr const char* STMT = R"(
+       SELECT * FROM regex101_entries WHERE
+          format_name = ? AND regex_name = ?;
+    )";
+
+    auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return error{std::string()};
+    }
+
+    auto_mem<char, sqlite3_free> errmsg;
+    if (sqlite3_exec(db.in(), META_TABLE_DEF, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
+        log_error("unable to make bookmark table -- %s", errmsg.in());
+        return error{std::string(errmsg)};
+    }
+
+    auto prep_res = prepare_stmt(db.in(), STMT, format_name, regex_name);
+    if (prep_res.isErr()) {
+        return error{prep_res.unwrapErr()};
+    }
+
+    auto ps = prep_res.unwrap();
+    return ps.fetch_row<entry>().match(
+        [](const prepared_stmt::fetch_error& fe) -> get_result_t {
+            return error{fe.fe_msg};
+        },
+        [](const prepared_stmt::end_of_rows&) -> get_result_t {
+            return no_entry{};
+        },
+        [](const entry& en) -> get_result_t { return en; });
 }

@@ -72,7 +72,7 @@ public:
                 bar_role_out = role_t::VCR_SCROLLBAR_WARNING;
             }
         }
-    };
+    }
 };
 
 #endif

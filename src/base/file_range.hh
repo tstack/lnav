@@ -62,15 +62,17 @@ public:
 
 struct source_location {
     source_location()
-        : sl_source(intern_string::lookup("unknown")), sl_line_number(-1)
+        : sl_source(intern_string::lookup("unknown")), sl_line_number(0)
     {
     }
 
-    source_location(intern_string_t source, int line)
-        : sl_source(source), sl_line_number(line){};
+    explicit source_location(intern_string_t source, int32_t line = 0)
+        : sl_source(source), sl_line_number(line)
+    {
+    }
 
     intern_string_t sl_source;
-    int sl_line_number;
+    int32_t sl_line_number;
 };
 
 #endif

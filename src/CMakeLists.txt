@@ -68,8 +68,10 @@ set(TIME_FORMATS
         "%m/%d/%Y %l:%M:%S %p %Z"
         "%m/%e/%Y %I:%M:%S %p"
         "%m/%e/%Y %l:%M:%S %p"
+        "%m/%d/%Y %H:%M:%S"
         "%d/%b/%y %H:%M:%S"
         "%m%d %H:%M:%S"
+        "%Y%m%d.%H%M%S"
         "%H:%M:%S"
         "%M:%S"
         "%m/%d %H:%M:%S"
@@ -253,6 +255,7 @@ add_library(
         command_executor.cc
         curl_looper.cc
         db_sub_source.cc
+        dump_internals.cc
         elem_to_json.cc
         environ_vtab.cc
         extension-functions.cc
@@ -275,6 +278,8 @@ add_library(
         input_dispatcher.cc
         json-extension-functions.cc
         listview_curses.cc
+        lnav.indexing.cc
+        lnav.management_cli.cc
         lnav_commands.cc
         lnav_config.cc
         lnav_util.cc
@@ -301,6 +306,8 @@ add_library(
         readline_highlighters.cc
         readline_possibilities.cc
         regexp_vtab.cc
+        regex101.client.cc
+        regex101.import.cc
         relative_time.cc
         session_data.cc
         sequence_matcher.cc
@@ -347,6 +354,7 @@ add_library(
         column_namer.hh
         curl_looper.hh
         doc_status_source.hh
+        dump_internals.hh
         elem_to_json.hh
         field_overlay_source.hh
         file_collection.hh
@@ -364,6 +372,8 @@ add_library(
         hotkeys.hh
         input_dispatcher.hh
         k_merge_tree.h
+        lnav.indexing.hh
+        lnav.management_cli.hh
         lnav_config.hh
         lnav_config_fwd.hh
         log_actions.hh
@@ -390,6 +400,8 @@ add_library(
         readline_callbacks.hh
         readline_context.hh
         readline_possibilities.hh
+        regex101.client.hh
+        regex101.import.hh
         regexp_vtab.hh
         relative_time.hh
         styling.hh
@@ -422,6 +434,7 @@ add_library(
         url_loader.hh
         view_helpers.hh
         view_helpers.examples.hh
+        view_helpers.hist.hh
         views_vtab.hh
         vis_line.hh
         vtab_module.hh
@@ -439,7 +452,24 @@ add_library(
         ghc/fs_std_fwd.hpp
         ghc/fs_std_impl.hpp
         ww898/cp_utf8.hpp
-        log_level_re.cc)
+        log_level_re.cc
+
+        third-party/CLI/StringTools.hpp
+        third-party/CLI/App.hpp
+        third-party/CLI/Macros.hpp
+        third-party/CLI/Option.hpp
+        third-party/CLI/Config.hpp
+        third-party/CLI/CLI.hpp
+        third-party/CLI/Formatter.hpp
+        third-party/CLI/Error.hpp
+        third-party/CLI/Version.hpp
+        third-party/CLI/Timer.hpp
+        third-party/CLI/FormatterFwd.hpp
+        third-party/CLI/Validators.hpp
+        third-party/CLI/Split.hpp
+        third-party/CLI/TypeTools.hpp
+        third-party/CLI/ConfigFwd.hpp
+)
 
 set(lnav_SRCS lnav.cc)
 

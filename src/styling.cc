@@ -68,7 +68,8 @@ static const struct json_path_container root_color_handler = {
 term_color_palette*
 xterm_colors()
 {
-    static term_color_palette retval(xterm_palette_json.to_string_fragment());
+    static term_color_palette retval(xterm_palette_json.get_name(),
+                                     xterm_palette_json.to_string_fragment());
 
     return &retval;
 }
@@ -76,7 +77,8 @@ xterm_colors()
 term_color_palette*
 ansi_colors()
 {
-    static term_color_palette retval(ansi_palette_json.to_string_fragment());
+    static term_color_palette retval(ansi_palette_json.get_name(),
+                                     ansi_palette_json.to_string_fragment());
 
     return &retval;
 }
@@ -180,9 +182,11 @@ rgb_color::operator!=(const rgb_color& rhs) const
     return !(rhs == *this);
 }
 
-term_color_palette::term_color_palette(const string_fragment& json)
+term_color_palette::term_color_palette(const char* name,
+                                       const string_fragment& json)
 {
-    yajlpp_parse_context ypc_xterm("palette.json", &root_color_handler);
+    yajlpp_parse_context ypc_xterm(intern_string::lookup(name),
+                                   &root_color_handler);
     yajl_handle handle;
 
     handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);

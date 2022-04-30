@@ -35,6 +35,29 @@
 #include "config.h"
 #include "doctest/doctest.h"
 
+TEST_CASE("split_lines")
+{
+    std::string in1 = "Hello, World!";
+    std::string in2 = "Hello, World!\nGoodbye, World!";
+
+    {
+        auto sf = string_fragment(in1);
+        auto split = sf.split_lines();
+
+        CHECK(1 == split.size());
+        CHECK(in1 == split[0].to_string());
+    }
+
+    {
+        auto sf = string_fragment(in2);
+        auto split = sf.split_lines();
+
+        CHECK(2 == split.size());
+        CHECK("Hello, World!\n" == split[0].to_string());
+        CHECK("Goodbye, World!" == split[1].to_string());
+    }
+}
+
 TEST_CASE("consume")
 {
     auto is_eq = string_fragment::tag1{'='};

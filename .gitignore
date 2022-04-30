@@ -2,7 +2,7 @@
 .lnav
 *.dat
 *.diff
-*.err
+test/*.err
 *.index
 *.log
 *.o

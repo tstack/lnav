@@ -91,6 +91,17 @@ curl_request::debug_cb(
     return 0;
 }
 
+size_t
+curl_request::string_cb(void* data, size_t size, size_t nmemb, void* userp)
+{
+    auto realsize = size * nmemb;
+    auto& vec = *static_cast<std::string*>(userp);
+
+    vec.append((char*) data, ((char*) data) + realsize);
+
+    return realsize;
+}
+
 void
 curl_looper::loop_body()
 {
@@ -243,6 +254,20 @@ curl_looper::compute_timeout(mstime_t current_time) const
     ensure(retval.count() > 0);
 
     return retval;
+}
+
+void
+curl_looper::process_all()
+{
+    this->check_for_new_requests();
+
+    this->requeue_requests(LONG_MAX);
+
+    while (!this->cl_handle_to_request.empty()) {
+        this->perform_io();
+
+        this->check_for_finished_requests();
+    }
 }
 
 #endif

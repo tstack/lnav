@@ -170,6 +170,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	db_sub_source.hh \
 	doc_status_source.hh \
+	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \
@@ -196,6 +197,8 @@ noinst_HEADERS = \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
+	lnav.indexing.hh \
+	lnav.management_cli.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
 	lnav_config_fwd.hh \
@@ -233,6 +236,8 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	readline_possibilities.hh \
+	regex101.client.hh \
+	regex101.import.hh \
 	regexp_vtab.hh \
 	relative_time.hh \
 	ring_span.hh \
@@ -271,6 +276,7 @@ noinst_HEADERS = \
 	view_curses.hh \
 	view_helpers.hh \
 	view_helpers.examples.hh \
+	view_helpers.hist.hh \
 	views_vtab.hh \
 	vis_line.hh \
 	vt52_curses.hh \
@@ -295,6 +301,21 @@ nodist_libdiag_a_SOURCES = \
 
 THIRD_PARTY_SRCS = \
     third-party/backward-cpp/backward.hpp \
+    third-party/CLI/StringTools.hpp \
+    third-party/CLI/App.hpp \
+    third-party/CLI/Macros.hpp \
+    third-party/CLI/Option.hpp \
+    third-party/CLI/Config.hpp \
+    third-party/CLI/CLI.hpp \
+    third-party/CLI/Formatter.hpp \
+    third-party/CLI/Error.hpp \
+    third-party/CLI/Version.hpp \
+    third-party/CLI/Timer.hpp \
+    third-party/CLI/FormatterFwd.hpp \
+    third-party/CLI/Validators.hpp \
+    third-party/CLI/Split.hpp \
+    third-party/CLI/TypeTools.hpp \
+    third-party/CLI/ConfigFwd.hpp \
     third-party/doctest-root/doctest/doctest.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
@@ -312,6 +333,7 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_scanner_re.cc \
 	db_sub_source.cc \
+	dump_internals.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
 	extension-functions.cc \
@@ -359,6 +381,8 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	readline_possibilities.cc \
+	regex101.client.cc \
+	regex101.import.cc \
 	regexp_vtab.cc \
 	relative_time.cc \
 	session_data.cc \
@@ -398,9 +422,18 @@ PLUGIN_SRCS = \
 
 lnav.$(OBJEXT): help-txt.h init-sql.h
 
-lnav_SOURCES = lnav.cc $(PLUGIN_SRCS)
+lnav_SOURCES = \
+    lnav.cc \
+    lnav.indexing.cc \
+    lnav.management_cli.cc \
+    $(PLUGIN_SRCS)
 
-lnav_test_SOURCES = lnav.cc test_override.c $(PLUGIN_SRCS)
+lnav_test_SOURCES = \
+    lnav.cc \
+    lnav.indexing.cc \
+    lnav.management_cli.cc \
+    test_override.c \
+    $(PLUGIN_SRCS)
 
 ptimec$(BUILD_EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $?
@@ -418,6 +451,9 @@ CLEANFILES = \
 DISTCLEANFILES = \
     $(LNAV_BUILT_FILES) \
 	$(RE2C_FILES)
+
+distclean-local:
+	$(RM_V)rm -rf *.dSYM
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
