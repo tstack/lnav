@@ -7,7 +7,7 @@ run_cap_test ./drive_shlexer '$FOO'
 
 run_cap_test ./drive_shlexer '${FOO}'
 
-run_cap_test ./drive_shlexer '\a'
+# run_cap_test ./drive_shlexer '\a'
 
 run_cap_test ./drive_shlexer '\'
 
