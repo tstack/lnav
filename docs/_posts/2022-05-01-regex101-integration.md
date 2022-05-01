@@ -1,8 +1,7 @@
 ---
 layout: post
 title: Integration with regex101.com
-excerpt: Create format files from regular expressions on regex101.com and edit
-them too
+excerpt: Create/edit format files using regex101.com
 ---
 
 *(This change will be in the upcoming v0.10.2 release)*
