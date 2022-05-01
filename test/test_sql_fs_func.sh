@@ -8,9 +8,9 @@ rm sql_fs_readlink_test.lnk
 
 run_cap_test ./drive_sql "select realpath('non-existent-path')"
 
-ln -sf drive_sql sql_fs_realpath_test.lnk
-run_cap_test ./drive_sql "select realpath('sql_fs_realpath_test.lnk')"
-rm sql_fs_realpath_test.lnk
+# ln -sf drive_sql sql_fs_realpath_test.lnk
+# run_cap_test ./drive_sql "select realpath('sql_fs_realpath_test.lnk')"
+# rm sql_fs_realpath_test.lnk
 
 run_cap_test ./drive_sql "select basename('')"
 
