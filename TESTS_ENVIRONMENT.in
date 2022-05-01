@@ -94,8 +94,8 @@ run_cap_test() {
     "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
 
     sed -ibak \
-        -e "s;${builddir};{builddir};g" \
         -e "s;${test_dir};{test_dir};g" \
+        -e "s;${builddir};{builddir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         ${test_file_base}_${test_hash}.out
     echo
@@ -121,8 +121,8 @@ run_cap_test() {
     fi
 
     sed -ibak -E \
-        -e "s;${builddir};{builddir};g" \
         -e "s;${test_dir};{test_dir};g" \
+        -e "s;${builddir};{builddir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e 's;"errorId":".+";;g' \
         ${test_file_base}_${test_hash}.err
