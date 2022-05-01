@@ -96,6 +96,9 @@ Options
 Management Mode (v0.10.2+)
 --------------------------
 
+The management CLI mode provides functionality for query **lnav**'s log
+format definitions.
+
 Options
 ^^^^^^^
 
