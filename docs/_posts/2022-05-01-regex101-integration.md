@@ -12,9 +12,14 @@ has been added. Now, you can create regular expressions for plaintext log
 files on https://regex101.com and then create a skeleton format file with a
 simple command. If you already have a format file that needs to be updated,
 you can push the regexes up to regex101, edit them with their interface, and
-then pull the changes back down as a format patch file. In addition, there
-is work underway to improve error messages, both how in what they say and
-how they look.
+then pull the changes back down as a format patch file.
+
+To further improve the experience of developing with format files, there is
+also work underway to improve error messages. Many messages should be clearer,
+more context is provided, and they should look nicer as well. For example, the
+following error is displayed when a format regex is not valid:
+
+![Screenshot of an error message](/assets/images/lnav-invalid-regex-error.png)
 
 ## Management CLI
 
