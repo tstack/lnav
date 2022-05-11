@@ -1859,6 +1859,7 @@ main(int argc, char* argv[])
     }
 
     (void) signal(SIGPIPE, SIG_IGN);
+    setlocale(LC_ALL, "");
     try {
         std::locale::global(std::locale(""));
     } catch (const std::runtime_error& e) {

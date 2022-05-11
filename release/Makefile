@@ -10,17 +10,17 @@ clean-outbox: outbox
 	rm -f outbox/*
 
 PACKAGE_URLS = \
-	https://www.libarchive.org/downloads/libarchive-3.5.1.tar.gz \
+	https://www.libarchive.org/downloads/libarchive-3.6.1.tar.gz \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
-	ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz \
-	https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz \
+	ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.3.tar.gz \
+	https://sourceforge.net/projects/pcre/files/pcre/8.42/pcre-8.42.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
-	http://www.zlib.net/zlib-1.2.11.tar.gz \
+	https://zlib.net/zlib-1.2.12.tar.gz \
 	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
-	https://www.sqlite.org/2021/sqlite-autoconf-3360000.tar.gz \
+	https://www.sqlite.org/2022/sqlite-autoconf-3380500.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.se/download/curl-7.77.0.tar.gz \
+	https://curl.se/download/curl-7.83.0.tar.gz \
 	https://tukaani.org/xz/xz-5.2.5.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs musl

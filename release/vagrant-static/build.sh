@@ -19,11 +19,11 @@ mkdir -p ~/github
 
 cd ~/github
 if ! test -d lnav; then
-    git clone git://github.com/tstack/lnav.git
+    git clone https://github.com/tstack/lnav.git
 fi
 
 cd ~/github/lnav
-git pull
+git pull --rebase
 
 if test -n "$SRC_VERSION"; then
     git checkout "$SRC_VERSION"

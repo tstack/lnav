@@ -73,12 +73,7 @@ OS=$(uname -s)
  make &&
  make install)
 
-(cd ncurses-5.9 &&
- wget ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20141206-patch.sh.bz2 &&
- bunzip2 ncurses-5.9-20141206-patch.sh.bz2 &&
- bash ./ncurses-5.9-20141206-patch.sh)
-
-(cd ncurses-5.9 && \
+(cd ncurses-6.3 && \
  ./configure --prefix=${FAKE_ROOT} \
      --enable-ext-mouse \
      --enable-sigwinch \
@@ -98,7 +93,7 @@ OS=$(uname -s)
  make && make install)
 
 if test x"${OS}" != x"FreeBSD"; then
-    (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+    (cd zlib-1.2.12 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
     (cd libssh2-* &&
      ./configure --prefix=${FAKE_ROOT} \
@@ -118,7 +113,7 @@ if test x"${OS}" != x"FreeBSD"; then
      make &&
      make install)
 else
-    (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
+    (cd zlib-1.2.12 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
         && make && make install)
 
     (cd libssh2-* &&

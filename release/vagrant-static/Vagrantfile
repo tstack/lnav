@@ -33,14 +33,14 @@ Vagrant.configure(2) do |config|
   config.vm.define :musl do |musl|
       musl.vbguest.auto_update = false
       musl.vm.synced_folder ".", "/vagrant", type: "virtualbox"
-      musl.vm.network "private_network", ip: "10.11.12.16"
+      musl.vm.network "private_network", ip: "192.168.56.16"
       musl.vm.provision "shell", path:"musl-pkg.sh"
       musl.vm.provision "shell", path:"provision.sh"
-      musl.vm.box = "generic/alpine313"
+      musl.vm.box = "generic/alpine315"
   end
 
   config.vm.define :linux do |linux|
-      linux.vm.network :private_network, ip: "10.11.12.14"
+      linux.vm.network :private_network, ip: "192.168.56.14"
       linux.vm.provision "shell", path:"pkg.sh"
       linux.vm.provision "shell", path:"provision.sh"
       linux.vm.box = "centos/7"
@@ -48,7 +48,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.define :pkger do |pkger|
       # config.vm.synced_folder ".", "/vagrant", type: "nfs"
-      pkger.vm.network :private_network, ip: "10.11.12.15"
+      pkger.vm.network :private_network, ip: "192.168.56.15"
       pkger.vm.provision "shell", path:"provision-pkg.sh"
       pkger.vm.box = "ubuntu/xenial64"
   end
