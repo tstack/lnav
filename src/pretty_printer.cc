@@ -386,7 +386,7 @@ pretty_printer::hier_node::lookup_child(pretty_printer::key_t key) const
 
 nonstd::optional<const pretty_printer::hier_node*>
 pretty_printer::hier_node::lookup_path(const pretty_printer::hier_node* root,
-                                       const std::vector<const key_t>& path)
+                                       const std::vector<key_t>& path)
 {
     auto retval = nonstd::make_optional(root);
 

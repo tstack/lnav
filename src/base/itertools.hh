@@ -506,11 +506,13 @@ template<typename T, typename F>
 auto
 operator|(const std::vector<T>& in,
           const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<typename std::remove_reference_t<
-        typename std::remove_const_t<decltype(((in.front()).*mapper.m_func))>>>
+    -> std::vector<
+        typename std::remove_const_t<typename std::remove_reference_t<
+            decltype(((in.front()).*mapper.m_func))>>>
 {
-    using return_type = std::vector<typename std::remove_reference_t<
-        typename std::remove_const_t<decltype(((in.front()).*mapper.m_func))>>>;
+    using return_type = std::vector<
+        typename std::remove_const_t<typename std::remove_reference_t<decltype((
+            (in.front()).*mapper.m_func))>>>;
     return_type retval;
 
     retval.reserve(in.size());

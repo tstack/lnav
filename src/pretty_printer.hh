@@ -75,7 +75,7 @@ public:
         nonstd::optional<hier_node*> lookup_child(key_t key) const;
 
         static nonstd::optional<const hier_node*> lookup_path(
-            const hier_node* root, const std::vector<const key_t>& path);
+            const hier_node* root, const std::vector<key_t>& path);
 
         template<typename F>
         static void depth_first(hier_node* root, F func)
