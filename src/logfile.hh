@@ -34,6 +34,7 @@
 #define logfile_hh
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -358,10 +359,12 @@ public:
     using note_map = std::map<note_type, std::string>;
     using safe_notes = safe::Safe<note_map>;
 
-    note_map get_notes() const
-    {
-        return *this->lf_notes.readAccess();
-    }
+    note_map get_notes() const { return *this->lf_notes.readAccess(); }
+
+    using opid_map = std::unordered_map<std::string, timeval>;
+    using safe_opid_map = safe::Safe<opid_map>;
+
+    safe_opid_map& get_opids() { return this->lf_opids; }
 
 protected:
     /**
@@ -407,6 +410,7 @@ private:
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
+    safe_opid_map lf_opids;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };

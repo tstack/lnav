@@ -79,6 +79,9 @@
                     },
                     "list-glyph": {
                         "color": "Yellow"
+                    },
+                    "breadcrumb": {
+                        "color": "Teal"
                     }
                 },
                 "syntax-styles": {
@@ -118,6 +121,9 @@
                     },
                     "file": {
                         "color": "Blue"
+                    },
+                    "number": {
+                        "bold": true
                     }
                 },
                 "status-styles": {
@@ -199,7 +205,13 @@
                         }
                     },
                     "xml": {
-                        "pattern": "</?([^ >=]+)[^>]*>",
+                        "pattern": "</?([^ >=!]+)[^>]*>",
+                        "style": {
+                            "color": "${semantic_highlight_color}"
+                        }
+                    },
+                    "xml-decl": {
+                        "pattern": "<!([^ >=!]+)[^>]*>",
                         "style": {
                             "color": "${semantic_highlight_color}"
                         }

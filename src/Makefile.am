@@ -161,6 +161,8 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	bound_tags.hh \
+	breadcrumb.hh \
+	breadcrumb_curses.hh \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
@@ -193,6 +195,7 @@ noinst_HEADERS = \
 	hotkeys.hh \
 	init.sql \
 	input_dispatcher.hh \
+	itertools.similar.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
@@ -275,6 +278,7 @@ noinst_HEADERS = \
 	url_loader.hh \
 	view_curses.hh \
 	view_helpers.hh \
+	view_helpers.crumbs.hh \
 	view_helpers.examples.hh \
 	view_helpers.hist.hh \
 	views_vtab.hh \
@@ -317,6 +321,7 @@ THIRD_PARTY_SRCS = \
     third-party/CLI/TypeTools.hpp \
     third-party/CLI/ConfigFwd.hpp \
     third-party/doctest-root/doctest/doctest.h \
+    third-party/intervaltree/IntervalTree.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
 
@@ -326,6 +331,7 @@ libdiag_a_SOURCES = \
 	archive_manager.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
+	breadcrumb_curses.cc \
 	collation-functions.cc \
 	column_namer.cc \
 	command_executor.cc \
@@ -375,6 +381,7 @@ libdiag_a_SOURCES = \
 	data_parser.cc \
 	papertrail_proc.cc \
 	pcap_manager.cc \
+	plain_text_source.cc \
 	pretty_printer.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \

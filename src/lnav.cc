@@ -89,6 +89,7 @@
 #include "bookmarks.hh"
 #include "bottom_status_source.hh"
 #include "bound_tags.hh"
+#include "breadcrumb_curses.hh"
 #include "CLI/CLI.hpp"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
@@ -126,6 +127,7 @@
 #include "textfile_highlighters.hh"
 #include "textview_curses.hh"
 #include "top_status_source.hh"
+#include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
 #include "views_vtab.hh"
@@ -274,6 +276,8 @@ force_linking(services::main_t anno)
 {
 }
 }  // namespace injector
+
+static breadcrumb_curses breadcrumb_view;
 
 bool
 setup_logline_table(exec_context& ec)
@@ -835,7 +839,21 @@ handle_key(int ch)
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
+                    if (ch == KEY_ENTER || ch == '\n' || ch == '\r') {
+                        breadcrumb_view.focus();
+                        lnav_data.ld_mode = ln_mode_t::BREADCRUMBS;
+                        return true;
+                    }
+
                     return handle_paging_key(ch);
+
+                case ln_mode_t::BREADCRUMBS:
+                    if (!breadcrumb_view.handle_key(ch)) {
+                        lnav_data.ld_mode = ln_mode_t::PAGING;
+                        lnav_data.ld_view_stack.set_needs_update();
+                        return true;
+                    }
+                    return true;
 
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
@@ -1048,6 +1066,15 @@ looper()
         view_colors& vc = view_colors::singleton();
         view_colors::init();
 
+        auto ecb_guard
+            = lnav_data.ld_exec_context.add_error_callback([](const auto& um) {
+                  lnav_data.ld_user_message_source.replace_with(
+                      um.to_attr_line().rtrim());
+                  lnav_data.ld_user_message_view.reload_data();
+                  lnav_data.ld_user_message_expiration
+                      = std::chrono::steady_clock::now() + 20s;
+              });
+
         {
             setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
@@ -1092,10 +1119,6 @@ looper()
         lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         sb.push_back(clear_last_user_mark);
-        sb.push_back(bind_mem(&top_status_source::update_filename,
-                              &lnav_data.ld_top_source));
-        vsb.push_back(bind_mem(&top_status_source::update_view_name,
-                               &lnav_data.ld_top_source));
         sb.push_back(bind_mem(&bottom_status_source::update_line_number,
                               &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&bottom_status_source::update_percent,
@@ -1112,6 +1135,9 @@ looper()
 
         vsb.push_back(sb);
 
+        breadcrumb_view.set_y(0);
+        breadcrumb_view.set_window(lnav_data.ld_window);
+        breadcrumb_view.set_line_source(lnav_crumb_source);
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
             lnav_data.ld_views[lpc].set_y(1);
@@ -1152,12 +1178,10 @@ looper()
 
         lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
-        lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (auto& sc : lnav_data.ld_status) {
             sc.set_window(lnav_data.ld_window);
         }
-        lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_data_source(
             &lnav_data.ld_bottom_source);
         lnav_data.ld_status[LNS_FILTER].set_data_source(
@@ -1256,7 +1280,6 @@ looper()
 
             gettimeofday(&current_time, nullptr);
 
-            lnav_data.ld_top_source.update_time(current_time);
             lnav_data.ld_preview_view.set_needs_update();
 
             layout_views();
@@ -1349,6 +1372,11 @@ looper()
                 lnav_data.ld_files_view.set_overlay_needs_update();
             }
 
+            if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS
+                && breadcrumb_view.get_needs_update())
+            {
+                lnav_data.ld_view_stack.set_needs_update();
+            }
             lnav_data.ld_view_stack.do_update();
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
@@ -1378,6 +1406,7 @@ looper()
                 default:
                     break;
             }
+            breadcrumb_view.do_update();
             if (lnav_data.ld_mode != ln_mode_t::FILTER
                 && lnav_data.ld_mode != ln_mode_t::FILES)
             {
@@ -1457,6 +1486,8 @@ looper()
                     int ch;
 
                     while ((ch = getch()) != ERR) {
+                        lnav_data.ld_user_message_source.clear();
+                        
                         alerter::singleton().new_input(ch);
 
                         lnav_data.ld_input_dispatcher.new_input(current_time,
@@ -1466,8 +1497,6 @@ looper()
                             lnav_data.ld_key_repeat_history.update(
                                 ch, tc->get_top());
                         };
-
-                        lnav_data.ld_user_message_source.clear();
 
                         if (!lnav_data.ld_looping) {
                             // No reason to keep processing input after the
@@ -1484,6 +1513,7 @@ looper()
                         case ln_mode_t::FILES:
                             next_rescan_time = next_status_update_time + 1s;
                             break;
+                        case ln_mode_t::BREADCRUMBS:
                         case ln_mode_t::COMMAND:
                         case ln_mode_t::SEARCH:
                         case ln_mode_t::SEARCH_FILTERS:
@@ -2227,6 +2257,7 @@ main(int argc, char* argv[])
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
 
+    lnav_data.ld_log_source.set_exec_context(&lnav_data.ld_exec_context);
     lnav_data.ld_views[LNV_HELP]
         .set_sub_source(&lnav_data.ld_help_source)
         .set_word_wrap(true);

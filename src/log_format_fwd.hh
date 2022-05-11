@@ -34,6 +34,7 @@
 
 #include <sys/types.h>
 
+#include "base/file_range.hh"
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"

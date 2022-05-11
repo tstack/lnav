@@ -526,10 +526,16 @@ public:
         return *this;
     }
 
-    template<typename C>
+    attr_line_t& with_attr_for_all(const string_attr_pair& sap)
+    {
+        this->al_attrs.emplace_back(line_range{0, -1}, sap);
+        return *this;
+    }
+
+    template<typename C, typename F>
     attr_line_t& join(const C& container,
                       const string_attr_pair& sap,
-                      const char* fill)
+                      const F& fill)
     {
         bool init = true;
         for (const auto& elem : container) {
@@ -537,6 +543,21 @@ public:
                 this->append(fill);
             }
             this->append(std::make_pair(elem, sap));
+            init = false;
+        }
+
+        return *this;
+    }
+
+    template<typename C, typename F>
+    attr_line_t& join(const C& container, const F& fill)
+    {
+        bool init = true;
+        for (const auto& elem : container) {
+            if (!init) {
+                this->append(fill);
+            }
+            this->append(elem);
             init = false;
         }
 

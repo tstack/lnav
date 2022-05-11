@@ -34,116 +34,76 @@
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/file_range.hh"
 #include "textview_curses.hh"
 
 class plain_text_source
     : public text_sub_source
     , public vis_location_history {
 public:
+    struct text_line {
+        text_line(file_off_t off, attr_line_t value)
+            : tl_offset(off), tl_value(std::move(value))
+        {
+        }
+
+        bool contains_offset(file_off_t off) const
+        {
+            return (this->tl_offset <= off
+                    && off < this->tl_offset + this->tl_value.length());
+        }
+
+        file_off_t tl_offset;
+        attr_line_t tl_value;
+    };
+
     plain_text_source() = default;
 
-    plain_text_source(const std::string& text)
-    {
-        size_t start = 0, end;
+    plain_text_source(const std::string& text);
 
-        while ((end = text.find('\n', start)) != std::string::npos) {
-            size_t len = (end - start);
-            this->tds_lines.emplace_back(text.substr(start, len));
-            start = end + 1;
-        }
-        if (start < text.length()) {
-            this->tds_lines.emplace_back(text.substr(start));
-        }
-        this->tds_longest_line = this->compute_longest_line();
-    }
+    plain_text_source(const std::vector<std::string>& text_lines);
 
-    plain_text_source(const std::vector<std::string>& text_lines)
-    {
-        this->replace_with(text_lines);
-    }
+    plain_text_source(const std::vector<attr_line_t>& text_lines);
 
-    plain_text_source(const std::vector<attr_line_t>& text_lines)
+    plain_text_source& set_reverse_selection(bool val)
     {
-        this->tds_lines = text_lines;
-        this->tds_longest_line = this->compute_longest_line();
-    }
-
-    plain_text_source& replace_with(const attr_line_t& text_lines)
-    {
-        this->tds_lines.clear();
-        text_lines.split_lines(this->tds_lines);
-        this->tds_longest_line = this->compute_longest_line();
+        this->tds_reverse_selection = val;
         return *this;
     }
 
-    plain_text_source& replace_with(const std::vector<std::string>& text_lines)
-    {
-        for (const auto& str : text_lines) {
-            this->tds_lines.emplace_back(str);
-        }
-        this->tds_longest_line = this->compute_longest_line();
-        return *this;
-    }
+    plain_text_source& replace_with(const attr_line_t& text_lines);
 
-    void clear()
-    {
-        this->tds_lines.clear();
-        this->tds_longest_line = 0;
-        this->tds_text_format = text_format_t::TF_UNKNOWN;
-    }
+    plain_text_source& replace_with(const std::vector<std::string>& text_lines);
 
-    plain_text_source& truncate_to(size_t max_lines)
-    {
-        while (this->tds_lines.size() > max_lines) {
-            this->tds_lines.pop_back();
-        }
-        return *this;
-    }
+    void clear();
 
-    size_t text_line_count()
-    {
-        return this->tds_lines.size();
-    }
+    plain_text_source& truncate_to(size_t max_lines);
+
+    size_t text_line_count() override { return this->tds_lines.size(); }
 
     bool empty() const
     {
         return this->tds_lines.empty();
     }
 
-    size_t text_line_width(textview_curses& curses)
-    {
-        return this->tds_longest_line;
-    }
+    size_t text_line_width(textview_curses& curses) override;
 
     void text_value_for_line(textview_curses& tc,
                              int row,
                              std::string& value_out,
-                             line_flags_t flags)
-    {
-        value_out = this->tds_lines[row].get_string();
-    }
+                             line_flags_t flags) override;
 
     void text_attrs_for_line(textview_curses& tc,
                              int line,
-                             string_attrs_t& value_out)
-    {
-        value_out = this->tds_lines[line].get_attrs();
-    }
+                             string_attrs_t& value_out) override;
 
-    size_t text_size_for_line(textview_curses& tc, int row, line_flags_t flags)
-    {
-        return this->tds_lines[row].length();
-    }
+    size_t text_size_for_line(textview_curses& tc,
+                              int row,
+                              line_flags_t flags) override;
 
-    text_format_t get_text_format() const
-    {
-        return this->tds_text_format;
-    }
+    text_format_t get_text_format() const override;
 
-    const std::vector<attr_line_t>& get_lines() const
-    {
-        return this->tds_lines;
-    }
+    const std::vector<text_line>& get_lines() const { return this->tds_lines; }
 
     plain_text_source& set_text_format(text_format_t format)
     {
@@ -151,24 +111,20 @@ public:
         return *this;
     }
 
-    nonstd::optional<location_history*> get_location_history()
+    nonstd::optional<location_history*> get_location_history() override
     {
         return this;
     }
 
-private:
-    size_t compute_longest_line()
-    {
-        size_t retval = 0;
-        for (auto& iter : this->tds_lines) {
-            retval = std::max(retval, (size_t) iter.length());
-        }
-        return retval;
-    };
+protected:
+    size_t compute_longest_line();
 
-    std::vector<attr_line_t> tds_lines;
+    nonstd::optional<vis_line_t> line_for_offset(file_off_t off);
+
+    std::vector<text_line> tds_lines;
     text_format_t tds_text_format{text_format_t::TF_UNKNOWN};
     size_t tds_longest_line{0};
+    bool tds_reverse_selection{false};
 };
 
 #endif  // LNAV_PLAIN_TEXT_SOURCE_HH

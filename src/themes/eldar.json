@@ -134,19 +134,19 @@
                     },
                     "text": {
                         "color": "$black",
-                        "background-color": "$white"
+                        "background-color": "#999"
                     },
                     "warn": {
                         "color": "$yellow",
-                        "background-color": "$white"
+                        "background-color": "#999"
                     },
                     "alert": {
                         "color": "$red",
-                        "background-color": "$white"
+                        "background-color": "#999"
                     },
                     "active": {
                         "color": "$green",
-                        "background-color": "$white"
+                        "background-color": "#999"
                     },
                     "inactive": {
                         "color": "$black",

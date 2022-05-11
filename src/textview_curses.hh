@@ -38,6 +38,7 @@
 #include "base/func_util.hh"
 #include "base/lnav_log.hh"
 #include "bookmarks.hh"
+#include "breadcrumb.hh"
 #include "grep_proc.hh"
 #include "highlighter.hh"
 #include "listview_curses.hh"
@@ -385,14 +386,16 @@ public:
      */
     virtual void text_mark(const bookmark_type_t* bm,
                            vis_line_t line,
-                           bool added){};
+                           bool added)
+    {
+    }
 
     /**
      * Clear the bookmarks for a particular type in the text source.
      *
      * @param bm The type of bookmarks to clear.
      */
-    virtual void text_clear_marks(const bookmark_type_t* bm){};
+    virtual void text_clear_marks(const bookmark_type_t* bm) {}
 
     /**
      * Get the attributes for a line of text.
@@ -404,7 +407,9 @@ public:
      */
     virtual void text_attrs_for_line(textview_curses& tc,
                                      int line,
-                                     string_attrs_t& value_out){};
+                                     string_attrs_t& value_out)
+    {
+    }
 
     /**
      * Update the bookmarks used by the text view based on the bookmarks
@@ -412,7 +417,7 @@ public:
      *
      * @param bm The bookmarks data structure used by the text view.
      */
-    virtual void text_update_marks(vis_bookmarks& bm){};
+    virtual void text_update_marks(vis_bookmarks& bm) {}
 
     virtual std::string text_source_name(const textview_curses& tv)
     {
@@ -444,11 +449,10 @@ public:
         return nonstd::nullopt;
     }
 
-    void toggle_apply_filters()
-    {
-        this->tss_apply_filters = !this->tss_apply_filters;
-        this->text_filters_changed();
-    }
+    void toggle_apply_filters();
+
+    virtual void text_crumbs_for_line(int line,
+                                      std::vector<breadcrumb::crumb>& crumbs);
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};

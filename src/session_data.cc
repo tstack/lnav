@@ -520,10 +520,14 @@ load_time_bookmarks()
     }
 
     for (const char* upgrade_stmt : UPGRADE_STMTS) {
-        if (sqlite3_exec(db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out())
-            != SQLITE_OK)
-        {
-            log_error("unable to upgrade bookmark table -- %s", errmsg.in());
+        auto rc = sqlite3_exec(
+            db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out());
+        if (rc != SQLITE_OK) {
+            auto exterr = sqlite3_extended_errcode(db.in());
+            log_error("unable to upgrade bookmark table -- (%d/%d) %s",
+                      rc,
+                      exterr,
+                      errmsg.in());
         }
     }
 

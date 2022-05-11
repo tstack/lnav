@@ -43,8 +43,8 @@ A      ················└ carriage-return
 S  17 ┋before <123> after                                                              ┋
 A      ········└ fg(#008080), inverse
 A      ···········└ normal
-S  17 ┋                                                                                ┋
-A      ········└ normal
+A      ··················└ carriage-return
+A      └ normal
 CSI Erase all
 CSI Use normal screen buffer
 CTRL restore cursor

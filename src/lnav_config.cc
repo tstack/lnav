@@ -647,6 +647,13 @@ static const struct json_path_container theme_styles_handlers = {
                 return &root->lt_style_list_glyph;
             })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("breadcrumb")
+        .with_description("Styling for the separator between breadcrumbs")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_breadcrumb;
+            })
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {
@@ -863,7 +870,7 @@ static const struct json_path_container highlighter_handlers = {
 };
 
 static const struct json_path_container theme_highlights_handlers = {
-    yajlpp::pattern_property_handler("(?<highlight_name>\\w+)")
+    yajlpp::pattern_property_handler("(?<highlight_name>[\\w\\-]+)")
         .with_obj_provider<highlighter_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
                 highlighter_config& hc

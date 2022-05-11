@@ -1,11 +1,26 @@
 lnav v0.10.2:
      Features:
+     * Redesigned the top status bar to make it display breadcrumbs that
+       are interactive.  Pressing ENTER will activate the breadcrumb bar
+       and the left/right cursor keys can be used to select a particular
+       crumb while the up/down keys can select a value to switch to.
+       While a crumb is selected, you can also type in some text to do
+       a fuzzy search on the possibilities or, if the crumb represents
+       an array of values, enter the index to jump to.
+     * The pretty-print view will now show breadcrumbs that indicate the
+       location of the top line in the view with the prettified structure.
      * Added an integration with regex101.com to make it easier to edit
        log message regular expressions.  Using the new "management CLI"
        (activated by the -m option), a log format can be created from
        a regular expression entry on regex101.com and existing patterns
        can be edited.
      * Add initial support for pcap(3) files using tshark(1).
+     * Added a "top_meta" column to the lnav_views table that contains
+       metadata related to the top line in the view.
+     * Added a "log_opid" hidden column to all log tables that contains
+       the "operation ID" as specified in the log format.
+     * Moved the "log_format" column from the all_logs table to a hidden
+       column on all tables.
      * Add format for UniFi gateway.
 
      Breaking Changes:

@@ -40,19 +40,19 @@ class textfile_sub_source
     : public text_sub_source
     , public vis_location_history {
 public:
-    typedef std::deque<std::shared_ptr<logfile>>::iterator file_iterator;
+    using file_iterator = std::deque<std::shared_ptr<logfile>>::iterator;
 
     textfile_sub_source() { this->tss_supports_filtering = true; }
 
-    ~textfile_sub_source() = default;
+    ~textfile_sub_source() override = default;
 
     bool empty() const { return this->tss_files.empty(); }
 
     size_t size() const { return this->tss_files.size(); }
 
-    size_t text_line_count();
+    size_t text_line_count() override;
 
-    size_t text_line_width(textview_curses& curses)
+    size_t text_line_width(textview_curses& curses) override
     {
         return this->tss_files.empty()
             ? 0
@@ -62,15 +62,15 @@ public:
     void text_value_for_line(textview_curses& tc,
                              int line,
                              std::string& value_out,
-                             line_flags_t flags);
+                             line_flags_t flags) override;
 
     void text_attrs_for_line(textview_curses& tc,
                              int row,
-                             string_attrs_t& value_out);
+                             string_attrs_t& value_out) override;
 
     size_t text_size_for_line(textview_curses& tc,
                               int line,
-                              line_flags_t flags);
+                              line_flags_t flags) override;
 
     std::shared_ptr<logfile> current_file() const
     {
@@ -81,7 +81,7 @@ public:
         return this->tss_files.front();
     }
 
-    std::string text_source_name(const textview_curses& tv)
+    std::string text_source_name(const textview_curses& tv) override
     {
         if (this->tss_files.empty()) {
             return "";
@@ -179,18 +179,21 @@ public:
         return retval;
     }
 
-    void text_filters_changed();
+    void text_filters_changed() override;
 
-    int get_filtered_count() const;
+    int get_filtered_count() const override;
 
-    int get_filtered_count_for(size_t filter_index) const;
+    int get_filtered_count_for(size_t filter_index) const override;
 
-    text_format_t get_text_format() const;
+    text_format_t get_text_format() const override;
 
-    nonstd::optional<location_history*> get_location_history()
+    nonstd::optional<location_history*> get_location_history() override
     {
         return this;
     }
+
+    void text_crumbs_for_line(int line,
+                              std::vector<breadcrumb::crumb>& crumbs) override;
 
 private:
     void detach_observer(std::shared_ptr<logfile> lf)

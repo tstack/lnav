@@ -63,8 +63,11 @@ static const char* LOG_COLUMNS = R"(  (
 
 static const char* LOG_FOOTER_COLUMNS = R"(
   -- END Format-specific fields
+  log_opid        TEXT HIDDEN,                       -- The message's OPID
+  log_format      TEXT HIDDEN,                       -- The name of the log file format
   log_time_msecs  INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
   log_path        TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
+  log_unique_path TEXT HIDDEN COLLATE naturalnocase, -- The unique portion of the path this message is from
   log_text        TEXT HIDDEN,                       -- The full text of the log message
   log_body        TEXT HIDDEN,                       -- The body of the log message
   log_raw_text    TEXT HIDDEN                        -- The raw text from the log file
@@ -200,6 +203,10 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
+    if (lc.lc_opid && lf_iter->get_opid() != lc.lc_opid.value().value) {
+        return false;
+    }
+
     return true;
 }
 
@@ -300,6 +307,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
 
     p_cur->base.pVtab = p_svt;
+    p_cur->log_cursor.lc_opid = nonstd::nullopt;
     p_cur->log_cursor.lc_curr_line = -1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
@@ -473,11 +481,13 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
             sqlite3_result_text(
                 ctx, level_name, strlen(level_name), SQLITE_STATIC);
-        } break;
+            break;
+        }
 
         case VT_COL_MARK: {
             sqlite3_result_int(ctx, ll->is_marked());
-        } break;
+            break;
+        }
 
         case VT_COL_LOG_COMMENT: {
             const auto& bm = vt->lss->get_user_bookmark_metadata();
@@ -566,17 +576,54 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
                 switch (post_col_number) {
                     case 0: {
-                        sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                        if (vc->line_values.empty()) {
+                            lf->read_full_message(ll, vc->log_msg);
+                            vt->vi->extract(
+                                lf, line_number, vc->log_msg, vc->line_values);
+                        }
+
+                        auto opid_opt = get_string_attr(vt->vi->vi_attrs,
+                                                        logline::L_OPID);
+                        if (opid_opt) {
+                            auto opid_range
+                                = opid_opt.value().saw_string_attr->sa_range;
+
+                            to_sqlite(
+                                ctx,
+                                vc->log_msg.to_string_fragment(
+                                    opid_range.lr_start, opid_range.length()));
+                        } else {
+                            sqlite3_result_null(ctx);
+                        }
                         break;
                     }
                     case 1: {
+                        auto format_name = lf->get_format_name();
+                        sqlite3_result_text(ctx,
+                                            format_name.get(),
+                                            format_name.size(),
+                                            SQLITE_STATIC);
+                        break;
+                    }
+                    case 2: {
+                        sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                        break;
+                    }
+                    case 3: {
                         const auto& fn = lf->get_filename();
 
                         sqlite3_result_text(
                             ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
                         break;
                     }
-                    case 2: {
+                    case 4: {
+                        const auto& fn = lf->get_unique_path();
+
+                        sqlite3_result_text(
+                            ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
+                        break;
+                    }
+                    case 5: {
                         shared_buffer_ref line;
 
                         lf->read_full_message(ll, line);
@@ -586,7 +633,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                             SQLITE_TRANSIENT);
                         break;
                     }
-                    case 3: {
+                    case 6: {
                         if (vc->line_values.empty()) {
                             lf->read_full_message(ll, vc->log_msg);
                             vt->vi->extract(
@@ -609,7 +656,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
                         break;
                     }
-                    case 4: {
+                    case 7: {
                         auto read_res = lf->read_raw_message(ll);
 
                         if (read_res.isErr()) {
@@ -827,26 +874,31 @@ vt_rowid(sqlite3_vtab_cursor* cur, sqlite_int64* p_rowid)
 }
 
 void
-log_cursor::update(unsigned char op, vis_line_t vl, bool exact)
+log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
 {
     if (vl < 0) {
         vl = -1_vl;
     }
+    this->lc_opid = nonstd::nullopt;
     switch (op) {
         case SQLITE_INDEX_CONSTRAINT_EQ:
             if (vl < this->lc_end_line) {
                 this->lc_curr_line = vl;
-                this->lc_end_line = vis_line_t(this->lc_curr_line + 1);
+                if (cons == constraint_t::unique) {
+                    this->lc_end_line = vis_line_t(this->lc_curr_line + 1);
+                }
             }
             break;
         case SQLITE_INDEX_CONSTRAINT_GE:
             this->lc_curr_line = vl;
             break;
         case SQLITE_INDEX_CONSTRAINT_GT:
-            this->lc_curr_line = vis_line_t(vl + (exact ? 1 : 0));
+            this->lc_curr_line
+                = vis_line_t(vl + (cons == constraint_t::unique ? 1 : 0));
             break;
         case SQLITE_INDEX_CONSTRAINT_LE:
-            this->lc_end_line = vis_line_t(vl + (exact ? 1 : 0));
+            this->lc_end_line
+                = vis_line_t(vl + (cons == constraint_t::unique ? 1 : 0));
             break;
         case SQLITE_INDEX_CONSTRAINT_LT:
             this->lc_end_line = vl;
@@ -867,6 +919,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         = (sqlite3_index_info::sqlite3_index_constraint*) idxStr;
 
     log_info("(%p) filter called: %d", vt, idxNum);
+    p_cur->log_cursor.lc_opid = nonstd::nullopt;
     p_cur->log_cursor.lc_curr_line = -1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     vt_next(p_vtc);
@@ -876,10 +929,13 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     }
 
     for (int lpc = 0; lpc < idxNum; lpc++) {
-        switch (index[lpc].iColumn) {
+        auto col = index[lpc].iColumn;
+        switch (col) {
             case VT_COL_LINE_NUMBER:
                 p_cur->log_cursor.update(
-                    index[lpc].op, vis_line_t(sqlite3_value_int64(argv[lpc])));
+                    index[lpc].op,
+                    vis_line_t(sqlite3_value_int64(argv[lpc])),
+                    log_cursor::constraint_t::unique);
                 break;
 
             case VT_COL_LOG_TIME:
@@ -892,7 +948,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
                     dts.scan((const char*) datestr,
                              strlen((const char*) datestr),
-                             NULL,
+                             nullptr,
                              &mytm,
                              tv);
                     auto vl_opt = vt->lss->find_from_time(tv);
@@ -901,10 +957,75 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             = p_cur->log_cursor.lc_end_line;
                     } else {
                         p_cur->log_cursor.update(
-                            index[lpc].op, vl_opt.value(), false);
+                            index[lpc].op,
+                            vl_opt.value(),
+                            log_cursor::constraint_t::none);
                     }
                 }
                 break;
+            default: {
+                if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
+                    int post_col_number
+                        = col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1;
+
+                    switch (post_col_number) {
+                        case 0: {
+                            if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
+                                continue;
+                            }
+                            const auto* opid
+                                = (const char*) sqlite3_value_text(argv[lpc]);
+                            auto opid_len = sqlite3_value_bytes(argv[lpc]);
+                            nonstd::optional<timeval> min_time;
+                            for (const auto& file_data : *vt->lss) {
+                                safe::ReadAccess<logfile::safe_opid_map>
+                                    r_opid_map(
+                                        file_data->get_file_ptr()->get_opids());
+                                const auto& iter = r_opid_map->find(opid);
+                                if (iter == r_opid_map->end()) {
+                                    continue;
+                                }
+                                if (!min_time
+                                    || iter->second < min_time.value()) {
+                                    min_time = iter->second;
+                                }
+                            }
+
+                            if (!min_time) {
+                                log_debug("no min time");
+                                p_cur->log_cursor.lc_curr_line
+                                    = p_cur->log_cursor.lc_end_line;
+                                continue;
+                            }
+                            log_debug("found min time: %d.%06d",
+                                      min_time.value().tv_sec,
+                                      min_time.value().tv_usec);
+                            auto vl_opt
+                                = vt->lss->row_for_time(min_time.value());
+                            if (!vl_opt) {
+                                log_debug("time not found");
+                                p_cur->log_cursor.lc_curr_line
+                                    = p_cur->log_cursor.lc_end_line;
+                                continue;
+                            }
+
+                            log_debug("got row %d", (int) vl_opt.value());
+                            p_cur->log_cursor.update(
+                                index[lpc].op,
+                                vl_opt.value(),
+                                log_cursor::constraint_t::none);
+
+                            log_cursor::opid_hash opid_val;
+                            opid_val.value = hash_str(opid, opid_len);
+                            p_cur->log_cursor.lc_opid = opid_val;
+                            log_debug("filter opid %d",
+                                      p_cur->log_cursor.lc_opid.value().value);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -913,6 +1034,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     {
         p_cur->log_cursor.lc_curr_line += 1_vl;
     }
+
+    log_debug("cursor %d %d",
+              (int) p_cur->log_cursor.lc_curr_line,
+              (int) p_cur->log_cursor.lc_end_line);
 
     return SQLITE_OK;
 }
@@ -931,24 +1056,50 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     }
     for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
         if (!p_info->aConstraint[lpc].usable
-            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH)
+            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH
+            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_OFFSET
+            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT)
         {
+            log_debug("  [%d] not usable", lpc);
             continue;
         }
 
-        switch (p_info->aConstraint[lpc].iColumn) {
-            case VT_COL_LINE_NUMBER:
+        auto col = p_info->aConstraint[lpc].iColumn;
+        switch (col) {
+            case VT_COL_LINE_NUMBER: {
+                log_debug("line number index %d", p_info->aConstraint[lpc].op);
                 argvInUse += 1;
                 indexes.push_back(p_info->aConstraint[lpc]);
                 p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
                 break;
+            }
+            default: {
+                if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
+                    int post_col_number
+                        = col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1;
+
+                    switch (post_col_number) {
+                        case 0: {
+                            log_debug("opid index");
+                            argvInUse += 1;
+                            indexes.push_back(p_info->aConstraint[lpc]);
+                            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
         }
     }
 
     if (!argvInUse) {
+        log_debug("fall back to log_time");
         for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
             if (!p_info->aConstraint[lpc].usable
-                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH)
+                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH
+                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_OFFSET
+                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT)
             {
                 continue;
             }

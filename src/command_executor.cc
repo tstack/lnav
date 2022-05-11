@@ -81,8 +81,6 @@ sql_progress(const struct log_cursor& lc)
 
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
         lnav_data.ld_bottom_source.update_loading(off, total);
-        lnav_data.ld_top_source.update_time();
-        lnav_data.ld_status[LNS_TOP].do_update();
         lnav_data.ld_status[LNS_BOTTOM].do_update();
         refresh();
     }
@@ -98,8 +96,6 @@ sql_progress_finished()
     }
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
-    lnav_data.ld_top_source.update_time();
-    lnav_data.ld_status[LNS_TOP].do_update();
     lnav_data.ld_status[LNS_BOTTOM].do_update();
     lnav_data.ld_views[LNV_DB].redo_search();
 }
@@ -926,6 +922,17 @@ exec_context::exec_context(std::vector<logline_value>* line_values,
     this->ec_source.emplace(
         lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
     this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
+    this->ec_error_callback_stack.emplace_back(
+        [](const auto& um) { lnav::console::print(stderr, um); });
+}
+
+void
+exec_context::execute(const std::string& cmdline)
+{
+    auto exec_res = execute_any(*this, cmdline);
+    if (exec_res.isErr()) {
+        this->ec_error_callback_stack.back()(exec_res.unwrapErr());
+    }
 }
 
 void

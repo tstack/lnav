@@ -126,6 +126,9 @@ public:
 
     listview_curses();
 
+    listview_curses(const listview_curses&) = delete;
+    listview_curses(listview_curses&) = delete;
+
     void set_title(const std::string& title) { this->lv_title = title; }
 
     const std::string& get_title() const { return this->lv_title; }
@@ -506,7 +509,7 @@ public:
         this->lv_tail_space = space;
 
         return *this;
-    };
+    }
 
     void log_state()
     {

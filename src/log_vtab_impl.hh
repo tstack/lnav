@@ -57,21 +57,26 @@ enum {
 class logfile_sub_source;
 
 struct log_cursor {
+    struct opid_hash {
+        unsigned int value : 6;
+    };
+
     vis_line_t lc_curr_line;
     int lc_sub_index;
     vis_line_t lc_end_line;
 
-    void update(unsigned char op, vis_line_t vl, bool exact = true);
+    nonstd::optional<opid_hash> lc_opid;
 
-    void set_eof()
-    {
-        this->lc_curr_line = this->lc_end_line = vis_line_t(0);
+    enum class constraint_t {
+        none,
+        unique,
     };
 
-    bool is_eof() const
-    {
-        return this->lc_curr_line >= this->lc_end_line;
-    };
+    void update(unsigned char op, vis_line_t vl, constraint_t cons);
+
+    void set_eof() { this->lc_curr_line = this->lc_end_line = vis_line_t(0); }
+
+    bool is_eof() const { return this->lc_curr_line >= this->lc_end_line; }
 };
 
 const std::string LOG_BODY = "log_body";

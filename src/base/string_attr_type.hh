@@ -110,6 +110,7 @@ enum class role_t : int32_t {
     VCR_H6,
 
     VCR_LIST_GLYPH,
+    VCR_BREADCRUMB,
 
     VCR__MAX
 };
@@ -119,7 +120,8 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 const intern_string_t,
                                                 std::string,
                                                 std::shared_ptr<logfile>,
-                                                bookmark_metadata*>;
+                                                bookmark_metadata*,
+                                                timespec>;
 
 class string_attr_type_base {
 public:
@@ -202,6 +204,22 @@ status(S str)
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
+inactive_status(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_INACTIVE_STATUS));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+status_title(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_STATUS_TITLE));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
 ok(S str)
 {
     return std::make_pair(std::move(str),
@@ -254,6 +272,30 @@ comment(S str)
 {
     return std::make_pair(std::move(str),
                           VC_ROLE.template value(role_t::VCR_COMMENT));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+identifier(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_IDENTIFIER));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+list_glyph(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_LIST_GLYPH));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+breadcrumb(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_BREADCRUMB));
 }
 
 template<typename S>
@@ -360,6 +402,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _list_glyph(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_LIST_GLYPH));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _breadcrumb(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_BREADCRUMB));
 }
 
 }  // namespace literals

@@ -35,7 +35,7 @@
 #include "base/result.h"
 #include "base/string_util.hh"
 #include "fmt/format.h"
-#include "fts_fuzzy_match.hh"
+#include "itertools.similar.hh"
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "mapbox/variant.hpp"
@@ -43,69 +43,6 @@
 #include "session_data.hh"
 
 using namespace lnav::roles::literals;
-
-namespace lnav {
-namespace itertools {
-
-namespace details {
-
-struct similar_to {
-    std::string st_pattern;
-    size_t st_count;
-};
-
-}  // namespace details
-
-details::similar_to
-similar_to(std::string pattern, size_t count = 5)
-{
-    return lnav::itertools::details::similar_to{std::move(pattern), count};
-}
-
-}  // namespace itertools
-}  // namespace lnav
-
-template<typename T>
-std::vector<typename T::value_type>
-operator|(const T& in, const lnav::itertools::details::similar_to& st)
-{
-    using score_pair = std::pair<int, typename T::value_type>;
-
-    struct score_cmp {
-        bool operator()(const score_pair& lhs, const score_pair& rhs)
-        {
-            return lhs.first > rhs.first;
-        }
-    };
-
-    std::priority_queue<score_pair, std::vector<score_pair>, score_cmp> pq;
-
-    for (const auto& elem : in) {
-        int score = 0;
-
-        if (!fts::fuzzy_match(st.st_pattern.c_str(), elem.c_str(), score)) {
-            continue;
-        }
-        if (score <= 0) {
-            continue;
-        }
-        pq.push(std::make_pair(score, elem));
-
-        if (pq.size() > st.st_count) {
-            pq.pop();
-        }
-    }
-
-    std::vector<std::remove_const_t<typename T::value_type>> retval;
-
-    while (!pq.empty()) {
-        retval.template emplace_back(pq.top().second);
-        pq.pop();
-    }
-    std::reverse(retval.begin(), retval.end());
-
-    return retval;
-}
 
 namespace lnav {
 

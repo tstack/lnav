@@ -118,7 +118,7 @@ pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
     return pollfds | lnav::itertools::find_if([fd](const auto& entry) {
                return entry.fd == fd;
            })
-        | lnav::itertools::map(&pollfd::revents)
+        | lnav::itertools::deref() | lnav::itertools::map(&pollfd::revents)
         | lnav::itertools::unwrap_or((short) 0);
 }
 
@@ -183,7 +183,8 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     [&](const std::shared_ptr<logfile>& lf) {
                         elem_map.gen("");
                     },
-                    [&](const bookmark_metadata* bm) { elem_map.gen(""); });
+                    [&](const bookmark_metadata* bm) { elem_map.gen(""); },
+                    [&](const timespec& ts) { elem_map.gen(""); });
             }
         }
     }

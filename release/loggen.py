@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -156,7 +156,7 @@ while True:
     for fname, gen in FILES:
         for i in range(random.randrange(0, 4)):
             with open(fname, "a+") as fp:
-                fp.write(gen.next())
+                fp.write(next(gen))
                 #if random.uniform(0.0, 1.0) < 0.010:
                 #    fp.truncate(0)
             time.sleep(random.uniform(0.05, 0.10))

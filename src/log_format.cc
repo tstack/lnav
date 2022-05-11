@@ -834,7 +834,17 @@ external_log_format::scan(logfile& lf,
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
-        if (opid_cap != nullptr) {
+        if (opid_cap != nullptr && !opid_cap->empty()) {
+            auto opid_str = pi.get_substr(opid_cap);
+            {
+                safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
+                    lf.get_opids());
+                auto opid_iter = writable_opid_map->find(opid_str);
+
+                if (opid_iter == writable_opid_map->end()) {
+                    (*writable_opid_map)[opid_str] = log_tv;
+                }
+            }
             opid = hash_str(pi.get_substr_start(opid_cap), opid_cap->length());
         }
 

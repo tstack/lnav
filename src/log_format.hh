@@ -143,7 +143,7 @@ public:
     logline_value(logline_value_meta lvm) : lv_meta(std::move(lvm))
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_NULL;
-    };
+    }
     logline_value(logline_value_meta lvm, bool b)
         : lv_meta(std::move(lvm)), lv_value((int64_t) (b ? 1 : 0))
     {
@@ -153,18 +153,20 @@ public:
         : lv_meta(std::move(lvm)), lv_value(i)
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_INTEGER;
-    };
+    }
     logline_value(logline_value_meta lvm, double i)
         : lv_meta(std::move(lvm)), lv_value(i)
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
-    };
+    }
     logline_value(logline_value_meta lvm, shared_buffer_ref& sbr)
-        : lv_meta(std::move(lvm)), lv_sbr(sbr){};
+        : lv_meta(std::move(lvm)), lv_sbr(sbr)
+    {
+    }
     logline_value(logline_value_meta lvm, const intern_string_t val)
-        : lv_meta(std::move(lvm)), lv_intern_string(val){
-
-                                   };
+        : lv_meta(std::move(lvm)), lv_intern_string(val)
+    {
+    }
     logline_value(logline_value_meta lvm,
                   shared_buffer_ref& sbr,
                   struct line_range origin);
@@ -196,7 +198,7 @@ public:
             return this->lv_intern_string.get();
         }
         return this->lv_sbr.get_data();
-    };
+    }
 
     size_t text_length() const
     {
@@ -387,7 +389,9 @@ public:
 
     virtual void get_subline(const logline& ll,
                              shared_buffer_ref& sbr,
-                             bool full_message = false){};
+                             bool full_message = false)
+    {
+    }
 
     virtual const std::vector<std::string>* get_actions(
         const logline_value& lv) const

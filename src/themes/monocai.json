@@ -16,7 +16,6 @@
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$black",
                         "color": "semantic()"
                     },
                     "text": {
@@ -92,6 +91,9 @@
                     },
                     "list-glyph": {
                         "color": "$yellow"
+                    },
+                    "breadcrumb": {
+                        "color": "#99a"
                     }
                 },
                 "syntax-styles": {
@@ -132,6 +134,9 @@
                     },
                     "file": {
                         "color": "$blue"
+                    },
+                    "number": {
+                        "bold": true
                     }
                 },
                 "status-styles": {

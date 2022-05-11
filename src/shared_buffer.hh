@@ -40,6 +40,7 @@
 #include <sys/types.h>
 
 #include "base/auto_mem.hh"
+#include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 
 class shared_buffer;
@@ -47,12 +48,11 @@ class shared_buffer;
 struct shared_buffer_ref {
 public:
     shared_buffer_ref(char* data = nullptr, size_t len = 0)
-        : sb_owner(nullptr), sb_data(data), sb_length(len){};
-
-    ~shared_buffer_ref()
+        : sb_owner(nullptr), sb_data(data), sb_length(len)
     {
-        this->disown();
-    };
+    }
+
+    ~shared_buffer_ref() { this->disown(); }
 
     shared_buffer_ref(const shared_buffer_ref& other)
     {
@@ -61,7 +61,7 @@ public:
         this->sb_length = 0;
 
         this->copy_ref(other);
-    };
+    }
 
     shared_buffer_ref(shared_buffer_ref&& other) noexcept;
 
@@ -73,27 +73,21 @@ public:
         }
 
         return *this;
-    };
+    }
 
     bool empty() const
     {
         return this->sb_data == nullptr || this->sb_length == 0;
-    };
+    }
 
-    const char* get_data() const
-    {
-        return this->sb_data;
-    };
+    const char* get_data() const { return this->sb_data; }
 
     const char* get_data_at(off_t offset) const
     {
         return &this->sb_data[offset];
-    };
+    }
 
-    size_t length() const
-    {
-        return this->sb_length;
-    };
+    size_t length() const { return this->sb_length; }
 
     shared_buffer_ref& rtrim(bool pred(char))
     {
@@ -110,7 +104,7 @@ public:
         const char* buffer_end = this->sb_data + this->sb_length;
 
         return (this->sb_data <= ptr && ptr < buffer_end);
-    };
+    }
 
     char* get_writable_data()
     {
@@ -119,7 +113,13 @@ public:
         }
 
         return nullptr;
-    };
+    }
+
+    string_fragment to_string_fragment(off_t offset, size_t len)
+    {
+        return string_fragment{
+            this->sb_data, (int) offset, (int) (offset + len)};
+    }
 
     void share(shared_buffer& sb, char* data, size_t len);
 
@@ -140,15 +140,9 @@ private:
 
 class shared_buffer {
 public:
-    ~shared_buffer()
-    {
-        this->invalidate_refs();
-    }
+    ~shared_buffer() { this->invalidate_refs(); }
 
-    void add_ref(shared_buffer_ref& ref)
-    {
-        this->sb_refs.push_back(&ref);
-    };
+    void add_ref(shared_buffer_ref& ref) { this->sb_refs.push_back(&ref); }
 
     bool invalidate_refs()
     {
@@ -161,7 +155,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     std::vector<shared_buffer_ref*> sb_refs;
 };

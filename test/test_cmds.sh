@@ -457,7 +457,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is working" <<EOF
-✘ error: expecting line number/percentage, timestamp, or relative time
+✘ error: invalid argument: invalid
+ reason: expecting line number/percentage, timestamp, or relative time
  --> command-option:1
  | :goto invalid
  = help: Synopsis

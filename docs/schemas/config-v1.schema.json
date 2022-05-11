@@ -352,6 +352,11 @@
                                             "description": "Styling for glyphs that prefix a list item",
                                             "title": "/ui/theme-defs/<theme_name>/styles/list-glyph",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "breadcrumb": {
+                                            "description": "Styling for the separator between breadcrumbs",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/breadcrumb",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false
@@ -509,7 +514,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/highlights",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(\\w+)": {
+                                        "([\\w\\-]+)": {
                                             "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>",
                                             "type": "object",
                                             "properties": {

@@ -35,14 +35,26 @@
 void
 pretty_printer::append_to(attr_line_t& al)
 {
+    auto& pi = this->pp_scanner->get_input();
     pcre_context_static<30> pc;
     data_token_t dt;
 
     this->pp_scanner->reset();
+    if (pi.pi_offset > 0) {
+        pcre_context::capture_t leading_cap = {
+            0,
+            static_cast<int>(pi.pi_offset),
+        };
+
+        // this->pp_stream << pi.get_substr(&leading_cap);
+        this->pp_values.emplace_back(DT_WORD, leading_cap);
+    }
+
     while (this->pp_scanner->tokenize2(pc, dt)) {
         element el(dt, pc);
 
         switch (dt) {
+            case DT_XML_DECL_TAG:
             case DT_XML_EMPTY_TAG:
                 if (this->pp_is_xml && this->pp_line_length > 0) {
                     this->start_new_line();
@@ -56,6 +68,10 @@ pretty_printer::append_to(attr_line_t& al)
                 if (this->pp_is_xml) {
                     this->start_new_line();
                     this->write_element(el);
+                    this->pp_interval_state.back().is_start
+                        = this->pp_stream.tellp();
+                    this->pp_interval_state.back().is_name
+                        = pi.get_substr(&el.e_capture);
                     this->descend();
                 } else {
                     this->pp_values.emplace_back(el);
@@ -64,6 +80,7 @@ pretty_printer::append_to(attr_line_t& al)
             case DT_XML_CLOSE_TAG:
                 this->flush_values();
                 this->ascend();
+                this->append_child_node();
                 this->write_element(el);
                 this->start_new_line();
                 continue;
@@ -73,6 +90,8 @@ pretty_printer::append_to(attr_line_t& al)
                 this->flush_values(true);
                 this->pp_values.emplace_back(el);
                 this->descend();
+                this->pp_interval_state.back().is_start
+                    = this->pp_stream.tellp();
                 continue;
             case DT_RCURLY:
             case DT_RSQUARE:
@@ -87,8 +106,11 @@ pretty_printer::append_to(attr_line_t& al)
             case DT_COMMA:
                 if (this->pp_depth > 0) {
                     this->flush_values(true);
+                    this->append_child_node();
                     this->write_element(el);
                     this->start_new_line();
+                    this->pp_interval_state.back().is_start
+                        = this->pp_stream.tellp();
                     continue;
                 }
                 break;
@@ -117,6 +139,21 @@ pretty_printer::append_to(attr_line_t& al)
         al.append("\n");
     }
     al.append(combined);
+
+    if (this->pp_hier_stage != nullptr) {
+        this->pp_hier_stage->hn_parent = this->pp_hier_nodes.back().get();
+        this->pp_hier_nodes.back()->hn_children.push_back(
+            std::move(this->pp_hier_stage));
+    }
+    this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
+    this->pp_hier_nodes.pop_back();
+    if (this->pp_hier_stage->hn_children.size() == 1
+        && this->pp_hier_stage->hn_named_children.empty())
+    {
+        this->pp_hier_stage
+            = std::move(this->pp_hier_stage->hn_children.front());
+        this->pp_hier_stage->hn_parent = nullptr;
+    }
 }
 
 void
@@ -142,7 +179,7 @@ pretty_printer::write_element(const pretty_printer::element& el)
         }
         return;
     }
-    pcre_input& pi = this->pp_scanner->get_input();
+    auto& pi = this->pp_scanner->get_input();
     if (this->pp_line_length == 0) {
         this->append_indent();
     }
@@ -208,12 +245,36 @@ pretty_printer::append_indent()
 bool
 pretty_printer::flush_values(bool start_on_depth)
 {
+    nonstd::optional<pcre_context::capture_t> last_key;
+    auto& pi = this->pp_scanner->get_input();
     bool retval = false;
 
     while (!this->pp_values.empty()) {
         {
-            element& el = this->pp_values.front();
+            auto& el = this->pp_values.front();
             this->write_element(this->pp_values.front());
+            switch (el.e_token) {
+                case DT_SYMBOL:
+                case DT_CONSTANT:
+                case DT_WORD:
+                case DT_QUOTED_STRING:
+                    last_key = el.e_capture;
+                    break;
+                case DT_COLON:
+                case DT_EQUALS:
+                    if (last_key) {
+                        this->pp_interval_state.back().is_name
+                            = pi.get_substr(&last_key.value());
+                        if (!this->pp_interval_state.back().is_name.empty()) {
+                            this->pp_interval_state.back().is_start
+                                = static_cast<ssize_t>(this->pp_stream.tellp());
+                        }
+                        last_key = nonstd::nullopt;
+                    }
+                    break;
+                default:
+                    break;
+            }
             if (start_on_depth
                 && (el.e_token == DT_LSQUARE || el.e_token == DT_LCURLY)) {
                 if (this->pp_line_length > 0) {
@@ -253,6 +314,11 @@ pretty_printer::ascend()
         this->pp_depth -= 1;
         this->pp_body_lines.pop();
         this->pp_body_lines.top() += lines;
+
+        this->append_child_node();
+        this->pp_interval_state.pop_back();
+        this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
+        this->pp_hier_nodes.pop_back();
     } else {
         this->pp_body_lines.top() = 0;
     }
@@ -263,4 +329,78 @@ pretty_printer::descend()
 {
     this->pp_depth += 1;
     this->pp_body_lines.push(0);
+    this->pp_interval_state.resize(this->pp_depth + 1);
+    this->pp_hier_nodes.push_back(std::make_unique<hier_node>());
+}
+
+void
+pretty_printer::append_child_node()
+{
+    auto& ivstate = this->pp_interval_state.back();
+    if (!ivstate.is_start) {
+        return;
+    }
+
+    auto* top_node = this->pp_hier_nodes.back().get();
+    auto new_key = ivstate.is_name.empty() ? key_t{top_node->hn_children.size()}
+                                           : key_t{ivstate.is_name};
+    this->pp_intervals.emplace_back(
+        ivstate.is_start.value(),
+        static_cast<ssize_t>(this->pp_stream.tellp()),
+        new_key);
+    auto new_node = this->pp_hier_stage != nullptr
+        ? std::move(this->pp_hier_stage)
+        : std::make_unique<hier_node>();
+    auto* retval = new_node.get();
+    new_node->hn_parent = top_node;
+    new_node->hn_start = this->pp_intervals.back().start;
+    if (!ivstate.is_name.empty()) {
+        top_node->hn_named_children.insert({
+            ivstate.is_name,
+            retval,
+        });
+    }
+    top_node->hn_children.emplace_back(std::move(new_node));
+    ivstate.is_start = nonstd::nullopt;
+    ivstate.is_name.clear();
+}
+
+nonstd::optional<pretty_printer::hier_node*>
+pretty_printer::hier_node::lookup_child(pretty_printer::key_t key) const
+{
+    return make_optional_from_nullable(key.match(
+        [this](const std::string& str) -> pretty_printer::hier_node* {
+            auto iter = this->hn_named_children.find(str);
+            if (iter != this->hn_named_children.end()) {
+                return iter->second;
+            }
+            return nullptr;
+        },
+        [this](size_t index) -> pretty_printer::hier_node* {
+            if (index < this->hn_children.size()) {
+                return this->hn_children[index].get();
+            }
+            return nullptr;
+        }));
+}
+
+nonstd::optional<const pretty_printer::hier_node*>
+pretty_printer::hier_node::lookup_path(const pretty_printer::hier_node* root,
+                                       const std::vector<const key_t>& path)
+{
+    auto retval = nonstd::make_optional(root);
+
+    for (const auto& comp : path) {
+        if (!retval) {
+            break;
+        }
+
+        retval = retval.value()->lookup_child(comp);
+    }
+
+    if (!retval) {
+        return nonstd::nullopt;
+    }
+
+    return retval;
 }

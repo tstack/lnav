@@ -29,6 +29,7 @@
 
 #include "textfile_sub_source.hh"
 
+#include "base/itertools.hh"
 #include "config.h"
 
 size_t
@@ -234,4 +235,43 @@ textfile_sub_source::get_text_format() const
     }
 
     return this->tss_files.front()->get_text_format();
+}
+
+void
+textfile_sub_source::text_crumbs_for_line(
+    int line, std::vector<breadcrumb::crumb>& crumbs)
+{
+    text_sub_source::text_crumbs_for_line(line, crumbs);
+
+    if (this->empty()) {
+        return;
+    }
+
+    auto lf = this->current_file();
+    crumbs.emplace_back(
+        lf->get_unique_path(),
+        attr_line_t().append(lnav::roles::identifier(lf->get_unique_path())),
+        [this]() {
+            return this->tss_files | lnav::itertools::map([](const auto& lf) {
+                       return breadcrumb::possibility{
+                           lf->get_unique_path(),
+                           attr_line_t(lf->get_unique_path()),
+                       };
+                   });
+        },
+        [this](const auto& key) {
+            auto lf_opt = this->tss_files
+                | lnav::itertools::find_if([&key](const auto& elem) {
+                              return key.template get<std::string>()
+                                  == elem->get_unique_path();
+                          })
+                | lnav::itertools::deref();
+
+            if (!lf_opt) {
+                return;
+            }
+
+            this->to_front(lf_opt.value());
+            this->tss_view->reload_data();
+        });
 }

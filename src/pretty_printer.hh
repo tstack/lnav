@@ -31,25 +31,60 @@
 #define pretty_printer_hh
 
 #include <deque>
+#include <map>
 #include <sstream>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include <sys/types.h>
 
 #include "base/attr_line.hh"
+#include "base/file_range.hh"
+#include "base/opt_util.hh"
 #include "data_scanner.hh"
+#include "intervaltree/IntervalTree.h"
 
 class pretty_printer {
 public:
+    using key_t = mapbox::util::variant<std::string, size_t>;
+    using pretty_interval = interval_tree::Interval<file_off_t, key_t>;
+    using pretty_tree = interval_tree::IntervalTree<file_off_t, key_t>;
+
     struct element {
         element(data_token_t token, pcre_context& pc)
             : e_token(token), e_capture(*pc.all())
         {
         }
 
+        element(data_token_t token, pcre_context::capture_t& cap)
+            : e_token(token), e_capture(cap)
+        {
+        }
+
         data_token_t e_token;
         pcre_context::capture_t e_capture;
+    };
+
+    struct hier_node {
+        hier_node* hn_parent{nullptr};
+        file_off_t hn_start{0};
+        std::multimap<std::string, hier_node*> hn_named_children;
+        std::vector<std::unique_ptr<hier_node>> hn_children;
+
+        nonstd::optional<hier_node*> lookup_child(key_t key) const;
+
+        static nonstd::optional<const hier_node*> lookup_path(
+            const hier_node* root, const std::vector<const key_t>& path);
+
+        template<typename F>
+        static void depth_first(hier_node* root, F func)
+        {
+            for (auto& child : root->hn_children) {
+                depth_first(child.get(), func);
+            }
+            func(root);
+        }
     };
 
     pretty_printer(data_scanner* ds, string_attrs_t sa, int leading_indent = 0)
@@ -63,13 +98,27 @@ public:
 
         this->pp_scanner->reset();
         while (this->pp_scanner->tokenize2(pc, dt)) {
-            if (dt == DT_XML_CLOSE_TAG) {
+            if (dt == DT_XML_CLOSE_TAG || dt == DT_XML_DECL_TAG) {
                 pp_is_xml = true;
+                break;
             }
         }
+
+        this->pp_interval_state.resize(1);
+        this->pp_hier_nodes.push_back(std::make_unique<hier_node>());
     }
 
     void append_to(attr_line_t& al);
+
+    std::vector<pretty_interval> take_intervals()
+    {
+        return std::move(this->pp_intervals);
+    }
+
+    std::unique_ptr<hier_node> take_hier_root()
+    {
+        return std::move(this->pp_hier_stage);
+    }
 
 private:
     void descend();
@@ -84,6 +133,13 @@ private:
 
     void write_element(const element& el);
 
+    void append_child_node();
+
+    struct interval_state {
+        nonstd::optional<file_off_t> is_start;
+        std::string is_name;
+    };
+
     int pp_leading_indent;
     int pp_depth{0};
     int pp_line_length{0};
@@ -95,6 +151,10 @@ private:
     std::deque<element> pp_values{};
     int pp_shift_accum{0};
     bool pp_is_xml{false};
+    std::vector<interval_state> pp_interval_state;
+    std::vector<pretty_interval> pp_intervals;
+    std::vector<std::unique_ptr<hier_node>> pp_hier_nodes;
+    std::unique_ptr<hier_node> pp_hier_stage;
 };
 
 #endif

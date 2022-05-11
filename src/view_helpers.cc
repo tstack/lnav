@@ -29,18 +29,24 @@
 
 #include "view_helpers.hh"
 
+#include "base/humanize.hh"
+#include "base/itertools.hh"
 #include "config.h"
 #include "environ_vtab.hh"
 #include "help-txt.h"
+#include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "pretty_printer.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
 #include "vtab_module.hh"
+
+using namespace std::chrono_literals;
 
 const char* lnav_view_strings[LNV__MAX + 1] = {
     "log",
@@ -73,7 +79,7 @@ view_from_string(const char* name)
         return nonstd::nullopt;
     }
 
-    auto view_name_iter
+    auto* view_name_iter
         = std::find_if(std::begin(lnav_view_strings),
                        std::end(lnav_view_strings),
                        [&](const char* v) {
@@ -111,15 +117,174 @@ open_schema_view()
     schema_tc->redo_search();
 }
 
+class pretty_sub_source : public plain_text_source {
+public:
+    void text_crumbs_for_line(int line,
+                              std::vector<breadcrumb::crumb>& crumbs) override
+    {
+        text_sub_source::text_crumbs_for_line(line, crumbs);
+
+        if (line < 0 || line > this->tds_lines.size()) {
+            return;
+        }
+
+        const auto& tl = this->tds_lines[line];
+        const auto initial_size = crumbs.size();
+        pretty_printer::hier_node* root_node;
+
+        this->pss_hier_tree->template visit_overlapping(
+            tl.tl_offset,
+            [&root_node](const auto& hier_iv) { root_node = hier_iv.value; });
+        this->pss_interval_tree->visit_overlapping(
+            tl.tl_offset,
+            tl.tl_offset + tl.tl_value.length(),
+            [&crumbs, root_node, this, initial_size](const auto& iv) {
+                auto path = crumbs | lnav::itertools::skip(initial_size)
+                    | lnav::itertools::map(&breadcrumb::crumb::c_key)
+                    | lnav::itertools::append(iv.value);
+                auto poss_provider = [root_node, path]() {
+                    std::vector<breadcrumb::possibility> retval;
+                    auto curr_node = pretty_printer::hier_node::lookup_path(
+                        root_node, path);
+                    if (curr_node) {
+                        auto* parent_node = curr_node.value()->hn_parent;
+
+                        if (parent_node != nullptr) {
+                            for (const auto& sibling :
+                                 parent_node->hn_named_children) {
+                                retval.template emplace_back(sibling.first);
+                            }
+                        }
+                    }
+                    return retval;
+                };
+                auto path_performer =
+                    [this, root_node, path](
+                        const breadcrumb::crumb::key_t& value) {
+                        auto curr_node = pretty_printer::hier_node::lookup_path(
+                            root_node, path);
+                        if (!curr_node) {
+                            return;
+                        }
+                        auto* parent_node = curr_node.value()->hn_parent;
+
+                        if (parent_node == nullptr) {
+                            return;
+                        }
+                        value.template match(
+                            [this, parent_node](const std::string& str) {
+                                auto sib_iter
+                                    = parent_node->hn_named_children.find(str);
+                                if (sib_iter
+                                    != parent_node->hn_named_children.end()) {
+                                    this->line_for_offset(
+                                        sib_iter->second->hn_start)
+                                        | [](const auto new_top) {
+                                              lnav_data.ld_views[LNV_PRETTY]
+                                                  .set_top(new_top);
+                                          };
+                                }
+                            },
+                            [this, parent_node](size_t index) {
+                                if (index >= parent_node->hn_children.size()) {
+                                    return;
+                                }
+                                auto sib
+                                    = parent_node->hn_children[index].get();
+                                this->line_for_offset(sib->hn_start) |
+                                    [](const auto new_top) {
+                                        lnav_data.ld_views[LNV_PRETTY].set_top(
+                                            new_top);
+                                    };
+                            });
+                    };
+                crumbs.template emplace_back(iv.value,
+                                             std::move(poss_provider),
+                                             std::move(path_performer));
+                auto curr_node
+                    = pretty_printer::hier_node::lookup_path(root_node, path);
+                if (curr_node
+                    && curr_node.value()->hn_parent->hn_children.size()
+                        != curr_node.value()
+                               ->hn_parent->hn_named_children.size())
+                {
+                    auto node = pretty_printer::hier_node::lookup_path(
+                        root_node, path);
+
+                    crumbs.back().c_expected_input
+                        = curr_node.value()
+                              ->hn_parent->hn_named_children.empty()
+                        ? breadcrumb::crumb::expected_input_t::index
+                        : breadcrumb::crumb::expected_input_t::index_or_exact;
+                    crumbs.back().with_possible_range(
+                        node | lnav::itertools::map([](const auto hn) {
+                            return hn->hn_parent->hn_children.size();
+                        })
+                        | lnav::itertools::unwrap_or(size_t{0}));
+                }
+            });
+
+        auto path = crumbs | lnav::itertools::skip(initial_size)
+            | lnav::itertools::map(&breadcrumb::crumb::c_key);
+        auto node = pretty_printer::hier_node::lookup_path(root_node, path);
+
+        if (node && !node.value()->hn_children.empty()) {
+            auto poss_provider = [curr_node = node.value()]() {
+                std::vector<breadcrumb::possibility> retval;
+                for (const auto& child : curr_node->hn_named_children) {
+                    retval.template emplace_back(child.first);
+                }
+                return retval;
+            };
+            auto path_performer = [this, curr_node = node.value()](
+                                      const breadcrumb::crumb::key_t& value) {
+                value.template match(
+                    [this, curr_node](const std::string& str) {
+                        auto child_iter
+                            = curr_node->hn_named_children.find(str);
+                        if (child_iter != curr_node->hn_named_children.end()) {
+                            this->line_for_offset(child_iter->second->hn_start)
+                                | [](const auto new_top) {
+                                      lnav_data.ld_views[LNV_PRETTY].set_top(
+                                          new_top);
+                                  };
+                        }
+                    },
+                    [this, curr_node](size_t index) {
+                        auto* child = curr_node->hn_children[index].get();
+                        this->line_for_offset(child->hn_start) |
+                            [](const auto new_top) {
+                                lnav_data.ld_views[LNV_PRETTY].set_top(new_top);
+                            };
+                    });
+            };
+            crumbs.emplace_back("", "\u22ef", poss_provider, path_performer);
+            crumbs.back().c_expected_input
+                = node.value()->hn_named_children.empty()
+                ? breadcrumb::crumb::expected_input_t::index
+                : breadcrumb::crumb::expected_input_t::index_or_exact;
+        }
+    }
+
+    using hier_tree_t
+        = interval_tree::IntervalTree<file_off_t, pretty_printer::hier_node*>;
+    using hier_interval_t
+        = interval_tree::Interval<file_off_t, pretty_printer::hier_node*>;
+
+    std::shared_ptr<pretty_printer::pretty_tree> pss_interval_tree;
+    std::vector<std::unique_ptr<pretty_printer::hier_node>> pss_hier_nods;
+    std::shared_ptr<hier_tree_t> pss_hier_tree;
+};
+
 static void
 open_pretty_view()
 {
     static const char* NOTHING_MSG = "Nothing to pretty-print";
 
-    textview_curses* top_tc = *lnav_data.ld_view_stack.top();
-    textview_curses* pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
-    textview_curses* log_tc = &lnav_data.ld_views[LNV_LOG];
-    textview_curses* text_tc = &lnav_data.ld_views[LNV_TEXT];
+    auto* top_tc = *lnav_data.ld_view_stack.top();
+    auto* pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
+    auto* log_tc = &lnav_data.ld_views[LNV_LOG];
+    auto* text_tc = &lnav_data.ld_views[LNV_TEXT];
     attr_line_t full_text;
 
     delete pretty_tc->get_sub_source();
@@ -129,6 +294,9 @@ open_pretty_view()
         return;
     }
 
+    std::vector<pretty_printer::pretty_interval> all_intervals;
+    std::vector<std::unique_ptr<pretty_printer::hier_node>> hier_nodes;
+    std::vector<pretty_sub_source::hier_interval_t> hier_tree_vec;
     if (top_tc == log_tc) {
         logfile_sub_source& lss = lnav_data.ld_log_source;
         bool first_line = true;
@@ -146,7 +314,7 @@ open_pretty_view()
             auto ll_start = lf->message_start(ll);
             attr_line_t al;
 
-            vl -= vis_line_t(distance(ll_start, ll));
+            vl -= vis_line_t(std::distance(ll_start, ll));
             lss.text_value_for_line(
                 *log_tc,
                 vl,
@@ -157,21 +325,33 @@ open_pretty_view()
                 al.apply_hide();
             }
 
-            line_range orig_lr
+            const auto orig_lr
                 = find_string_attr_range(al.get_attrs(), &SA_ORIGINAL_LINE);
-            attr_line_t orig_al
-                = al.subline(orig_lr.lr_start, orig_lr.length());
-            attr_line_t prefix_al = al.subline(0, orig_lr.lr_start);
-
-            data_scanner ds(orig_al.get_string());
-            pretty_printer pp(&ds, orig_al.get_attrs());
+            const auto body_lr
+                = find_string_attr_range(al.get_attrs(), &SA_BODY);
+            auto orig_al = al.subline(orig_lr.lr_start, orig_lr.length());
+            auto prefix_al = al.subline(0, orig_lr.lr_start);
             attr_line_t pretty_al;
             std::vector<attr_line_t> pretty_lines;
+            data_scanner ds(orig_al.get_string(),
+                            body_lr.is_valid()
+                                ? body_lr.lr_start - orig_lr.lr_start
+                                : orig_lr.lr_start);
+            pretty_printer pp(&ds, orig_al.get_attrs());
+            auto start_off = full_text.length();
 
-            // TODO: dump more details of the line in the output.
-            pp.append_to(pretty_al);
+            if (body_lr.is_valid()) {
+                // TODO: dump more details of the line in the output.
+                pp.append_to(pretty_al);
+            } else {
+                pretty_al = orig_al;
+            }
+
             pretty_al.split_lines(pretty_lines);
 
+            auto curr_intervals = pp.take_intervals();
+            auto line_hier_root = pp.take_hier_root();
+            auto line_off = 0;
             for (auto& pretty_line : pretty_lines) {
                 if (pretty_line.empty() && &pretty_line == &pretty_lines.back())
                 {
@@ -179,32 +359,76 @@ open_pretty_view()
                 }
                 pretty_line.insert(0, prefix_al);
                 pretty_line.append("\n");
+                for (auto& interval : curr_intervals) {
+                    if (line_off <= interval.start) {
+                        interval.start += prefix_al.length();
+                        interval.stop += prefix_al.length();
+                    } else if (line_off < interval.stop) {
+                        interval.stop += prefix_al.length();
+                    }
+                }
+                pretty_printer::hier_node::depth_first(
+                    line_hier_root.get(),
+                    [line_off, prefix_len = prefix_al.length()](auto* hn) {
+                        if (line_off <= hn->hn_start) {
+                            hn->hn_start += prefix_len;
+                        }
+                    });
+                line_off += pretty_line.length();
                 full_text.append(pretty_line);
             }
 
             first_line = false;
+            for (auto& interval : curr_intervals) {
+                interval.start += start_off;
+                interval.stop += start_off;
+            }
+            pretty_printer::hier_node::depth_first(
+                line_hier_root.get(),
+                [start_off](auto* hn) { hn->hn_start += start_off; });
+            hier_nodes.emplace_back(std::move(line_hier_root));
+            hier_tree_vec.emplace_back(
+                start_off, full_text.length(), hier_nodes.back().get());
+            all_intervals.insert(
+                all_intervals.end(),
+                std::make_move_iterator(curr_intervals.begin()),
+                std::make_move_iterator(curr_intervals.end()));
         }
 
         if (!full_text.empty()) {
             full_text.erase(full_text.length() - 1, 1);
         }
     } else if (top_tc == text_tc) {
-        auto lf = lnav_data.ld_text_source.current_file();
+        if (text_tc->listview_rows(*text_tc)) {
+            auto lf = lnav_data.ld_text_source.current_file();
+            std::string all_lines;
 
-        for (vis_line_t vl = text_tc->get_top(); vl <= text_tc->get_bottom();
-             ++vl) {
-            auto ll = lf->begin() + vl;
-            shared_buffer_ref sbr;
+            for (vis_line_t vl = text_tc->get_top();
+                 vl <= text_tc->get_bottom();
+                 ++vl) {
+                auto ll = lf->begin() + vl;
+                shared_buffer_ref sbr;
 
-            lf->read_full_message(ll, sbr);
-            data_scanner ds(sbr);
+                lf->read_full_message(ll, sbr);
+                all_lines.append(sbr.get_data(), sbr.length());
+            }
+            data_scanner ds(all_lines);
             string_attrs_t sa;
             pretty_printer pp(&ds, sa);
 
             pp.append_to(full_text);
+            all_intervals = pp.take_intervals();
+            hier_nodes.emplace_back(pp.take_hier_root());
+            hier_tree_vec.emplace_back(
+                0, full_text.length(), hier_nodes.back().get());
         }
     }
-    auto* pts = new plain_text_source();
+    auto* pts = new pretty_sub_source();
+    pts->pss_interval_tree = std::make_shared<pretty_printer::pretty_tree>(
+        std::move(all_intervals));
+    pts->pss_hier_nods = std::move(hier_nodes);
+    pts->pss_hier_tree = std::make_shared<pretty_sub_source::hier_tree_t>(
+        std::move(hier_tree_vec));
     pts->replace_with(full_text);
     pretty_tc->set_sub_source(pts);
     if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
@@ -342,6 +566,7 @@ layout_views()
                          || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
                          || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
         && !preview_status_open && !doc_open;
+    bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
     int filter_height = filters_open ? 5 : 0;
 
     int bottom_height = (doc_open ? 1 : 0) + doc_height
@@ -352,7 +577,6 @@ layout_views()
         tc.set_height(vis_line_t(-(bottom_height + (filter_status_open ? 1 : 0)
                                    + (filters_open ? 1 : 0) + filter_height)));
     }
-    lnav_data.ld_status[LNS_TOP].set_enabled(!filters_open);
     lnav_data.ld_status[LNS_FILTER].set_visible(filter_status_open);
     lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
     lnav_data.ld_status[LNS_FILTER].set_top(
@@ -361,6 +585,8 @@ layout_views()
     lnav_data.ld_status[LNS_FILTER_HELP].set_top(
         -(bottom_height + filter_height + 1));
     lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + um_height + 2));
+    lnav_data.ld_status[LNS_BOTTOM].set_enabled(!filters_open
+                                                && !breadcrumb_open);
     lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
     lnav_data.ld_status[LNS_DOC].set_visible(doc_open);
     lnav_data.ld_status[LNS_PREVIEW].set_top(height - bottom_height
@@ -624,6 +850,9 @@ ensure_view(textview_curses* expected_tc)
 bool
 ensure_view(lnav_view_t expected)
 {
+    require(expected >= 0);
+    require(expected < LNV__MAX);
+
     return ensure_view(&lnav_data.ld_views[expected]);
 }
 
@@ -819,4 +1048,86 @@ void
 hist_index_delegate::index_complete(logfile_sub_source& lss)
 {
     this->hid_view.reload_data();
+}
+
+static std::vector<breadcrumb::possibility>
+view_title_poss()
+{
+    std::vector<breadcrumb::possibility> retval;
+
+    for (int view_index = 0; view_index < LNV__MAX; view_index++) {
+        attr_line_t display_value{lnav_view_titles[view_index]};
+        nonstd::optional<size_t> quantity;
+        std::string units;
+
+        switch (view_index) {
+            case LNV_LOG:
+                quantity = lnav_data.ld_log_source.file_count();
+                units = "file";
+                break;
+            case LNV_TEXT:
+                quantity = lnav_data.ld_text_source.size();
+                units = "file";
+                break;
+            case LNV_DB:
+                quantity = lnav_data.ld_db_row_source.dls_rows.size();
+                units = "row";
+                break;
+        }
+
+        if (quantity) {
+            display_value.pad_to(8)
+                .append(" (")
+                .append(lnav::roles::number(
+                    quantity.value() == 0 ? "no"
+                                          : fmt::to_string(quantity.value())))
+                .append(FMT_STRING(" {}{})"),
+                        units,
+                        quantity.value() == 1 ? "" : "s");
+        }
+        retval.emplace_back(lnav_view_titles[view_index], display_value);
+    }
+    return retval;
+}
+
+static void
+view_performer(const breadcrumb::crumb::key_t& view_name)
+{
+    auto* view_title_iter = std::find_if(
+        std::begin(lnav_view_titles),
+        std::end(lnav_view_titles),
+        [&](const char* v) {
+            return strcasecmp(v, view_name.get<std::string>().c_str()) == 0;
+        });
+
+    if (view_title_iter != std::end(lnav_view_titles)) {
+        ensure_view(lnav_view_t(view_title_iter - lnav_view_titles));
+    }
+}
+
+std::vector<breadcrumb::crumb>
+lnav_crumb_source()
+{
+    std::vector<breadcrumb::crumb> retval;
+
+    auto top_view_opt = lnav_data.ld_view_stack.top();
+    if (!top_view_opt) {
+        return retval;
+    }
+
+    auto* top_view = top_view_opt.value();
+    auto view_index = top_view - lnav_data.ld_views;
+    retval.emplace_back(
+        lnav_view_titles[view_index],
+        attr_line_t().append(lnav::roles::status_title(
+            fmt::format(FMT_STRING(" {} "), lnav_view_titles[view_index]))),
+        view_title_poss,
+        view_performer);
+
+    auto* tss = top_view->get_sub_source();
+    if (tss != nullptr) {
+        tss->text_crumbs_for_line(top_view->get_top(), retval);
+    }
+
+    return retval;
 }

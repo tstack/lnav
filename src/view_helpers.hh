@@ -58,6 +58,7 @@ typedef enum {
 /** The command modes that are available while viewing a file. */
 enum class ln_mode_t : int {
     PAGING,
+    BREADCRUMBS,
     FILTER,
     FILES,
     COMMAND,

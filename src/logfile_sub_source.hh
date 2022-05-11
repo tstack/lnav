@@ -79,7 +79,9 @@ public:
 class pcre_filter : public text_filter {
 public:
     pcre_filter(type_t type, const std::string& id, size_t index, pcre* code)
-        : text_filter(type, filter_lang_t::REGEX, id, index), pf_pcre(code){};
+        : text_filter(type, filter_lang_t::REGEX, id, index), pf_pcre(code)
+    {
+    }
 
     ~pcre_filter() override = default;
 
@@ -148,6 +150,72 @@ private:
     nonstd::ring_span<content_line_t> llh_history;
     logfile_sub_source& llh_log_source;
     content_line_t llh_backing[MAX_SIZE];
+};
+
+class logline_window {
+public:
+    logline_window(logfile_sub_source& lss, vis_line_t start_line)
+        : lw_source(lss), lw_start_line(start_line)
+    {
+    }
+
+    class iterator;
+
+    class logmsg_info {
+    public:
+        logmsg_info(logfile_sub_source& lss, vis_line_t vl);
+
+        vis_line_t get_vis_line() const { return this->li_line; }
+
+        const logline& get_logline() const { return *this->li_logline; }
+
+        const string_attrs_t& get_attrs() const
+        {
+            this->load_msg();
+            return this->li_string_attrs;
+        }
+
+        std::string to_string(const struct line_range& lr) const;
+
+    private:
+        friend iterator;
+
+        void next_msg();
+        void load_msg() const;
+
+        logfile_sub_source& li_source;
+        vis_line_t li_line;
+        logfile* li_file{nullptr};
+        logfile::const_iterator li_logline;
+        mutable shared_buffer_ref li_msg_buffer;
+        mutable string_attrs_t li_string_attrs;
+        mutable std::vector<logline_value> li_line_values;
+    };
+
+    class iterator {
+    public:
+        iterator(logfile_sub_source& lss, vis_line_t vl) : i_info(lss, vl) {}
+
+        iterator& operator++();
+
+        bool operator!=(const iterator& rhs) const
+        {
+            return this->i_info.get_vis_line() != rhs.i_info.get_vis_line();
+        }
+
+        const logmsg_info& operator*() const { return this->i_info; }
+
+    private:
+        logmsg_info i_info;
+    };
+
+    iterator begin();
+
+    iterator end();
+
+private:
+    logfile_sub_source& lw_source;
+    vis_line_t lw_start_line;
 };
 
 /**
@@ -332,7 +400,7 @@ public:
         const_iterator iter;
 
         for (iter = this->cbegin(); iter != this->cend(); ++iter) {
-            if (*iter != NULL && (*iter)->get_file() != NULL) {
+            if (*iter != nullptr && (*iter)->get_file() != nullptr) {
                 retval += 1;
             }
         }
@@ -363,7 +431,7 @@ public:
             this->lss_line_size_cache[index].first = row;
         }
         return this->lss_line_size_cache[index].second;
-    };
+    }
 
     void text_mark(const bookmark_type_t* bm, vis_line_t line, bool added);
 
@@ -477,6 +545,30 @@ public:
         return retval;
     }
 
+    nonstd::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
+    find_line_with_file(content_line_t line) const
+    {
+        std::shared_ptr<logfile> lf = this->find(line);
+
+        if (lf != nullptr) {
+            auto ll_iter = lf->begin() + line;
+
+            return std::make_pair(lf, ll_iter);
+        }
+
+        return nonstd::nullopt;
+    }
+
+    nonstd::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
+    find_line_with_file(vis_line_t vl) const
+    {
+        if (vl >= 0_vl && vl <= this->lss_filtered_index.size()) {
+            return this->find_line_with_file(this->at(vl));
+        }
+
+        return nonstd::nullopt;
+    }
+
     nonstd::optional<vis_line_t> find_from_time(
         const struct timeval& start) const;
 
@@ -507,7 +599,7 @@ public:
         return this->find_from_time(time_bucket);
     }
 
-    content_line_t at(vis_line_t vl)
+    content_line_t at(vis_line_t vl) const
     {
         return this->lss_index[this->lss_filtered_index[vl]];
     }
@@ -519,6 +611,11 @@ public:
         }
 
         return this->at(vl);
+    }
+
+    logline_window window_at(vis_line_t vl)
+    {
+        return logline_window(*this, vl);
     }
 
     log_accel::direction_t get_line_accel_direction(vis_line_t vl);
@@ -557,7 +654,7 @@ public:
 
         bool is_visible() const
         {
-            return this->ld_visible;
+            return this->get_file_ptr() != nullptr && this->ld_visible;
         }
 
         void set_visibility(bool vis)
@@ -649,7 +746,7 @@ public:
         : public grep_proc_source<vis_line_t>
         , public grep_proc_sink<vis_line_t> {
     public:
-        meta_grepper(logfile_sub_source& source) : lmg_source(source){};
+        meta_grepper(logfile_sub_source& source) : lmg_source(source) {}
 
         bool grep_value_for_line(vis_line_t line,
                                  std::string& value_out) override;
@@ -683,21 +780,19 @@ public:
         return &this->lss_location_history;
     }
 
+    void text_crumbs_for_line(int line, std::vector<breadcrumb::crumb>& crumbs);
+
     Result<bool, std::string> eval_sql_filter(sqlite3_stmt* stmt,
                                               iterator ld,
                                               logfile::const_iterator ll);
 
     void invalidate_sql_filter();
 
-    void set_line_meta_changed()
-    {
-        this->lss_line_meta_changed = true;
-    }
+    void set_line_meta_changed() { this->lss_line_meta_changed = true; }
 
-    bool is_line_meta_changed() const
-    {
-        return this->lss_line_meta_changed;
-    }
+    bool is_line_meta_changed() const { return this->lss_line_meta_changed; }
+
+    void set_exec_context(exec_context* ec) { this->lss_exec_context = ec; }
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
@@ -726,7 +821,7 @@ private:
     };
 
     struct __attribute__((__packed__)) indexed_content {
-        indexed_content() {}
+        indexed_content() = default;
 
         indexed_content(content_line_t cl) : ic_value(cl) {}
 
@@ -739,7 +834,8 @@ private:
     };
 
     struct logline_cmp {
-        logline_cmp(logfile_sub_source& lc) : llss_controller(lc){};
+        logline_cmp(logfile_sub_source& lc) : llss_controller(lc) {}
+
         bool operator()(const content_line_t& lhs,
                         const content_line_t& rhs) const
         {
@@ -789,8 +885,10 @@ private:
     };
 
     struct filtered_logline_cmp {
-        filtered_logline_cmp(const logfile_sub_source& lc)
-            : llss_controller(lc){};
+        filtered_logline_cmp(const logfile_sub_source& lc) : llss_controller(lc)
+        {
+        }
+
         bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
         {
             content_line_t cl_lhs
@@ -820,7 +918,9 @@ private:
      */
     struct logfile_data_eq {
         explicit logfile_data_eq(std::shared_ptr<logfile> lf)
-            : lde_file(std::move(lf)){};
+            : lde_file(std::move(lf))
+        {
+        }
 
         bool operator()(const std::unique_ptr<logfile_data>& ld) const
         {
@@ -834,7 +934,7 @@ private:
     {
         this->lss_line_size_cache.fill(std::make_pair(0, 0));
         this->lss_line_size_cache[0].first = -1;
-    };
+    }
 
     bool check_extra_filters(iterator ld, logfile::iterator ll);
 
@@ -877,6 +977,7 @@ private:
     size_t lss_longest_line{0};
     meta_grepper lss_meta_grepper;
     log_location_history lss_location_history;
+    exec_context* lss_exec_context;
 
     bool lss_in_value_for_line{false};
     bool lss_line_meta_changed{false};

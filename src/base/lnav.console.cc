@@ -340,10 +340,14 @@ println(FILE* file, const attr_line_t& al)
                 line_style |= fg_style;
             }
 
-            fmt::print(file,
-                       line_style,
-                       FMT_STRING("{}"),
-                       str.substr(start, point - start));
+            if (start < str.size()) {
+                auto actual_end
+                    = std::min(str.size(), static_cast<size_t>(point));
+                fmt::print(file,
+                           line_style,
+                           FMT_STRING("{}"),
+                           str.substr(start, actual_end - start));
+            }
         }
         last_point = point;
     }

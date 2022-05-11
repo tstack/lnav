@@ -330,6 +330,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 case DT_IPV6_ADDRESS:
                 case DT_MAC_ADDRESS:
                 case DT_HEX_DUMP:
+                case DT_XML_DECL_TAG:
                 case DT_XML_OPEN_TAG:
                 case DT_XML_CLOSE_TAG:
                 case DT_XML_EMPTY_TAG:

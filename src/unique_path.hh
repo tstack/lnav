@@ -51,10 +51,7 @@ public:
         this->ups_unique_path = path;
     }
 
-    std::string get_unique_path() const
-    {
-        return this->ups_unique_path;
-    }
+    const std::string& get_unique_path() const { return this->ups_unique_path; }
 
     virtual ghc::filesystem::path get_path() const = 0;
 

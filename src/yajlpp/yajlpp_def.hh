@@ -1299,6 +1299,17 @@ struct typed_json_path_container : public json_path_container {
 
         return gen.to_string_fragment().to_string();
     }
+
+    json_string to_json_string(T& obj) const
+    {
+        yajlpp_gen gen;
+        yajlpp_gen_context ygc(gen, *this);
+        ygc.template with_obj(obj);
+        ygc.ygc_depth = 1;
+        ygc.gen();
+
+        return json_string{gen.get_handle()};
+    }
 };
 
 namespace yajlpp {

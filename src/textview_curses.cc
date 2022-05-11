@@ -972,3 +972,16 @@ vis_location_history::loc_history_forward(vis_line_t current_top)
 
     return this->current_position();
 }
+
+void
+text_sub_source::toggle_apply_filters()
+{
+    this->tss_apply_filters = !this->tss_apply_filters;
+    this->text_filters_changed();
+}
+
+void
+text_sub_source::text_crumbs_for_line(int line,
+                                      std::vector<breadcrumb::crumb>& crumbs)
+{
+}

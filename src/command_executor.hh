@@ -56,6 +56,9 @@ int sql_callback(exec_context& ec, sqlite3_stmt* stmt);
 using pipe_callback_t
     = std::future<std::string> (*)(exec_context&, const std::string&, auto_fd&);
 
+using error_callback_t
+    = std::function<void(const lnav::console::user_message&)>;
+
 struct exec_context {
     enum class perm_t {
         READ_WRITE,
@@ -117,14 +120,23 @@ struct exec_context {
     void clear_output();
 
     struct source_guard {
-        source_guard(exec_context& context) : sg_context(context) {}
+        source_guard(exec_context* context) : sg_context(context) {}
+
+        source_guard(const source_guard&) = delete;
+
+        source_guard(source_guard&& other) : sg_context(other.sg_context)
+        {
+            other.sg_context = nullptr;
+        }
 
         ~source_guard()
         {
-            this->sg_context.ec_source.pop();
+            if (this->sg_context != nullptr) {
+                this->sg_context->ec_source.pop();
+            }
         }
 
-        exec_context& sg_context;
+        exec_context* sg_context;
     };
 
     struct output_guard {
@@ -144,7 +156,32 @@ struct exec_context {
     {
         this->ec_source.emplace(
             lnav::console::snippet::from(path, content).with_line(line_number));
-        return {*this};
+        return {this};
+    }
+
+    struct error_cb_guard {
+        error_cb_guard(exec_context* context) : sg_context(context) {}
+
+        error_cb_guard(const error_cb_guard&) = delete;
+        error_cb_guard(error_cb_guard&& other) : sg_context(other.sg_context)
+        {
+            other.sg_context = nullptr;
+        }
+
+        ~error_cb_guard()
+        {
+            if (this->sg_context != nullptr) {
+                this->sg_context->ec_error_callback_stack.pop_back();
+            }
+        }
+
+        exec_context* sg_context;
+    };
+
+    error_cb_guard add_error_callback(error_callback_t cb)
+    {
+        this->ec_error_callback_stack.emplace_back(std::move(cb));
+        return {this};
     }
 
     scoped_resolver create_resolver()
@@ -153,6 +190,32 @@ struct exec_context {
             &this->ec_local_vars.top(),
             &this->ec_global_vars,
         };
+    }
+
+    void execute(const std::string& cmdline);
+
+    using kv_pair_t = std::pair<std::string, std::string>;
+
+    void execute_with_int(const std::string& cmdline)
+    {
+        this->execute(cmdline);
+    }
+
+    template<typename... Args>
+    void execute_with_int(const std::string& cmdline,
+                          kv_pair_t pair,
+                          Args... args)
+    {
+        this->ec_local_vars.top().template emplace(pair);
+        this->execute(cmdline, args...);
+    }
+
+    template<typename... Args>
+    void execute_with(const std::string& cmdline, Args... args)
+    {
+        this->ec_local_vars.push({});
+        this->execute_with_int(cmdline, args...);
+        this->ec_local_vars.pop();
     }
 
     vis_line_t ec_top_line{0_vl};
@@ -174,6 +237,7 @@ struct exec_context {
 
     sql_callback_t ec_sql_callback;
     pipe_callback_t ec_pipe_callback;
+    std::vector<error_callback_t> ec_error_callback_stack;
 };
 
 Result<std::string, lnav::console::user_message> execute_command(

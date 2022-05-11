@@ -36,14 +36,11 @@ static auto intern_lifetime = intern_string::get_table_lifetime();
 
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
-      alv_value_meta(
-          intern_string::lookup("log_format"), value_kind_t::VALUE_TEXT, 0),
       alv_msg_meta(
-          intern_string::lookup("log_msg_format"), value_kind_t::VALUE_TEXT, 1),
+          intern_string::lookup("log_msg_format"), value_kind_t::VALUE_TEXT, 0),
       alv_schema_meta(
-          intern_string::lookup("log_msg_schema"), value_kind_t::VALUE_TEXT, 2)
+          intern_string::lookup("log_msg_schema"), value_kind_t::VALUE_TEXT, 1)
 {
-    this->alv_value_meta.lvm_identifier = true;
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
 }
@@ -51,8 +48,6 @@ all_logs_vtab::all_logs_vtab()
 void
 all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 {
-    cols.emplace_back(vtab_column(this->alv_value_meta.lvm_name.get())
-                          .with_comment("The name of the log file format"));
     cols.emplace_back(
         vtab_column(this->alv_msg_meta.lvm_name.get())
             .with_comment(
@@ -71,7 +66,6 @@ all_logs_vtab::extract(std::shared_ptr<logfile> lf,
                        std::vector<logline_value>& values)
 {
     auto format = lf->get_format();
-    values.emplace_back(this->alv_value_meta, format->get_name());
 
     std::vector<logline_value> sub_values;
 
@@ -106,23 +100,9 @@ all_logs_vtab::extract(std::shared_ptr<logfile> lf,
 }
 
 bool
-all_logs_vtab::is_valid(log_cursor& lc, logfile_sub_source& lss)
-{
-    auto cl = lss.at(lc.lc_curr_line);
-    auto lf = lss.find(cl);
-    auto lf_iter = lf->begin() + cl;
-
-    if (!lf_iter->is_message()) {
-        return false;
-    }
-
-    return true;
-}
-
-bool
 all_logs_vtab::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+    lc.lc_curr_line = lc.lc_curr_line + 1_vl;
     lc.lc_sub_index = 0;
 
     if (lc.is_eof()) {

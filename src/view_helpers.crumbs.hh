@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,38 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_all_logs_vtab_hh
-#define lnav_all_logs_vtab_hh
+#ifndef lnav_view_helpers_crumbs_hh
+#define lnav_view_helpers_crumbs_hh
 
-#include <array>
+#include "breadcrumb_curses.hh"
 
-#include "data_parser.hh"
-#include "log_vtab_impl.hh"
+std::vector<breadcrumb::crumb> lnav_crumb_source();
 
-/**
- * A virtual table that provides access to all log messages from all formats.
- *
- * @feature f0:sql.tables.all_logs
- */
-class all_logs_vtab : public log_vtab_impl {
-public:
-    all_logs_vtab();
-
-    void get_columns(std::vector<vtab_column>& cols) const override;
-
-    void extract(std::shared_ptr<logfile> lf,
-                 uint64_t line_number,
-                 shared_buffer_ref& line,
-                 std::vector<logline_value>& values) override;
-
-    bool next(log_cursor& lc, logfile_sub_source& lss) override;
-
-private:
-    logline_value_meta alv_msg_meta;
-    logline_value_meta alv_schema_meta;
-    shared_buffer alv_schema_manager;
-    fmt::basic_memory_buffer<char, data_parser::schema_id_t::STRING_SIZE>
-        alv_schema_buffer;
-};
-
-#endif  // LNAV_ALL_LOGS_VTAB_HH
+#endif

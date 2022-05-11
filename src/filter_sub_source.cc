@@ -353,27 +353,21 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
     line_range lr{2, 3};
     value_out.emplace_back(lr, VC_GRAPHIC.value(enabled));
     if (tf->is_enabled()) {
-        value_out.emplace_back(lr,
-                               VC_FOREGROUND.value(
-                                   vcolors.ansi_to_theme_color(COLOR_GREEN)));
+        value_out.emplace_back(
+            lr, VC_FOREGROUND.value(vcolors.ansi_to_theme_color(COLOR_GREEN)));
     }
 
     role_t fg_role = tf->get_type() == text_filter::INCLUDE ? role_t::VCR_OK
                                                             : role_t::VCR_ERROR;
-    value_out.emplace_back(line_range{4, 7},
-                           VC_ROLE_FG.value(fg_role));
-    value_out.emplace_back(line_range{4, 7},
-                           VC_STYLE.value(A_BOLD));
+    value_out.emplace_back(line_range{4, 7}, VC_ROLE.value(fg_role));
+    value_out.emplace_back(line_range{4, 7}, VC_STYLE.value(A_BOLD));
 
-    value_out.emplace_back(line_range{8, 17},
-                           VC_STYLE.value(A_BOLD));
-    value_out.emplace_back(line_range{23, 24},
-                           VC_GRAPHIC.value(ACS_VLINE));
+    value_out.emplace_back(line_range{8, 17}, VC_STYLE.value(A_BOLD));
+    value_out.emplace_back(line_range{23, 24}, VC_GRAPHIC.value(ACS_VLINE));
 
     if (selected) {
-        value_out.emplace_back(
-            line_range{0, -1},
-            VC_ROLE.value(role_t::VCR_FOCUSED));
+        value_out.emplace_back(line_range{0, -1},
+                               VC_ROLE.value(role_t::VCR_FOCUSED));
     }
 
     attr_line_t content{tf->get_id()};
@@ -613,7 +607,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
         attr_line_t al;
         vis_line_t line, selected_line;
 
-        for (auto& match : matches) {
+        for (const auto& match : matches) {
             if (match == current_match) {
                 al.append(match, VC_STYLE.value(A_REVERSE));
                 selected_line = line;

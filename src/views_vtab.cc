@@ -34,12 +34,15 @@
 #include <unistd.h>
 
 #include "base/injector.bind.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "lnav.hh"
 #include "sql_util.hh"
 #include "view_curses.hh"
+#include "vtab_module_json.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 template<>
 struct from_sqlite<lnav_view_t> {
@@ -119,6 +122,55 @@ struct from_sqlite<std::pair<std::string, auto_mem<pcre>>> {
     }
 };
 
+static const typed_json_path_container<breadcrumb::possibility>
+    breadcrumb_possibility_handlers = {
+        yajlpp::property_handler("display_value")
+            .for_field(&breadcrumb::possibility::p_display_value,
+                       &attr_line_t::al_string),
+};
+
+struct resolved_crumb {
+    resolved_crumb() = default;
+
+    resolved_crumb(std::string display_value,
+                   std::string search_placeholder,
+                   std::vector<breadcrumb::possibility> possibilities)
+        : rc_display_value(std::move(display_value)),
+          rc_search_placeholder(std::move(search_placeholder)),
+          rc_possibilities(std::move(possibilities))
+    {
+    }
+
+    std::string rc_display_value;
+    std::string rc_search_placeholder;
+    std::vector<breadcrumb::possibility> rc_possibilities;
+};
+
+static const typed_json_path_container<resolved_crumb> breadcrumb_crumb_handlers
+    = {
+        yajlpp::property_handler("display_value")
+            .for_field(&resolved_crumb::rc_display_value),
+        yajlpp::property_handler("search_placeholder")
+            .for_field(&resolved_crumb::rc_search_placeholder),
+        yajlpp::property_handler("possibilities#")
+            .for_field(&resolved_crumb::rc_possibilities)
+            .with_children(breadcrumb_possibility_handlers),
+};
+
+struct top_line_meta {
+    nonstd::optional<std::string> tlm_time;
+    nonstd::optional<std::string> tlm_file;
+    std::vector<resolved_crumb> tlm_crumbs;
+};
+
+static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
+    yajlpp::property_handler("time").for_field(&top_line_meta::tlm_time),
+    yajlpp::property_handler("file").for_field(&top_line_meta::tlm_file),
+    yajlpp::property_handler("breadcrumbs#")
+        .for_field(&top_line_meta::tlm_crumbs)
+        .with_children(breadcrumb_crumb_handlers),
+};
+
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
     static constexpr const char* CREATE_STMT = R"(
@@ -133,7 +185,8 @@ CREATE TABLE lnav_views (
     top_file TEXT,          -- The file the top line is from.
     paused INTEGER,         -- Indicates if the view is paused and will not load new data.
     search TEXT,            -- The text to search for in the view.
-    filtering INTEGER       -- Indicates if the view is applying filters.
+    filtering INTEGER,      -- Indicates if the view is applying filters.
+    top_meta TEXT           --
 );
 )";
 
@@ -217,12 +270,59 @@ CREATE TABLE lnav_views (
                 to_sqlite(ctx, tc.get_current_search());
                 break;
             case 9: {
-                auto tss = tc.get_sub_source();
+                auto* tss = tc.get_sub_source();
 
                 if (tss != nullptr && tss->tss_supports_filtering) {
                     sqlite3_result_int(ctx, tss->tss_apply_filters);
                 } else {
                     sqlite3_result_int(ctx, 0);
+                }
+                break;
+            }
+            case 10: {
+                auto* tss = tc.get_sub_source();
+
+                if (tss != nullptr && tss->text_line_count() > 0) {
+                    auto* time_source = dynamic_cast<text_time_translator*>(
+                        tc.get_sub_source());
+                    std::vector<breadcrumb::crumb> crumbs;
+
+                    tss->text_crumbs_for_line(tc.get_top(), crumbs);
+
+                    top_line_meta tlm;
+                    if (time_source != nullptr) {
+                        auto top_time_opt
+                            = time_source->time_for_row(tc.get_top());
+
+                        if (top_time_opt) {
+                            char timestamp[64];
+
+                            sql_strftime(timestamp,
+                                         sizeof(timestamp),
+                                         top_time_opt.value(),
+                                         'T');
+                            tlm.tlm_time = timestamp;
+                        }
+                    }
+                    tlm.tlm_file = tc.map_top_row([](const auto& al) {
+                        return get_string_attr(al.get_attrs(), logline::L_FILE)
+                            | [](const auto wrapper) {
+                                  auto lf = wrapper.get();
+
+                                  return nonstd::make_optional(
+                                      lf->get_filename());
+                              };
+                    });
+                    for (const auto& crumb : crumbs) {
+                        tlm.tlm_crumbs.emplace_back(
+                            crumb.c_display_value.get_string(),
+                            crumb.c_search_placeholder,
+                            crumb.c_possibility_provider());
+                    }
+                    auto ret = top_line_meta_handlers.to_json_string(tlm);
+                    to_sqlite(ctx, ret);
+                } else {
+                    sqlite3_result_null(ctx);
                 }
                 break;
             }
@@ -256,7 +356,8 @@ CREATE TABLE lnav_views (
                    const char* top_file,
                    bool is_paused,
                    const char* search,
-                   bool do_filtering)
+                   bool do_filtering,
+                   const char* top_meta)
     {
         textview_curses& tc = lnav_data.ld_views[index];
         text_time_translator* time_source

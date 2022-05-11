@@ -127,7 +127,7 @@ class generic_log_format : public log_format {
         };
 
         return log_fmt;
-    };
+    }
 
     std::string get_pattern_regex(uint64_t line_number) const override
     {
@@ -138,7 +138,7 @@ class generic_log_format : public log_format {
     const intern_string_t get_name() const override
     {
         return intern_string::lookup("generic_log");
-    };
+    }
 
     void scrub(std::string& line) override
     {
@@ -155,7 +155,7 @@ class generic_log_format : public log_format {
 
             line = new_line;
         }
-    };
+    }
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
@@ -194,7 +194,7 @@ class generic_log_format : public log_format {
         }
 
         return SCAN_NO_MATCH;
-    };
+    }
 
     void annotate(uint64_t line_number,
                   shared_buffer_ref& line,
@@ -232,12 +232,12 @@ class generic_log_format : public log_format {
         lr.lr_start = prefix_len;
         lr.lr_end = line.length();
         sa.emplace_back(lr, SA_BODY.value());
-    };
+    }
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
         return std::make_shared<generic_log_format>(*this);
-    };
+    }
 };
 
 std::string
@@ -320,7 +320,7 @@ struct separated_string {
             : i_parent(ss), i_pos(pos), i_next_pos(pos), i_index(0)
         {
             this->update();
-        };
+        }
 
         void update()
         {
@@ -334,7 +334,7 @@ struct separated_string {
             } else {
                 this->i_next_pos = ss.ss_str + ss.ss_len;
             }
-        };
+        }
 
         iterator& operator++()
         {
@@ -343,7 +343,7 @@ struct separated_string {
             this->i_index += 1;
 
             return *this;
-        };
+        }
 
         string_fragment operator*()
         {
@@ -356,23 +356,20 @@ struct separated_string {
                 end = this->i_next_pos - ss.ss_str;
             }
             return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
-        };
+        }
 
         bool operator==(const iterator& other) const
         {
             return (&this->i_parent == &other.i_parent)
                 && (this->i_pos == other.i_pos);
-        };
+        }
 
         bool operator!=(const iterator& other) const
         {
             return !(*this == other);
-        };
+        }
 
-        size_t index() const
-        {
-            return this->i_index;
-        };
+        size_t index() const { return this->i_index; }
     };
 
     iterator begin()
@@ -397,7 +394,9 @@ public:
                            int col,
                            log_format* format)
             : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
-              fd_numeric_index(-1){};
+              fd_numeric_index(-1)
+        {
+        }
 
         field_def& with_kind(value_kind_t kind,
                              bool identifier = false,
@@ -407,7 +406,7 @@ public:
             this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
-        };
+        }
 
         field_def& with_numeric_index(int index)
         {
@@ -420,21 +419,21 @@ public:
     {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
-    };
+    }
 
     const intern_string_t get_name() const override
     {
         static const intern_string_t name(intern_string::lookup("bro"));
 
         return this->blf_format_name.empty() ? name : this->blf_format_name;
-    };
+    }
 
     void clear() override
     {
         this->log_format::clear();
         this->blf_format_name.clear();
         this->blf_field_defs.clear();
-    };
+    }
 
     scan_result_t scan_int(std::vector<logline>& dst,
                            const line_info& li,
@@ -664,7 +663,7 @@ public:
         this->lf_value_stats.clear();
 
         return SCAN_NO_MATCH;
-    };
+    }
 
     void annotate(uint64_t line_number,
                   shared_buffer_ref& sbr,
@@ -707,7 +706,7 @@ public:
                 values.emplace_back(fd.fd_meta);
             }
         }
-    };
+    }
 
     const logline_value_stats* stats_for_value(
         const intern_string_t& name) const override
@@ -725,12 +724,12 @@ public:
         }
 
         return retval;
-    };
+    }
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
         return std::make_shared<bro_log_format>(*this);
-    };
+    }
 
     class bro_log_table : public log_format_vtab_impl {
     public:
@@ -753,7 +752,7 @@ public:
                                   "",
                                   type_pair.second);
             }
-        };
+        }
 
         void get_foreign_keys(
             std::vector<std::string>& keys_inout) const override
@@ -776,7 +775,7 @@ public:
         static std::map<intern_string_t, std::shared_ptr<bro_log_table>> retval;
 
         return retval;
-    };
+    }
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
     {
@@ -794,7 +793,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
@@ -833,7 +832,7 @@ struct ws_separated_string {
             : i_parent(ss), i_pos(pos), i_next_pos(pos)
         {
             this->update();
-        };
+        }
 
         void update()
         {
@@ -859,7 +858,7 @@ struct ws_separated_string {
                     this->i_next_pos += 1;
                 }
             }
-        };
+        }
 
         iterator& operator++()
         {
@@ -875,7 +874,7 @@ struct ws_separated_string {
             this->i_index += 1;
 
             return *this;
-        };
+        }
 
         string_fragment operator*()
         {
@@ -883,34 +882,25 @@ struct ws_separated_string {
             int end = this->i_next_pos - ss.ss_str;
 
             return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
-        };
+        }
 
         bool operator==(const iterator& other) const
         {
             return (&this->i_parent == &other.i_parent)
                 && (this->i_pos == other.i_pos);
-        };
+        }
 
         bool operator!=(const iterator& other) const
         {
             return !(*this == other);
-        };
+        }
 
-        size_t index() const
-        {
-            return this->i_index;
-        };
+        size_t index() const { return this->i_index; }
     };
 
-    iterator begin()
-    {
-        return {*this, this->ss_str};
-    };
+    iterator begin() { return {*this, this->ss_str}; }
 
-    iterator end()
-    {
-        return {*this, this->ss_str + this->ss_len};
-    };
+    iterator end() { return {*this, this->ss_str + this->ss_len}; }
 };
 
 class w3c_log_format : public log_format {
@@ -955,7 +945,7 @@ public:
             this->fd_meta.lvm_identifier = identifier;
             this->fd_collator = collator;
             return *this;
-        };
+        }
 
         field_def& with_numeric_index(int index)
         {
@@ -982,14 +972,14 @@ public:
     {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
-    };
+    }
 
     const intern_string_t get_name() const override
     {
         static const intern_string_t name(intern_string::lookup("w3c"));
 
         return this->wlf_format_name.empty() ? name : this->wlf_format_name;
-    };
+    }
 
     void clear() override
     {
@@ -997,7 +987,7 @@ public:
         this->wlf_time_scanner.clear();
         this->wlf_format_name.clear();
         this->wlf_field_defs.clear();
-    };
+    }
 
     scan_result_t scan_int(std::vector<logline>& dst,
                            const line_info& li,
@@ -1255,7 +1245,7 @@ public:
         this->lf_value_stats.clear();
 
         return SCAN_NO_MATCH;
-    };
+    }
 
     void annotate(uint64_t line_number,
                   shared_buffer_ref& sbr,
@@ -1297,7 +1287,7 @@ public:
                 values.emplace_back(fd.fd_meta);
             }
         }
-    };
+    }
 
     const logline_value_stats* stats_for_value(
         const intern_string_t& name) const override
@@ -1315,12 +1305,12 @@ public:
         }
 
         return retval;
-    };
+    }
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
         return std::make_shared<w3c_log_format>(*this);
-    };
+    }
 
     class w3c_log_table : public log_format_vtab_impl {
     public:
@@ -1372,7 +1362,7 @@ public:
         static std::map<intern_string_t, std::shared_ptr<w3c_log_table>> retval;
 
         return retval;
-    };
+    }
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
     {
@@ -1390,7 +1380,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
@@ -1570,7 +1560,7 @@ public:
             static const auto FIELDS = std::string("fields");
 
             cols.emplace_back(FIELDS);
-        };
+        }
     };
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
@@ -1769,7 +1759,7 @@ public:
     std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
         return std::make_shared<logfmt_format>(*this);
-    };
+    }
 };
 
 static auto format_binder = injector::bind_multiple<log_format>()

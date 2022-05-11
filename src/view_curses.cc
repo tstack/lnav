@@ -49,7 +49,8 @@ using namespace std::chrono_literals;
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
     {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
-    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()}};
+    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
+};
 
 ui_periodic_timer::ui_periodic_timer() : upt_counter(0)
 {
@@ -188,8 +189,11 @@ view_curses::mvwattrline(WINDOW* window,
     full_line = expanded_line;
 
     auto& vc = view_colors::singleton();
-    auto text_attrs = vc.attrs_for_role(base_role);
-    auto attrs = text_attrs;
+    auto text_attrs = vc.attrs_for_role(role_t::VCR_TEXT);
+    short text_role_fg, text_role_bg;
+    auto text_color_pair = PAIR_NUMBER(text_attrs);
+    pair_content(text_color_pair, &text_role_fg, &text_role_bg);
+    auto attrs = vc.attrs_for_role(base_role);
     wmove(window, y, x);
     wattron(window, attrs);
     if (lr_bytes.lr_start < (int) full_line.size()) {
@@ -332,6 +336,27 @@ view_curses::mvwattrline(WINDOW* window,
                     color_pair = vc.ensure_color_pair(pair_fg, pair_bg);
 
                     attrs &= ~(A_LEFT | A_RIGHT);
+                }
+
+                if (color_pair > 0) {
+                    short pair_fg, pair_bg;
+                    pair_content(color_pair, &pair_fg, &pair_bg);
+
+                    if ((pair_fg == -1 || pair_fg == text_role_fg)
+                        && (pair_bg == -1 || pair_bg == text_role_bg))
+                    {
+                        color_pair = 0;
+                    } else if (pair_bg == -1 || pair_bg == text_role_bg) {
+                        if (!has_fg) {
+                            memset(
+                                fg_color, -1, line_width_chars * sizeof(short));
+                        }
+                        std::fill(&fg_color[attr_range.lr_start],
+                                  &fg_color[attr_range.lr_end],
+                                  (short) pair_fg);
+                        has_fg = true;
+                        color_pair = 0;
+                    }
                 }
 
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
@@ -885,6 +910,12 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(color_pair_base,
                          lt,
                          lt.lt_style_list_glyph,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_BREADCRUMB)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_breadcrumb,
                          lt.lt_style_text,
                          reporter);
 

@@ -486,6 +486,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             return;
         }
 
+        case ln_mode_t::BREADCRUMBS:
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
@@ -578,6 +579,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
     auto old_mode = std::exchange(lnav_data.ld_mode, new_mode);
     switch (old_mode) {
+        case ln_mode_t::BREADCRUMBS:
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
@@ -596,10 +598,6 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
                 lnav_data.ld_user_message_source.replace_with(
                     um.to_attr_line().rtrim());
-                for (const auto& line :
-                     lnav_data.ld_user_message_source.get_lines()) {
-                    log_debug("line -- %s", lnav::to_json(line).c_str());
-                }
                 lnav_data.ld_user_message_view.reload_data();
                 lnav_data.ld_user_message_expiration
                     = std::chrono::steady_clock::now() + 20s;

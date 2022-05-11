@@ -76,7 +76,8 @@ bookmark_type_t::find_type(const std::string& name)
 {
     return get_all_types()
         | lnav::itertools::find_if(
-               [&name](const auto& elem) { return elem->bt_name == name; });
+               [&name](const auto& elem) { return elem->bt_name == name; })
+        | lnav::itertools::deref();
 }
 
 std::vector<bookmark_type_t*>&

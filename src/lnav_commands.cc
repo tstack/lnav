@@ -423,9 +423,13 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
             dst_vl = vis_line_t(line_number);
         } else {
-            return ec.make_error(
-                "expecting line number/percentage, timestamp, or relative "
-                "time");
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("invalid argument: ").append(args[1]))
+                          .with_reason(
+                              "expecting line number/percentage, timestamp, or "
+                              "relative time");
+            ec.add_error_context(um);
+            return Err(um);
         }
 
         dst_vl | [&ec, tc, &retval](auto new_top) {

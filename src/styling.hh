@@ -208,6 +208,7 @@ struct lnav_theme {
     style_config lt_style_file;
     style_config lt_style_header[6];
     style_config lt_style_list_glyph;
+    style_config lt_style_breadcrumb;
     std::map<log_level_t, style_config> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

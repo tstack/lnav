@@ -250,6 +250,7 @@ add_library(
         bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
+        breadcrumb_curses.cc
         collation-functions.cc
         column_namer.cc
         command_executor.cc
@@ -299,6 +300,7 @@ add_library(
         data_parser.cc
         papertrail_proc.cc
         pcap_manager.cc
+        plain_text_source.cc
         pretty_printer.cc
         pugixml/pugixml.cpp
         readline_callbacks.cc
@@ -349,6 +351,8 @@ add_library(
         big_array.hh
         bottom_status_source.hh
         bound_tags.hh
+        breadcrumb.hh
+        breadcrumb_curses.hh
         byte_array.hh
         command_executor.hh
         column_namer.hh
@@ -371,6 +375,7 @@ add_library(
         highlighter.hh
         hotkeys.hh
         input_dispatcher.hh
+        itertools.similar.hh
         k_merge_tree.h
         lnav.indexing.hh
         lnav.management_cli.hh
@@ -433,6 +438,7 @@ add_library(
         top_status_source.hh
         url_loader.hh
         view_helpers.hh
+        view_helpers.crumbs.hh
         view_helpers.examples.hh
         view_helpers.hist.hh
         views_vtab.hh
@@ -469,6 +475,8 @@ add_library(
         third-party/CLI/Split.hpp
         third-party/CLI/TypeTools.hpp
         third-party/CLI/ConfigFwd.hpp
+
+        third-party/intervaltree/IntervalTree.h
 )
 
 set(lnav_SRCS lnav.cc)

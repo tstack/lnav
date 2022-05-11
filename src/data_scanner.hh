@@ -46,6 +46,7 @@ enum data_token_t {
     DT_TIME,
     DT_IPV6_ADDRESS,
     DT_HEX_DUMP,
+    DT_XML_DECL_TAG,
     DT_XML_EMPTY_TAG,
     DT_XML_OPEN_TAG,
     DT_XML_CLOSE_TAG,
@@ -119,7 +120,7 @@ public:
         if (!line.empty() && line[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;
         }
-    };
+    }
 
     data_scanner(shared_buffer_ref& line,
                  size_t off = 0,
@@ -132,20 +133,14 @@ public:
         if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;
         }
-    };
+    }
 
     bool tokenize(pcre_context& pc, data_token_t& token_out);
     bool tokenize2(pcre_context& pc, data_token_t& token_out);
 
-    pcre_input& get_input()
-    {
-        return this->ds_pcre_input;
-    };
+    pcre_input& get_input() { return this->ds_pcre_input; }
 
-    void reset()
-    {
-        this->ds_pcre_input.reset_next_offset();
-    };
+    void reset() { this->ds_pcre_input.reset_next_offset(); }
 
 private:
     std::string ds_line;

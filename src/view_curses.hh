@@ -349,11 +349,13 @@ public:
      */
     virtual void do_update()
     {
+        this->vc_needs_update = false;
+
         if (!this->vc_visible) {
             return;
         }
 
-        for (auto child : this->vc_children) {
+        for (auto* child : this->vc_children) {
             child->do_update();
         }
     }
@@ -363,10 +365,12 @@ public:
     void set_needs_update()
     {
         this->vc_needs_update = true;
-        for (auto child : this->vc_children) {
+        for (auto* child : this->vc_children) {
             child->set_needs_update();
         }
     }
+
+    bool get_needs_update() const { return this->vc_needs_update; }
 
     view_curses& add_child_view(view_curses* child)
     {
@@ -375,10 +379,7 @@ public:
         return *this;
     }
 
-    void set_default_role(role_t role)
-    {
-        this->vc_default_role = role;
-    }
+    void set_default_role(role_t role) { this->vc_default_role = role; }
 
     void set_visible(bool value)
     {

@@ -194,14 +194,18 @@ add_view_text_possibilities(readline_curses* rlc,
 
     rlc->clear_possibilities(context, type);
 
-    for (vis_line_t curr_line = tc->get_top(); curr_line <= tc->get_bottom();
-         ++curr_line)
-    {
-        std::string line;
+    if (tc->get_inner_height() > 0_vl) {
+        for (vis_line_t curr_line = tc->get_top();
+             curr_line <= tc->get_bottom();
+             ++curr_line)
+        {
+            std::string line;
 
-        tss->text_value_for_line(*tc, curr_line, line, text_sub_source::RF_RAW);
+            tss->text_value_for_line(
+                *tc, curr_line, line, text_sub_source::RF_RAW);
 
-        add_text_possibilities(rlc, context, type, line, tq);
+            add_text_possibilities(rlc, context, type, line, tq);
+        }
     }
 
     rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);

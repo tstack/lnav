@@ -43,10 +43,10 @@ run_test ${lnav_test} -n \
     logfile_syslog_test.2
 
 check_output "all_logs does not work?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_format,log_msg_format,log_msg_schema
-0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is up,aff2bfc3c61e7b86329b83190f0912b3
-1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is up,aff2bfc3c61e7b86329b83190f0912b3
-2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,syslog_log,# is down,506560b3c73dee057732e69a3c666718
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_msg_format,log_msg_schema
+0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
+1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
+2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is down,506560b3c73dee057732e69a3c666718
 EOF
 
 
@@ -823,11 +823,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "syslog_log table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
-0,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,<NULL>
-1,<NULL>,2007-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,<NULL>
-2,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,<NULL>
-3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version
+0,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,automount[7998],<NULL>
+1,<NULL>,2007-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,automount[16442],<NULL>
+2,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,automount[7999],<NULL>
+3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>
 EOF
 
 
@@ -841,13 +841,13 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ";select * from syslog_log where log_time >= datetime('2007-11-03T09:47:02.000')" \
+    -c ";select log_line from syslog_log where log_time >= datetime('2007-11-03T09:47:02.000')" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_syslog.0
 
 check_output "log_time collation is wrong" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
-3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
+log_line
+3
 EOF
 
 
@@ -858,8 +858,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2007-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
+0,<NULL>,2007-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 

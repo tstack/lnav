@@ -37,16 +37,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "data_parser.hh"
-#include "view_curses.hh"
 #include "base/injector.hh"
 #include "config.h"
+#include "data_parser.hh"
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
+#include "logfile.hh"
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
+#include "view_curses.hh"
 
 const char* TMP_NAME = "scanned.tmp";
 
@@ -153,11 +154,13 @@ main(int argc, char* argv[])
                 std::vector<logline> index;
 
                 if (is_log) {
+                    logfile_open_options loo;
+                    auto open_res = logfile::open(argv[lpc], loo);
+                    auto lf = open_res.unwrap();
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
                          ++iter) {
                         line_info li = {{13}};
-                        logfile* lf = nullptr;  // XXX
 
                         (*iter)->clear();
                         if ((*iter)->scan(*lf, index, li, sbr)

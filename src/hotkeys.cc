@@ -45,7 +45,6 @@
 #include "lnav_util.hh"
 #include "log_data_helper.hh"
 #include "plain_text_source.hh"
-#include "pretty_printer.hh"
 #include "readline_highlighters.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
@@ -55,10 +54,7 @@
 
 class logline_helper {
 public:
-    logline_helper(logfile_sub_source& lss)
-        : lh_sub_source(lss){
-
-        };
+    logline_helper(logfile_sub_source& lss) : lh_sub_source(lss) {}
 
     logline& move_to_msg_start()
     {
@@ -71,7 +67,7 @@ public:
         }
 
         return (*lf)[cl];
-    };
+    }
 
     logline& current_line()
     {
@@ -79,7 +75,7 @@ public:
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
 
         return (*lf)[cl];
-    };
+    }
 
     void annotate()
     {
@@ -95,7 +91,7 @@ public:
                          this->lh_string_attrs,
                          this->lh_line_values,
                          false);
-    };
+    }
 
     std::string to_string(const struct line_range& lr) const
     {

@@ -6,10 +6,10 @@
         "url": "http://en.wikipedia.org/wiki/Syslog",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?:\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "rfc5424": {
-                "pattern": "^<(?<log_pri>\\d+)>(?<syslog_version>\\d+) (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{6})?(?:[^ ]+)?) (?<log_hostname>[^ ]+|-) (?<log_procname>[^ ]+|-) (?<log_pid>[^ ]+|-) (?<log_msgid>[^ ]+|-) (?<log_struct>\\[(?:[^\\]\"]|\"(?:\\.|[^\"])+\")*\\]|-|)\\s+(?<body>.*)"
+                "pattern": "^<(?<log_pri>\\d+)>(?<syslog_version>\\d+) (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{6})?(?:[^ ]+)?) (?<log_hostname>[^ ]+|-) (?<log_syslog_tag>(?<log_procname>[^ ]+|-) (?<log_pid>[^ ]+|-) (?<log_msgid>[^ ]+|-)) (?<log_struct>\\[(?:[^\\]\"]|\"(?:\\.|[^\"])+\")*\\]|-|)\\s+(?<body>.*)"
             }
         },
         "level-field": "body",
@@ -17,7 +17,7 @@
             "error": "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
             "warning": "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
-        "opid-field": "log_pid",
+        "opid-field": "log_syslog_tag",
         "multiline": true,
         "module-field": "log_procname",
         "value": {
@@ -49,6 +49,11 @@
                     "dump_pid"
                 ],
                 "description": "The ID of the process that generated the message"
+            },
+            "log_syslog_tag": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The combination of the procname and pid"
             },
             "log_msgid": {
                 "kind": "string",
