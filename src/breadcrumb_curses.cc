@@ -61,38 +61,36 @@ breadcrumb_curses::do_update()
     auto width = getmaxx(this->bc_window);
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
                                                   : this->bc_focused_crumbs;
-    auto crumbs_line
-        = crumbs | lnav::itertools::map(&breadcrumb::crumb::c_display_value)
-        | lnav::itertools::fold(
-              [&](const auto& elem, auto& accum) {
-                  auto accum_width = utf8_string_length(accum.get_string())
-                                         .template unwrap();
-                  auto elem_width
-                      = utf8_string_length(elem.get_string()).template unwrap();
-                  auto is_selected = this->bc_selected_crumb
-                      && (crumb_index == this->bc_selected_crumb.value());
+    attr_line_t crumbs_line;
+    for (const auto& crumb : crumbs) {
+        auto accum_width
+            = utf8_string_length(crumbs_line.get_string()).template unwrap();
+        auto elem_width = utf8_string_length(crumb.c_display_value.get_string())
+                              .template unwrap();
+        auto is_selected = this->bc_selected_crumb
+            && (crumb_index == this->bc_selected_crumb.value());
 
-                  if (is_selected && ((accum_width + elem_width) > width)) {
-                      accum.clear();
-                      accum.append("\u22ef\u276d"_breadcrumb);
-                      accum_width = 2;
-                  }
+        if (is_selected && ((accum_width + elem_width) > width)) {
+            crumbs_line.clear();
+            crumbs_line.append("\u22ef\u276d"_breadcrumb);
+            accum_width = 2;
+        }
 
-                  accum.append(elem);
-                  if (is_selected) {
-                      sel_crumb_offset = accum_width;
-                      accum.get_attrs().emplace_back(
-                          line_range{
-                              (int) (accum.length() - elem.length()),
-                              (int) accum.length(),
-                          },
-                          VC_STYLE.template value(A_REVERSE));
-                  }
-                  crumb_index += 1;
-                  return accum.append("\u276d"_breadcrumb);
-              },
-              attr_line_t());
-    
+        crumbs_line.append(crumb.c_display_value);
+        if (is_selected) {
+            sel_crumb_offset = accum_width;
+            crumbs_line.get_attrs().emplace_back(
+                line_range{
+                    (int) (crumbs_line.length()
+                           - crumb.c_display_value.length()),
+                    (int) crumbs_line.length(),
+                },
+                VC_STYLE.template value(A_REVERSE));
+        }
+        crumb_index += 1;
+        crumbs_line.append("\u276d"_breadcrumb);
+    }
+
     line_range lr{0, width};
     view_curses::mvwattrline(
         this->bc_window, this->bc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
