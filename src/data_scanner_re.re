@@ -164,7 +164,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            cap[1].c_end -= 1;
            return true;
        }
-       [a-zA-Z0-9]+"://"[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../")[a-zA-Z0-9_\.\-\~/!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
