@@ -1057,8 +1057,11 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
         if (!p_info->aConstraint[lpc].usable
             || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH
+#ifdef SQLITE_INDEX_CONSTRAINT_OFFSET
             || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_OFFSET
-            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT)
+            || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT
+#endif
+        )
         {
             log_debug("  [%d] not usable", lpc);
             continue;
@@ -1098,8 +1101,11 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
         for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
             if (!p_info->aConstraint[lpc].usable
                 || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH
+#ifdef SQLITE_INDEX_CONSTRAINT_OFFSET
                 || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_OFFSET
-                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT)
+                || p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_LIMIT
+#endif
+            )
             {
                 continue;
             }
