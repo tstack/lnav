@@ -149,6 +149,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             }
         }
         str.erase(str.begin() + caps[0].c_begin, str.begin() + caps[0].c_end);
+        shift_string_attrs(sa, caps[0].c_begin, -caps[0].length());
 
         if (has_attrs) {
             for (auto rit = sa.rbegin(); rit != sa.rend(); rit++) {

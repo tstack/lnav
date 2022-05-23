@@ -814,7 +814,9 @@ struct ws_separated_string {
     size_t ss_len;
 
     explicit ws_separated_string(const char* str = nullptr, size_t len = -1)
-        : ss_str(str), ss_len(len){};
+        : ss_str(str), ss_len(len)
+    {
+    }
 
     struct iterator {
         enum class state_t {
@@ -1025,18 +1027,24 @@ public:
 
             if (sf.startswith("#")) {
                 if (sf == "#Date:") {
-                    date_time_scanner dts;
-                    struct exttm tm;
-                    struct timeval tv;
+                    auto sbr_sf_opt
+                        = sbr.to_string_fragment().consume_n(sf.length());
 
-                    if (dts.scan(sbr.get_data_at(sf.length() + 1),
-                                 sbr.length() - sf.length() - 1,
-                                 nullptr,
-                                 &tm,
-                                 tv))
-                    {
-                        this->lf_date_time.set_base_time(tv.tv_sec);
-                        this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                    if (sbr_sf_opt) {
+                        auto sbr_sf = sbr_sf_opt.value();
+                        date_time_scanner dts;
+                        struct exttm tm;
+                        struct timeval tv;
+
+                        sbr_sf.trim(" \t");
+                        if (dts.scan(sbr_sf.data(),
+                                     sbr_sf.length(),
+                                     nullptr,
+                                     &tm,
+                                     tv)) {
+                            this->lf_date_time.set_base_time(tv.tv_sec);
+                            this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                        }
                     }
                 }
                 dst.emplace_back(
@@ -1118,6 +1126,10 @@ public:
         static const auto* W3C_LOG_NAME = intern_string::lookup("w3c_log");
         static const auto* X_FIELDS_NAME = intern_string::lookup("x_fields");
         static auto X_FIELDS_IDX = 0;
+
+        if (li.li_partial) {
+            return SCAN_INCOMPLETE;
+        }
 
         if (!this->wlf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);

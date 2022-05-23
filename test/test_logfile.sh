@@ -3,6 +3,15 @@
 echo ${top_srcdir}
 echo ${top_builddir}
 
+run_cap_test env TEST_COMMENT="w3c with bad header" ${lnav_test} -n <<EOF
+#Fields: 0 time
+ 00:00
+#Date:
+EOF
+
+printf '\x2b0\x1b[a' | run_cap_test \
+    env TEST_COMMENT="log line with an ansi escape" ${lnav_test} -n
+
 run_cap_test ${lnav_test} -n \
     -c ';SELECT * FROM logline' \
     ${test_dir}/logfile_block.1
