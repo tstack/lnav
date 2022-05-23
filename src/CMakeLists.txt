@@ -99,7 +99,7 @@ function(bin2c)
             DEPENDS bin2c "${FILE_TO_LINK}")
 endfunction(bin2c)
 
-foreach (FILE_TO_LINK ansi-palette.json xterm-palette.json help.txt init.sql)
+foreach (FILE_TO_LINK ansi-palette.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
             OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
@@ -247,6 +247,7 @@ add_library(
         config.h.in
         all_logs_vtab.cc
         archive_manager.cc
+        document.sections.cc
         bin2c.hh
         bookmarks.cc
         bottom_status_source.cc
@@ -294,6 +295,8 @@ add_library(
         log_search_table.cc
         logfile.cc
         logfile_sub_source.cc
+        md2attr_line.cc
+        md4cpp.cc
         network-extension-functions.cc
         data_scanner.cc
         data_scanner_re.cc
@@ -343,11 +346,14 @@ add_library(
         xpath_vtab.cc
         xterm_mouse.cc
         spookyhash/SpookyV2.cpp
+        third-party/md4c/md4c.c
         third-party/sqlite/ext/series.c
         third-party/sqlite/ext/dbdump.c
+
         all_logs_vtab.hh
         archive_manager.hh
         archive_manager.cfg.hh
+        document.sections.hh
         big_array.hh
         bottom_status_source.hh
         bound_tags.hh
@@ -394,6 +400,8 @@ add_library(
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
+        md2attr_line.hh
+        md4cpp.hh
         optional.hpp
         papertrail_proc.hh
         pcap_manager.hh
@@ -477,6 +485,8 @@ add_library(
         third-party/CLI/ConfigFwd.hpp
 
         third-party/intervaltree/IntervalTree.h
+
+        third-party/md4c/md4c.h
 )
 
 set(lnav_SRCS lnav.cc)

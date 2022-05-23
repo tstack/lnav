@@ -302,7 +302,6 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
     bool selected
         = lnav_data.ld_mode == ln_mode_t::FILES && line == tc.get_selection();
     const auto& fc = lnav_data.ld_active_files;
-    auto& vcolors = view_colors::singleton();
     const auto dim = tc.get_dimensions();
     auto filename_width
         = std::min(fc.fc_largest_path_length,
@@ -360,8 +359,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
                            VC_GRAPHIC.value(visible));
     if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3},
-                               VC_FOREGROUND.value(
-                                   vcolors.ansi_to_theme_color(COLOR_GREEN)));
+                               VC_FOREGROUND.value(COLOR_GREEN));
     }
 
     auto lr = line_range{
@@ -372,9 +370,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
 
     lr.lr_start = this->fss_last_line_len;
     lr.lr_end = -1;
-    value_out.emplace_back(lr,
-                           VC_FOREGROUND.value(
-                               vcolors.ansi_to_theme_color(COLOR_YELLOW)));
+    value_out.emplace_back(lr, VC_FOREGROUND.value(COLOR_YELLOW));
 }
 
 size_t

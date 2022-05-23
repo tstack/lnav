@@ -35,6 +35,7 @@
 #include "auto_mem.hh"
 #include "config.h"
 #include "lnav_log.hh"
+#include "pcrepp/pcrepp.hh"
 
 attr_line_t&
 attr_line_t::with_ansi_string(const char* str, ...)
@@ -63,6 +64,88 @@ attr_line_t::with_ansi_string(const std::string& str)
     return *this;
 }
 
+namespace text_stream {
+struct word {
+    string_fragment w_word;
+    string_fragment w_remaining;
+};
+
+struct space {
+    string_fragment s_value;
+    string_fragment s_remaining;
+};
+
+struct corrupt {
+    string_fragment c_value;
+    string_fragment c_remaining;
+};
+
+struct eof {
+    string_fragment e_remaining;
+};
+
+using chunk = mapbox::util::variant<word, space, corrupt, eof>;
+
+chunk
+consume(const string_fragment text)
+{
+    static const pcrepp WORD_RE(R"((*UTF)^[^\p{Z}\p{So}\p{C}]+)");
+    static const pcrepp SPACE_RE(R"((*UTF)^\s)");
+
+    if (text.empty()) {
+        return eof{text};
+    }
+
+    pcre_input pi(text);
+    pcre_context_static<30> pc;
+
+    if (WORD_RE.match(pc, pi)) {
+        auto split_res = text.split_n(pc.all()->length()).value();
+
+        return word{split_res.first, split_res.second};
+    }
+
+    if (SPACE_RE.match(pc, pi)) {
+        auto split_res = text.split_n(pc.all()->length()).value();
+
+        return space{split_res.first, split_res.second};
+    }
+
+    auto csize_res = ww898::utf::utf8::char_size(
+        [&text]() { return std::make_pair(text.front(), text.length()); });
+
+    if (csize_res.isErr()) {
+        auto split_res = text.split_n(1);
+
+        return corrupt{split_res->first, split_res->second};
+    }
+
+    auto split_res = text.split_n(csize_res.unwrap());
+
+    return word{split_res->first, split_res->second};
+}
+
+}  // namespace text_stream
+
+static void
+split_attrs(attr_line_t& al, const line_range& lr)
+{
+    string_attrs_t new_attrs;
+
+    for (auto& attr : al.al_attrs) {
+        if (!lr.intersects(attr.sa_range)) {
+            continue;
+        }
+
+        new_attrs.emplace_back(line_range{lr.lr_end, attr.sa_range.lr_end},
+                               std::make_pair(attr.sa_type, attr.sa_value));
+        attr.sa_range.lr_end = lr.lr_start;
+    }
+    for (auto& new_attr : new_attrs) {
+        al.al_attrs.emplace_back(std::move(new_attr));
+    }
+}
+
 attr_line_t&
 attr_line_t::insert(size_t index,
                     const attr_line_t& al,
@@ -74,7 +157,7 @@ attr_line_t::insert(size_t index,
 
     this->al_string.insert(index, al.al_string);
 
-    for (auto& sa : al.al_attrs) {
+    for (const auto& sa : al.al_attrs) {
         this->al_attrs.emplace_back(sa);
 
         line_range& lr = this->al_attrs.back().sa_range;
@@ -85,88 +168,148 @@ attr_line_t::insert(size_t index,
         }
     }
 
-    if (tws != nullptr && (int) this->al_string.length() > tws->tws_width) {
-        ssize_t start_pos = index;
-        ssize_t line_start = this->al_string.rfind('\n', start_pos);
-
-        if (line_start == (ssize_t) std::string::npos) {
-            line_start = 0;
-        } else {
-            line_start += 1;
-        }
-
-        ssize_t line_len = index - line_start;
-        ssize_t usable_width = tws->tws_width - tws->tws_indent;
-        ssize_t avail
-            = std::max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
-
-        if (avail == 0) {
-            avail = INT_MAX;
-        }
-
-        while (start_pos < (int) this->al_string.length()) {
-            ssize_t lpc;
-
-            // Find the end of a word or a breakpoint.
-            for (lpc = start_pos; lpc < (int) this->al_string.length()
-                 && (isalnum(this->al_string[lpc])
-                     || this->al_string[lpc] == ','
-                     || this->al_string[lpc] == '_'
-                     || this->al_string[lpc] == '.'
-                     || this->al_string[lpc] == ';');
-                 lpc++)
-            {
-                if (this->al_string[lpc] == '-' || this->al_string[lpc] == '.')
-                {
-                    lpc += 1;
-                    break;
-                }
-            }
-
-            if ((avail != usable_width) && (lpc - start_pos > avail)) {
-                // Need to wrap the word.  Do the wrap.
-                this->insert(start_pos, 1, '\n')
-                    .insert(start_pos + 1, tws->tws_indent, ' ');
-                start_pos += 1 + tws->tws_indent;
-                avail = tws->tws_width - tws->tws_indent;
-            } else {
-                // There's still room to add stuff.
-                avail -= (lpc - start_pos);
-                while (lpc < (int) this->al_string.length() && avail) {
-                    if (this->al_string[lpc] == '\n') {
-                        this->insert(lpc + 1, tws->tws_indent, ' ');
-                        avail = usable_width;
-                        lpc += 1 + tws->tws_indent;
-                        break;
-                    }
-                    if (isalnum(this->al_string[lpc])
-                        || this->al_string[lpc] == '_') {
-                        break;
-                    }
-                    avail -= 1;
-                    lpc += 1;
-                }
-                start_pos = lpc;
-                if (!avail) {
-                    this->insert(start_pos, 1, '\n')
-                        .insert(start_pos + 1, tws->tws_indent, ' ');
-                    start_pos += 1 + tws->tws_indent;
-                    avail = usable_width;
-
-                    for (lpc = start_pos; lpc < (int) this->al_string.length()
-                         && this->al_string[lpc] == ' ';
-                         lpc++)
-                    {
-                    }
-
-                    if (lpc != start_pos) {
-                        this->erase(start_pos, (lpc - start_pos));
-                    }
-                }
-            }
-        }
+    if (tws == nullptr) {
+        return *this;
     }
 
+    static const pcrepp SPACE_RE(R"(\s?)");
+
+    ssize_t starting_line_index = this->al_string.rfind('\n', index);
+    if (starting_line_index == std::string::npos) {
+        starting_line_index = 0;
+    } else {
+        starting_line_index += 1;
+    }
+
+    const ssize_t usable_width = tws->tws_width - tws->tws_indent;
+
+    auto text_to_wrap
+        = string_fragment{this->al_string.data(), (int) starting_line_index};
+    string_fragment last_word;
+    size_t line_ch_count = 0;
+    auto needs_indent = false;
+
+    while (!text_to_wrap.empty()) {
+        if (needs_indent) {
+            this->insert(text_to_wrap.sf_begin,
+                         tws->tws_indent + tws->tws_padding_indent,
+                         ' ');
+            auto indent_lr = line_range{
+                text_to_wrap.sf_begin,
+                text_to_wrap.sf_begin + tws->tws_indent,
+            };
+            split_attrs(*this, indent_lr);
+            indent_lr.lr_end += tws->tws_padding_indent;
+            line_ch_count += tws->tws_padding_indent;
+            this->al_attrs.emplace_back(indent_lr, SA_PREFORMATTED.value());
+            text_to_wrap = text_to_wrap.prepend(
+                this->al_string.data(),
+                tws->tws_indent + tws->tws_padding_indent);
+            needs_indent = false;
+        }
+        auto chunk = text_stream::consume(text_to_wrap);
+
+        text_to_wrap = chunk.match(
+            [&](text_stream::word word) {
+                auto ch_count = word.w_word.utf8_length().unwrap();
+
+                if ((line_ch_count + ch_count) > usable_width
+                    && find_string_attr_containing(this->al_attrs,
+                                                   &SA_PREFORMATTED,
+                                                   text_to_wrap.sf_begin)
+                        == this->al_attrs.end())
+                {
+                    this->insert(word.w_word.sf_begin, 1, '\n');
+                    this->insert(word.w_word.sf_begin + 1,
+                                 tws->tws_indent + tws->tws_padding_indent,
+                                 ' ');
+                    auto indent_lr = line_range{
+                        word.w_word.sf_begin + 1,
+                        word.w_word.sf_begin + 1 + tws->tws_indent,
+                    };
+                    split_attrs(*this, indent_lr);
+                    indent_lr.lr_end += tws->tws_padding_indent;
+                    this->al_attrs.emplace_back(indent_lr,
+                                                SA_PREFORMATTED.value());
+                    line_ch_count = tws->tws_padding_indent + ch_count;
+                    auto trailing_space_count = 0;
+                    if (!last_word.empty()) {
+                        trailing_space_count
+                            = word.w_word.sf_begin - last_word.sf_begin;
+                        this->erase(last_word.sf_begin, trailing_space_count);
+                    }
+                    return word.w_remaining
+                        .erase_before(this->al_string.data(),
+                                      trailing_space_count)
+                        .prepend(this->al_string.data(),
+                                 1 + tws->tws_indent + tws->tws_padding_indent);
+                }
+                line_ch_count += ch_count;
+
+                return word.w_remaining;
+            },
+            [&](text_stream::space space) {
+                if (space.s_value == "\n") {
+                    line_ch_count = 0;
+                    needs_indent = true;
+                    return space.s_remaining;
+                }
+
+                if (line_ch_count > 0) {
+                    auto ch_count = space.s_value.utf8_length().unwrap();
+
+                    if ((line_ch_count + ch_count) > usable_width
+                        && find_string_attr_containing(this->al_attrs,
+                                                       &SA_PREFORMATTED,
+                                                       text_to_wrap.sf_begin)
+                            == this->al_attrs.end())
+                    {
+                        this->erase(space.s_value.sf_begin,
+                                    space.s_value.length());
+                        this->insert(space.s_value.sf_begin, "\n");
+                        line_ch_count = 0;
+                        needs_indent = true;
+
+                        auto trailing_space_count = 0;
+                        if (!last_word.empty()) {
+                            trailing_space_count
+                                = space.s_value.sf_begin - last_word.sf_begin;
+                            this->erase(last_word.sf_end, trailing_space_count);
+                        }
+
+                        return space.s_remaining
+                            .erase_before(
+                                this->al_string.data(),
+                                space.s_value.length() + trailing_space_count)
+                            .prepend(this->al_string.data(), 1);
+                    }
+                    line_ch_count += ch_count;
+                } else if (find_string_attr_containing(this->al_attrs,
+                                                       &SA_PREFORMATTED,
+                                                       text_to_wrap.sf_begin)
+                           == this->al_attrs.end())
+                {
+                    this->erase(space.s_value.sf_begin, space.s_value.length());
+                    return space.s_remaining.erase_before(
+                        this->al_string.data(), space.s_value.length());
+                }
+
+                return space.s_remaining;
+            },
+            [](text_stream::corrupt corrupt) {
+                return corrupt.c_remaining;
+            },
+            [](text_stream::eof eof) {
+                return eof.e_remaining;
+            });
+
+        if (chunk.is<text_stream::word>()) {
+            last_word = text_to_wrap;
+        }
+
+        ensure(this->al_string.data() == text_to_wrap.sf_string);
+        ensure(text_to_wrap.sf_begin <= text_to_wrap.sf_end);
+    }
     return *this;
 }
 
@@ -303,10 +446,16 @@ attr_line_t::erase(size_t pos, size_t len)
 attr_line_t&
 attr_line_t::pad_to(size_t size)
 {
-    const auto curr_len = this->length();
+    const auto curr_len = this->utf8_length_or_length();
 
     if (curr_len < size) {
         this->append((size - curr_len), ' ');
+        for (auto& attr : this->al_attrs) {
+            if (attr.sa_range.lr_start == 0 && attr.sa_range.lr_end == curr_len)
+            {
+                attr.sa_range.lr_end = this->al_string.length();
+            }
+        }
     }
 
     return *this;

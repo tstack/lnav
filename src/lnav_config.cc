@@ -640,6 +640,20 @@ static const struct json_path_container theme_styles_handlers = {
                 return &root->lt_style_header[5];
             })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("hr")
+        .with_description("Styling for horizontal rules")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_hr;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("hyperlink")
+        .with_description("Styling for hyperlinks")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_hyperlink;
+            })
+        .with_children(style_config_handlers),
     yajlpp::property_handler("list-glyph")
         .with_description("Styling for glyphs that prefix a list item")
         .with_obj_provider<style_config, lnav_theme>(
@@ -654,9 +668,65 @@ static const struct json_path_container theme_styles_handlers = {
                 return &root->lt_style_breadcrumb;
             })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("table-border")
+        .with_description("Styling for table borders")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_table_border;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("table-header")
+        .with_description("Styling for table headers")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_table_header;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("quote-border")
+        .with_description("Styling for quoted-block borders")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_quote_border;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("quoted-text")
+        .with_description("Styling for quoted text blocks")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_quoted_text;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("footnote-border")
+        .with_description("Styling for footnote borders")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_footnote_border;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("footnote-text")
+        .with_description("Styling for footnote text")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_footnote_text;
+            })
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {
+    yajlpp::property_handler("quoted-code")
+        .with_description("Styling for quoted code blocks")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_quoted_code;
+            })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("code-border")
+        .with_description("Styling for quoted-code borders")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_code_border;
+            })
+        .with_children(style_config_handlers),
     yajlpp::property_handler("keyword")
         .with_description("Styling for keywords in source files")
         .with_obj_provider<style_config, lnav_theme>(

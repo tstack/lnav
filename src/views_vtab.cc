@@ -343,7 +343,7 @@ CREATE TABLE lnav_views (
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be inserted into the lnav_views table");
         return SQLITE_ERROR;
-    };
+    }
 
     int update_row(sqlite3_vtab* tab,
                    sqlite3_int64& index,
@@ -433,7 +433,7 @@ CREATE TABLE lnav_view_stack (
         }
 
         return SQLITE_OK;
-    };
+    }
 
     int delete_row(sqlite3_vtab* tab, sqlite3_int64 rowid)
     {
@@ -446,7 +446,7 @@ CREATE TABLE lnav_view_stack (
         lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
         lnav_data.ld_view_stack.pop_back();
         return SQLITE_OK;
-    };
+    }
 
     int insert_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid_out,
@@ -458,14 +458,14 @@ CREATE TABLE lnav_view_stack (
         rowid_out = lnav_data.ld_view_stack.size() - 1;
 
         return SQLITE_OK;
-    };
+    }
 
     int update_row(sqlite3_vtab* tab, sqlite3_int64& index)
     {
         tab->zErrMsg
             = sqlite3_mprintf("The lnav_view_stack table cannot be updated");
         return SQLITE_ERROR;
-    };
+    }
 };
 
 struct lnav_view_filter_base {
@@ -803,7 +803,7 @@ CREATE TABLE lnav_view_filters (
         tc.set_needs_update();
 
         return SQLITE_OK;
-    };
+    }
 };
 
 struct lnav_view_filter_stats

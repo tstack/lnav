@@ -78,6 +78,7 @@ plain_text_source&
 plain_text_source::replace_with(const attr_line_t& text_lines)
 {
     this->tds_lines.clear();
+    this->tds_doc_sections = lnav::document::discover_metadata(text_lines);
     this->tds_lines = to_text_line(text_lines.split_lines());
     this->tds_longest_line = this->compute_longest_line();
     return *this;
@@ -165,7 +166,7 @@ plain_text_source::compute_longest_line()
 }
 
 nonstd::optional<vis_line_t>
-plain_text_source::line_for_offset(file_off_t off)
+plain_text_source::line_for_offset(file_off_t off) const
 {
     struct cmper {
         bool operator()(const file_off_t& lhs, const text_line& rhs)
@@ -199,4 +200,99 @@ plain_text_source::line_for_offset(file_off_t off)
 
     return nonstd::make_optional(
         vis_line_t(std::distance(this->tds_lines.begin(), iter)));
+}
+
+void
+plain_text_source::text_crumbs_for_line(int line,
+                                        std::vector<breadcrumb::crumb>& crumbs)
+{
+    const auto initial_size = crumbs.size();
+    const auto& tl = this->tds_lines[line];
+
+    this->tds_doc_sections.m_sections_tree.visit_overlapping(
+        tl.tl_offset,
+        [&crumbs, initial_size, meta = &this->tds_doc_sections, this](
+            const auto& iv) {
+            auto path = crumbs | lnav::itertools::skip(initial_size)
+                | lnav::itertools::map(&breadcrumb::crumb::c_key)
+                | lnav::itertools::append(iv.value);
+            crumbs.template emplace_back(
+                iv.value,
+                [meta, path]() { return meta->possibility_provider(path); },
+                [this, meta, path](const auto& key) {
+                    auto curr_node = lnav::document::hier_node::lookup_path(
+                        meta->m_sections_root.get(), path);
+                    if (!curr_node) {
+                        return;
+                    }
+                    auto* parent_node = curr_node.value()->hn_parent;
+
+                    if (parent_node == nullptr) {
+                        return;
+                    }
+                    key.template match(
+                        [this, parent_node](const std::string& str) {
+                            auto sib_iter
+                                = parent_node->hn_named_children.find(str);
+                            if (sib_iter
+                                == parent_node->hn_named_children.end()) {
+                                return;
+                            }
+                            this->line_for_offset(sib_iter->second->hn_start) |
+                                [this](const auto new_top) {
+                                    this->tss_view->set_top(new_top);
+                                };
+                        },
+                        [this, parent_node](size_t index) {
+                            if (index >= parent_node->hn_children.size()) {
+                                return;
+                            }
+                            auto sib = parent_node->hn_children[index].get();
+                            this->line_for_offset(sib->hn_start) |
+                                [this](const auto new_top) {
+                                    this->tss_view->set_top(new_top);
+                                };
+                        });
+                });
+        });
+
+    auto path = crumbs | lnav::itertools::skip(initial_size)
+        | lnav::itertools::map(&breadcrumb::crumb::c_key);
+    auto node = lnav::document::hier_node::lookup_path(
+        this->tds_doc_sections.m_sections_root.get(), path);
+
+    if (node && !node.value()->hn_children.empty()) {
+        auto poss_provider = [curr_node = node.value()]() {
+            std::vector<breadcrumb::possibility> retval;
+            for (const auto& child : curr_node->hn_named_children) {
+                retval.template emplace_back(child.first);
+            }
+            return retval;
+        };
+        auto path_performer = [this, curr_node = node.value()](
+                                  const breadcrumb::crumb::key_t& value) {
+            value.template match(
+                [this, curr_node](const std::string& str) {
+                    auto child_iter = curr_node->hn_named_children.find(str);
+                    if (child_iter != curr_node->hn_named_children.end()) {
+                        this->line_for_offset(child_iter->second->hn_start) |
+                            [this](const auto new_top) {
+                                this->tss_view->set_top(new_top);
+                            };
+                    }
+                },
+                [this, curr_node](size_t index) {
+                    auto* child = curr_node->hn_children[index].get();
+                    this->line_for_offset(child->hn_start) |
+                        [this](const auto new_top) {
+                            this->tss_view->set_top(new_top);
+                        };
+                });
+        };
+        crumbs.emplace_back(
+            "", "\u22ef", std::move(poss_provider), std::move(path_performer));
+        crumbs.back().c_expected_input = node.value()->hn_named_children.empty()
+            ? breadcrumb::crumb::expected_input_t::index
+            : breadcrumb::crumb::expected_input_t::index_or_exact;
+    }
 }

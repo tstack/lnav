@@ -101,6 +101,7 @@ LDADD = \
     $(TEXT2C_OBJS) \
     $(DUMMY_OBJS) \
     $(top_builddir)/src/libdiag.a \
+    $(top_builddir)/src/libdatascanner.a \
     $(top_builddir)/src/formats/logfmt/liblogfmt.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \

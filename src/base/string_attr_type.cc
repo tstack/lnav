@@ -36,6 +36,7 @@ string_attr_type<void> SA_BODY("body");
 string_attr_type<void> SA_HIDDEN("hidden");
 string_attr_type<const intern_string_t> SA_FORMAT("format");
 string_attr_type<void> SA_REMOVED("removed");
+string_attr_type<void> SA_PREFORMATTED("preformatted");
 string_attr_type<std::string> SA_INVALID("invalid");
 string_attr_type<std::string> SA_ERROR("error");
 string_attr_type<int64_t> SA_LEVEL("level");

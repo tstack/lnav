@@ -186,6 +186,26 @@ string_fragment::consume_n(int amount) const
     };
 }
 
+string_fragment::split_result
+string_fragment::split_n(int amount) const
+{
+    if (amount > this->length()) {
+        return nonstd::nullopt;
+    }
+
+    return std::make_pair(
+        string_fragment{
+            this->sf_string,
+            this->sf_begin,
+            this->sf_begin + amount,
+        },
+        string_fragment{
+            this->sf_string,
+            this->sf_begin + amount,
+            this->sf_end,
+        });
+}
+
 std::vector<string_fragment>
 string_fragment::split_lines() const
 {

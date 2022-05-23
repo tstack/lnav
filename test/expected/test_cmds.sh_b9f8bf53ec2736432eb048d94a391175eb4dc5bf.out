@@ -1,0 +1,2 @@
+Feb  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed
+Jan  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt

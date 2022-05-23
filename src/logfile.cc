@@ -495,10 +495,11 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 
                 this->lf_text_format
                     = avail_data
-                          .map([](const shared_buffer_ref& avail_sbr)
+                          .map([path = this->get_path()](
+                                   const shared_buffer_ref& avail_sbr)
                                    -> text_format_t {
-                              return detect_text_format(avail_sbr.get_data(),
-                                                        avail_sbr.length());
+                              return detect_text_format(
+                                  avail_sbr.to_string_fragment(), path);
                           })
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);
@@ -645,6 +646,19 @@ logfile::read_line(logfile::iterator ll)
     } catch (line_buffer::error& e) {
         return Err(std::string(strerror(e.e_err)));
     }
+}
+
+Result<std::string, std::string>
+logfile::read_file()
+{
+    if (this->lf_stat.st_size > line_buffer::MAX_LINE_BUFFER_SIZE) {
+        return Err(std::string("file is too large to read"));
+    }
+
+    auto retval
+        = TRY(this->lf_line_buffer.read_range({0, this->lf_stat.st_size}));
+
+    return Ok(to_string(retval));
 }
 
 void
@@ -841,4 +855,40 @@ logfile::original_line_time(logfile::iterator ll)
     }
 
     return ll->get_timeval();
+}
+
+nonstd::optional<logfile::const_iterator>
+logfile::line_for_offset(file_off_t off) const
+{
+    struct cmper {
+        bool operator()(const file_off_t& lhs, const logline& rhs) const
+        {
+            return lhs < rhs.get_offset();
+        }
+
+        bool operator()(const logline& lhs, const file_off_t& rhs) const
+        {
+            return lhs.get_offset() < rhs;
+        }
+    };
+
+    if (this->lf_index.empty()) {
+        return nonstd::nullopt;
+    }
+
+    auto iter = std::lower_bound(
+        this->lf_index.begin(), this->lf_index.end(), off, cmper{});
+    if (iter == this->lf_index.end()) {
+        if (this->lf_index.back().get_offset() <= off
+            && off < this->lf_index_size) {
+            return nonstd::make_optional(iter);
+        }
+        return nonstd::nullopt;
+    }
+
+    if (off < iter->get_offset() && iter != this->lf_index.begin()) {
+        --iter;
+    }
+
+    return nonstd::make_optional(iter);
 }

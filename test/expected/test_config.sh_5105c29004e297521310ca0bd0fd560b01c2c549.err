@@ -1,6 +1,6 @@
 [31m✘ error[0m: '[1mbad[0m' is not a supported configuration $schema version
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.bad-schema.json[0m:2
-[36m | [0m    "$schema": "bad"
+[36m | [0m[37m[40m    "$schema": "bad"                    [0m
 [36m =[0m [36mnote[0m: expecting one of the following $schema values:
          [1m  https://lnav.org/schemas/config-v1.schema.json[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
@@ -11,7 +11,7 @@
            https://lnav.org/schemas/config-v1.schema.json
 [33m⚠ warning[0m: unexpected value for property “[1m/ui[0m”
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:2
-[36m | [0m    "ui": "theme",
+[36m | [0m[37m[40m    "ui": "theme",                      [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
            [1m$schema[0m [4m<schema-uri>[0m
            [1mtuning[0m[1m/[0m 
@@ -20,12 +20,12 @@
 [31m✘ error[0m: invalid JSON
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:3
 [36m | [0mparse error: object key and value must be separated by a colon (':')
-[36m | [0m               "ui": "theme",     "abc",     "def": "" }
-[36m | [0m                     (right here) ------^
-[36m [0m|
+[36m | [0m               "ui": "theme",     "abc",     "def": "" }            
+[36m | [0m                     (right here) ------^                           
+[36m | [0m                                                                    
 [33m⚠ warning[0m: unexpected value for property “[1m/ui[0m”
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:2
-[36m | [0m    "ui": "theme"
+[36m | [0m[37m[40m    "ui": "theme"                       [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
            [1m$schema[0m [4m<schema-uri>[0m
            [1mtuning[0m[1m/[0m 

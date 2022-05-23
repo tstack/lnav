@@ -33,6 +33,7 @@
 #include "help_text_formatter.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "fmt/format.h"
@@ -85,6 +86,7 @@ format_help_text_for_term(const help_text& ht,
 {
     static const size_t body_indent = 2;
 
+    attr_line_builder alb(out);
     text_wrap_settings tws;
     size_t start_index = out.get_string().length();
 
@@ -92,11 +94,9 @@ format_help_text_for_term(const help_text& ht,
 
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND: {
-            out.append("Synopsis"_h2)
-                .append("\n")
-                .append(body_indent, ' ')
-                .append(":")
-                .append(lnav::roles::symbol(ht.ht_name));
+            auto line_start = out.al_string.length();
+
+            out.append(":").append(lnav::roles::symbol(ht.ht_name));
             for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
@@ -116,26 +116,27 @@ format_help_text_for_term(const help_text& ht,
                     out.append("]");
                 }
             }
-            out.append(" - ")
+            out.with_attr(string_attr{
+                line_range{(int) line_start, (int) out.get_string().length()},
+                VC_ROLE.value(role_t::VCR_H3),
+            });
+            alb.append("\n")
+                .append(
+                    lnav::roles::table_border(repeat("\u2550", tws.tws_width)))
+                .append("\n")
+                .indent(body_indent)
                 .append(attr_line_t::from_ansi_str(ht.ht_summary),
-                        &tws.with_indent(body_indent + 2))
+                        &tws.with_indent(body_indent))
                 .append("\n");
             break;
         }
         case help_context_t::HC_SQL_FUNCTION:
         case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
-            size_t line_start = body_indent;
+            auto line_start = out.al_string.length();
             bool break_all = false;
             bool needs_comma = false;
 
-            if (!synopsis_only) {
-                out.append("Synopsis"_h2).append("\n");
-            }
-
-            line_start = out.length();
-            out.append(body_indent, ' ')
-                .append(lnav::roles::symbol(ht.ht_name))
-                .append("(");
+            out.append(lnav::roles::symbol(ht.ht_name)).append("(");
             for (const auto& param : ht.ht_parameters) {
                 if (!param.ht_flag_name && needs_comma) {
                     out.append(", ");
@@ -146,7 +147,7 @@ format_help_text_for_term(const help_text& ht,
                 {
                     out.append("\n");
                     line_start = out.get_string().length();
-                    out.append(body_indent + strlen(ht.ht_name) + 1, ' ');
+                    alb.indent(body_indent + strlen(ht.ht_name) + 1);
                     break_all = true;
                 }
                 if (param.ht_flag_name) {
@@ -168,22 +169,33 @@ format_help_text_for_term(const help_text& ht,
                 }
                 needs_comma = true;
             }
-            out.append(") -- ");
+            out.append(")");
+            out.with_attr(string_attr{
+                line_range{(int) line_start, (int) out.get_string().length()},
+                VC_ROLE.value(role_t::VCR_H3),
+            });
             if (break_all) {
-                out.append("\n").append(body_indent + strlen(ht.ht_name) + 1,
-                                        ' ');
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent + strlen(ht.ht_name) + 1);
+            } else {
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent);
             }
             out.append(attr_line_t::from_ansi_str(ht.ht_summary),
-                       &tws.with_indent(body_indent + 2))
+                       &tws.with_indent(body_indent))
                 .append("\n");
             break;
         }
         case help_context_t::HC_SQL_COMMAND: {
-            out.append("Synopsis"_h2)
-                .append("\n")
-                .append(body_indent, ' ')
-                .append(";")
-                .append(lnav::roles::symbol(ht.ht_name));
+            auto line_start = out.al_string.length();
+
+            out.append(";").append(lnav::roles::symbol(ht.ht_name));
             for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
@@ -203,7 +215,15 @@ format_help_text_for_term(const help_text& ht,
                     out.append("]");
                 }
             }
-            out.append(" - ")
+            out.with_attr(string_attr{
+                line_range{(int) line_start, (int) out.get_string().length()},
+                VC_ROLE.value(role_t::VCR_H3),
+            });
+            alb.append("\n")
+                .append(
+                    lnav::roles::table_border(repeat("\u2550", tws.tws_width)))
+                .append("\n")
+                .indent(body_indent)
                 .append(attr_line_t::from_ansi_str(ht.ht_summary),
                         &tws.with_indent(body_indent + 2))
                 .append("\n");
@@ -211,14 +231,10 @@ format_help_text_for_term(const help_text& ht,
         }
         case help_context_t::HC_SQL_INFIX:
         case help_context_t::HC_SQL_KEYWORD: {
-            size_t line_start = body_indent;
+            size_t line_start = out.get_string().length();
             bool break_all = false;
             bool is_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
 
-            if (!synopsis_only) {
-                out.append("Synopsis"_h2).append("\n");
-            }
-            out.append(body_indent, ' ');
             if (is_infix) {
                 out.append(ht.ht_name);
             } else {
@@ -232,7 +248,7 @@ format_help_text_for_term(const help_text& ht,
                 {
                     out.append("\n");
                     line_start = out.get_string().length();
-                    out.append(body_indent + strlen(ht.ht_name) + 1, ' ');
+                    alb.indent(body_indent + strlen(ht.ht_name) + 1);
                     break_all = true;
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
@@ -312,13 +328,20 @@ format_help_text_for_term(const help_text& ht,
                     out.append("]");
                 }
             }
-            if (!synopsis_only) {
-                out.append("\n\n")
-                    .append(body_indent, ' ')
+            out.with_attr(string_attr{
+                line_range{(int) line_start, (int) out.get_string().length()},
+                VC_ROLE.value(role_t::VCR_H3),
+            });
+            if (synopsis_only) {
+                out.append("\n");
+            } else {
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent)
                     .append(ht.ht_summary, &tws)
                     .append("\n");
-            } else {
-                out.append("\n");
             }
             break;
         }
@@ -334,8 +357,8 @@ format_help_text_for_term(const help_text& ht,
                 = std::max(strlen(param.ht_name), max_param_name_width);
         }
 
-        out.append(ht.ht_parameters.size() == 1 ? "Parameter"_h2
-                                                : "Parameters"_h2)
+        out.append(ht.ht_parameters.size() == 1 ? "Parameter"_h4
+                                                : "Parameters"_h4)
             .append("\n");
 
         for (const auto& param : ht.ht_parameters) {
@@ -343,7 +366,7 @@ format_help_text_for_term(const help_text& ht,
                 continue;
             }
 
-            out.append(body_indent, ' ')
+            alb.indent(body_indent)
                 .append(lnav::roles::variable(param.ht_name))
                 .append(max_param_name_width - strlen(param.ht_name), ' ')
                 .append("   ")
@@ -360,7 +383,7 @@ format_help_text_for_term(const help_text& ht,
                 = std::max(strlen(result.ht_name), max_result_name_width);
         }
 
-        out.append(ht.ht_results.size() == 1 ? "Result"_h2 : "Results"_h2)
+        out.append(ht.ht_results.size() == 1 ? "Result"_h4 : "Results"_h4)
             .append("\n");
 
         for (const auto& result : ht.ht_results) {
@@ -368,7 +391,7 @@ format_help_text_for_term(const help_text& ht,
                 continue;
             }
 
-            out.append(body_indent, ' ')
+            alb.indent(body_indent)
                 .append(lnav::roles::variable(result.ht_name))
                 .append(max_result_name_width - strlen(result.ht_name), ' ')
                 .append("   ")
@@ -398,17 +421,18 @@ format_help_text_for_term(const help_text& ht,
         }
         stable_sort(related_refs.begin(), related_refs.end());
 
-        out.append("See Also"_h2).append("\n").append(body_indent, ' ');
+        alb.append("See Also"_h4).append("\n").indent(body_indent);
 
         bool first = true;
-        size_t line_start = out.length();
+        size_t line_start = out.get_string().length();
         for (const auto& ref : related_refs) {
             if (!first) {
                 out.append(", ");
             }
-            if ((out.length() - line_start + ref.length()) > width) {
-                out.append("\n").append(body_indent, ' ');
-                line_start = out.length();
+            if ((out.get_string().length() - line_start + ref.length()) > width)
+            {
+                alb.append("\n").indent(body_indent);
+                line_start = out.get_string().length();
             }
             out.append(lnav::roles::symbol(ref));
             first = false;
@@ -422,59 +446,58 @@ format_example_text_for_term(const help_text& ht,
                              size_t width,
                              attr_line_t& out)
 {
-    text_wrap_settings tws;
+    if (ht.ht_example.empty()) {
+        return;
+    }
 
-    tws.with_width(width);
+    attr_line_builder alb(out);
+    int count = 1;
 
-    if (!ht.ht_example.empty()) {
-        int count = 1;
+    out.append(ht.ht_example.size() == 1 ? "Example"_h4 : "Examples"_h4)
+        .append("\n");
+    for (const auto& ex : ht.ht_example) {
+        attr_line_t ex_line(ex.he_cmd);
+        const char* prompt = "";
+        text_wrap_settings tws;
 
-        out.append(ht.ht_example.size() == 1 ? "Example"_h2 : "Examples"_h2)
-            .append("\n");
-        for (const auto& ex : ht.ht_example) {
-            attr_line_t ex_line(ex.he_cmd);
-            size_t keyword_offset = 0;
-            const char* space = strchr(ex.he_cmd, ' ');
-            const char* prompt = "";
-
-            if (space) {
-                keyword_offset = space - ex.he_cmd;
-            }
-            if (count > 1) {
-                out.append("\n");
-            }
-            switch (ht.ht_context) {
-                case help_context_t::HC_COMMAND:
-                    ex_line.insert(0, 1, ' ');
-                    ex_line.insert(0, 1, ':');
-                    ex_line.insert(1, ht.ht_name);
-                    readline_command_highlighter(ex_line, 0);
-                    break;
-                case help_context_t::HC_SQL_INFIX:
-                case help_context_t::HC_SQL_KEYWORD:
-                case help_context_t::HC_SQL_FUNCTION:
-                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
-                    readline_sqlite_highlighter(ex_line, 0);
-                    prompt = ";";
-                    break;
-                default:
-                    break;
-            }
-
-            out.append("#")
-                .append(fmt::to_string(count))
-                .append(" ")
-                .append(ex.he_description, &tws.with_indent(3))
-                .append(":\n   ")
-                .append(prompt)
-                .append(ex_line, &tws.with_indent(3 + keyword_offset + 1))
-                .append("\n")
-                .append(3, ' ')
-                .append(eval(ht, ex), &tws.with_indent(3))
-                .append("\n");
-
-            count += 1;
+        tws.with_width(width);
+        if (count > 1) {
+            out.append("\n");
         }
+        switch (ht.ht_context) {
+            case help_context_t::HC_COMMAND:
+                ex_line.insert(0, 1, ' ');
+                ex_line.insert(0, 1, ':');
+                ex_line.insert(1, ht.ht_name);
+                readline_command_highlighter(ex_line, 0);
+                break;
+            case help_context_t::HC_SQL_INFIX:
+            case help_context_t::HC_SQL_KEYWORD:
+            case help_context_t::HC_SQL_FUNCTION:
+            case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
+                readline_sqlite_highlighter(ex_line, 0);
+                prompt = ";";
+                break;
+            default:
+                break;
+        }
+
+        ex_line.pad_to(50).with_attr_for_all(
+            VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+        alb.append("#")
+            .append(fmt::to_string(count))
+            .append(" ")
+            .append(ex.he_description, &tws.with_indent(3))
+            .append(":\n")
+            .indent(3)
+            .append(prompt, VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+            .append(ex_line, &tws.with_indent(3).with_padding_indent(3))
+            .append("\n")
+            .indent(3)
+            .append(eval(ht, ex), &tws.with_indent(3))
+            .append("\n");
+
+        count += 1;
     }
 }
 

@@ -67,6 +67,8 @@ struct find {
     T f_value;
 };
 
+struct second {};
+
 template<typename F>
 struct filter_in {
     F f_func;
@@ -115,6 +117,15 @@ struct skip {
 
 struct unique {};
 
+struct max_value {};
+
+template<typename T>
+struct max_with_init {
+    T m_init;
+};
+
+struct sum {};
+
 }  // namespace details
 
 template<typename T>
@@ -142,6 +153,12 @@ find(T value)
     return details::find<T>{
         value,
     };
+}
+
+inline details::second
+second()
+{
+    return details::second{};
 }
 
 inline details::nth
@@ -258,6 +275,25 @@ chain(const T& value1, const Args&... args)
     return retval;
 }
 
+inline details::max_value
+max()
+{
+    return details::max_value{};
+}
+
+template<typename T>
+inline details::max_with_init<T>
+max(T init)
+{
+    return details::max_with_init<T>{init};
+}
+
+inline details::sum
+sum()
+{
+    return details::sum{};
+}
+
 }  // namespace itertools
 }  // namespace lnav
 
@@ -309,6 +345,55 @@ operator|(const C& in, const lnav::itertools::details::nth indexer)
 
     return nonstd::nullopt;
 }
+
+template<typename C>
+nonstd::optional<typename C::value_type>
+operator|(const C& in, const lnav::itertools::details::max_value maxer)
+{
+    nonstd::optional<typename C::value_type> retval;
+
+    for (const auto& elem : in) {
+        if (!retval) {
+            retval = elem;
+            continue;
+        }
+
+        if (elem > retval.value()) {
+            retval = elem;
+        }
+    }
+
+    return retval;
+}
+
+template<typename C, typename T>
+typename C::value_type
+operator|(const C& in, const lnav::itertools::details::max_with_init<T> maxer)
+{
+    typename C::value_type retval = (typename C::value_type) maxer.m_init;
+
+    for (const auto& elem : in) {
+        if (elem > retval) {
+            retval = elem;
+        }
+    }
+
+    return retval;
+}
+
+template<typename C>
+typename C::value_type
+operator|(const C& in, const lnav::itertools::details::sum summer)
+{
+    typename C::value_type retval{0};
+
+    for (const auto& elem : in) {
+        retval += elem;
+    }
+
+    return retval;
+}
+
 template<typename C>
 C
 operator|(const C& in, const lnav::itertools::details::skip& skipper)

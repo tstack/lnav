@@ -1,0 +1,3 @@
+/ui/clock-format = "%a %b %d %H:%M:%S %Z"
+info: changed config option -- /ui/clock-format
+/ui/clock-format = "abc"

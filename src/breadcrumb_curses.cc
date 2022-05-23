@@ -111,7 +111,13 @@ breadcrumb_curses::reload_data()
     auto& selected_crumb_ref
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     this->bc_possible_values = selected_crumb_ref.c_possibility_provider()
-        | lnav::itertools::sort_by(&breadcrumb::possibility::p_key);
+        | lnav::itertools::sort_with([](const auto& lhs, const auto& rhs) {
+                                   return strnatcasecmp(lhs.p_key.size(),
+                                                        lhs.p_key.data(),
+                                                        rhs.p_key.size(),
+                                                        rhs.p_key.data())
+                                       < 0;
+                               });
 
     nonstd::optional<size_t> selected_value;
     this->bc_similar_values = this->bc_possible_values
@@ -119,7 +125,10 @@ breadcrumb_curses::reload_data()
                                   [](const auto& elem) { return elem.p_key; },
                                   this->bc_current_search,
                                   INT_MAX);
-    if (selected_crumb_ref.c_key.is<std::string>()) {
+    if (selected_crumb_ref.c_key.is<std::string>()
+        && selected_crumb_ref.c_expected_input
+            != breadcrumb::crumb::expected_input_t::anything)
+    {
         auto& selected_crumb_key = selected_crumb_ref.c_key.get<std::string>();
         auto found_poss_opt = this->bc_similar_values
             | lnav::itertools::find_if([&selected_crumb_key](const auto& elem) {
@@ -157,10 +166,9 @@ breadcrumb_curses::reload_data()
         std::min(this->bc_match_source.get_lines().size() + 1, size_t{4})));
     this->bc_match_view.set_width(width + 3);
     this->bc_match_view.set_needs_update();
-    if (selected_value) {
-        this->bc_match_view.set_selection(vis_line_t(selected_value.value()));
-        this->bc_match_view.scroll_selection_into_view();
-    }
+    this->bc_match_view.set_selection(
+        vis_line_t(selected_value.value_or(-1_vl)));
+    this->bc_match_view.scroll_selection_into_view();
     this->bc_match_view.reload_data();
     this->set_needs_update();
 }
@@ -186,6 +194,7 @@ breadcrumb_curses::blur()
     this->bc_selected_crumb = nonstd::nullopt;
     this->bc_current_search.clear();
     this->bc_match_view.set_height(0_vl);
+    this->bc_match_view.set_selection(-1_vl);
     this->bc_match_source.clear();
     this->set_needs_update();
 }
@@ -214,17 +223,21 @@ breadcrumb_curses::handle_key(int ch)
         case '\t':
         case KEY_RIGHT:
             if (this->bc_selected_crumb) {
+                this->perform_selection(perform_behavior_t::if_different);
+                this->blur();
+                this->focus();
+                this->reload_data();
                 if (this->bc_selected_crumb.value()
                     < this->bc_focused_crumbs.size() - 1) {
                     this->bc_selected_crumb
                         = this->bc_selected_crumb.value() + 1;
-                } else {
-                    this->bc_selected_crumb = 0;
+                    retval = true;
                 }
                 this->bc_current_search.clear();
                 this->reload_data();
+            } else {
+                retval = true;
             }
-            retval = true;
             break;
         case KEY_HOME:
             this->bc_match_view.set_selection(0_vl);
@@ -261,33 +274,7 @@ breadcrumb_curses::handle_key(int ch)
             break;
         case KEY_ENTER:
         case '\r':
-            if (this->bc_selected_crumb) {
-                auto& selected_crumb_ref
-                    = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
-                if (this->bc_match_view.get_selection() >= 0
-                    && this->bc_match_view.get_selection()
-                        < this->bc_similar_values.size())
-                {
-                    const auto& new_value
-                        = this->bc_similar_values[this->bc_match_view
-                                                      .get_selection()]
-                              .p_key;
-
-                    selected_crumb_ref.c_performer(new_value);
-                } else if (!this->bc_current_search.empty()) {
-                    if (selected_crumb_ref.c_possible_range) {
-                        size_t index;
-
-                        if (sscanf(
-                                this->bc_current_search.c_str(), "%zu", &index)
-                            == 1) {
-                            selected_crumb_ref.c_performer(index);
-                        }
-                    } else {
-                        selected_crumb_ref.c_performer(this->bc_current_search);
-                    }
-                }
-            }
+            this->perform_selection(perform_behavior_t::always);
             break;
         default:
             if (isprint(ch)) {
@@ -303,6 +290,52 @@ breadcrumb_curses::handle_key(int ch)
     }
     this->set_needs_update();
     return retval;
+}
+
+void
+breadcrumb_curses::perform_selection(
+    breadcrumb_curses::perform_behavior_t behavior)
+{
+    if (!this->bc_selected_crumb) {
+        return;
+    }
+
+    auto& selected_crumb_ref
+        = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
+    auto match_sel = this->bc_match_view.get_selection();
+    if (match_sel >= 0 && match_sel < this->bc_similar_values.size()) {
+        const auto& new_value = this->bc_similar_values[match_sel].p_key;
+
+        switch (behavior) {
+            case perform_behavior_t::if_different:
+                if (breadcrumb::crumb::key_t{new_value}
+                    == selected_crumb_ref.c_key) {
+                    return;
+                }
+                break;
+            case perform_behavior_t::always:
+                break;
+        }
+        selected_crumb_ref.c_performer(new_value);
+    } else if (!this->bc_current_search.empty()) {
+        switch (selected_crumb_ref.c_expected_input) {
+            case breadcrumb::crumb::expected_input_t::exact:
+                break;
+            case breadcrumb::crumb::expected_input_t::index:
+            case breadcrumb::crumb::expected_input_t::index_or_exact: {
+                size_t index;
+
+                if (sscanf(this->bc_current_search.c_str(), "%zu", &index) == 1)
+                {
+                    selected_crumb_ref.c_performer(index);
+                }
+                break;
+            }
+            case breadcrumb::crumb::expected_input_t::anything:
+                selected_crumb_ref.c_performer(this->bc_current_search);
+                break;
+        }
+    }
 }
 
 bool

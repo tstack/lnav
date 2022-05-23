@@ -2,10 +2,10 @@
  [31mreason[0m: “foo” is not a valid value for option “[1m/#[0m”
 [31m |      [0m  [31mreason[0m: value does not match pattern: [1m^#[^\s]+$[0m
 [31m |      [0m [36m --> [0m[1maccess_log.log_tags[0m:1
-[31m |      [0m [36m | [0m["foo"]
+[31m |      [0m [36m | [0m[37m[40m["foo"]                                 [0m
 [31m |      [0m [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
 [31m |      [0m            [1m/#[0m [4mtag[0m
 [31m |      [0m          [1mDescription[0m
 [31m |      [0m            A tag for the log line
 [36m --> [0m[1mcommand-option[0m:1
-[36m | [0m;UPDATE access_log SET log_tags = json_array('foo') WHERE log_line = 1
+[36m | [0m[37m[40m;UPDATE access_log SET log_tags = json_array('foo') WHERE log_line = 1[0m

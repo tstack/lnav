@@ -36,7 +36,9 @@
 
 #include <sys/types.h>
 
+#include "base/intern_string.hh"
 #include "fmt/format.h"
+#include "ghc/filesystem.hpp"
 
 enum class text_format_t {
     TF_UNKNOWN,
@@ -48,6 +50,7 @@ enum class text_format_t {
     TF_SQL,
     TF_XML,
     TF_JSON,
+    TF_MARKDOWN,
 };
 
 namespace fmt {
@@ -85,6 +88,9 @@ struct formatter<text_format_t> : formatter<string_view> {
             case text_format_t::TF_JSON:
                 name = "application/json";
                 break;
+            case text_format_t::TF_MARKDOWN:
+                name = "text/markdown";
+                break;
         }
         return formatter<string_view>::format(name, ctx);
     }
@@ -94,16 +100,10 @@ struct formatter<text_format_t> : formatter<string_view> {
 /**
  * Try to detect the format of the given text file fragment.
  *
- * @param str The text to scan.
- * @param len The length of the 'str' buffer.
  * @return The detected format.
  */
-text_format_t detect_text_format(const char* str, size_t len);
-
-inline text_format_t
-detect_text_format(const std::string& str)
-{
-    return detect_text_format(str.c_str(), str.length());
-}
+text_format_t detect_text_format(string_fragment sf,
+                                 nonstd::optional<ghc::filesystem::path> path
+                                 = nonstd::nullopt);
 
 #endif

@@ -115,10 +115,15 @@ public:
         return nullptr;
     }
 
-    string_fragment to_string_fragment(off_t offset, size_t len)
+    string_fragment to_string_fragment(off_t offset, size_t len) const
     {
         return string_fragment{
             this->sb_data, (int) offset, (int) (offset + len)};
+    }
+
+    string_fragment to_string_fragment() const
+    {
+        return string_fragment{this->sb_data, 0, (int) this->length()};
     }
 
     void share(shared_buffer& sb, char* data, size_t len);

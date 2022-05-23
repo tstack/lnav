@@ -1,0 +1,12 @@
+Dec  6 13:01:34 ubu-mac avahi-daemon[786]: Joining mDNS multicast group on interface virbr0.IPv4 with address 192.168.122.1.
+Dec  6 13:01:34 ubu-mac avahi-daemon[786]: New relevant interface virbr0.IPv4 for mDNS.
+Dec  6 13:01:34 ubu-mac avahi-daemon[786]: Registering new address record for 192.168.122.1 on virbr0.IPv4.
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: started, version 2.68 cachesize 150
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: compile time options: IPv6 GNU-getopt DBus i18n IDN DHCP DHCPv6 no-Lua TFTP conntrack ipset auth
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: DHCP, IP range 192.168.122.2 -- 192.168.122.254, lease time 1h
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: DHCP, sockets bound exclusively to interface virbr0
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: reading /etc/resolv.conf
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: using nameserver 192.168.1.1#53
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /etc/hosts - 5 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /var/lib/libvirt/dnsmasq/default.addnhosts - 0 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: read /var/lib/libvirt/dnsmasq/default.hostsfile

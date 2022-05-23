@@ -36,8 +36,13 @@
 #include "yajl/api/yajl_parse.h"
 
 text_format_t
-detect_text_format(const char* str, size_t len)
+detect_text_format(string_fragment sf,
+                   nonstd::optional<ghc::filesystem::path> path)
 {
+    static const auto GZ_EXT = ghc::filesystem::path(".gz");
+    static const auto BZ2_EXT = ghc::filesystem::path(".bz2");
+    static const auto MD_EXT = ghc::filesystem::path(".md");
+
     // XXX This is a pretty crude way of detecting format...
     static const pcrepp PYTHON_MATCHERS = pcrepp(
         "(?:"
@@ -87,14 +92,30 @@ detect_text_format(const char* str, size_t len)
         PCRE_MULTILINE | PCRE_CASELESS);
 
     text_format_t retval = text_format_t::TF_UNKNOWN;
-    pcre_input pi(str, 0, len);
+
+    if (path) {
+        if (path->extension() == GZ_EXT) {
+            path = path->stem();
+        }
+        if (path->extension() == BZ2_EXT) {
+            path = path->stem();
+        }
+
+        if (path->extension() == MD_EXT) {
+            return text_format_t::TF_MARKDOWN;
+        }
+    }
+
+    pcre_input pi(sf);
     pcre_context_static<30> pc;
 
     {
         auto_mem<yajl_handle_t> jhandle(yajl_free);
 
         jhandle = yajl_alloc(nullptr, nullptr, nullptr);
-        if (yajl_parse(jhandle, (unsigned char*) str, len) == yajl_status_ok) {
+        if (yajl_parse(jhandle, (unsigned char*) sf.data(), sf.length())
+            == yajl_status_ok)
+        {
             return text_format_t::TF_JSON;
         }
     }

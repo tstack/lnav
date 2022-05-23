@@ -380,9 +380,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 continue;
             }
 
-            value_out.emplace_back(
-                token_attr.sa_range,
-                VC_ROLE.value(role_t::VCR_INVALID_MSG));
+            value_out.emplace_back(token_attr.sa_range,
+                                   VC_ROLE.value(role_t::VCR_INVALID_MSG));
         }
     }
 
@@ -410,9 +409,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 this->lss_token_value.c_str(), this->lss_token_value.length());
         }
 
-        value_out.emplace_back(
-            ident_range,
-            VC_ROLE.value(role_t::VCR_IDENTIFIER));
+        value_out.emplace_back(ident_range,
+                               VC_ROLE.value(role_t::VCR_IDENTIFIER));
     }
 
     if (this->lss_token_shift_size) {
@@ -453,8 +451,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                               vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
-                value_out.emplace_back(lr,
-                                       VC_STYLE.value(A_REVERSE));
+                value_out.emplace_back(lr, VC_STYLE.value(A_REVERSE));
             }
         }
     }
@@ -484,10 +481,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
         shift_string_attrs(value_out, 0, time_offset_end);
 
-        value_out.emplace_back(
-            lr, VC_ROLE.value(role_t::VCR_OFFSET_TIME));
-        value_out.emplace_back(line_range(12, 13),
-                               VC_GRAPHIC.value(ACS_VLINE));
+        value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_OFFSET_TIME));
+        value_out.emplace_back(line_range(12, 13), VC_GRAPHIC.value(ACS_VLINE));
 
         role_t bar_role = role_t::VCR_NONE;
 
@@ -502,8 +497,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 break;
         }
         if (bar_role != role_t::VCR_NONE) {
-            value_out.emplace_back(line_range(12, 13),
-                                   VC_ROLE.value(bar_role));
+            value_out.emplace_back(line_range(12, 13), VC_ROLE.value(bar_role));
         }
     }
 
@@ -549,9 +543,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(
-                time_range,
-                VC_ROLE.value(role_t::VCR_ADJUSTED_TIME));
+            value_out.emplace_back(time_range,
+                                   VC_ROLE.value(role_t::VCR_ADJUSTED_TIME));
         }
     }
 
@@ -560,9 +553,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            value_out.emplace_back(
-                time_range,
-                VC_ROLE.value(role_t::VCR_SKEWED_TIME));
+            value_out.emplace_back(time_range,
+                                   VC_ROLE.value(role_t::VCR_SKEWED_TIME));
         }
     }
 
@@ -584,8 +576,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                     color = COLOR_GREEN;
                 } else {
                     color = COLOR_RED;
-                    value_out.emplace_back(
-                        line_range{0, 1}, VC_STYLE.value(A_BLINK));
+                    value_out.emplace_back(line_range{0, 1},
+                                           VC_STYLE.value(A_BLINK));
                 }
             }
             value_out.emplace_back(line_range{0, 1},
@@ -2039,133 +2031,243 @@ logfile_sub_source::text_crumbs_for_line(int line,
     }
 
     auto line_pair_opt = this->find_line_with_file(vis_line_t(line));
-    if (line_pair_opt) {
-        auto line_pair = line_pair_opt.value();
-        auto& lf = line_pair.first;
-        auto format = lf->get_format();
-        char ts[64];
+    if (!line_pair_opt) {
+        return;
+    }
+    auto line_pair = line_pair_opt.value();
+    auto& lf = line_pair.first;
+    auto format = lf->get_format();
+    char ts[64];
 
-        sql_strftime(ts, sizeof(ts), line_pair.second->get_timeval(), 'T');
+    sql_strftime(ts, sizeof(ts), line_pair.second->get_timeval(), 'T');
 
-        crumbs.emplace_back(
-            std::string(ts),
-            timestamp_poss,
-            [ec = this->lss_exec_context](const auto& ts) {
-                ec->execute(fmt::format(FMT_STRING(":goto {}"),
-                                        ts.template get<std::string>()));
-            });
-        crumbs.back().c_expected_input
-            = breadcrumb::crumb::expected_input_t::anything;
-        crumbs.back().c_search_placeholder
-            = "(Enter an absolute or relative time)";
+    crumbs.emplace_back(
+        std::string(ts),
+        timestamp_poss,
+        [ec = this->lss_exec_context](const auto& ts) {
+            ec->execute(fmt::format(FMT_STRING(":goto {}"),
+                                    ts.template get<std::string>()));
+        });
+    crumbs.back().c_expected_input
+        = breadcrumb::crumb::expected_input_t::anything;
+    crumbs.back().c_search_placeholder = "(Enter an absolute or relative time)";
 
-        auto format_name = format->get_name().to_string();
-        crumbs.emplace_back(
-            format_name,
-            attr_line_t().append(lnav::roles::identifier(format_name)),
-            [this]() -> std::vector<breadcrumb::possibility> {
-                return this->lss_files
-                    | lnav::itertools::filter_in([](const auto& file_data) {
-                           return file_data->is_visible();
-                       })
-                    | lnav::itertools::map(&logfile_data::get_file_ptr)
-                    | lnav::itertools::map(&logfile::get_format_name)
-                    | lnav::itertools::unique()
-                    | lnav::itertools::map([](const auto& elem) {
-                           return breadcrumb::possibility{
-                               elem.to_string(),
-                           };
-                       });
-            },
-            [ec = this->lss_exec_context](const auto& format_name) {
-                static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = (SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1)
+    auto format_name = format->get_name().to_string();
+    crumbs.emplace_back(
+        format_name,
+        attr_line_t().append(lnav::roles::identifier(format_name)),
+        [this]() -> std::vector<breadcrumb::possibility> {
+            return this->lss_files
+                | lnav::itertools::filter_in([](const auto& file_data) {
+                       return file_data->is_visible();
+                   })
+                | lnav::itertools::map(&logfile_data::get_file_ptr)
+                | lnav::itertools::map(&logfile::get_format_name)
+                | lnav::itertools::unique()
+                | lnav::itertools::map([](const auto& elem) {
+                       return breadcrumb::possibility{
+                           elem.to_string(),
+                       };
+                   });
+        },
+        [ec = this->lss_exec_context](const auto& format_name) {
+            static const std::string MOVE_STMT = R"(;UPDATE lnav_views
+     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
      WHERE name = 'log'
 )";
 
-                ec->execute_with(
-                    MOVE_STMT,
-                    std::make_pair("format_name",
-                                   format_name.template get<std::string>()));
-            });
+            ec->execute_with(
+                MOVE_STMT,
+                std::make_pair("format_name",
+                               format_name.template get<std::string>()));
+        });
 
-        auto msg_start_iter = lf->message_start(line_pair.second);
-        auto file_line_number = std::distance(lf->begin(), msg_start_iter);
-        crumbs.emplace_back(
-            lf->get_unique_path(),
-            attr_line_t()
-                .append(lnav::roles::identifier(lf->get_unique_path()))
-                .append(FMT_STRING("[{:L}]"), file_line_number),
-            [this]() -> std::vector<breadcrumb::possibility> {
-                return this->lss_files
-                    | lnav::itertools::filter_in([](const auto& file_data) {
-                           return file_data->is_visible();
-                       })
-                    | lnav::itertools::map([](const auto& file_data) {
-                           return breadcrumb::possibility{
-                               file_data->get_file_ptr()->get_unique_path(),
-                               attr_line_t(file_data->get_file_ptr()
-                                               ->get_unique_path()),
-                           };
-                       });
-            },
-            [ec = this->lss_exec_context](const auto& uniq_path) {
-                static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = (SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1)
+    auto msg_start_iter = lf->message_start(line_pair.second);
+    auto file_line_number = std::distance(lf->begin(), msg_start_iter);
+    crumbs.emplace_back(
+        lf->get_unique_path(),
+        attr_line_t()
+            .append(lnav::roles::identifier(lf->get_unique_path()))
+            .append(FMT_STRING("[{:L}]"), file_line_number),
+        [this]() -> std::vector<breadcrumb::possibility> {
+            return this->lss_files
+                | lnav::itertools::filter_in([](const auto& file_data) {
+                       return file_data->is_visible();
+                   })
+                | lnav::itertools::map([](const auto& file_data) {
+                       return breadcrumb::possibility{
+                           file_data->get_file_ptr()->get_unique_path(),
+                           attr_line_t(
+                               file_data->get_file_ptr()->get_unique_path()),
+                       };
+                   });
+        },
+        [ec = this->lss_exec_context](const auto& uniq_path) {
+            static const std::string MOVE_STMT = R"(;UPDATE lnav_views
+     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
      WHERE name = 'log'
 )";
 
-                ec->execute_with(
-                    MOVE_STMT,
-                    std::make_pair("uniq_path",
-                                   uniq_path.template get<std::string>()));
-            });
+            ec->execute_with(
+                MOVE_STMT,
+                std::make_pair("uniq_path",
+                               uniq_path.template get<std::string>()));
+        });
 
-        shared_buffer_ref sbr;
-        string_attrs_t sa;
-        std::vector<logline_value> values;
+    shared_buffer_ref sbr;
+    string_attrs_t sa;
+    std::vector<logline_value> values;
 
-        lf->read_full_message(msg_start_iter, sbr);
-        format->annotate(file_line_number, sbr, sa, values);
+    lf->read_full_message(msg_start_iter, sbr);
+    format->annotate(file_line_number, sbr, sa, values);
 
-        auto opid_opt = get_string_attr(sa, logline::L_OPID);
-        if (opid_opt) {
-            const auto& opid_range = opid_opt.value().saw_string_attr->sa_range;
-            const auto opid_str = sbr.to_string_fragment(opid_range.lr_start,
-                                                         opid_range.length())
-                                      .to_string();
-            crumbs.emplace_back(
-                opid_str,
-                attr_line_t().append(lnav::roles::identifier(opid_str)),
-                [this]() -> std::vector<breadcrumb::possibility> {
-                    std::set<std::string> opids;
+    auto opid_opt = get_string_attr(sa, logline::L_OPID);
+    if (opid_opt) {
+        const auto& opid_range = opid_opt.value().saw_string_attr->sa_range;
+        const auto opid_str
+            = sbr.to_string_fragment(opid_range.lr_start, opid_range.length())
+                  .to_string();
+        crumbs.emplace_back(
+            opid_str,
+            attr_line_t().append(lnav::roles::identifier(opid_str)),
+            [this]() -> std::vector<breadcrumb::possibility> {
+                std::set<std::string> opids;
 
-                    for (const auto& file_data : this->lss_files) {
-                        safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
-                            file_data->get_file_ptr()->get_opids());
+                for (const auto& file_data : this->lss_files) {
+                    safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
+                        file_data->get_file_ptr()->get_opids());
 
-                        for (const auto& pair : *r_opid_map) {
-                            opids.insert(pair.first);
-                        }
+                    for (const auto& pair : *r_opid_map) {
+                        opids.insert(pair.first);
                     }
+                }
 
-                    return opids | lnav::itertools::map([](const auto& elem) {
-                               return breadcrumb::possibility{
-                                   elem,
-                               };
-                           });
-                },
-                [ec = this->lss_exec_context](const auto& opid) {
-                    static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-                         SET top = (SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1)
+                return opids | lnav::itertools::map([](const auto& elem) {
+                           return breadcrumb::possibility{
+                               elem,
+                           };
+                       });
+            },
+            [ec = this->lss_exec_context](const auto& opid) {
+                static const std::string MOVE_STMT = R"(;UPDATE lnav_views
+                         SET top = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
                          WHERE name = 'log'
                     )";
 
-                    ec->execute_with(
-                        MOVE_STMT,
-                        std::make_pair("opid",
-                                       opid.template get<std::string>()));
-                });
+                ec->execute_with(
+                    MOVE_STMT,
+                    std::make_pair("opid", opid.template get<std::string>()));
+            });
+    }
+
+    auto sf = sbr.to_string_fragment();
+    auto sf_lines = sf.split_lines();
+    auto msg_line_number = std::distance(msg_start_iter, line_pair.second);
+    auto line_from_top = line - msg_line_number;
+    if (sf_lines.size() > 1) {
+        this->lss_token_meta = lnav::document::discover_structure(sf);
+        const auto initial_size = crumbs.size();
+        file_off_t line_offset = 0;
+        file_off_t line_end_offset = sf.length();
+        size_t line_number = 0;
+
+        for (const auto& sf_line : sf_lines) {
+            if (line_number >= msg_line_number) {
+                line_end_offset = line_offset + sf_line.length();
+                break;
+            }
+            line_number += 1;
+            line_offset += sf_line.length();
+        }
+
+        this->lss_token_meta.m_sections_tree.visit_overlapping(
+            line_offset,
+            line_end_offset,
+            [this,
+             initial_size,
+             meta = &this->lss_token_meta,
+             &crumbs,
+             line_from_top](const auto& iv) {
+                auto path = crumbs | lnav::itertools::skip(initial_size)
+                    | lnav::itertools::map(&breadcrumb::crumb::c_key)
+                    | lnav::itertools::append(iv.value);
+                auto curr_node = lnav::document::hier_node::lookup_path(
+                    meta->m_sections_root.get(), path);
+
+                crumbs.template emplace_back(
+                    iv.value,
+                    [meta, path]() { return meta->possibility_provider(path); },
+                    [this, curr_node, path, line_from_top](const auto& key) {
+                        if (!curr_node) {
+                            return;
+                        }
+                        auto* parent_node = curr_node.value()->hn_parent;
+                        if (parent_node == nullptr) {
+                            return;
+                        }
+                        key.template match(
+                            [parent_node](const std::string& str) {
+                                return parent_node->find_line_number(str);
+                            },
+                            [parent_node](size_t index) {
+                                return parent_node->find_line_number(index);
+                            })
+                            | [this, line_from_top](auto line_number) {
+                                  this->tss_view->set_top(
+                                      vis_line_t(line_from_top + line_number));
+                              };
+                    });
+                if (curr_node && curr_node.value()->hn_parent->is_named_only())
+                {
+                    auto node = lnav::document::hier_node::lookup_path(
+                        meta->m_sections_root.get(), path);
+
+                    crumbs.back().c_expected_input
+                        = curr_node.value()
+                              ->hn_parent->hn_named_children.empty()
+                        ? breadcrumb::crumb::expected_input_t::index
+                        : breadcrumb::crumb::expected_input_t::index_or_exact;
+                    crumbs.back().with_possible_range(
+                        node | lnav::itertools::map([](const auto hn) {
+                            return hn->hn_parent->hn_children.size();
+                        })
+                        | lnav::itertools::unwrap_or(size_t{0}));
+                }
+            });
+
+        auto path = crumbs | lnav::itertools::skip(initial_size)
+            | lnav::itertools::map(&breadcrumb::crumb::c_key);
+        auto node = lnav::document::hier_node::lookup_path(
+            this->lss_token_meta.m_sections_root.get(), path);
+
+        if (node && !node.value()->hn_children.empty()) {
+            auto poss_provider = [curr_node = node.value()]() {
+                std::vector<breadcrumb::possibility> retval;
+                for (const auto& child : curr_node->hn_named_children) {
+                    retval.template emplace_back(child.first);
+                }
+                return retval;
+            };
+            auto path_performer
+                = [this, curr_node = node.value(), line_from_top](
+                      const breadcrumb::crumb::key_t& value) {
+                      value.template match(
+                          [curr_node](const std::string& str) {
+                              return curr_node->find_line_number(str);
+                          },
+                          [curr_node](size_t index) {
+                              return curr_node->find_line_number(index);
+                          })
+                          | [this, line_from_top](size_t line_number) {
+                                this->tss_view->set_top(
+                                    vis_line_t(line_from_top + line_number));
+                            };
+                  };
+            crumbs.emplace_back("", "\u22ef", poss_provider, path_performer);
+            crumbs.back().c_expected_input
+                = node.value()->hn_named_children.empty()
+                ? breadcrumb::crumb::expected_input_t::index
+                : breadcrumb::crumb::expected_input_t::index_or_exact;
         }
     }
 }

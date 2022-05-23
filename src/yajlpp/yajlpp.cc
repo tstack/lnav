@@ -1139,6 +1139,7 @@ yajlpp_parse_context::get_snippet() const
         }
     }
 
+    content.with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
     return lnav::console::snippet::from(this->ypc_source, content)
         .with_line(line_number);
 }

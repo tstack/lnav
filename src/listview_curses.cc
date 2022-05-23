@@ -475,7 +475,8 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
     } else if (this->lv_top != top) {
         this->lv_top = top;
         if (this->lv_selectable) {
-            if (this->lv_selection < top) {
+            if (this->lv_selection < 0_vl) {
+            } else if (this->lv_selection < top) {
                 this->lv_selection = top;
             } else {
                 auto bot = this->get_bottom();
@@ -544,4 +545,23 @@ listview_curses::rows_available(vis_line_t line,
     }
 
     return retval;
+}
+
+void
+listview_curses::scroll_selection_into_view()
+{
+    unsigned long width;
+    vis_line_t height;
+
+    this->get_dimensions(height, width);
+    if (height <= 0) {
+        return;
+    }
+    if (this->lv_selection < 0_vl) {
+        this->set_top(0_vl);
+    } else if (this->lv_selection >= (this->lv_top + height - 1)) {
+        this->set_top(this->lv_selection - height + 2_vl, true);
+    } else if (this->lv_selection < this->lv_top) {
+        this->set_top(this->lv_selection, true);
+    }
 }

@@ -154,7 +154,13 @@ user_message::to_attr_line(std::set<render_flags> flags) const
             }
             retval.append(header).append("\n");
             if (!snip.s_content.blank()) {
-                for (const auto& line : snip.s_content.split_lines()) {
+                auto snippet_lines = snip.s_content.split_lines();
+                auto longest_line_length = snippet_lines
+                    | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+                    | lnav::itertools::max(40);
+
+                for (auto& line : snippet_lines) {
+                    line.pad_to(longest_line_length);
                     retval.append(" | "_comment).append(line).append("\n");
                 }
             }
@@ -254,6 +260,8 @@ println(FILE* file, const attr_line_t& al)
     nonstd::optional<int> last_point;
     for (const auto& point : points) {
         if (last_point) {
+            auto default_fg_style = fmt::text_style{};
+            auto default_bg_style = fmt::text_style{};
             auto line_style = fmt::text_style{};
             auto fg_style = fmt::text_style{};
             auto start = last_point.value();
@@ -330,6 +338,12 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_LIST_GLYPH:
                             line_style |= fmt::fg(fmt::terminal_color::yellow);
                             break;
+                        case role_t::VCR_QUOTED_CODE:
+                            default_fg_style
+                                = fmt::fg(fmt::terminal_color::white);
+                            default_bg_style
+                                = fmt::bg(fmt::terminal_color::black);
+                            break;
                         default:
                             break;
                     }
@@ -338,6 +352,14 @@ println(FILE* file, const attr_line_t& al)
 
             if (!line_style.has_foreground() && fg_style.has_foreground()) {
                 line_style |= fg_style;
+            }
+            if (!line_style.has_foreground()
+                && default_fg_style.has_foreground()) {
+                line_style |= default_fg_style;
+            }
+            if (!line_style.has_background()
+                && default_bg_style.has_background()) {
+                line_style |= default_bg_style;
             }
 
             if (start < str.size()) {
@@ -357,7 +379,12 @@ println(FILE* file, const attr_line_t& al)
 void
 print(FILE* file, const user_message& um)
 {
-    println(file, um.to_attr_line().rtrim());
+    auto al = um.to_attr_line();
+
+    if (endswith(al.get_string(), "\n")) {
+        al.erase(al.length() - 1);
+    }
+    println(file, al);
 }
 
 }  // namespace console

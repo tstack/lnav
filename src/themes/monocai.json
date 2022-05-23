@@ -72,13 +72,15 @@
                         "background-color": "#888"
                     },
                     "h1": {
-                        "underline": true
+                        "color": "$magenta",
+                        "bold": true
                     },
                     "h2": {
+                        "color": "$magenta",
                         "underline": true
                     },
                     "h3": {
-                        "underline": true
+                        "color": "$magenta"
                     },
                     "h4": {
                         "underline": true
@@ -89,14 +91,49 @@
                     "h6": {
                         "underline": true
                     },
+                    "hr": {
+                        "color": "#444"
+                    },
+                    "hyperlink": {
+                        "underline": true
+                    },
                     "list-glyph": {
                         "color": "$yellow"
                     },
                     "breadcrumb": {
                         "color": "#99a"
+                    },
+                    "table-border": {
+                        "color": "#444"
+                    },
+                    "table-header": {
+                        "bold": true
+                    },
+                    "quote-border": {
+                        "color": "#666",
+                        "background-color": "#444"
+                    },
+                    "quoted-text": {
+                        "background-color": "#444"
+                    },
+                    "footnote-border": {
+                        "color": "$blue",
+                        "background-color": "#444"
+                    },
+                    "footnote-text": {
+                        "color": "#eee",
+                        "background-color": "#444"
                     }
                 },
                 "syntax-styles": {
+                    "quoted-code": {
+                        "color": "#eee",
+                        "background-color": "#121212"
+                    },
+                    "code-border": {
+                        "color": "#444",
+                        "background-color": "#121212"
+                    },
                     "keyword": {
                         "color": "#ff6188",
                         "bold": true
@@ -106,7 +143,7 @@
                         "bold": true
                     },
                     "comment": {
-                        "color": "#727072"
+                        "color": "#949194"
                     },
                     "doc-directive": {
                         "color": "#a9dc76"

@@ -45,6 +45,7 @@
 #include "base/time_util.hh"
 #include "big_array.hh"
 #include "bookmarks.hh"
+#include "document.sections.hh"
 #include "filter_observer.hh"
 #include "log_accel.hh"
 #include "log_format.hh"
@@ -958,6 +959,7 @@ private:
     std::shared_ptr<logfile> lss_token_file;
     std::string lss_token_value;
     string_attrs_t lss_token_attrs;
+    lnav::document::metadata lss_token_meta;
     std::vector<logline_value> lss_token_values;
     int lss_token_shift_start{0};
     int lss_token_shift_size{0};

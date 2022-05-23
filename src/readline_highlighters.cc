@@ -31,6 +31,7 @@
 
 #include "readline_highlighters.hh"
 
+#include "base/attr_line.builder.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
@@ -39,7 +40,13 @@
 #include "sql_util.hh"
 #include "view_curses.hh"
 
-static void readline_sqlite_highlighter_int(attr_line_t& al, int x, int skip);
+static void readline_sqlite_highlighter_int(attr_line_t& al,
+                                            int x,
+                                            line_range sub);
+
+static void readline_shlex_highlighter_int(attr_line_t& al,
+                                           int x,
+                                           line_range sub);
 
 static bool
 check_re_prev(const std::string& line, int x)
@@ -69,80 +76,79 @@ is_bracket(const std::string& str, int index, bool is_lit)
 }
 
 static void
-find_matching_bracket(attr_line_t& al, int x, char left, char right)
+find_matching_bracket(
+    attr_line_t& al, int x, line_range sub, char left, char right)
 {
-    view_colors& vc = view_colors::singleton();
-    int matching_bracket_attrs
-        = A_BOLD | A_REVERSE | vc.attrs_for_role(role_t::VCR_OK);
-    int missing_bracket_attrs
-        = A_BOLD | A_REVERSE | vc.attrs_for_role(role_t::VCR_ERROR);
     bool is_lit = (left == 'Q');
-    const std::string& line = al.get_string();
+    attr_line_builder alb(al);
+    const auto& line = al.get_string();
     int depth = 0;
 
-    if (x < 0 || x > (int) line.length()) {
+    if (x < sub.lr_start || x > sub.lr_end) {
         return;
     }
 
     if (line[x] == right && is_bracket(line, x, is_lit)) {
-        for (int lpc = x - 1; lpc > 0; lpc--) {
+        for (int lpc = x - 1; lpc >= sub.lr_start; lpc--) {
             if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 depth += 1;
             } else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
-                    al.get_attrs().emplace_back(
-                        line_range(lpc, lpc + 1),
-                        VC_STYLE.value(matching_bracket_attrs));
+                    alb.overlay_attr_for_char(
+                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                    alb.overlay_attr_for_char(lpc,
+                                              VC_ROLE.value(role_t::VCR_OK));
                     break;
-                } else {
-                    depth -= 1;
                 }
+                depth -= 1;
             }
         }
     }
 
     if (line[x] == left && is_bracket(line, x, is_lit)) {
-        for (size_t lpc = x + 1; lpc < line.length(); lpc++) {
+        for (size_t lpc = x + 1; lpc < sub.lr_end; lpc++) {
             if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 depth += 1;
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
-                    al.get_attrs().emplace_back(
-                        line_range(lpc, lpc + 1),
-                        VC_STYLE.value(matching_bracket_attrs));
+                    alb.overlay_attr_for_char(
+                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                    alb.overlay_attr_for_char(lpc,
+                                              VC_ROLE.value(role_t::VCR_OK));
                     break;
-                } else {
-                    depth -= 1;
                 }
+                depth -= 1;
             }
         }
     }
 
-    int first_left = -1;
+    nonstd::optional<int> first_left;
 
     depth = 0;
 
-    for (size_t lpc = 1; lpc < line.length(); lpc++) {
+    for (size_t lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
-            if (first_left == -1) {
+            if (!first_left) {
                 first_left = lpc;
             }
         } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
             if (depth > 0) {
                 depth -= 1;
             } else {
-                al.get_attrs().emplace_back(
-                    line_range(is_lit ? lpc - 1 : lpc, lpc + 1),
-                    VC_STYLE.value(missing_bracket_attrs));
+                auto lr = line_range(is_lit ? lpc - 1 : lpc, lpc + 1);
+                alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+                alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
             }
         }
     }
 
     if (depth > 0) {
-        al.get_attrs().emplace_back(
-            line_range(is_lit ? first_left - 1 : first_left, first_left + 1),
-            VC_STYLE.value(missing_bracket_attrs));
+        auto lr
+            = line_range(is_lit ? first_left.value() - 1 : first_left.value(),
+                         first_left.value() + 1);
+        alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+        alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
     }
 }
 
@@ -157,16 +163,8 @@ safe_read(const std::string& str, std::string::size_type index)
 }
 
 static void
-readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
+readline_regex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
-    view_colors& vc = view_colors::singleton();
-    int special_char = (A_BOLD | vc.attrs_for_role(role_t::VCR_RE_SPECIAL));
-    int class_attrs = (A_BOLD | vc.attrs_for_role(role_t::VCR_SYMBOL));
-    int repeated_char_attrs = vc.attrs_for_role(role_t::VCR_RE_REPEAT);
-    int bracket_attrs = vc.attrs_for_role(role_t::VCR_OK);
-    int error_attrs
-        = (A_BOLD | A_REVERSE | vc.attrs_for_role(role_t::VCR_ERROR));
-
     static const char* brackets[] = {
         "[]",
         "{}",
@@ -176,10 +174,11 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
         nullptr,
     };
 
-    auto& line = al.get_string();
+    const auto& line = al.get_string();
+    attr_line_builder alb(al);
     bool backslash_is_quoted = false;
 
-    for (size_t lpc = skip; lpc < line.length(); lpc++) {
+    for (size_t lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (line[lpc - 1] != '\\') {
             switch (line[lpc]) {
                 case '^':
@@ -188,20 +187,24 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
                 case '+':
                 case '|':
                 case '.':
-                    al.get_attrs().emplace_back(line_range(lpc, lpc + 1),
-                                                VC_STYLE.value(special_char));
+                    alb.overlay_attr_for_char(
+                        lpc, VC_ROLE.value(role_t::VCR_RE_SPECIAL));
 
                     if ((line[lpc] == '*' || line[lpc] == '+')
                         && check_re_prev(line, lpc)) {
-                        al.get_attrs().emplace_back(
-                            line_range(lpc - 1, lpc),
-                            VC_STYLE.value(repeated_char_attrs));
+                        alb.overlay_attr_for_char(
+                            lpc - 1, VC_ROLE.value(role_t::VCR_RE_REPEAT));
                     }
                     break;
                 case '?': {
                     struct line_range lr(lpc, lpc + 1);
 
-                    if (line[lpc - 1] == '(') {
+                    if (lpc == sub.lr_start || (lpc - sub.lr_start) == 0) {
+                        alb.overlay_attr_for_char(
+                            lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                        alb.overlay_attr_for_char(
+                            lpc, VC_ROLE.value(role_t::VCR_ERROR));
+                    } else if (line[lpc - 1] == '(') {
                         switch (line[lpc + 1]) {
                             case ':':
                             case '!':
@@ -211,16 +214,14 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
                                 lr.lr_end += 1;
                                 break;
                         }
-                        al.get_attrs().emplace_back(
-                            lr, VC_STYLE.value(bracket_attrs));
+                        alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_OK));
                     } else {
-                        al.get_attrs().emplace_back(
-                            lr, VC_STYLE.value(special_char));
+                        alb.overlay_attr(lr,
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
 
                         if (check_re_prev(line, lpc)) {
-                            al.get_attrs().emplace_back(
-                                line_range(lpc - 1, lpc),
-                                VC_STYLE.value(repeated_char_attrs));
+                            alb.overlay_attr_for_char(
+                                lpc - 1, VC_ROLE.value(role_t::VCR_RE_REPEAT));
                         }
                     }
                     break;
@@ -232,8 +233,8 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
                 case '}':
                 case '[':
                 case ']':
-                    al.get_attrs().emplace_back(line_range(lpc, lpc + 1),
-                                                VC_STYLE.value(bracket_attrs));
+                    alb.overlay_attr_for_char(lpc,
+                                              VC_ROLE.value(role_t::VCR_OK));
                     break;
             }
         }
@@ -245,8 +246,8 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
             switch (line[lpc]) {
                 case '\\':
                     backslash_is_quoted = true;
-                    al.with_attr(string_attr(line_range(lpc - 1, lpc + 1),
-                                             VC_STYLE.value(special_char)));
+                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                     VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     break;
                 case 'd':
                 case 'D':
@@ -268,38 +269,41 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
                 case 'G':
                 case 'Z':
                 case 'z':
-                    al.get_attrs().emplace_back(line_range(lpc - 1, lpc + 1),
-                                                VC_STYLE.value(class_attrs));
+                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                     VC_ROLE.value(role_t::VCR_SYMBOL));
                     break;
                 case ' ':
-                    al.get_attrs().emplace_back(line_range(lpc - 1, lpc + 1),
-                                                VC_STYLE.value(error_attrs));
+                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                     VC_STYLE.value(A_BOLD | A_REVERSE));
+                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                     VC_ROLE.value(role_t::VCR_ERROR));
                     break;
                 case '0':
                 case 'x':
                     if (safe_read(line, lpc + 1) == '{') {
-                        al.with_attr(string_attr(line_range(lpc - 1, lpc + 1),
-                                                 VC_STYLE.value(special_char)));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     } else if (isdigit(safe_read(line, lpc + 1))
                                && isdigit(safe_read(line, lpc + 2)))
                     {
-                        al.with_attr(string_attr(line_range(lpc - 1, lpc + 3),
-                                                 VC_STYLE.value(special_char)));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 3),
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     } else {
-                        al.with_attr(string_attr(line_range(lpc - 1, lpc + 1),
-                                                 VC_STYLE.value(error_attrs)));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_STYLE.value(A_BOLD | A_REVERSE));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_ROLE.value(role_t::VCR_ERROR));
                     }
                     break;
                 case 'Q':
                 case 'E':
-                    al.with_attr(string_attr(line_range(lpc - 1, lpc + 1),
-                                             VC_STYLE.value(bracket_attrs)));
+                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                     VC_ROLE.value(role_t::VCR_OK));
                     break;
                 default:
                     if (isdigit(line[lpc])) {
-                        al.get_attrs().emplace_back(
-                            line_range(lpc - 1, lpc + 1),
-                            VC_STYLE.value(special_char));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     }
                     break;
             }
@@ -307,18 +311,19 @@ readline_regex_highlighter_int(attr_line_t& al, int x, int skip)
     }
 
     for (int lpc = 0; brackets[lpc]; lpc++) {
-        find_matching_bracket(al, x, brackets[lpc][0], brackets[lpc][1]);
+        find_matching_bracket(al, x, sub, brackets[lpc][0], brackets[lpc][1]);
     }
 }
 
 void
 readline_regex_highlighter(attr_line_t& al, int x)
 {
-    readline_regex_highlighter_int(al, x, 1);
+    readline_regex_highlighter_int(
+        al, x, line_range{1, (int) al.get_string().size()});
 }
 
 void
-readline_command_highlighter(attr_line_t& al, int x)
+readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     static const pcrepp RE_PREFIXES(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
@@ -329,54 +334,56 @@ readline_command_highlighter(attr_line_t& al, int x)
     static const pcrepp COLOR_PREFIXES("^:(config)");
     static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{3}))");
 
-    view_colors& vc = view_colors::singleton();
-    int keyword_attrs = (A_BOLD | vc.attrs_for_role(role_t::VCR_KEYWORD));
-
+    attr_line_builder alb(al);
     const auto& line = al.get_string();
     pcre_context_static<30> pc;
-    pcre_input pi(line);
+    pcre_input pi(&line[sub.lr_start], 0, sub.length());
     size_t ws_index;
 
-    ws_index = line.find(' ');
-    auto command = line.substr(0, ws_index);
+    ws_index = line.find(' ', sub.lr_start);
+    auto command = line.substr(sub.lr_start, ws_index);
     if (ws_index != std::string::npos) {
-        al.get_attrs().emplace_back(line_range(1, ws_index),
-                                    VC_STYLE.value(keyword_attrs));
+        alb.overlay_attr(line_range(sub.lr_start + 1, ws_index),
+                         VC_ROLE.value(role_t::VCR_KEYWORD));
     }
     if (RE_PREFIXES.match(pc, pi)) {
-        readline_regex_highlighter_int(al, x, 1 + pc[0]->length());
+        readline_regex_highlighter_int(
+            al, x, line_range{(int) ws_index, sub.lr_end});
     }
-    pi.reset(line);
+    pi.reset(&line[sub.lr_start], 0, sub.length());
     if (SH_PREFIXES.match(pc, pi)) {
-        readline_shlex_highlighter(al, x);
+        readline_shlex_highlighter_int(
+            al, x, line_range{(int) ws_index, sub.lr_end});
     }
-    pi.reset(line);
+    pi.reset(&line[sub.lr_start], 0, sub.length());
     if (SQL_PREFIXES.match(pc, pi)) {
-        readline_sqlite_highlighter_int(al, x, 1 + pc[0]->length());
+        readline_sqlite_highlighter_int(
+            al, x, line_range{(int) ws_index, sub.lr_end});
     }
-    pi.reset(line);
+    pi.reset(&line[sub.lr_start], 0, sub.length());
     if (COLOR_PREFIXES.match(pc, pi)) {
-        pi.reset(line);
+        pi.reset(&line[sub.lr_start], 0, sub.length());
         if (COLOR_RE.match(pc, pi)) {
             pcre_context::capture_t* cap = pc[0];
             auto hash_color = pi.get_substr(cap);
 
             styling::color_unit::from_str(hash_color)
                 .then([&](const auto& rgb_fg) {
-                    al.get_attrs().emplace_back(
-                        line_range{cap->c_begin, cap->c_begin + 1},
+                    alb.template overlay_attr(
+                        line_range{sub.lr_start + cap->c_begin,
+                                   sub.lr_start + cap->c_begin + 1},
                         VC_ROLE.value(role_t::VCR_COLOR_HINT));
                 });
         }
     }
-    pi.reset(line);
+    pi.reset(&line[sub.lr_start], 0, sub.length());
     if (IDENT_PREFIXES.match(pc, pi) && ws_index != std::string::npos) {
         size_t start = ws_index, last;
 
         do {
-            for (; start < line.length() && isspace(line[start]); start++)
+            for (; start < sub.length() && isspace(line[start]); start++)
                 ;
-            for (last = start; last < line.length() && !isspace(line[last]);
+            for (last = start; last < sub.length() && !isspace(line[last]);
                  last++)
                 ;
             struct line_range lr {
@@ -392,169 +399,139 @@ readline_command_highlighter(attr_line_t& al, int x)
                 {
                     value = "#" + value;
                 }
-                al.get_attrs().emplace_back(
-                    lr, VC_STYLE.value(vc.attrs_for_ident(value)));
+                alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_IDENTIFIER));
             }
 
             start = last;
-        } while (start < line.length());
+        } while (start < sub.length());
     }
 }
 
-static void
-readline_sqlite_highlighter_int(attr_line_t& al, int x, int skip)
+void
+readline_command_highlighter(attr_line_t& al, int x)
 {
-    static const auto keyword_re_str = sql_keyword_re();
-    static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
-    static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
-    static pcrepp ident_pcre(
-        "(?:\\$|:)?(\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
+    readline_command_highlighter_int(
+        al, x, line_range{0, (int) al.get_string().length()});
+}
 
-    static const char* brackets[] = {"[]",
-                                     "()",
+static void
+readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
+{
+    static const char* brackets[] = {
+        "[]",
+        "()",
 
-                                     nullptr};
+        nullptr,
+    };
 
-    auto& vc = view_colors::singleton();
+    attr_line_builder alb(al);
+    const auto& line = al.get_string();
 
-    int keyword_attrs = vc.attrs_for_role(role_t::VCR_KEYWORD);
-    int symbol_attrs = vc.attrs_for_role(role_t::VCR_SYMBOL);
-    int string_attrs = vc.attrs_for_role(role_t::VCR_STRING);
-    int error_attrs = vc.attrs_for_role(role_t::VCR_ERROR) | A_REVERSE;
+    auto anno_sql = al.subline(sub.lr_start, sub.length());
+    anno_sql.get_attrs().clear();
+    annotate_sql_statement(anno_sql);
 
-    pcre_context_static<30> pc;
-    pcre_input pi(al.get_string(), skip);
-    auto& line = al.get_string();
-
-    if (startswith(line, ";.")) {
-        auto space = line.find(' ');
-        struct line_range lr {
-            2, -1
+    for (const auto& attr : anno_sql.al_attrs) {
+        line_range lr{
+            sub.lr_start + attr.sa_range.lr_start,
+            sub.lr_start + attr.sa_range.lr_end,
         };
-
-        if (space != std::string::npos) {
-            lr.lr_end = space;
+        if (attr.sa_type == &SQL_COMMAND_ATTR
+            || attr.sa_type == &SQL_KEYWORD_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_KEYWORD));
+        } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR) {
+            if (!attr.sa_range.contains(x) && attr.sa_range.lr_end != x) {
+                alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_IDENTIFIER));
+            }
+        } else if (attr.sa_type == &SQL_FUNCTION_ATTR) {
+            alb.overlay_attr(
+                line_range{lr.lr_start, (int) line.find('(', lr.lr_start)},
+                VC_ROLE.value(role_t::VCR_SYMBOL));
+        } else if (attr.sa_type == &SQL_STRING_ATTR) {
+            if (lr.length() > 1 && al.al_string[lr.lr_end - 1] == '\'') {
+                alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
+            } else {
+                alb.overlay_attr_for_char(lr.lr_start,
+                                          VC_STYLE.value(A_REVERSE));
+                alb.overlay_attr_for_char(lr.lr_start,
+                                          VC_ROLE.value(role_t::VCR_ERROR));
+            }
+        } else if (attr.sa_type == &SQL_OPERATOR_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_SYMBOL));
+        } else if (attr.sa_type == &SQL_COMMENT_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_COMMENT));
         }
-        al.get_attrs().emplace_back(lr, VC_STYLE.value(keyword_attrs));
-        return;
-    }
-
-    while (ident_pcre.match(pc, pi)) {
-        pcre_context::capture_t* cap = pc.first_valid();
-        int attrs = vc.attrs_for_ident(pi.get_substr_start(cap), cap->length());
-        struct line_range lr(cap->c_begin, cap->c_end);
-
-        if (line[cap->c_end] == '(') {
-        } else if (!lr.contains(x) && !lr.contains(x - 1)) {
-            al.get_attrs().emplace_back(lr, VC_STYLE.value(attrs));
-        }
-    }
-
-    pi.reset(line, skip);
-
-    while (keyword_pcre.match(pc, pi)) {
-        pcre_context::capture_t* cap = pc.all();
-
-        al.get_attrs().emplace_back(line_range(cap->c_begin, cap->c_end),
-                                    VC_STYLE.value(keyword_attrs));
-    }
-
-    for (size_t lpc = skip; lpc < line.length(); lpc++) {
-        switch (line[lpc]) {
-            case '*':
-            case '<':
-            case '>':
-            case '=':
-            case '!':
-            case '-':
-            case '+':
-                al.get_attrs().emplace_back(line_range(lpc, lpc + 1),
-                                            VC_STYLE.value(symbol_attrs));
-                break;
-        }
-    }
-
-    pi.reset(line, skip);
-
-    while (string_literal_pcre.match(pc, pi)) {
-        pcre_context::capture_t* cap = pc.all();
-        struct line_range lr(cap->c_begin, cap->c_end);
-        string_attrs_t& sa = al.get_attrs();
-
-        remove_string_attr(sa, lr);
-
-        if (line[cap->c_end - 1] != '\'') {
-            sa.emplace_back(line_range(cap->c_begin, cap->c_begin + 1),
-                            VC_STYLE.value(error_attrs));
-            lr.lr_start += 1;
-        }
-        sa.emplace_back(lr, VC_STYLE.value(string_attrs));
     }
 
     for (int lpc = 0; brackets[lpc]; lpc++) {
-        find_matching_bracket(al, x, brackets[lpc][0], brackets[lpc][1]);
+        find_matching_bracket(al, x, sub, brackets[lpc][0], brackets[lpc][1]);
     }
 }
 
 void
 readline_sqlite_highlighter(attr_line_t& al, int x)
 {
-    readline_sqlite_highlighter_int(al, x, 0);
+    readline_sqlite_highlighter_int(
+        al, x, line_range{0, (int) al.get_string().length()});
 }
 
-void
-readline_shlex_highlighter(attr_line_t& al, int x)
+static void
+readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
-    view_colors& vc = view_colors::singleton();
-    int special_char = (A_BOLD | vc.attrs_for_role(role_t::VCR_SYMBOL));
-    int error_attrs = vc.attrs_for_role(role_t::VCR_ERROR) | A_REVERSE;
-    int string_attrs = vc.attrs_for_role(role_t::VCR_STRING);
+    attr_line_builder alb(al);
     const auto& str = al.get_string();
     pcre_context::capture_t cap;
     shlex_token_t token;
-    int quote_start = -1;
-    shlex lexer(str);
+    nonstd::optional<int> quote_start;
+    shlex lexer(string_fragment{al.al_string.data(), sub.lr_start, sub.lr_end});
 
     while (lexer.tokenize(cap, token)) {
         switch (token) {
             case shlex_token_t::ST_ERROR:
-                al.with_attr(string_attr(line_range(cap.c_begin, cap.c_end),
-                                         VC_STYLE.value(error_attrs)));
+                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
+                                            sub.lr_start + cap.c_end),
+                                 VC_STYLE.value(A_REVERSE));
+                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
+                                            sub.lr_start + cap.c_end),
+                                 VC_ROLE.value(role_t::VCR_ERROR));
                 break;
             case shlex_token_t::ST_TILDE:
             case shlex_token_t::ST_ESCAPE:
-                al.with_attr(string_attr(line_range(cap.c_begin, cap.c_end),
-                                         VC_STYLE.value(special_char)));
+                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
+                                            sub.lr_start + cap.c_end),
+                                 VC_ROLE.value(role_t::VCR_SYMBOL));
                 break;
             case shlex_token_t::ST_DOUBLE_QUOTE_START:
             case shlex_token_t::ST_SINGLE_QUOTE_START:
-                quote_start = cap.c_begin;
+                quote_start = sub.lr_start + cap.c_begin;
                 break;
             case shlex_token_t::ST_DOUBLE_QUOTE_END:
             case shlex_token_t::ST_SINGLE_QUOTE_END:
-                al.with_attr(string_attr(line_range(quote_start, cap.c_end),
-                                         VC_STYLE.value(string_attrs)));
-                quote_start = -1;
+                alb.overlay_attr(
+                    line_range(quote_start.value(), sub.lr_start + cap.c_end),
+                    VC_ROLE.value(role_t::VCR_STRING));
+                quote_start = nonstd::nullopt;
                 break;
             case shlex_token_t::ST_VARIABLE_REF:
             case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                 int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                auto ident = str.substr(cap.c_begin + 1 + extra,
+                auto ident = str.substr(sub.lr_start + cap.c_begin + 1 + extra,
                                         cap.length() - 1 - extra * 2);
-                int attrs = vc.attrs_for_ident(ident);
-
-                al.with_attr(string_attr(
-                    line_range(cap.c_begin, cap.c_begin + 1 + extra),
-                    VC_STYLE.value(special_char)));
-                al.with_attr(string_attr(
-                    line_range(cap.c_begin + 1 + extra, cap.c_end - extra),
-                    VC_STYLE.value(x == cap.c_end || cap.contains(x)
-                                       ? special_char
-                                       : attrs)));
+                alb.overlay_attr(
+                    line_range(sub.lr_start + cap.c_begin,
+                               sub.lr_start + cap.c_begin + 1 + extra),
+                    VC_ROLE.value(role_t::VCR_SYMBOL));
+                alb.overlay_attr(
+                    line_range(sub.lr_start + cap.c_begin + 1 + extra,
+                               sub.lr_start + cap.c_end - extra),
+                    VC_ROLE.value(x == sub.lr_start + cap.c_end
+                                          || cap.contains(x)
+                                      ? role_t::VCR_SYMBOL
+                                      : role_t::VCR_IDENTIFIER));
                 if (extra) {
-                    al.with_attr(
-                        string_attr(line_range(cap.c_end - 1, cap.c_end),
-                                    VC_STYLE.value(special_char)));
+                    alb.overlay_attr_for_char(
+                        sub.lr_start + cap.c_end - 1,
+                        VC_ROLE.value(role_t::VCR_SYMBOL));
                 }
                 break;
             }
@@ -563,8 +540,111 @@ readline_shlex_highlighter(attr_line_t& al, int x)
         }
     }
 
-    if (quote_start != -1) {
-        al.with_attr(string_attr(line_range(quote_start, quote_start + 1),
-                                 VC_STYLE.value(error_attrs)));
+    if (quote_start) {
+        alb.overlay_attr_for_char(quote_start.value(),
+                                  VC_ROLE.value(role_t::VCR_ERROR));
+    }
+}
+
+void
+readline_shlex_highlighter(attr_line_t& al, int x)
+{
+    readline_shlex_highlighter_int(
+        al, x, line_range{0, (int) al.al_string.length()});
+}
+
+static void
+readline_lnav_highlighter_int(attr_line_t& al, int x, line_range sub)
+{
+    switch (al.al_string[sub.lr_start]) {
+        case ':':
+            readline_command_highlighter_int(al, x, sub);
+            break;
+        case ';':
+            readline_sqlite_highlighter_int(al,
+                                            x,
+                                            line_range{
+                                                sub.lr_start + 1,
+                                                sub.lr_end,
+                                            });
+            break;
+        case '|':
+            break;
+        case '/':
+            readline_regex_highlighter_int(al,
+                                           x,
+                                           line_range{
+                                               sub.lr_start + 1,
+                                               sub.lr_end,
+                                           });
+            break;
+    }
+}
+
+void
+readline_lnav_highlighter(attr_line_t& al, int x)
+{
+    static const pcrepp COMMENT_RE{R"(^\s*#)"};
+
+    attr_line_builder alb(al);
+    size_t start = 0, lf_pos;
+    nonstd::optional<size_t> section_start;
+
+    while ((lf_pos = al.get_string().find('\n', start)) != std::string::npos) {
+        line_range line{(int) start, (int) lf_pos};
+
+        if (line.empty()) {
+            start = lf_pos + 1;
+            continue;
+        }
+
+        pcre_input pi(&al.al_string[line.lr_start], 0, line.length());
+        pcre_context_static<30> pc;
+
+        if (COMMENT_RE.match(pc, pi)) {
+            if (section_start) {
+                readline_lnav_highlighter_int(al,
+                                              x,
+                                              line_range{
+                                                  (int) section_start.value(),
+                                                  line.lr_start,
+                                              });
+                section_start = nonstd::nullopt;
+            }
+            const auto* cap = pc.all();
+            alb.overlay_attr(
+                line_range{line.lr_start + cap->c_begin, (int) lf_pos},
+                VC_ROLE.value(role_t::VCR_COMMENT));
+        } else {
+            switch (al.al_string[line.lr_start]) {
+                case ':':
+                case ';':
+                case '|':
+                case '/':
+                    if (section_start) {
+                        readline_lnav_highlighter_int(
+                            al,
+                            x,
+                            line_range{
+                                (int) section_start.value(),
+                                line.lr_start,
+                            });
+                    }
+
+                    section_start = line.lr_start;
+                    break;
+            }
+        }
+
+        start = lf_pos;
+    }
+
+    if (section_start) {
+        readline_lnav_highlighter_int(al,
+                                      x,
+                                      line_range{
+                                          (int) section_start.value(),
+                                          (int) al.al_string.length(),
+                                      });
     }
 }

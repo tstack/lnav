@@ -20,6 +20,11 @@ add_executable(test_auto_mem test_auto_mem.cc test_stubs.cc)
 target_link_libraries(test_auto_mem diag)
 add_test(NAME test_auto_mem COMMAND test_auto_mem)
 
+add_executable(document.sections.tests document.sections.tests.cc test_stubs.cc)
+target_include_directories(document.sections.tests PUBLIC ../src/third-party/doctest-root)
+target_link_libraries(document.sections.tests diag)
+add_test(NAME document.sections.tests COMMAND document.sections.tests)
+
 add_executable(test_bookmarks test_bookmarks.cc test_stubs.cc)
 target_link_libraries(test_bookmarks diag)
 add_test(NAME test_bookmarks COMMAND test_bookmarks)

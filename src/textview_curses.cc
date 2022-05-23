@@ -985,3 +985,91 @@ text_sub_source::text_crumbs_for_line(int line,
                                       std::vector<breadcrumb::crumb>& crumbs)
 {
 }
+
+logfile_filter_state::logfile_filter_state(std::shared_ptr<logfile> lf)
+    : tfs_logfile(std::move(lf))
+{
+    memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+    memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
+    memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
+    memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+    memset(this->tfs_last_message_matched,
+           0,
+           sizeof(this->tfs_last_message_matched));
+    memset(this->tfs_last_lines_for_message,
+           0,
+           sizeof(this->tfs_last_lines_for_message));
+    this->tfs_mask.reserve(64 * 1024);
+}
+
+void
+logfile_filter_state::clear()
+{
+    this->tfs_logfile = nullptr;
+    memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+    memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
+    memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
+    memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+    memset(this->tfs_last_message_matched,
+           0,
+           sizeof(this->tfs_last_message_matched));
+    memset(this->tfs_last_lines_for_message,
+           0,
+           sizeof(this->tfs_last_lines_for_message));
+    this->tfs_mask.clear();
+    this->tfs_index.clear();
+}
+
+void
+logfile_filter_state::clear_filter_state(size_t index)
+{
+    this->tfs_filter_count[index] = 0;
+    this->tfs_filter_hits[index] = 0;
+    this->tfs_message_matched[index] = false;
+    this->tfs_lines_for_message[index] = 0;
+    this->tfs_last_message_matched[index] = false;
+    this->tfs_last_lines_for_message[index] = 0;
+}
+
+void
+logfile_filter_state::clear_deleted_filter_state(uint32_t used_mask)
+{
+    for (int lpc = 0; lpc < MAX_FILTERS; lpc++) {
+        if (!(used_mask & (1L << lpc))) {
+            this->clear_filter_state(lpc);
+        }
+    }
+    for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
+        this->tfs_mask[lpc] &= used_mask;
+    }
+}
+
+void
+logfile_filter_state::resize(size_t newsize)
+{
+    size_t old_mask_size = this->tfs_mask.size();
+
+    this->tfs_mask.resize(newsize);
+    if (newsize > old_mask_size) {
+        memset(&this->tfs_mask[old_mask_size],
+               0,
+               sizeof(uint32_t) * (newsize - old_mask_size));
+    }
+}
+
+nonstd::optional<size_t>
+logfile_filter_state::content_line_to_vis_line(uint32_t line)
+{
+    if (this->tfs_index.empty()) {
+        return nonstd::nullopt;
+    }
+
+    auto iter = std::lower_bound(
+        this->tfs_index.begin(), this->tfs_index.end(), line);
+
+    if (iter == this->tfs_index.end() || *iter != line) {
+        return nonstd::nullopt;
+    }
+
+    return nonstd::make_optional(std::distance(this->tfs_index.begin(), iter));
+}

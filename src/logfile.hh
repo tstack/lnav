@@ -144,6 +144,8 @@ public:
 
     file_off_t get_index_size() const { return this->lf_index_size; }
 
+    nonstd::optional<const_iterator> line_for_offset(file_off_t off) const;
+
     /**
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.
@@ -248,6 +250,8 @@ public:
     struct timeval original_line_time(iterator ll);
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
+
+    Result<std::string, std::string> read_file();
 
     iterator line_base(iterator ll)
     {

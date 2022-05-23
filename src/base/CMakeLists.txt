@@ -3,6 +3,7 @@ add_library(
         ../config.h.in
         ansi_scrubber.cc
         attr_line.cc
+        attr_line.builder.cc
         auto_pid.cc
         date_time_scanner.cc
         fs_util.cc
@@ -24,6 +25,7 @@ add_library(
 
         ansi_scrubber.hh
         attr_line.hh
+        attr_line.builder.hh
         auto_fd.hh
         auto_mem.hh
         auto_pid.hh
@@ -58,6 +60,7 @@ target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses pthread)
 
 add_executable(
         test_base
+        attr_line.tests.cc
         fs_util.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc

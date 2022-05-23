@@ -95,7 +95,7 @@
 #include "opt_util.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
-static const size_t MAX_LOG_LINE_SIZE = 2048;
+static const size_t MAX_LOG_LINE_SIZE = 2 * 1024;
 
 static const char* CRASH_MSG
     = "\n"

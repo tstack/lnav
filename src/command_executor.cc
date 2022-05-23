@@ -947,9 +947,21 @@ exec_context::add_error_context(lnav::console::user_message& um)
     if (this->ec_current_help != nullptr) {
         attr_line_t help;
 
-        format_help_text_for_term(*this->ec_current_help, -1, help, true);
+        format_help_text_for_term(*this->ec_current_help, 70, help, true);
         um.with_help(help);
     }
+}
+
+exec_context::source_guard
+exec_context::enter_source(intern_string_t path,
+                           int line_number,
+                           const std::string& content)
+{
+    attr_line_t content_al{content};
+    content_al.with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+    this->ec_source.emplace(
+        lnav::console::snippet::from(path, content_al).with_line(line_number));
+    return {this};
 }
 
 exec_context::output_guard::output_guard(exec_context& context,

@@ -53,15 +53,14 @@ struct line_range {
     explicit line_range(int start = -1, int end = -1)
         : lr_start(start), lr_end(end){};
 
-    bool is_valid() const
-    {
-        return this->lr_start != -1;
-    }
+    bool is_valid() const { return this->lr_start != -1; }
 
     int length() const
     {
         return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
     }
+
+    bool empty() const { return this->length() == 0; }
 
     int end_for_string(const std::string& str) const
     {
@@ -70,17 +69,20 @@ struct line_range {
 
     bool contains(int pos) const
     {
-        return this->lr_start <= pos && pos < this->lr_end;
+        return this->lr_start <= pos
+            && (this->lr_end == -1 || pos < this->lr_end);
     }
 
     bool contains(const struct line_range& other) const
     {
-        return this->contains(other.lr_start) && other.lr_end <= this->lr_end;
+        return this->contains(other.lr_start)
+            && (this->lr_end == -1 || other.lr_end <= this->lr_end);
     }
 
     bool intersects(const struct line_range& other) const
     {
-        return this->contains(other.lr_start) || this->contains(other.lr_end);
+        return this->contains(other.lr_start) || this->contains(other.lr_end)
+            || other.contains(this->lr_start);
     }
 
     line_range intersection(const struct line_range& other) const;
@@ -347,6 +349,12 @@ struct text_wrap_settings {
         return *this;
     }
 
+    text_wrap_settings& with_padding_indent(int indent)
+    {
+        this->tws_padding_indent = indent;
+        return *this;
+    }
+
     text_wrap_settings& with_width(int width)
     {
         this->tws_width = width;
@@ -355,6 +363,7 @@ struct text_wrap_settings {
 
     int tws_indent{2};
     int tws_width{80};
+    int tws_padding_indent{0};
 };
 
 /**
@@ -504,6 +513,12 @@ public:
         return *this;
     }
 
+    attr_line_t& append(const string_fragment& str)
+    {
+        this->al_string.append(str.data(), str.length());
+        return *this;
+    }
+
     template<typename S>
     attr_line_t& append(S str)
     {
@@ -646,6 +661,16 @@ public:
         }
 
         return retval;
+    }
+
+    Result<size_t, const char*> utf8_length() const
+    {
+        return utf8_string_length(this->al_string);
+    }
+
+    ssize_t utf8_length_or_length() const
+    {
+        return utf8_string_length(this->al_string).unwrapOr(this->length());
     }
 
     std::string get_substring(const line_range& lr) const

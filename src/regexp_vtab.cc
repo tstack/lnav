@@ -52,15 +52,15 @@ struct regexp_capture {
 -- The regexp_capture() table-valued function allows you to execute a regular-
 -- expression over a given string and get the captured data as rows in a table.
 CREATE TABLE regexp_capture (
-    match_index integer,
-    capture_index integer,
-    capture_name text,
-    capture_count integer,
-    range_start integer,
-    range_stop integer,
-    content text,
-    value text HIDDEN,
-    pattern text HIDDEN
+    match_index INTEGER,
+    capture_index INTEGER,
+    capture_name TEXT,
+    capture_count INTEGER,
+    range_start INTEGER,
+    range_stop INTEGER,
+    content TEXT,
+    value TEXT HIDDEN,
+    pattern TEXT HIDDEN
 );
 )";
 

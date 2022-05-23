@@ -43,14 +43,10 @@
 #include "base/file_range.hh"
 #include "base/opt_util.hh"
 #include "data_scanner.hh"
-#include "intervaltree/IntervalTree.h"
+#include "document.sections.hh"
 
 class pretty_printer {
 public:
-    using key_t = mapbox::util::variant<std::string, size_t>;
-    using pretty_interval = interval_tree::Interval<file_off_t, key_t>;
-    using pretty_tree = interval_tree::IntervalTree<file_off_t, key_t>;
-
     struct element {
         element(data_token_t token, pcre_context& pc)
             : e_token(token), e_capture(*pc.all())
@@ -64,27 +60,6 @@ public:
 
         data_token_t e_token;
         pcre_context::capture_t e_capture;
-    };
-
-    struct hier_node {
-        hier_node* hn_parent{nullptr};
-        file_off_t hn_start{0};
-        std::multimap<std::string, hier_node*> hn_named_children;
-        std::vector<std::unique_ptr<hier_node>> hn_children;
-
-        nonstd::optional<hier_node*> lookup_child(key_t key) const;
-
-        static nonstd::optional<const hier_node*> lookup_path(
-            const hier_node* root, const std::vector<key_t>& path);
-
-        template<typename F>
-        static void depth_first(hier_node* root, F func)
-        {
-            for (auto& child : root->hn_children) {
-                depth_first(child.get(), func);
-            }
-            func(root);
-        }
     };
 
     pretty_printer(data_scanner* ds, string_attrs_t sa, int leading_indent = 0)
@@ -105,17 +80,18 @@ public:
         }
 
         this->pp_interval_state.resize(1);
-        this->pp_hier_nodes.push_back(std::make_unique<hier_node>());
+        this->pp_hier_nodes.push_back(
+            std::make_unique<lnav::document::hier_node>());
     }
 
     void append_to(attr_line_t& al);
 
-    std::vector<pretty_interval> take_intervals()
+    std::vector<lnav::document::section_interval_t> take_intervals()
     {
         return std::move(this->pp_intervals);
     }
 
-    std::unique_ptr<hier_node> take_hier_root()
+    std::unique_ptr<lnav::document::hier_node> take_hier_root()
     {
         return std::move(this->pp_hier_stage);
     }
@@ -152,9 +128,9 @@ private:
     int pp_shift_accum{0};
     bool pp_is_xml{false};
     std::vector<interval_state> pp_interval_state;
-    std::vector<pretty_interval> pp_intervals;
-    std::vector<std::unique_ptr<hier_node>> pp_hier_nodes;
-    std::unique_ptr<hier_node> pp_hier_stage;
+    std::vector<lnav::document::section_interval_t> pp_intervals;
+    std::vector<std::unique_ptr<lnav::document::hier_node>> pp_hier_nodes;
+    std::unique_ptr<lnav::document::hier_node> pp_hier_stage;
 };
 
 #endif

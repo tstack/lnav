@@ -34,6 +34,7 @@
 
 #include "filter_observer.hh"
 #include "logfile.hh"
+#include "plain_text_source.hh"
 #include "textview_curses.hh"
 
 class textfile_sub_source
@@ -92,6 +93,8 @@ public:
 
     void to_front(const std::shared_ptr<logfile>& lf);
 
+    void set_top_from_off(file_off_t off);
+
     void rotate_left();
 
     void rotate_right();
@@ -100,84 +103,18 @@ public:
 
     void push_back(const std::shared_ptr<logfile>& lf);
 
-    template<class T>
-    bool rescan_files(T& callback,
+    class scan_callback {
+    public:
+        virtual void closed_files(
+            const std::vector<std::shared_ptr<logfile>>& files)
+            = 0;
+        virtual void promote_file(const std::shared_ptr<logfile>& lf) = 0;
+        virtual void scanned_file(const std::shared_ptr<logfile>& lf) = 0;
+    };
+
+    bool rescan_files(scan_callback& callback,
                       nonstd::optional<ui_clock::time_point> deadline
-                      = nonstd::nullopt)
-    {
-        file_iterator iter;
-        bool retval = false;
-
-        if (this->tss_view->is_paused()) {
-            return retval;
-        }
-
-        std::vector<std::shared_ptr<logfile>> closed_files;
-        for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-            std::shared_ptr<logfile> lf = (*iter);
-
-            if (lf->is_closed()) {
-                iter = this->tss_files.erase(iter);
-                this->detach_observer(lf);
-                closed_files.template emplace_back(lf);
-                continue;
-            }
-
-            try {
-                uint32_t old_size = lf->size();
-                logfile::rebuild_result_t new_text_data
-                    = lf->rebuild_index(deadline);
-
-                if (lf->get_format() != nullptr) {
-                    iter = this->tss_files.erase(iter);
-                    this->detach_observer(lf);
-                    callback.promote_file(lf);
-                    continue;
-                }
-
-                switch (new_text_data) {
-                    case logfile::rebuild_result_t::NEW_LINES:
-                    case logfile::rebuild_result_t::NEW_ORDER:
-                        retval = true;
-                        break;
-                    default:
-                        break;
-                }
-                callback.scanned_file(lf);
-
-                uint32_t filter_in_mask, filter_out_mask;
-
-                this->get_filters().get_enabled_mask(filter_in_mask,
-                                                     filter_out_mask);
-                auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-                for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
-                    if (this->tss_apply_filters
-                        && lfo->excluded(filter_in_mask, filter_out_mask, lpc))
-                    {
-                        continue;
-                    }
-                    lfo->lfo_filter_state.tfs_index.push_back(lpc);
-                }
-            } catch (const line_buffer::error& e) {
-                iter = this->tss_files.erase(iter);
-                lf->close();
-                this->detach_observer(lf);
-                closed_files.template emplace_back(lf);
-                continue;
-            }
-
-            ++iter;
-        }
-        if (!closed_files.empty()) {
-            callback.closed_files(closed_files);
-        }
-
-        if (retval) {
-            this->tss_view->search_new_data();
-        }
-
-        return retval;
-    }
+                      = nonstd::nullopt);
 
     void text_filters_changed() override;
 
@@ -203,8 +140,22 @@ private:
         delete lfo;
     }
 
+    struct rendered_file {
+        time_t rf_mtime;
+        file_size_t rf_file_size;
+        std::unique_ptr<plain_text_source> rf_text_source;
+    };
+
+    struct metadata_state {
+        time_t ms_mtime;
+        file_size_t ms_file_size;
+        lnav::document::metadata ms_metadata;
+    };
+
     std::deque<std::shared_ptr<logfile>> tss_files;
     std::deque<std::shared_ptr<logfile>> tss_hidden_files;
+    std::unordered_map<std::string, rendered_file> tss_rendered_files;
+    std::unordered_map<std::string, metadata_state> tss_doc_metadata;
 };
 
 #endif

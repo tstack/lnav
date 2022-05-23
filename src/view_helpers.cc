@@ -32,11 +32,15 @@
 #include "base/humanize.hh"
 #include "base/itertools.hh"
 #include "config.h"
+#include "document.sections.hh"
 #include "environ_vtab.hh"
+#include "help-md.h"
 #include "help-txt.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
+#include "md2attr_line.hh"
+#include "md4cpp.hh"
 #include "pretty_printer.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
@@ -47,6 +51,7 @@
 #include "vtab_module.hh"
 
 using namespace std::chrono_literals;
+using namespace lnav::roles::literals;
 
 const char* lnav_view_strings[LNV__MAX + 1] = {
     "log",
@@ -130,7 +135,7 @@ public:
 
         const auto& tl = this->tds_lines[line];
         const auto initial_size = crumbs.size();
-        pretty_printer::hier_node* root_node;
+        lnav::document::hier_node* root_node{nullptr};
 
         this->pss_hier_tree->template visit_overlapping(
             tl.tl_offset,
@@ -144,7 +149,7 @@ public:
                     | lnav::itertools::append(iv.value);
                 auto poss_provider = [root_node, path]() {
                     std::vector<breadcrumb::possibility> retval;
-                    auto curr_node = pretty_printer::hier_node::lookup_path(
+                    auto curr_node = lnav::document::hier_node::lookup_path(
                         root_node, path);
                     if (curr_node) {
                         auto* parent_node = curr_node.value()->hn_parent;
@@ -161,7 +166,7 @@ public:
                 auto path_performer =
                     [this, root_node, path](
                         const breadcrumb::crumb::key_t& value) {
-                        auto curr_node = pretty_printer::hier_node::lookup_path(
+                        auto curr_node = lnav::document::hier_node::lookup_path(
                             root_node, path);
                         if (!curr_node) {
                             return;
@@ -202,13 +207,13 @@ public:
                                              std::move(poss_provider),
                                              std::move(path_performer));
                 auto curr_node
-                    = pretty_printer::hier_node::lookup_path(root_node, path);
+                    = lnav::document::hier_node::lookup_path(root_node, path);
                 if (curr_node
                     && curr_node.value()->hn_parent->hn_children.size()
                         != curr_node.value()
                                ->hn_parent->hn_named_children.size())
                 {
-                    auto node = pretty_printer::hier_node::lookup_path(
+                    auto node = lnav::document::hier_node::lookup_path(
                         root_node, path);
 
                     crumbs.back().c_expected_input
@@ -226,7 +231,7 @@ public:
 
         auto path = crumbs | lnav::itertools::skip(initial_size)
             | lnav::itertools::map(&breadcrumb::crumb::c_key);
-        auto node = pretty_printer::hier_node::lookup_path(root_node, path);
+        auto node = lnav::document::hier_node::lookup_path(root_node, path);
 
         if (node && !node.value()->hn_children.empty()) {
             auto poss_provider = [curr_node = node.value()]() {
@@ -267,12 +272,12 @@ public:
     }
 
     using hier_tree_t
-        = interval_tree::IntervalTree<file_off_t, pretty_printer::hier_node*>;
+        = interval_tree::IntervalTree<file_off_t, lnav::document::hier_node*>;
     using hier_interval_t
-        = interval_tree::Interval<file_off_t, pretty_printer::hier_node*>;
+        = interval_tree::Interval<file_off_t, lnav::document::hier_node*>;
 
-    std::shared_ptr<pretty_printer::pretty_tree> pss_interval_tree;
-    std::vector<std::unique_ptr<pretty_printer::hier_node>> pss_hier_nods;
+    std::shared_ptr<lnav::document::sections_tree_t> pss_interval_tree;
+    std::vector<std::unique_ptr<lnav::document::hier_node>> pss_hier_nods;
     std::shared_ptr<hier_tree_t> pss_hier_tree;
 };
 
@@ -294,8 +299,8 @@ open_pretty_view()
         return;
     }
 
-    std::vector<pretty_printer::pretty_interval> all_intervals;
-    std::vector<std::unique_ptr<pretty_printer::hier_node>> hier_nodes;
+    std::vector<lnav::document::section_interval_t> all_intervals;
+    std::vector<std::unique_ptr<lnav::document::hier_node>> hier_nodes;
     std::vector<pretty_sub_source::hier_interval_t> hier_tree_vec;
     if (top_tc == log_tc) {
         logfile_sub_source& lss = lnav_data.ld_log_source;
@@ -367,7 +372,7 @@ open_pretty_view()
                         interval.stop += prefix_al.length();
                     }
                 }
-                pretty_printer::hier_node::depth_first(
+                lnav::document::hier_node::depth_first(
                     line_hier_root.get(),
                     [line_off, prefix_len = prefix_al.length()](auto* hn) {
                         if (line_off <= hn->hn_start) {
@@ -383,7 +388,7 @@ open_pretty_view()
                 interval.start += start_off;
                 interval.stop += start_off;
             }
-            pretty_printer::hier_node::depth_first(
+            lnav::document::hier_node::depth_first(
                 line_hier_root.get(),
                 [start_off](auto* hn) { hn->hn_start += start_off; });
             hier_nodes.emplace_back(std::move(line_hier_root));
@@ -424,7 +429,7 @@ open_pretty_view()
         }
     }
     auto* pts = new pretty_sub_source();
-    pts->pss_interval_tree = std::make_shared<pretty_printer::pretty_tree>(
+    pts->pss_interval_tree = std::make_shared<lnav::document::sections_tree_t>(
         std::move(all_intervals));
     pts->pss_hier_nods = std::move(hier_nodes);
     pts->pss_hier_tree = std::make_shared<pretty_sub_source::hier_tree_t>(
@@ -438,6 +443,12 @@ open_pretty_view()
     pretty_tc->redo_search();
 }
 
+template<typename T>
+static void
+ignore_case(const T&)
+{
+}
+
 static void
 build_all_help_text()
 {
@@ -445,13 +456,15 @@ build_all_help_text()
         return;
     }
 
-    attr_line_t all_help_text;
-    shlex lexer(help_txt.to_string_fragment());
+    shlex lexer(help_md.to_string_fragment());
     std::string sub_help_text;
 
     lexer.with_ignore_quotes(true).eval(
         sub_help_text, lnav_data.ld_exec_context.ec_global_vars);
-    all_help_text.with_ansi_string(sub_help_text);
+
+    md2attr_line mdal;
+    auto parse_res = md4cpp::parse(sub_help_text, mdal);
+    attr_line_t all_help_text = parse_res.unwrap();
 
     std::map<std::string, help_text*> sql_funcs;
     std::map<std::string, help_text*> sql_keywords;
@@ -470,9 +483,26 @@ build_all_help_text()
         }
     }
 
+    all_help_text.append("\n").append("Command Reference"_h2);
+
+    for (const auto& cmd : lnav_commands) {
+        if (cmd.second->c_help.ht_summary == nullptr) {
+            continue;
+        }
+        all_help_text.append(2, '\n');
+        format_help_text_for_term(cmd.second->c_help, 70, all_help_text);
+        if (!cmd.second->c_help.ht_example.empty()) {
+            all_help_text.append("\n");
+            format_example_text_for_term(
+                cmd.second->c_help, eval_example, 90, all_help_text);
+        }
+    }
+
+    all_help_text.append("\n").append("SQL Reference"_h2);
+
     for (const auto& iter : sql_funcs) {
         all_help_text.append(2, '\n');
-        format_help_text_for_term(*iter.second, 79, all_help_text);
+        format_help_text_for_term(*iter.second, 70, all_help_text);
         if (!iter.second->ht_example.empty()) {
             all_help_text.append(1, '\n');
             format_example_text_for_term(
@@ -482,7 +512,7 @@ build_all_help_text()
 
     for (const auto& iter : sql_keywords) {
         all_help_text.append(2, '\n');
-        format_help_text_for_term(*iter.second, 79, all_help_text);
+        format_help_text_for_term(*iter.second, 70, all_help_text);
         if (!iter.second->ht_example.empty()) {
             all_help_text.append(1, '\n');
             format_example_text_for_term(

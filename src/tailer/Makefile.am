@@ -40,7 +40,8 @@ libtailercommon_a_SOURCES = \
 libtailerpp_a_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
-    -I$(srcdir)/../fmtlib
+    -I$(srcdir)/../fmtlib \
+    -I$(srcdir)/../third-party
 
 libtailerpp_a_SOURCES = \
     tailerpp.cc
@@ -51,7 +52,8 @@ tailerbin.h tailerbin.cc: tailer tailer.ape ../tools/bin2c$(BUILD_EXEEXT)
 libtailerservice_a_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
-    -I$(srcdir)/../fmtlib
+    -I$(srcdir)/../fmtlib \
+    -I$(srcdir)/../third-party
 
 libtailerservice_a_LIBADD = \
     libtailercommon.a \

@@ -1,10 +1,10 @@
 [31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
-[36m | [0m                "pattern": "abc(def"
+[36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
-[36m | [0mabc(def
-[36m | [0m       [31m^ [0m[31mmissing )[0m
+[36m | [0mabc(def                                 
+[36m | [0m       [31m^ [0m[31mmissing )[0m                      
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/search-table/bad_table_regex/pattern[0m [4m<regex>[0m
          [1mDescription[0m
@@ -12,9 +12,9 @@
 [31m✘ error[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression for property “[1m/bad_regex_log/regex/std/pattern[0m”
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:6
-[36m | [0m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"
+[36m | [0m[37m[40m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"[0m
 [36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
-[36m | [0m^(?<timestamp>\d+: (?<body>.*)$
+[36m | [0m^(?<timestamp>\d+: (?<body>.*)$           
 [36m | [0m                               [31m^ [0m[31mmissing )[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/regex/std/pattern[0m [4m<message-regex>[0m
@@ -23,10 +23,10 @@
 [31m✘ error[0m: “(foo” is not a valid regular expression for property “[1m/bad_regex_log/level/error[0m”
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:10
-[36m | [0m            "error" : "(foo"
+[36m | [0m[37m[40m            "error" : "(foo"            [0m
 [36m --> [0m[1m/bad_regex_log/level/error[0m
-[36m | [0m(foo
-[36m | [0m    [31m^ [0m[31mmissing )[0m
+[36m | [0m(foo                                    
+[36m | [0m    [31m^ [0m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/level/error[0m [4m<pattern|integer>[0m
          [1mDescription[0m
@@ -34,17 +34,17 @@
 [31m✘ error[0m: “abc(” is not a valid regular expression for property “[1m/bad_regex_log/highlights/foobar/pattern[0m”
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:22
-[36m | [0m                "pattern": "abc("
+[36m | [0m[37m[40m                "pattern": "abc("       [0m
 [36m --> [0m[1m/bad_regex_log/highlights/foobar/pattern[0m
-[36m | [0mabc(
-[36m | [0m    [31m^ [0m[31mmissing )[0m
+[36m | [0mabc(                                    
+[36m | [0m    [31m^ [0m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/highlights/foobar/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            A regular expression to highlight in logs of this format.
 [31m✘ error[0m: “foo” is not a valid value for option “[1m/bad_sample_log/value/pid/kind[0m”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:24
-[36m | [0m                "kind": "foo"
+[36m | [0m[37m[40m                "kind": "foo"           [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_sample_log/value/pid/kind[0m [4m<data-type>[0m
          [1mDescription[0m
@@ -53,7 +53,7 @@
            [1mstring[0m, [1minteger[0m, [1mfloat[0m, [1mboolean[0m, [1mjson[0m, [1mstruct[0m, [1mquoted[0m, [1mxml[0m
 [31m✘ error[0m: '[1mbad[0m' is not a supported log format $schema version
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-schema/format.json[0m:2
-[36m | [0m    "$schema": "bad"
+[36m | [0m[37m[40m    "$schema": "bad"                    [0m
 [36m =[0m [36mnote[0m: expecting one of the following $schema values:
          [1m  https://lnav.org/schemas/format-v1.schema.json[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
@@ -87,6 +87,7 @@
          [1msemi      [0m = “^(?<timestamp>\d+); (?<body>\w+)$”
          [1mstd       [0m = “^(?<timestamp>\d+): (?<pid>\w+) (?<body>.*)$”
          [1mwith-level[0m = “^(?<timestamp>\d+)\| (?<level>\w+) (?<body>\w+)$”
+         
 [31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
@@ -110,10 +111,10 @@
 [31m✘ error[0m: failed to compile SQL statement
  [31mreason[0m: near "TALE": syntax error
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init.sql[0m:4
-[36m | [0m-- comment test
-[36m | [0mCREATE TALE
+[36m | [0m[37m[40m-- comment test                         [0m
+[36m | [0m[37m[40mCREATE TALE                             [0m
 [31m✘ error[0m: failed to execute SQL statement
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init2.sql[0m
-[36m | [0mSELECT regexp_match('abc(', '123')
-[36m | [0mFROM sqlite_master;
+[36m | [0m[37m[40mSELECT regexp_match('abc(', '123')      [0m
+[36m | [0m[37m[40mFROM sqlite_master;                     [0m

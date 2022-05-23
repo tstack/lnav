@@ -1,0 +1,6 @@
+[31m✘ error[0m: filter expression failed with: unable to parse time slice value: bad -- Unrecognized input
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:filter-expr timeslice(:log_time_msecs, 'bad') is not null[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
+         ══════════════════════════════════════════════════════════════════════
+           Set the filter expression

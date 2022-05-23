@@ -45,6 +45,7 @@ extern string_attr_type<void> SQL_STRING_ATTR;
 extern string_attr_type<void> SQL_OPERATOR_ATTR;
 extern string_attr_type<void> SQL_PAREN_ATTR;
 extern string_attr_type<void> SQL_GARBAGE_ATTR;
+extern string_attr_type<void> SQL_COMMENT_ATTR;
 
 void annotate_sql_statement(attr_line_t& al_inout);
 

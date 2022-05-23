@@ -189,17 +189,23 @@ public:
 
     pcre_input(const string_fragment& s)
         : pi_offset(0), pi_next_offset(0), pi_length(s.length()),
-          pi_string(s.data()){};
+          pi_string(s.data())
+    {
+    }
 
     pcre_input(const intern_string_t& s)
         : pi_offset(0), pi_next_offset(0), pi_length(s.size()),
-          pi_string(s.get()){};
+          pi_string(s.get())
+    {
+    }
 
     pcre_input(const string_fragment&&) = delete;
 
     pcre_input(const std::string& str, size_t off = 0)
         : pi_offset(off), pi_next_offset(off), pi_length(str.length()),
-          pi_string(str.c_str()){};
+          pi_string(str.c_str())
+    {
+    }
 
     pcre_input(const std::string&&, size_t off = 0) = delete;
 
@@ -227,6 +233,15 @@ public:
     {
         return intern_string::lookup(&this->pi_string[iter->c_begin],
                                      iter->length());
+    }
+
+    string_fragment get_string_fragment(pcre_context::const_iterator iter) const
+    {
+        return string_fragment{
+            this->pi_string,
+            iter->c_begin,
+            iter->c_end,
+        };
     }
 
     nonstd::optional<std::string> get_substr_opt(
@@ -276,9 +291,11 @@ struct pcre_named_capture {
     class iterator {
     public:
         iterator(pcre_named_capture* pnc, size_t name_len)
-            : i_named_capture(pnc), i_name_len(name_len){};
+            : i_named_capture(pnc), i_name_len(name_len)
+        {
+        }
 
-        iterator() : i_named_capture(nullptr), i_name_len(0){};
+        iterator() : i_named_capture(nullptr), i_name_len(0) {}
 
         const pcre_named_capture& operator*() const
         {
@@ -341,12 +358,14 @@ public:
     class error : public std::exception {
     public:
         error(std::string msg, int offset = 0)
-            : e_msg(std::move(msg)), e_offset(offset){};
+            : e_msg(std::move(msg)), e_offset(offset)
+        {
+        }
 
         const char* what() const noexcept override
         {
             return this->e_msg.c_str();
-        };
+        }
 
         const std::string e_msg;
         int e_offset;

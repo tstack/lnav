@@ -97,9 +97,14 @@ struct crumb {
     crumb& with_possible_range(size_t count)
     {
         this->c_possible_range = count;
-        this->c_search_placeholder
-            = fmt::format(FMT_STRING("(Enter a number from 0 to {})"),
-                          this->c_possible_range.value() - 1);
+        if (count == 0) {
+            this->c_search_placeholder = "(Array is empty)";
+        } else if (count == 1) {
+            this->c_search_placeholder = "(Array contains a single element)";
+        } else {
+            this->c_search_placeholder = fmt::format(
+                FMT_STRING("(Enter a number from 0 to {})"), count - 1);
+        }
         return *this;
     }
 

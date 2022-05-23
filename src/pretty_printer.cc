@@ -106,7 +106,9 @@ pretty_printer::append_to(attr_line_t& al)
             case DT_COMMA:
                 if (this->pp_depth > 0) {
                     this->flush_values(true);
-                    this->append_child_node();
+                    if (!this->pp_is_xml) {
+                        this->append_child_node();
+                    }
                     this->write_element(el);
                     this->start_new_line();
                     this->pp_interval_state.back().is_start
@@ -315,7 +317,9 @@ pretty_printer::ascend()
         this->pp_body_lines.pop();
         this->pp_body_lines.top() += lines;
 
-        this->append_child_node();
+        if (!this->pp_is_xml) {
+            this->append_child_node();
+        }
         this->pp_interval_state.pop_back();
         this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
         this->pp_hier_nodes.pop_back();
@@ -330,7 +334,8 @@ pretty_printer::descend()
     this->pp_depth += 1;
     this->pp_body_lines.push(0);
     this->pp_interval_state.resize(this->pp_depth + 1);
-    this->pp_hier_nodes.push_back(std::make_unique<hier_node>());
+    this->pp_hier_nodes.push_back(
+        std::make_unique<lnav::document::hier_node>());
 }
 
 void
@@ -342,15 +347,16 @@ pretty_printer::append_child_node()
     }
 
     auto* top_node = this->pp_hier_nodes.back().get();
-    auto new_key = ivstate.is_name.empty() ? key_t{top_node->hn_children.size()}
-                                           : key_t{ivstate.is_name};
+    auto new_key = ivstate.is_name.empty()
+        ? lnav::document::section_key_t{top_node->hn_children.size()}
+        : lnav::document::section_key_t{ivstate.is_name};
     this->pp_intervals.emplace_back(
         ivstate.is_start.value(),
         static_cast<ssize_t>(this->pp_stream.tellp()),
         new_key);
     auto new_node = this->pp_hier_stage != nullptr
         ? std::move(this->pp_hier_stage)
-        : std::make_unique<hier_node>();
+        : std::make_unique<lnav::document::hier_node>();
     auto* retval = new_node.get();
     new_node->hn_parent = top_node;
     new_node->hn_start = this->pp_intervals.back().start;
@@ -363,44 +369,4 @@ pretty_printer::append_child_node()
     top_node->hn_children.emplace_back(std::move(new_node));
     ivstate.is_start = nonstd::nullopt;
     ivstate.is_name.clear();
-}
-
-nonstd::optional<pretty_printer::hier_node*>
-pretty_printer::hier_node::lookup_child(pretty_printer::key_t key) const
-{
-    return make_optional_from_nullable(key.match(
-        [this](const std::string& str) -> pretty_printer::hier_node* {
-            auto iter = this->hn_named_children.find(str);
-            if (iter != this->hn_named_children.end()) {
-                return iter->second;
-            }
-            return nullptr;
-        },
-        [this](size_t index) -> pretty_printer::hier_node* {
-            if (index < this->hn_children.size()) {
-                return this->hn_children[index].get();
-            }
-            return nullptr;
-        }));
-}
-
-nonstd::optional<const pretty_printer::hier_node*>
-pretty_printer::hier_node::lookup_path(const pretty_printer::hier_node* root,
-                                       const std::vector<key_t>& path)
-{
-    auto retval = nonstd::make_optional(root);
-
-    for (const auto& comp : path) {
-        if (!retval) {
-            break;
-        }
-
-        retval = retval.value()->lookup_child(comp);
-    }
-
-    if (!retval) {
-        return nonstd::nullopt;
-    }
-
-    return retval;
 }

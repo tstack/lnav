@@ -348,6 +348,16 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/h6",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "hr": {
+                                            "description": "Styling for horizontal rules",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/hr",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "hyperlink": {
+                                            "description": "Styling for hyperlinks",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/hyperlink",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "list-glyph": {
                                             "description": "Styling for glyphs that prefix a list item",
                                             "title": "/ui/theme-defs/<theme_name>/styles/list-glyph",
@@ -356,6 +366,36 @@
                                         "breadcrumb": {
                                             "description": "Styling for the separator between breadcrumbs",
                                             "title": "/ui/theme-defs/<theme_name>/styles/breadcrumb",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "table-border": {
+                                            "description": "Styling for table borders",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/table-border",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "table-header": {
+                                            "description": "Styling for table headers",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/table-header",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "quote-border": {
+                                            "description": "Styling for quoted-block borders",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/quote-border",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "quoted-text": {
+                                            "description": "Styling for quoted text blocks",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/quoted-text",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "footnote-border": {
+                                            "description": "Styling for footnote borders",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/footnote-border",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "footnote-text": {
+                                            "description": "Styling for footnote text",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/footnote-text",
                                             "$ref": "#/definitions/style"
                                         }
                                     },
@@ -366,6 +406,16 @@
                                     "title": "/ui/theme-defs/<theme_name>/syntax-styles",
                                     "type": "object",
                                     "properties": {
+                                        "quoted-code": {
+                                            "description": "Styling for quoted code blocks",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/quoted-code",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "code-border": {
+                                            "description": "Styling for quoted-code borders",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/code-border",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "keyword": {
                                             "description": "Styling for keywords in source files",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/keyword",

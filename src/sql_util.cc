@@ -685,6 +685,8 @@ sql_compile_script(sqlite3* db,
             } else {
                 sql_content.append(script);
             }
+            sql_content.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             errors.emplace_back(
                 lnav::console::user_message::error(
                     "failed to compile SQL statement")
@@ -766,16 +768,18 @@ sql_execute_script(sqlite3* db,
                 }
 
                 default: {
+                    attr_line_t sql_content(sqlite3_sql(stmt));
                     const char* errmsg;
 
                     errmsg = sqlite3_errmsg(db);
+                    sql_content.with_attr_for_all(
+                        VC_ROLE.value(role_t::VCR_QUOTED_CODE));
                     errors.emplace_back(
                         lnav::console::user_message::error(
                             "failed to execute SQL statement")
                             .with_reason(errmsg)
                             .with_snippet(lnav::console::snippet::from(
-                                intern_string::lookup(src_name),
-                                sqlite3_sql(stmt))));
+                                intern_string::lookup(src_name), sql_content)));
                     done = true;
                     break;
                 }
@@ -897,10 +901,12 @@ string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
 string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
 string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
 string_attr_type<void> SQL_STRING_ATTR("sql_string");
+string_attr_type<void> SQL_UNTERMINATED_STRING_ATTR("sql_unstring");
 string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
 string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
 string_attr_type<void> SQL_COMMA_ATTR("sql_comma");
 string_attr_type<void> SQL_GARBAGE_ATTR("sql_garbage");
+string_attr_type<void> SQL_COMMENT_ATTR("sql_comment");
 
 void
 annotate_sql_statement(attr_line_t& al)
@@ -919,6 +925,7 @@ annotate_sql_statement(attr_line_t& al)
         {pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])",
                 PCRE_CASELESS},
          &SQL_IDENTIFIER_ATTR},
+        {pcrepp{R"(\A--.*)"}, &SQL_COMMENT_ATTR},
         {pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR},
         {pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR},
     };

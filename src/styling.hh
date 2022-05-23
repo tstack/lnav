@@ -184,6 +184,8 @@ struct lnav_theme {
     style_config lt_style_status_disabled_title;
     style_config lt_style_status_subtitle;
     style_config lt_style_status_hotkey;
+    style_config lt_style_quoted_code;
+    style_config lt_style_code_border;
     style_config lt_style_keyword;
     style_config lt_style_string;
     style_config lt_style_comment;
@@ -207,8 +209,16 @@ struct lnav_theme {
     style_config lt_style_inactive_alert_status;
     style_config lt_style_file;
     style_config lt_style_header[6];
+    style_config lt_style_hr;
+    style_config lt_style_hyperlink;
     style_config lt_style_list_glyph;
     style_config lt_style_breadcrumb;
+    style_config lt_style_table_border;
+    style_config lt_style_table_header;
+    style_config lt_style_quote_border;
+    style_config lt_style_quoted_text;
+    style_config lt_style_footnote_border;
+    style_config lt_style_footnote_text;
     std::map<log_level_t, style_config> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

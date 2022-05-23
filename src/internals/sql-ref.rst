@@ -3370,7 +3370,8 @@ timeslice(*time*, *slice*)
 
     .. code-block::  custsqlite
 
-      ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1) FROM lnav_example_log GROUP BY slice
+      ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1)
+    FROM lnav_example_log GROUP BY slice
                slice          count(1) 
       2017-02-03 04:05:00.000        2 
       2017-02-03 04:25:00.000        1 

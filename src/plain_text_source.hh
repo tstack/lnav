@@ -35,6 +35,7 @@
 
 #include "base/attr_line.hh"
 #include "base/file_range.hh"
+#include "document.sections.hh"
 #include "textview_curses.hh"
 
 class plain_text_source
@@ -116,15 +117,19 @@ public:
         return this;
     }
 
+    void text_crumbs_for_line(int line,
+                              std::vector<breadcrumb::crumb>& crumbs) override;
+
 protected:
     size_t compute_longest_line();
 
-    nonstd::optional<vis_line_t> line_for_offset(file_off_t off);
+    nonstd::optional<vis_line_t> line_for_offset(file_off_t off) const;
 
     std::vector<text_line> tds_lines;
     text_format_t tds_text_format{text_format_t::TF_UNKNOWN};
     size_t tds_longest_line{0};
     bool tds_reverse_selection{false};
+    lnav::document::metadata tds_doc_sections;
 };
 
 #endif  // LNAV_PLAIN_TEXT_SOURCE_HH

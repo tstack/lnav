@@ -1260,6 +1260,13 @@ public:
             });
     }
 
+    yajlpp_parser& with_ignore_unused(bool value)
+    {
+        this->yp_parse_context.with_ignore_unused(value);
+
+        return *this;
+    }
+
     Result<T, std::vector<lnav::console::user_message>> of(
         const string_fragment& json)
     {

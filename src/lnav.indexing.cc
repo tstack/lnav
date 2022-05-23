@@ -110,9 +110,10 @@ rebuild_hist()
     lss.reload_index_delegate();
 }
 
-class textfile_callback {
+class textfile_callback : public textfile_sub_source::scan_callback {
 public:
-    void closed_files(const std::vector<std::shared_ptr<logfile>>& files)
+    void closed_files(
+        const std::vector<std::shared_ptr<logfile>>& files) override
     {
         for (const auto& lf : files) {
             log_info("closed text files: %s", lf->get_filename().c_str());
@@ -120,7 +121,7 @@ public:
         lnav_data.ld_active_files.close_files(files);
     }
 
-    void promote_file(const std::shared_ptr<logfile>& lf)
+    void promote_file(const std::shared_ptr<logfile>& lf) override
     {
         if (lnav_data.ld_log_source.insert_file(lf)) {
             this->did_promotion = true;
@@ -150,7 +151,7 @@ public:
         }
     }
 
-    void scanned_file(const std::shared_ptr<logfile>& lf)
+    void scanned_file(const std::shared_ptr<logfile>& lf) override
     {
         if (!lnav_data.ld_files_to_front.empty()
             && lnav_data.ld_files_to_front.front().first == lf->get_filename())

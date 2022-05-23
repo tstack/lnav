@@ -1,13 +1,15 @@
 
 include $(top_srcdir)/aminclude_static.am
 
+CXXFLAGS =
+
 SUBDIRS = tools fmtlib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
 
 bin_PROGRAMS = lnav
 
 noinst_PROGRAMS = lnav-test
 
-noinst_LIBRARIES = libdiag.a
+noinst_LIBRARIES = libdiag.a libdatascanner.a
 
 PTIME_V = $(PTIME_V_@AM_V@)
 PTIME_V_ = $(PTIME_V_@AM_DEFAULT_V@)
@@ -52,6 +54,9 @@ builtin-sh-scripts.h builtin-sh-scripts.cc: tools/bin2c$(BUILD_EXEEXT) $(BUILTIN
 %-txt.cc %-txt.h: $(srcdir)/%.txt tools/bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-txt $<
 
+%-md.cc %-md.h: $(srcdir)/%.md tools/bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-md $<
+
 %-sql.cc %-sql.h: $(srcdir)/%.sql tools/bin2c$(BUILD_EXEEXT)
 	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-sql $<
 
@@ -81,7 +86,9 @@ log_format_loader.$(OBJEXT): \
 
 styling.$(OBJEXT): ansi-palette-json.h xterm-palette-json.h
 
-view_helpers.$(OBJEXT): help-txt.h
+view_helpers.$(OBJEXT): help-txt.h help-md.h
+
+md4cpp.$(OBJEXT): xml-entities-json.h emojis-json.h
 
 LNAV_BUILT_FILES = \
     ansi-palette-json.h \
@@ -94,17 +101,23 @@ LNAV_BUILT_FILES = \
     default-config.cc \
     default-formats.h \
     default-formats.cc \
+    emojis-json.h \
+    emojis-json.cc \
     help-txt.h \
     help-txt.cc \
+    help-md.h \
+    help-md.cc \
     init-sql.h \
     init-sql.cc \
     time_fmts.cc \
+    xml-entities-json.h \
+    xml-entities-json.cc \
     xterm-palette-json.h \
     xterm-palette-json.cc
 
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
-AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -127,6 +140,7 @@ AM_CPPFLAGS = \
 
 LDADD = \
 	libdiag.a \
+	libdatascanner.a \
 	base/libbase.a \
 	formats/logfmt/liblogfmt.a \
 	fmtlib/libcppfmt.a \
@@ -143,16 +157,22 @@ LDADD = \
 	$(LIBARCHIVE_LIBS) \
 	$(LIBCURL)
 
+# emojis.json is from https://gist.github.com/oliveratgithub/0bf11a9aff0d6da7b46f1490f86a71eb/
+# xml-entities.json is from https://html.spec.whatwg.org/entities.json
+
 dist_noinst_DATA = \
 	alpha-release.sh \
 	ansi-palette.json \
+	emojis.json \
 	$(BUILTIN_LNAVSCRIPTS) \
 	$(BUILTIN_SHSCRIPTS) \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
+	xml-entities.json \
 	xterm-palette.json
 
 noinst_HEADERS = \
+    third-party/md4c/md4c.h \
 	all_logs_vtab.hh \
 	archive_manager.hh \
 	archive_manager.cfg.hh \
@@ -172,6 +192,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	db_sub_source.hh \
 	doc_status_source.hh \
+	document.sections.hh \
 	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
@@ -187,6 +208,7 @@ noinst_HEADERS = \
 	fts_fuzzy_match.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
+	help.md \
 	help.txt \
 	help_text.hh \
 	help_text_formatter.hh \
@@ -226,6 +248,8 @@ noinst_HEADERS = \
 	mapbox/variant.hpp \
 	mapbox/variant_io.hpp \
 	mapbox/variant_visitor.hpp \
+	md2attr_line.hh \
+	md4cpp.hh \
 	optional.hpp \
 	papertrail_proc.hh \
 	pcap_manager.hh \
@@ -322,8 +346,15 @@ THIRD_PARTY_SRCS = \
     third-party/CLI/ConfigFwd.hpp \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
+    third-party/md4c/md4c.c \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
+
+libdatascanner_a_SOURCES = \
+	data_scanner_re.cc
+# XXX The data_scanner_re optimized build is taking 30+ minutes to run for
+# some reason, so we need to override the flags
+libdatascanner_a_CXXFLAGS = -O1
 
 libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \
@@ -337,8 +368,8 @@ libdiag_a_SOURCES = \
 	command_executor.cc \
 	curl_looper.cc \
 	data_scanner.cc \
-	data_scanner_re.cc \
 	db_sub_source.cc \
+	document.sections.cc \
 	dump_internals.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
@@ -377,6 +408,8 @@ libdiag_a_SOURCES = \
 	log_search_table.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
+	md2attr_line.cc \
+	md4cpp.cc \
 	network-extension-functions.cc \
 	data_parser.cc \
 	papertrail_proc.cc \

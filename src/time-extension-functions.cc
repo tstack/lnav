@@ -193,7 +193,7 @@ time_extension_functions(struct FuncDef** basic_funcs,
                     "To group log messages into five minute buckets and count "
                     "them",
                     "SELECT timeslice(log_time_msecs, '5m') AS slice, "
-                    "count(1) FROM lnav_example_log GROUP BY slice",
+                    "count(1)\n    FROM lnav_example_log GROUP BY slice",
                 })
                 .with_example({
                     "To group log messages by those before 4:30am and after",

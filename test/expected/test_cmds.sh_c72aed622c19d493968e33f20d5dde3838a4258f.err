@@ -1,0 +1,6 @@
+[31m✘ error[0m: invalid unix time -- abc
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:unix-time abc                          [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4munix-time[0m[4m [0m[4mseconds[0m
+         ══════════════════════════════════════════════════════════════════════
+           Convert epoch time to a human-readable form

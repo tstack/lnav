@@ -82,6 +82,13 @@ private:
         breadcrumb_curses* sos_parent{nullptr};
     };
 
+    enum class perform_behavior_t {
+        always,
+        if_different,
+    };
+
+    void perform_selection(perform_behavior_t behavior);
+
     WINDOW* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
     int bc_y{0};

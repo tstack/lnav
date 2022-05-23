@@ -11,8 +11,9 @@ check_error_output "read worked with a nonexistent file?" <<EOF
 ✘ error: unable to read script file: nonexistent-file -- No such file or directory
  --> command-option:1
  | ;.read nonexistent-file
- = help: Synopsis
-           ;.read path - Execute the SQLite statements in the given file
+ = help: ;.read path
+         ══════════════════════════════════════════════════════════════════════
+           Execute the SQLite statements in the given file
 EOF
 
 run_test ${lnav_test} -n \
@@ -668,8 +669,9 @@ check_error_output "spectrogram worked without log_time?" <<EOF
 ✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
  --> command-option:2
  | :spectrogram sc_bytes
- = help: Synopsis
-           :spectrogram field-name - Visualize the given message field using a spectrogram
+ = help: :spectrogram field-name
+         ══════════════════════════════════════════════════════════════════════
+           Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -681,8 +683,9 @@ check_error_output "spectrogram worked with bad column?" <<EOF
 ✘ error: unknown column -- sc_byes
  --> command-option:2
  | :spectrogram sc_byes
- = help: Synopsis
-           :spectrogram field-name - Visualize the given message field using a spectrogram
+ = help: :spectrogram field-name
+         ══════════════════════════════════════════════════════════════════════
+           Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -694,8 +697,9 @@ check_error_output "spectrogram worked with non-numeric column?" <<EOF
 ✘ error: column is not numeric -- c_ip
  --> command-option:2
  | :spectrogram c_ip
- = help: Synopsis
-           :spectrogram field-name - Visualize the given message field using a spectrogram
+ = help: :spectrogram field-name
+         ══════════════════════════════════════════════════════════════════════
+           Visualize the given message field using a spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -707,8 +711,9 @@ check_error_output "spectrogram worked with unordered log_time?" <<EOF
 ✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
  --> command-option:2
  | :spectrogram sc_bytes
- = help: Synopsis
-           :spectrogram field-name - Visualize the given message field using a spectrogram
+ = help: :spectrogram field-name
+         ══════════════════════════════════════════════════════════════════════
+           Visualize the given message field using a spectrogram
 EOF
 
 cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times_test.0
@@ -1551,8 +1556,9 @@ check_error_output "able to delete unknown table?" <<EOF
 ✘ error: unknown search table -- search_test1
  --> command-option:1
  | :delete-search-table search_test1
- = help: Synopsis
-           :delete-search-table table-name - Create an SQL table based on a regex search
+ = help: :delete-search-table table-name
+         ══════════════════════════════════════════════════════════════════════
+           Create an SQL table based on a regex search
 EOF
 
 run_test ${lnav_test} -n \
@@ -1564,8 +1570,9 @@ check_error_output "able to delete logline table?" <<EOF
 ✘ error: unknown search table -- search_test1
  --> command-option:2
  | :delete-search-table search_test1
- = help: Synopsis
-           :delete-search-table table-name - Create an SQL table based on a regex search
+ = help: :delete-search-table table-name
+         ══════════════════════════════════════════════════════════════════════
+           Create an SQL table based on a regex search
 EOF
 
 run_test ${lnav_test} -n \
@@ -1576,8 +1583,9 @@ check_error_output "able to create table with a bad regex?" <<EOF
 ✘ error: missing )
  --> command-option:1
  | :create-search-table search_test1 bad(
- = help: Synopsis
-           :create-search-table table-name [pattern] - Create an SQL table based on a regex search
+ = help: :create-search-table table-name [pattern]
+         ══════════════════════════════════════════════════════════════════════
+           Create an SQL table based on a regex search
 EOF
 
 NULL_GRAPH_SELECT_1=$(cat <<EOF

@@ -258,6 +258,8 @@ view_curses::mvwattrline(WINDOW* window,
             short attr_fg = iter->sa_value.get<int64_t>();
             if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
                 attr_fg = vc.color_for_ident(al.to_string_fragment(iter));
+            } else if (attr_fg < 8) {
+                attr_fg = vc.ansi_to_theme_color(attr_fg);
             }
             std::fill(&fg_color[attr_range.lr_start],
                       &fg_color[attr_range.lr_end],
@@ -906,6 +908,15 @@ view_colors::init_roles(const lnav_theme& lt,
                          lt.lt_style_header[5],
                          lt.lt_style_text,
                          reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_HR)]
+        = this->to_attrs(
+            color_pair_base, lt, lt.lt_style_hr, lt.lt_style_text, reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_HYPERLINK)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_hyperlink,
+                         lt.lt_style_text,
+                         reporter);
     this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_LIST_GLYPH)]
         = this->to_attrs(color_pair_base,
                          lt,
@@ -916,6 +927,43 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(color_pair_base,
                          lt,
                          lt.lt_style_breadcrumb,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_TABLE_BORDER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_table_border,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_TABLE_HEADER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_table_header,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_QUOTE_BORDER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_quote_border,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_QUOTED_TEXT)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_quoted_text,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(
+        role_t::VCR_FOOTNOTE_BORDER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_footnote_border,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_FOOTNOTE_TEXT)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_footnote_text,
                          lt.lt_style_text,
                          reporter);
 
@@ -1052,6 +1100,18 @@ view_colors::init_roles(const lnav_theme& lt,
                 color_pair_base, lt, bar_sc, lt.lt_style_warn_status, reporter);
     }
 
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_QUOTED_CODE)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_quoted_code,
+                         lt.lt_style_text,
+                         reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_CODE_BORDER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_code_border,
+                         lt.lt_style_text,
+                         reporter);
     this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_KEYWORD)]
         = this->to_attrs(color_pair_base,
                          lt,

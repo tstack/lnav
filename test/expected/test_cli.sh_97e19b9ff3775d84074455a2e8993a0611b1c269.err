@@ -1,7 +1,7 @@
 [31m✘ error[0m: invalid value for “[1m-c[0m” option
-[36m --> [0m[1marg[0m
-[36m | [0m -c foo
-[36m | [0m    [31m^ command type prefix is missing[0m
+[36m --> [0m[1mcommand-line argument[0m
+[36m | [0m[37m[40m -c [0m[37m[40mfoo [0m                                
+[36m | [0m    [31m^ command type prefix is missing[0m    
 [36m =[0m [36mhelp[0m: command arguments must start with one of the following symbols to denote the type of command:
             [1m:[0m - an lnav command   (e.g. :goto 42)
             [1m;[0m - an SQL statement  (e.g. ;SELECT * FROM syslog_log)

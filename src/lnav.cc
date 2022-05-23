@@ -508,11 +508,8 @@ usage()
     ex1_term.append(lnav::roles::ok("$"))
         .append(" ")
         .append(lnav::roles::file("lnav"))
-        .pad_to(40);
-    ex1_term.get_attrs().emplace_back(line_range{0, (int) ex1_term.length()},
-                                      VC_BACKGROUND.value(COLOR_BLACK));
-    ex1_term.get_attrs().emplace_back(line_range{0, (int) ex1_term.length()},
-                                      VC_FOREGROUND.value(COLOR_WHITE));
+        .pad_to(40)
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
     attr_line_t ex2_term;
 
@@ -521,11 +518,8 @@ usage()
         .append(lnav::roles::file("lnav"))
         .append(" ")
         .append(lnav::roles::file("/var/log"))
-        .pad_to(40);
-    ex2_term.get_attrs().emplace_back(line_range{0, (int) ex2_term.length()},
-                                      VC_BACKGROUND.value(COLOR_BLACK));
-    ex2_term.get_attrs().emplace_back(line_range{0, (int) ex2_term.length()},
-                                      VC_FOREGROUND.value(COLOR_WHITE));
+        .pad_to(40)
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
     attr_line_t ex3_term;
 
@@ -536,11 +530,8 @@ usage()
         .append(lnav::roles::file("lnav"))
         .append(" ")
         .append("-t"_symbol)
-        .pad_to(40);
-    ex3_term.get_attrs().emplace_back(line_range{0, (int) ex3_term.length()},
-                                      VC_BACKGROUND.value(COLOR_BLACK));
-    ex3_term.get_attrs().emplace_back(line_range{0, (int) ex3_term.length()},
-                                      VC_FOREGROUND.value(COLOR_WHITE));
+        .pad_to(40)
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
     attr_line_t usage_al;
 
@@ -1964,7 +1955,8 @@ main(int argc, char* argv[])
         auto cmd_appender
             = [](std::string cmd) { lnav_data.ld_commands.emplace_back(cmd); };
         auto cmd_validator = [&arg_errors](std::string cmd) -> std::string {
-            static const auto ARG_SRC = intern_string::lookup("arg");
+            static const auto ARG_SRC
+                = intern_string::lookup("command-line argument");
 
             if (cmd.empty()) {
                 return "empty commands are not allowed";
@@ -1977,6 +1969,7 @@ main(int argc, char* argv[])
                 case '|':
                     break;
                 default:
+                    cmd.push_back(' ');
                     arg_errors.emplace_back(
                         lnav::console::user_message::error(
                             attr_line_t("invalid value for ")
@@ -1984,8 +1977,9 @@ main(int argc, char* argv[])
                                 .append(" option"))
                             .with_snippet(lnav::console::snippet::from(
                                 ARG_SRC,
-                                attr_line_t(" -c ")
-                                    .append(cmd)
+                                attr_line_t()
+                                    .append(" -c "_quoted_code)
+                                    .append(lnav::roles::quoted_code(cmd))
                                     .append("\n")
                                     .append(4, ' ')
                                     .append(lnav::roles::error(
@@ -2261,7 +2255,7 @@ main(int argc, char* argv[])
     lnav_data.ld_log_source.set_exec_context(&lnav_data.ld_exec_context);
     lnav_data.ld_views[LNV_HELP]
         .set_sub_source(&lnav_data.ld_help_source)
-        .set_word_wrap(true);
+        .set_word_wrap(false);
     auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
                                             lnav_data.ld_text_source);
     if (lnav_data.ld_flags & LNF_HEADLESS) {

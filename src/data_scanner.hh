@@ -122,6 +122,13 @@ public:
         }
     }
 
+    explicit data_scanner(string_fragment sf) : ds_pcre_input(sf)
+    {
+        if (!sf.empty() && sf[sf.length() - 1] == '.') {
+            this->ds_pcre_input.pi_length -= 1;
+        }
+    }
+
     data_scanner(shared_buffer_ref& line,
                  size_t off = 0,
                  size_t len = (size_t) -1)

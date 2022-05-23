@@ -152,12 +152,7 @@ struct exec_context {
 
     source_guard enter_source(intern_string_t path,
                               int line_number,
-                              const std::string& content)
-    {
-        this->ec_source.emplace(
-            lnav::console::snippet::from(path, content).with_line(line_number));
-        return {this};
-    }
+                              const std::string& content);
 
     struct error_cb_guard {
         error_cb_guard(exec_context* context) : sg_context(context) {}

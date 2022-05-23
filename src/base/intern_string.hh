@@ -41,6 +41,7 @@
 #include "fmt/format.h"
 #include "optional.hpp"
 #include "strnatcmp.h"
+#include "ww898/cp_utf8.hpp"
 
 struct string_fragment {
     using iterator = const char*;
@@ -60,40 +61,41 @@ struct string_fragment {
     {
     }
 
-    bool is_valid() const
-    {
-        return this->sf_begin != -1;
-    };
+    bool is_valid() const { return this->sf_begin != -1; }
 
-    int length() const
-    {
-        return this->sf_end - this->sf_begin;
-    };
+    int length() const { return this->sf_end - this->sf_begin; }
 
-    const char* data() const
+    Result<size_t, const char*> utf8_length() const
     {
-        return &this->sf_string[this->sf_begin];
+        size_t retval = 0;
+
+        for (ssize_t byte_index = this->sf_begin; byte_index < this->sf_end;) {
+            auto ch_size
+                = TRY(ww898::utf::utf8::char_size([this, byte_index]() {
+                      return std::make_pair(this->sf_string[byte_index],
+                                            this->sf_end - byte_index);
+                  }));
+            byte_index += ch_size;
+            retval += 1;
+        }
+
+        return Ok(retval);
     }
 
-    iterator begin() const
-    {
-        return &this->sf_string[this->sf_begin];
-    }
+    const char* data() const { return &this->sf_string[this->sf_begin]; }
 
-    iterator end() const
-    {
-        return &this->sf_string[this->sf_end];
-    }
+    char front() const { return this->sf_string[this->sf_begin]; }
 
-    bool empty() const
-    {
-        return !this->is_valid() || length() == 0;
-    };
+    iterator begin() const { return &this->sf_string[this->sf_begin]; }
+
+    iterator end() const { return &this->sf_string[this->sf_end]; }
+
+    bool empty() const { return !this->is_valid() || length() == 0; }
 
     char operator[](int index) const
     {
         return this->sf_string[sf_begin + index];
-    };
+    }
 
     bool operator==(const std::string& str) const
     {
@@ -104,7 +106,7 @@ struct string_fragment {
         return memcmp(
                    &this->sf_string[this->sf_begin], str.c_str(), str.length())
             == 0;
-    };
+    }
 
     bool operator==(const string_fragment& sf) const
     {
@@ -113,7 +115,7 @@ struct string_fragment {
         }
 
         return memcmp(this->data(), sf.data(), sf.length()) == 0;
-    };
+    }
 
     bool iequal(const string_fragment& sf) const
     {
@@ -124,7 +126,7 @@ struct string_fragment {
         return strnatcasecmp(
                    this->length(), this->data(), sf.length(), sf.data())
             == 0;
-    };
+    }
 
     bool operator==(const char* str) const
     {
@@ -132,7 +134,7 @@ struct string_fragment {
 
         return len == (size_t) this->length()
             && strncmp(this->data(), str, this->length()) == 0;
-    };
+    }
 
     bool operator!=(const char* str) const
     {
@@ -240,6 +242,8 @@ struct string_fragment {
             });
     }
 
+    split_result split_n(int amount) const;
+
     std::vector<string_fragment> split_lines() const;
 
     struct tag1 {
@@ -273,7 +277,7 @@ struct string_fragment {
         buf[this->length()] = '\0';
 
         return buf;
-    };
+    }
 
     std::string to_string() const
     {
@@ -284,15 +288,42 @@ struct string_fragment {
     {
         this->sf_begin = 0;
         this->sf_end = 0;
-    };
+    }
 
     void invalidate()
     {
         this->sf_begin = -1;
         this->sf_end = -1;
-    };
+    }
 
     void trim(const char* tokens);
+
+    string_fragment prepend(const char* str, int amount) const
+    {
+        return string_fragment{
+            str,
+            this->sf_begin + amount,
+            this->sf_end + amount,
+        };
+    }
+
+    string_fragment erase_before(const char* str, int amount) const
+    {
+        return string_fragment{
+            str,
+            this->sf_begin - amount,
+            this->sf_end - amount,
+        };
+    }
+
+    string_fragment erase(const char* str, int amount) const
+    {
+        return string_fragment{
+            str,
+            this->sf_begin,
+            this->sf_end - amount,
+        };
+    }
 
     const char* sf_string;
     int sf_begin;

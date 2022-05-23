@@ -203,21 +203,7 @@ public:
         }
     }
 
-    void scroll_selection_into_view()
-    {
-        unsigned long width;
-        vis_line_t height;
-
-        this->get_dimensions(height, width);
-        if (height <= 0) {
-            return;
-        }
-        if (this->lv_selection >= (this->lv_top + height - 1)) {
-            this->set_top(this->lv_selection - height + 2_vl, true);
-        } else if (this->lv_selection < this->lv_top) {
-            this->set_top(this->lv_selection, true);
-        }
-    }
+    void scroll_selection_into_view();
 
     void shift_selection(int offset);
 
