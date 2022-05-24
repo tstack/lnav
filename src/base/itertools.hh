@@ -520,7 +520,7 @@ auto
 operator|(nonstd::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
     -> nonstd::optional<
-        typename std::remove_reference_t<typename std::remove_const_t<
+        typename std::remove_const_t<typename std::remove_reference_t<
             decltype(lnav::func::invoke(mapper.m_func, in.value()))>>>
 {
     if (!in) {
@@ -575,7 +575,7 @@ operator|(const std::vector<std::shared_ptr<T>>& in,
         typename std::remove_const_t<decltype(((*in.front()).*mapper.m_func))>>>
 {
     using return_type = std::vector<
-        typename std::remove_reference_t<typename std::remove_const_t<decltype((
+        typename std::remove_const_t<typename std::remove_reference_t<decltype((
             (*in.front()).*mapper.m_func))>>>;
     return_type retval;
 

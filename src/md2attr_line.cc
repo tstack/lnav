@@ -389,10 +389,12 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             static_cast<int>(this->ml_span_starts.back()),
             static_cast<int>(last_block.length()),
         };
+#if defined(A_ITALIC)
         last_block.with_attr({
             lr,
             VC_STYLE.value(A_ITALIC),
         });
+#endif
     } else if (sp.is<span_strong>()) {
         line_range lr{
             static_cast<int>(this->ml_span_starts.back()),

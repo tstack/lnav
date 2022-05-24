@@ -1616,8 +1616,8 @@ public:
                             auto_mem<yajl_handle_t> handle(yajl_free);
                             yajl_callbacks cb;
 
-                            handle = yajl_alloc(&cb, nullptr, &lph);
                             memset(&cb, 0, sizeof(cb));
+                            handle = yajl_alloc(&cb, nullptr, &lph);
                             cb.yajl_string = +[](void* ctx,
                                                  const unsigned char* str,
                                                  size_t len) -> int {
