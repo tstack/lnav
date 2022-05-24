@@ -137,6 +137,7 @@ jobs:
                     LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv" \
                     --sysconfdir=/etc \
                     --prefix=$PREFIX
+        cat config.log
     - name: '🚧 Make (do not use -j)'
       run: |
         set -x
