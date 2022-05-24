@@ -441,6 +441,7 @@ DISTCLEANFILES = \
 	logfile_syslog_fr_test.0 \
 	logfile_syslog_with_mixed_times_test.0 \
 	not:a:remote:file \
+	rollover_in.0 \
 	test-logs.tgz \
 	test-logs-trunc.tgz \
 	test_pretty_in.* \
