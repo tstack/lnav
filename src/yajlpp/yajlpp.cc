@@ -512,30 +512,24 @@ yajlpp_parse_context::map_key(void* ctx, const unsigned char* key, size_t len)
     if (ypc->ypc_path.back() != '/') {
         ypc->ypc_path.push_back('/');
     }
-    if (ypc->ypc_handlers != nullptr) {
-        for (size_t lpc = 0; lpc < len; lpc++) {
-            switch (key[lpc]) {
-                case '~':
-                    ypc->ypc_path.push_back('~');
-                    ypc->ypc_path.push_back('0');
-                    break;
-                case '/':
-                    ypc->ypc_path.push_back('~');
-                    ypc->ypc_path.push_back('1');
-                    break;
-                case '#':
-                    ypc->ypc_path.push_back('~');
-                    ypc->ypc_path.push_back('2');
-                    break;
-                default:
-                    ypc->ypc_path.push_back(key[lpc]);
-                    break;
-            }
+    for (size_t lpc = 0; lpc < len; lpc++) {
+        switch (key[lpc]) {
+            case '~':
+                ypc->ypc_path.push_back('~');
+                ypc->ypc_path.push_back('0');
+                break;
+            case '/':
+                ypc->ypc_path.push_back('~');
+                ypc->ypc_path.push_back('1');
+                break;
+            case '#':
+                ypc->ypc_path.push_back('~');
+                ypc->ypc_path.push_back('2');
+                break;
+            default:
+                ypc->ypc_path.push_back(key[lpc]);
+                break;
         }
-    } else {
-        size_t start = ypc->ypc_path.size();
-        ypc->ypc_path.resize(ypc->ypc_path.size() + len);
-        memcpy(&ypc->ypc_path[start], key, len);
     }
     ypc->ypc_path.push_back('\0');
 

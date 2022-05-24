@@ -387,14 +387,20 @@ log_format::check_for_new_year(std::vector<logline>& dst,
         struct tm otm;
 
         gmtime_r(&ot, &otm);
-        otm.tm_year -= off_year;
+        if (otm.tm_year < off_year) {
+            otm.tm_year = 0;
+        } else {
+            otm.tm_year -= off_year;
+        }
         otm.tm_mon -= off_month;
-        otm.tm_mday -= off_day;
-        otm.tm_hour -= off_hour;
+        if (otm.tm_mon < 0) {
+            otm.tm_mon += 12;
+        }
         auto new_time = tm2sec(&otm);
         if (new_time == -1) {
             continue;
         }
+        new_time -= (off_day * 24 * 60 * 60) + (off_hour * 60 * 60);
         ll.set_time(new_time);
     }
 }
@@ -403,10 +409,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
  * XXX This needs some cleanup.
  */
 struct json_log_userdata {
-    json_log_userdata(shared_buffer_ref& sbr)
-        : jlu_shared_buffer(sbr){
-
-        };
+    json_log_userdata(shared_buffer_ref& sbr) : jlu_shared_buffer(sbr) {}
 
     external_log_format* jlu_format{nullptr};
     const logline* jlu_line{nullptr};

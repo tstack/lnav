@@ -1,5 +1,0 @@
-[31m✘ error[0m: expecting an operation to perform on the [1mstd[0m regex
-[36m =[0m [36mnote[0m: this regex is currently associated with the following regex101.com entry:
-            [1mhttps://regex101.com/r/zpEnjV[0m
-[36m =[0m [36mhelp[0m: the available subcommands are:
-          • [1m[34mregex101[0m: use regex101.com to edit this regular expression

@@ -388,13 +388,12 @@ public:
     struct field_def {
         logline_value_meta fd_meta;
         std::string fd_collator;
-        int fd_numeric_index;
+        nonstd::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name,
                            int col,
                            log_format* format)
-            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
-              fd_numeric_index(-1)
+            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format)
         {
         }
 
@@ -408,7 +407,7 @@ public:
             return *this;
         }
 
-        field_def& with_numeric_index(int index)
+        field_def& with_numeric_index(size_t index)
         {
             this->fd_numeric_index = index;
             return *this;
@@ -484,7 +483,7 @@ public:
                 opid = hash_str(sf.data(), sf.length());
             }
 
-            if (fd.fd_numeric_index >= 0) {
+            if (fd.fd_numeric_index) {
                 switch (fd.fd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER:
                     case value_kind_t::VALUE_FLOAT: {
@@ -494,8 +493,8 @@ public:
 
                         if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
                         {
-                            this->lf_value_stats[fd.fd_numeric_index].add_value(
-                                val);
+                            this->lf_value_stats[fd.fd_numeric_index.value()]
+                                .add_value(val);
                         }
                         break;
                     }
@@ -583,7 +582,7 @@ public:
             } else if (directive == "#path") {
                 auto full_name = fmt::format(FMT_STRING("bro_{}_log"), *iter);
                 this->blf_format_name = intern_string::lookup(full_name);
-            } else if (directive == "#fields") {
+            } else if (directive == "#fields" && this->blf_field_defs.empty()) {
                 do {
                     this->blf_field_defs.emplace_back(
                         intern_string::lookup("bro_" + sql_safe_ident(*iter)),
@@ -715,10 +714,11 @@ public:
 
         for (const auto& blf_field_def : this->blf_field_defs) {
             if (blf_field_def.fd_meta.lvm_name == name) {
-                if (blf_field_def.fd_numeric_index < 0) {
+                if (!blf_field_def.fd_numeric_index) {
                     break;
                 }
-                retval = &this->lf_value_stats[blf_field_def.fd_numeric_index];
+                retval = &this->lf_value_stats[blf_field_def.fd_numeric_index
+                                                   .value()];
                 break;
             }
         }
@@ -911,16 +911,17 @@ public:
         const intern_string_t fd_name;
         logline_value_meta fd_meta;
         std::string fd_collator;
-        int fd_numeric_index;
+        nonstd::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name)
             : fd_name(name), fd_meta(intern_string::lookup(sql_safe_ident(
                                          name.to_string_fragment())),
-                                     value_kind_t::VALUE_TEXT),
-              fd_numeric_index(-1){};
+                                     value_kind_t::VALUE_TEXT)
+        {
+        }
 
         field_def(const intern_string_t name, logline_value_meta meta)
-            : fd_name(name), fd_meta(meta), fd_numeric_index(-1)
+            : fd_name(name), fd_meta(meta)
         {
         }
 
@@ -934,7 +935,7 @@ public:
                   intern_string::lookup(sql_safe_ident(string_fragment(name))),
                   kind,
                   col),
-              fd_collator(std::move(coll)), fd_numeric_index(-1)
+              fd_collator(std::move(coll))
         {
             this->fd_meta.lvm_identifier = ident;
         }
@@ -1031,12 +1032,11 @@ public:
                         = sbr.to_string_fragment().consume_n(sf.length());
 
                     if (sbr_sf_opt) {
-                        auto sbr_sf = sbr_sf_opt.value();
+                        auto sbr_sf = sbr_sf_opt.value().trim();
                         date_time_scanner dts;
                         struct exttm tm;
                         struct timeval tv;
 
-                        sbr_sf.trim(" \t");
                         if (dts.scan(sbr_sf.data(),
                                      sbr_sf.length(),
                                      nullptr,
@@ -1052,7 +1052,7 @@ public:
                 return SCAN_MATCH;
             }
 
-            sf.trim("\" \t");
+            sf = sf.trim("\" \t");
             if (F_DATE == fd.fd_name || F_DATE_LOCAL == fd.fd_name
                 || F_DATE_UTC == fd.fd_name)
             {
@@ -1076,7 +1076,7 @@ public:
                 }
             }
 
-            if (fd.fd_numeric_index >= 0) {
+            if (fd.fd_numeric_index) {
                 switch (fd.fd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER:
                     case value_kind_t::VALUE_FLOAT: {
@@ -1085,8 +1085,8 @@ public:
 
                         if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
                         {
-                            this->lf_value_stats[fd.fd_numeric_index].add_value(
-                                val);
+                            this->lf_value_stats[fd.fd_numeric_index.value()]
+                                .add_value(val);
                         }
                         break;
                     }
@@ -1179,13 +1179,13 @@ public:
                     this->lf_date_time.set_base_time(tv.tv_sec);
                     this->wlf_time_scanner.set_base_time(tv.tv_sec);
                 }
-            } else if (directive == "#Fields:") {
+            } else if (directive == "#Fields:" && this->wlf_field_defs.empty())
+            {
                 int numeric_count = 0;
 
                 do {
-                    string_fragment sf = *iter;
+                    auto sf = (*iter).trim(")");
 
-                    sf.trim(")");
                     auto field_iter = std::find_if(
                         begin(KNOWN_FIELDS),
                         end(KNOWN_FIELDS),
@@ -1308,10 +1308,11 @@ public:
 
         for (const auto& wlf_field_def : this->wlf_field_defs) {
             if (wlf_field_def.fd_meta.lvm_name == name) {
-                if (wlf_field_def.fd_numeric_index < 0) {
+                if (!wlf_field_def.fd_numeric_index) {
                     break;
                 }
-                retval = &this->lf_value_stats[wlf_field_def.fd_numeric_index];
+                retval = &this->lf_value_stats[wlf_field_def.fd_numeric_index
+                                                   .value()];
                 break;
             }
         }

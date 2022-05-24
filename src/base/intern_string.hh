@@ -145,7 +145,7 @@ struct string_fragment {
     {
         const auto* iter = this->begin();
 
-        while (*prefix != '\0' && *prefix == *iter && iter < this->end()) {
+        while (*prefix != '\0' && iter < this->end() && *prefix == *iter) {
             prefix += 1;
             iter += 1;
         }
@@ -296,7 +296,8 @@ struct string_fragment {
         this->sf_end = -1;
     }
 
-    void trim(const char* tokens);
+    string_fragment trim(const char* tokens) const;
+    string_fragment trim() const;
 
     string_fragment prepend(const char* str, int amount) const
     {

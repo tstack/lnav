@@ -3,6 +3,21 @@
 echo ${top_srcdir}
 echo ${top_builddir}
 
+cat > rollover_in.0 <<EOF
+2600/2 0 00:00:00 0:
+00:2 0 00:00:00 0:
+00:2 0 00:00:00 0:
+EOF
+touch -t 200711030923 rollover_in.0
+
+run_cap_test env TEST_COMMENT="invalid date rollover" ${lnav_test} -n rollover_in.0
+
+printf '#Fields: 0\tcs-bytes\n#Fields: 0\n\t0 #\n0' | run_cap_test \
+    env TEST_COMMENT="w3c with dupe #Fields" ${lnav_test} -n
+
+printf '#Fields: \xf9\t)\n0\n' | run_cap_test \
+    env TEST_COMMENT="garbage w3c fields #1" ${lnav_test} -n
+
 run_cap_test env TEST_COMMENT="w3c with bad header" ${lnav_test} -n <<EOF
 #Fields: 0 time
  00:00

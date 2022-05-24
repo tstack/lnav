@@ -1,2 +1,0 @@
-[31m✘ error[0m: invalid regex “[1mabc(def)[0m” from “[1mhttps://regex101.com/r/cvCJNP/1[0m”
- [31mreason[0m: only the “[1mpcre[0m” flavor of regexes are supported

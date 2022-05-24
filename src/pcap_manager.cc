@@ -110,8 +110,8 @@ convert(const std::string& filename)
                     lb.read_range(li.li_file_range)
                         .then([error_queue, child_pid](auto sbr) {
                             auto line_str = string_fragment(
-                                sbr.get_data(), 0, sbr.length());
-                            line_str.trim("\n");
+                                                sbr.get_data(), 0, sbr.length())
+                                                .trim("\n");
                             if (error_queue->size() < 5) {
                                 error_queue->emplace_back(line_str.to_string());
                             }

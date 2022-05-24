@@ -73,8 +73,8 @@ read_err_pipe(const std::string& netloc,
             } else {
                 lb.read_range(li.li_file_range).then([netloc, &eq](auto sbr) {
                     auto line_str
-                        = string_fragment(sbr.get_data(), 0, sbr.length());
-                    line_str.trim("\n");
+                        = string_fragment(sbr.get_data(), 0, sbr.length())
+                              .trim("\n");
                     if (eq.size() < 10) {
                         eq.template emplace_back(line_str.to_string());
                     }

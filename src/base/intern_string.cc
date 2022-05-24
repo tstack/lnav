@@ -137,14 +137,16 @@ intern_string::startswith(const char* prefix) const
     return *prefix == '\0';
 }
 
-void
-string_fragment::trim(const char* tokens)
+string_fragment
+string_fragment::trim(const char* tokens) const
 {
-    while (this->sf_begin < this->sf_end) {
+    string_fragment retval = *this;
+
+    while (retval.sf_begin < retval.sf_end) {
         bool found = false;
 
         for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
-            if (this->sf_string[this->sf_begin] == tokens[lpc]) {
+            if (retval.sf_string[retval.sf_begin] == tokens[lpc]) {
                 found = true;
                 break;
             }
@@ -153,13 +155,13 @@ string_fragment::trim(const char* tokens)
             break;
         }
 
-        this->sf_begin += 1;
+        retval.sf_begin += 1;
     }
-    while (this->sf_begin < this->sf_end) {
+    while (retval.sf_begin < retval.sf_end) {
         bool found = false;
 
         for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
-            if (this->sf_string[this->sf_end - 1] == tokens[lpc]) {
+            if (retval.sf_string[retval.sf_end - 1] == tokens[lpc]) {
                 found = true;
                 break;
             }
@@ -168,8 +170,16 @@ string_fragment::trim(const char* tokens)
             break;
         }
 
-        this->sf_end -= 1;
+        retval.sf_end -= 1;
     }
+
+    return retval;
+}
+
+string_fragment
+string_fragment::trim() const
+{
+    return this->trim(" \t\r\n");
 }
 
 nonstd::optional<string_fragment>

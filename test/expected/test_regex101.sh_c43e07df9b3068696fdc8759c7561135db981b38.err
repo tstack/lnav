@@ -1,2 +1,0 @@
-[31m✘ error[0m: unable to get entry “[1mbadregex123[0m” on regex101.com
- [31mreason[0m: received response code [1m400[0m content “{"error":"Invalid permalink id",}”

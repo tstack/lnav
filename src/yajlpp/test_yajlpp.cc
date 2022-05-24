@@ -62,10 +62,38 @@ read_const(yajlpp_parse_context* ypc, long long value)
     return 1;
 }
 
+static int
+dummy_string_handler(void* ctx, const unsigned char* s, size_t len)
+{
+    return 1;
+}
+
 int
 main(int argc, char* argv[])
 {
     static const auto TEST_SRC = intern_string::lookup("test_data");
+
+    {
+        struct dummy {};
+
+        typed_json_path_container<dummy> dummy_handlers = {
+
+        };
+
+        std::string in1 = "{\"#\":{\"";
+        auto parse_res = dummy_handlers.parser_for(TEST_SRC).of(in1);
+    }
+
+    {
+        static const char UNICODE_BARF[] = "\"\\udb00\\\\0\"\n";
+
+        yajl_callbacks cbs;
+        memset(&cbs, 0, sizeof(cbs));
+        cbs.yajl_string = dummy_string_handler;
+        auto handle = yajl_alloc(&cbs, nullptr, nullptr);
+        auto rc = yajl_parse(handle, (const unsigned char*) UNICODE_BARF, 12);
+        assert(rc == yajl_status_ok);
+    }
 
     struct json_path_container test_obj_handler = {
         json_path_handler("foo", read_foo),

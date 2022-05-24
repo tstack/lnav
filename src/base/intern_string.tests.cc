@@ -35,6 +35,14 @@
 #include "config.h"
 #include "doctest/doctest.h"
 
+TEST_CASE("string_fragment::startswith")
+{
+    std::string empty;
+    auto sf = string_fragment{empty};
+
+    CHECK_FALSE(sf.startswith("abc"));
+}
+
 TEST_CASE("split_lines")
 {
     std::string in1 = "Hello, World!";

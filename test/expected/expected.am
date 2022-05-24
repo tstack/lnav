@@ -254,10 +254,14 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_c60050b3469f37c5b0864e1dc7eb354e91d6ec81.out \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.err \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.out \
+    $(srcdir)/%reldir%/test_logfile.sh_08d731a04c877a34819b35de185e30a74c9fd497.err \
+    $(srcdir)/%reldir%/test_logfile.sh_08d731a04c877a34819b35de185e30a74c9fd497.out \
     $(srcdir)/%reldir%/test_logfile.sh_09bd16e044302f6b121092534708594bdad11b5a.err \
     $(srcdir)/%reldir%/test_logfile.sh_09bd16e044302f6b121092534708594bdad11b5a.out \
-    $(srcdir)/%reldir%/test_logfile.sh_0bba304f34ae07c4fa9e91e0b42f5fe98654a6a8.err \
-    $(srcdir)/%reldir%/test_logfile.sh_0bba304f34ae07c4fa9e91e0b42f5fe98654a6a8.out \
+    $(srcdir)/%reldir%/test_logfile.sh_290a3c49e53c2229a7400c107338fa0bb38375e2.err \
+    $(srcdir)/%reldir%/test_logfile.sh_290a3c49e53c2229a7400c107338fa0bb38375e2.out \
+    $(srcdir)/%reldir%/test_logfile.sh_4a2a907fcb069b8d6e65961a7b2e796d6c3a87b1.err \
+    $(srcdir)/%reldir%/test_logfile.sh_4a2a907fcb069b8d6e65961a7b2e796d6c3a87b1.out \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.err \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.out \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.err \

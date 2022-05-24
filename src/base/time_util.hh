@@ -92,7 +92,7 @@ enum exttm_flags_t {
 };
 
 struct exttm {
-    struct tm et_tm;
+    struct tm et_tm {};
     int32_t et_nsec{0};
     unsigned int et_flags{0};
     long et_gmtoff{0};
@@ -105,7 +105,7 @@ struct exttm {
     bool operator==(const exttm& other) const
     {
         return memcmp(this, &other, sizeof(exttm)) == 0;
-    };
+    }
 
     struct timeval to_timeval() const;
 };
