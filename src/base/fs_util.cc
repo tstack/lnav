@@ -125,9 +125,7 @@ std::string
 build_path(const std::vector<ghc::filesystem::path>& paths)
 {
     return paths
-        | lnav::itertools::map(
-               static_cast<std::string (ghc::filesystem::path::*)() const>(
-                   &ghc::filesystem::path::string))
+        | lnav::itertools::map([](const auto& path) { return path.string(); })
         | lnav::itertools::append(getenv_opt("PATH").value_or(""))
         | lnav::itertools::filter_out(&std::string::empty)
         | lnav::itertools::fold(
