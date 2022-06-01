@@ -89,6 +89,7 @@ OS=$(uname -s)
  ./configure --prefix=${FAKE_ROOT} \
      --enable-jit \
      --enable-utf \
+     --enable-unicode-properties \
      && \
  make && make install)
 
