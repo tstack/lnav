@@ -1328,6 +1328,7 @@ looper()
             {
                 active_copy.clear();
                 active_copy.merge(lnav_data.ld_active_files);
+                active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
                 rescan_future = std::async(std::launch::async,
                                            &file_collection::rescan_files,
                                            std::move(active_copy),

@@ -300,6 +300,8 @@ file_collection::watch_logfile(const std::string& filename,
             return lnav::futures::make_ready_future(std::move(retval));
         }
 
+        require(this->fc_progress.get() != nullptr);
+
         auto func = [filename,
                      st,
                      loo2 = std::move(loo),

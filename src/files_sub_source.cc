@@ -404,7 +404,7 @@ files_overlay_source::list_value_for_overlay(const listview_curses& lv,
         constexpr size_t PROG_SIZE = sizeof(PROG) - 1;
 
         auto& fc = lnav_data.ld_active_files;
-        auto& fc_prog = fc.fc_progress;
+        auto fc_prog = fc.fc_progress;
         safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
 
         if (!sp->sp_extractions.empty()) {
