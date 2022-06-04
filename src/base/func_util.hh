@@ -90,13 +90,19 @@ invoke(Fn&& f, Args&&... args) noexcept(
 
 template<class F, class... Args>
 struct is_invocable {
-    template<class U>
-    static auto test(U* p)
-        -> decltype((*p)(std::declval<Args>()...), void(), std::true_type());
-    template<class U>
+    template<typename U, typename Obj, typename... FuncArgs>
+    static auto test(U&& p)
+        -> decltype((std::declval<Obj>().*p)(std::declval<FuncArgs>()...),
+                    void(),
+                    std::true_type());
+    template<typename U, typename... FuncArgs>
+    static auto test(U* p) -> decltype((*p)(std::declval<FuncArgs>()...),
+                                       void(),
+                                       std::true_type());
+    template<typename U, typename... FuncArgs>
     static auto test(...) -> decltype(std::false_type());
 
-    static constexpr bool value = decltype(test<F>(0))::value;
+    static constexpr bool value = decltype(test<F, Args...>(0))::value;
 };
 
 }  // namespace func

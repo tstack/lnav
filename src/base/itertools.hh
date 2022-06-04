@@ -533,10 +533,11 @@ operator|(nonstd::optional<T> in,
 template<typename T, typename F>
 auto
 operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<decltype(mapper.m_func(typename T::value_type{}))>
+    -> std::vector<
+        decltype(mapper.m_func(std::declval<typename T::value_type>()))>
 {
-    using return_type
-        = std::vector<decltype(mapper.m_func(typename T::value_type{}))>;
+    using return_type = std::vector<decltype(mapper.m_func(
+        std::declval<typename T::value_type>()))>;
     return_type retval;
 
     retval.reserve(in.size());
@@ -605,7 +606,9 @@ operator|(const std::vector<std::shared_ptr<T>>& in,
     return retval;
 }
 
-template<typename T, typename F>
+template<typename T,
+         typename F,
+         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(const std::vector<T>& in,
           const lnav::itertools::details::mapper<F>& mapper)
