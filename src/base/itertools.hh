@@ -548,6 +548,24 @@ operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
 
 template<typename T, typename F>
 auto
+operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
+    -> std::vector<
+        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>
+{
+    using return_type = std::vector<
+        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>;
+    return_type retval;
+
+    retval.reserve(in.size());
+    for (const auto& elem : in) {
+        retval.template emplace_back((elem.*mapper.m_func)());
+    }
+
+    return retval;
+}
+
+template<typename T, typename F>
+auto
 operator|(const std::vector<T>& in,
           const lnav::itertools::details::mapper<F>& mapper)
     -> std::vector<typename std::remove_const_t<decltype((*(*in.begin())
@@ -643,24 +661,6 @@ operator|(nonstd::optional<T> in,
           const lnav::itertools::details::unwrap_or<T>& unwrapper)
 {
     return in.value_or(unwrapper.uo_value);
-}
-
-template<typename T, typename F>
-auto
-operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<
-        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>
-{
-    using return_type = std::vector<
-        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>;
-    return_type retval;
-
-    retval.reserve(in.size());
-    for (const auto& elem : in) {
-        retval.template emplace_back((elem.*mapper.m_func)());
-    }
-
-    return retval;
 }
 
 #endif
