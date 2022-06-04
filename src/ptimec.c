@@ -60,32 +60,43 @@ int main(int argc, char *argv[])
 
     fputs(PRELUDE, stdout);
     for (int lpc = 1; lpc < argc; lpc++) {
-        const char *arg = argv[lpc];
+        const char* arg = argv[lpc];
 
-        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, ssize_t len) {\n"
-               "    // log_debug(\"ptime_f%d\");\n",
-            lpc, lpc);
+        printf(
+            "bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, "
+            "ssize_t len) {\n"
+            "    dst->et_flags = 0;\n"
+            "    // log_debug(\"ptime_f%d\");\n",
+            lpc,
+            lpc);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
                 switch (arg[index + 1]) {
-                case 'a':
-                case 'Z':
-                    if (arg[index + 2]) {
-                        printf("    if (!ptime_upto('%s', str, off, len)) return false;\n",
-                            escape_char(arg[index + 2]));
-                    }
-                    else {
-                        printf("    if (!ptime_upto_end(str, off, len)) return false;\n");
-                    }
-                    arg += 1;
-                    break;
-                case '@':
-                    printf("    if (!ptime_at(dst, str, off, len)) return false;\n");
-                    arg += 1;
-                    break;
-                default:
-                    printf("    if (!ptime_%c(dst, str, off, len)) return false;\n",
-                        arg[index + 1]);
+                    case 'a':
+                    case 'Z':
+                        if (arg[index + 2]) {
+                            printf(
+                                "    if (!ptime_upto('%s', str, off, len)) "
+                                "return false;\n",
+                                escape_char(arg[index + 2]));
+                        } else {
+                            printf(
+                                "    if (!ptime_upto_end(str, off, len)) "
+                                "return false;\n");
+                        }
+                        arg += 1;
+                        break;
+                    case '@':
+                        printf(
+                            "    if (!ptime_at(dst, str, off, len)) return "
+                            "false;\n");
+                        arg += 1;
+                        break;
+                    default:
+                        printf(
+                            "    if (!ptime_%c(dst, str, off, len)) return "
+                            "false;\n",
+                            arg[index + 1]);
                     arg += 1;
                     break;
                 }

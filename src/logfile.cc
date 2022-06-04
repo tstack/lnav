@@ -203,15 +203,20 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
              ++iter)
         {
             if (!(*iter)->match_name(this->lf_filename)) {
-                log_debug("(%s) does not match file name: %s",
-                          (*iter)->get_name().get(),
-                          this->lf_filename.c_str());
+                if (li.li_file_range.fr_offset == 0) {
+                    log_debug("(%s) does not match file name: %s",
+                              (*iter)->get_name().get(),
+                              this->lf_filename.c_str());
+                }
                 continue;
             }
             if (!(*iter)->match_mime_type(this->lf_options.loo_file_format)) {
-                log_debug("(%s) does not match file format: %d",
-                          (*iter)->get_name().get(),
-                          this->lf_options.loo_file_format);
+                if (li.li_file_range.fr_offset == 0) {
+                    log_debug("(%s) does not match file format: %s",
+                              (*iter)->get_name().get(),
+                              fmt::to_string(this->lf_options.loo_file_format)
+                                  .c_str());
+                }
                 continue;
             }
 

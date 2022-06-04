@@ -287,6 +287,7 @@ ptime_S(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_sec
             = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_flags |= ETF_SECOND_SET;
     });
 
     return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
@@ -320,8 +321,9 @@ ptime_s(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     secs2tm(epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME;
 
     return (epoch > 0);
 }
@@ -377,8 +379,9 @@ ptime_q(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     secs2tm(epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME;
 
     return (epoch > 0);
 }
@@ -434,6 +437,7 @@ ptime_M(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_min
             = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_flags |= ETF_MINUTE_SET;
     });
 
     return (dst->et_tm.tm_min >= 0 && dst->et_tm.tm_min <= 59);
@@ -455,6 +459,7 @@ ptime_H(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_hour
             = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_flags |= ETF_HOUR_SET;
     });
 
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
@@ -487,8 +492,9 @@ ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     secs2tm(epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME;
 
     return (epoch_ms > 0);
 }
@@ -523,8 +529,9 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     secs2tm(epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME;
 
     return (epoch_us > 0);
 }
@@ -552,6 +559,7 @@ ptime_I(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         if (dst->et_tm.tm_hour < 1 || dst->et_tm.tm_hour > 12) {
             return false;
         }
+        dst->et_flags |= ETF_HOUR_SET;
     });
 
     return true;
@@ -690,6 +698,7 @@ ptime_k(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
             dst->et_tm.tm_hour *= 10;
             dst->et_tm.tm_hour += str[off_inout] - '0';
+            dst->et_flags |= ETF_HOUR_SET;
             off_inout += 1;
         }
     }
@@ -749,6 +758,8 @@ ptime_l(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     if (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23) {
         return true;
     }
+
+    dst->et_flags |= ETF_HOUR_SET;
 
     off_inout = orig_off;
     return false;
@@ -1070,8 +1081,8 @@ ptime_at(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         });
     }
 
-    dst->et_flags |= ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+    dst->et_flags |= ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
 
     return true;
 }

@@ -2165,7 +2165,14 @@ logfile_sub_source::text_crumbs_for_line(int line,
     auto msg_line_number = std::distance(msg_start_iter, line_pair.second);
     auto line_from_top = line - msg_line_number;
     if (sf_lines.size() > 1) {
-        this->lss_token_meta = lnav::document::discover_structure(sf);
+        if (this->lss_token_meta_line != file_line_number
+            || this->lss_token_meta_size != sf.length())
+        {
+            this->lss_token_meta = lnav::document::discover_structure(sf);
+            this->lss_token_meta_line = file_line_number;
+            this->lss_token_meta_size = sf.length();
+        }
+
         const auto initial_size = crumbs.size();
         file_off_t line_offset = 0;
         file_off_t line_end_offset = sf.length();

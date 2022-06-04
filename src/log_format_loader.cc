@@ -797,6 +797,12 @@ struct json_path_container format_handlers = {
         .with_description(
             "The name of the timestamp field in the log message pattern")
         .for_field(&log_format::lf_timestamp_field),
+    json_path_handler("time-field", read_format_field)
+        .with_description(
+            "The name of the time field in the log message pattern.  This "
+            "field should only be specified if the timestamp field only "
+            "contains a date.")
+        .for_field(&log_format::lf_time_field),
     json_path_handler("body-field", read_format_field)
         .with_description(
             "The name of the body field in the log message pattern")

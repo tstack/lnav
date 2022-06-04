@@ -1,0 +1,56 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "esx_syslog_log": {
+        "description": "Format file generated from regex101 entry -- https://regex101.com/r/wHXtl4/1",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\])?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            },
+            "notime": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2})\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)\\s+(?<log_procname>[^\\[]+)\\[(?<log_pid>\\d+)\\]:\\s(?<new_time>\\d{2}:\\d{2}:\\d{2}\\.\\d+)\\s+(?<body>.*)"
+            }
+        },
+        "level": {
+            "debug": "^Db$",
+            "info": "^In$",
+            "notice": "^No$",
+            "warning": "^Wa$",
+            "error": "^Er$",
+            "critical": "^Cr$",
+            "fatal": "^Al|Em$"
+        },
+        "opid-field": "log_syslog_tag",
+        "time-field": "new_time",
+        "multiline": false,
+        "value": {
+            "body": {
+                "kind": "string"
+            },
+            "log_pid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "log_procname": {
+                "kind": "string",
+                "identifier": true
+            },
+            "log_syslog_tag": {
+                "kind": "string"
+            },
+            "syslog_pri": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2022-06-02T05:34:56.746Z In(14) ConfigStore[1001430703]: Log for ConfigStore version=1.0 build=build-19833347 option=BETA"
+            },
+            {
+                "line": "2022-06-02T05:34:23Z In(14)[+] hostprofile[1001430319]: {'mode': 'Disabled', 'exceptionUsers': []}"
+            }
+        ]
+    }
+}

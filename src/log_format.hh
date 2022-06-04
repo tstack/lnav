@@ -303,6 +303,7 @@ public:
     {
         this->lf_pattern_locks.clear();
         this->lf_date_time.clear();
+        this->lf_time_scanner.clear();
     }
 
     /**
@@ -466,8 +467,10 @@ public:
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     date_time_scanner lf_date_time;
+    date_time_scanner lf_time_scanner;
     std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
+    intern_string_t lf_time_field;
     std::vector<const char*> lf_timestamp_format;
     unsigned int lf_timestamp_flags{0};
     std::map<std::string, action_def> lf_action_defs;

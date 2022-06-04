@@ -797,18 +797,32 @@ external_log_format::scan(logfile& lf,
         }
 
         pcre_context::capture_t* ts = pc[fpat->p_timestamp_field_index];
+        pcre_context::capture_t* time_cap = pc[fpat->p_time_field_index];
         pcre_context::capture_t* level_cap = pc[fpat->p_level_field_index];
         pcre_context::capture_t* mod_cap = pc[fpat->p_module_field_index];
         pcre_context::capture_t* opid_cap = pc[fpat->p_opid_field_index];
         pcre_context::capture_t* body_cap = pc[fpat->p_body_field_index];
         const char* ts_str = pi.get_substr_start(ts);
+        auto ts_str_len = ts->length();
         const char* last;
         struct exttm log_time_tm;
         struct timeval log_tv;
         uint8_t mod_index = 0, opid = 0;
+        char combined_datetime_buf[512];
+
+        if (time_cap != nullptr) {
+            ts_str_len = snprintf(combined_datetime_buf,
+                                  sizeof(combined_datetime_buf),
+                                  "%.*sT%.*s",
+                                  ts->length(),
+                                  ts_str,
+                                  time_cap->length(),
+                                  pi.get_substr_start(time_cap));
+            ts_str = combined_datetime_buf;
+        }
 
         if ((last = this->lf_date_time.scan(ts_str,
-                                            ts->length(),
+                                            ts_str_len,
                                             this->get_timestamp_formats(),
                                             &log_time_tm,
                                             log_tv))
@@ -816,7 +830,7 @@ external_log_format::scan(logfile& lf,
         {
             this->lf_date_time.unlock();
             if ((last = this->lf_date_time.scan(ts_str,
-                                                ts->length(),
+                                                ts_str_len,
                                                 this->get_timestamp_formats(),
                                                 &log_time_tm,
                                                 log_tv))
@@ -1721,6 +1735,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             if (name == this->lf_timestamp_field) {
                 pat.p_timestamp_field_index = name_iter->index();
+            }
+            if (name == this->lf_time_field) {
+                pat.p_time_field_index = name_iter->index();
             }
             if (name == this->elf_level_field) {
                 pat.p_level_field_index = name_iter->index();

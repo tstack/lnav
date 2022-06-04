@@ -11,6 +11,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/elb_log.json \
     $(srcdir)/%reldir%/engine_log.json \
     $(srcdir)/%reldir%/error_log.json \
+    $(srcdir)/%reldir%/esx_syslog_log.json \
     $(srcdir)/%reldir%/fsck_hfs_log.json \
     $(srcdir)/%reldir%/glog_log.json \
     $(srcdir)/%reldir%/haproxy_log.json \
@@ -36,5 +37,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vdsm_log.json \
     $(srcdir)/%reldir%/vmk_log.json \
     $(srcdir)/%reldir%/vmw_log.json \
+    $(srcdir)/%reldir%/vmw_wcp_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
     $()

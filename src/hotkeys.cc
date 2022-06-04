@@ -656,18 +656,17 @@ handle_paging_key(int ch)
 
         case 'p':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                field_overlay_source* fos;
-
-                fos = (field_overlay_source*) tc->get_overlay_source();
+                auto* fos = dynamic_cast<field_overlay_source*>(
+                    tc->get_overlay_source());
                 fos->fos_contexts.top().c_show
                     = !fos->fos_contexts.top().c_show;
-                tc->reload_data();
+                tc->set_needs_update();
             } else if (tc == &lnav_data.ld_views[LNV_DB]) {
-                db_overlay_source* dos
-                    = (db_overlay_source*) tc->get_overlay_source();
+                auto* dos = dynamic_cast<db_overlay_source*>(
+                    tc->get_overlay_source());
 
                 dos->dos_active = !dos->dos_active;
-                tc->reload_data();
+                tc->set_needs_update();
             }
             break;
 

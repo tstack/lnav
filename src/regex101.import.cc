@@ -209,6 +209,13 @@ regex101::import(const std::string& url,
                          named_iter != regex.named_end();
                          ++named_iter)
                     {
+                        if (strcmp(named_iter->pnc_name, "level") == 0
+                            || strcmp(named_iter->pnc_name, "body") == 0)
+                        {
+                            // don't need to add this as a value
+                            continue;
+                        }
+
                         value_map.gen(named_iter->pnc_name);
                         {
                             yajlpp_map cap_map(gen);

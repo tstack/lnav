@@ -47,10 +47,7 @@
  * an exttm struct to a string using the ftime() method.
  */
 struct date_time_scanner {
-    date_time_scanner()
-    {
-        this->clear();
-    };
+    date_time_scanner() { this->clear(); }
 
     void clear()
     {
@@ -58,7 +55,7 @@ struct date_time_scanner {
         this->dts_base_tm = exttm{};
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
-    };
+    }
 
     /**
      * Unlock this scanner so that the format is rediscovered.
@@ -73,7 +70,7 @@ struct date_time_scanner {
     {
         this->dts_base_time = base_time;
         localtime_r(&base_time, &this->dts_base_tm.et_tm);
-    };
+    }
 
     /**
      * Convert a timestamp to local time.
@@ -122,7 +119,7 @@ struct date_time_scanner {
             return true;
         }
         return false;
-    };
+    }
 
     bool convert_to_timeval(const std::string& time_src, struct timeval& tv_out)
     {

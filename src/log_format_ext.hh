@@ -103,6 +103,7 @@ public:
         std::vector<indexed_value_def> p_value_by_index;
         std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index{-1};
+        int p_time_field_index{-1};
         int p_level_field_index{-1};
         int p_module_field_index{-1};
         int p_opid_field_index{-1};
@@ -131,12 +132,9 @@ public:
           jlf_yajl_handle(nullptr, yajl_handle_deleter()), elf_name(name)
     {
         this->jlf_line_offsets.reserve(128);
-    };
+    }
 
-    const intern_string_t get_name() const
-    {
-        return this->elf_name;
-    };
+    const intern_string_t get_name() const { return this->elf_name; }
 
     bool match_name(const std::string& filename);
 
@@ -177,7 +175,7 @@ public:
 
         vd_iter->second->vd_meta.lvm_user_hidden = val;
         return true;
-    };
+    }
 
     std::shared_ptr<log_format> specialized(int fmt_lock);
 

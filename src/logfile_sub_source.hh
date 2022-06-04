@@ -960,6 +960,8 @@ private:
     std::string lss_token_value;
     string_attrs_t lss_token_attrs;
     lnav::document::metadata lss_token_meta;
+    int lss_token_meta_line{-1};
+    int lss_token_meta_size{0};
     std::vector<logline_value> lss_token_values;
     int lss_token_shift_start{0};
     int lss_token_shift_size{0};

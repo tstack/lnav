@@ -1,0 +1,40 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "vmw_wcp_log": {
+        "title": "VMware WCP Log",
+        "description": "Log files for the Workload Control Plane",
+        "url": "https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-2A989D79-463C-4EC8-A5F2-CDC3A2C827FB.html",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)\\s+(?<level>\\w+)\\s+wcp\\s\\[(?<srcfile>[^:]+):(?<srcline>\\d+)\\](\\s+\\[opID=(?<opid>[^\\]]+)\\])?\\s+(?<body>.*)"
+            }
+        },
+        "opid-field": "opid",
+        "value": {
+            "body": {
+                "kind": "string"
+            },
+            "opid": {
+                "kind": "string"
+            },
+            "srcfile": {
+                "kind": "string",
+                "identifier": true
+            },
+            "srcline": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "2022-06-02T12:25:11.537Z info wcp [eamagency/util.go:148] [opID=vCLS] Going to read service config",
+                "level": "info"
+            },
+            {
+                "line": "2022-06-02T10:54:45.001Z debug wcp [auth/session.go:156] Removing expired sessions",
+                "level": "debug"
+            }
+        ]
+    }
+}

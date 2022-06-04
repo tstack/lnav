@@ -100,6 +100,11 @@
                     "description": "The name of the timestamp field in the log message pattern",
                     "type": "string"
                 },
+                "time-field": {
+                    "title": "/<format_name>/time-field",
+                    "description": "The name of the time field in the log message pattern.  This field should only be specified if the timestamp field only contains a date.",
+                    "type": "string"
+                },
                 "body-field": {
                     "title": "/<format_name>/body-field",
                     "description": "The name of the body field in the log message pattern",
