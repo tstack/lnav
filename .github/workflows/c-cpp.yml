@@ -115,6 +115,7 @@ jobs:
           msys/libarchive-devel
           msys/libbz2-devel
           msys/libcurl-devel
+          msys/libidn2-devel
           msys/liblzma-devel
           msys/libreadline-devel
           msys/libsqlite-devel
