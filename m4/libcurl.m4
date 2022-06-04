@@ -128,7 +128,14 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
            fi
            if test x"$LIBCURL" = "x" ; then
               if $5; then
-                 LIBCURL=`$_libcurl_config --static-libs`
+                 case "$host_os" in
+                 darwin*)
+                    LIBCURL=`$_libcurl_config --libs`
+                    ;;
+                 *)
+                    LIBCURL=`$_libcurl_config --static-libs`
+                    ;;
+                 esac
               else
                  LIBCURL=`$_libcurl_config --libs`
               fi
@@ -142,6 +149,23 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
                  ;;
               esac
            fi
+
+           dnl If we are on OS X and we haven't picked up libcurl static or
+           dnl otherwise, then let's just go ahead and use the one present on
+           dnl the system. Since this compiled binary will only run on OS X
+           dnl which almost always has cURL installed, it's OK to add the
+           dnl static dependency.
+           AS_IF([test "x${LIBCURL}" = "x"],
+                [AS_CASE(["$host_os"],
+                    [darwin*],
+                    [AS_IF([test "x$_libcurl_config" != "x"],
+                        AS_VAR_SET(LIBCURL, $($_libcurl_config --libs)),
+                        []
+                    )],
+                    []
+                )],
+                []
+            )
 
            # All curl-config scripts support --feature
            _libcurl_features=`$_libcurl_config --feature`

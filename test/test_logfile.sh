@@ -6,6 +6,9 @@ echo ${top_builddir}
 printf '#Date:\t20\x800-2-02\n0\n' | run_cap_test \
     env TEST_COMMENT="short timestamp" ${lnav_test} -n
 
+printf '000\n000\n#Fields: 0\n0\n#Fields: 0\n0' | run_cap_test \
+    env TEST_COMMENT="invalid w3c log" ${lnav_test} -n
+
 cat > rollover_in.0 <<EOF
 2600/2 0 00:00:00 0:
 00:2 0 00:00:00 0:

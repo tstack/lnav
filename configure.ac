@@ -102,7 +102,7 @@ AC_SEARCH_LIBS(BZ2_bzopen, bz2,
 AC_SUBST(BZIP2_SUPPORT)
 AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(backtrace, execinfo)
-LIBCURL_CHECK_CONFIG([], [7.23.0], [], [AC_MSG_ERROR([libz required to build])], [test x"${enable_static}" = x"yes"])
+LIBCURL_CHECK_CONFIG([], [7.23.0], [], [AC_MSG_ERROR([libcurl required to build])], [test x"${enable_static}" = x"yes"])
 
 # Sometimes, curses depends on these libraries being linked in...
 AC_ARG_ENABLE([tinfo],

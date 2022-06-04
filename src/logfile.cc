@@ -260,6 +260,8 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
         }
     }
 
+    log_debug("match found %d %d", found, li.li_file_range.fr_offset);
+
     switch (found) {
         case log_format::SCAN_MATCH:
             if (!this->lf_index.empty()) {
@@ -327,6 +329,8 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
         case log_format::SCAN_INCOMPLETE:
             break;
     }
+
+    log_debug("index size %d", this->lf_index.size());
 
     return retval;
 }

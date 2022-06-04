@@ -236,7 +236,10 @@ class generic_log_format : public log_format {
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
-        return std::make_shared<generic_log_format>(*this);
+        auto retval = std::make_shared<generic_log_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
     }
 };
 
@@ -505,11 +508,15 @@ public:
         }
 
         if (found_ts) {
+            if (!this->lf_specialized) {
+                for (auto& ll : dst) {
+                    ll.set_ignore(true);
+                }
+            }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
             return SCAN_MATCH;
-        } else {
-            return SCAN_NO_MATCH;
         }
+        return SCAN_NO_MATCH;
     }
 
     scan_result_t scan(logfile& lf,
@@ -728,7 +735,10 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
-        return std::make_shared<bro_log_format>(*this);
+        auto retval = std::make_shared<bro_log_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
     }
 
     class bro_log_table : public log_format_vtab_impl {
@@ -1111,11 +1121,16 @@ public:
             tv.tv_sec = tm2sec(&tm.et_tm);
             tv.tv_usec = tm.et_nsec / 1000;
 
+            if (!this->lf_specialized) {
+                for (auto& ll : dst) {
+                    ll.set_ignore(true);
+                }
+            }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0);
             return SCAN_MATCH;
-        } else {
-            return SCAN_NO_MATCH;
         }
+
+        return SCAN_NO_MATCH;
     }
 
     scan_result_t scan(logfile& lf,
@@ -1249,7 +1264,6 @@ public:
         }
 
         if (!this->wlf_format_name.empty() && !this->wlf_field_defs.empty()) {
-            dst.clear();
             return this->scan_int(dst, li, sbr);
         }
 
@@ -1322,7 +1336,10 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
-        return std::make_shared<w3c_log_format>(*this);
+        auto retval = std::make_shared<w3c_log_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
     }
 
     class w3c_log_table : public log_format_vtab_impl {
@@ -1771,7 +1788,10 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
-        return std::make_shared<logfmt_format>(*this);
+        auto retval = std::make_shared<logfmt_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
     }
 };
 

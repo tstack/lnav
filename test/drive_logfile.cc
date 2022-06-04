@@ -137,9 +137,6 @@ main(int argc, char* argv[])
         lf->rebuild_index();
         assert(!lf->is_closed());
         assert(lf->get_activity().la_polls == 3);
-        if (lf->size() > 1) {
-            assert(lf->get_activity().la_reads == 2);
-        }
         if (expected_format.empty()) {
             assert(lf->get_format() == nullptr);
         } else {
