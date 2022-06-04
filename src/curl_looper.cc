@@ -46,13 +46,13 @@ struct curl_request_eq {
     bool operator()(const std::shared_ptr<curl_request>& cr) const
     {
         return this->cre_name == cr->get_name();
-    };
+    }
 
     bool operator()(
         const std::pair<mstime_t, std::shared_ptr<curl_request>>& pair) const
     {
         return this->cre_name == pair.second->get_name();
-    };
+    }
 
     const std::string& cre_name;
 };
@@ -127,6 +127,9 @@ curl_looper::perform_io()
     auto timeout = this->compute_timeout(current_time);
     int running_handles;
 
+    if (timeout < 1ms) {
+        timeout = 5ms;
+    }
     curl_multi_wait(this->cl_curl_multi, nullptr, 0, timeout.count(), nullptr);
     curl_multi_perform(this->cl_curl_multi, &running_handles);
 }
@@ -211,10 +214,8 @@ curl_looper::check_for_finished_requests()
         curl_multi_remove_handle(this->cl_curl_multi, easy);
         if (iter != this->cl_handle_to_request.end()) {
             auto cr = iter->second;
-            long delay_ms;
-
             this->cl_handle_to_request.erase(iter);
-            delay_ms = cr->complete(msg->data.result);
+            auto delay_ms = cr->complete(msg->data.result);
             if (delay_ms < 0) {
                 log_info("%s:curl_request %p finished, deleting...",
                          cr->get_name().c_str(),
@@ -243,15 +244,13 @@ curl_looper::compute_timeout(mstime_t current_time) const
     std::chrono::milliseconds retval = 1s;
 
     if (!this->cl_handle_to_request.empty()) {
-        retval = 1ms;
+        retval = 0ms;
     } else if (!this->cl_poll_queue.empty()) {
         retval
             = std::max(1ms,
                        std::chrono::milliseconds(
                            this->cl_poll_queue.front().first - current_time));
     }
-
-    ensure(retval.count() > 0);
 
     return retval;
 }

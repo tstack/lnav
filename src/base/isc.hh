@@ -78,7 +78,7 @@ public:
             safe::WriteAccess<safe_message_list, std::unique_lock>
                 writable_msgs(this->mp_messages);
 
-            if (writable_msgs->empty()) {
+            if (writable_msgs->empty() && rel_time.count() > 0) {
                 this->sp_cond.template wait_for(writable_msgs.lock, rel_time);
             }
 

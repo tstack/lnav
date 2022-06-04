@@ -41,7 +41,7 @@
 
 class url_loader : public curl_request {
 public:
-    url_loader(const std::string& url) : curl_request(url), ul_resume_offset(0)
+    url_loader(const std::string& url) : curl_request(url)
     {
         auto tmp_res = lnav::filesystem::open_temp_file(
             ghc::filesystem::temp_directory_path() / "lnav.url.XXXXXX");
@@ -57,17 +57,12 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_WRITEFUNCTION, write_cb);
         curl_easy_setopt(this->cr_handle, CURLOPT_WRITEDATA, this);
         curl_easy_setopt(this->cr_handle, CURLOPT_FILETIME, 1);
-    };
+        curl_easy_setopt(this->cr_handle, CURLOPT_BUFFERSIZE, 128L * 1024L);
+    }
 
-    int get_fd() const
-    {
-        return this->ul_fd.get();
-    };
+    int get_fd() const { return this->ul_fd.get(); }
 
-    auto_fd copy_fd() const
-    {
-        return this->ul_fd.dup();
-    };
+    auto_fd copy_fd() const { return this->ul_fd.dup(); }
 
     long complete(CURLcode result)
     {
@@ -125,7 +120,7 @@ public:
         }
 
         return -1;
-    };
+    }
 
 private:
     static const long FOLLOW_IF_MODIFIED_SINCE = 60 * 60;
@@ -148,7 +143,7 @@ private:
     }
 
     auto_fd ul_fd;
-    off_t ul_resume_offset;
+    off_t ul_resume_offset{0};
 };
 #endif
 
