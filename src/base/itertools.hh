@@ -586,7 +586,9 @@ operator|(const std::vector<T>& in,
     return retval;
 }
 
-template<typename T, typename F>
+template<typename T,
+         typename F,
+         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(const std::vector<std::shared_ptr<T>>& in,
           const lnav::itertools::details::mapper<F>& mapper)
@@ -629,7 +631,9 @@ operator|(const std::vector<T>& in,
     return retval;
 }
 
-template<typename T, typename F>
+template<typename T,
+         typename F,
+         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(nonstd::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
@@ -643,7 +647,9 @@ operator|(nonstd::optional<T> in,
     return nonstd::make_optional((in.value()).*mapper.m_func);
 }
 
-template<typename T, typename F>
+template<typename T,
+         typename F,
+         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(nonstd::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
