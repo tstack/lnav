@@ -119,6 +119,7 @@ jobs:
           msys/liblzma-devel
           msys/libreadline-devel
           msys/libsqlite-devel
+          msys/libunistring-devel
           msys/ncurses-devel
           msys/pcre-devel
           msys/zlib-devel
@@ -135,10 +136,9 @@ jobs:
                     CPPFLAGS="-I../src -I../../lnav/src -I../../lnav/src/fmtlib -O2 -DNCURSES_STATIC" \
                     CXXFLAGS="-fPIC" \
                     CFLAGS="-fPIC" \
-                    LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv" \
+                    LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring" \
                     --sysconfdir=/etc \
-                    --prefix=$PREFIX
-        cat config.log
+                    --prefix=$PREFIX || cat config.log
     - name: '🚧 Make (do not use -j)'
       run: |
         set -x
