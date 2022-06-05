@@ -58,7 +58,7 @@ breadcrumb_curses::do_update()
 
     size_t crumb_index = 0;
     size_t sel_crumb_offset = 0;
-    auto width = getmaxx(this->bc_window);
+    auto width = static_cast<size_t>(getmaxx(this->bc_window));
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
                                                   : this->bc_focused_crumbs;
     attr_line_t crumbs_line;
@@ -91,7 +91,7 @@ breadcrumb_curses::do_update()
         crumbs_line.append("\u276d"_breadcrumb);
     }
 
-    line_range lr{0, width};
+    line_range lr{0, static_cast<int>(width)};
     view_curses::mvwattrline(
         this->bc_window, this->bc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
 
@@ -159,7 +159,9 @@ breadcrumb_curses::reload_data()
                      },
                      selected_crumb_ref.c_display_value.length());
 
-    if (selected_crumb_ref.c_search_placeholder.size() > width) {
+    if (static_cast<ssize_t>(selected_crumb_ref.c_search_placeholder.size())
+        > width)
+    {
         width = selected_crumb_ref.c_search_placeholder.size();
     }
     this->bc_match_view.set_height(vis_line_t(
@@ -303,7 +305,8 @@ breadcrumb_curses::perform_selection(
     auto& selected_crumb_ref
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     auto match_sel = this->bc_match_view.get_selection();
-    if (match_sel >= 0 && match_sel < this->bc_similar_values.size()) {
+    if (match_sel >= 0
+        && match_sel < vis_line_t(this->bc_similar_values.size())) {
         const auto& new_value = this->bc_similar_values[match_sel].p_key;
 
         switch (behavior) {

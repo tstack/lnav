@@ -97,8 +97,9 @@ intern_string::lookup(const char* str, ssize_t len) noexcept
 
         curr = tab->it_table[h];
         while (curr != nullptr) {
-            if (curr->is_str.size() == len
-                && strncmp(curr->is_str.c_str(), str, len) == 0) {
+            if (static_cast<ssize_t>(curr->is_str.size()) == len
+                && strncmp(curr->is_str.c_str(), str, len) == 0)
+            {
                 return curr;
             }
             curr = curr->is_next;
@@ -231,4 +232,21 @@ string_fragment::split_lines() const
     retval.emplace_back(this->sf_string, start, this->sf_end);
 
     return retval;
+}
+
+Result<ssize_t, const char*>
+string_fragment::utf8_length() const
+{
+    ssize_t retval = 0;
+
+    for (ssize_t byte_index = this->sf_begin; byte_index < this->sf_end;) {
+        auto ch_size = TRY(ww898::utf::utf8::char_size([this, byte_index]() {
+            return std::make_pair(this->sf_string[byte_index],
+                                  this->sf_end - byte_index);
+        }));
+        byte_index += ch_size;
+        retval += 1;
+    }
+
+    return Ok(retval);
 }

@@ -350,7 +350,9 @@ static const typed_json_path_container<console::user_message>
             .with_obj_provider<console::snippet, console::user_message>(
                 [](const yajlpp_provider_context& ypc,
                    console::user_message* root) {
-                    root->um_snippets.resize(ypc.ypc_index + 1);
+                    if (ypc.ypc_index >= root->um_snippets.size()) {
+                        root->um_snippets.resize(ypc.ypc_index + 1);
+                    }
 
                     return &root->um_snippets[ypc.ypc_index];
                 })

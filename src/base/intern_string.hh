@@ -65,22 +65,7 @@ struct string_fragment {
 
     int length() const { return this->sf_end - this->sf_begin; }
 
-    Result<size_t, const char*> utf8_length() const
-    {
-        size_t retval = 0;
-
-        for (ssize_t byte_index = this->sf_begin; byte_index < this->sf_end;) {
-            auto ch_size
-                = TRY(ww898::utf::utf8::char_size([this, byte_index]() {
-                      return std::make_pair(this->sf_string[byte_index],
-                                            this->sf_end - byte_index);
-                  }));
-            byte_index += ch_size;
-            retval += 1;
-        }
-
-        return Ok(retval);
-    }
+    Result<ssize_t, const char*> utf8_length() const;
 
     const char* data() const { return &this->sf_string[this->sf_begin]; }
 

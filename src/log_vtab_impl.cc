@@ -683,7 +683,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         lf, line_number, vc->log_msg, vc->line_values);
                 }
 
-                size_t sub_col = col - VT_COL_MAX;
+                int sub_col = col - VT_COL_MAX;
                 std::vector<logline_value>::iterator lv_iter;
 
                 lv_iter = find_if(vc->line_values.begin(),

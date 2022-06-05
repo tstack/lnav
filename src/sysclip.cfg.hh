@@ -35,6 +35,7 @@
 #include <map>
 #include <string>
 
+#include "base/lnav_log.hh"
 #include "sysclip.hh"
 
 namespace sysclip {
@@ -51,6 +52,8 @@ struct clip_commands {
             case op_t::READ:
                 return this->cc_read;
         }
+
+        ensure(false);
     }
 };
 
@@ -67,6 +70,8 @@ struct clipboard {
             case type_t::FIND:
                 return this->c_find;
         }
+
+        ensure(false);
     }
 };
 

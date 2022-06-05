@@ -123,7 +123,7 @@ discover_metadata(const attr_line_t& al)
         {
         }
 
-        uint32_t oi_level;
+        int32_t oi_level;
         file_off_t oi_start;
         section_key_t oi_id;
         std::unique_ptr<hier_node> oi_node{std::make_unique<hier_node>()};

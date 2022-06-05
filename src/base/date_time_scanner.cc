@@ -211,7 +211,8 @@ date_time_scanner::scan(const char* time_dest,
         retval = nullptr;
     }
 
-    if (retval != nullptr && (retval - time_dest) < time_len) {
+    if (retval != nullptr && static_cast<size_t>(retval - time_dest) < time_len)
+    {
         /* Try to pull out the milli/micro-second value. */
         if (retval[0] == '.' || retval[0] == ',') {
             off_t off = (retval - time_dest) + 1;

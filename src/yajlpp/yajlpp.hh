@@ -89,7 +89,9 @@ class yajlpp_parse_context;
 
 struct yajlpp_provider_context {
     pcre_extractor ypc_extractor;
-    int ypc_index;
+    size_t ypc_index{0};
+
+    static constexpr size_t nindex = static_cast<size_t>(-1);
 
     template<typename T>
     intern_string_t get_substr_i(T name) const
@@ -149,7 +151,7 @@ struct json_path_handler_base {
         }
 
         const char* first;
-        unsigned int second;
+        int second;
     };
 
     static const enum_value_t ENUM_TERMINATOR;
@@ -400,7 +402,7 @@ public:
     yajl_callbacks ypc_alt_callbacks;
     std::vector<char> ypc_path;
     std::vector<size_t> ypc_path_index_stack;
-    std::vector<int> ypc_array_index;
+    std::vector<size_t> ypc_array_index;
     std::vector<const json_path_handler_base*> ypc_handler_stack;
     pcre_context_static<30> ypc_pcre_context;
     bool ypc_ignore_unused{false};
@@ -416,11 +418,11 @@ public:
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
-    int index_for_provider() const
+    size_t index_for_provider() const
     {
-        return this->ypc_array_index.empty() ? -1
+        return this->ypc_array_index.empty() ? static_cast<size_t>(-1)
                                              : this->ypc_array_index.back();
-    };
+    }
 
     static int map_start(void* ctx);
     static int map_key(void* ctx, const unsigned char* key, size_t len);

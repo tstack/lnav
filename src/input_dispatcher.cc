@@ -169,7 +169,9 @@ input_dispatcher::reset_escape_buffer(int ch,
 void
 input_dispatcher::append_to_escape_buffer(int ch)
 {
-    if (this->id_escape_index < (sizeof(this->id_escape_buffer) - 1)) {
+    if (this->id_escape_index
+        < static_cast<ssize_t>(sizeof(this->id_escape_buffer) - 1))
+    {
         this->id_escape_buffer[this->id_escape_index++] = static_cast<char>(ch);
         this->id_escape_buffer[this->id_escape_index] = '\0';
     }

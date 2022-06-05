@@ -1303,7 +1303,9 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
     if (this->lss_index_delegate) {
         this->lss_index_delegate->index_start(*this);
     }
-    for (auto row = 0_vl; row < this->lss_filtered_index.size(); row += 1_vl) {
+    for (auto row = 0_vl; row < vis_line_t(this->lss_filtered_index.size());
+         row += 1_vl)
+    {
         auto cl = this->at(row);
         auto ld = this->find_data(cl);
         auto ll = (*ld)->get_file()->begin() + cl;
@@ -1919,7 +1921,7 @@ logline_window::end()
 logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
     : li_source(lss), li_line(vl)
 {
-    if (this->li_line < this->li_source.text_line_count()) {
+    if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
         while (true) {
             auto pair_opt = this->li_source.find_line_with_file(vl);
 
@@ -1948,7 +1950,7 @@ logline_window::logmsg_info::next_msg()
     this->li_string_attrs.clear();
     this->li_line_values.clear();
     ++this->li_line;
-    while (this->li_line < this->li_source.text_line_count()) {
+    while (this->li_line < vis_line_t(this->li_source.text_line_count())) {
         auto pair_opt = this->li_source.find_line_with_file(this->li_line);
 
         if (!pair_opt) {

@@ -647,7 +647,7 @@ public:
 
     attr_line_t& right_justify(unsigned long width);
 
-    attr_line_t& pad_to(size_t size);
+    attr_line_t& pad_to(ssize_t size);
 
     ssize_t length() const
     {

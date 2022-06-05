@@ -174,7 +174,7 @@ attr_line_t::insert(size_t index,
 
     static const pcrepp SPACE_RE(R"(\s?)");
 
-    ssize_t starting_line_index = this->al_string.rfind('\n', index);
+    auto starting_line_index = this->al_string.rfind('\n', index);
     if (starting_line_index == std::string::npos) {
         starting_line_index = 0;
     } else {
@@ -186,7 +186,7 @@ attr_line_t::insert(size_t index,
     auto text_to_wrap
         = string_fragment{this->al_string.data(), (int) starting_line_index};
     string_fragment last_word;
-    size_t line_ch_count = 0;
+    ssize_t line_ch_count = 0;
     auto needs_indent = false;
 
     while (!text_to_wrap.empty()) {
@@ -444,7 +444,7 @@ attr_line_t::erase(size_t pos, size_t len)
 }
 
 attr_line_t&
-attr_line_t::pad_to(size_t size)
+attr_line_t::pad_to(ssize_t size)
 {
     const auto curr_len = this->utf8_length_or_length();
 

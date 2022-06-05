@@ -88,7 +88,7 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
             pcre_context_static<30> pc;
             pcre_input pi("");
 
-            yajlpp_provider_context ypc{{pc, pi}, static_cast<int>(index)};
+            yajlpp_provider_context ypc{{pc, pi}, index};
             yajlpp_gen_context elem_ygc(handle, *this->jph_children);
             elem_ygc.ygc_depth = 1;
             elem_ygc.ygc_obj_stack.push(
@@ -127,10 +127,12 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 
                 this->jph_regex.match(pc, pi);
                 ygc.ygc_obj_stack.push(this->jph_obj_provider(
-                    {{pc, pi}, -1}, ygc.ygc_obj_stack.top()));
+                    {{pc, pi}, yajlpp_provider_context::nindex},
+                    ygc.ygc_obj_stack.top()));
                 if (!ygc.ygc_default_stack.empty()) {
                     ygc.ygc_default_stack.push(this->jph_obj_provider(
-                        {{pc, pi}, -1}, ygc.ygc_default_stack.top()));
+                        {{pc, pi}, yajlpp_provider_context::nindex},
+                        ygc.ygc_default_stack.top()));
                 }
             }
 
@@ -395,7 +397,9 @@ json_path_handler_base::walk(
                         ensure(false);
                     }
                     child_root = this->jph_obj_provider(
-                        {{ypc.ypc_pcre_context, pi}, -1}, root);
+                        {{ypc.ypc_pcre_context, pi},
+                         yajlpp_provider_context::nindex},
+                        root);
                 }
 
                 jph.walk(cb, child_root, full_path);
@@ -431,7 +435,7 @@ const char*
 json_path_handler_base::to_enum_string(int value) const
 {
     for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
-        const enum_value_t& ev = this->jph_enum_values[lpc];
+        const auto& ev = this->jph_enum_values[lpc];
 
         if (ev.second == value) {
             return ev.first;
@@ -584,7 +588,7 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         }
     }
 
-    for (auto& jph : handlers->jpc_children) {
+    for (const auto& jph : handlers->jpc_children) {
         pi.reset(&this->ypc_path[1 + child_start],
                  0,
                  this->ypc_path.size() - 2 - child_start);
@@ -592,11 +596,12 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
             pcre_context::capture_t* cap = this->ypc_pcre_context.all();
 
             if (jph.jph_obj_provider) {
-                int index = this->index_for_provider();
+                auto index = this->index_for_provider();
 
                 if ((1 + child_start + cap->c_end
                      != (int) this->ypc_path.size() - 1)
-                    && (!jph.is_array() || index >= 0))
+                    && (!jph.is_array()
+                        || index != yajlpp_provider_context::nindex))
                 {
                     this->ypc_obj_stack.push(jph.jph_obj_provider(
                         {{this->ypc_pcre_context, pi}, index},

@@ -129,7 +129,7 @@ public:
     {
         text_sub_source::text_crumbs_for_line(line, crumbs);
 
-        if (line < 0 || line > this->tds_lines.size()) {
+        if (line < 0 || static_cast<size_t>(line) > this->tds_lines.size()) {
             return;
         }
 

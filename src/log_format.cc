@@ -2036,7 +2036,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 pcre_input pi_full(elf_sample.s_line.pp_value);
 
                 if (!pat.p_pcre->match(pc_full, pi_full)
-                    || pc_full.all()->length()
+                    || static_cast<size_t>(pc_full.all()->length())
                         != elf_sample.s_line.pp_value.length())
                 {
                     errors.emplace_back(

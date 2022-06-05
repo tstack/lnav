@@ -245,7 +245,7 @@ println(FILE* file, const attr_line_t& al)
         return;
     }
 
-    std::set<int> points = {0, (int) al.length()};
+    std::set<size_t> points = {0, static_cast<size_t>(al.length())};
 
     for (const auto& attr : al.get_attrs()) {
         if (!attr.sa_range.is_valid()) {
@@ -257,7 +257,7 @@ println(FILE* file, const attr_line_t& al)
         }
     }
 
-    nonstd::optional<int> last_point;
+    nonstd::optional<size_t> last_point;
     for (const auto& point : points) {
         if (last_point) {
             auto default_fg_style = fmt::text_style{};
