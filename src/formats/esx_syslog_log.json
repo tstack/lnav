@@ -4,7 +4,10 @@
         "description": "Format file generated from regex101 entry -- https://regex101.com/r/wHXtl4/1",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\])?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            },
+            "host": {
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?:host-(?<log_pid>\\d+))?)\\s+(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "notime": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2})\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)\\s+(?<log_procname>[^\\[]+)\\[(?<log_pid>\\d+)\\]:\\s(?<new_time>\\d{2}:\\d{2}:\\d{2}\\.\\d+)\\s+(?<body>.*)"
@@ -50,6 +53,9 @@
             },
             {
                 "line": "2022-06-02T05:34:23Z In(14)[+] hostprofile[1001430319]: {'mode': 'Disabled', 'exceptionUsers': []}"
+            },
+            {
+                "line": "2022-06-01T13:42:40.681Z In(05) host-16250 <analytics> Skip service health check. State STOPPED, Curr request 0"
             }
         ]
     }

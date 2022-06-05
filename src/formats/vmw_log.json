@@ -12,7 +12,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
             },
             "section": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|Section for VMware VirtualCenter,.*|- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
             },
             "5.0+": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[^ \\]]+))?\\](?<body>.*)(?:\\n.*)?$"
@@ -135,6 +135,9 @@
             },
             {
                 "line": "2021-06-16T14:59:52.362Z info vsand[1000083783] [opID=MainThread VsanMgmtSvcMain::_PatchPyVmomi] Python 3.8.8 (default, Jun  1 2021, 03:16:39)  [GCC 4.6.3] on VMkernel, optimize: 0, recursionLimit: 300"
+            },
+            {
+                "line": "2022-06-01T13:24:08.243Z Section for vdtc, pid=4774, version=e.x.p, build=19889761, option=Release"
             }
         ]
     }

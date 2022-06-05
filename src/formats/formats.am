@@ -37,6 +37,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vdsm_log.json \
     $(srcdir)/%reldir%/vmk_log.json \
     $(srcdir)/%reldir%/vmw_log.json \
-    $(srcdir)/%reldir%/vmw_wcp_log.json \
+    $(srcdir)/%reldir%/vmw_vc_svc_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
     $()

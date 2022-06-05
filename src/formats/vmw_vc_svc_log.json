@@ -1,12 +1,12 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
-    "vmw_wcp_log": {
-        "title": "VMware WCP Log",
-        "description": "Log files for the Workload Control Plane",
+    "vmw_vc_svc_log": {
+        "title": "VMware Go Log",
+        "description": "Log files for go-based logs",
         "url": "https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-2A989D79-463C-4EC8-A5F2-CDC3A2C827FB.html",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)\\s+(?<level>\\w+)\\s+wcp\\s\\[(?<srcfile>[^:]+):(?<srcline>\\d+)\\](\\s+\\[opID=(?<opid>[^\\]]+)\\])?\\s+(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)\\s+(?<level>\\w+)\\s+(?<module>\\w+)\\s\\[(?<srcfile>[^:]+):(?<srcline>\\d+)\\](\\s+\\[opID=(?<opid>[^\\]]+)\\])?\\s+(?<body>.*)"
             }
         },
         "opid-field": "opid",
@@ -24,6 +24,10 @@
             "srcline": {
                 "kind": "string",
                 "identifier": true
+            },
+            "module": {
+                "kind": "string",
+                "identifier": true
             }
         },
         "sample": [
@@ -34,6 +38,10 @@
             {
                 "line": "2022-06-02T10:54:45.001Z debug wcp [auth/session.go:156] Removing expired sessions",
                 "level": "debug"
+            },
+            {
+                "line": "2022-06-02T08:35:17.031Z info vlcm [logger/teelogger.go:47] [opID=vapi] Loading Introspection Services",
+                "level": "info"
             }
         ]
     }
