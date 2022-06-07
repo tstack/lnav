@@ -6,16 +6,41 @@
         "url": "",
         "regex": {
             "jvm": {
-                "pattern": "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>.*)"
+                "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>.*)"
             },
             "dump": {
-                "pattern": "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>.*)$"
+                "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>.*)$"
             },
             "tasko": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<alert_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+            },
+            "prefix-brackets": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+            },
+            "in-brackets": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+\\[\\])?\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+            },
+            "nobrackets": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+            },
+            "vmw1": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<srcfile>[^\\|]+)\\s*\\|\\s*(?<srcline>\\d+)\\s*\\|\\s*(?<body>.*)$"
+            },
+            "vmw2": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\d+\\[(?<thread>[^\\]]+)\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+-\\s+(?<body>.*)$"
+            },
+            "vmw3": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[^\\|]+)\\s*\\|\\s*(?<body>.*)$"
+            },
+            "vmw-sso": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+\\w+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
+            },
+            "vmw-sps": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
             }
         },
-        "level-field": "alert_level",
+        "level-field": "level",
+        "opid-field": "opid",
         "level": {
             "error": "ERROR",
             "warning": "WARN",
@@ -27,7 +52,11 @@
                 "kind": "string",
                 "identifier": true
             },
-            "alert_level": {
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
                 "kind": "string"
             },
             "jvm_no": {
@@ -36,8 +65,29 @@
             "debug_level": {
                 "kind": "string"
             },
+            "opid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "corid": {
+                "kind": "string",
+                "identifier": true
+            },
             "class": {
-                "kind": "string"
+                "kind": "string",
+                "identifier": true
+            },
+            "method": {
+                "kind": "string",
+                "identifier": true
+            },
+            "srcfile": {
+                "kind": "string",
+                "identifier": true
+            },
+            "srcline": {
+                "kind": "string",
+                "identifier": true
             },
             "body": {
                 "kind": "string"
@@ -55,6 +105,33 @@
             },
             {
                 "line": "INFO   | jvm 1    | 2015/05/24 07:35:50 | JVMDUMP013I Processed dump event \"user\", detail \"\"."
+            },
+            {
+                "line": "2022-06-02T12:12:38.414Z phProdLogDrainerTaskExecutor-5  INFO  org.bouncycastle.jsse.provider.ProvTrustManagerFactorySpi Initializing with trust store at path: /usr/java/jre-vmware/lib/security/cacerts"
+            },
+            {
+                "line": "2022-06-02T12:23:11.514Z |  INFO | vim-async-1 | VcEventManager.java | 806 | [EventIndex: 2154] Event posted."
+            },
+            {
+                "line": "2022-06-02T12:23:44.971Z [syncaas-grpc-5  INFO  com.vmware.hvc.topology.util.LookupServiceUtil  opId=] Local Node id is 9c66ff98-3fee-420c-a2bb-dbe2276c1aab"
+            },
+            {
+                "line": "[2022-06-02T10:45:15.969Z tomcat-http--188                                                           ERROR com.vmware.vim.vmomi.server.http.impl.AsyncServlet30Template] Internal server error during asynchronous request processing"
+            },
+            {
+                "line": "[2022-06-01T13:37:36,371] WARN574240[Thread-35] - com.vmware.observability.observer.Observer.execute(Observer.java:384) - No metric configured for observation from source LimitCollectorPlugin.limit"
+            },
+            {
+                "line": "2022-06-02T12:23:44.070Z INFO tokenservice[83:tomcat-http--36] [CorId=95c59584-4472-4f7c-ad9e-f228b94d9b45 OpId=16205349-254c-4f76-a7f1-aa15aae385c5] [com.vmware.vcenter.tokenservice.ExchangeFacadeImpl] Parsed Caller token; tokenType=SAML2"
+            },
+            {
+                "line": "2022-06-01T13:43:59.791Z [main [] INFO  com.vmware.vcenter.trustmanagement.service.TrustManagement  opId=] trustmanagement-vlsi.xml"
+            },
+            {
+                "line": "2022-06-02T08:34:01.203Z | INFO  | state-manager1            | org.eclipse.jetty.server.session | DefaultSessionIdManager workerName=node0"
+            },
+            {
+                "line": "2022-06-02T11:26:26.803Z [pool-26-thread-1] INFO  opId=sps-Main-158837-921 com.vmware.vim.storage.common.util.OperationIdUtil - OperationID present in invoker thread, adding suffix and re-using it - sps-Main-158837-921-169186-507."
             }
         ]
     }

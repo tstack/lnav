@@ -1,12 +1,12 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
-    "autodeploy_log": {
-        "title": "VMware vSphere Auto Deploy log format",
-        "description": "The log format for the VMware Auto Deploy service",
+    "vmw_py_log": {
+        "title": "VMware vSphere log format",
+        "description": "The log format for some VMware vSphere services",
         "url": "http://kb.vmware.com/kb/2000988",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>[\\w-]+):(?<body>.*$)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?: (?:AM|PM) UTC)?) \\[(?<pid>\\d+)\\](?<level>ERROR|WARNING|INFO|DEBUG):(?<module>[\\w\\-\\.]+):(?<body>.*$)"
             }
         },
         "level-field": "level",
@@ -33,6 +33,9 @@
         "sample": [
             {
                 "line": "2015-04-24T21:09:29.296 [25376]INFO:somemodule:Something very INFOrmative."
+            },
+            {
+                "line": "2022-06-01T13:23:25.515 [2376]DEBUG:vmware.vherd.base.detwist:method = com.vmware.appliance.version1.networking.interfaces.list, args = ()"
             }
         ]
     }

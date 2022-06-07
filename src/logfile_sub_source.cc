@@ -2124,7 +2124,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     format->annotate(file_line_number, sbr, sa, values);
 
     auto opid_opt = get_string_attr(sa, logline::L_OPID);
-    if (opid_opt) {
+    if (opid_opt && !opid_opt.value().saw_string_attr->sa_range.empty()) {
         const auto& opid_range = opid_opt.value().saw_string_attr->sa_range;
         const auto opid_str
             = sbr.to_string_fragment(opid_range.lr_start, opid_range.length())

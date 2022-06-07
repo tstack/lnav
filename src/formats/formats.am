@@ -2,7 +2,6 @@
 FORMAT_FILES = \
     $(srcdir)/%reldir%/access_log.json \
     $(srcdir)/%reldir%/alb_log.json \
-    $(srcdir)/%reldir%/autodeploy_log.json \
     $(srcdir)/%reldir%/block_log.json \
     $(srcdir)/%reldir%/candlepin_log.json \
     $(srcdir)/%reldir%/choose_repo_log.json \
@@ -38,5 +37,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vmk_log.json \
     $(srcdir)/%reldir%/vmw_log.json \
     $(srcdir)/%reldir%/vmw_vc_svc_log.json \
+    $(srcdir)/%reldir%/vmw_py_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
     $()
