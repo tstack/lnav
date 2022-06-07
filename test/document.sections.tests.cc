@@ -82,3 +82,53 @@ TEST_CASE("lnav::document::sections::basics")
             }
         });
 }
+
+TEST_CASE("lnav::document::sections::empty")
+{
+    static const std::string INPUT
+        = R"(SOCKET 1 (10) creating new listening socket on port -1)";
+
+    auto meta = lnav::document::discover_structure(INPUT);
+
+    meta.m_sections_tree.visit_all([](const auto& intv) {
+        auto ser = intv.value.match(
+            [](const std::string& name) { return name; },
+            [](const size_t index) { return fmt::format("{}", index); });
+        printf("interval %d:%d %s\n", intv.start, intv.stop, ser.c_str());
+    });
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(), [](const auto* node) {
+            printf("node %p %d\n", node, node->hn_start);
+            for (const auto& pair : node->hn_named_children) {
+                printf("  child: %p %s\n", pair.second, pair.first.c_str());
+            }
+        });
+}
+
+TEST_CASE("lnav::document::sections::sql")
+{
+    static const std::string INPUT
+        = R"(2022-06-03T22:05:58.186Z verbose -[35642] [Originator@6876 sub=Default] [VdbStatement]Executing SQL:
+-->       INSERT INTO PM_CLUSTER_DRAFT_VALIDATION_STATE
+-->         (draft_id, errors, hosts) VALUES (?::integer, ?::jsonb, ARRAY[]::text[])
+-->         ON CONFLICT (draft_id) DO UPDATE
+-->           SET errors = EXCLUDED.errors, hosts = EXCLUDED.hosts
+-->
+)";
+
+    auto meta = lnav::document::discover_structure(INPUT);
+
+    meta.m_sections_tree.visit_all([](const auto& intv) {
+        auto ser = intv.value.match(
+            [](const std::string& name) { return name; },
+            [](const size_t index) { return fmt::format("{}", index); });
+        printf("interval %d:%d %s\n", intv.start, intv.stop, ser.c_str());
+    });
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(), [](const auto* node) {
+            printf("node %p %d\n", node, node->hn_start);
+            for (const auto& pair : node->hn_named_children) {
+                printf("  child: %p %s\n", pair.second, pair.first.c_str());
+            }
+        });
+}

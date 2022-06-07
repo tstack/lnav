@@ -162,10 +162,10 @@ struct json_path_handler_base {
 
     json_path_handler_base(std::string property, const pcrepp& property_re);
 
-    bool is_array() const
-    {
-        return this->jph_is_array;
-    }
+    json_path_handler_base(std::string property,
+                           const std::shared_ptr<pcrepp>& property_re);
+
+    bool is_array() const { return this->jph_is_array; }
 
     nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
     const char* to_enum_string(int value) const;
@@ -192,7 +192,7 @@ struct json_path_handler_base {
     std::vector<schema_type_t> get_types() const;
 
     std::string jph_property;
-    pcrepp jph_regex;
+    std::shared_ptr<pcrepp> jph_regex;
     yajl_callbacks jph_callbacks{};
     std::function<yajl_gen_status(
         yajlpp_gen_context&, const json_path_handler_base&, yajl_gen)>

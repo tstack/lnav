@@ -414,11 +414,11 @@ add_config_possibilities()
                              const std::string& path,
                              void* mem) {
         if (jph.jph_children) {
-            if (!jph.jph_regex.p_named_count) {
+            if (!jph.jph_regex->p_named_count) {
                 rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             }
-            for (auto named_iter = jph.jph_regex.named_begin();
-                 named_iter != jph.jph_regex.named_end();
+            for (auto named_iter = jph.jph_regex->named_begin();
+                 named_iter != jph.jph_regex->named_end();
                  ++named_iter)
             {
                 if (visited.count(named_iter->pnc_name) == 0) {

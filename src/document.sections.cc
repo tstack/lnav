@@ -243,30 +243,49 @@ public:
                 }
                 case DT_LCURLY:
                 case DT_LSQUARE:
-                case DT_LPAREN:
+                case DT_LPAREN: {
                     this->flush_values();
+                    // this->append_child_node(term);
                     this->sw_depth += 1;
-                    if (!this->sw_interval_state.back().is_start) {
-                        this->sw_interval_state.back().is_start
-                            = el.e_capture.c_begin;
-                        this->sw_interval_state.back().is_line_number
-                            = this->sw_line_number;
-                    }
+                    this->sw_interval_state.back().is_start
+                        = el.e_capture.c_begin;
+                    this->sw_interval_state.back().is_line_number
+                        = this->sw_line_number;
                     this->sw_interval_state.resize(this->sw_depth + 1);
                     this->sw_hier_nodes.push_back(
                         std::make_unique<hier_node>());
                     break;
+                }
                 case DT_RCURLY:
                 case DT_RSQUARE:
                 case DT_RPAREN: {
                     auto term = this->flush_values();
                     if (this->sw_depth > 0) {
-                        this->sw_depth -= 1;
                         this->append_child_node(term);
+                        this->sw_depth -= 1;
                         this->sw_interval_state.pop_back();
                         this->sw_hier_stage
                             = std::move(this->sw_hier_nodes.back());
                         this->sw_hier_nodes.pop_back();
+                        if (this->sw_interval_state.back().is_start) {
+                            pcre_context::capture_t obj_cap = {
+                                static_cast<int>(this->sw_interval_state.back()
+                                                     .is_start.value()),
+                                el.e_capture.c_end,
+                            };
+
+                            auto sf = pi.get_string_fragment(&obj_cap);
+                            if (!sf.find('\n')) {
+                                this->sw_hier_stage->hn_named_children.clear();
+                                this->sw_hier_stage->hn_children.clear();
+                                while (!this->sw_intervals.empty()
+                                       && this->sw_intervals.back().start
+                                           > obj_cap.c_begin)
+                                {
+                                    this->sw_intervals.pop_back();
+                                }
+                            }
+                        }
                     }
                     this->sw_values.emplace_back(el);
                     break;
@@ -383,21 +402,24 @@ private:
     void append_child_node(nonstd::optional<pcre_context::capture_t> terminator)
     {
         auto& ivstate = this->sw_interval_state.back();
-        if (!ivstate.is_start || !terminator) {
+        if (!ivstate.is_start || !terminator || this->sw_depth == 0) {
+            ivstate.is_start = nonstd::nullopt;
+            ivstate.is_line_number = 0;
+            ivstate.is_name.clear();
             return;
         }
 
+        const auto& pi = this->sw_scanner.get_input().get_string();
+        auto new_node = this->sw_hier_stage != nullptr
+            ? std::move(this->sw_hier_stage)
+            : std::make_unique<lnav::document::hier_node>();
+        auto iv_start = ivstate.is_start.value();
+        auto iv_stop = static_cast<ssize_t>(terminator.value().c_end);
         auto* top_node = this->sw_hier_nodes.back().get();
         auto new_key = ivstate.is_name.empty()
             ? lnav::document::section_key_t{top_node->hn_children.size()}
             : lnav::document::section_key_t{ivstate.is_name};
-        this->sw_intervals.emplace_back(
-            ivstate.is_start.value(),
-            static_cast<ssize_t>(terminator.value().c_end),
-            new_key);
-        auto new_node = this->sw_hier_stage != nullptr
-            ? std::move(this->sw_hier_stage)
-            : std::make_unique<lnav::document::hier_node>();
+        this->sw_intervals.emplace_back(iv_start, iv_stop, new_key);
         auto* retval = new_node.get();
         new_node->hn_parent = top_node;
         new_node->hn_start = this->sw_intervals.back().start;

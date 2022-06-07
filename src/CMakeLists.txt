@@ -112,7 +112,6 @@ endforeach (FILE_TO_LINK)
 set(FORMAT_FILES
         formats/access_log.json
         formats/alb_log.json
-        formats/autodeploy_log.json
         formats/block_log.json
         formats/candlepin_log.json
         formats/choose_repo_log.json
@@ -121,6 +120,7 @@ set(FORMAT_FILES
         formats/elb_log.json
         formats/engine_log.json
         formats/error_log.json
+        formats/esx_syslog_log.json
         formats/fsck_hfs_log.json
         formats/glog_log.json
         formats/haproxy_log.json
@@ -144,6 +144,8 @@ set(FORMAT_FILES
         formats/vdsm_log.json
         formats/vmk_log.json
         formats/vmw_log.json
+        formats/vmw_vc_svc_log.json
+        formats/vmw_py_log.json
         formats/xmlrpc_log.json)
 
 set(FORMAT_FILE_PATHS ${FORMAT_FILES})

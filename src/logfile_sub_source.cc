@@ -2226,7 +2226,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                       vis_line_t(line_from_top + line_number));
                               };
                     });
-                if (curr_node && curr_node.value()->hn_parent->is_named_only())
+                if (curr_node && !curr_node.value()->hn_parent->is_named_only())
                 {
                     auto node = lnav::document::hier_node::lookup_path(
                         meta->m_sections_root.get(), path);

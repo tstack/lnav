@@ -46,7 +46,8 @@ json_path_handler_base::json_path_handler_base(const std::string& property)
     : jph_property(property.back() == '#'
                        ? property.substr(0, property.size() - 1)
                        : property),
-      jph_regex(pcrepp::quote(property), PCRE_ANCHORED),
+      jph_regex(
+          std::make_shared<pcrepp>(pcrepp::quote(property), PCRE_ANCHORED)),
       jph_is_array(property.back() == '#')
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
@@ -61,7 +62,8 @@ scrub_pattern(const std::string& pattern)
 }
 
 json_path_handler_base::json_path_handler_base(const pcrepp& property)
-    : jph_property(scrub_pattern(property.p_pattern)), jph_regex(property),
+    : jph_property(scrub_pattern(property.p_pattern)),
+      jph_regex(std::make_shared<pcrepp>(property)),
       jph_is_array(property.p_pattern.back() == '#'),
       jph_is_pattern_property(true)
 {
@@ -70,8 +72,17 @@ json_path_handler_base::json_path_handler_base(const pcrepp& property)
 
 json_path_handler_base::json_path_handler_base(std::string property,
                                                const pcrepp& property_re)
-    : jph_property(std::move(property)), jph_regex(property_re),
+    : jph_property(std::move(property)),
+      jph_regex(std::make_shared<pcrepp>(property_re)),
       jph_is_array(property_re.p_pattern.find('#') != std::string::npos)
+{
+    memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
+}
+
+json_path_handler_base::json_path_handler_base(
+    std::string property, const std::shared_ptr<pcrepp>& property_re)
+    : jph_property(std::move(property)), jph_regex(property_re),
+      jph_is_array(property_re->p_pattern.find('#') != std::string::npos)
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
@@ -125,7 +136,7 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
                 pcre_context_static<30> pc;
                 pcre_input pi(full_path);
 
-                this->jph_regex.match(pc, pi);
+                this->jph_regex->match(pc, pi);
                 ygc.ygc_obj_stack.push(this->jph_obj_provider(
                     {{pc, pi}, yajlpp_provider_context::nindex},
                     ygc.ygc_obj_stack.top()));
@@ -192,7 +203,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
             }
             if (this->jph_is_pattern_property) {
                 ygc.ygc_path.emplace_back(fmt::format(
-                    FMT_STRING("<{}>"), this->jph_regex.name_for_capture(0)));
+                    FMT_STRING("<{}>"), this->jph_regex->name_for_capture(0)));
             } else {
                 ygc.ygc_path.emplace_back(this->jph_property);
             }
@@ -202,7 +213,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                                        fmt::join(ygc.ygc_path, "/")));
                 schema.gen("type");
                 if (this->jph_is_array) {
-                    if (this->jph_regex.p_pattern.find("#?")
+                    if (this->jph_regex->p_pattern.find("#?")
                         == std::string::npos) {
                         schema.gen("array");
                     } else {
@@ -238,7 +249,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
 
         if (this->jph_is_pattern_property) {
             ygc.ygc_path.emplace_back(fmt::format(
-                FMT_STRING("<{}>"), this->jph_regex.name_for_capture(0)));
+                FMT_STRING("<{}>"), this->jph_regex->name_for_capture(0)));
         } else {
             ygc.ygc_path.emplace_back(this->jph_property);
         }
@@ -254,7 +265,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
         schema.gen("type");
 
         if (this->jph_is_array) {
-            if (this->jph_regex.p_pattern.find("#?") == std::string::npos) {
+            if (this->jph_regex->p_pattern.find("#?") == std::string::npos) {
                 schema.gen("array");
             } else {
                 yajlpp_array type_array(ygc.ygc_handle);
@@ -381,9 +392,8 @@ json_path_handler_base::walk(
                     full_path += "/";
                 }
                 json_path_container dummy{
-                    json_path_handler(this->jph_property),
+                    json_path_handler(this->jph_property, this->jph_regex),
                 };
-                dummy.jpc_children[0].jph_callbacks = this->jph_callbacks;
 
                 yajlpp_parse_context ypc(POSS_SRC, &dummy);
                 void* child_root = root;
@@ -393,7 +403,7 @@ json_path_handler_base::walk(
                     std::string full_path = lpath + "/";
                     pcre_input pi(full_path);
 
-                    if (!this->jph_regex.match(ypc.ypc_pcre_context, pi)) {
+                    if (!this->jph_regex->match(ypc.ypc_pcre_context, pi)) {
                         ensure(false);
                     }
                     child_root = this->jph_obj_provider(
@@ -592,7 +602,7 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         pi.reset(&this->ypc_path[1 + child_start],
                  0,
                  this->ypc_path.size() - 2 - child_start);
-        if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
+        if (jph.jph_regex->match(this->ypc_pcre_context, pi)) {
             pcre_context::capture_t* cap = this->ypc_pcre_context.all();
 
             if (jph.jph_obj_provider) {
@@ -1365,6 +1375,7 @@ dump_schema_to(const json_path_container& jpc,
 
     ygc.gen_schema();
 }
+
 string_fragment
 yajlpp_gen::to_string_fragment()
 {

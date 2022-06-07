@@ -114,7 +114,15 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     json_path_handler(const std::string& path, const pcrepp& re)
-        : json_path_handler_base(path, re){};
+        : json_path_handler_base(path, re)
+    {
+    }
+
+    json_path_handler(const std::string& path,
+                      const std::shared_ptr<pcrepp>& re)
+        : json_path_handler_base(path, re)
+    {
+    }
 
     json_path_handler& add_cb(int (*null_func)(yajlpp_parse_context*))
     {
