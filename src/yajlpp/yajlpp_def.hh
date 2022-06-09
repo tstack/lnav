@@ -1299,13 +1299,13 @@ struct typed_json_path_container : public json_path_container {
     {
     }
 
-    typed_json_path_container<T>& with_schema_id(const std::string& id)
+    typed_json_path_container<T>& with_schema_id2(const std::string& id)
     {
         this->jpc_schema_id = id;
         return *this;
     }
 
-    typed_json_path_container<T>& with_description(std::string desc)
+    typed_json_path_container<T>& with_description2(std::string desc)
     {
         this->jpc_description = std::move(desc);
         return *this;

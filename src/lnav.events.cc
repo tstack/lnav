@@ -44,8 +44,8 @@ const auto open::handlers = typed_json_path_container<open>{
         .with_description("The path of the file that was opened")
         .for_field(&open::o_filename),
 }
-    .with_schema_id(open::SCHEMA_ID)
-    .with_description("Event fired when a file is opened.");
+    .with_schema_id2(open::SCHEMA_ID)
+    .with_description2("Event fired when a file is opened.");
 
 const std::string format_detected::SCHEMA_ID
     = "https://lnav.org/event-file-format-detected-v1.schema.json";
@@ -60,8 +60,8 @@ const auto format_detected::handlers = typed_json_path_container<format_detected
         .with_description("The name of the format")
         .for_field(&format_detected::fd_format),
 }
-    .with_schema_id(format_detected::SCHEMA_ID)
-    .with_description("Event fired when a log format is detected for a file.");
+    .with_schema_id2(format_detected::SCHEMA_ID)
+    .with_description2("Event fired when a log format is detected for a file.");
 
 }  // namespace file
 
