@@ -1,4 +1,3 @@
-
 .. _sql-tab:
 
 SQLite Tables Reference
@@ -8,6 +7,7 @@ In addition to the tables generated for each log format, **lnav** includes
 the following tables/views:
 
 * `environ`_
+* `lnav_events`_
 * `lnav_file`_
 * `lnav_views`_
 * `lnav_view_stack`_
@@ -50,6 +50,22 @@ named "FILENAME" and then open it in **lnav** by referencing it with
     ;INSERT INTO environ VALUES ('FILENAME', '/path/to/file')
     :open $FILENAME
 
+
+.. _table_lnav_events:
+
+lnav_events
+-----------
+
+The **lnav_events** table allows you to react to events that occur while
+**lnav** is running using SQLite triggers.  For example, when a file is
+opened, a row is inserted into the :code:`lnav_events` table that contains
+a timestamp and a JSON object with the event ID and the path of the file.
+The following columns are available in this table:
+
+  :ts: The timestamp of the event.
+  :content: A JSON object that contains the event information.  See the
+            :ref:`event_reference` for more information about the types
+            of events that are available.
 
 lnav_file
 ---------

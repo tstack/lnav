@@ -1,0 +1,3 @@
+[31m✘ error[0m: expecting an operation to perform on the [1mstd[0m regular expression
+[36m =[0m [36mhelp[0m: the available subcommands are:
+          • [1m[34mregex101[0m: use regex101.com to edit this regular expression

@@ -622,8 +622,6 @@ struct json_string {
     size_t js_len{0};
 };
 
-void dump_schema_to(const json_path_container& jpc,
-                    const char* internals_dir,
-                    const char* name);
+void dump_schema_to(const json_path_container& jpc, const char* internals_dir);
 
 #endif

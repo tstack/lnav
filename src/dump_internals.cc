@@ -29,6 +29,7 @@
 
 #include "dump_internals.hh"
 
+#include "lnav.events.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_format_loader.hh"
@@ -41,9 +42,16 @@ namespace lnav {
 void
 dump_internals(const char* internals_dir)
 {
-    dump_schema_to(
-        lnav_config_handlers, internals_dir, "config-v1.schema.json");
-    dump_schema_to(root_format_handler, internals_dir, "format-v1.schema.json");
+    for (const auto* handlers :
+         std::initializer_list<const json_path_container*>{
+             &lnav_config_handlers,
+             &root_format_handler,
+             &lnav::events::file::open::handlers,
+             &lnav::events::file::format_detected::handlers,
+         })
+    {
+        dump_schema_to(*handlers, internals_dir);
+    }
 
     execute_examples();
 

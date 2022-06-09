@@ -1,0 +1,26 @@
+{
+    "$id": "https://lnav.org/event-file-format-detected-v1.schema.json",
+    "title": "https://lnav.org/event-file-format-detected-v1.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Event fired when a log format is detected for a file.",
+    "properties": {
+        "$schema": {
+            "title": "/$schema",
+            "type": "string",
+            "examples": [
+                "https://lnav.org/event-file-format-detected-v1.schema.json"
+            ]
+        },
+        "filename": {
+            "title": "/filename",
+            "description": "The path of the file for which a matching format was found",
+            "type": "string"
+        },
+        "format": {
+            "title": "/format",
+            "description": "The name of the format",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false
+}

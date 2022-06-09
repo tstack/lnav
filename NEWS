@@ -19,6 +19,11 @@ lnav v0.10.2:
        a regular expression entry on regex101.com and existing patterns
        can be edited.
      * Add initial support for pcap(3) files using tshark(1).
+     * To make it possible to automate some operations, there is now an
+       "lnav_events" table that is updated when internal events occur
+       within lnav (e.g. opening a file, format is detected).  You
+       can then add SQLite TRIGGERs to this table that can perform a
+       task by updating other tables.
      * Added a "top_meta" column to the lnav_views table that contains
        metadata related to the top line in the view.
      * Added a "log_opid" hidden column to all log tables that contains

@@ -1,5 +1,6 @@
 {
     "$id": "https://lnav.org/schemas/format-v1.schema.json",
+    "title": "https://lnav.org/schemas/format-v1.schema.json",
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
         "$schema": {

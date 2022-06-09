@@ -1299,6 +1299,18 @@ struct typed_json_path_container : public json_path_container {
     {
     }
 
+    typed_json_path_container<T>& with_schema_id(const std::string& id)
+    {
+        this->jpc_schema_id = id;
+        return *this;
+    }
+
+    typed_json_path_container<T>& with_description(std::string desc)
+    {
+        this->jpc_description = std::move(desc);
+        return *this;
+    }
+
     yajlpp_parser<T> parser_for(intern_string_t src) const
     {
         return yajlpp_parser<T>{src, this};

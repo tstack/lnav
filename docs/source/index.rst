@@ -27,6 +27,7 @@ Contents:
    commands
    sqlext
    sqltab
+   events
    data
    faq
 

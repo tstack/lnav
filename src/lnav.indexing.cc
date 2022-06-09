@@ -29,6 +29,7 @@
 
 #include "lnav.indexing.hh"
 
+#include "lnav.events.hh"
 #include "lnav.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
@@ -146,6 +147,12 @@ public:
                     ld->set_visibility(iter->second.fs_is_visible);
                 };
             }
+
+            lnav::events::publish(lnav_data.ld_db.in(),
+                                  lnav::events::file::format_detected{
+                                      lf->get_filename(),
+                                      lf->get_format_name().to_string(),
+                                  });
         } else {
             this->closed_files({lf});
         }
@@ -186,7 +193,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     }
 
     {
-        textfile_sub_source* tss = &lnav_data.ld_text_source;
+        auto* tss = &lnav_data.ld_text_source;
         textfile_callback cb;
 
         if (tss->rescan_files(cb, deadline)) {
@@ -347,6 +354,13 @@ update_active_files(file_collection& new_files)
             lnav_data.ld_active_files.fc_child_pollers.begin()),
         std::make_move_iterator(
             lnav_data.ld_active_files.fc_child_pollers.end()));
+
+    lnav::events::publish(
+        lnav_data.ld_db.in(), new_files.fc_files, [](const auto& lf) {
+            return lnav::events::file::open{
+                lf->get_filename(),
+            };
+        });
 
     return true;
 }

@@ -247,7 +247,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'lnav'
-copyright = u'2021, Tim Stack'
+copyright = u'2022, Tim Stack'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

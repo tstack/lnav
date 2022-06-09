@@ -34,8 +34,10 @@
 
 #include "yajlpp.hh"
 
+#include "base/fs_util.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "ghc/filesystem.hpp"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
@@ -1036,9 +1038,8 @@ yajlpp_parse_context::get_line_number() const
             &this->ypc_json_text[0], &this->ypc_json_text[consumed], '\n');
 
         return this->ypc_line_number + current_count;
-    } else {
-        return this->ypc_line_number;
     }
+    return this->ypc_line_number;
 }
 
 void
@@ -1064,9 +1065,15 @@ yajlpp_gen_context::gen_schema(const json_path_container* handlers)
         if (!handlers->jpc_schema_id.empty()) {
             schema.gen("$id");
             schema.gen(handlers->jpc_schema_id);
+            schema.gen("title");
+            schema.gen(handlers->jpc_schema_id);
         }
         schema.gen("$schema");
         schema.gen("http://json-schema.org/draft-07/schema#");
+        if (!handlers->jpc_description.empty()) {
+            schema.gen("description");
+            schema.gen(handlers->jpc_description);
+        }
         handlers->gen_schema(*this);
 
         if (!this->ygc_schema_definitions.empty()) {
@@ -1355,13 +1362,13 @@ schema_printer(FILE* file, const char* str, size_t len)
 }
 
 void
-dump_schema_to(const json_path_container& jpc,
-               const char* internals_dir,
-               const char* name)
+dump_schema_to(const json_path_container& jpc, const char* internals_dir)
 {
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
-    auto schema_path = fmt::format(FMT_STRING("{}/{}"), internals_dir, name);
+    auto internals_dir_path = ghc::filesystem::path(internals_dir);
+    auto schema_file_name = ghc::filesystem::path(jpc.jpc_schema_id).filename();
+    auto schema_path = internals_dir_path / schema_file_name;
     auto file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(schema_path.c_str(), "w+"), fclose);
 

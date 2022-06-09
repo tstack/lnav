@@ -1,0 +1,14 @@
+[31m✘ error[0m: invalid sample log message: "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+ [31mreason[0m: sample does not match any patterns
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:26
+[36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
+            [03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}
+[36m =[0m [36mnote[0m: [1mstd[0m = “”
+         
+[31m✘ error[0m: invalid sample log message: "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+ [31mreason[0m: sample does not match any patterns
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:30
+[36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
+            [03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}
+[36m =[0m [36mnote[0m: [1mstd[0m = “”
+         

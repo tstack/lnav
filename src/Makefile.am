@@ -222,6 +222,7 @@ noinst_HEADERS = \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
+	lnav.events.hh \
 	lnav.indexing.hh \
 	lnav.management_cli.hh \
 	lnav_commands.hh \
@@ -464,12 +465,14 @@ lnav.$(OBJEXT): help-txt.h init-sql.h
 
 lnav_SOURCES = \
     lnav.cc \
+    lnav.events.cc \
     lnav.indexing.cc \
     lnav.management_cli.cc \
     $(PLUGIN_SRCS)
 
 lnav_test_SOURCES = \
     lnav.cc \
+    lnav.events.cc \
     lnav.indexing.cc \
     lnav.management_cli.cc \
     test_override.c \

@@ -178,6 +178,7 @@ dist_noinst_SCRIPTS = \
 	test_config.sh \
 	test_curl.sh \
 	test_data_parser.sh \
+	test_events.sh \
 	test_format_installer.sh \
 	test_format_loader.sh \
 	test_grep_proc.sh \
@@ -371,6 +372,7 @@ TESTS = \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \
+	test_events.sh \
 	test_listview.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \

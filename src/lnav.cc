@@ -99,6 +99,7 @@
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
+#include "lnav.events.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.management_cli.hh"
@@ -2118,6 +2119,40 @@ main(int argc, char* argv[])
                 continue;
             }
 
+            if (endswith(file_path, ".sql")) {
+                auto sql_path = ghc::filesystem::path(file_path);
+                auto read_res = lnav::filesystem::read_file(sql_path);
+                if (read_res.isErr()) {
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("unable to read SQL file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason(read_res.unwrapErr()));
+                    return EXIT_FAILURE;
+                }
+
+                auto dst_path = formats_installed_path / sql_path.filename();
+                auto write_res
+                    = lnav::filesystem::write_file(dst_path, read_res.unwrap());
+                if (write_res.isErr()) {
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("unable to write SQL file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason(write_res.unwrapErr()));
+                    return EXIT_FAILURE;
+                }
+
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::ok(
+                        attr_line_t("installed -- ")
+                            .append(lnav::roles::file(dst_path))));
+                continue;
+            }
+
             if (file_path == "extra") {
                 install_extra_formats();
                 continue;
@@ -2249,6 +2284,7 @@ main(int argc, char* argv[])
     register_regexp_vtab(lnav_data.ld_db.in());
     register_xpath_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
+    lnav::events::register_events_tab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);

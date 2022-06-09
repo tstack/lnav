@@ -52,32 +52,32 @@ template<class T, free_func_t default_free = free>
 class auto_mem {
 public:
     explicit auto_mem(T* ptr = nullptr)
-        : am_ptr(ptr), am_free_func(default_free){};
+        : am_ptr(ptr), am_free_func(default_free)
+    {
+    }
 
     auto_mem(const auto_mem& am) = delete;
 
     template<typename F>
     explicit auto_mem(F free_func) noexcept
-        : am_ptr(nullptr), am_free_func((free_func_t) free_func){};
+        : am_ptr(nullptr), am_free_func((free_func_t) free_func)
+    {
+    }
 
     auto_mem(auto_mem&& other) noexcept
-        : am_ptr(other.release()), am_free_func(other.am_free_func){};
-
-    ~auto_mem()
+        : am_ptr(other.release()), am_free_func(other.am_free_func)
     {
-        this->reset();
-    };
+    }
 
-    operator T*() const
-    {
-        return this->am_ptr;
-    };
+    ~auto_mem() { this->reset(); }
+
+    operator T*() const { return this->am_ptr; }
 
     auto_mem& operator=(T* ptr)
     {
         this->reset(ptr);
         return *this;
-    };
+    }
 
     auto_mem& operator=(auto_mem&) = delete;
 
@@ -86,7 +86,7 @@ public:
         this->reset(am.release());
         this->am_free_func = am.am_free_func;
         return *this;
-    };
+    }
 
     T* release()
     {
@@ -94,18 +94,15 @@ public:
 
         this->am_ptr = nullptr;
         return retval;
-    };
+    }
 
-    T* in() const
-    {
-        return this->am_ptr;
-    };
+    T* in() const { return this->am_ptr; }
 
     T** out()
     {
         this->reset();
         return &this->am_ptr;
-    };
+    }
 
     void reset(T* ptr = nullptr)
     {
@@ -115,7 +112,7 @@ public:
             }
             this->am_ptr = ptr;
         }
-    };
+    }
 
 private:
     T* am_ptr;
@@ -125,43 +122,25 @@ private:
 template<typename T, void (*free_func)(T*)>
 class static_root_mem {
 public:
-    static_root_mem()
-    {
-        memset(&this->srm_value, 0, sizeof(T));
-    };
+    static_root_mem() { memset(&this->srm_value, 0, sizeof(T)); }
 
-    ~static_root_mem()
-    {
-        free_func(&this->srm_value);
-    };
+    ~static_root_mem() { free_func(&this->srm_value); }
 
-    const T* operator->() const
-    {
-        return &this->srm_value;
-    };
+    const T* operator->() const { return &this->srm_value; }
 
-    const T& in() const
-    {
-        return this->srm_value;
-    };
+    const T& in() const { return this->srm_value; }
 
     T* inout()
     {
         free_func(&this->srm_value);
         memset(&this->srm_value, 0, sizeof(T));
         return &this->srm_value;
-    };
+    }
 
 private:
-    static_root_mem& operator=(T&)
-    {
-        return *this;
-    };
+    static_root_mem& operator=(T&) { return *this; }
 
-    static_root_mem& operator=(static_root_mem&)
-    {
-        return *this;
-    };
+    static_root_mem& operator=(static_root_mem&) { return *this; }
 
     T srm_value;
 };
@@ -187,10 +166,7 @@ public:
         this->ab_size = 0;
     }
 
-    char* in()
-    {
-        return this->ab_buffer;
-    }
+    char* in() { return this->ab_buffer; }
 
     std::pair<char*, size_t> release()
     {
@@ -201,10 +177,7 @@ public:
         return retval;
     }
 
-    size_t size() const
-    {
-        return this->ab_size;
-    }
+    size_t size() const { return this->ab_size; }
 
     void expand_by(size_t amount)
     {

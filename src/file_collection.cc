@@ -203,7 +203,7 @@ struct same_file {
     {
         return !lf->is_closed() && this->sf_stat.st_dev == lf->get_stat().st_dev
             && this->sf_stat.st_ino == lf->get_stat().st_ino;
-    };
+    }
 
     const struct stat& sf_stat;
 };

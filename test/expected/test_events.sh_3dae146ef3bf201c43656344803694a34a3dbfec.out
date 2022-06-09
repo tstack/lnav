@@ -1,0 +1,2 @@
+{"content":{"$schema":"https://lnav.org/event-file-open-v1.schema.json","filename":"{test_dir}/logfile_access_log.0"}}
+{"content":{"$schema":"https://lnav.org/event-file-format-detected-v1.schema.json","filename":"{test_dir}/logfile_access_log.0","format":"access_log"}}

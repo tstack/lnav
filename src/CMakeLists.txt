@@ -282,6 +282,7 @@ add_library(
         input_dispatcher.cc
         json-extension-functions.cc
         listview_curses.cc
+        lnav.events.cc
         lnav.indexing.cc
         lnav.management_cli.cc
         lnav_commands.cc
@@ -385,6 +386,7 @@ add_library(
         input_dispatcher.hh
         itertools.similar.hh
         k_merge_tree.h
+        lnav.events.hh
         lnav.indexing.hh
         lnav.management_cli.hh
         lnav_config.hh

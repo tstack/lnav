@@ -226,10 +226,10 @@ struct subcmd_format_t {
         auto um = console::user_message::error(
             attr_line_t("expecting an operation to perform on the ")
                 .append(lnav::roles::symbol(sf.sf_regex_name))
-                .append(" regular expression using regex101.com"));
+                .append(" regular expression"));
 
         um.with_help(attr_line_t{"the available subcommands are:"}.append(
-            sf.sf_regex101_app->get_subcommands({})
+            sf.sf_regex_app->get_subcommands({})
             | lnav::itertools::fold(subcmd_reducer, attr_line_t{})));
 
         return {um};
@@ -446,7 +446,7 @@ struct subcmd_format_t {
         auto um = console::user_message::error(
             attr_line_t("expecting an operation to perform on the ")
                 .append(lnav::roles::symbol(sf.sf_regex_name))
-                .append(" regex"));
+                .append(" regex using regex101.com"));
 
         auto get_res
             = lnav::session::regex101::get_entry(sf.sf_name, sf.sf_regex_name);
@@ -460,7 +460,7 @@ struct subcmd_format_t {
         }
 
         um.with_help(attr_line_t{"the available subcommands are:"}.append(
-            sf.sf_regex_app->get_subcommands({})
+            sf.sf_regex101_app->get_subcommands({})
             | lnav::itertools::fold(subcmd_reducer, attr_line_t{})));
 
         return {um};

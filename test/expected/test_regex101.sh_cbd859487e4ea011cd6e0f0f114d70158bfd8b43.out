@@ -1,0 +1,34 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "unit_test_log": {
+        "description": "Format file generated from regex101 entry -- https://regex101.com/r/zpEnjV/2",
+        "regex": {
+            "std": {
+                "pattern": "\\[(?<timestamp>\\d+\\/\\d+\\/\\d+ \\d+:\\d+:\\d+) (?<jobserver>[\\w.]+) (?<workqueue>[\\w.]+) (?<processid>\\d+)\\] (?<body>.*)$"
+            }
+        },
+        "value": {
+            "jobserver": {
+                "kind": "string"
+            },
+            "processid": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            },
+            "workqueue": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+            },
+            {
+                "description": "sample 1",
+                "line": "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+            }
+        ]
+    }
+}
