@@ -37,7 +37,7 @@ namespace file {
 const std::string open::SCHEMA_ID
     = "https://lnav.org/event-file-open-v1.schema.json";
 
-const auto open::handlers = typed_json_path_container<open>{
+const typed_json_path_container<open> open::handlers = typed_json_path_container<open>{
     yajlpp::property_handler("$schema").for_field(&open::o_schema)
         .with_example(open::SCHEMA_ID),
     yajlpp::property_handler("filename")
@@ -50,7 +50,7 @@ const auto open::handlers = typed_json_path_container<open>{
 const std::string format_detected::SCHEMA_ID
     = "https://lnav.org/event-file-format-detected-v1.schema.json";
 
-const auto format_detected::handlers = typed_json_path_container<format_detected>{
+const typed_json_path_container<format_detected> format_detected::handlers = typed_json_path_container<format_detected>{
     yajlpp::property_handler("$schema").for_field(&format_detected::fd_schema)
         .with_example(format_detected::SCHEMA_ID),
     yajlpp::property_handler("filename")
