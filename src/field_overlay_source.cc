@@ -31,6 +31,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
+#include "base/snippet_highlighters.hh"
 #include "config.h"
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
@@ -392,7 +393,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         pattern_str = " Pattern: " + lf->get_pattern_name(cl) + " = ";
         int skip = pattern_str.length();
         pattern_str += lf->get_pattern_regex(cl);
-        readline_regex_highlighter(pattern_al, skip);
+        lnav::snippets::regex_highlighter(
+            pattern_al,
+            pattern_al.length(),
+            line_range{skip, (int) pattern_al.length()});
         this->fos_lines.emplace_back(pattern_al);
     }
 

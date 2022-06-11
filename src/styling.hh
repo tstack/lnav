@@ -219,6 +219,7 @@ struct lnav_theme {
     style_config lt_style_quoted_text;
     style_config lt_style_footnote_border;
     style_config lt_style_footnote_text;
+    style_config lt_style_snippet_border;
     std::map<log_level_t, style_config> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

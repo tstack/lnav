@@ -398,6 +398,11 @@
                                             "description": "Styling for footnote text",
                                             "title": "/ui/theme-defs/<theme_name>/styles/footnote-text",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "snippet-border": {
+                                            "description": "Styling for snippet borders",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/snippet-border",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false

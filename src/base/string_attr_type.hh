@@ -121,6 +121,7 @@ enum class role_t : int32_t {
     VCR_QUOTED_TEXT,
     VCR_FOOTNOTE_BORDER,
     VCR_FOOTNOTE_TEXT,
+    VCR_SNIPPET_BORDER,
 
     VCR__MAX
 };
@@ -591,6 +592,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _footnote_text(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_FOOTNOTE_BORDER));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _snippet_border(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_SNIPPET_BORDER));
 }
 
 }  // namespace literals

@@ -710,6 +710,13 @@ static const struct json_path_container theme_styles_handlers = {
                 return &root->lt_style_footnote_text;
             })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("snippet-border")
+        .with_description("Styling for snippet borders")
+        .with_obj_provider<style_config, lnav_theme>(
+            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                return &root->lt_style_snippet_border;
+            })
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {

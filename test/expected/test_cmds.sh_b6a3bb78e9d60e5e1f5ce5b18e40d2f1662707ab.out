@@ -5,7 +5,7 @@ A fancy log file viewer for the terminal.
 
 [1mOverview[0m
 
-The Logfile Navigator, lnav, is an enhanced log file viewer that takes
+The Logfile Navigator, [1mlnav[0m, is an enhanced log file viewer that takes
 advantage of any semantic information that can be gleaned from the
 files being viewed, such as timestamps and log levels. Using this
 extra semantic information, lnav can do things like interleaving
@@ -84,20 +84,20 @@ you can pass the [37m[40m -n [0m option. This combination of options allows y
 to write scripts for processing logs with lnav. For example, to get a
 list of IP addresses that dhclient has bound to in CSV format:
 
- ▌[36m[40m#! /usr/bin/lnav -nf                                                                            [0m
+ ▌[32m[40m#! /usr/bin/lnav -nf                                                                            [0m
  ▌[37m[40m                                                                                                [0m
- ▌[36m[40m# Usage: dhcp_ip.lnav /var/log/messages                                                         [0m
- ▌[36m[40m# Only include lines that look like:                                                            [0m
- ▌[36m[40m# Apr 29 00:31:56 example-centos5 dhclient: bound to [0m[36m[40m10.1.10.103[0m[36m[40m -- renewal in 9938 seconds.    [0m
+ ▌[32m[40m# Usage: dhcp_ip.lnav /var/log/messages                                                         [0m
+ ▌[32m[40m# Only include lines that look like:                                                            [0m
+ ▌[32m[40m# Apr 29 00:31:56 example-centos5 dhclient: bound to [0m[32m[40m10.1.10.103[0m[32m[40m -- renewal in 9938 seconds.    [0m
  ▌[37m[40m                                                                                                [0m
- ▌[37m[40m:[0m[1m[34m[40mfilter-in[0m[37m[40m dhclient: bound to                                                                   [0m
+ ▌[37m[40m:[0m[1m[36m[40mfilter-in[0m[37m[40m dhclient: bound to                                                                   [0m
  ▌[37m[40m                                                                                                [0m
- ▌[36m[40m# The log message parser will extract the IP address                                            [0m
- ▌[36m[40m# as col_0, so we select that and alias it to "dhcp_ip".                                        [0m
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mDISTINCT[0m[37m[40m [0m[37m[40mcol_0[0m[37m[40m [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mdhcp_ip[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlogline[0m[37m[40m;                                                 [0m
+ ▌[32m[40m# The log message parser will extract the IP address                                            [0m
+ ▌[32m[40m# as col_0, so we select that and alias it to "dhcp_ip".                                        [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mDISTINCT[0m[37m[40m [0m[37m[40mcol_0[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mdhcp_ip[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlogline[0m[37m[40m;                                                 [0m
  ▌[37m[40m                                                                                                [0m
- ▌[36m[40m# Finally, write the results of the query to stdout.                                            [0m
- ▌[37m[40m:[0m[1m[34m[40mwrite-csv-to[0m[37m[40m -                                                                                 [0m
+ ▌[32m[40m# Finally, write the results of the query to stdout.                                            [0m
+ ▌[37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m -                                                                                 [0m
 
 [1mDisplay[0m
 
@@ -182,8 +182,8 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
  Key(s)  Action                                            
 ═══════════════════════════════════════════════════════════
- ?       View/leave this help message.
- q       Leave the current view or quit the program when in
+ [1m?[0m       View/leave this help message.
+ [1mq[0m       Leave the current view or quit the program when in
          the log file view.
  Q       Similar to [37m[40m q [0m, except it will try to sync the top
          time between the current and former views. For
@@ -368,7 +368,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
  Key(s)               Action                                            
 ════════════════════════════════════════════════════════════════════════
- /regexp              Start a search for the given regular expression.
+ [1m/[0mregexp              Start a search for the given regular expression.
                       The search is live, so when there is a pause in
                       typing, the currently running search will be
                       canceled and a new one started. The first ten
@@ -384,16 +384,16 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
                       the status line. While the search is active, the
                       'hits' field in the status line will be green,
                       when finished it will turn back to black.
- :<command>           Execute an internal command. The commands are
+ [1m:[0m<command>           Execute an internal command. The commands are
                       listed below. History is also supported in this
                       context as well as tab-completion for commands and
                       some arguments. The result of the command replaces
                       the command you typed.
- ;<sql>               Execute an SQL query. Most supported log file
+ [1m;[0m<sql>               Execute an SQL query. Most supported log file
                       formats provide a sqlite virtual table backend
                       that can be used in queries. See the SQL section
                       below for more information.
- |<script> [arg1...]  Execute an lnav script contained in a format
+ [1m|[0m<script> [arg1...]  Execute an lnav script contained in a format
                       directory (e.g. ~/.lnav/formats/default). The
                       script can contain lines starting with [37m[40m : [0m, [37m[40m ; [0m,
                       or [37m[40m | [0m to execute commands, SQL queries or execute
@@ -463,8 +463,8 @@ lnav will create tables that can be queried using the subset of SQL
 that is supported by Sqlite3. For example, to get the top ten URLs
 being accessed in any loaded Apache log files, you can execute:
 
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m    [0m
- ▌[37m[40m   [0m[1m[34m[40mGROUP[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[34m[40mORDER[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[34m[40mDESC[0m[37m[40m [0m[1m[34m[40mLIMIT[0m[37m[40m 10;     [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m    [0m
+ ▌[37m[40m   [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m [0m[1m[36m[40mLIMIT[0m[37m[40m 10;     [0m
 
 The query result view shows the results and graphs any numeric values
 found in the result, much like the histogram view.
@@ -556,10 +556,10 @@ you can attach another database and create tables in that database.
 For example, if you wanted to save the results from the earlier
 example of a top ten query into the "/tmp/topten.db" file, you can do:
 
- ▌[37m[40m;[0m[1m[34m[40mATTACH[0m[37m[40m [0m[1m[34m[40mDATABASE[0m[37m[40m [0m[37m[40m'/tmp/topten.db'[0m[37m[40m [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
- ▌[37m[40m;[0m[1m[34m[40mCREATE[0m[37m[40m [0m[1m[34m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[1m[34m[40m.foo[0m[37m[40m [0m[1m[34m[40mAS[0m[37m[40m [0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
- ▌[37m[40m   [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[34m[40mGROUP[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[34m[40mORDER[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[34m[40mDESC[0m[37m[40m          [0m
- ▌[37m[40m   [0m[1m[34m[40mLIMIT[0m[37m[40m 10;                                                         [0m
+ ▌[37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[37m[40m'/tmp/topten.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
+ ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[1m[36m[40m.foo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
+ ▌[37m[40m   [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m          [0m
+ ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m 10;                                                         [0m
 
 [1mDynamic logline Table (experimental)[0m
 
@@ -581,7 +581,7 @@ other log messages that have the same format. So, if you were to
 execute the following query while viewing the above line, you might
 get the following results:
 
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mUSER[0m[37m[40m,[0m[37m[40mCOMMAND[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlogline[0m[37m[40m;      [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mUSER[0m[37m[40m,[0m[37m[40mCOMMAND[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlogline[0m[37m[40m;      [0m
 
  USER  COMMAND                   
 ═════════════════════════════════
@@ -615,34 +615,34 @@ Environment variables can be used in SQL statements by prefixing the
 variable name with a dollar-sign ($). For example, to read the value
 of the [37m[40m HOME [0m variable, you can do:
 
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40m$HOME[0m[37m[40m;                          [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m$HOME[0m[37m[40m;                          [0m
 
 To select the syslog messages that have a hostname field that is equal
 to the [37m[40m HOSTNAME [0m variable:
 
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[34m[40mWHERE[0m[37m[40m [0m[37m[40mlog_hostname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m$HOSTNAME[0m[37m[40m;    [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_hostname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m$HOSTNAME[0m[37m[40m;    [0m
 
 NOTE: Variable substitution is done for fields in the query and is not
 a plain text substitution. For example, the following statement WILL
 NOT WORK:
 
- ▌[37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40m$TABLE_NAME[0m[37m[40m; [0m[36m[40m-- Syntax error[0m[37m[40m    [0m
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40m$TABLE_NAME[0m[37m[40m; [0m[32m[40m-- Syntax error[0m[37m[40m    [0m
 
 Access to lnav's environment variables is also available via the
 "environ" table. The table has two columns (name, value) and can be
 read and written to using SQL SELECT, INSERT, UPDATE, and DELETE
 statements. For example, to set the "FOO" variable to the value "BAR":
 
- ▌[37m[40m;[0m[1m[34m[40mINSERT[0m[37m[40m [0m[1m[34m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40m'FOO'[0m[37m[40m, [0m[37m[40m'BAR'[0m[37m[40m;    [0m
+ ▌[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m'FOO'[0m[37m[40m, [0m[37m[40m'BAR'[0m[37m[40m;    [0m
 
 As a more complex example, you can set the variable "LAST" to the last
 syslog line number by doing:
 
- ▌[37m[40m;[0m[1m[34m[40mINSERT[0m[37m[40m [0m[1m[34m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40m'LAST'[0m[37m[40m, ([0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[37m[40mlog_line[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m);    [0m
+ ▌[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m'LAST'[0m[37m[40m, ([0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[37m[40mlog_line[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m);    [0m
 
 A delete will unset the environment variable:
 
- ▌[37m[40m;[0m[1m[34m[40mDELETE[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[34m[40mWHERE[0m[37m[40m [0m[37m[40mname[0m[1m[37m[40m=[0m[37m[40m'LAST'[0m[37m[40m;    [0m
+ ▌[37m[40m;[0m[1m[36m[40mDELETE[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mname[0m[1m[37m[40m=[0m[37m[40m'LAST'[0m[37m[40m;    [0m
 
 The table allows you to easily use the results of a SQL query in lnav
 commands, which is especially useful when scripting lnav.
@@ -674,11 +674,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To set the top timestamp to a given date:
-   [37m[40m:[0m[1m[34m[40madjust-log-time[0m[37m[40m 2017-01-02T05:33:00              [0m
+   [37m[40m:[0m[1m[36m[40madjust-log-time[0m[37m[40m 2017-01-02T05:33:00              [0m
    
 
 #2 To set the top timestamp back an hour:
-   [37m[40m:[0m[1m[34m[40madjust-log-time[0m[37m[40m -1h                              [0m
+   [37m[40m:[0m[1m[36m[40madjust-log-time[0m[37m[40m -1h                              [0m
    
 
 
@@ -693,7 +693,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To display 'Press t to switch to the text view' on the bottom right:
-   [37m[40m:[0m[1m[34m[40malt-msg[0m[37m[40m Press t to switch to the text view       [0m
+   [37m[40m:[0m[1m[36m[40malt-msg[0m[37m[40m Press t to switch to the text view       [0m
    
 
 
@@ -708,7 +708,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To append marked lines to the file /tmp/interesting-lines.txt:
-   [37m[40m:[0m[1m[34m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
+   [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
    
 
 
@@ -735,7 +735,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
 [4mExample[0m
 #1 To clear the highlight with the pattern 'foobar':
-   [37m[40m:[0m[1m[34m[40mclear-highlight[0m[37m[40m foobar                           [0m
+   [37m[40m:[0m[1m[36m[40mclear-highlight[0m[37m[40m foobar                           [0m
    
 
 
@@ -764,7 +764,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:clear-comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To add the comment 'This is where it all went wrong' to the top line:
-   [37m[40m:[0m[1m[34m[40mcomment[0m[37m[40m This is where it all went wrong          [0m
+   [37m[40m:[0m[1m[36m[40mcomment[0m[37m[40m This is where it all went wrong          [0m
    
 
 
@@ -779,11 +779,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:reset-config[0m
 [4mExamples[0m
 #1 To read the configuration of the '/ui/clock-format' option:
-   [37m[40m:[0m[1m[34m[40mconfig[0m[37m[40m /ui/clock-format                          [0m
+   [37m[40m:[0m[1m[36m[40mconfig[0m[37m[40m /ui/clock-format                          [0m
    
 
 #2 To set the '/ui/dim-text' option to 'false':
-   [37m[40m:[0m[1m[34m[40mconfig[0m[37m[40m /ui/dim-text false                        [0m
+   [37m[40m:[0m[1m[36m[40mconfig[0m[37m[40m /ui/dim-text false                        [0m
    
 
 
@@ -798,7 +798,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To create a logline-style table named 'task_durations':
-   [37m[40m:[0m[1m[34m[40mcreate-logline-table[0m[37m[40m task_durations              [0m
+   [37m[40m:[0m[1m[36m[40mcreate-logline-table[0m[37m[40m task_durations              [0m
    
 
 
@@ -818,7 +818,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExample[0m
 #1 To create a table named 'task_durations' that matches log messages with the pattern
    'duration=(?<duration>\d+)':
-   [37m[40m:[0m[1m[34m[40mcreate-search-table[0m[37m[40m task_durations duration=[0m[1m[32m[40m([0m[1m[32m[40m?<[0m[37m[40mduration[0m[37m[40m>[0m[1m[37m[40m\d[0m[37m[40m+[0m[1m[32m[40m)[0m
+   [37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m task_durations duration=[0m[1m[32m[40m([0m[1m[32m[40m?<[0m[37m[40mduration[0m[37m[40m>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[1m[32m[40m)[0m
    
 
 
@@ -830,7 +830,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4m:[0m[1m[4mdelete-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Delete the filter created with :filter-in or :filter-out
+  Delete the filter created with [1m:filter-in[0m or [1m:filter-out[0m
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
@@ -838,7 +838,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To delete the filter with the pattern 'last message repeated':
-   [37m[40m:[0m[1m[34m[40mdelete-filter[0m[37m[40m last message repeated              [0m
+   [37m[40m:[0m[1m[36m[40mdelete-filter[0m[37m[40m last message repeated              [0m
    
 
 
@@ -854,7 +854,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To delete the logline-style table named 'task_durations':
-   [37m[40m:[0m[1m[34m[40mdelete-logline-table[0m[37m[40m task_durations              [0m
+   [37m[40m:[0m[1m[36m[40mdelete-logline-table[0m[37m[40m task_durations              [0m
    
 
 
@@ -870,7 +870,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To delete the search table named 'task_durations':
-   [37m[40m:[0m[1m[34m[40mdelete-search-table[0m[37m[40m task_durations               [0m
+   [37m[40m:[0m[1m[36m[40mdelete-search-table[0m[37m[40m task_durations               [0m
    
 
 
@@ -883,7 +883,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To remove the tags '#BUG123' and '#needs-review' from all log lines:
-   [37m[40m:[0m[1m[34m[40mdelete-tags[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                [0m
+   [37m[40m:[0m[1m[36m[40mdelete-tags[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                [0m
    
 
 
@@ -898,7 +898,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To disable the filter with the pattern 'last message repeated':
-   [37m[40m:[0m[1m[34m[40mdisable-filter[0m[37m[40m last message repeated             [0m
+   [37m[40m:[0m[1m[36m[40mdisable-filter[0m[37m[40m last message repeated             [0m
    
 
 
@@ -925,7 +925,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
-   [37m[40m:[0m[1m[34m[40mecho[0m[37m[40m Hello, World!                               [0m
+   [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
    
 
 
@@ -940,7 +940,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To enable the disabled filter with the pattern 'last message repeated':
-   [37m[40m:[0m[1m[34m[40menable-filter[0m[37m[40m last message repeated              [0m
+   [37m[40m:[0m[1m[36m[40menable-filter[0m[37m[40m last message repeated              [0m
    
 
 
@@ -962,7 +962,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To substitute the table name from a variable:
-   [37m[40m:[0m[1m[34m[40meval[0m[37m[40m ;SELECT * FROM [0m[1m[37m[40m${[0m[37m[40mtable[0m[1m[37m[40m}[0m[37m[40m                     [0m
+   [37m[40m:[0m[1m[36m[40meval[0m[37m[40m ;SELECT * FROM [0m[1m[37m[40m${[0m[37m[40mtable[0m[1m[37m[40m}[0m[37m[40m                     [0m
    
 
 
@@ -978,12 +978,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To set a filter expression that matched syslog messages from 'syslogd':
-   [37m[40m:[0m[1m[34m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'syslogd'[0m[37m[40m            [0m
+   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'syslogd'[0m[37m[40m            [0m
    
 
 #2 To set a filter expression that matches log messages where 'id' is followed by a
    number and contains the string 'foo':
-   [37m[40m:[0m[1m[34m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[34m[40mREGEXP[0m[37m[40m [0m[37m[40m'id\d+'[0m[37m[40m [0m[1m[34m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[34m[40mREGEXP[0m[37m[40m [0m[37m[40m'foo'[0m
+   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'id\d+'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'foo'[0m
    
 
 
@@ -998,7 +998,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that do not have the string 'dhclient':
-   [37m[40m:[0m[1m[34m[40mfilter-in[0m[37m[40m dhclient                               [0m
+   [37m[40m:[0m[1m[36m[40mfilter-in[0m[37m[40m dhclient                               [0m
    
 
 
@@ -1013,7 +1013,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that contain the string 'last message repeated':
-   [37m[40m:[0m[1m[34m[40mfilter-out[0m[37m[40m last message repeated                 [0m
+   [37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m last message repeated                 [0m
    
 
 
@@ -1027,15 +1027,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 [4mExamples[0m
 #1 To go to line 22:
-   [37m[40m:[0m[1m[34m[40mgoto[0m[37m[40m 22                                          [0m
+   [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 22                                          [0m
    
 
 #2 To go to the line 75% of the way into the view:
-   [37m[40m:[0m[1m[34m[40mgoto[0m[37m[40m 75%                                         [0m
+   [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 75%                                         [0m
    
 
 #3 To go to the first message on the first day of 2017:
-   [37m[40m:[0m[1m[34m[40mgoto[0m[37m[40m 2017-01-01                                  [0m
+   [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 2017-01-01                                  [0m
    
 
 
@@ -1056,11 +1056,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:enable-word-wrap[0m, [1m:highlight[0m, [1m:show-fields[0m
 [4mExamples[0m
 #1 To hide the log_procname fields in all formats:
-   [37m[40m:[0m[1m[34m[40mhide-fields[0m[37m[40m log_procname                         [0m
+   [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m log_procname                         [0m
    
 
 #2 To hide only the log_procname field in the syslog format:
-   [37m[40m:[0m[1m[34m[40mhide-fields[0m[37m[40m syslog_log.log_procname              [0m
+   [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m syslog_log.log_procname              [0m
    
 
 
@@ -1083,11 +1083,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines after the top line in the view:
-   [37m[40m:[0m[1m[34m[40mhide-lines-after[0m[37m[40m here                            [0m
+   [37m[40m:[0m[1m[36m[40mhide-lines-after[0m[37m[40m here                            [0m
    
 
 #2 To hide the lines after 6 AM today:
-   [37m[40m:[0m[1m[34m[40mhide-lines-after[0m[37m[40m 6am                             [0m
+   [37m[40m:[0m[1m[36m[40mhide-lines-after[0m[37m[40m 6am                             [0m
    
 
 
@@ -1101,11 +1101,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines before the top line in the view:
-   [37m[40m:[0m[1m[34m[40mhide-lines-before[0m[37m[40m here                           [0m
+   [37m[40m:[0m[1m[36m[40mhide-lines-before[0m[37m[40m here                           [0m
    
 
 #2 To hide the log messages before 6 AM today:
-   [37m[40m:[0m[1m[34m[40mhide-lines-before[0m[37m[40m 6am                            [0m
+   [37m[40m:[0m[1m[36m[40mhide-lines-before[0m[37m[40m 6am                            [0m
    
 
 
@@ -1126,7 +1126,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m
 [4mExample[0m
 #1 To highlight numbers with three or more digits:
-   [37m[40m:[0m[1m[34m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
+   [37m[40m:[0m[1m[36m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
    
 
 
@@ -1152,7 +1152,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:clear-mark-expr[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m
 [4mExample[0m
 #1 To mark lines from 'dhclient' that mention 'eth0':
-   [37m[40m:[0m[1m[34m[40mmark-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'dhclient'[0m[37m[40m [0m[1m[34m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[34m[40mLIKE[0m[37m[40m [0m[37m[40m'%eth0%'[0m
+   [37m[40m:[0m[1m[36m[40mmark-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'dhclient'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mLIKE[0m[37m[40m [0m[37m[40m'%eth0%'[0m
    
 
 
@@ -1173,7 +1173,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 [4mExample[0m
 #1 To go to the next error:
-   [37m[40m:[0m[1m[34m[40mnext-mark[0m[37m[40m error                                  [0m
+   [37m[40m:[0m[1m[36m[40mnext-mark[0m[37m[40m error                                  [0m
    
 
 
@@ -1187,11 +1187,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To open the file '/path/to/file':
-   [37m[40m:[0m[1m[34m[40mopen[0m[37m[40m /path/to/file                               [0m
+   [37m[40m:[0m[1m[36m[40mopen[0m[37m[40m /path/to/file                               [0m
    
 
 #2 To open the remote file '/var/log/syslog.log':
-   [37m[40m:[0m[1m[34m[40mopen[0m[37m[40m dean@host1.example.com:/var/log/syslog.log  [0m
+   [37m[40m:[0m[1m[36m[40mopen[0m[37m[40m dean@host1.example.com:/var/log/syslog.log  [0m
    
 
 
@@ -1204,7 +1204,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To mark the top line as the start of the partition named 'boot #1':
-   [37m[40m:[0m[1m[34m[40mpartition-name[0m[37m[40m boot #1                           [0m
+   [37m[40m:[0m[1m[36m[40mpartition-name[0m[37m[40m boot #1                           [0m
    
 
 
@@ -1219,7 +1219,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the top line to 'sed' for processing:
-   [37m[40m:[0m[1m[34m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
+   [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
    
 
 
@@ -1234,7 +1234,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
-   [37m[40m:[0m[1m[34m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
+   [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
    
 
 
@@ -1255,7 +1255,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:next-mark[0m, [1m:prev-location[0m, [1m:relative-goto[0m
 [4mExample[0m
 #1 To go to the previous error:
-   [37m[40m:[0m[1m[34m[40mprev-mark[0m[37m[40m error                                  [0m
+   [37m[40m:[0m[1m[36m[40mprev-mark[0m[37m[40m error                                  [0m
    
 
 
@@ -1273,11 +1273,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To open the command prompt with 'filter-in' already filled in:
-   [37m[40m:[0m[1m[34m[40mprompt[0m[37m[40m command : 'filter-in '                    [0m
+   [37m[40m:[0m[1m[36m[40mprompt[0m[37m[40m command : 'filter-in '                    [0m
    
 
 #2 To ask the user a question:
-   [37m[40m:[0m[1m[34m[40mprompt[0m[37m[40m user 'Are you sure? '                     [0m
+   [37m[40m:[0m[1m[36m[40mprompt[0m[37m[40m user 'Are you sure? '                     [0m
    
 
 
@@ -1311,7 +1311,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file /tmp/script-output.txt:
-   [37m[40m:[0m[1m[34m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
+   [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
    
 
 
@@ -1329,11 +1329,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m
 [4mExamples[0m
 #1 To move 22 lines down in the view:
-   [37m[40m:[0m[1m[34m[40mrelative-goto[0m[37m[40m +22                                [0m
+   [37m[40m:[0m[1m[36m[40mrelative-goto[0m[37m[40m +22                                [0m
    
 
 #2 To move 10 percent back in the view:
-   [37m[40m:[0m[1m[34m[40mrelative-goto[0m[37m[40m -10%                               [0m
+   [37m[40m:[0m[1m[36m[40mrelative-goto[0m[37m[40m -10%                               [0m
    
 
 
@@ -1346,7 +1346,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:config[0m
 [4mExample[0m
 #1 To reset the '/ui/clock-format' option back to the builtin default:
-   [37m[40m:[0m[1m[34m[40mreset-config[0m[37m[40m /ui/clock-format                    [0m
+   [37m[40m:[0m[1m[36m[40mreset-config[0m[37m[40m /ui/clock-format                    [0m
    
 
 
@@ -1369,7 +1369,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To add the command ':highlight foobar' to the session file:
-   [37m[40m:[0m[1m[34m[40msession[0m[37m[40m :highlight foobar                        [0m
+   [37m[40m:[0m[1m[36m[40msession[0m[37m[40m :highlight foobar                        [0m
    
 
 
@@ -1381,7 +1381,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To set the minimum log level displayed to error:
-   [37m[40m:[0m[1m[34m[40mset-min-log-level[0m[37m[40m error                          [0m
+   [37m[40m:[0m[1m[36m[40mset-min-log-level[0m[37m[40m error                          [0m
    
 
 
@@ -1394,7 +1394,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
 [4mExample[0m
 #1 To show all the log_procname fields in all formats:
-   [37m[40m:[0m[1m[34m[40mshow-fields[0m[37m[40m log_procname                         [0m
+   [37m[40m:[0m[1m[36m[40mshow-fields[0m[37m[40m log_procname                         [0m
    
 
 
@@ -1435,7 +1435,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To visualize the sc_bytes field in the access_log format:
-   [37m[40m:[0m[1m[34m[40mspectrogram[0m[37m[40m sc_bytes                             [0m
+   [37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                             [0m
    
 
 
@@ -1448,7 +1448,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get a summary of the sc_bytes column in the access_log table:
-   [37m[40m:[0m[1m[34m[40msummarize[0m[37m[40m sc_bytes                               [0m
+   [37m[40m:[0m[1m[36m[40msummarize[0m[37m[40m sc_bytes                               [0m
    
 
 
@@ -1460,7 +1460,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To switch to the 'schema' view:
-   [37m[40m:[0m[1m[34m[40mswitch-to-view[0m[37m[40m schema                            [0m
+   [37m[40m:[0m[1m[36m[40mswitch-to-view[0m[37m[40m schema                            [0m
    
 
 
@@ -1473,7 +1473,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:comment[0m, [1m:delete-tags[0m, [1m:untag[0m
 [4mExample[0m
 #1 To add the tags '#BUG123' and '#needs-review' to the top line:
-   [37m[40m:[0m[1m[34m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
+   [37m[40m:[0m[1m[36m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
    
 
 
@@ -1495,7 +1495,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExample[0m
 #1 To switch to the 'schema' view if it is not displayed or switch back to the previous
    view:
-   [37m[40m:[0m[1m[34m[40mtoggle-view[0m[37m[40m schema                               [0m
+   [37m[40m:[0m[1m[36m[40mtoggle-view[0m[37m[40m schema                               [0m
    
 
 
@@ -1507,7 +1507,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To convert the epoch time 1490191111:
-   [37m[40m:[0m[1m[34m[40munix-time[0m[37m[40m 1490191111                             [0m
+   [37m[40m:[0m[1m[36m[40munix-time[0m[37m[40m 1490191111                             [0m
    
 
 
@@ -1520,7 +1520,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To remove the tags '#BUG123' and '#needs-review' from the top line:
-   [37m[40m:[0m[1m[34m[40muntag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                      [0m
+   [37m[40m:[0m[1m[36m[40muntag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                      [0m
    
 
 
@@ -1539,7 +1539,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as text to /tmp/table.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
+   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
    
 
 
@@ -1559,7 +1559,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as CSV to /tmp/table.csv:
-   [37m[40m:[0m[1m[34m[40mwrite-csv-to[0m[37m[40m /tmp/table.csv                      [0m
+   [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m /tmp/table.csv                      [0m
    
 
 
@@ -1579,7 +1579,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as JSON to /tmp/table.json:
-   [37m[40m:[0m[1m[34m[40mwrite-json-to[0m[37m[40m /tmp/table.json                    [0m
+   [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m /tmp/table.json                    [0m
    
 
 
@@ -1598,7 +1598,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as JSON Lines to /tmp/table.json:
-   [37m[40m:[0m[1m[34m[40mwrite-jsonlines-to[0m[37m[40m /tmp/table.json               [0m
+   [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m /tmp/table.json               [0m
    
 
 
@@ -1622,7 +1622,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the marked lines in the log view to /tmp/table.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-raw-to[0m[37m[40m /tmp/table.txt                      [0m
+   [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m /tmp/table.txt                      [0m
    
 
 
@@ -1642,7 +1642,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write only the displayed text to /tmp/table.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-screen-to[0m[37m[40m /tmp/table.txt                   [0m
+   [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m /tmp/table.txt                   [0m
    
 
 
@@ -1661,7 +1661,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as text to /tmp/table.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
+   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
    
 
 
@@ -1679,7 +1679,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-view-to[0m
 [4mExample[0m
 #1 To write marked lines to the file /tmp/interesting-lines.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-to[0m[37m[40m /tmp/interesting-lines.txt              [0m
+   [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m /tmp/interesting-lines.txt              [0m
    
 
 
@@ -1700,7 +1700,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:write-to[0m
 [4mExample[0m
 #1 To write the top view to /tmp/table.txt:
-   [37m[40m:[0m[1m[34m[40mwrite-view-to[0m[37m[40m /tmp/table.txt                     [0m
+   [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m /tmp/table.txt                     [0m
    
 
 
@@ -1712,7 +1712,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To set the zoom level to '1-week':
-   [37m[40m:[0m[1m[34m[40mzoom-to[0m[37m[40m 1-week                                   [0m
+   [37m[40m:[0m[1m[36m[40mzoom-to[0m[37m[40m 1-week                                   [0m
    
 
 [1mSQL Reference[0m
@@ -1727,7 +1727,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To cast the value 1.23 as an integer:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mCAST[0m[37m[40m(1[0m[1m[34m[40m.23[0m[37m[40m [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mINTEGER[0m[37m[40m)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCAST[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mINTEGER[0m[37m[40m)                      [0m
    
 
 
@@ -1757,7 +1757,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the absolute value of -1:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mabs[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m1)                                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mabs[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m1)                                    [0m
    
 
 
@@ -1772,7 +1772,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arccosine of 0.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40macos[0m[37m[40m(0[0m[1m[34m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macos[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1787,7 +1787,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arccosine of 1.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m(1[0m[1m[34m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m(1[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1802,7 +1802,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arcsine of 0.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40masin[0m[37m[40m(0[0m[1m[34m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masin[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1817,7 +1817,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arcsine of 0.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40masinh[0m[37m[40m(0[0m[1m[34m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masinh[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1832,7 +1832,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arctangent of 0.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40matan[0m[37m[40m(0[0m[1m[34m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matan[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1849,7 +1849,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matan2[0m[37m[40m(5, 5))                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matan2[0m[37m[40m(5, 5))                       [0m
    
 
 
@@ -1864,7 +1864,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arctangent of 0.2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40matanh[0m[37m[40m(0[0m[1m[34m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matanh[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1881,7 +1881,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matn2[0m[37m[40m(5, 5))                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matn2[0m[37m[40m(5, 5))                        [0m
    
 
 
@@ -1897,12 +1897,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the average of the column 'ex_duration' from the table 'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
    
 
 #2 To get the average of the column 'ex_duration' from the table 'lnav_example_log'
    when grouped by 'ex_procname':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m, [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[34m[40mGROUP[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m, [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m
    
 
 
@@ -1915,27 +1915,27 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To get the base of a plain file name:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m)                         [0m
    
 
 #2 To get the base of a path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo/bar'[0m[37m[40m)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo/bar'[0m[37m[40m)                        [0m
    
 
 #3 To get the base of a directory:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo/bar/'[0m[37m[40m)                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo/bar/'[0m[37m[40m)                       [0m
    
 
 #4 To get the base of an empty string:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m''[0m[37m[40m)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m''[0m[37m[40m)                               [0m
    
 
 #5 To get the base of a Windows path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo\bar'[0m[37m[40m)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'foo\bar'[0m[37m[40m)                        [0m
    
 
 #6 To get the base of the root directory:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m)                              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m)                              [0m
    
 
 
@@ -1950,7 +1950,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the ceiling of 1.23:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mceil[0m[37m[40m(1[0m[1m[34m[40m.23[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mceil[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m)                                 [0m
    
 
 
@@ -1976,7 +1976,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get a string with the code points 0x48 and 0x49:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m(0[0m[37m[40mx48[0m[37m[40m, 0[0m[37m[40mx49[0m[37m[40m)                           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m(0[0m[37m[40mx48[0m[37m[40m, 0[0m[37m[40mx49[0m[37m[40m)                           [0m
    
 
 
@@ -2000,11 +2000,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To search for the string 'abc' within 'abcabc' and starting at position 2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'abcabc'[0m[37m[40m, 2)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'abcabc'[0m[37m[40m, 2)              [0m
    
 
 #2 To search for the string 'abc' within 'abcdef' and starting at position 2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'abcdef'[0m[37m[40m, 2)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'abcdef'[0m[37m[40m, 2)              [0m
    
 
 
@@ -2018,7 +2018,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get the first non-null value from three parameters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcoalesce[0m[37m[40m([0m[1m[34m[40mnull[0m[37m[40m, 0, [0m[1m[34m[40mnull[0m[37m[40m)                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcoalesce[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, 0, [0m[1m[36m[40mnull[0m[37m[40m)                    [0m
    
 
 
@@ -2031,11 +2031,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To get the count of the non-NULL rows of 'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m             [0m
    
 
 #2 To get the count of the non-NULL values of 'log_part' from 'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[37m[40mlog_part[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[37m[40mlog_part[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m      [0m
    
 
 
@@ -2057,15 +2057,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdatetime()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the date portion of the timestamp '2017-01-02T03:04:05':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
    
 
 #2 To get the date portion of the timestamp '2017-01-02T03:04:05' plus one day:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 day'[0m[37m[40m)      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 day'[0m[37m[40m)      [0m
    
 
 #3 To get the date portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)              [0m
    
 
 
@@ -2080,16 +2080,16 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the date and time portion of the timestamp '2017-01-02T03:04:05':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)            [0m
    
 
 #2 To get the date and time portion of the timestamp '2017-01-02T03:04:05' plus one
    minute:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
    
 
 #3 To get the date and time portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)          [0m
    
 
 
@@ -2104,7 +2104,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To convert PI to degrees:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40mpi[0m[37m[40m())                              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40mpi[0m[37m[40m())                              [0m
    
 
 
@@ -2125,23 +2125,23 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mbasename()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To get the directory of a relative file path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'foo/bar'[0m[37m[40m)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'foo/bar'[0m[37m[40m)                         [0m
    
 
 #2 To get the directory of an absolute file path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'/foo/bar'[0m[37m[40m)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'/foo/bar'[0m[37m[40m)                        [0m
    
 
 #3 To get the directory of a file in the root directory:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'/bar'[0m[37m[40m)                            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'/bar'[0m[37m[40m)                            [0m
    
 
 #4 To get the directory of a Windows path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'foo\bar'[0m[37m[40m)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m'foo\bar'[0m[37m[40m)                         [0m
    
 
 #5 To get the directory of an empty path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m''[0m[37m[40m)                                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[37m[40m''[0m[37m[40m)                                [0m
    
 
 
@@ -2161,11 +2161,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'notbad.jpg' ends with '.jpg':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40m'notbad.jpg'[0m[37m[40m, [0m[37m[40m'.jpg'[0m[37m[40m)             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40m'notbad.jpg'[0m[37m[40m, [0m[37m[40m'.jpg'[0m[37m[40m)             [0m
    
 
 #2 To test if the string 'notbad.png' starts with '.jpg':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40m'notbad.png'[0m[37m[40m, [0m[37m[40m'.jpg'[0m[37m[40m)             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40m'notbad.png'[0m[37m[40m, [0m[37m[40m'.jpg'[0m[37m[40m)             [0m
    
 
 
@@ -2181,7 +2181,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To raise e to 2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mexp[0m[37m[40m(2)                                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mexp[0m[37m[40m(2)                                     [0m
    
 
 
@@ -2200,11 +2200,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To extract key/value pairs from a string:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m) [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m) [0m
    
 
 #2 To extract columnar data from a string:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[37m[40m'1.0 abc 2.0'[0m[37m[40m)                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[37m[40m'1.0 abc 2.0'[0m[37m[40m)                     [0m
    
 
 
@@ -2229,7 +2229,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the floor of 1.23:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfloor[0m[37m[40m(1[0m[1m[34m[40m.23[0m[37m[40m)                                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfloor[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m)                                [0m
    
 
 
@@ -2246,15 +2246,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To generate the numbers in the range [10, 14]:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14)         [0m
    
 
 #2 To generate every other number in the range [10, 14]:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14, 2)      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14, 2)      [0m
    
 
 #3 To count down from five to 1:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(1, 5, [0m[1m[37m[40m-[0m[37m[40m1)       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(1, 5, [0m[1m[37m[40m-[0m[37m[40m1)       [0m
    
 
 
@@ -2267,7 +2267,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mgethostbyname()[0m
 [4mExample[0m
 #1 To get the hostname for the IP '127.0.0.1':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyaddr[0m[37m[40m([0m[37m[40m'[0m[37m[40m127.0.0.1[0m[37m[40m'[0m[37m[40m)                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyaddr[0m[37m[40m([0m[37m[40m'[0m[37m[40m127.0.0.1[0m[37m[40m'[0m[37m[40m)                 [0m
    
 
 
@@ -2280,7 +2280,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mgethostbyaddr()[0m
 [4mExample[0m
 #1 To get the IP address for 'localhost':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyname[0m[37m[40m([0m[37m[40m'localhost'[0m[37m[40m)                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyname[0m[37m[40m([0m[37m[40m'localhost'[0m[37m[40m)                 [0m
    
 
 
@@ -2293,7 +2293,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To test if the string 'abc' matches the glob 'a*':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mglob[0m[37m[40m([0m[37m[40m'a*'[0m[37m[40m, [0m[37m[40m'abc'[0m[37m[40m)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mglob[0m[37m[40m([0m[37m[40m'a*'[0m[37m[40m, [0m[37m[40m'abc'[0m[37m[40m)                          [0m
    
 
 
@@ -2315,16 +2315,16 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExamples[0m
 #1 To concatenate the values of the column 'ex_procname' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    
 
 #2 To join the values of the column 'ex_procname' using the string ', ':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40m', '[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40m', '[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    
 
 #3 To concatenate the distinct values of the column 'ex_procname' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[1m[34m[40mDISTINCT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[1m[36m[40mDISTINCT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    
 
 
@@ -2343,7 +2343,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To produce a hash of all of the values of 'column1':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m ([0m[1m[34m[40mVALUES[0m[37m[40m ([0m[37m[40m'abc'[0m[37m[40m), ([0m[37m[40m'123'[0m[37m[40m))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[37m[40m'abc'[0m[37m[40m), ([0m[37m[40m'123'[0m[37m[40m))[0m
    
 
 
@@ -2384,7 +2384,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get the hexadecimal rendering of the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                                 [0m
    
 
 
@@ -2403,7 +2403,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To format an amount:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m(10 [0m[1m[37m[40m*[0m[37m[40m 1024 [0m[1m[37m[40m*[0m[37m[40m 1024)       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m(10 [0m[1m[37m[40m*[0m[37m[40m 1024 [0m[1m[37m[40m*[0m[37m[40m 1024)       [0m
    
 
 
@@ -2417,7 +2417,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get the first non-null value between null and zero:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[1m[34m[40mnull[0m[37m[40m, 0)                            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, 0)                            [0m
    
 
 
@@ -2439,7 +2439,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To test get the position of 'b' in the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40minstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'b'[0m[37m[40m)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40minstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'b'[0m[37m[40m)                          [0m
    
 
 
@@ -2455,15 +2455,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To get the root of a JSON value:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[37m[40m'1'[0m[37m[40m, [0m[37m[40m''[0m[37m[40m)                              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[37m[40m'1'[0m[37m[40m, [0m[37m[40m''[0m[37m[40m)                              [0m
    
 
 #2 To get the property named 'b' in a JSON object:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[37m[40m'{ "a": 1, "b": 2 }'[0m[37m[40m, [0m[37m[40m'/b'[0m[37m[40m)           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[37m[40m'{ "a": 1, "b": 2 }'[0m[37m[40m, [0m[37m[40m'/b'[0m[37m[40m)           [0m
    
 
 #3 To get the 'msg' property and return a default if it does not exist:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[1m[34m[40mnull[0m[37m[40m, [0m[37m[40m'/msg'[0m[37m[40m, [0m[37m[40m'Hello'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, [0m[37m[40m'/msg'[0m[37m[40m, [0m[37m[40m'Hello'[0m[37m[40m)                [0m
    
 
 
@@ -2479,19 +2479,19 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mbasename()[0m, [1mdirname()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To join a directory and file name into a relative path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                     [0m
    
 
 #2 To join an empty component with other names into a relative path:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m''[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m''[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                 [0m
    
 
 #3 To create an absolute path with two path components:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                [0m
    
 
 #4 To create an absolute path from a path component that starts with a forward slash:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'/bar'[0m[37m[40m)               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[37m[40m'/'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m, [0m[37m[40m'/bar'[0m[37m[40m)               [0m
    
 
 
@@ -2510,15 +2510,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To append the number 4 to null:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[1m[34m[40mNULL[0m[37m[40m, 4)                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[1m[36m[40mNULL[0m[37m[40m, 4)                       [0m
    
 
 #2 To append 4 and 5 to the array [1, 2, 3]:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, 4, 5)             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, 4, 5)             [0m
    
 
 #3 To concatenate two arrays together:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, [0m[1m[37m[40mjson[0m[37m[40m([0m[37m[40m'[4, 5]'[0m[37m[40m))   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, [0m[1m[37m[40mjson[0m[37m[40m([0m[37m[40m'[4, 5]'[0m[37m[40m))   [0m
    
 
 
@@ -2532,11 +2532,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To test if a JSON array contains the number 4:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, 4)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[37m[40m'[1, 2, 3]'[0m[37m[40m, 4)              [0m
    
 
 #2 To test if a JSON array contains the string 'def':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[37m[40m'["abc", "def"]'[0m[37m[40m, [0m[37m[40m'def'[0m[37m[40m)     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[37m[40m'["abc", "def"]'[0m[37m[40m, [0m[37m[40m'def'[0m[37m[40m)     [0m
    
 
 
@@ -2549,11 +2549,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To create an array from arguments:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40m'one'[0m[37m[40m, 2, 3[0m[1m[34m[40m.4[0m[37m[40m)            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40m'one'[0m[37m[40m, 2, 3[0m[1m[36m[40m.4[0m[37m[40m)            [0m
    
 
 #2 To create an array from a column of values:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m ([0m[1m[34m[40mVALUES[0m[37m[40m (1), (2), (3))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m (1), (2), (3))[0m
    
 
 
@@ -2567,11 +2567,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m
 [4mExamples[0m
 #1 To create an object from arguments:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40m'a'[0m[37m[40m, 1, [0m[37m[40m'b'[0m[37m[40m, 2)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40m'a'[0m[37m[40m, 1, [0m[37m[40m'b'[0m[37m[40m, 2)          [0m
    
 
 #2 To create an object from a pair of columns:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m ([0m[1m[34m[40mVALUES[0m[37m[40m ([0m[37m[40m'a'[0m[37m[40m, 1), ([0m[37m[40m'b'[0m[37m[40m, 2))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[37m[40m'a'[0m[37m[40m, 1), ([0m[37m[40m'b'[0m[37m[40m, 2))[0m
    
 
 
@@ -2587,15 +2587,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mdatetime()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the julian day from the timestamp '2017-01-02T03:04:05':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)           [0m
    
 
 #2 To get the julian day from the timestamp '2017-01-02T03:04:05' plus one minute:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
    
 
 #3 To get the julian day from the timestamp 1491341842:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)         [0m
    
 
 
@@ -2658,11 +2658,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the first character of the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                          [0m
    
 
 #2 To get the first ten characters of a string, regardless of size:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 10)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 10)                         [0m
    
 
 
@@ -2682,7 +2682,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the length of the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlength[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlength[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                              [0m
    
 
 
@@ -2699,11 +2699,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To test if the string 'aabcc' contains the letter 'b':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mlike[0m[37m[40m([0m[37m[40m'%b%'[0m[37m[40m, [0m[37m[40m'aabcc'[0m[37m[40m)                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mlike[0m[37m[40m([0m[37m[40m'%b%'[0m[37m[40m, [0m[37m[40m'aabcc'[0m[37m[40m)                       [0m
    
 
 #2 To test if the string 'aab%' ends with 'b%':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mlike[0m[37m[40m([0m[37m[40m'%b:%'[0m[37m[40m, [0m[37m[40m'aab%'[0m[37m[40m, [0m[37m[40m':'[0m[37m[40m)                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mlike[0m[37m[40m([0m[37m[40m'%b:%'[0m[37m[40m, [0m[37m[40m'aab%'[0m[37m[40m, [0m[37m[40m':'[0m[37m[40m)                  [0m
    
 
 
@@ -2757,7 +2757,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To get the natual logarithm of 8:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog[0m[37m[40m(8)                                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog[0m[37m[40m(8)                                     [0m
    
 
 
@@ -2772,7 +2772,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the logarithm of 100:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog10[0m[37m[40m(100)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog10[0m[37m[40m(100)                                 [0m
    
 
 
@@ -2801,7 +2801,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract key/value pairs from a log message:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlogfmt2json[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlogfmt2json[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m)[0m
    
 
 
@@ -2821,7 +2821,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To lowercase the string 'AbC':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlower[0m[37m[40m([0m[37m[40m'AbC'[0m[37m[40m)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlower[0m[37m[40m([0m[37m[40m'AbC'[0m[37m[40m)                               [0m
    
 
 
@@ -2842,11 +2842,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the leading whitespace from the string '   abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[37m[40m'   abc'[0m[37m[40m)                            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[37m[40m'   abc'[0m[37m[40m)                            [0m
    
 
 #2 To trim the characters 'a' or 'b' from the left side of the string 'aaaabbbc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[37m[40m'aaaabbbc'[0m[37m[40m, [0m[37m[40m'ab'[0m[37m[40m)                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[37m[40m'aaaabbbc'[0m[37m[40m, [0m[37m[40m'ab'[0m[37m[40m)                    [0m
    
 
 
@@ -2864,11 +2864,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the largest value from the parameters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m(2, 1, 3)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m(2, 1, 3)                               [0m
    
 
 #2 To get the largest value from an aggregate:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
    
 
 
@@ -2886,11 +2886,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the smallest value from the parameters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m(2, 1, 3)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m(2, 1, 3)                               [0m
    
 
 #2 To get the smallest value from an aggregate:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
    
 
 
@@ -2924,11 +2924,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To test if 1 is different from 1:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 1)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 1)                               [0m
    
 
 #2 To test if 1 is different from 2:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 2)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 2)                               [0m
    
 
 
@@ -2949,11 +2949,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
    
 
 #2 To pad the string 'abcdef' to a length of eight characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 8) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'ghi'[0m[37m[40m                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 8) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'ghi'[0m[37m[40m                 [0m
    
 
 
@@ -2974,11 +2974,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6)                             [0m
    
 
 #2 To pad the string 'abcdef' to a length of four characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 4)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 4)                          [0m
    
 
 
@@ -2999,11 +2999,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
    
 
 #2 To pad the string 'abcdef' to a length of four characters:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 4) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'ghi'[0m[37m[40m                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[37m[40m'abcdef'[0m[37m[40m, 4) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'ghi'[0m[37m[40m                 [0m
    
 
 
@@ -3024,7 +3024,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To get the value of PI:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpi[0m[37m[40m()                                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpi[0m[37m[40m()                                       [0m
    
 
 
@@ -3041,7 +3041,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To raise two to the power of three:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpower[0m[37m[40m(2, 3)                                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpower[0m[37m[40m(2, 3)                                [0m
    
 
 
@@ -3064,15 +3064,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To substitute 'World' into the string 'Hello, %s!':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'Hello, %s!'[0m[37m[40m, [0m[37m[40m'World'[0m[37m[40m)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'Hello, %s!'[0m[37m[40m, [0m[37m[40m'World'[0m[37m[40m)              [0m
    
 
 #2 To right-align 'small' in the string 'align:' with a column width of 10:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'align: % 10s'[0m[37m[40m, [0m[37m[40m'small'[0m[37m[40m)            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'align: % 10s'[0m[37m[40m, [0m[37m[40m'small'[0m[37m[40m)            [0m
    
 
 #3 To format 11 with a width of five characters and leading zeroes:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'value: %05d'[0m[37m[40m, 11)                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'value: %05d'[0m[37m[40m, 11)                  [0m
    
 
 
@@ -3091,7 +3091,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To capitalize the words in the string 'hello, world!':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mproper[0m[37m[40m([0m[37m[40m'hello, world!'[0m[37m[40m)                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mproper[0m[37m[40m([0m[37m[40m'hello, world!'[0m[37m[40m)                    [0m
    
 
 
@@ -3104,11 +3104,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To quote the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mquote[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mquote[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                               [0m
    
 
 #2 To quote the string 'abc'123':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mquote[0m[37m[40m([0m[37m[40m'abc''123'[0m[37m[40m)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mquote[0m[37m[40m([0m[37m[40m'abc''123'[0m[37m[40m)                          [0m
    
 
 
@@ -3123,7 +3123,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To convert 180 degrees to radians:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mradians[0m[37m[40m(180)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mradians[0m[37m[40m(180)                               [0m
    
 
 
@@ -3213,7 +3213,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture[0m[37m[40m([0m[37m[40m'a=1; b=2'[0m[37m[40m, [0m[37m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture[0m[37m[40m([0m[37m[40m'a=1; b=2'[0m[37m[40m, [0m[37m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
    
 
 
@@ -3234,17 +3234,17 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To capture the digits from the string '123':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(\d+)'[0m[37m[40m, [0m[37m[40m'123'[0m[37m[40m)               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(\d+)'[0m[37m[40m, [0m[37m[40m'123'[0m[37m[40m)               [0m
    
 
 #2 To capture a number and word into a JSON object with the properties 'col_0' and
    'col_1':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(\d+) (\w+)'[0m[37m[40m, [0m[37m[40m'123 four'[0m[37m[40m)    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(\d+) (\w+)'[0m[37m[40m, [0m[37m[40m'123 four'[0m[37m[40m)    [0m
    
 
 #3 To capture a number and word into a JSON object with the named properties 'num' and
    'str':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(?<[0m[37m[40mnum[0m[37m[40m>\d+) (?<[0m[37m[40mstr[0m[37m[40m>\w+)'[0m[37m[40m, [0m[37m[40m'123 four'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(?<[0m[37m[40mnum[0m[37m[40m>\d+) (?<[0m[37m[40mstr[0m[37m[40m>\w+)'[0m[37m[40m, [0m[37m[40m'123 four'[0m[37m[40m)[0m
    
 
 
@@ -3267,11 +3267,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[37m[40m'^(\w+)'[0m[37m[40m, [0m[37m[40m'Goodbye'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[37m[40m'^(\w+)'[0m[37m[40m, [0m[37m[40m'Goodbye'[0m[37m[40m)[0m
    
 
 #2 To wrap alphanumeric words with angle brackets:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[37m[40m'123 abc'[0m[37m[40m, [0m[37m[40m'(\w+)'[0m[37m[40m, [0m[37m[40m'<[0m[37m[40m\1[0m[37m[40m>'[0m[37m[40m) [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[37m[40m'123 abc'[0m[37m[40m, [0m[37m[40m'(\w+)'[0m[37m[40m, [0m[37m[40m'<[0m[37m[40m\1[0m[37m[40m>'[0m[37m[40m) [0m
    
 
 
@@ -3294,11 +3294,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the string 'x' with 'z' in 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mreplace[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'x'[0m[37m[40m, [0m[37m[40m'z'[0m[37m[40m)                   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mreplace[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'x'[0m[37m[40m, [0m[37m[40m'z'[0m[37m[40m)                   [0m
    
 
 #2 To replace the string 'a' with 'z' in 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mreplace[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'a'[0m[37m[40m, [0m[37m[40m'z'[0m[37m[40m)                   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mreplace[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'a'[0m[37m[40m, [0m[37m[40m'z'[0m[37m[40m)                   [0m
    
 
 
@@ -3318,7 +3318,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To repeat the string 'abc' three times:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 3)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 3)                        [0m
    
 
 
@@ -3337,7 +3337,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To reverse the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreverse[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreverse[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
    
 
 
@@ -3358,11 +3358,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the last character of the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                         [0m
    
 
 #2 To get the last ten characters of a string, regardless of size:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 10)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 10)                        [0m
    
 
 
@@ -3381,15 +3381,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To round the number 123.456 to an integer:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[34m[40m.456[0m[37m[40m)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m)                             [0m
    
 
 #2 To round the number 123.456 to a precision of 1:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[34m[40m.456[0m[37m[40m, 1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m, 1)                          [0m
    
 
 #3 To round the number 123.456 to a precision of 5:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[34m[40m.456[0m[37m[40m, 5)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m, 5)                          [0m
    
 
 
@@ -3402,8 +3402,8 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m
 [4mExample[0m
 #1 To number messages from a process:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrow_number[0m[37m[40m() [0m[1m[34m[40mOVER[0m[37m[40m ([0m[1m[34m[40mPARTITION[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m [0m[1m[34m[40mORDER[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m) [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mmsg_num[0m[37m[40m,[0m
-   [37m[40m   [0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrow_number[0m[37m[40m() [0m[1m[36m[40mOVER[0m[37m[40m ([0m[1m[36m[40mPARTITION[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mmsg_num[0m[37m[40m,[0m
+   [37m[40m   [0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    
 
 
@@ -3424,11 +3424,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the whitespace from the end of the string 'abc   ':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[37m[40m'abc   '[0m[37m[40m)                            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[37m[40m'abc   '[0m[37m[40m)                            [0m
    
 
 #2 To trim the characters 'b' and 'c' from the string 'abbbbcccc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[37m[40m'abbbbcccc'[0m[37m[40m, [0m[37m[40m'bc'[0m[37m[40m)                   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[37m[40m'abbbbcccc'[0m[37m[40m, [0m[37m[40m'bc'[0m[37m[40m)                   [0m
    
 
 
@@ -3444,15 +3444,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the sign of 10:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(10)                                   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(10)                                   [0m
    
 
 #2 To get the sign of 0:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(0)                                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(0)                                    [0m
    
 
 #3 To get the sign of -10:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m10)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m10)                                  [0m
    
 
 
@@ -3477,11 +3477,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the unicode block element for the value 32 in the range of 0-128:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m(32, 128)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m(32, 128)                         [0m
    
 
 #2 To chart the values in a JSON array:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[37m[40m'[0, 1, 2, 3, 4, 5, 6, 7, 8]'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[37m[40m'[0, 1, 2, 3, 4, 5, 6, 7, 8]'[0m[37m[40m)[0m
    
 
 
@@ -3500,19 +3500,19 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To produce a hash for the string 'Hello, World!':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m)               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m)               [0m
    
 
 #2 To produce a hash for the parameters where one is NULL:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[1m[34m[40mNULL[0m[37m[40m)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[1m[36m[40mNULL[0m[37m[40m)         [0m
    
 
 #3 To produce a hash for the parameters where one is an empty string:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[37m[40m''[0m[37m[40m)           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[37m[40m''[0m[37m[40m)           [0m
    
 
 #4 To produce a hash for the parameters where one is a number:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, 123)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, 123)          [0m
    
 
 
@@ -3533,7 +3533,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To check if the SQLite library was compiled with ENABLE_FTS3:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msqlite_compileoption_used[0m[37m[40m([0m[37m[40m'ENABLE_FTS3'[0m[37m[40m)   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msqlite_compileoption_used[0m[37m[40m([0m[37m[40m'ENABLE_FTS3'[0m[37m[40m)   [0m
    
 
 
@@ -3560,7 +3560,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To get the square of two:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msquare[0m[37m[40m(2)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msquare[0m[37m[40m(2)                                  [0m
    
 
 
@@ -3580,11 +3580,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'foobar' starts with 'foo':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m)                [0m
    
 
 #2 To test if the string 'foobar' starts with 'bar':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m, [0m[37m[40m'bar'[0m[37m[40m)                [0m
    
 
 
@@ -3605,7 +3605,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the 'b', 'c', and 'd' characters from the string 'abcabc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrfilter[0m[37m[40m([0m[37m[40m'abcabc'[0m[37m[40m, [0m[37m[40m'bcd'[0m[37m[40m)                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrfilter[0m[37m[40m([0m[37m[40m'abcabc'[0m[37m[40m, [0m[37m[40m'bcd'[0m[37m[40m)                 [0m
    
 
 
@@ -3623,16 +3623,16 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mdatetime()[0m, [1mjulianday()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the year from the timestamp '2017-01-02T03:04:05':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'%Y'[0m[37m[40m, [0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'%Y'[0m[37m[40m, [0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)      [0m
    
 
 #2 To create a string with the time from the timestamp '2017-01-02T03:04:05' plus one
    minute:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'The time is: %H:%M:%S'[0m[37m[40m, [0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'The time is: %H:%M:%S'[0m[37m[40m, [0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)[0m
    
 
 #3 To create a string with the Julian day from the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'Julian day: %J'[0m[37m[40m, 1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[37m[40m'Julian day: %J'[0m[37m[40m, 1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)[0m
    
 
 
@@ -3661,22 +3661,22 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExamples[0m
 #1 To get the substring starting at the second character until the end of the string
    'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 2)                           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 2)                           [0m
    
 
 #2 To get the substring of size one starting at the second character of the string
    'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 2, 1)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 2, 1)                        [0m
    
 
 #3 To get the substring starting at the last character until the end of the string
    'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1)                          [0m
    
 
 #4 To get the substring starting at the last character and going backwards one step of
    the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1, [0m[1m[37m[40m-[0m[37m[40m1)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1, [0m[1m[37m[40m-[0m[37m[40m1)                      [0m
    
 
 
@@ -3693,7 +3693,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExample[0m
 #1 To sum all of the values in the column 'ex_duration' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40msum[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msum[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
    
 
 
@@ -3708,15 +3708,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mdatetime()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the time portion of the timestamp '2017-01-02T03:04:05':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
    
 
 #2 To get the time portion of the timestamp '2017-01-02T03:04:05' plus one minute:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[37m[40m'2017-01-02T03:04:05'[0m[37m[40m, [0m[37m[40m'+1 minute'[0m[37m[40m)   [0m
    
 
 #3 To get the time portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m(1491341842, [0m[37m[40m'unixepoch'[0m[37m[40m)              [0m
    
 
 
@@ -3730,11 +3730,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mdatetime()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimeslice()[0m
 [4mExamples[0m
 #1 To get the difference between two timestamps:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[37m[40m'2017-02-03T04:05:06'[0m[37m[40m, [0m[37m[40m'2017-02-03T04:05:00'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[37m[40m'2017-02-03T04:05:06'[0m[37m[40m, [0m[37m[40m'2017-02-03T04:05:00'[0m[37m[40m)[0m
    
 
 #2 To get the difference between relative timestamps:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[37m[40m'today'[0m[37m[40m, [0m[37m[40m'yesterday'[0m[37m[40m)             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[37m[40m'today'[0m[37m[40m, [0m[37m[40m'yesterday'[0m[37m[40m)             [0m
    
 
 
@@ -3749,17 +3749,17 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mdate()[0m, [1mdatetime()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m
 [4mExamples[0m
 #1 To get the timestamp rounded down to the start of the ten minute slice:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40m'2017-01-01T05:05:00'[0m[37m[40m, [0m[37m[40m'10m'[0m[37m[40m)    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40m'2017-01-01T05:05:00'[0m[37m[40m, [0m[37m[40m'10m'[0m[37m[40m)    [0m
    
 
 #2 To group log messages into five minute buckets and count them:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[37m[40m'5m'[0m[37m[40m) [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1)[0m
-   [37m[40m   [0m[37m[40m    [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[34m[40mGROUP[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[37m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1)[0m
+   [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    
 
 #3 To group log messages by those before 4:30am and after:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[37m[40m'before 4:30am'[0m[37m[40m) [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1) [0m[1m[34m[40mFROM[0m
-   [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[34m[40mGROUP[0m[37m[40m [0m[1m[34m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[37m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1) [0m[1m[36m[40mFROM[0m
+   [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    
 
 
@@ -3776,7 +3776,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExample[0m
 #1 To total all of the values in the column 'ex_duration' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtotal[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtotal[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m   [0m
    
 
 
@@ -3805,11 +3805,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim whitespace from the start and end of the string '    abc   ':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[37m[40m'    abc   '[0m[37m[40m)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[37m[40m'    abc   '[0m[37m[40m)                         [0m
    
 
 #2 To trim the characters '-' and '+' from the string '-+abc+-':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[37m[40m'-+abc+-'[0m[37m[40m, [0m[37m[40m'-+'[0m[37m[40m)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[37m[40m'-+abc+-'[0m[37m[40m, [0m[37m[40m'-+'[0m[37m[40m)                      [0m
    
 
 
@@ -3822,11 +3822,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To get the type of the number 1:
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m(1)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m(1)                                  [0m
    
 
 #2 To get the type of the string 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                              [0m
    
 
 
@@ -3846,7 +3846,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the unicode code point for the first character of 'abc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40municode[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40municode[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
    
 
 
@@ -3873,7 +3873,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To uppercase the string 'aBc':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40mupper[0m[37m[40m([0m[37m[40m'aBc'[0m[37m[40m)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mupper[0m[37m[40m([0m[37m[40m'aBc'[0m[37m[40m)                               [0m
    
 
 
@@ -3901,15 +3901,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m
 [4mExamples[0m
 #1 To select the XML nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
    
 
 #2 To select all 'a' attributes on the path '/abc/def':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/@a', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/@a', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
    
 
 #3 To select the text nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/text()', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[37m[40m &#[0m[37m[40mx2605[0m[37m[40m;[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/text()', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[37m[40m &#[0m[37m[40mx2605[0m[37m[40m;[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
    
 
 
@@ -3920,7 +3920,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mN[0m   The size of the BLOB.
 
 
-[1m[4m[34mATTACH[0m[4m [0m[1m[4m[34mDATABASE[0m[4m [0m[4mfilename[0m[4m [0m[1m[4m[34mAS[0m[4m [0m[4mschema-name[0m
+[1m[4m[36mATTACH[0m[4m [0m[1m[4m[36mDATABASE[0m[4m [0m[4mfilename[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mschema-name[0m
 ══════════════════════════════════════════════════════════════════════
   Attach a database file to the current connection.
 [4mParameters[0m
@@ -3929,11 +3929,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To attach the database file '/tmp/customers.db' with the name customers:
-   [37m[40m;[0m[1m[34m[40mATTACH[0m[37m[40m [0m[1m[34m[40mDATABASE[0m[37m[40m [0m[37m[40m'/tmp/customers.db'[0m[37m[40m [0m[1m[34m[40mAS[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m  [0m
+   [37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[37m[40m'/tmp/customers.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m  [0m
    
 
 
-[1m[4m[34mCASE[0m[4m [[0m[4mbase-expr[0m[4m] [0m[1m[4m[34mWHEN[0m[4m [0m[4mcmp-expr[0m[4m1[0m[4m [0m[1m[4m[34mTHEN[0m[4m [0m[4mthen-expr[0m[4m1[0m[4m [... [0m[1m[4m[34mWHEN[0m[4m [0m[4mcmp-expr[0m[4mN[0m[4m [0m[1m[4m[34mTHEN[0m[4m [0m[4mthen-expr[0m[4mN[0m[4m] [[0m[1m[4m[34mELSE[0m[4m [0m[4melse-expr[0m[4m] [0m[1m[4m[34mEND[0m
+[1m[4m[36mCASE[0m[4m [[0m[4mbase-expr[0m[4m] [0m[1m[4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4m1[0m[4m [0m[1m[4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4m1[0m[4m [... [0m[1m[4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4mN[0m[4m [0m[1m[4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4mN[0m[4m] [[0m[1m[4m[36mELSE[0m[4m [0m[4melse-expr[0m[4m] [0m[1m[4m[36mEND[0m
 ══════════════════════════════════════════════════════════════════════
   Evaluate a series of expressions in order until one evaluates to
   true and then return it's result.  Similar to an IF-THEN-ELSE
@@ -3948,11 +3948,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To evaluate the number one and return the string 'one':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[34m[40mCASE[0m[37m[40m 1 [0m[1m[34m[40mWHEN[0m[37m[40m 0 [0m[1m[34m[40mTHEN[0m[37m[40m [0m[37m[40m'zero'[0m[37m[40m [0m[1m[34m[40mWHEN[0m[37m[40m 1 [0m[1m[34m[40mTHEN[0m[37m[40m [0m[37m[40m'one'[0m[37m[40m [0m[1m[34m[40mEND[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCASE[0m[37m[40m 1 [0m[1m[36m[40mWHEN[0m[37m[40m 0 [0m[1m[36m[40mTHEN[0m[37m[40m [0m[37m[40m'zero'[0m[37m[40m [0m[1m[36m[40mWHEN[0m[37m[40m 1 [0m[1m[36m[40mTHEN[0m[37m[40m [0m[37m[40m'one'[0m[37m[40m [0m[1m[36m[40mEND[0m
    
 
 
-[1m[4m[34mCREATE[0m[4m [[0m[4mTEMP[0m[4m] [0m[1m[4m[34mVIEW[0m[4m [[0m[4mIF NOT EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m[4m [0m[1m[4m[34mAS[0m[4m [0m[4mselect-stmt[0m
+[1m[4m[36mCREATE[0m[4m [[0m[4mTEMP[0m[4m] [0m[1m[4m[36mVIEW[0m[4m [[0m[4mIF NOT EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mselect-stmt[0m
 ══════════════════════════════════════════════════════════════════════
   Assign a name to a SELECT statement
 [4mParameters[0m
@@ -3964,7 +3964,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
                   represents
 
 
-[1m[4m[34mDELETE[0m[4m [0m[1m[4m[34mFROM[0m[4m [0m[4mtable-name[0m[4m [[0m[1m[4m[34mWHERE[0m[4m [0m[4mcond[0m[4m][0m
+[1m[4m[36mDELETE[0m[4m [0m[1m[4m[36mFROM[0m[4m [0m[4mtable-name[0m[4m [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Delete rows from a table
 [4mParameters[0m
@@ -3972,7 +3972,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mcond[0m         The conditions used to delete the rows.
 
 
-[1m[4m[34mDETACH[0m[4m [0m[1m[4m[34mDATABASE[0m[4m [0m[4mschema-name[0m
+[1m[4m[36mDETACH[0m[4m [0m[1m[4m[36mDATABASE[0m[4m [0m[4mschema-name[0m
 ══════════════════════════════════════════════════════════════════════
   Detach a database from the current connection.
 [4mParameter[0m
@@ -3980,17 +3980,17 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To detach the database named 'customers':
-   [37m[40m;[0m[1m[34m[40mDETACH[0m[37m[40m [0m[1m[34m[40mDATABASE[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m                         [0m
+   [37m[40m;[0m[1m[36m[40mDETACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m                         [0m
    
 
 
-[1m[4m[34mDROP[0m[4m [0m[1m[4m[34mVIEW[0m[4m [[0m[4mIF EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m
+[1m[4m[36mDROP[0m[4m [0m[1m[4m[36mVIEW[0m[4m [[0m[4mIF EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
   Drop a view
 [4mParameters[0m
 
 
-[1m[4m[34mINSERT[0m[4m [0m[1m[4m[34mINTO[0m[4m [[0m[4mschema-name.[0m[4m] [0m[4mtable-name[0m[4m [[0m[1m[4m[34m([0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [, ...[0m[4m [0m[4mcolumn-name[0m[4mN[0m[4m] [0m[1m[4m[34m)[0m[4m] [0m[1m[4m[34mVALUES[0m[4m [0m[1m[4m[34m([0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [0m[1m[4m[34m)[0m
+[1m[4m[36mINSERT[0m[4m [0m[1m[4m[36mINTO[0m[4m [[0m[4mschema-name.[0m[4m] [0m[4mtable-name[0m[4m [[0m[1m[4m[36m([0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [, ...[0m[4m [0m[4mcolumn-name[0m[4mN[0m[4m] [0m[1m[4m[36m)[0m[4m] [0m[1m[4m[36mVALUES[0m[4m [0m[1m[4m[36m([0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [0m[1m[4m[36m)[0m
 ══════════════════════════════════════════════════════════════════════
   Insert rows into a table
 [4mParameters[0m
@@ -3998,18 +3998,18 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExample[0m
 #1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the
    'environ' table:
-   [37m[40m;[0m[1m[34m[40mINSERT[0m[37m[40m [0m[1m[34m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[34m[40mVALUES[0m[37m[40m ([0m[37m[40m'MSG'[0m[37m[40m, [0m[37m[40m'HELLO, WORLD!'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[37m[40m'MSG'[0m[37m[40m, [0m[37m[40m'HELLO, WORLD!'[0m[37m[40m)[0m
    
 
 
-[1m[4m[34mOVER[0m[4m [0m[4mwindow-name[0m
+[1m[4m[36mOVER[0m[4m [0m[4mwindow-name[0m
 ══════════════════════════════════════════════════════════════════════
   Executes the preceding function over a window
 [4mParameter[0m
   [4mwindow-name[0m   The name of the window definition
 
 
-[1m[4m[34mSELECT[0m[4m [0m[4mresult-column[0m[4m1[0m[4m [, ...[0m[4m [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1m[4m[34mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ...[0m[4m [0m[4mtable[0m[4mN[0m[4m]] [[0m[1m[4m[34mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1m[4m[34mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1m[4m[34mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [, ...[0m[4m [0m[4mordering-term[0m[4mN[0m[4m]] [[0m[1m[4m[34mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
+[1m[4m[36mSELECT[0m[4m [0m[4mresult-column[0m[4m1[0m[4m [, ...[0m[4m [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1m[4m[36mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ...[0m[4m [0m[4mtable[0m[4mN[0m[4m]] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1m[4m[36mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1m[4m[36mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [, ...[0m[4m [0m[4mordering-term[0m[4mN[0m[4m]] [[0m[1m[4m[36mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
 ══════════════════════════════════════════════════════════════════════
   Query the database and return zero or more rows of data.
 [4mParameters[0m
@@ -4027,11 +4027,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To select all of the columns from the table 'syslog_log':
-   [37m[40m;[0m[1m[34m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[34m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m                          [0m
    
 
 
-[1m[4m[34mUPDATE[0m[4m [0m[4mtable[0m[4m [0m[1m[4m[34mSET[0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [0m[1m[4m[34m=[0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mcolumn-name[0m[4mN[0m[4m [0m[1m[4m[34m=[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [[0m[1m[4m[34mWHERE[0m[4m [0m[4mcond[0m[4m][0m
+[1m[4m[36mUPDATE[0m[4m [0m[4mtable[0m[4m [0m[1m[4m[36mSET[0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ...[0m[4m [0m[4mcolumn-name[0m[4mN[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Modify a subset of values in zero or more rows of the given table
 [4mParameters[0m
@@ -4042,11 +4042,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To mark the syslog message at line 40:
-   [37m[40m;[0m[1m[34m[40mUPDATE[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[34m[40mSET[0m[37m[40m [0m[37m[40mlog_mark[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 1 [0m[1m[34m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 40[0m
+   [37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_mark[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 1 [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 40[0m
    
 
 
-[1m[4m[34mWITH[0m[4m [[0m[1m[4m[34mRECURSIVE[0m[4m] [0m[4mcte-table-name[0m[4m [0m[1m[4m[34mAS[0m[4m [0m[4mselect-stmt[0m
+[1m[4m[36mWITH[0m[4m [[0m[1m[4m[36mRECURSIVE[0m[4m] [0m[4mcte-table-name[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mselect-stmt[0m
 ══════════════════════════════════════════════════════════════════════
   Create a temporary view that exists only for the duration of a SQL
   statement.

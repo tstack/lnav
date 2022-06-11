@@ -1,4 +1,4 @@
-log_line  log_comment  log_tags 
-       0 Hello, World! ["#foo"] 
+[1mlog_line [0m[1m log_comment  [0m[1mlog_tags [0m
+[1m       0[0m[1m [0m[1mHello, World![0m[1m [0m[1m["#foo"] [0m
        1 <NULL>        <NULL>   
-       2 <NULL>        <NULL>   
+[1m       2[0m[1m [0m[1m<[0m[1mNULL[0m[1m>       [0m[1m [0m[1m<[0m[1mNULL[0m[1m>   [0m

@@ -48,6 +48,7 @@
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
 #include "readline_context.hh"
+#include "readline_highlighters.hh"
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 
@@ -687,6 +688,7 @@ sql_compile_script(sqlite3* db,
             }
             sql_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            readline_sqlite_highlighter(sql_content, sql_content.length());
             errors.emplace_back(
                 lnav::console::user_message::error(
                     "failed to compile SQL statement")
@@ -774,6 +776,8 @@ sql_execute_script(sqlite3* db,
                     errmsg = sqlite3_errmsg(db);
                     sql_content.with_attr_for_all(
                         VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                    readline_sqlite_highlighter(sql_content,
+                                                sql_content.length());
                     errors.emplace_back(
                         lnav::console::user_message::error(
                             "failed to execute SQL statement")

@@ -146,7 +146,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
         for (const auto& snip : this->um_snippets) {
             attr_line_t header;
 
-            header.append(" --> "_comment)
+            header.append(" --> "_snippet_border)
                 .append(lnav::roles::file(snip.s_location.sl_source.get()));
             if (snip.s_location.sl_line_number > 0) {
                 header.append(":").append(FMT_STRING("{}"),
@@ -161,7 +161,9 @@ user_message::to_attr_line(std::set<render_flags> flags) const
 
                 for (auto& line : snippet_lines) {
                     line.pad_to(longest_line_length);
-                    retval.append(" | "_comment).append(line).append("\n");
+                    retval.append(" | "_snippet_border)
+                        .append(line)
+                        .append("\n");
                 }
             }
         }
@@ -173,9 +175,9 @@ user_message::to_attr_line(std::set<render_flags> flags) const
                 attr_line_t prefix;
 
                 if (first_line) {
-                    prefix.append(" ="_comment)
+                    prefix.append(" ="_snippet_border)
                         .append(indent, ' ')
-                        .append("note"_comment)
+                        .append("note"_snippet_border)
                         .append(": ");
                     first_line = false;
                 } else {
@@ -192,9 +194,9 @@ user_message::to_attr_line(std::set<render_flags> flags) const
             attr_line_t prefix;
 
             if (first_line) {
-                prefix.append(" ="_comment)
+                prefix.append(" ="_snippet_border)
                     .append(indent, ' ')
-                    .append("help"_comment)
+                    .append("help"_snippet_border)
                     .append(": ");
                 first_line = false;
             } else {
@@ -259,19 +261,23 @@ println(FILE* file, const attr_line_t& al)
 
     nonstd::optional<size_t> last_point;
     for (const auto& point : points) {
-        if (last_point) {
-            auto default_fg_style = fmt::text_style{};
-            auto default_bg_style = fmt::text_style{};
-            auto line_style = fmt::text_style{};
-            auto fg_style = fmt::text_style{};
-            auto start = last_point.value();
+        if (!last_point) {
+            last_point = point;
+            continue;
+        }
+        auto default_fg_style = fmt::text_style{};
+        auto default_bg_style = fmt::text_style{};
+        auto line_style = fmt::text_style{};
+        auto fg_style = fmt::text_style{};
+        auto start = last_point.value();
 
-            for (const auto& attr : al.get_attrs()) {
-                if (!attr.sa_range.contains(start)
-                    && !attr.sa_range.contains(point - 1)) {
-                    continue;
-                }
+        for (const auto& attr : al.get_attrs()) {
+            if (!attr.sa_range.contains(start)
+                && !attr.sa_range.contains(point - 1)) {
+                continue;
+            }
 
+            try {
                 if (attr.sa_type == &VC_BACKGROUND) {
                     auto saw = string_attr_wrapper<int64_t>(&attr);
                     auto color_opt = curses_color_to_terminal_color(saw.get());
@@ -285,6 +291,16 @@ println(FILE* file, const attr_line_t& al)
 
                     if (color_opt) {
                         fg_style = fmt::fg(color_opt.value());
+                    }
+                } else if (attr.sa_type == &VC_STYLE) {
+                    auto saw = string_attr_wrapper<int64_t>(&attr);
+                    auto style = saw.get();
+
+                    if (style & A_REVERSE) {
+                        line_style |= fmt::emphasis::reverse;
+                    }
+                    if (style & A_BOLD) {
+                        line_style |= fmt::emphasis::bold;
                     }
                 } else if (attr.sa_type == &SA_LEVEL) {
                     auto level = static_cast<log_level_t>(
@@ -311,9 +327,13 @@ println(FILE* file, const attr_line_t& al)
                             line_style |= fmt::fg(fmt::terminal_color::red);
                             break;
                         case role_t::VCR_WARNING:
+                        case role_t::VCR_RE_REPEAT:
                             line_style |= fmt::fg(fmt::terminal_color::yellow);
                             break;
                         case role_t::VCR_COMMENT:
+                            line_style |= fmt::fg(fmt::terminal_color::green);
+                            break;
+                        case role_t::VCR_SNIPPET_BORDER:
                             line_style |= fmt::fg(fmt::terminal_color::cyan);
                             break;
                         case role_t::VCR_OK:
@@ -325,8 +345,9 @@ println(FILE* file, const attr_line_t& al)
                                 | fmt::fg(fmt::terminal_color::magenta);
                             break;
                         case role_t::VCR_KEYWORD:
+                        case role_t::VCR_RE_SPECIAL:
                             line_style |= fmt::emphasis::bold
-                                | fmt::fg(fmt::terminal_color::blue);
+                                | fmt::fg(fmt::terminal_color::cyan);
                             break;
                         case role_t::VCR_VARIABLE:
                             line_style |= fmt::emphasis::underline;
@@ -362,28 +383,27 @@ println(FILE* file, const attr_line_t& al)
                             break;
                     }
                 }
+            } catch (const fmt::format_error& e) {
+                log_error("style error: %s", e.what());
             }
+        }
 
-            if (!line_style.has_foreground() && fg_style.has_foreground()) {
-                line_style |= fg_style;
-            }
-            if (!line_style.has_foreground()
-                && default_fg_style.has_foreground()) {
-                line_style |= default_fg_style;
-            }
-            if (!line_style.has_background()
-                && default_bg_style.has_background()) {
-                line_style |= default_bg_style;
-            }
+        if (!line_style.has_foreground() && fg_style.has_foreground()) {
+            line_style |= fg_style;
+        }
+        if (!line_style.has_foreground() && default_fg_style.has_foreground()) {
+            line_style |= default_fg_style;
+        }
+        if (!line_style.has_background() && default_bg_style.has_background()) {
+            line_style |= default_bg_style;
+        }
 
-            if (start < str.size()) {
-                auto actual_end
-                    = std::min(str.size(), static_cast<size_t>(point));
-                fmt::print(file,
-                           line_style,
-                           FMT_STRING("{}"),
-                           str.substr(start, actual_end - start));
-            }
+        if (start < str.size()) {
+            auto actual_end = std::min(str.size(), static_cast<size_t>(point));
+            fmt::print(file,
+                       line_style,
+                       FMT_STRING("{}"),
+                       str.substr(start, actual_end - start));
         }
         last_point = point;
     }

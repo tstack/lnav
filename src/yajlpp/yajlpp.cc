@@ -35,6 +35,7 @@
 #include "yajlpp.hh"
 
 #include "base/fs_util.hh"
+#include "base/snippet_highlighters.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
@@ -1278,17 +1279,22 @@ json_path_handler_base::report_regex_value_error(
 {
     attr_line_t pcre_error_content{value};
 
+    lnav::snippets::regex_highlighter(pcre_error_content,
+                                      pcre_error_content.length(),
+                                      line_range{
+                                          0,
+                                          (int) pcre_error_content.length(),
+                                      });
     pcre_error_content.append("\n")
         .append(pcre_error.ce_offset, ' ')
         .append(lnav::roles::error("^ "))
         .append(lnav::roles::error(pcre_error.ce_msg));
-    ypc->report_error(
-        lnav::console::user_message::error(
-            attr_line_t()
-                .append_quoted(value)
-                .append(" is not a valid regular expression for "
-                        "property ")
-                .append_quoted(
+    ypc->report_error(lnav::console::user_message::error(
+                          attr_line_t()
+                              .append_quoted(value)
+                              .append(" is not a valid regular expression for "
+                                      "property ")
+                              .append_quoted(
                     lnav::roles::symbol(ypc->get_full_path().to_string())))
             .with_reason(pcre_error.ce_msg)
             .with_snippet(ypc->get_snippet())

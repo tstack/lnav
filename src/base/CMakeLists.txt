@@ -18,6 +18,7 @@ add_library(
         lnav_log.cc
         network.tcp.cc
         paths.cc
+        snippet_highlighters.cc
         string_attr_type.cc
         string_util.cc
         strnatcmp.c
@@ -50,6 +51,7 @@ add_library(
         network.tcp.hh
         paths.hh
         result.h
+        snippet_highlighters.hh
         string_attr_type.hh
         strnatcmp.h
         time_util.hh)

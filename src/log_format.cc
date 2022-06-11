@@ -1977,10 +1977,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             .append(ts, (size_t) ts_len)
                             .append("\n")
                             .append(2 + off, ' ')
-                            .append("^ "_comment)
+                            .append("^ "_snippet_border)
                             .append_quoted(
                                 lnav::roles::symbol(PTIMEC_FORMATS[lpc].pf_fmt))
-                            .append(" matched up to here"_comment);
+                            .append(" matched up to here"_snippet_border);
                     }
                 } else {
                     notes.append("the following custom formats were tried:");
@@ -1992,10 +1992,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             .append(ts, (size_t) ts_len)
                             .append("\n")
                             .append(2 + off, ' ')
-                            .append("^ "_comment)
+                            .append("^ "_snippet_border)
                             .append_quoted(
                                 lnav::roles::symbol(custom_formats[lpc]))
-                            .append(" matched up to here"_comment);
+                            .append(" matched up to here"_snippet_border);
                     }
                 }
 
@@ -2082,9 +2082,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         && part_pair.first < line_frag.length()) {
                         notes.append("   ")
                             .append(part_pair.first, ' ')
-                            .append("^ "_comment)
+                            .append("^ "_snippet_border)
                             .append(lnav::roles::symbol(part_pair.second))
-                            .append(" matched up to here"_comment)
+                            .append(" matched up to here"_snippet_border)
                             .append("\n");
                     }
                     part_pair.first -= line_frag.length();

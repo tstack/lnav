@@ -3,7 +3,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
 [36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
-[36m | [0mabc(def                                 
+[36m | [0mabc[1m[7m[32m([0mdef                                 
 [36m | [0m       [31m^ [0m[31mmissing )[0m                      
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/search-table/bad_table_regex/pattern[0m [4m<regex>[0m
@@ -14,7 +14,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:6
 [36m | [0m[37m[40m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"[0m
 [36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
-[36m | [0m^(?<timestamp>\d+: (?<body>.*)$           
+[36m | [0m[1m[36m^[0m[1m[7m[32m([0m[1m[32m?<[0mtimestamp>[1m\d[0m[1m[36m+[0m: [1m[32m([0m[1m[32m?<[0mbody>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m           
 [36m | [0m                               [31m^ [0m[31mmissing )[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/regex/std/pattern[0m [4m<message-regex>[0m
@@ -25,7 +25,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:10
 [36m | [0m[37m[40m            "error" : "(foo"            [0m
 [36m --> [0m[1m/bad_regex_log/level/error[0m
-[36m | [0m(foo                                    
+[36m | [0m[1m[7m[32m([0mfoo                                    
 [36m | [0m    [31m^ [0m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/level/error[0m [4m<pattern|integer>[0m
@@ -36,7 +36,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:22
 [36m | [0m[37m[40m                "pattern": "abc("       [0m
 [36m --> [0m[1m/bad_regex_log/highlights/foobar/pattern[0m
-[36m | [0mabc(                                    
+[36m | [0mabc[1m[7m[32m([0m                                    
 [36m | [0m    [31m^ [0m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/highlights/foobar/pattern[0m [4m<regex>[0m
@@ -111,10 +111,10 @@
 [31m✘ error[0m: failed to compile SQL statement
  [31mreason[0m: near "TALE": syntax error
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init.sql[0m:4
-[36m | [0m[37m[40m-- comment test                         [0m
-[36m | [0m[37m[40mCREATE TALE                             [0m
+[36m | [0m[32m[40m-- comment test                         [0m
+[36m | [0m[1m[36m[40mCREATE[0m[37m[40m TALE                             [0m
 [31m✘ error[0m: failed to execute SQL statement
  [31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init2.sql[0m
-[36m | [0m[37m[40mSELECT regexp_match('abc(', '123')      [0m
-[36m | [0m[37m[40mFROM sqlite_master;                     [0m
+[36m | [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[1m[7m[31m[40m([0m[37m[40m'abc('[0m[37m[40m, [0m[37m[40m'123'[0m[37m[40m)      [0m
+[36m | [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msqlite_master[0m[37m[40m;                     [0m

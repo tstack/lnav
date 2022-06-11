@@ -966,6 +966,12 @@ view_colors::init_roles(const lnav_theme& lt,
                          lt.lt_style_footnote_text,
                          lt.lt_style_text,
                          reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_SNIPPET_BORDER)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_snippet_border,
+                         lt.lt_style_text,
+                         reporter);
 
     {
         style_config stitch_sc;

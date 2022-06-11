@@ -50,6 +50,7 @@ noinst_HEADERS = \
     opt_util.hh \
     paths.hh \
     result.h \
+    snippet_highlighters.hh \
     string_attr_type.hh \
     string_util.hh \
     strnatcmp.h \
@@ -73,6 +74,7 @@ libbase_a_SOURCES = \
     lnav_log.cc \
     network.tcp.cc \
     paths.cc \
+    snippet_highlighters.cc \
     string_attr_type.cc \
     string_util.cc \
     strnatcmp.c \
