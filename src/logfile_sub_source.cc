@@ -1168,6 +1168,10 @@ logfile_sub_source::text_filters_changed()
     }
 
     if (this->tss_view != nullptr) {
+        if (!this->lss_index.empty()) {
+            this->row_for_time(this->ttt_top_time) |
+                [this](auto new_top) { this->tss_view->set_top(new_top); };
+        }
         this->tss_view->reload_data();
         this->tss_view->redo_search();
     }

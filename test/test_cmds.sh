@@ -101,6 +101,7 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-in vmk" \
     -c ":disable-filter vmk" \
+    -c ":goto 0" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
@@ -108,6 +109,7 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":rebuild" \
     -c ":reset-session" \
     -c ":rebuild" \
+    -c ":goto 0" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \

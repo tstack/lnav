@@ -1711,7 +1711,6 @@ com_filter(exec_context& ec,
                       args[1].c_str());
             fs.add_filter(pf);
             tss->text_filters_changed();
-            tc->reload_data();
 
             retval = "info: filter now active";
         }
