@@ -991,6 +991,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 = (const char*) sqlite3_value_text(argv[lpc]);
                             auto opid_len = sqlite3_value_bytes(argv[lpc]);
                             for (const auto& file_data : *vt->lss) {
+                                if (file_data->get_file_ptr() == nullptr) {
+                                    continue;
+                                }
                                 safe::ReadAccess<logfile::safe_opid_map>
                                     r_opid_map(
                                         file_data->get_file_ptr()->get_opids());
@@ -1027,7 +1030,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             const auto fn_str = std::string(filename, fn_len);
 
                             for (const auto& file_data : *vt->lss) {
-                                auto lf = file_data->get_file_ptr();
+                                auto* lf = file_data->get_file_ptr();
+                                if (lf == nullptr) {
+                                    continue;
+                                }
                                 if (fn_str == lf->get_filename()) {
                                     min_time = lf->front().get_timeval();
                                     max_time = lf->back().get_timeval();
@@ -1049,7 +1055,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             const auto fn_str = std::string(filename, fn_len);
 
                             for (const auto& file_data : *vt->lss) {
-                                auto lf = file_data->get_file_ptr();
+                                auto* lf = file_data->get_file_ptr();
+                                if (lf == nullptr) {
+                                    continue;
+                                }
                                 if (fn_str == lf->get_unique_path()) {
                                     min_time = lf->front().get_timeval();
                                     max_time = lf->back().get_timeval();
