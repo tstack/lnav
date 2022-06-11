@@ -2163,6 +2163,9 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 std::vector<breadcrumb::possibility> retval;
 
                 for (const auto& file_data : this->lss_files) {
+                    if (file_data->get_file_ptr() == nullptr) {
+                        continue;
+                    }
                     safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
                         file_data->get_file_ptr()->get_opids());
 

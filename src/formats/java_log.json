@@ -18,7 +18,7 @@
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
             },
             "in-brackets": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+\\[\\])?\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+(?:\\[\\]|null))?\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
             },
             "nobrackets": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
@@ -33,7 +33,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[^\\|]+)\\s*\\|\\s*(?<body>.*)$"
             },
             "vmw-sso": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+\\w+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+[\\w\\-]+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s\\]]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
             },
             "vmw-sps": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
@@ -132,6 +132,15 @@
             },
             {
                 "line": "2022-06-02T11:26:26.803Z [pool-26-thread-1] INFO  opId=sps-Main-158837-921 com.vmware.vim.storage.common.util.OperationIdUtil - OperationID present in invoker thread, adding suffix and re-using it - sps-Main-158837-921-169186-507."
+            },
+            {
+                "line": "2022-06-02T08:34:19.574Z [main null INFO  com.vmware.cis.server.util.PerfLog  opId=] Requesting LDAP connection"
+            },
+            {
+                "line": "2022-06-01T13:42:32.739Z INFO sts-perf[23:localhost-startStop-1] [CorId=] [com.vmware.identity.performanceSupport.PerfDataSink] restarting PerfDataSink."
+            },
+            {
+                "line": "2022-06-01T13:42:32.742Z INFO sts-default[23:localhost-startStop-1] [CorId= OpId=] [com.vmware.identity.idm.server.provider.PooledLdapConnectionFactory] New connection created in pool PooledLdapConnectionIdentity [tenantName=null, username=vc.vlcm.com@vsphere.local, authType=SRP, useGCPort=false, connectionString=ldap://vc.vlcm.com:389]"
             }
         ]
     }

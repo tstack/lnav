@@ -864,15 +864,28 @@ CREATE TABLE lnav_view_files (
 
     using iterator = logfile_sub_source::iterator;
 
-    iterator begin()
-    {
-        return lnav_data.ld_log_source.begin();
-    }
+    struct cursor : public tvt_iterator_cursor<lnav_view_files>::cursor {
+        explicit cursor(sqlite3_vtab* vt)
+            : tvt_iterator_cursor<lnav_view_files>::cursor(vt)
+        {
+        }
 
-    iterator end()
-    {
-        return lnav_data.ld_log_source.end();
-    }
+        int next()
+        {
+            if (this->iter != get_handler().end()) {
+                do {
+                    ++this->iter;
+                } while (this->iter != get_handler().end()
+                         && (*this->iter)->get_file_ptr() == nullptr);
+            }
+
+            return SQLITE_OK;
+        }
+    };
+
+    iterator begin() { return lnav_data.ld_log_source.begin(); }
+
+    iterator end() { return lnav_data.ld_log_source.end(); }
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {

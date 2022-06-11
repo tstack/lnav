@@ -895,7 +895,7 @@ struct tvt_iterator_cursor {
             return SQLITE_OK;
         }
 
-    private:
+    protected:
         T& get_handler()
         {
             auto* mod_vt = (typename vtab_module<T>::vtab*) this->base.pVtab;
