@@ -99,7 +99,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
     {
@@ -112,7 +112,7 @@ public:
         auto up = std::upper_bound(this->begin(), this->end(), stop);
 
         return std::make_pair(lb, up);
-    };
+    }
 
     /**
      * @param start The value to start the search for the next bookmark.

@@ -162,6 +162,8 @@ struct file_collection {
 
     void merge(file_collection& other);
 
+    void request_close(const std::shared_ptr<logfile>& lf);
+
     void close_files(const std::vector<std::shared_ptr<logfile>>& files);
 
     void regenerate_unique_file_names();

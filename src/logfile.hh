@@ -365,8 +365,7 @@ public:
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
 
-    using opid_map = std::unordered_map<std::string, timeval>;
-    using safe_opid_map = safe::Safe<opid_map>;
+    using safe_opid_map = safe::Safe<log_opid_map>;
 
     safe_opid_map& get_opids() { return this->lf_opids; }
 
@@ -378,7 +377,9 @@ protected:
      * @param prefix The contents of the line.
      * @param len The length of the 'prefix' string.
      */
-    bool process_prefix(shared_buffer_ref& sbr, const line_info& li);
+    bool process_prefix(shared_buffer_ref& sbr,
+                        const line_info& li,
+                        scan_batch_context& sbc);
 
     void set_format_base_time(log_format* lf);
 

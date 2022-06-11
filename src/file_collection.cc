@@ -637,3 +637,10 @@ file_collection::rescan_files(bool required)
 
     return retval;
 }
+
+void
+file_collection::request_close(const std::shared_ptr<logfile>& lf)
+{
+    lf->close();
+    this->fc_files_generation += 1;
+}

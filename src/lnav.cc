@@ -1478,9 +1478,11 @@ looper()
                 } else if (in_revents & POLLIN) {
                     int ch;
 
+                    auto old_gen
+                        = lnav_data.ld_active_files.fc_files_generation;
                     while ((ch = getch()) != ERR) {
                         lnav_data.ld_user_message_source.clear();
-                        
+
                         alerter::singleton().new_input(ch);
 
                         lnav_data.ld_input_dispatcher.new_input(current_time,
@@ -1504,7 +1506,13 @@ looper()
                         case ln_mode_t::PAGING:
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
-                            next_rescan_time = next_status_update_time + 1s;
+                            if (old_gen
+                                == lnav_data.ld_active_files
+                                       .fc_files_generation) {
+                                next_rescan_time = next_status_update_time + 1s;
+                            } else {
+                                next_rescan_time = next_status_update_time;
+                            }
                             break;
                         case ln_mode_t::BREADCRUMBS:
                         case ln_mode_t::COMMAND:

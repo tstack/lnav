@@ -1452,8 +1452,26 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
+        if (strcmp(name, ":log_format") == 0) {
+            const auto format_name = format->get_name();
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              format_name.get(),
+                              format_name.size(),
+                              SQLITE_STATIC);
+            continue;
+        }
         if (strcmp(name, ":log_path") == 0) {
             const auto& filename = lf->get_filename();
+            sqlite3_bind_text(stmt,
+                              lpc + 1,
+                              filename.c_str(),
+                              filename.length(),
+                              SQLITE_STATIC);
+            continue;
+        }
+        if (strcmp(name, ":log_unique_path") == 0) {
+            const auto& filename = lf->get_unique_path();
             sqlite3_bind_text(stmt,
                               lpc + 1,
                               filename.c_str(),
@@ -1470,6 +1488,21 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             auto body_attr_opt = get_string_attr(sa, SA_BODY);
             if (body_attr_opt) {
                 auto& sar = body_attr_opt.value().saw_string_attr->sa_range;
+
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  sbr.get_data_at(sar.lr_start),
+                                  sar.length(),
+                                  SQLITE_STATIC);
+            } else {
+                sqlite3_bind_null(stmt, lpc + 1);
+            }
+            continue;
+        }
+        if (strcmp(name, ":log_opid") == 0) {
+            auto opid_attr_opt = get_string_attr(sa, logline::L_OPID);
+            if (opid_attr_opt) {
+                auto& sar = opid_attr_opt.value().saw_string_attr->sa_range;
 
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
@@ -1645,20 +1678,14 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
              mark_iter != this->lss_user_marks.end();
              ++mark_iter)
         {
-            content_line_t mark_curr
-                = content_line_t(file_index * MAX_LINES_PER_FILE);
-            content_line_t mark_end
+            auto mark_curr = content_line_t(file_index * MAX_LINES_PER_FILE);
+            auto mark_end
                 = content_line_t((file_index + 1) * MAX_LINES_PER_FILE);
-            bookmark_vector<content_line_t>::iterator bv_iter;
-            bookmark_vector<content_line_t>& bv = mark_iter->second;
+            auto& bv = mark_iter->second;
+            auto file_range = bv.equal_range(mark_curr, mark_end);
 
-            while ((bv_iter = std::lower_bound(bv.begin(), bv.end(), mark_curr))
-                   != bv.end())
-            {
-                if (*bv_iter >= mark_end) {
-                    break;
-                }
-                mark_iter->second.erase(bv_iter);
+            if (file_range.first != file_range.second) {
+                bv.erase(file_range.first, file_range.second);
             }
         }
 
@@ -2133,22 +2160,18 @@ logfile_sub_source::text_crumbs_for_line(int line,
             opid_str,
             attr_line_t().append(lnav::roles::identifier(opid_str)),
             [this]() -> std::vector<breadcrumb::possibility> {
-                std::set<std::string> opids;
+                std::vector<breadcrumb::possibility> retval;
 
                 for (const auto& file_data : this->lss_files) {
                     safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
                         file_data->get_file_ptr()->get_opids());
 
                     for (const auto& pair : *r_opid_map) {
-                        opids.insert(pair.first);
+                        retval.emplace_back(pair.first);
                     }
                 }
 
-                return opids | lnav::itertools::map([](const auto& elem) {
-                           return breadcrumb::possibility{
-                               elem,
-                           };
-                       });
+                return retval;
             },
             [ec = this->lss_exec_context](const auto& opid) {
                 static const std::string MOVE_STMT = R"(;UPDATE lnav_views

@@ -48,6 +48,11 @@ struct possibility {
 
     possibility() = default;
 
+    bool operator<(const possibility& rhs) const { return p_key < rhs.p_key; }
+    bool operator>(const possibility& rhs) const { return rhs < *this; }
+    bool operator<=(const possibility& rhs) const { return !(rhs < *this); }
+    bool operator>=(const possibility& rhs) const { return !(*this < rhs); }
+
     std::string p_key;
     attr_line_t p_display_value;
 };

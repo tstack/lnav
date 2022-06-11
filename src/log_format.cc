@@ -647,7 +647,7 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
         return false;
     }
 
-    auto pat = this->elf_pattern_order[this->last_pattern_index()];
+    auto& pat = this->elf_pattern_order[this->last_pattern_index()];
     pcre_input pi(sbr.get_data(), 0, sbr.length());
 
     if (!this->lf_multiline) {
@@ -682,7 +682,8 @@ log_format::scan_result_t
 external_log_format::scan(logfile& lf,
                           std::vector<logline>& dst,
                           const line_info& li,
-                          shared_buffer_ref& sbr)
+                          shared_buffer_ref& sbr,
+                          scan_batch_context& sbc)
 {
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         yajlpp_parse_context& ypc = *(this->jlf_parse_context);
@@ -781,8 +782,8 @@ external_log_format::scan(logfile& lf,
     int pat_index = orig_lock;
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
-        auto fpat = this->elf_pattern_order[curr_fmt];
-        auto& pat = fpat->p_pcre;
+        auto* fpat = this->elf_pattern_order[curr_fmt].get();
+        auto* pat = fpat->p_pcre.get();
 
         if (fpat->p_module_format) {
             continue;
@@ -840,7 +841,7 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        log_level_t level = this->convert_level(pi, level_cap);
+        auto level = this->convert_level(pi, level_cap);
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
 
@@ -854,12 +855,12 @@ external_log_format::scan(logfile& lf,
         if (opid_cap != nullptr && !opid_cap->empty()) {
             auto opid_str = pi.get_substr(opid_cap);
             {
-                safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
-                    lf.get_opids());
-                auto opid_iter = writable_opid_map->find(opid_str);
+                auto opid_iter = sbc.sbc_opids.find(opid_str);
 
-                if (opid_iter == writable_opid_map->end()) {
-                    (*writable_opid_map)[opid_str] = log_tv;
+                if (opid_iter == sbc.sbc_opids.end()) {
+                    sbc.sbc_opids[opid_str] = opid_time_range{log_tv, log_tv};
+                } else {
+                    opid_iter->second.otr_end = log_tv;
                 }
             }
             opid = hash_str(pi.get_substr_start(opid_cap), opid_cap->length());
@@ -992,7 +993,7 @@ external_log_format::module_scan(const pcre_input& pi,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            auto fpat = elf->elf_pattern_order[curr_fmt];
+            auto& fpat = elf->elf_pattern_order[curr_fmt];
             auto& pat = fpat->p_pcre;
 
             if (!fpat->p_module_format) {

@@ -79,7 +79,13 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
 {
     this->tds_lines.clear();
     this->tds_doc_sections = lnav::document::discover_metadata(text_lines);
-    this->tds_lines = to_text_line(text_lines.split_lines());
+
+    file_off_t off = 0;
+    for (auto& line : text_lines.split_lines()) {
+        auto line_len = line.length() + 1;
+        this->tds_lines.emplace_back(off, std::move(line));
+        off += line_len;
+    }
     this->tds_longest_line = this->compute_longest_line();
     return *this;
 }

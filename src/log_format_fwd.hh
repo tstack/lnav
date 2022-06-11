@@ -32,6 +32,8 @@
 #ifndef lnav_log_format_fwd_hh
 #define lnav_log_format_fwd_hh
 
+#include <unordered_map>
+
 #include <sys/types.h>
 
 #include "base/file_range.hh"
@@ -41,6 +43,17 @@
 #include "ptimec.hh"
 
 class log_format;
+
+struct opid_time_range {
+    struct timeval otr_begin;
+    struct timeval otr_end;
+};
+
+using log_opid_map = std::unordered_map<std::string, opid_time_range>;
+
+struct scan_batch_context {
+    log_opid_map sbc_opids;
+};
 
 /**
  * Metadata for a single line in a log file.

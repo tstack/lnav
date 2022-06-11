@@ -6,7 +6,7 @@
         "url": "http://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>.+?))?(?: opI(?:D|d)=(?<opid>[^\\]]+))?(?: user=(?<user>[^ \\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Memory checker|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>[^\\]]+))?(?: user=(?<user>[^ \\]]+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
             },
             "6.0+-nosrc": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
@@ -41,9 +41,11 @@
         },
         "level-field": "level",
         "level": {
-            "error": "(?i)(alert|crit|emerg|error|fatal|panic)",
-            "warning": "(?i)(warning|warn)",
-            "trace": "verbose"
+            "info": "^(?i)info$",
+            "debug": "^(?i)debug$",
+            "error": "^(?i)(alert|crit|emerg|error|fatal|panic)$",
+            "warning": "^(?i)(warning|warn)$",
+            "trace": "^(?i)verbose$"
         },
         "opid-field": "opid",
         "value": {
@@ -71,6 +73,10 @@
                 "kind": "string",
                 "identifier": true
             },
+            "item": {
+                "kind": "string",
+                "identifier": true
+            },
             "opid": {
                 "kind": "string",
                 "identifier": true
@@ -78,6 +84,9 @@
             "user": {
                 "kind": "string",
                 "identifier": true
+            },
+            "reason": {
+                "kind": "string"
             },
             "file": {
                 "kind": "string",
@@ -138,6 +147,33 @@
             },
             {
                 "line": "2022-06-01T13:24:08.243Z Section for vdtc, pid=4774, version=e.x.p, build=19889761, option=Release"
+            },
+            {
+                "line": "2022-06-02T12:21:26.285Z info vmware-vum-server[00932] [Originator@6876 sub=SessionAuthData reason=Timeout expired] [vciSessionAuthData 94] Session [521601f2-6eb3-0475-7be8-c30eed1040ab] is closed"
+            },
+            {
+                "line": "2022-06-01T20:17:31.352Z info vpxd[27059] [Originator@6876 sub=drmLogger item=FixNIOCViolation opID=SWI-5441881e] FixNIOCViolation worker starts for host [vim.HostSystem:host-588,esx-3-23.vlcm.com]"
+            },
+            {
+                "line": "2022-06-01T14:23:06.536Z info vpxd[27349] [Originator@6876 sub=Http2Session #28] Starting a Http2Session (server): <io_obj p:0x00007eff5867c618, h:477, <TCP '127.0.0.1 : 8093'>, <TCP '127.0.0.1 : 50504'>>"
+            },
+            {
+                "line": "2022-06-02T08:34:54.811Z info vpxd[44568] [Originator@6876 sub=SoapAdapter[0].HTTPService] Max buffered response size is 104857600 bytes"
+            },
+            {
+                "line": "2022-06-02T08:34:55.613Z info vpxd[44568] [Originator@6876 sub=SSL SoapAdapter[1].HTTPService] Max buffered response size is 104857600 bytes"
+            },
+            {
+                "line": "2022-06-02T08:34:55.753Z info vpxd[44568] [Originator@6876 sub=Req@vsan/VMC M5] Created version logger for vsan/VMC M5 (vsan.version.version8)"
+            },
+            {
+                "line": "2022-06-02T08:34:55.421Z info vpxd[44568] [Originator@6876 sub=Req@vsan/vSAN 7.0U2] Created version logger for vsan/vSAN 7.0U2 (vsan.version.version16)"
+            },
+            {
+                "line": "2022-06-02T08:33:42.327Z info StatsMonitor[40881] [Originator@6876 sub=LinuxStatsProvider(00005575a7a395f0)] Created"
+            },
+            {
+                "line": "2022-06-02T08:33:42.692Z info rhttpproxy[40998] [Originator@6876 sub=WorkQueue.rhttpproxy.packetsniffer[0000562e3c06fee0].queue] Created: WorkQueue.rhttpproxy.packetsniffer[0000562e3c06fee0].queue, type = serial, priority = 16, itemWeight = 1"
             }
         ]
     }

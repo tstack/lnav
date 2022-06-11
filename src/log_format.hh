@@ -341,7 +341,8 @@ public:
     virtual scan_result_t scan(logfile& lf,
                                std::vector<logline>& dst,
                                const line_info& li,
-                               shared_buffer_ref& sbr)
+                               shared_buffer_ref& sbr,
+                               scan_batch_context& sbc)
         = 0;
 
     virtual bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const

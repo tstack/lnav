@@ -208,7 +208,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
     return retval;
 }
 
-fmt::terminal_color
+static nonstd::optional<fmt::terminal_color>
 curses_color_to_terminal_color(int curses_color)
 {
     switch (curses_color) {
@@ -228,9 +228,9 @@ curses_color_to_terminal_color(int curses_color)
             return fmt::terminal_color::green;
         case COLOR_RED:
             return fmt::terminal_color::red;
+        default:
+            return nonstd::nullopt;
     }
-
-    ensure(false);
 }
 
 void
@@ -274,19 +274,33 @@ println(FILE* file, const attr_line_t& al)
 
                 if (attr.sa_type == &VC_BACKGROUND) {
                     auto saw = string_attr_wrapper<int64_t>(&attr);
-                    auto color = saw.get();
+                    auto color_opt = curses_color_to_terminal_color(saw.get());
 
-                    if (color >= 0) {
-                        line_style
-                            |= fmt::bg(curses_color_to_terminal_color(color));
+                    if (color_opt) {
+                        line_style |= fmt::bg(color_opt.value());
                     }
                 } else if (attr.sa_type == &VC_FOREGROUND) {
                     auto saw = string_attr_wrapper<int64_t>(&attr);
-                    auto color = saw.get();
+                    auto color_opt = curses_color_to_terminal_color(saw.get());
 
-                    if (color >= 0) {
-                        fg_style
-                            = fmt::fg(curses_color_to_terminal_color(color));
+                    if (color_opt) {
+                        fg_style = fmt::fg(color_opt.value());
+                    }
+                } else if (attr.sa_type == &SA_LEVEL) {
+                    auto level = static_cast<log_level_t>(
+                        attr.sa_value.get<int64_t>());
+
+                    switch (level) {
+                        case LEVEL_FATAL:
+                        case LEVEL_CRITICAL:
+                        case LEVEL_ERROR:
+                            line_style |= fmt::fg(fmt::terminal_color::red);
+                            break;
+                        case LEVEL_WARNING:
+                            line_style |= fmt::fg(fmt::terminal_color::yellow);
+                            break;
+                        default:
+                            break;
                     }
                 } else if (attr.sa_type == &VC_ROLE) {
                     auto saw = string_attr_wrapper<role_t>(&attr);

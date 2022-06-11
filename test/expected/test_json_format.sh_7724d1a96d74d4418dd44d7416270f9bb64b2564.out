@@ -17,13 +17,13 @@
   @fields: { "lvl": "DEBUG", "msg": "Details..."}
 2013-09-06T22:01:49.124 STATS 1 beat per second
   @fields: { "lvl": "STATS", "msg": "1 beat per second"}
-2013-09-06T22:01:49.124 WARNING not looking good
-  @fields: { "lvl": "WARNING", "msg": "not looking good"}
-2013-09-06T22:01:49.124 ERROR looking bad
-  @fields: { "lvl": "ERROR", "msg": "looking bad"}
-2013-09-06T22:01:49.124 CRITICAL sooo bad
-  @fields: { "lvl": "CRITICAL", "msg": "sooo bad"}
-2013-09-06T22:01:49.124 FATAL shoot
-  @fields/trace#: line:1
-  @fields/trace#: line:2
-  @fields: { "lvl": "FATAL", "msg": "shoot", "trace": ["line:1", "line:2"]}
+[33m2013-09-06T22:01:49.124[0m[33m WARNING [0m[33mnot looking good[0m
+[33m  @fields: { "lvl": "WARNING", "msg": "not looking good"}[0m
+[31m2013-09-06T22:01:49.124[0m[31m ERROR [0m[31mlooking bad[0m
+[31m  @fields: { "lvl": "ERROR", "msg": "looking bad"}[0m
+[31m2013-09-06T22:01:49.124[0m[31m CRITICAL [0m[31msooo bad[0m
+[31m  @fields: { "lvl": "CRITICAL", "msg": "sooo bad"}[0m
+[31m2013-09-06T22:01:49.124[0m[31m FATAL [0m[31mshoot[0m
+[31m  @fields/trace#: line:1[0m
+[31m  @fields/trace#: line:2[0m
+[31m  @fields: { "lvl": "FATAL", "msg": "shoot", "trace": ["line:1", "line:2"]}[0m

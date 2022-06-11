@@ -66,6 +66,8 @@ struct log_cursor {
     vis_line_t lc_end_line;
 
     nonstd::optional<opid_hash> lc_opid;
+    nonstd::optional<std::string> lc_log_path;
+    nonstd::optional<std::string> lc_unique_path;
 
     enum class constraint_t {
         none,

@@ -961,11 +961,13 @@ annotate_sql_statement(attr_line_t& al)
         bool found_open = false;
         ssize_t lpc;
 
+        start = iter->sa_range.lr_end;
         for (lpc = iter->sa_range.lr_end; lpc < (int) line.length(); lpc++) {
             if (line[lpc] == '(') {
                 found_open = true;
                 break;
-            } else if (!isspace(line[lpc])) {
+            }
+            if (!isspace(line[lpc])) {
                 break;
             }
         }
@@ -994,8 +996,6 @@ annotate_sql_statement(attr_line_t& al)
             }
             sa.emplace_back(func_range, SQL_FUNCTION_ATTR.value());
         }
-
-        start = iter->sa_range.lr_end;
     }
 
     remove_string_attr(sa, &SQL_PAREN_ATTR);

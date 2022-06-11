@@ -203,6 +203,15 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
+    if (lc.lc_log_path && lf->get_filename() != lc.lc_log_path.value()) {
+        return false;
+    }
+
+    if (lc.lc_unique_path && lf->get_unique_path() != lc.lc_unique_path.value())
+    {
+        return false;
+    }
+
     if (lc.lc_opid && lf_iter->get_opid() != lc.lc_opid.value().value) {
         return false;
     }
@@ -967,6 +976,11 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
                     int post_col_number
                         = col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1;
+                    nonstd::optional<timeval> min_time;
+                    nonstd::optional<timeval> max_time;
+                    nonstd::optional<log_cursor::opid_hash> opid_val;
+                    nonstd::optional<std::string> log_path;
+                    nonstd::optional<std::string> unique_path;
 
                     switch (post_col_number) {
                         case 0: {
@@ -976,7 +990,6 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             const auto* opid
                                 = (const char*) sqlite3_value_text(argv[lpc]);
                             auto opid_len = sqlite3_value_bytes(argv[lpc]);
-                            nonstd::optional<timeval> min_time;
                             for (const auto& file_data : *vt->lss) {
                                 safe::ReadAccess<logfile::safe_opid_map>
                                     r_opid_map(
@@ -986,43 +999,100 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                     continue;
                                 }
                                 if (!min_time
-                                    || iter->second < min_time.value()) {
-                                    min_time = iter->second;
+                                    || iter->second.otr_begin
+                                        < min_time.value()) {
+                                    min_time = iter->second.otr_begin;
+                                }
+                                if (!max_time
+                                    || max_time.value() < iter->second.otr_end)
+                                {
+                                    max_time = iter->second.otr_end;
                                 }
                             }
 
-                            if (!min_time) {
-                                log_debug("no min time");
-                                p_cur->log_cursor.lc_curr_line
-                                    = p_cur->log_cursor.lc_end_line;
-                                continue;
-                            }
-                            log_debug("found min time: %d.%06d",
-                                      min_time.value().tv_sec,
-                                      min_time.value().tv_usec);
-                            auto vl_opt
-                                = vt->lss->row_for_time(min_time.value());
-                            if (!vl_opt) {
-                                log_debug("time not found");
-                                p_cur->log_cursor.lc_curr_line
-                                    = p_cur->log_cursor.lc_end_line;
+                            opid_val = log_cursor::opid_hash{
+                                static_cast<unsigned int>(
+                                    hash_str(opid, opid_len))};
+                            log_debug("filter opid %d", opid_val.value().value);
+                            break;
+                        }
+                        case 3: {
+                            if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
                                 continue;
                             }
 
-                            log_debug("got row %d", (int) vl_opt.value());
-                            p_cur->log_cursor.update(
-                                index[lpc].op,
-                                vl_opt.value(),
-                                log_cursor::constraint_t::none);
+                            const auto* filename
+                                = (const char*) sqlite3_value_text(argv[lpc]);
+                            auto fn_len = sqlite3_value_bytes(argv[lpc]);
+                            const auto fn_str = std::string(filename, fn_len);
 
-                            log_cursor::opid_hash opid_val;
-                            opid_val.value = hash_str(opid, opid_len);
-                            p_cur->log_cursor.lc_opid = opid_val;
-                            log_debug("filter opid %d",
-                                      p_cur->log_cursor.lc_opid.value().value);
+                            for (const auto& file_data : *vt->lss) {
+                                auto lf = file_data->get_file_ptr();
+                                if (fn_str == lf->get_filename()) {
+                                    min_time = lf->front().get_timeval();
+                                    max_time = lf->back().get_timeval();
+                                }
+                            }
+                            if (min_time) {
+                                log_path = std::move(fn_str);
+                            }
+                            break;
+                        }
+                        case 4: {
+                            if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
+                                continue;
+                            }
+
+                            const auto* filename
+                                = (const char*) sqlite3_value_text(argv[lpc]);
+                            auto fn_len = sqlite3_value_bytes(argv[lpc]);
+                            const auto fn_str = std::string(filename, fn_len);
+
+                            for (const auto& file_data : *vt->lss) {
+                                auto lf = file_data->get_file_ptr();
+                                if (fn_str == lf->get_unique_path()) {
+                                    min_time = lf->front().get_timeval();
+                                    max_time = lf->back().get_timeval();
+                                }
+                            }
+                            if (min_time) {
+                                unique_path = std::move(fn_str);
+                            }
                             break;
                         }
                     }
+
+                    if (!min_time) {
+                        log_debug("no min time");
+                        p_cur->log_cursor.lc_curr_line
+                            = p_cur->log_cursor.lc_end_line;
+                        continue;
+                    }
+
+                    log_debug("found min time: %d.%06d",
+                              min_time.value().tv_sec,
+                              min_time.value().tv_usec);
+                    auto vl_opt = vt->lss->row_for_time(min_time.value());
+                    if (!vl_opt) {
+                        log_debug("time not found");
+                        p_cur->log_cursor.lc_curr_line
+                            = p_cur->log_cursor.lc_end_line;
+                        continue;
+                    }
+                    auto vl_max_opt = vt->lss->row_for_time(max_time.value());
+
+                    log_debug("got row %d", (int) vl_opt.value());
+                    p_cur->log_cursor.update(index[lpc].op,
+                                             vl_opt.value(),
+                                             log_cursor::constraint_t::none);
+                    if (vl_max_opt) {
+                        log_debug("got max row %d", (int) vl_max_opt.value());
+                        p_cur->log_cursor.lc_end_line
+                            = vl_max_opt.value() + 1_vl;
+                    }
+                    p_cur->log_cursor.lc_opid = opid_val;
+                    p_cur->log_cursor.lc_log_path = log_path;
+                    p_cur->log_cursor.lc_unique_path = unique_path;
                 }
                 break;
             }
@@ -1068,6 +1138,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
         }
 
         auto col = p_info->aConstraint[lpc].iColumn;
+        log_debug("column number %d", col);
         switch (col) {
             case VT_COL_LINE_NUMBER: {
                 log_debug("line number index %d", p_info->aConstraint[lpc].op);
@@ -1081,9 +1152,24 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                     int post_col_number
                         = col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1;
 
+                    log_debug("post column numer %d", post_col_number);
                     switch (post_col_number) {
                         case 0: {
                             log_debug("opid index");
+                            argvInUse += 1;
+                            indexes.push_back(p_info->aConstraint[lpc]);
+                            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                            break;
+                        }
+                        case 3: {
+                            log_debug("log_path index");
+                            argvInUse += 1;
+                            indexes.push_back(p_info->aConstraint[lpc]);
+                            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                            break;
+                        }
+                        case 4: {
+                            log_debug("log_unique_path index");
                             argvInUse += 1;
                             indexes.push_back(p_info->aConstraint[lpc]);
                             p_info->aConstraintUsage[lpc].argvIndex = argvInUse;

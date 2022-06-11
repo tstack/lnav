@@ -371,19 +371,14 @@ struct text_wrap_settings {
  */
 class attr_line_t {
 public:
-    attr_line_t()
-    {
-        this->al_attrs.reserve(RESERVE_SIZE);
-    }
+    attr_line_t() = default;
 
     attr_line_t(std::string str) : al_string(std::move(str))
     {
-        this->al_attrs.reserve(RESERVE_SIZE);
     }
 
     attr_line_t(const char* str) : al_string(str)
     {
-        this->al_attrs.reserve(RESERVE_SIZE);
     }
 
     static inline attr_line_t from_ansi_str(const char* str)
@@ -734,8 +729,6 @@ public:
     size_t nearest_text(size_t x) const;
 
     void apply_hide();
-
-    const static size_t RESERVE_SIZE = 128;
 
     std::string al_string;
     string_attrs_t al_attrs;

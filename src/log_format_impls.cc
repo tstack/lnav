@@ -160,7 +160,8 @@ class generic_log_format : public log_format {
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr) override
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
     {
         struct exttm log_time;
         struct timeval log_tv;
@@ -522,7 +523,8 @@ public:
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr) override
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
     {
         static const pcrepp SEP_RE(R"(^#separator\s+(.+))");
 
@@ -1136,7 +1138,8 @@ public:
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr) override
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
     {
         static const auto* W3C_LOG_NAME = intern_string::lookup("w3c_log");
         static const auto* X_FIELDS_NAME = intern_string::lookup("x_fields");
@@ -1603,7 +1606,8 @@ public:
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
-                       shared_buffer_ref& sbr) override
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
     {
         auto p = logfmt::parser(
             string_fragment{sbr.get_data(), 0, (int) sbr.length()});

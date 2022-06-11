@@ -409,7 +409,6 @@ private:
             return;
         }
 
-        const auto& pi = this->sw_scanner.get_input().get_string();
         auto new_node = this->sw_hier_stage != nullptr
             ? std::move(this->sw_hier_stage)
             : std::make_unique<lnav::document::hier_node>();

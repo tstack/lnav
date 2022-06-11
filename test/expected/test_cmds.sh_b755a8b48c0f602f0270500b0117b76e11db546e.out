@@ -25,8 +25,8 @@ Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpd
         </o:app>
     </o:gupdate>
  >
-Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: WARNING: The Gestalt selector gestaltSystemVersion is returning 10.9.2 instead of 10.10.2. Use NSProcessInfo's operatingSystemVersion property to get correct system version number.
- Call location:
+[33mApr  7 07:31:56[0m[33m [0m[33mTim-Stacks-iMac.local[0m[33m [0m[33mVirtualBox[0m[33m[[0m[33m36403[0m[33m][0m[33m: [0m[33mWARNING: The Gestalt selector gestaltSystemVersion is returning 10.9.2 instead of 10.10.2. Use NSProcessInfo's operatingSystemVersion property to get correct system version number.[0m
+[33m Call location:[0m
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 0   CarbonCore                          0x00007fff8a9b3d9b ___Gestalt_SystemVersion_block_invoke + 113
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 1   libdispatch.dylib                   0x00007fff8bc84c13 _dispatch_client_callout + 8
 Apr  7 07:32:56 Tim-Stacks-iMac.local logger[234]: Bad data {

@@ -2507,7 +2507,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return ec.make_error("no text files are opened");
             } else {
                 fn = tss.current_file()->get_filename();
-                tss.current_file()->close();
+                lnav_data.ld_active_files.request_close(tss.current_file());
 
                 if (tss.size() == 1) {
                     lnav_data.ld_view_stack.pop_back();
@@ -2525,7 +2525,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 actual_path = lf->get_actual_path();
                 fn = lf->get_filename();
                 if (!ec.ec_dry_run) {
-                    lf->close();
+                    lnav_data.ld_active_files.request_close(lf);
                 }
             }
         } else {

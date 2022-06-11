@@ -110,21 +110,21 @@ breadcrumb_curses::reload_data()
 
     auto& selected_crumb_ref
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
-    this->bc_possible_values = selected_crumb_ref.c_possibility_provider()
-        | lnav::itertools::sort_with([](const auto& lhs, const auto& rhs) {
-                                   return strnatcasecmp(lhs.p_key.size(),
-                                                        lhs.p_key.data(),
-                                                        rhs.p_key.size(),
-                                                        rhs.p_key.data())
-                                       < 0;
-                               });
+    this->bc_possible_values = selected_crumb_ref.c_possibility_provider();
 
     nonstd::optional<size_t> selected_value;
     this->bc_similar_values = this->bc_possible_values
         | lnav::itertools::similar_to(
                                   [](const auto& elem) { return elem.p_key; },
                                   this->bc_current_search,
-                                  INT_MAX);
+                                  128)
+        | lnav::itertools::sort_with([](const auto& lhs, const auto& rhs) {
+                                  return strnatcasecmp(lhs.p_key.size(),
+                                                       lhs.p_key.data(),
+                                                       rhs.p_key.size(),
+                                                       rhs.p_key.data())
+                                      < 0;
+                              });
     if (selected_crumb_ref.c_key.is<std::string>()
         && selected_crumb_ref.c_expected_input
             != breadcrumb::crumb::expected_input_t::anything)

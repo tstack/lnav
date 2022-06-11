@@ -93,6 +93,10 @@ public:
 
     std::unique_ptr<lnav::document::hier_node> take_hier_root()
     {
+        if (this->pp_hier_stage == nullptr && !this->pp_hier_nodes.empty()) {
+            this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
+            this->pp_hier_nodes.pop_back();
+        }
         return std::move(this->pp_hier_stage);
     }
 

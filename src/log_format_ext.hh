@@ -143,7 +143,8 @@ public:
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& offset,
-                       shared_buffer_ref& sbr);
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc);
 
     bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const;
 

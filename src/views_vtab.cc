@@ -280,6 +280,8 @@ CREATE TABLE lnav_views (
                 break;
             }
             case 10: {
+                static const size_t MAX_POSSIBILITIES = 128;
+
                 auto* tss = tc.get_sub_source();
 
                 if (tss != nullptr && tss->text_line_count() > 0) {
@@ -314,10 +316,14 @@ CREATE TABLE lnav_views (
                               };
                     });
                     for (const auto& crumb : crumbs) {
+                        auto poss = crumb.c_possibility_provider();
+                        if (poss.size() > MAX_POSSIBILITIES) {
+                            poss.resize(MAX_POSSIBILITIES);
+                        }
                         tlm.tlm_crumbs.emplace_back(
                             crumb.c_display_value.get_string(),
                             crumb.c_search_placeholder,
-                            crumb.c_possibility_provider());
+                            std::move(poss));
                     }
                     auto ret = top_line_meta_handlers.to_json_string(tlm);
                     to_sqlite(ctx, ret);

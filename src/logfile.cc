@@ -174,7 +174,9 @@ logfile::set_format_base_time(log_format* lf)
 }
 
 bool
-logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
+logfile::process_prefix(shared_buffer_ref& sbr,
+                        const line_info& li,
+                        scan_batch_context& sbc)
 {
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
     size_t prescan_size = this->lf_index.size();
@@ -186,7 +188,7 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
             prescan_time = this->lf_index[prescan_size - 1].get_time();
         }
         /* We've locked onto a format, just use that scanner. */
-        found = this->lf_format->scan(*this, this->lf_index, li, sbr);
+        found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
     } else if (this->lf_options.loo_detect_format
                && this->lf_index.size()
                    < injector::get<const lnav::logfile::config&>()
@@ -222,7 +224,7 @@ logfile::process_prefix(shared_buffer_ref& sbr, const line_info& li)
 
             (*iter)->clear();
             this->set_format_base_time(iter->get());
-            found = (*iter)->scan(*this, this->lf_index, li, sbr);
+            found = (*iter)->scan(*this, this->lf_index, li, sbr, sbc);
             if (found == log_format::SCAN_MATCH) {
 #if 0
                 require(this->lf_index.size() == 1 ||
@@ -458,6 +460,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             log_debug(
                 "loading file... %s:%d", this->lf_filename.c_str(), begin_size);
         }
+        scan_batch_context sbc;
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -524,7 +527,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             this->lf_longest_line
                 = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = li.li_partial;
-            sort_needed = this->process_prefix(sbr, li) || sort_needed;
+            sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
 
             if (old_size > this->lf_index.size()) {
                 old_size = 0;
@@ -605,6 +608,28 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
          */
         this->lf_index_size = prev_range.next_offset();
         this->lf_stat = st;
+
+        {
+            safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
+                this->lf_opids);
+
+            for (const auto& opid_pair : sbc.sbc_opids) {
+                auto opid_iter = writable_opid_map->find(opid_pair.first);
+
+                if (opid_iter == writable_opid_map->end()) {
+                    writable_opid_map->emplace(opid_pair);
+                } else {
+                    if (opid_pair.second.otr_begin
+                        < opid_iter->second.otr_begin) {
+                        opid_iter->second.otr_begin
+                            = opid_pair.second.otr_begin;
+                    }
+                    if (opid_iter->second.otr_end < opid_pair.second.otr_end) {
+                        opid_iter->second.otr_end = opid_pair.second.otr_end;
+                    }
+                }
+            }
+        }
 
         if (sort_needed) {
             retval = rebuild_result_t::NEW_ORDER;

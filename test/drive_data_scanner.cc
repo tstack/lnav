@@ -157,13 +157,14 @@ main(int argc, char* argv[])
                     logfile_open_options loo;
                     auto open_res = logfile::open(argv[lpc], loo);
                     auto lf = open_res.unwrap();
+                    scan_batch_context sbc;
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
                          ++iter) {
                         line_info li = {{13}};
 
                         (*iter)->clear();
-                        if ((*iter)->scan(*lf, index, li, sbr)
+                        if ((*iter)->scan(*lf, index, li, sbr, sbc)
                             == log_format::SCAN_MATCH) {
                             format = (*iter)->specialized();
                             found = true;
