@@ -55,7 +55,6 @@ public:
                                 attr_line_t& value_out) override;
 
     void build_field_lines(const listview_curses& lv);
-    void build_summary_lines(const listview_curses& lv);
     void build_meta_line(const listview_curses& lv,
                          std::vector<attr_line_t>& dst,
                          vis_line_t row);
@@ -80,7 +79,6 @@ public:
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_lines;
-    std::vector<attr_line_t> fos_summary_lines;
     std::vector<attr_line_t> fos_meta_lines;
 };
 

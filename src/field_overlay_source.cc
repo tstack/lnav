@@ -43,148 +43,6 @@
 json_string extract(const char* str);
 
 void
-field_overlay_source::build_summary_lines(const listview_curses& lv)
-{
-    auto& tc = dynamic_cast<const textview_curses&>(lv);
-    textfile_sub_source& tss = this->fos_tss;
-    logfile_sub_source& lss = this->fos_lss;
-
-    this->fos_summary_lines.clear();
-
-    {
-        vis_line_t filled_rows
-            = lv.rows_available(lv.get_top(), listview_curses::RD_DOWN);
-        vis_line_t height, free_rows;
-        unsigned long width;
-        long rate_len = 0;
-
-        lv.get_dimensions(height, width);
-        free_rows = height - filled_rows - vis_line_t(this->fos_lines.size());
-        if (free_rows < 2 || !this->fos_show_status) {
-            this->fos_summary_lines.clear();
-        } else {
-            std::string time_span;
-            double error_rate = 0.0;
-
-            if (lv.get_inner_height() == 0) {
-                time_span = "None";
-            } else {
-                logline *first_line, *last_line;
-                time_t now = time(nullptr);
-
-                first_line = lss.find_line(lss.at(vis_line_t(0)));
-                last_line = lss.find_line(lss.at(lv.get_bottom()));
-                time_span
-                    = humanize::time::duration::from_tv(
-                          last_line->get_timeval() - first_line->get_timeval())
-                          .to_string();
-
-                time_t local_now = convert_log_time_to_local(now);
-                time_t five_minutes_ago = local_now - (5 * 60 * 60);
-                time_t ten_secs_ago = local_now - 10;
-
-                auto from_five_min_ago_opt
-                    = lss.find_from_time(five_minutes_ago);
-                auto from_ten_secs_ago_opt = lss.find_from_time(ten_secs_ago);
-                auto& bm = tc.get_bookmarks();
-                auto error_bm_iter = bm.find(&logfile_sub_source::BM_ERRORS);
-
-                if (now > last_line->get_time() && from_five_min_ago_opt
-                    && error_bm_iter != bm.end())
-                {
-                    auto& error_bookmarks = error_bm_iter->second;
-                    auto five_min_lower
-                        = lower_bound(error_bookmarks.begin(),
-                                      error_bookmarks.end(),
-                                      from_five_min_ago_opt.value());
-                    if (five_min_lower != error_bookmarks.end()) {
-                        double error_count
-                            = distance(five_min_lower, error_bookmarks.end());
-                        double time_diff = 5.0;
-
-                        if (first_line->get_time() > five_minutes_ago) {
-                            time_diff
-                                = (double) (local_now - first_line->get_time())
-                                / 60.0;
-                        }
-                        error_rate = error_count / time_diff;
-
-                        if (from_ten_secs_ago_opt) {
-                            auto ten_sec_lower
-                                = lower_bound(error_bookmarks.begin(),
-                                              error_bookmarks.end(),
-                                              from_ten_secs_ago_opt.value());
-                            if (ten_sec_lower != error_bookmarks.end()) {
-                                double recent_error_count = distance(
-                                    ten_sec_lower, error_bookmarks.end());
-                                double recent_error_rate
-                                    = recent_error_count / 10.0;
-                                double long_error_rate
-                                    = error_count / (time_diff * 60.0 / 10.0);
-
-                                if (long_error_rate == 0.0) {
-                                    long_error_rate = 1.0;
-                                }
-                                long computed_rate_len
-                                    = lrint(ceil((recent_error_rate * 40.0)
-                                                 / long_error_rate));
-                                rate_len = std::min(10L, computed_rate_len);
-                            }
-                        }
-                    }
-                }
-            }
-
-            this->fos_summary_lines.emplace_back();
-            attr_line_t& sum_line = this->fos_summary_lines.back();
-            if (tss.empty()) {
-                sum_line.with_ansi_string(
-                    "       "
-                        "Files: " ANSI_BOLD("%'2d") "; "
-                        ANSI_ROLE("Error rate") ": " ANSI_BOLD(
-                        "%'.2lf") "/min; "
-                        "Time span: " ANSI_BOLD("%s"),
-                    lss.file_count(),
-                    role_t::VCR_ERROR,
-                    error_rate,
-                    time_span.c_str());
-            } else {
-                sum_line.with_ansi_string(
-                    "       "
-                        "Log Files: " ANSI_BOLD("%'2d") "; "
-                        "Text Files: " ANSI_BOLD("%'2d") "; "
-                        ANSI_ROLE("Error rate") ": " ANSI_BOLD(
-                        "%'.2lf") "/min; "
-                        "Time span: " ANSI_BOLD("%s"),
-                    lss.file_count(),
-                    tss.size(),
-                    role_t::VCR_ERROR,
-                    error_rate,
-                    time_span.c_str());
-            }
-            const auto& sum_msg = sum_line.get_string();
-            sum_line
-                .with_attr(string_attr(
-                    line_range(sum_msg.find("Error rate"),
-                               sum_msg.find("Error rate") + rate_len),
-                    VC_STYLE.value(A_REVERSE)))
-                .with_attr(
-                    string_attr(line_range(1, 2),
-                                VC_GRAPHIC.value(ACS_ULCORNER)))
-                .with_attr(string_attr(
-                    line_range(2, 6), VC_GRAPHIC.value(ACS_HLINE)))
-                .with_attr(string_attr(
-                    line_range(sum_msg.length() + 1, sum_msg.length() + 5),
-                    VC_GRAPHIC.value(ACS_HLINE)))
-                .with_attr(string_attr(
-                    line_range(sum_msg.length() + 5, sum_msg.length() + 6),
-                    VC_GRAPHIC.value(ACS_URCORNER)))
-                .right_justify(width - 2);
-        }
-    }
-}
-
-void
 field_overlay_source::build_field_lines(const listview_curses& lv)
 {
     logfile_sub_source& lss = this->fos_lss;
@@ -638,7 +496,6 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
 {
     if (y == 0) {
         this->build_field_lines(lv);
-        this->build_summary_lines(lv);
         return false;
     }
 
@@ -646,12 +503,7 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
         value_out = this->fos_lines[y - 1];
         return true;
     }
-
-    if (!this->fos_summary_lines.empty() && y == (bottom - 1)) {
-        value_out = this->fos_summary_lines[0];
-        return true;
-    }
-
+    
     if (!this->fos_meta_lines.empty()) {
         value_out = this->fos_meta_lines.front();
         this->fos_meta_lines.erase(this->fos_meta_lines.begin());

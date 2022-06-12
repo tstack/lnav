@@ -38,6 +38,9 @@ lnav v0.10.2:
        or 'sql'.
      * Timestamps that do not have a day or month are rewritten to a
        full timestamp like YYYY-MM-DD HH:MM:SS.
+     * Removed the summary overlay at the bottom of the log view that
+       displayed things like "Error rate" and the time span.  It doesn't
+       seem like anyone used it.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression

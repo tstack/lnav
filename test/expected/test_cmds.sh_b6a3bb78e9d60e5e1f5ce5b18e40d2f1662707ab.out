@@ -128,18 +128,6 @@ messages are from the same file. Pressing the left-arrow or [37m[40m h [0m wi
 reveal the source file names for each message and pressing again will
 show the full paths.
 
-When at the bottom of the log view, a summary line will be displayed
-on the right-hand-side to give you some more information about your
-logs, including: how long ago the last message was generated, the
-number of log files, the error rate, and how much time the logs cover.
-The error rate display shows the errors-per-minute over the last five
-minutes. A bar chart is also overlaid on the "Error rate" label to
-show the error rate over the past ten seconds. For example, if there
-have not been many errors in the past five minutes and there is a
-sudden spike, the bar chart will fill up completely. But, if there has
-been a steady stream of errors, then the chart will only partially
-fill based on the recent error frequency.
-
 Above and below the main body are status lines that display:
 
  [33m•[0m the current time;
