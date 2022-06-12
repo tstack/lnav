@@ -1,0 +1,48 @@
+# GitHub actions workflow.
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+
+name: Coverity Scan
+
+on:
+  push:
+    branches: [ main ]
+
+  schedule:
+    # The GH mirroring from Google GoB does not trigger push actions.
+    # Fire it once a week to provide some coverage.
+    - cron: '39 2 * * WED'
+
+  # Allow for manual triggers from the web.
+  workflow_dispatch:
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update apt
+        run: sudo apt-get update
+      - name: Install packages
+        run: >-
+          sudo apt-get install -y
+          make
+          automake
+          autoconf
+          g++
+          libpcre3-dev
+          libncurses-dev
+          libsqlite3-dev
+          libbz2-dev
+          libcurl4-openssl-dev
+          libreadline-dev
+          tshark
+          zlib1g-dev
+      - name: autogen
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure --disable-static
+      - uses: vapier/coverity-scan-action@v1
+        with:
+          command: make -j$(getconf _NPROCESSORS_CONF)
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
