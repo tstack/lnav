@@ -825,7 +825,6 @@ handle_key(int ch)
     lnav_data.ld_input_state.push_back(ch);
 
     switch (ch) {
-        case CTRL('d'):
         case KEY_RESIZE:
             break;
         default: {
