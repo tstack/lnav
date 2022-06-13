@@ -41,6 +41,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "line_buffer.hh"
@@ -79,9 +80,15 @@ piper_proc::piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd)
             line_buffer lb;
             off_t woff = 0, last_woff = 0;
             file_range last_range;
-            int nullfd;
 
-            nullfd = open("/dev/null", O_RDWR);
+            auto open_res = lnav::filesystem::open_file("/dev/null", O_RDWR);
+            if (open_res.isErr()) {
+                fprintf(stderr,
+                        "unable to open /dev/null: %s\n",
+                        open_res.unwrapErr().c_str());
+                exit(EXIT_FAILURE);
+            }
+            auto nullfd = open_res.unwrap();
             if (pipefd != STDIN_FILENO) {
                 dup2(nullfd, STDIN_FILENO);
             }

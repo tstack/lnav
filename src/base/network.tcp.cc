@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include "auto_mem.hh"
 #include "config.h"
 #include "fmt/format.h"
 
@@ -42,12 +43,13 @@ namespace tcp {
 Result<auto_fd, std::string>
 connect(const char* hostname, const char* servname)
 {
-    struct addrinfo hints, *ai;
+    struct addrinfo hints;
+    auto_mem<addrinfo> ai(freeaddrinfo);
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    auto rc = getaddrinfo(hostname, servname, &hints, &ai);
+    auto rc = getaddrinfo(hostname, servname, &hints, ai.out());
 
     if (rc != 0) {
         return Err(fmt::format(FMT_STRING("unable to resolve {}:{} -- {}"),

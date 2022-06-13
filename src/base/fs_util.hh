@@ -59,9 +59,12 @@ openp(const ghc::filesystem::path& path, int flags, mode_t mode)
     return open(path.c_str(), flags, mode);
 }
 
+Result<auto_fd, std::string> create_file(const ghc::filesystem::path& path,
+                                         int flags,
+                                         mode_t mode);
+
 Result<auto_fd, std::string> open_file(const ghc::filesystem::path& path,
-                                       int flags,
-                                       mode_t mode);
+                                       int flags);
 
 Result<struct stat, std::string> stat_file(const ghc::filesystem::path& path);
 

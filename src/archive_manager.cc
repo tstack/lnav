@@ -87,8 +87,7 @@ public:
         auto lock_path = archive_path;
 
         lock_path += ".lck";
-        auto open_res
-            = lnav::filesystem::open_file(lock_path, O_CREAT | O_RDWR, 0600);
+        auto open_res = lnav::filesystem::create_file(lock_path, O_RDWR, 0600);
         if (open_res.isErr()) {
             throw std::runtime_error(open_res.unwrapErr());
         }
@@ -375,7 +374,7 @@ extract(const std::string& filename, const extract_cb& cb)
     archive_read_close(arc);
     archive_write_close(ext);
 
-    lnav::filesystem::open_file(done_path, O_CREAT | O_WRONLY, 0600);
+    lnav::filesystem::create_file(done_path, O_WRONLY, 0600);
 
     return Ok();
 }

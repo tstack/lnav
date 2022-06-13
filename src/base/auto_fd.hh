@@ -71,7 +71,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     /**
      * dup(2) the given file descriptor and wrap it in an auto_fd.
@@ -99,10 +99,7 @@ public:
      *
      * @param fd The file descriptor to be managed.
      */
-    explicit auto_fd(int fd = -1) : af_fd(fd)
-    {
-        require(fd >= -1);
-    }
+    explicit auto_fd(int fd = -1) : af_fd(fd) { require(fd >= -1); }
 
     /**
      * Non-const copy constructor.  Management of the file descriptor will be
@@ -111,7 +108,7 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(auto_fd&& af) noexcept : af_fd(af.release()){};
+    auto_fd(auto_fd&& af) noexcept : af_fd(af.release()) {}
 
     /**
      * Const copy constructor.  The file descriptor from the source will be
@@ -137,14 +134,12 @@ public:
      */
     ~auto_fd()
     {
-        this->reset();
-    };
+        this->reset(); }
 
     /** @return The file descriptor as a plain integer. */
     operator int() const
     {
-        return this->af_fd;
-    };
+        return this->af_fd; }
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -159,7 +154,7 @@ public:
 
         this->reset(fd);
         return *this;
-    };
+    }
 
     /**
      * Transfer management of the given file descriptor to this object.
@@ -171,7 +166,7 @@ public:
     {
         this->reset(af.release());
         return *this;
-    };
+    }
 
     /**
      * Return a pointer that can be passed to functions that require an out
@@ -183,7 +178,7 @@ public:
     {
         this->reset();
         return &this->af_fd;
-    };
+    }
 
     /**
      * Stop managing the file descriptor in this object and return its value.
@@ -196,15 +191,14 @@ public:
 
         this->af_fd = -1;
         return retval;
-    };
+    }
 
     /**
      * @return The file descriptor.
      */
     int get() const
     {
-        return this->af_fd;
-    };
+        return this->af_fd; }
 
     /**
      * Closes the current file descriptor and replaces its value with the given
@@ -230,7 +224,7 @@ public:
             }
             this->af_fd = fd;
         }
-    };
+    }
 
     void close_on_exec() const
     {

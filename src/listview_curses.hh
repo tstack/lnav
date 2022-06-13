@@ -544,9 +544,11 @@ protected:
     bool lv_selectable{false};
     vis_line_t lv_selection{0};
 
-    struct timeval lv_mouse_time;
+    struct timeval lv_mouse_time {
+        0, 0
+    };
     int lv_scroll_accel{1};
-    int lv_scroll_velo;
+    int lv_scroll_velo{0};
     int lv_mouse_y{-1};
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
     vis_line_t lv_tail_space{1};

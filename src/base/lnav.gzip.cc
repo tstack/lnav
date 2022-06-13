@@ -58,6 +58,7 @@ compress(const void* input, size_t len)
     zs.next_in = (Bytef*) input;
     zs.avail_out = (uInt) retval.size();
     zs.next_out = (Bytef*) retval.in();
+    zs.total_out = 0;
 
     auto rc = deflateInit2(
         &zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
@@ -87,6 +88,7 @@ uncompress(const std::string& src, const void* buffer, size_t size)
 
     strm.next_in = (Bytef*) buffer;
     strm.avail_in = size;
+    strm.total_in = 0;
     strm.total_out = 0;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;

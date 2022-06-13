@@ -2697,8 +2697,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             stdin_tmp_path = temp_pair.first;
             stdin_opts.so_out_fd = std::move(temp_pair.second);
         } else {
-            auto open_res = lnav::filesystem::open_file(
-                stdin_opts.so_out, O_RDWR | O_CREAT | O_TRUNC, 0600);
+            auto open_res = lnav::filesystem::create_file(
+                stdin_opts.so_out, O_RDWR | O_TRUNC, 0600);
             if (open_res.isErr()) {
                 fmt::print(stderr, "error: {}\n", open_res.unwrapErr());
                 return EXIT_FAILURE;

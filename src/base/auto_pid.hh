@@ -51,14 +51,14 @@ template<process_state ProcState>
 class auto_pid {
 public:
     explicit auto_pid(pid_t child, int status = 0)
-        : ap_child(child), ap_status(status)
+        : ap_status(status), ap_child(child)
     {
     }
 
     auto_pid(const auto_pid& other) = delete;
 
     auto_pid(auto_pid&& other) noexcept
-        : ap_child(std::move(other).release()), ap_status(other.ap_status)
+        : ap_status(other.ap_status), ap_child(std::move(other).release())
     {
     }
 
@@ -69,8 +69,9 @@ public:
 
     auto_pid& operator=(auto_pid&& other) noexcept
     {
+        auto other_status = other.ap_status;
         this->reset(std::move(other).release());
-        this->ap_status = other.ap_status;
+        this->ap_status = other_status;
         return *this;
     }
 
@@ -86,19 +87,18 @@ public:
         static_assert(ProcState == process_state::running,
                       "this method is only available in the RUNNING state");
         return this->ap_child == 0;
-    };
+    }
 
     pid_t release() &&
     {
-        return std::exchange(this->ap_child, -1);
-    };
+        return std::exchange(this->ap_child, -1); }
 
     int status() const
     {
         static_assert(ProcState == process_state::finished,
                       "wait_for_child() must be called first");
         return this->ap_status;
-    };
+    }
 
     bool was_normal_exit() const
     {
@@ -159,8 +159,8 @@ public:
     }
 
 private:
-    pid_t ap_child;
     int ap_status{0};
+    pid_t ap_child;
 };
 
 namespace lnav {

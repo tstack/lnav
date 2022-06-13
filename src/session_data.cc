@@ -201,7 +201,7 @@ struct prepared_stmt {
     Result<void, std::string> execute()
     {
         auto rc = sqlite3_step(this->ps_stmt.in());
-        if (rc == SQLITE_OK && rc == SQLITE_DONE) {
+        if (rc == SQLITE_OK || rc == SQLITE_DONE) {
             return Ok();
         }
 

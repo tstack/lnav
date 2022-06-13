@@ -959,11 +959,11 @@ static auto a = injector::bind_multiple<vtab_module_base>()
 int
 register_views_vtab(sqlite3* db)
 {
-    char* errmsg;
-    if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, &errmsg)
+    auto_mem<char> errmsg(sqlite3_free);
+    if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {
-        log_error("Unable to create filter view: %s", errmsg);
+        log_error("Unable to create filter view: %s", errmsg.in());
     }
 
     return 0;

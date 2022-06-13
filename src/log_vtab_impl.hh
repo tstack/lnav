@@ -142,7 +142,7 @@ public:
                          std::vector<logline_value>& values);
 
     bool vi_supports_indexes{true};
-    int vi_column_count;
+    int vi_column_count{0};
     string_attrs_t vi_attrs;
 
 protected:

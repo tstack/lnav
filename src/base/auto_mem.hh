@@ -73,6 +73,8 @@ public:
 
     operator T*() const { return this->am_ptr; }
 
+    T* operator->() { return this->am_ptr; }
+
     auto_mem& operator=(T* ptr)
     {
         this->reset(ptr);

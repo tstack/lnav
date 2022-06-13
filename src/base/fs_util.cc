@@ -38,9 +38,23 @@ namespace lnav {
 namespace filesystem {
 
 Result<auto_fd, std::string>
-open_file(const ghc::filesystem::path& path, int flags, mode_t mode)
+create_file(const ghc::filesystem::path& path, int flags, mode_t mode)
 {
-    auto fd = openp(path, flags, mode);
+    auto fd = openp(path, flags | O_CREAT, mode);
+
+    if (fd == -1) {
+        return Err(fmt::format(FMT_STRING("Failed to open: {} -- {}"),
+                               path.string(),
+                               strerror(errno)));
+    }
+
+    return Ok(auto_fd(fd));
+}
+
+Result<auto_fd, std::string>
+open_file(const ghc::filesystem::path& path, int flags)
+{
+    auto fd = openp(path, flags);
 
     if (fd == -1) {
         return Err(fmt::format(FMT_STRING("Failed to open: {} -- {}"),
