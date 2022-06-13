@@ -56,7 +56,7 @@ parts:
     build-packages:
       - build-essential
       - libarchive-dev
-      - libcurl-dev
+      - libcurl4-gnutls-dev
       - libpcre3-dev
       - libsqlite3-dev
       - libncursesw6
@@ -67,7 +67,7 @@ parts:
     stage-packages:
       - zlib1g
       - git-core
-      - libcurl
+      - libcurl4
       - libncursesw6
       - libpcre3
       - libgpm2
