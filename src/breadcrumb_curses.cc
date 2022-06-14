@@ -61,6 +61,11 @@ breadcrumb_curses::do_update()
     auto width = static_cast<size_t>(getmaxx(this->bc_window));
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
                                                   : this->bc_focused_crumbs;
+    if (this->bc_last_selected_crumb
+        && this->bc_last_selected_crumb.value() >= crumbs.size())
+    {
+        this->bc_last_selected_crumb = crumbs.size() - 1;
+    }
     attr_line_t crumbs_line;
     for (const auto& crumb : crumbs) {
         auto accum_width
@@ -184,6 +189,12 @@ breadcrumb_curses::focus()
     }
 
     this->bc_current_search.clear();
+    if (this->bc_last_selected_crumb
+        && this->bc_last_selected_crumb.value()
+            >= this->bc_focused_crumbs.size())
+    {
+        this->bc_last_selected_crumb = this->bc_focused_crumbs.size() - 1;
+    }
     this->bc_selected_crumb = this->bc_last_selected_crumb.value_or(0);
     this->reload_data();
 }

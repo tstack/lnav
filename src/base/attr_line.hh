@@ -81,8 +81,17 @@ struct line_range {
 
     bool intersects(const struct line_range& other) const
     {
-        return this->contains(other.lr_start) || this->contains(other.lr_end)
-            || other.contains(this->lr_start);
+        if (this->contains(other.lr_start)) {
+            return true;
+        }
+        if (other.lr_end > 0 && this->contains(other.lr_end - 1)) {
+            return true;
+        }
+        if (other.contains(this->lr_start)) {
+            return true;
+        }
+
+        return false;
     }
 
     line_range intersection(const struct line_range& other) const;

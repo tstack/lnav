@@ -210,8 +210,10 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 .append(line)
                 .append("\n");
         }
-        padded_text.with_attr_for_all(SA_PREFORMATTED.value());
-        last_block.append("\n").append(padded_text);
+        if (!padded_text.empty()) {
+            padded_text.with_attr_for_all(SA_PREFORMATTED.value());
+            last_block.append("\n").append(padded_text);
+        }
     } else if (bl.is<block_quote>()) {
         text_wrap_settings tws = {0, 60};
         attr_line_t wrapped_text;
@@ -231,8 +233,10 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 .append(line)
                 .append("\n");
         }
-        padded_text.with_attr_for_all(SA_PREFORMATTED.value());
-        last_block.append("\n").append(padded_text);
+        if (!padded_text.empty()) {
+            padded_text.with_attr_for_all(SA_PREFORMATTED.value());
+            last_block.append("\n").append(padded_text);
+        }
     } else if (bl.is<MD_BLOCK_TABLE_DETAIL*>()) {
         auto* table_detail = bl.get<MD_BLOCK_TABLE_DETAIL*>();
         auto tab = std::move(this->ml_tables.back());
@@ -333,8 +337,10 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 block_text.append("\n");
             }
         }
-        block_text.with_attr_for_all(SA_PREFORMATTED.value());
-        last_block.append(block_text);
+        if (!block_text.empty()) {
+            block_text.with_attr_for_all(SA_PREFORMATTED.value());
+            last_block.append(block_text);
+        }
     } else if (bl.is<block_th>()) {
         this->ml_tables.back().t_headers.push_back(block_text);
     } else if (bl.is<MD_BLOCK_TD_DETAIL*>()) {

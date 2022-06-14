@@ -130,6 +130,10 @@ consume(const string_fragment text)
 static void
 split_attrs(attr_line_t& al, const line_range& lr)
 {
+    if (lr.empty()) {
+        return;
+    }
+
     string_attrs_t new_attrs;
 
     for (auto& attr : al.al_attrs) {
@@ -201,7 +205,9 @@ attr_line_t::insert(size_t index,
             split_attrs(*this, indent_lr);
             indent_lr.lr_end += tws->tws_padding_indent;
             line_ch_count += tws->tws_padding_indent;
-            this->al_attrs.emplace_back(indent_lr, SA_PREFORMATTED.value());
+            if (!indent_lr.empty()) {
+                this->al_attrs.emplace_back(indent_lr, SA_PREFORMATTED.value());
+            }
             text_to_wrap = text_to_wrap.prepend(
                 this->al_string.data(),
                 tws->tws_indent + tws->tws_padding_indent);
@@ -229,8 +235,10 @@ attr_line_t::insert(size_t index,
                     };
                     split_attrs(*this, indent_lr);
                     indent_lr.lr_end += tws->tws_padding_indent;
-                    this->al_attrs.emplace_back(indent_lr,
-                                                SA_PREFORMATTED.value());
+                    if (!indent_lr.empty()) {
+                        this->al_attrs.emplace_back(indent_lr,
+                                                    SA_PREFORMATTED.value());
+                    }
                     line_ch_count = tws->tws_padding_indent + ch_count;
                     auto trailing_space_count = 0;
                     if (!last_word.empty()) {
@@ -296,12 +304,8 @@ attr_line_t::insert(size_t index,
 
                 return space.s_remaining;
             },
-            [](text_stream::corrupt corrupt) {
-                return corrupt.c_remaining;
-            },
-            [](text_stream::eof eof) {
-                return eof.e_remaining;
-            });
+            [](text_stream::corrupt corrupt) { return corrupt.c_remaining; },
+            [](text_stream::eof eof) { return eof.e_remaining; });
 
         if (chunk.is<text_stream::word>()) {
             last_word = text_to_wrap;
@@ -439,6 +443,11 @@ attr_line_t::erase(size_t pos, size_t len)
     this->al_string.erase(pos, len);
 
     shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+    auto new_end = std::remove_if(
+        this->al_attrs.begin(), this->al_attrs.end(), [](const auto& attr) {
+            return attr.sa_range.empty();
+        });
+    this->al_attrs.erase(new_end, this->al_attrs.end());
 
     return *this;
 }

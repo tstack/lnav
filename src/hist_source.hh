@@ -220,9 +220,8 @@ public:
         }
         lr.lr_end = left = lr.lr_start + amount;
 
-        if (ci.ci_attrs != 0) {
-            value_out.emplace_back(
-                lr, VC_STYLE.value(ci.ci_attrs | A_REVERSE));
+        if (ci.ci_attrs != 0 && !lr.empty()) {
+            value_out.emplace_back(lr, VC_STYLE.value(ci.ci_attrs | A_REVERSE));
         }
     }
 

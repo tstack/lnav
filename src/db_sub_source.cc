@@ -106,7 +106,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                                      string_attrs_t& sa)
 {
     struct line_range lr(0, 0);
-    struct line_range lr2(0, -1);
+    const struct line_range lr2(0, -1);
 
     if (row >= (int) this->dls_rows.size()) {
         return;
