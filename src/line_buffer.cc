@@ -648,13 +648,14 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 Result<line_info, std::string>
 line_buffer::load_next_line(file_range prev_line)
 {
-    ssize_t request_size = DEFAULT_INCREMENT;
     bool done = false;
     line_info retval;
 
     require(this->lb_fd != -1);
 
     auto offset = prev_line.next_offset();
+    ssize_t request_size = this->lb_buffer_size == 0 ? DEFAULT_INCREMENT
+                                                     : 16 * 1024;
     retval.li_file_range.fr_offset = offset;
     while (!done) {
         char *line_start, *lf;
