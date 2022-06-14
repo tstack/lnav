@@ -105,6 +105,12 @@ consume(const string_fragment text)
         return word{split_res.first, split_res.second};
     }
 
+    if (isspace(text.front())) {
+        auto split_res = text.split_n(1).value();
+
+        return space{split_res.first, split_res.second};
+    }
+
     if (SPACE_RE.match(pc, pi)) {
         auto split_res = text.split_n(pc.all()->length()).value();
 
