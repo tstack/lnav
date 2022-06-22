@@ -123,6 +123,9 @@
                     "footnote-text": {
                         "color": "#eee",
                         "background-color": "#444"
+                    },
+                    "snippet-border": {
+                        "color": "$cyan"
                     }
                 },
                 "syntax-styles": {
