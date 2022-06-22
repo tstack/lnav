@@ -1082,7 +1082,8 @@ ptime_at(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     dst->et_flags |= ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
-        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME;
 
     return true;
 }
@@ -1092,14 +1093,8 @@ ftime_at(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
 }
 
-typedef bool (*ptime_func)(struct exttm* dst,
-                           const char* str,
-                           off_t& off,
-                           ssize_t len);
-typedef void (*ftime_func)(char* dst,
-                           off_t& off_inout,
-                           size_t len,
-                           const struct exttm& tm);
+using ptime_func = bool (*)(struct exttm*, const char*, off_t&, ssize_t);
+using ftime_func = void (*)(char*, off_t&, size_t, const struct exttm&);
 
 bool ptime_fmt(const char* fmt,
                struct exttm* dst,

@@ -169,20 +169,21 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
     if (ws_index != std::string::npos) {
         alb.overlay_attr(line_range(sub.lr_start + 1, ws_index),
                          VC_ROLE.value(role_t::VCR_KEYWORD));
-    }
-    if (RE_PREFIXES.match(pc, pi)) {
-        lnav::snippets::regex_highlighter(
-            al, x, line_range{(int) ws_index, sub.lr_end});
-    }
-    pi.reset(&line[sub.lr_start], 0, sub.length());
-    if (SH_PREFIXES.match(pc, pi)) {
-        readline_shlex_highlighter_int(
-            al, x, line_range{(int) ws_index, sub.lr_end});
-    }
-    pi.reset(&line[sub.lr_start], 0, sub.length());
-    if (SQL_PREFIXES.match(pc, pi)) {
-        readline_sqlite_highlighter_int(
-            al, x, line_range{(int) ws_index, sub.lr_end});
+
+        if (RE_PREFIXES.match(pc, pi)) {
+            lnav::snippets::regex_highlighter(
+                al, x, line_range{(int) ws_index, sub.lr_end});
+        }
+        pi.reset(&line[sub.lr_start], 0, sub.length());
+        if (SH_PREFIXES.match(pc, pi)) {
+            readline_shlex_highlighter_int(
+                al, x, line_range{(int) ws_index, sub.lr_end});
+        }
+        pi.reset(&line[sub.lr_start], 0, sub.length());
+        if (SQL_PREFIXES.match(pc, pi)) {
+            readline_sqlite_highlighter_int(
+                al, x, line_range{(int) ws_index, sub.lr_end});
+        }
     }
     pi.reset(&line[sub.lr_start], 0, sub.length());
     if (COLOR_PREFIXES.match(pc, pi)) {
@@ -461,6 +462,10 @@ readline_lnav_highlighter(attr_line_t& al, int x)
         }
 
         start = lf_pos;
+    }
+
+    if (start == 0) {
+        section_start = 0;
     }
 
     if (section_start) {

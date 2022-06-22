@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <termios.h>
 
+#include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
@@ -346,10 +347,11 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         args.emplace_back("move-time");
     } else if (args.size() > 1) {
         std::string all_args = remaining_args(cmdline, args);
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
         auto ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
         int line_number, consumed;
         date_time_scanner dts;
+        const char* scan_end = nullptr;
         struct timeval tv;
         struct exttm tm;
         float value;
@@ -401,12 +403,52 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                     r, R, "to move forward/backward the same amount of time"));
             }
-        } else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv)
+        } else if ((scan_end = dts.scan(
+                        args[1].c_str(), args[1].size(), nullptr, &tm, tv))
                    != nullptr)
         {
             if (ttt == nullptr) {
                 return ec.make_error(
                     "time values only work in a time-indexed view");
+            }
+
+            auto matched_size = scan_end - args[1].c_str();
+            if (matched_size != args[1].size()) {
+                auto um
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid timestamp: ").append(args[1]))
+                          .with_reason(
+                              attr_line_t("the leading part of the timestamp "
+                                          "was matched, however, the trailing "
+                                          "text ")
+                                  .append_quoted(scan_end)
+                                  .append(" was not"))
+                          .with_snippets(ec.ec_source)
+                          .with_note(
+                              attr_line_t("input matched time format ")
+                                  .append_quoted(
+                                      PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt))
+                          .with_help(
+                              "fix the timestamp or remove the trailing text");
+
+                auto unmatched_size = args[1].size() - matched_size;
+                auto& snippet_copy = um.um_snippets.back();
+                attr_line_builder alb(snippet_copy.s_content);
+
+                alb.append("\n")
+                    .append(1 + cmdline.find(args[1]), ' ')
+                    .append(matched_size, ' ');
+                {
+                    auto attr_guard
+                        = alb.with_attr(VC_ROLE.value(role_t::VCR_COMMENT));
+
+                    alb.append("^").append(unmatched_size - 2, '-');
+                    if (unmatched_size > 1) {
+                        alb.append("^");
+                    }
+                    alb.append(" unrecognized input");
+                }
+                return Err(um);
             }
 
             dst_vl = ttt->row_for_time(tv);
@@ -3160,7 +3202,7 @@ com_summarize(exec_context& ec,
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<std::string> other_columns;
         std::vector<std::string> num_columns;
-        const auto& top_source = ec.ec_source.top();
+        const auto& top_source = ec.ec_source.back();
         sql_progress_guard progress_guard(sql_progress,
                                           sql_progress_finished,
                                           top_source.s_location,
@@ -3962,6 +4004,8 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (args.empty()) {
         args.emplace_back("*");
     } else if (args.size() > 1) {
+        static intern_string_t EVAL_SRC = intern_string::lookup(":eval");
+
         std::string all_args = remaining_args(cmdline, args);
         std::string expanded_cmd;
         shlex lexer(all_args.c_str(), all_args.size());
@@ -3992,6 +4036,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return Ok(std::string());
         }
 
+        auto src_guard = ec.enter_source(EVAL_SRC, 1, expanded_cmd);
         std::string alt_msg;
         switch (expanded_cmd[0]) {
             case ':':
@@ -4145,7 +4190,8 @@ com_config(exec_context& ec,
                 if (changed) {
                     intern_string_t path = intern_string::lookup(option);
 
-                    lnav_config_locations[path] = ec.ec_source.top().s_location;
+                    lnav_config_locations[path]
+                        = ec.ec_source.back().s_location;
                     reload_config(errors);
 
                     if (!errors.empty()) {

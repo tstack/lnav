@@ -347,15 +347,7 @@ static const typed_json_path_container<console::user_message>
                    console::user_message* root) { return &root->um_reason; })
             .with_children(attr_line_handlers),
         yajlpp::property_handler("snippets#")
-            .with_obj_provider<console::snippet, console::user_message>(
-                [](const yajlpp_provider_context& ypc,
-                   console::user_message* root) {
-                    if (ypc.ypc_index >= root->um_snippets.size()) {
-                        root->um_snippets.resize(ypc.ypc_index + 1);
-                    }
-
-                    return &root->um_snippets[ypc.ypc_index];
-                })
+            .for_field(&console::user_message::um_snippets)
             .with_children(snippet_handlers),
         yajlpp::property_handler("help")
             .with_obj_provider<attr_line_t, console::user_message>(

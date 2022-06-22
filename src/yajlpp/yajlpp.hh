@@ -404,6 +404,7 @@ public:
     std::vector<size_t> ypc_path_index_stack;
     std::vector<size_t> ypc_array_index;
     std::vector<const json_path_handler_base*> ypc_handler_stack;
+    size_t ypc_array_handler_count{0};
     pcre_context_static<30> ypc_pcre_context;
     bool ypc_ignore_unused{false};
     const struct json_path_container* ypc_sibling_handlers{nullptr};

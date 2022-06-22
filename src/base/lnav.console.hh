@@ -113,11 +113,19 @@ struct user_message {
         return *this;
     }
 
-    user_message& with_snippets(std::vector<snippet> snippets)
+    template<typename C>
+    user_message& with_snippets(C snippets)
     {
         this->um_snippets.insert(this->um_snippets.end(),
-                                 std::make_move_iterator(snippets.begin()),
-                                 std::make_move_iterator(snippets.end()));
+                                 std::make_move_iterator(std::begin(snippets)),
+                                 std::make_move_iterator(std::end(snippets)));
+        if (this->um_snippets.size() > 1) {
+            auto last_iter = std::remove_if(
+                this->um_snippets.begin(),
+                this->um_snippets.end(),
+                [](const auto& elem) { return elem.s_content.empty(); });
+            this->um_snippets.erase(last_iter, this->um_snippets.end());
+        }
         return *this;
     }
 

@@ -584,6 +584,7 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
     if (handlers == nullptr) {
         handlers = this->ypc_handlers;
         this->ypc_handler_stack.clear();
+        this->ypc_array_handler_count = 0;
     }
 
     if (!this->ypc_active_paths.empty()) {
@@ -608,8 +609,13 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         if (jph.jph_regex->match(this->ypc_pcre_context, pi)) {
             pcre_context::capture_t* cap = this->ypc_pcre_context.all();
 
+            if (jph.jph_is_array) {
+                this->ypc_array_handler_count += 1;
+            }
             if (jph.jph_obj_provider) {
-                auto index = this->index_for_provider();
+                auto index = this->ypc_array_handler_count == 0
+                    ? static_cast<size_t>(-1)
+                    : this->ypc_array_index[this->ypc_array_handler_count - 1];
 
                 if ((1 + child_start + cap->c_end
                      != (int) this->ypc_path.size() - 1)
@@ -640,19 +646,26 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                 this->ypc_current_handler = &jph;
             }
 
-            if (jph.jph_callbacks.yajl_null != nullptr)
+            if (jph.jph_callbacks.yajl_null != nullptr) {
                 this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
-            if (jph.jph_callbacks.yajl_boolean != nullptr)
+            }
+            if (jph.jph_callbacks.yajl_boolean != nullptr) {
                 this->ypc_callbacks.yajl_boolean
                     = jph.jph_callbacks.yajl_boolean;
-            if (jph.jph_callbacks.yajl_integer != nullptr)
+            }
+            if (jph.jph_callbacks.yajl_integer != nullptr) {
                 this->ypc_callbacks.yajl_integer
                     = jph.jph_callbacks.yajl_integer;
-            if (jph.jph_callbacks.yajl_double != nullptr)
+            }
+            if (jph.jph_callbacks.yajl_double != nullptr) {
                 this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
-            if (jph.jph_callbacks.yajl_string != nullptr)
+            }
+            if (jph.jph_callbacks.yajl_string != nullptr) {
                 this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
-
+            }
+            if (jph.jph_is_array) {
+                this->ypc_array_handler_count -= 1;
+            }
             return;
         }
     }
@@ -950,6 +963,7 @@ yajlpp_parse_context::reset(const struct json_path_container* handlers)
     this->ypc_path.push_back('\0');
     this->ypc_path_index_stack.clear();
     this->ypc_array_index.clear();
+    this->ypc_array_handler_count = 0;
     this->ypc_callbacks = DEFAULT_CALLBACKS;
     memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
     this->ypc_sibling_handlers = nullptr;
@@ -967,6 +981,7 @@ yajlpp_parse_context::set_static_handler(json_path_handler_base& jph)
     this->ypc_path.push_back('\0');
     this->ypc_path_index_stack.clear();
     this->ypc_array_index.clear();
+    this->ypc_array_handler_count = 0;
     if (jph.jph_callbacks.yajl_null != nullptr) {
         this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
     }

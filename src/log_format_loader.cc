@@ -807,7 +807,7 @@ struct json_path_container format_handlers = {
         .with_description(
             "The name of the body field in the log message pattern")
         .for_field(&external_log_format::elf_body_field),
-    json_path_handler("url", pcrepp("url#?"))
+    json_path_handler("url", pcrepp("^url#?"))
         .add_cb(read_format_field)
         .with_description("A URL with more information about this log format"),
     json_path_handler("title", read_format_field)

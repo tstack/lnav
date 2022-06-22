@@ -132,7 +132,7 @@ struct exec_context {
         ~source_guard()
         {
             if (this->sg_context != nullptr) {
-                this->sg_context->ec_source.pop();
+                this->sg_context->ec_source.pop_back();
             }
         }
 
@@ -222,7 +222,7 @@ struct exec_context {
     std::stack<std::map<std::string, std::string>> ec_local_vars;
     std::map<std::string, std::string> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
-    std::stack<lnav::console::snippet> ec_source;
+    std::vector<lnav::console::snippet> ec_source;
     help_text* ec_current_help{nullptr};
 
     std::vector<std::pair<std::string, nonstd::optional<output_t>>>

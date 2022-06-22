@@ -169,6 +169,9 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ':goto 2022-06-16Tabc'
+
+run_cap_test ${lnav_test} -n \
     -c ":goto 1" \
     ${test_dir}/logfile_access_log.0
 

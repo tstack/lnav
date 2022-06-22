@@ -588,7 +588,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
         case ln_mode_t::COMMAND: {
             rc->set_alt_value("");
-            ec.ec_source.top().s_content
+            ec.ec_source.back().s_content
                 = fmt::format(FMT_STRING(":{}"), rc->get_value().get_string());
             auto exec_res = execute_command(ec, rc->get_value().get_string());
             if (exec_res.isOk()) {
@@ -603,7 +603,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     = std::chrono::steady_clock::now() + 20s;
                 rc->set_value("");
             }
-            ec.ec_source.top().s_content.clear();
+            ec.ec_source.back().s_content.clear();
             break;
         }
 
@@ -669,7 +669,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
 
         case ln_mode_t::SQL: {
-            ec.ec_source.top().s_content = rc->get_value();
+            ec.ec_source.back().s_content = rc->get_value();
             auto result
                 = execute_sql(ec, rc->get_value().get_string(), alt_msg);
             db_label_source& dls = lnav_data.ld_db_row_source;
@@ -692,7 +692,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 lnav_data.ld_user_message_expiration
                     = std::chrono::steady_clock::now() + 20s;
             }
-            ec.ec_source.top().s_content.clear();
+            ec.ec_source.back().s_content.clear();
 
             rc->set_value(prompt);
             rc->set_alt_value(alt_msg);

@@ -1,6 +1,6 @@
 [31m✘ error[0m: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
 [36m --> [0m[1mcommand-option[0m:32
-[36m | [0m[37m[40m:filter-out 32                          [0m
+[36m | [0m[37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m 32                          [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mfilter-out[0m[4m [0m[4mpattern[0m
          ══════════════════════════════════════════════════════════════════════
            Remove lines that match the given regular expression in the current

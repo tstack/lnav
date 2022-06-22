@@ -45,6 +45,7 @@
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
 #include "papertrail_proc.hh"
+#include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
@@ -100,11 +101,10 @@ sql_progress_finished()
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 
-Result<std::string, lnav::console::user_message> execute_from_file(
+static Result<std::string, lnav::console::user_message> execute_from_file(
     exec_context& ec,
     const ghc::filesystem::path& path,
     int line_number,
-    char mode,
     const std::string& cmdline);
 
 Result<std::string, lnav::console::user_message>
@@ -169,7 +169,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     ec.ec_accumulator->clear();
 
-    auto source = ec.ec_source.top();
+    const auto& source = ec.ec_source.back();
     sql_progress_guard progress_guard(sql_progress,
                                       sql_progress_finished,
                                       source.s_location,
@@ -188,23 +188,17 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         return ec.make_error("No statement given");
     }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-    else if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in()))
-    {
+    if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in())) {
         return ec.make_error(
             "modifying statements are not allowed in this context: {}", sql);
     }
 #endif
-    else
     {
         bool done = false;
-        int param_count;
-
-        param_count = sqlite3_bind_parameter_count(stmt.in());
+        auto param_count = sqlite3_bind_parameter_count(stmt.in());
         for (int lpc = 0; lpc < param_count; lpc++) {
             std::map<std::string, std::string>::iterator ov_iter;
-            const char* name;
-
-            name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
+            const auto* name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
             ov_iter = ec.ec_override.find(name);
             if (ov_iter != ec.ec_override.end()) {
                 sqlite3_bind_text(stmt.in(),
@@ -454,8 +448,7 @@ execute_file_contents(exec_context& ec,
     auto_mem<char> line;
     size_t line_max_size;
     ssize_t line_size;
-    std::string cmdline;
-    char mode = '\0';
+    nonstd::optional<std::string> cmdline;
 
     ec.ec_path_stack.emplace_back(path.parent_path());
     exec_context::output_guard og(ec);
@@ -474,29 +467,28 @@ execute_file_contents(exec_context& ec,
             case '/':
             case ';':
             case '|':
-                if (mode) {
+                if (cmdline) {
                     retval = TRY(execute_from_file(
-                        ec, path, starting_line_number, mode, trim(cmdline)));
+                        ec, path, starting_line_number, trim(cmdline.value())));
                 }
 
                 starting_line_number = line_number;
-                mode = line[0];
-                cmdline = std::string(&line[1]);
+                cmdline = std::string(line);
                 break;
             default:
                 if (multiline) {
-                    cmdline += line;
+                    cmdline = fmt::format("{}{}", cmdline.value(), line);
                 } else {
                     retval = TRY(execute_from_file(
-                        ec, path, line_number, ':', line.in()));
+                        ec, path, line_number, fmt::format(":{}", line.in())));
                 }
                 break;
         }
     }
 
-    if (mode) {
+    if (cmdline) {
         retval = TRY(execute_from_file(
-            ec, path, starting_line_number, mode, trim(cmdline)));
+            ec, path, starting_line_number, trim(cmdline.value())));
     }
 
     if (file == stdin) {
@@ -608,16 +600,15 @@ Result<std::string, lnav::console::user_message>
 execute_from_file(exec_context& ec,
                   const ghc::filesystem::path& path,
                   int line_number,
-                  char mode,
                   const std::string& cmdline)
 {
     std::string retval, alt_msg;
     auto _sg = ec.enter_source(
         intern_string::lookup(path.string()), line_number, cmdline);
 
-    switch (mode) {
+    switch (cmdline[0]) {
         case ':':
-            retval = TRY(execute_command(ec, cmdline));
+            retval = TRY(execute_command(ec, cmdline.substr(1)));
             break;
         case '/':
             lnav_data.ld_view_stack.top() |
@@ -625,10 +616,10 @@ execute_from_file(exec_context& ec,
             break;
         case ';':
             setup_logline_table(ec);
-            retval = TRY(execute_sql(ec, cmdline, alt_msg));
+            retval = TRY(execute_sql(ec, cmdline.substr(1), alt_msg));
             break;
         case '|':
-            retval = TRY(execute_file(ec, cmdline));
+            retval = TRY(execute_file(ec, cmdline.substr(1)));
             break;
         default:
             retval = TRY(execute_command(ec, cmdline));
@@ -919,7 +910,7 @@ exec_context::exec_context(std::vector<logline_value>* line_values,
 
     this->ec_local_vars.push(std::map<std::string, std::string>());
     this->ec_path_stack.emplace_back(".");
-    this->ec_source.emplace(
+    this->ec_source.emplace_back(
         lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
     this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
     this->ec_error_callback_stack.emplace_back(
@@ -938,11 +929,7 @@ exec_context::execute(const std::string& cmdline)
 void
 exec_context::add_error_context(lnav::console::user_message& um)
 {
-    if (!this->ec_source.empty()) {
-        auto source = this->ec_source.top();
-
-        um.with_snippet(source);
-    }
+    um.with_snippets(this->ec_source);
 
     if (this->ec_current_help != nullptr) {
         attr_line_t help;
@@ -959,7 +946,8 @@ exec_context::enter_source(intern_string_t path,
 {
     attr_line_t content_al{content};
     content_al.with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-    this->ec_source.emplace(
+    readline_lnav_highlighter(content_al, -1);
+    this->ec_source.emplace_back(
         lnav::console::snippet::from(path, content_al).with_line(line_number));
     return {this};
 }
