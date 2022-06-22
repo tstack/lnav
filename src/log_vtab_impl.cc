@@ -1471,7 +1471,7 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
 bool
 log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+    lc.lc_curr_line = lc.lc_curr_line + 1_vl;
     lc.lc_sub_index = 0;
 
     if (lc.is_eof()) {

@@ -632,6 +632,19 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    template<typename... Args>
+    json_path_handler& for_child(Args... args)
+    {
+        this->jph_obj_provider = [args...](const yajlpp_provider_context& ypc,
+                                           void* root) -> void* {
+            auto& child = json_path_handler::get_field(root, args...);
+
+            return &child;
+        };
+
+        return *this;
+    }
+
     template<typename... Args,
              std::enable_if_t<
                  LastIs<std::map<std::string, std::string>, Args...>::value,

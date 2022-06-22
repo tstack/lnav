@@ -314,10 +314,7 @@ static const json_path_container snippet_handlers = {
     yajlpp::property_handler("line").for_field(
         &console::snippet::s_location, &source_location::sl_line_number),
     yajlpp::property_handler("content")
-        .with_obj_provider<attr_line_t, console::snippet>(
-            [](const yajlpp_provider_context& ypc, console::snippet* snip) {
-                return &snip->s_content;
-            })
+        .for_child(&console::snippet::s_content)
         .with_children(attr_line_handlers),
 };
 
@@ -337,22 +334,16 @@ static const typed_json_path_container<console::user_message>
             .with_enum_values(LEVEL_ENUM)
             .for_field(&console::user_message::um_level),
         yajlpp::property_handler("message")
-            .with_obj_provider<attr_line_t, console::user_message>(
-                [](const yajlpp_provider_context& ypc,
-                   console::user_message* root) { return &root->um_message; })
+            .for_child(&console::user_message::um_message)
             .with_children(attr_line_handlers),
         yajlpp::property_handler("reason")
-            .with_obj_provider<attr_line_t, console::user_message>(
-                [](const yajlpp_provider_context& ypc,
-                   console::user_message* root) { return &root->um_reason; })
+            .for_child(&console::user_message::um_reason)
             .with_children(attr_line_handlers),
         yajlpp::property_handler("snippets#")
             .for_field(&console::user_message::um_snippets)
             .with_children(snippet_handlers),
         yajlpp::property_handler("help")
-            .with_obj_provider<attr_line_t, console::user_message>(
-                [](const yajlpp_provider_context& ypc,
-                   console::user_message* root) { return &root->um_help; })
+            .for_child(&console::user_message::um_help)
             .with_children(attr_line_handlers),
 };
 

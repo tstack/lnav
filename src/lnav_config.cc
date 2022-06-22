@@ -494,109 +494,64 @@ static const struct json_path_container style_config_handlers =
 static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("identifier")
         .with_description("Styling for identifiers in logs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_identifier;
-            })
+        .for_child(&lnav_theme::lt_style_identifier)
         .with_children(style_config_handlers),
     yajlpp::property_handler("text")
         .with_description("Styling for plain text")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_text;
-            })
+        .for_child(&lnav_theme::lt_style_text)
         .with_children(style_config_handlers),
     yajlpp::property_handler("alt-text")
         .with_description("Styling for plain text when alternating")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_alt_text;
-            })
+        .for_child(&lnav_theme::lt_style_alt_text)
         .with_children(style_config_handlers),
     yajlpp::property_handler("error")
         .with_description("Styling for error messages")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_error;
-            })
+        .for_child(&lnav_theme::lt_style_error)
         .with_children(style_config_handlers),
     yajlpp::property_handler("ok")
         .with_description("Styling for success messages")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_ok;
-            })
+        .for_child(&lnav_theme::lt_style_ok)
         .with_children(style_config_handlers),
     yajlpp::property_handler("warning")
         .with_description("Styling for warning messages")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_warning;
-            })
+        .for_child(&lnav_theme::lt_style_warning)
         .with_children(style_config_handlers),
     yajlpp::property_handler("hidden")
         .with_description("Styling for hidden fields in logs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_hidden;
-            })
+        .for_child(&lnav_theme::lt_style_hidden)
         .with_children(style_config_handlers),
     yajlpp::property_handler("adjusted-time")
         .with_description("Styling for timestamps that have been adjusted")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_adjusted_time;
-            })
+        .for_child(&lnav_theme::lt_style_adjusted_time)
         .with_children(style_config_handlers),
     yajlpp::property_handler("skewed-time")
         .with_description(
             "Styling for timestamps that are different from the received time")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_skewed_time;
-            })
+        .for_child(&lnav_theme::lt_style_skewed_time)
         .with_children(style_config_handlers),
     yajlpp::property_handler("offset-time")
         .with_description("Styling for hidden fields")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_offset_time;
-            })
+        .for_child(&lnav_theme::lt_style_offset_time)
         .with_children(style_config_handlers),
     yajlpp::property_handler("invalid-msg")
         .with_description("Styling for invalid log messages")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_invalid_msg;
-            })
+        .for_child(&lnav_theme::lt_style_invalid_msg)
         .with_children(style_config_handlers),
     yajlpp::property_handler("popup")
         .with_description("Styling for popup windows")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_popup;
-            })
+        .for_child(&lnav_theme::lt_style_popup)
         .with_children(style_config_handlers),
     yajlpp::property_handler("focused")
         .with_description("Styling for a focused row in a list view")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_focused;
-            })
+        .for_child(&lnav_theme::lt_style_focused)
         .with_children(style_config_handlers),
     yajlpp::property_handler("disabled-focused")
         .with_description("Styling for a disabled focused row in a list view")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_disabled_focused;
-            })
+        .for_child(&lnav_theme::lt_style_disabled_focused)
         .with_children(style_config_handlers),
     yajlpp::property_handler("scrollbar")
         .with_description("Styling for scrollbars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_scrollbar;
-            })
+        .for_child(&lnav_theme::lt_style_scrollbar)
         .with_children(style_config_handlers),
     yajlpp::property_handler("h1")
         .with_description("Styling for top-level headers")
@@ -642,271 +597,160 @@ static const struct json_path_container theme_styles_handlers = {
         .with_children(style_config_handlers),
     yajlpp::property_handler("hr")
         .with_description("Styling for horizontal rules")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_hr;
-            })
+        .for_child(&lnav_theme::lt_style_hr)
         .with_children(style_config_handlers),
     yajlpp::property_handler("hyperlink")
         .with_description("Styling for hyperlinks")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_hyperlink;
-            })
+        .for_child(&lnav_theme::lt_style_hyperlink)
         .with_children(style_config_handlers),
     yajlpp::property_handler("list-glyph")
         .with_description("Styling for glyphs that prefix a list item")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_list_glyph;
-            })
+        .for_child(&lnav_theme::lt_style_list_glyph)
         .with_children(style_config_handlers),
     yajlpp::property_handler("breadcrumb")
         .with_description("Styling for the separator between breadcrumbs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_breadcrumb;
-            })
+        .for_child(&lnav_theme::lt_style_breadcrumb)
         .with_children(style_config_handlers),
     yajlpp::property_handler("table-border")
         .with_description("Styling for table borders")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_table_border;
-            })
+        .for_child(&lnav_theme::lt_style_table_border)
         .with_children(style_config_handlers),
     yajlpp::property_handler("table-header")
         .with_description("Styling for table headers")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_table_header;
-            })
+        .for_child(&lnav_theme::lt_style_table_header)
         .with_children(style_config_handlers),
     yajlpp::property_handler("quote-border")
         .with_description("Styling for quoted-block borders")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_quote_border;
-            })
+        .for_child(&lnav_theme::lt_style_quote_border)
         .with_children(style_config_handlers),
     yajlpp::property_handler("quoted-text")
         .with_description("Styling for quoted text blocks")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_quoted_text;
-            })
+        .for_child(&lnav_theme::lt_style_quoted_text)
         .with_children(style_config_handlers),
     yajlpp::property_handler("footnote-border")
         .with_description("Styling for footnote borders")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_footnote_border;
-            })
+        .for_child(&lnav_theme::lt_style_footnote_border)
         .with_children(style_config_handlers),
     yajlpp::property_handler("footnote-text")
         .with_description("Styling for footnote text")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_footnote_text;
-            })
+        .for_child(&lnav_theme::lt_style_footnote_text)
         .with_children(style_config_handlers),
     yajlpp::property_handler("snippet-border")
         .with_description("Styling for snippet borders")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_snippet_border;
-            })
+        .for_child(&lnav_theme::lt_style_snippet_border)
         .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {
     yajlpp::property_handler("quoted-code")
         .with_description("Styling for quoted code blocks")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_quoted_code;
-            })
+        .for_child(&lnav_theme::lt_style_quoted_code)
         .with_children(style_config_handlers),
     yajlpp::property_handler("code-border")
         .with_description("Styling for quoted-code borders")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_code_border;
-            })
+        .for_child(&lnav_theme::lt_style_code_border)
         .with_children(style_config_handlers),
     yajlpp::property_handler("keyword")
         .with_description("Styling for keywords in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_keyword;
-            })
+        .for_child(&lnav_theme::lt_style_keyword)
         .with_children(style_config_handlers),
     yajlpp::property_handler("string")
         .with_description("Styling for single/double-quoted strings in text")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_string;
-            })
+        .for_child(&lnav_theme::lt_style_string)
         .with_children(style_config_handlers),
     yajlpp::property_handler("comment")
         .with_description("Styling for comments in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_comment;
-            })
+        .for_child(&lnav_theme::lt_style_comment)
         .with_children(style_config_handlers),
     yajlpp::property_handler("doc-directive")
         .with_description(
             "Styling for documentation directives in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_doc_directive;
-            })
+        .for_child(&lnav_theme::lt_style_doc_directive)
         .with_children(style_config_handlers),
     yajlpp::property_handler("variable")
         .with_description("Styling for variables in text")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_variable;
-            })
+        .for_child(&lnav_theme::lt_style_variable)
         .with_children(style_config_handlers),
     yajlpp::property_handler("symbol")
         .with_description("Styling for symbols in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_symbol;
-            })
+        .for_child(&lnav_theme::lt_style_symbol)
         .with_children(style_config_handlers),
     yajlpp::property_handler("number")
         .with_description("Styling for numbers in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_number;
-            })
+        .for_child(&lnav_theme::lt_style_number)
         .with_children(style_config_handlers),
     yajlpp::property_handler("re-special")
         .with_description(
             "Styling for special characters in regular expressions")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_re_special;
-            })
+        .for_child(&lnav_theme::lt_style_re_special)
         .with_children(style_config_handlers),
     yajlpp::property_handler("re-repeat")
         .with_description("Styling for repeats in regular expressions")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_re_repeat;
-            })
+        .for_child(&lnav_theme::lt_style_re_repeat)
         .with_children(style_config_handlers),
 
     yajlpp::property_handler("diff-delete")
         .with_description("Styling for deleted lines in diffs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_diff_delete;
-            })
+        .for_child(&lnav_theme::lt_style_diff_delete)
         .with_children(style_config_handlers),
     yajlpp::property_handler("diff-add")
         .with_description("Styling for added lines in diffs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_diff_add;
-            })
+        .for_child(&lnav_theme::lt_style_diff_add)
         .with_children(style_config_handlers),
     yajlpp::property_handler("diff-section")
         .with_description("Styling for diffs")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_diff_section;
-            })
+        .for_child(&lnav_theme::lt_style_diff_section)
         .with_children(style_config_handlers),
     yajlpp::property_handler("file")
         .with_description("Styling for file names in source files")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_file;
-            })
+        .for_child(&lnav_theme::lt_style_file)
         .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_status_styles_handlers = {
     yajlpp::property_handler("text")
         .with_description("Styling for status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status;
-            })
+        .for_child(&lnav_theme::lt_style_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("warn")
         .with_description("Styling for warnings in status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_warn_status;
-            })
+        .for_child(&lnav_theme::lt_style_warn_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("alert")
         .with_description("Styling for alerts in status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_alert_status;
-            })
+        .for_child(&lnav_theme::lt_style_alert_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("active")
         .with_description("Styling for activity in status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_active_status;
-            })
+        .for_child(&lnav_theme::lt_style_active_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("inactive-alert")
         .with_description("Styling for inactive alert status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_inactive_alert_status;
-            })
+        .for_child(&lnav_theme::lt_style_inactive_alert_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("inactive")
         .with_description("Styling for inactive status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_inactive_status;
-            })
+        .for_child(&lnav_theme::lt_style_inactive_status)
         .with_children(style_config_handlers),
     yajlpp::property_handler("title-hotkey")
         .with_description("Styling for hotkey highlights in titles")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status_title_hotkey;
-            })
+        .for_child(&lnav_theme::lt_style_status_title_hotkey)
         .with_children(style_config_handlers),
     yajlpp::property_handler("title")
         .with_description("Styling for title sections of status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status_title;
-            })
+        .for_child(&lnav_theme::lt_style_status_title)
         .with_children(style_config_handlers),
     yajlpp::property_handler("disabled-title")
         .with_description("Styling for title sections of status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status_disabled_title;
-            })
+        .for_child(&lnav_theme::lt_style_status_disabled_title)
         .with_children(style_config_handlers),
     yajlpp::property_handler("subtitle")
         .with_description("Styling for subtitle sections of status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status_subtitle;
-            })
+        .for_child(&lnav_theme::lt_style_status_subtitle)
         .with_children(style_config_handlers),
     yajlpp::property_handler("hotkey")
         .with_description("Styling for hotkey highlights of status bars")
-        .with_obj_provider<style_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_status_hotkey;
-            })
+        .for_child(&lnav_theme::lt_style_status_hotkey)
         .with_children(style_config_handlers),
 };
 
@@ -939,10 +783,7 @@ static const struct json_path_container highlighter_handlers = {
     yajlpp::property_handler("style")
         .with_description(
             "The styling for the text that matches the associated pattern")
-        .with_obj_provider<style_config, highlighter_config>(
-            [](const yajlpp_provider_context& ypc, highlighter_config* root) {
-                return &root->hc_style;
-            })
+        .for_child(&highlighter_config::hc_style)
         .with_children(style_config_handlers),
 };
 
@@ -1188,17 +1029,11 @@ static const struct json_path_container sysclip_impl_handlers = {
         .for_field(&sysclip::clipboard::c_test_command),
     yajlpp::property_handler("general")
         .with_description("Commands to work with the general clipboard")
-        .with_obj_provider<sysclip::clip_commands, sysclip::clipboard>(
-            [](const yajlpp_provider_context& ypc, sysclip::clipboard* root) {
-                return &root->c_general;
-            })
+        .for_child(&sysclip::clipboard::c_general)
         .with_children(sysclip_impl_cmd_handlers),
     yajlpp::property_handler("find")
         .with_description("Commands to work with the find clipboard")
-        .with_obj_provider<sysclip::clip_commands, sysclip::clipboard>(
-            [](const yajlpp_provider_context& ypc, sysclip::clipboard* root) {
-                return &root->c_find;
-            })
+        .for_child(&sysclip::clipboard::c_find)
         .with_children(sysclip_impl_cmd_handlers),
 };
 

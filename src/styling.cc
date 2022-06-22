@@ -49,8 +49,7 @@ static const struct json_path_container term_color_handler = {
     yajlpp::property_handler("name").for_field(&term_color::xc_name),
     yajlpp::property_handler("hexString").for_field(&term_color::xc_hex),
     yajlpp::property_handler("rgb")
-        .with_obj_provider<rgb_color, term_color>(
-            [](const auto& pc, term_color* xc) { return &xc->xc_color; })
+        .for_child(&term_color::xc_color)
         .with_children(term_color_rgb_handler),
 };
 
@@ -59,7 +58,9 @@ static const struct json_path_container root_color_handler = {
         .with_obj_provider<term_color, std::vector<term_color>>(
             [](const yajlpp_provider_context& ypc,
                std::vector<term_color>* palette) {
-                palette->resize(ypc.ypc_index + 1);
+                if (ypc.ypc_index >= palette->size()) {
+                    palette->resize(ypc.ypc_index + 1);
+                }
                 return &((*palette)[ypc.ypc_index]);
             })
         .with_children(term_color_handler),

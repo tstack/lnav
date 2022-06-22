@@ -114,8 +114,7 @@ bottom_status_source::update_percent(listview_curses* lc)
     lc->get_dimensions(height, width);
 
     if (lc->get_inner_height() > 0) {
-        bottom = std::min(top + height - vis_line_t(1),
-                          vis_line_t(lc->get_inner_height() - 1));
+        bottom = std::min(top + height - 1_vl, lc->get_inner_height() - 1_vl);
         percent = (double) (bottom + 1);
         percent /= (double) lc->get_inner_height();
         percent *= 100.0;

@@ -437,7 +437,7 @@ open_pretty_view()
     pts->replace_with(full_text);
     pretty_tc->set_sub_source(pts);
     if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
-        pretty_tc->set_top(vis_line_t(0));
+        pretty_tc->set_top(0_vl);
     }
     lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     pretty_tc->redo_search();

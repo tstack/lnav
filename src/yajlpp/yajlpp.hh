@@ -419,12 +419,6 @@ public:
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
-    size_t index_for_provider() const
-    {
-        return this->ypc_array_index.empty() ? static_cast<size_t>(-1)
-                                             : this->ypc_array_index.back();
-    }
-
     static int map_start(void* ctx);
     static int map_key(void* ctx, const unsigned char* key, size_t len);
     static int map_end(void* ctx);
@@ -435,7 +429,7 @@ private:
 
 class yajlpp_generator {
 public:
-    yajlpp_generator(yajl_gen handle) : yg_handle(handle){};
+    yajlpp_generator(yajl_gen handle) : yg_handle(handle) {}
 
     yajl_gen_status operator()(const std::string& str)
     {
@@ -516,7 +510,7 @@ private:
 
 class yajlpp_container_base {
 public:
-    yajlpp_container_base(yajl_gen handle) : gen(handle), ycb_handle(handle){};
+    yajlpp_container_base(yajl_gen handle) : gen(handle), ycb_handle(handle) {}
 
     yajlpp_generator gen;
 
@@ -554,7 +548,9 @@ class yajlpp_gen_context {
 public:
     yajlpp_gen_context(yajl_gen handle,
                        const struct json_path_container& handlers)
-        : ygc_handle(handle), ygc_depth(0), ygc_handlers(&handlers){};
+        : ygc_handle(handle), ygc_depth(0), ygc_handlers(&handlers)
+    {
+    }
 
     template<typename T>
     yajlpp_gen_context& with_default_obj(T& obj)

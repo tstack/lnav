@@ -117,11 +117,11 @@ log_data_table::get_columns_int()
 bool
 log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    if (lc.lc_curr_line == vis_line_t(-1)) {
+    if (lc.lc_curr_line == -1_vl) {
         this->ldt_instance = -1;
     }
 
-    lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+    lc.lc_curr_line = lc.lc_curr_line + 1_vl;
     lc.lc_sub_index = 0;
 
     if (lc.lc_curr_line == (int) lss.text_line_count()) {

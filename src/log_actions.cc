@@ -162,7 +162,7 @@ action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED:
-            if (mouse_line >= vis_line_t(0) && mouse_line <= tc.get_bottom()) {
+            if (mouse_line >= 0_vl && mouse_line <= tc.get_bottom()) {
                 size_t line_end_index = 0;
                 int x_offset;
 

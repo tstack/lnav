@@ -76,7 +76,7 @@ struct log_cursor {
 
     void update(unsigned char op, vis_line_t vl, constraint_t cons);
 
-    void set_eof() { this->lc_curr_line = this->lc_end_line = vis_line_t(0); }
+    void set_eof() { this->lc_curr_line = this->lc_end_line = 0_vl; }
 
     bool is_eof() const { return this->lc_curr_line >= this->lc_end_line; }
 };
@@ -94,7 +94,9 @@ public:
                     const std::string comment = "",
                     unsigned int subtype = 0)
             : vc_name(name), vc_type(type), vc_collator(collator),
-              vc_hidden(hidden), vc_comment(comment), vc_subtype(subtype){};
+              vc_hidden(hidden), vc_comment(comment), vc_subtype(subtype)
+        {
+        }
 
         vtab_column& with_comment(const std::string comment)
         {
@@ -132,7 +134,7 @@ public:
 
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
-    virtual void get_columns(std::vector<vtab_column>& cols) const {};
+    virtual void get_columns(std::vector<vtab_column>& cols) const {}
 
     virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const;
 
@@ -235,4 +237,5 @@ private:
     logfile_sub_source& vm_source;
     std::map<intern_string_t, std::shared_ptr<log_vtab_impl>> vm_impls;
 };
+
 #endif
