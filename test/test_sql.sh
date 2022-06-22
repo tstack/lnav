@@ -258,8 +258,10 @@ run_test ${lnav_test} -n \
 
 check_error_output "rename-stdin works without an argument?" <<EOF
 ✘ error: expecting the new name for stdin as the first argument
+ --> command-option:1
+ | |rename-stdin
  --> ../test/.lnav/formats/default/rename-stdin.lnav:6
- | SELECT raise_error('expecting the new name for stdin as the first argument') WHERE \$1 IS NULL
+ | ;SELECT raise_error('expecting the new name for stdin as the first argument') WHERE \$1 IS NULL
 EOF
 
 run_test ${lnav_test} -n \
@@ -268,8 +270,10 @@ run_test ${lnav_test} -n \
 
 check_error_output "rename-stdin when there is no stdin file?" <<EOF
 ✘ error: no data was redirected to lnav's standard-input
+ --> command-option:1
+ | |rename-stdin foo
  --> ../test/.lnav/formats/default/rename-stdin.lnav:7
- | SELECT raise_error('no data was redirected to lnav''s standard-input')
+ | ;SELECT raise_error('no data was redirected to lnav''s standard-input')
  |         WHERE (SELECT count(1) FROM lnav_file WHERE filepath='stdin') = 0
 EOF
 
