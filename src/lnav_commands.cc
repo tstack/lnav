@@ -47,6 +47,7 @@
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
+#include "base/itertools.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
@@ -66,6 +67,7 @@
 #include "papertrail_proc.hh"
 #include "readline_callbacks.hh"
 #include "readline_curses.hh"
+#include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "relative_time.hh"
 #include "service_tags.hh"
@@ -78,6 +80,8 @@
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
+
+using namespace lnav::roles::literals;
 
 static std::string
 remaining_args(const std::string& cmdline,
@@ -100,6 +104,29 @@ remaining_args(const std::string& cmdline,
     require(index_in_cmdline != std::string::npos);
 
     return cmdline.substr(index_in_cmdline);
+}
+
+static string_fragment
+remaining_args_frag(const std::string& cmdline,
+                    const std::vector<std::string>& args,
+                    size_t index = 1)
+{
+    size_t start_pos = 0;
+
+    require(index > 0);
+
+    if (index >= args.size()) {
+        return string_fragment{};
+    }
+    for (size_t lpc = 0; lpc < index; lpc++) {
+        start_pos += args[lpc].length();
+    }
+
+    size_t index_in_cmdline = cmdline.find(args[index], start_pos);
+
+    require(index_in_cmdline != std::string::npos);
+
+    return string_fragment{cmdline.c_str(), static_cast<int>(index_in_cmdline)};
 }
 
 static nonstd::optional<std::string>
@@ -581,8 +608,16 @@ com_mark_expr(exec_context& ec,
 #endif
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
+            auto expr_al = attr_line_t(expr).with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            readline_sqlite_highlighter(expr_al, -1);
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("invalid mark expression: ").append(expr_al))
+                      .with_reason(errmsg)
+                      .with_snippets(ec.ec_source);
 
-            return ec.make_error("{}", errmsg);
+            return Err(um);
         }
 
         auto& lss = lnav_data.ld_log_source;
@@ -662,8 +697,18 @@ com_goto_mark(exec_context& ec,
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 auto bt_opt = bookmark_type_t::find_type(args[lpc]);
                 if (!bt_opt) {
-                    return ec.make_error("unknown bookmark type: {}",
-                                         args[lpc]);
+                    auto um
+                        = lnav::console::user_message::error(
+                              attr_line_t("unknown bookmark type: ")
+                                  .append(args[lpc]))
+                              .with_snippets(ec.ec_source)
+                              .with_help(
+                                  attr_line_t("available types: ")
+                                      .join(bookmark_type_t::get_all_types()
+                                                | lnav::itertools::map(
+                                                    &bookmark_type_t::get_name),
+                                            ", "));
+                    return Err(um);
                 }
                 mark_types.insert(bt_opt.value());
             }
@@ -689,7 +734,12 @@ com_goto_mark(exec_context& ec,
                 }
 
                 if (!new_top) {
-                    return ec.make_error("no more bookmarks after here");
+                    return ec.make_error(
+                        "no more {} bookmarks after here",
+                        fmt::join(mark_types
+                                      | lnav::itertools::map(
+                                          &bookmark_type_t::get_name),
+                                  ", "));
                 }
             } else {
                 for (const auto& bt : mark_types) {
@@ -1568,17 +1618,27 @@ com_highlight(exec_context& ec,
         auto_mem<pcre> code;
         int eoff;
 
-        args[1] = remaining_args(cmdline, args);
+        auto re_frag = remaining_args_frag(cmdline, args);
+        args[1] = re_frag.to_string();
         if (hm.find({highlight_source_t::INTERACTIVE, args[1]}) != hm.end()) {
             return ec.make_error("highlight already exists -- {}", args[1]);
         } else if ((code = pcre_compile(args[1].c_str(),
-                                        PCRE_CASELESS,
+                                        PCRE_CASELESS | PCRE_UTF8,
                                         &errptr,
                                         &eoff,
                                         nullptr))
                    == nullptr)
         {
-            return ec.make_error("{}", errptr);
+            auto um = lnav::console::user_message::error(
+                          "invalid regular expression")
+                          .with_reason(errptr)
+                          .with_snippets(ec.ec_source);
+            um.um_snippets.back()
+                .s_content.append("\n")
+                .append(re_frag.sf_begin + eoff, ' ')
+                .append("^ "_comment)
+                .append(lnav::roles::comment(errptr));
+            return Err(um);
         } else {
             highlighter hl(code.release());
             attr_t hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
@@ -1693,7 +1753,8 @@ com_filter(exec_context& ec,
         auto_mem<pcre> code;
         int eoff;
 
-        args[1] = remaining_args(cmdline, args);
+        auto re_frag = remaining_args_frag(cmdline, args);
+        args[1] = re_frag.to_string();
         if (fs.get_filter(args[1]) != NULL) {
             return com_enable_filter(ec, cmdline, args);
         } else if (fs.full()) {
@@ -1701,13 +1762,22 @@ com_filter(exec_context& ec,
                 "filter limit reached, try combining "
                 "filters with a pipe symbol (e.g. foo|bar)");
         } else if ((code = pcre_compile(args[1].c_str(),
-                                        PCRE_CASELESS,
+                                        PCRE_CASELESS | PCRE_UTF8,
                                         &errptr,
                                         &eoff,
                                         nullptr))
                    == NULL)
         {
-            return ec.make_error("{}", errptr);
+            auto um = lnav::console::user_message::error(
+                          "invalid regular expression")
+                          .with_reason(errptr)
+                          .with_snippets(ec.ec_source);
+            um.um_snippets.back()
+                .s_content.append("\n")
+                .append(re_frag.sf_begin + eoff, ' ')
+                .append("^ "_comment)
+                .append(lnav::roles::comment(errptr));
+            return Err(um);
         } else if (ec.ec_dry_run) {
             if (args[0] == "filter-in" && !fs.empty()) {
                 lnav_data.ld_preview_status_source.get_description().set_value(
@@ -1900,8 +1970,16 @@ com_filter_expr(exec_context& ec,
 #endif
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
+            auto expr_al = attr_line_t(expr).with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            readline_sqlite_highlighter(expr_al, -1);
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("invalid filter expression: ")
+                              .append(expr_al))
+                          .with_reason(errmsg)
+                          .with_snippets(ec.ec_source);
 
-            return ec.make_error("{}", errmsg);
+            return Err(um);
         }
 
         if (ec.ec_dry_run) {
@@ -2105,10 +2183,12 @@ com_create_search_table(exec_context& ec,
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
+        string_fragment regex_frag;
         std::string regex;
 
         if (args.size() >= 3) {
-            regex = remaining_args(cmdline, args, 2);
+            regex_frag = remaining_args_frag(cmdline, args, 2);
+            regex = regex_frag.to_string();
         } else {
             regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
@@ -2117,7 +2197,19 @@ com_create_search_table(exec_context& ec,
             = pcrepp::from_str(regex, log_search_table::pattern_options());
 
         if (re_res.isErr()) {
-            return ec.make_error("{}", re_res.unwrapErr().ce_msg);
+            auto re_err = re_res.unwrapErr();
+            auto um = lnav::console::user_message::error(
+                          "invalid regular expression")
+                          .with_reason(re_err.ce_msg)
+                          .with_snippets(ec.ec_source);
+            if (args.size() >= 3) {
+                um.um_snippets.back()
+                    .s_content.append("\n")
+                    .append(regex_frag.sf_begin + re_err.ce_offset, ' ')
+                    .append("^ "_comment)
+                    .append(lnav::roles::comment(re_err.ce_msg));
+            }
+            return Err(um);
         }
 
         auto re = re_res.unwrap();
@@ -2305,8 +2397,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     std::vector<std::pair<std::string, int>> files_to_front;
     std::vector<std::string> closed_files;
 
-    for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-        std::string fn = split_args[lpc];
+    for (auto fn : split_args) {
         int top = 0;
 
         if (startswith(fn, "pt:")) {
@@ -2332,14 +2423,14 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto lf = *file_iter;
 
             if (lf->get_filename() == fn) {
-                if (lf->get_format() != NULL) {
+                if (lf->get_format() != nullptr) {
                     retval = "info: log file already loaded";
                     break;
-                } else {
-                    files_to_front.emplace_back(fn, top);
-                    retval = "";
-                    break;
                 }
+
+                files_to_front.emplace_back(fn, top);
+                retval = "";
+                break;
             }
         }
         if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
@@ -2371,8 +2462,15 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     fc.fc_file_names.emplace(fn, logfile_open_options());
                     retval = "info: watching -- " + fn;
                 } else {
-                    return ec.make_error(
-                        "cannot stat file: {} -- {}", fn, strerror(errno));
+                    auto um = lnav::console::user_message::error(
+                                  attr_line_t("cannot open file: ")
+                                      .append(lnav::roles::file(fn)))
+                                  .with_errno_reason()
+                                  .with_snippets(ec.ec_source)
+                                  .with_help(
+                                      "make sure the file exists and is "
+                                      "accessible");
+                    return Err(um);
                 }
             } else if (is_dev_null(st)) {
                 return ec.make_error("cannot open /dev/null");
@@ -2380,8 +2478,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 auto_fd fifo_fd;
 
                 if ((fifo_fd = open(fn.c_str(), O_RDONLY)) == -1) {
-                    return ec.make_error(
-                        "cannot open FIFO: {} -- {}", fn, strerror(errno));
+                    auto um = lnav::console::user_message::error(
+                                  attr_line_t("cannot open FIFO: ")
+                                      .append(lnav::roles::file(fn)))
+                                  .with_errno_reason()
+                                  .with_snippets(ec.ec_source);
+                    return Err(um);
                 } else if (ec.ec_dry_run) {
                     retval = "";
                 } else {
@@ -2406,7 +2508,15 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     lnav_data.ld_pipers.push_back(fifo_piper);
                 }
             } else if ((abspath = realpath(fn.c_str(), nullptr)) == nullptr) {
-                return ec.make_error("cannot find file -- {}", fn);
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("cannot open file: ")
+                                  .append(lnav::roles::file(fn)))
+                              .with_errno_reason()
+                              .with_snippets(ec.ec_source)
+                              .with_help(
+                                  "make sure the file exists and is "
+                                  "accessible");
+                return Err(um);
             } else if (S_ISDIR(st.st_mode)) {
                 std::string dir_wild(abspath.in());
 
@@ -2417,11 +2527,25 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                          logfile_open_options());
                 retval = "info: watching -- " + dir_wild;
             } else if (!S_ISREG(st.st_mode)) {
-                return ec.make_error("not a regular file or directory -- {}",
-                                     fn);
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("cannot open file: ")
+                                  .append(lnav::roles::file(fn)))
+                              .with_reason("not a regular file or directory")
+                              .with_snippets(ec.ec_source)
+                              .with_help(
+                                  "only regular files, directories, and FIFOs "
+                                  "can be opened");
+                return Err(um);
             } else if (access(fn.c_str(), R_OK) == -1) {
-                return ec.make_error(
-                    "cannot read file {} -- {}", fn, strerror(errno));
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("cannot read file: ")
+                                  .append(lnav::roles::file(fn)))
+                              .with_errno_reason()
+                              .with_snippets(ec.ec_source)
+                              .with_help(
+                                  "make sure the file exists and is "
+                                  "accessible");
+                return Err(um);
             } else {
                 fn = abspath.in();
                 fc.fc_file_names.emplace(fn, logfile_open_options());
@@ -3491,8 +3615,9 @@ com_zoom_to(exec_context& ec,
     } else if (args.size() > 1) {
         bool found = false;
 
-        for (int lpc = 0; lnav_zoom_strings[lpc] && !found; lpc++) {
-            if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc]) == 0) {
+        for (int lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
+            if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc].c_str())
+                == 0) {
                 spectrogram_source& ss = lnav_data.ld_spectro_source;
                 struct timeval old_time;
 
@@ -3539,7 +3664,13 @@ com_zoom_to(exec_context& ec,
         }
 
         if (!found) {
-            return ec.make_error("invalid zoom level -- {}", args[1]);
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("invalid zoom level: ")
+                              .append(lnav::roles::symbol(args[1])))
+                          .with_snippets(ec.ec_source)
+                          .with_help(attr_line_t("available levels: ")
+                                         .join(lnav_zoom_strings, ", "));
+            return Err(um);
         }
     }
 
@@ -3626,7 +3757,7 @@ com_toggle_field(exec_context& ec,
     } else if (args.size() < 2) {
         return ec.make_error("Expecting a log message field name");
     } else {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             retval = "error: hiding fields only works in the log view";
@@ -3718,15 +3849,16 @@ com_hide_line(exec_context& ec,
                 sql_strftime(max_time_str, sizeof(max_time_str), max_time);
             }
             if (have_min_time && have_max_time) {
-                retval = "info: hiding lines before "
-                    + std::string(min_time_str) + " and after "
-                    + std::string(max_time_str);
+                retval
+                    = fmt::format("info: hiding lines before {} and after {}",
+                                  min_time_str,
+                                  max_time_str);
             } else if (have_min_time) {
                 retval
-                    = "info: hiding lines before " + std::string(min_time_str);
+                    = fmt::format("info: hiding lines before {}", min_time_str);
             } else if (have_max_time) {
                 retval
-                    = "info: hiding lines after " + std::string(max_time_str);
+                    = fmt::format("info: hiding lines after {}", max_time_str);
             } else {
                 retval
                     = "info: no lines hidden by time, pass an absolute or "
@@ -4987,7 +5119,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":goto")
          .with_summary("Go to the given location in the top view")
          .with_parameter(
-             help_text("line#|N%|date",
+             help_text("line#|N%|timestamp",
                        "A line number, percent into the file, or a timestamp"))
          .with_examples(
              {{"To go to line 22", "22"},

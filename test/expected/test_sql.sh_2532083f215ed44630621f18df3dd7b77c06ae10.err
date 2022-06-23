@@ -1,0 +1,5 @@
+[31m✘ error[0m: invalid regular expression
+ [31mreason[0m: missing )
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m search_test1 bad[0m[1m[32m[40m([0m[37m[40m          [0m
+[36m | [0m[37m[40m                                     [0m[32m[40m^ [0m[32m[40mmissing )[0m

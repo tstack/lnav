@@ -2265,7 +2265,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
         if (hd.hd_pattern != nullptr) {
             pcre* code = pcre_compile(hd.hd_pattern->get_pattern().c_str(),
-                                      PCRE_CASELESS,
+                                      PCRE_CASELESS | PCRE_UTF8,
                                       &errptr,
                                       &eoff,
                                       nullptr);

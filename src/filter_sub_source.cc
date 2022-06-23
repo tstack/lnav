@@ -422,8 +422,11 @@ filter_sub_source::rl_change(readline_curses* rc)
             const char* errptr;
             int eoff;
 
-            if ((code = pcre_compile(
-                     new_value.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
+            if ((code = pcre_compile(new_value.c_str(),
+                                     PCRE_CASELESS | PCRE_UTF8,
+                                     &errptr,
+                                     &eoff,
+                                     nullptr))
                 == nullptr)
             {
                 lnav_data.ld_filter_help_status_source.fss_error.set_value(
@@ -508,7 +511,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
                 int eoff;
 
                 if ((code = pcre_compile(new_value.c_str(),
-                                         PCRE_CASELESS,
+                                         PCRE_CASELESS | PCRE_UTF8,
                                          &errptr,
                                          &eoff,
                                          nullptr))

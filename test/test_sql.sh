@@ -1,20 +1,13 @@
 #! /bin/bash
 
+export YES_COLOR=1
+
 lnav_test="${top_builddir}/src/lnav-test"
 unset XDG_CONFIG_HOME
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";.read nonexistent-file" \
     ${test_dir}/logfile_empty.0
-
-check_error_output "read worked with a nonexistent file?" <<EOF
-✘ error: unable to read script file: nonexistent-file -- No such file or directory
- --> command-option:1
- | ;.read nonexistent-file
- = help: ;.read path
-         ══════════════════════════════════════════════════════════════════════
-           Execute the SQLite statements in the given file
-EOF
 
 run_test ${lnav_test} -n \
     -c ";.read ${test_dir}/file_for_dot_read.sql" \
@@ -27,14 +20,9 @@ log_line,log_body
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT replicate('foobar', 120)" \
     ${test_dir}/logfile_empty.0
-
-check_output "long lines are not truncated?" <<EOF
-                                                replicate('foobar', 120)
-foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar⋯oobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar
-EOF
 
 cp ${srcdir}/logfile_syslog.2 logfile_syslog_test.2
 touch -t 201511030923 logfile_syslog_test.2
@@ -150,35 +138,17 @@ check_output "w3c headers are not captured?" <<EOF
 ]
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM generate_series()" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "generate_series() works without params?" <<EOF
-✘ error: the start parameter is required
- --> command-option:1
- | ;SELECT * FROM generate_series()
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM generate_series(1)" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "generate_series() works without stop param?" <<EOF
-✘ error: the stop parameter is required
- --> command-option:1
- | ;SELECT * FROM generate_series(1)
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT raise_error('oops!')" \
     ${test_dir}/logfile_access_log.0
-
-check_error_output "raise_error() does not work?" <<EOF
-✘ error: oops!
- --> command-option:1
- | ;SELECT raise_error('oops!')
-EOF
 
 run_test ${lnav_test} -n \
     -c ";SELECT basename(filepath) as name, content, length(content) FROM lnav_file" \
@@ -242,50 +212,22 @@ ts
 2013-09-06T22:01:49.124817Z
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "able to change a real file's path?" <<EOF
-✘ error: real file paths cannot be updated, only symbolic ones
- --> command-option:1
- | ;UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c "|rename-stdin" \
     ${test_dir}/logfile_access_log.0 < /dev/null
 
-check_error_output "rename-stdin works without an argument?" <<EOF
-✘ error: expecting the new name for stdin as the first argument
- --> command-option:1
- | |rename-stdin
- --> ../test/.lnav/formats/default/rename-stdin.lnav:6
- | ;SELECT raise_error('expecting the new name for stdin as the first argument') WHERE \$1 IS NULL
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c "|rename-stdin foo" \
     ${test_dir}/logfile_access_log.0 < /dev/null
 
-check_error_output "rename-stdin when there is no stdin file?" <<EOF
-✘ error: no data was redirected to lnav's standard-input
- --> command-option:1
- | |rename-stdin foo
- --> ../test/.lnav/formats/default/rename-stdin.lnav:7
- | ;SELECT raise_error('no data was redirected to lnav''s standard-input')
- |         WHERE (SELECT count(1) FROM lnav_file WHERE filepath='stdin') = 0
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c "|rename-stdin foo" \
     -c ";SELECT filepath FROM lnav_file" <<EOF
 Hello, World!
-EOF
-
-check_output "rename of stdin did not work?" <<EOF
-filepath
-foo
 EOF
 
 run_test ${lnav_test} -n \
@@ -300,17 +242,10 @@ logfile_access_log.0,access_log,3,0
 logfile_access_log.1,access_log,1,0
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET time_offset = 60 * 1000" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
-
-check_output "time_offset in lnav_file table is not working?" <<EOF
-192.168.202.254 - - [20/Jul/2009:23:00:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:23:00:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:23:00:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-10.112.81.15 - - [15/Feb/2013:06:01:31 +0000] "-" 400 0 "-" "-"
-EOF
 
 run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET time_offset=14400000 WHERE endswith(filepath, 'logfile_block.1')" \
@@ -337,13 +272,9 @@ log,logfile_access_log.0,1
 log,logfile_access_log.1,1
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_view_files SET visible=0 WHERE endswith(filepath, 'log.0')" \
     ${test_dir}/logfile_access_log.*
-
-check_output "updating lnav_view_files does not work?" <<EOF
-10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
-EOF
 
 run_test ${lnav_test} -n \
     -c ";DELETE FROM lnav_view_stack" \
@@ -352,114 +283,52 @@ run_test ${lnav_test} -n \
 check_output "deleting the view stack does not work?" <<EOF
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_view_stack SET name = 'foo'" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "able to update lnav_view_stack?" <<EOF
-✘ error: The lnav_view_stack table cannot be updated
- --> command-option:1
- | ;UPDATE lnav_view_stack SET name = 'foo'
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_stack VALUES ('help')" \
     -c ";DELETE FROM lnav_view_stack WHERE name = 'log'" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "able to delete a view in the middle of lnav_view_stack?" <<EOF
-✘ error: Only the top view in the stack can be deleted
- --> command-option:2
- | ;DELETE FROM lnav_view_stack WHERE name = 'log'
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', '')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an empty pattern?" <<EOF
-✘ error: Expecting a non-empty pattern value
- --> command-option:1
- | ;INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', '')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', 'abc(')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an invalid pattern?" <<EOF
-✘ error: Invalid regular expression for pattern: missing ) at offset 4
- --> command-option:1
- | ;INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', 'abc(')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an invalid view name?" <<EOF
-✘ error: Expecting an lnav view name for column number 0
- --> command-option:1
- | ;INSERT INTO lnav_view_filters VALUES ('bad', 0, 1, 'out', 'regex', 'abc')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with a null view name?" <<EOF
-✘ error: Expecting an lnav view name for column number 0
- --> command-option:1
- | ;INSERT INTO lnav_view_filters VALUES (NULL, 0, 1, 'out', 'regex', 'abc')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'regex', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an invalid filter type?" <<EOF
-✘ error: Expecting an value of 'in' or 'out' for column number 3
- --> command-option:1
- | ;INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'regex', 'abc')
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters (view_name, pattern) VALUES ('log', 'vmk')" \
     ${test_dir}/logfile_access_log.0
 
-check_output "inserted filter-out did not work?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters (view_name, pattern, type) VALUES ('log', 'vmk', 'in')" \
     ${test_dir}/logfile_access_log.0
 
-check_output "inserted filter-in did not work?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":filter-out vmk" \
     -c ";DELETE FROM lnav_view_filters" \
     ${test_dir}/logfile_access_log.0
 
-check_output "inserted filter did not work?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":filter-out vmk" \
     -c ";UPDATE lnav_view_filters SET pattern = 'vmkboot'" \
     ${test_dir}/logfile_access_log.0
-
-check_output "inserted filter did not work?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
 
 run_test ${lnav_test} -n \
     -c ":filter-out vmk" \
@@ -488,55 +357,30 @@ run_test ${lnav_test} -n \
 check_output "output generated for empty result set?" <<EOF
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
     -c ";SELECT log_top_line()" \
     ${test_dir}/logfile_uwsgi.0
 
-check_output "log_top_line() not working?" <<EOF
-log_top_line()
-             2
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
     -c ";SELECT log_top_line()" \
     ${test_dir}/logfile_empty.0
 
-check_output "log_top_line() for an empty log file is not working?" <<EOF
-log_top_line()
-        <NULL>
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
     -c ";SELECT log_top_datetime()" \
     ${test_dir}/logfile_uwsgi.0
 
-check_output "log_top_datetime() not working?" <<EOF
-   log_top_datetime()
-2016-03-13 22:49:15.000
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
     -c ";SELECT log_top_datetime()" \
     ${test_dir}/logfile_empty.0
 
-check_output "log_top_datetime() for an empty log file is not working?" <<EOF
-    log_top_datetime()
-            <NULL>
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM uwsgi_log LIMIT 1" \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_uwsgi.0
-
-check_output "uwsgi not working?" <<EOF
-log_line log_part         log_time        log_idle_msecs log_level log_mark log_comment log_tags log_filters    c_ip   cs_bytes cs_method cs_uri_query   cs_uri_stem   cs_username cs_vars cs_version s_app s_core s_pid s_req s_runtime s_switches s_worker_reqs sc_bytes sc_header_bytes sc_headers sc_status
-       0   <NULL> 2016-03-13 22:49:12.000              0 info             0      <NULL>   <NULL>      <NULL> 127.0.0.1      696 POST            <NULL> /update_metrics                  38 HTTP/1.1   0     3      88185     1     0.129          1             1       47             378          9       200
-EOF
 
 run_test ${lnav_test} -n \
     -c ";SELECT s_runtime FROM uwsgi_log LIMIT 5" \
@@ -603,16 +447,9 @@ run_test ${lnav_test} -n \
 check_output "out-of-range query failed?" <<EOF
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line > -100000' \
     ${test_dir}/logfile_access_log.0
-
-check_output "out-of-range query failed?" <<EOF
-        log_time
-2009-07-20 22:59:26.000
-2009-07-20 22:59:29.000
-2009-07-20 22:59:29.000
-EOF
 
 run_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line < -10000' \
@@ -622,16 +459,9 @@ run_test ${lnav_test} -n \
 check_output "out-of-range query failed?" <<EOF
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line > -10000' \
     ${test_dir}/logfile_access_log.0
-
-check_output "out-of-range query failed?" <<EOF
-        log_time
-2009-07-20 22:59:26.000
-2009-07-20 22:59:29.000
-2009-07-20 22:59:29.000
-EOF
 
 run_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line < 0' \
@@ -641,84 +471,35 @@ run_test ${lnav_test} -n \
 check_output "out-of-range query failed?" <<EOF
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line <= 0' \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0
 
-check_output "range query failed?" <<EOF
-        log_time
-2009-07-20 22:59:26.000
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line >= 0' \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0
 
-check_output "range query failed?" <<EOF
-        log_time
-2009-07-20 22:59:26.000
-2009-07-20 22:59:29.000
-2009-07-20 22:59:29.000
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select sc_bytes from access_log' \
     -c ':spectrogram sc_bytes' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "spectrogram worked without log_time?" <<EOF
-✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
- --> command-option:2
- | :spectrogram sc_bytes
- = help: :spectrogram field-name
-         ══════════════════════════════════════════════════════════════════════
-           Visualize the given message field using a spectrogram
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time,sc_bytes from access_log' \
     -c ':spectrogram sc_byes' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "spectrogram worked with bad column?" <<EOF
-✘ error: unknown column -- sc_byes
- --> command-option:2
- | :spectrogram sc_byes
- = help: :spectrogram field-name
-         ══════════════════════════════════════════════════════════════════════
-           Visualize the given message field using a spectrogram
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time,c_ip from access_log' \
     -c ':spectrogram c_ip' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "spectrogram worked with non-numeric column?" <<EOF
-✘ error: column is not numeric -- c_ip
- --> command-option:2
- | :spectrogram c_ip
- = help: :spectrogram field-name
-         ══════════════════════════════════════════════════════════════════════
-           Visualize the given message field using a spectrogram
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';select log_time,sc_bytes from access_log order by log_time desc' \
     -c ':spectrogram sc_bytes' \
     ${test_dir}/logfile_access_log.0
-
-check_error_output "spectrogram worked with unordered log_time?" <<EOF
-✘ error: no 'log_time' column found or not in ascending order, unable to create spectrogram
- --> command-option:2
- | :spectrogram sc_bytes
- = help: :spectrogram field-name
-         ══════════════════════════════════════════════════════════════════════
-           Visualize the given message field using a spectrogram
-EOF
 
 cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times_test.0
 touch -t 201511030923 logfile_syslog_with_mixed_times_test.0
@@ -908,15 +689,10 @@ c_col_0,count_col_0
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ':write-to -' \
     ${test_dir}/logfile_access_log.0
-
-check_output "setting log_mark is not working" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
 
 export SQL_ENV_VALUE="foo bar,baz"
 
@@ -942,75 +718,25 @@ SQL_ENV_VALUE,"foo bar,baz"
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';INSERT INTO environ (name) VALUES (null)' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "insert into environ table works" <<EOF
-✘ error: A non-empty name and value must be provided when inserting an environment variable
- --> command-option:1
- | ;INSERT INTO environ (name) VALUES (null)
-EOF
-
-check_output "insert into environ table works" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';INSERT INTO environ (name, value) VALUES (null, null)' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "insert into environ table works" <<EOF
-✘ error: A non-empty name and value must be provided when inserting an environment variable
- --> command-option:1
- | ;INSERT INTO environ (name, value) VALUES (null, null)
-EOF
-
-check_output "insert into environ table works" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';INSERT INTO environ (name, value) VALUES ("", null)' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "insert into environ table works" <<EOF
-✘ error: A non-empty name and value must be provided when inserting an environment variable
- --> command-option:1
- | ;INSERT INTO environ (name, value) VALUES ("", null)
-EOF
-
-check_output "insert into environ table works" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';INSERT INTO environ (name, value) VALUES ("foo=bar", "bar")' \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "insert into environ table works" <<EOF
-✘ error: Environment variable names cannot contain an equals sign (=)
- --> command-option:1
- | ;INSERT INTO environ (name, value) VALUES ("foo=bar", "bar")
-EOF
-
-check_output "insert into environ table works" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ';INSERT INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
     ${test_dir}/logfile_access_log.0
-
-check_error_output "insert into environ table works" <<EOF
-✘ error: An environment variable with the name 'SQL_ENV_VALUE' already exists
- --> command-option:1
- | ;INSERT INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")
-EOF
-
-check_output "insert into environ table works" <<EOF
-EOF
-
 
 run_test ${lnav_test} -n \
     -c ';INSERT OR IGNORE INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
@@ -1104,15 +830,9 @@ count(*)
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top = 1 WHERE name = 'log'" \
     ${test_dir}/logfile_access_log.0
-
-check_output "updating lnav_views.top does not work?" <<EOF
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
-EOF
-
 
 run_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top = inner_height - 1 WHERE name = 'log'" \
@@ -1123,45 +843,24 @@ check_output "updating lnav_views.top using inner_height does not work?" <<EOF
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_time = 'bad-time' WHERE name = 'log'" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "updating lnav_views.top_time with a bad time works?" <<EOF
-✘ error: Invalid time: bad-time
- --> command-option:1
- | ;UPDATE lnav_views SET top_time = 'bad-time' WHERE name = 'log'
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_time = '2014-10-08T00:00:00' WHERE name = 'log'" \
     ${test_dir}/logfile_generic.0
 
-check_output "updating lnav_views.top_time does not work?" <<EOF
-2014-10-08 16:56:38,344:WARN:foo bar baz
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
     -c ";SELECT search FROM lnav_views WHERE name = 'log'" \
     ${test_dir}/logfile_generic.0
 
-check_output "updating lnav_views.search does not work?" <<EOF
-search
-warn
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
     -c ":goto 0" \
     -c ":next-mark search" \
     ${test_dir}/logfile_generic.0
-
-check_output "updating lnav_views.search does not work?" <<EOF
-2014-10-08 16:56:38,344:WARN:foo bar baz
-EOF
-
 
 schema_dump() {
     ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n19
@@ -1192,33 +891,13 @@ CREATE TABLE http_status_codes (
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";select * from nonexistent_table" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "errors are not reported" <<EOF
-✘ error: no such table: nonexistent_table
- --> command-option:1
- | ;select * from nonexistent_table
-EOF
-
-check_output "errors are not reported" <<EOF
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";delete from access_log" \
     ${test_dir}/logfile_access_log.0
-
-check_error_output "errors are not reported" <<EOF
-✘ error: attempt to write a readonly database
- --> command-option:1
- | ;delete from access_log
-EOF
-
-check_output "errors are not reported" <<EOF
-EOF
-
 
 touch -t 201504070732 ${test_dir}/logfile_pretty.0
 run_test ${lnav_test} -n \
@@ -1324,24 +1003,13 @@ check_output "write-json-to isn't working?" <<EOF
 ]
 EOF
 
-run_test ${lnav_test} -d "/tmp/lnav.err" -n \
+run_cap_test ${lnav_test} -d "/tmp/lnav.err" -n \
     -c ";select log_line, log_msg_instance, col_0 from logline" \
     ${test_dir}/logfile_for_join.0
 
-check_output "log msg instance is not working" <<EOF
-log_line log_msg_instance   col_0
-       0                0 eth0.IPv4
-       7                1 eth0.IPv4
-EOF
-
-run_test ${lnav_test} -d "/tmp/lnav.err" -n \
+run_cap_test ${lnav_test} -d "/tmp/lnav.err" -n \
     -c ";select log_msg_instance, col_0 from logline where log_line > 4" \
     ${test_dir}/logfile_for_join.0
-
-check_output "log msg instance is not working" <<EOF
-log_msg_instance   col_0
-               1 eth0.IPv4
-EOF
 
 run_test ${lnav_test} -d "/tmp/lnav.err" -n \
     -c ":goto 1" \
@@ -1360,26 +1028,13 @@ llline,jgline
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";select log_body from syslog_log where log_procname = 'automount'" \
     < ${test_dir}/logfile_syslog.0
 
-check_output "querying against stdin is not working?" <<EOF
-                log_body
- lookup(file): lookup for foobar failed
- attempting to mount entry /auto/opt
- lookup(file): lookup for opt failed
-EOF
-
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";select log_body from syslog_log where log_procname = 'sudo'" \
     < ${test_dir}/logfile_syslog.0
-
-check_output "single result is not working?" <<EOF
-                                                      log_body
- timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
-EOF
 
 # Create a dummy database for the next couple of tests to consume.
 touch empty
@@ -1396,72 +1051,36 @@ check_output "Could not create db?" <<EOF
 EOF
 
 # Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
-run_test ${lnav_test} -n -c ";select * from person order by age asc" \
+run_cap_test ${lnav_test} -n -c ";select * from person order by age asc" \
     simple-db.db
-
-check_output "lnav not able to recognize sqlite3 db file?" <<EOF
-id first_name last_name age
- 0 Phil       Myman      30
- 1 Lem        Hewitt     35
-EOF
 
 # Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
 # XXX: Need to pass in a file, otherwise lnav keeps trying to open syslog
 # and we might not have sufficient privileges on the system the tests are being
 # run on.
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
     -c ';select * from person order by age asc' \
     empty
 
-check_output "lnav not able to attach sqlite3 db file?" <<EOF
-id first_name last_name age
- 0 Phil       Myman      30
- 1 Lem        Hewitt     35
-EOF
-
 # Test to see if we can attach a database in LNAVSECURE mode.
 export LNAVSECURE=1
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
     empty
 
-check_error_output "LNAVSECURE mode bypassed" <<EOF
-✘ error: not authorized
- --> command-option:1
- | ;attach database 'simple-db.db' as 'db'
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";attach database ':memdb:' as 'db'" \
     empty
 
-check_error_output "LNAVSECURE mode bypassed (':' adorned)" <<EOF
-✘ error: not authorized
- --> command-option:1
- | ;attach database ':memdb:' as 'db'
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";attach database '/tmp/memdb' as 'db'" \
     empty
 
-check_error_output "LNAVSECURE mode bypassed (filepath)" <<EOF
-✘ error: not authorized
- --> command-option:1
- | ;attach database '/tmp/memdb' as 'db'
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";attach database 'file:memdb?cache=shared' as 'db'" \
     empty
-
-check_error_output "LNAVSECURE mode bypassed (URI)" <<EOF
-✘ error: not authorized
- --> command-option:1
- | ;attach database 'file:memdb?cache=shared' as 'db'
-EOF
 
 unset LNAVSECURE
 
@@ -1552,45 +1171,18 @@ integer
 integer
 EOF
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":delete-search-table search_test1" \
     ${test_dir}/logfile_multiline.0
 
-check_error_output "able to delete unknown table?" <<EOF
-✘ error: unknown search table -- search_test1
- --> command-option:1
- | :delete-search-table search_test1
- = help: :delete-search-table table-name
-         ══════════════════════════════════════════════════════════════════════
-           Create an SQL table based on a regex search
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":create-logline-table search_test1" \
     -c ":delete-search-table search_test1" \
     ${test_dir}/logfile_multiline.0
 
-check_error_output "able to delete logline table?" <<EOF
-✘ error: unknown search table -- search_test1
- --> command-option:2
- | :delete-search-table search_test1
- = help: :delete-search-table table-name
-         ══════════════════════════════════════════════════════════════════════
-           Create an SQL table based on a regex search
-EOF
-
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ":create-search-table search_test1 bad(" \
     ${test_dir}/logfile_multiline.0
-
-check_error_output "able to create table with a bad regex?" <<EOF
-✘ error: missing )
- --> command-option:1
- | :create-search-table search_test1 bad(
- = help: :create-search-table table-name [pattern]
-         ══════════════════════════════════════════════════════════════════════
-           Create an SQL table based on a regex search
-EOF
 
 NULL_GRAPH_SELECT_1=$(cat <<EOF
 ;SELECT value FROM (

@@ -1005,12 +1005,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 
-[4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|date[0m
+[4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp[0m
 ══════════════════════════════════════════════════════════════════════
   Go to the given location in the top view
 [4mParameter[0m
-  [4mline#|N%|date[0m   A line number, percent into the
-                  file, or a timestamp
+  [4mline#|N%|timestamp[0m   A line number, percent
+                       into the file, or a timestamp
 [4mSee Also[0m
   [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 [4mExamples[0m

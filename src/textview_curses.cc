@@ -179,7 +179,7 @@ textview_curses::reload_config(error_reporter& reporter)
             int eoff;
 
             if ((code = pcre_compile(hl_pair.second.hc_regex.c_str(),
-                                     0,
+                                     PCRE_CASELESS | PCRE_UTF8,
                                      &errptr,
                                      &eoff,
                                      nullptr))
@@ -570,8 +570,11 @@ textview_curses::execute_search(const std::string& regex_orig)
         log_debug("start search for: '%s'", regex.c_str());
 
         if (regex.empty()) {
-        } else if ((code = pcre_compile(
-                        regex.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
+        } else if ((code = pcre_compile(regex.c_str(),
+                                        PCRE_CASELESS | PCRE_UTF8,
+                                        &errptr,
+                                        &eoff,
+                                        nullptr))
                    == nullptr)
         {
             auto errmsg = std::string(errptr);
@@ -579,8 +582,11 @@ textview_curses::execute_search(const std::string& regex_orig)
             regex = pcrepp::quote(regex);
 
             log_info("invalid search regex, using quoted: %s", regex.c_str());
-            if ((code = pcre_compile(
-                     regex.c_str(), PCRE_CASELESS, &errptr, &eoff, nullptr))
+            if ((code = pcre_compile(regex.c_str(),
+                                     PCRE_CASELESS | PCRE_UTF8,
+                                     &errptr,
+                                     &eoff,
+                                     nullptr))
                 == nullptr)
             {
                 log_error("Unable to compile quoted regex: %s", regex.c_str());

@@ -533,11 +533,11 @@ operator|(nonstd::optional<T> in,
 template<typename T, typename F>
 auto
 operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<
-        decltype(mapper.m_func(std::declval<typename T::value_type>()))>
+    -> std::vector<std::remove_const_t<std::remove_reference_t<
+        decltype(mapper.m_func(std::declval<typename T::value_type>()))>>>
 {
-    using return_type = std::vector<decltype(mapper.m_func(
-        std::declval<typename T::value_type>()))>;
+    using return_type = std::vector<std::remove_const_t<std::remove_reference_t<
+        decltype(mapper.m_func(std::declval<typename T::value_type>()))>>>;
     return_type retval;
 
     retval.reserve(in.size());
@@ -569,11 +569,34 @@ template<typename T, typename F>
 auto
 operator|(const std::vector<T>& in,
           const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<typename std::remove_const_t<decltype((*(*in.begin())
-                                                          .*mapper.m_func)())>>
+    -> std::vector<typename std::remove_const_t<std::remove_reference_t<
+        decltype((*(std::declval<T>()).*mapper.m_func)())>>>
 {
-    using return_type = std::vector<typename std::remove_const_t<decltype((
-        *(*in.begin()).*mapper.m_func)())>>;
+    using return_type
+        = std::vector<typename std::remove_const_t<std::remove_reference_t<
+            decltype((*(std::declval<T>()).*mapper.m_func)())>>>;
+    return_type retval;
+
+    retval.reserve(in.size());
+    std::transform(
+        in.begin(),
+        in.end(),
+        std::back_inserter(retval),
+        [&mapper](const auto& elem) { return ((*elem).*mapper.m_func)(); });
+
+    return retval;
+}
+
+template<typename T, typename F>
+auto
+operator|(const std::set<T>& in,
+          const lnav::itertools::details::mapper<F>& mapper)
+    -> std::vector<typename std::remove_const_t<std::remove_reference_t<
+        decltype((*(std::declval<T>()).*mapper.m_func)())>>>
+{
+    using return_type
+        = std::vector<typename std::remove_const_t<std::remove_reference_t<
+            decltype((*(std::declval<T>()).*mapper.m_func)())>>>;
     return_type retval;
 
     retval.reserve(in.size());

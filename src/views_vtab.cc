@@ -109,7 +109,8 @@ struct from_sqlite<std::pair<std::string, auto_mem<pcre>>> {
             throw sqlite_func_error("Expecting a non-empty pattern value");
         }
 
-        code = pcre_compile(pattern, PCRE_CASELESS, &errptr, &eoff, nullptr);
+        code = pcre_compile(
+            pattern, PCRE_CASELESS | PCRE_UTF8, &errptr, &eoff, nullptr);
 
         if (code == nullptr) {
             throw sqlite_func_error(

@@ -184,7 +184,7 @@ const int ZOOM_LEVELS[] = {
 
 const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
-const char* lnav_zoom_strings[] = {
+const std::vector<std::string> lnav_zoom_strings = {
     "1-second",
     "30-second",
     "1-minute",
@@ -195,11 +195,9 @@ const char* lnav_zoom_strings[] = {
     "8-hour",
     "1-day",
     "1-week",
-
-    nullptr,
 };
 
-static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
+static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
     "match_index",
     "capture_index",
     "capture_count",

@@ -1,0 +1,3 @@
+[31m✘ error[0m: Expecting a non-empty pattern value
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40mlnav_view_filters[0m[37m[40m [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[37m[40m'log'[0m[37m[40m, 0, 1, [0m[37m[40m'out'[0m[37m[40m, [0m[37m[40m'regex'[0m[37m[40m, [0m[37m[40m''[0m[37m[40m)[0m

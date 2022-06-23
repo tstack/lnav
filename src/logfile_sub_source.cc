@@ -48,7 +48,7 @@
 
 const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
 const bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
-const bookmark_type_t logfile_sub_source::BM_FILES("");
+const bookmark_type_t logfile_sub_source::BM_FILES("file");
 
 static int
 pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)

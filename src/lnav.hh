@@ -87,7 +87,7 @@ typedef enum {
     LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
 } lnav_flags_t;
 
-extern const char* lnav_zoom_strings[];
+extern const std::vector<std::string> lnav_zoom_strings;
 
 /** The status bars. */
 typedef enum {

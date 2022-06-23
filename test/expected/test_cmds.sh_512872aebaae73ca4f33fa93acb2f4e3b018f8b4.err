@@ -1,8 +1,5 @@
-[31m✘ error[0m: cannot stat file: /non-existent -- No such file or directory
+[31m✘ error[0m: cannot open file: [1m/non-existent[0m
+ [31mreason[0m: No such file or directory
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mopen[0m[37m[40m /non-existent                     [0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
-         ══════════════════════════════════════════════════════════════════════
-           Open the given file(s) in lnav.  Opening files on machines
-           accessible via SSH can be done using the syntax:
-           [user@]host:/path/to/logs
+[36m =[0m [36mhelp[0m: make sure the file exists and is accessible

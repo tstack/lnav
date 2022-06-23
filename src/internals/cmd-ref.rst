@@ -554,13 +554,13 @@
 
 .. _goto:
 
-:goto *line#|N%|date*
-^^^^^^^^^^^^^^^^^^^^^
+:goto *line#|N%|timestamp*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Go to the given location in the top view
 
   **Parameters**
-    * **line#|N%|date\*** --- A line number, percent into the file, or a timestamp
+    * **line#|N%|timestamp\*** --- A line number, percent into the file, or a timestamp
 
   **Examples**
     To go to line 22:

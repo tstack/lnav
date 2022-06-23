@@ -346,8 +346,7 @@ handle_paging_key(int ch)
                 execute_command(
                     ec,
                     "zoom-to "
-                        + std::string(
-                            lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                        + lnav_zoom_strings[lnav_data.ld_zoom_level - 1]);
             }
             break;
 
@@ -358,8 +357,7 @@ handle_paging_key(int ch)
                 execute_command(
                     ec,
                     "zoom-to "
-                        + std::string(
-                            lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                        + lnav_zoom_strings[lnav_data.ld_zoom_level + 1]);
             }
             break;
 

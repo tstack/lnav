@@ -1,0 +1,3 @@
+[31m✘ error[0m: the stop parameter is required
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(1)       [0m

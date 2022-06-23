@@ -40,7 +40,8 @@ xpcre_compile(const char* pattern, int options = 0)
     pcre* retval;
     int eoff;
 
-    if ((retval = pcre_compile(pattern, options, &errptr, &eoff, nullptr))
+    if ((retval
+         = pcre_compile(pattern, options | PCRE_UTF8, &errptr, &eoff, nullptr))
         == nullptr)
     {
         fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
