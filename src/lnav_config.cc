@@ -1490,7 +1490,9 @@ save_config()
 
     auto config_str = gen.to_string_fragment().to_string();
     char errbuf[1024];
-    auto* tree = yajl_tree_parse(config_str.c_str(), errbuf, sizeof(errbuf));
+    auto_mem<yajl_val_s> tree(yajl_tree_free);
+
+    tree = yajl_tree_parse(config_str.c_str(), errbuf, sizeof(errbuf));
 
     if (tree == nullptr) {
         return fmt::format(

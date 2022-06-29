@@ -2454,7 +2454,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return print_user_msgs(perform_res);
     }
 
-    if (!mode_flags.mf_check_configs) {
+    if (!mode_flags.mf_check_configs && !lnav_data.ld_show_help_view) {
         DEFAULT_FILES.emplace_back("var/log/messages");
         DEFAULT_FILES.emplace_back("var/log/system.log");
         DEFAULT_FILES.emplace_back("var/log/syslog");
