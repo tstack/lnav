@@ -733,7 +733,8 @@ struct json_path_handler : public json_path_handler_base {
                   auto* obj = ypc->ypc_obj_stack.top();
                   auto key = ypc->get_path_fragment(-1);
 
-                  json_path_handler::get_field(obj, args...)[key] = val;
+                  json_path_handler::get_field(obj, args...)[key]
+                      = static_cast<int64_t>(val);
 
                   return 1;
               };
