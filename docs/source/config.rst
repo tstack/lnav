@@ -208,8 +208,8 @@ The handling of logs is largely determined by the
 :ref:`log file formats<log_formats>`, this section covers options that are not
 specific to a particular format.
 
-Watch Expressions
-^^^^^^^^^^^^^^^^^
+Watch Expressions (v0.10.2+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Watch expressions can be used to fire an event when a log message matches a
 condition.  You can then install a listener for these events and trigger an
