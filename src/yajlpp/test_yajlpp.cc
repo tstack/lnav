@@ -159,5 +159,7 @@ main(int argc, char* argv[])
         yajl_gen_tree(gen, tree);
         auto actual = gen.to_string_fragment().to_string();
         assert(EXPECTED_OUTPUT == actual);
+
+        yajl_tree_free(tree);
     }
 }
