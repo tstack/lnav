@@ -331,6 +331,9 @@ nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
 
 THIRD_PARTY_SRCS = \
+    third-party/ArenaAlloc/arenaalloc.h \
+    third-party/ArenaAlloc/arenaallocimpl.h \
+    third-party/ArenaAlloc/recyclealloc.h \
     third-party/backward-cpp/backward.hpp \
     third-party/CLI/StringTools.hpp \
     third-party/CLI/App.hpp \
