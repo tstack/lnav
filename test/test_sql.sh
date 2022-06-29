@@ -496,7 +496,7 @@ run_cap_test ${lnav_test} -n \
     -c ':spectrogram c_ip' \
     ${test_dir}/logfile_access_log.0
 
-run_cap_test env TZ=UTC ${lnav_test} -n \
+run_cap_test env TZ=UTC LC_NUMERIC=C ${lnav_test} -n \
     -c ':spectrogram bro_response_body_len' \
     ${test_dir}/logfile_bro_http.log.0
 
