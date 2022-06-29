@@ -93,6 +93,9 @@ static auto tc = injector::bind<tailer::config>::to_instance(
 static auto scc = injector::bind<sysclip::config>::to_instance(
     +[]() { return &lnav_config.lc_sysclip; });
 
+static auto lsc = injector::bind<logfile_sub_source_ns::config>::to_instance(
+    +[]() { return &lnav_config.lc_log_source; });
+
 bool
 check_experimental(const char* feature_name)
 {
@@ -863,6 +866,11 @@ static const struct json_path_container theme_defs_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
+        .with_obj_deleter(
+            +[](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                root->lc_ui_theme_defs.erase(
+                    ypc.ypc_extractor.get_substr("theme_name"));
+            })
         .with_children(theme_def_handlers),
 };
 
@@ -1064,6 +1072,51 @@ static const struct json_path_container sysclip_handlers = {
         .with_children(sysclip_impls_handlers),
 };
 
+static const struct json_path_container log_source_watch_expr_handlers = {
+    yajlpp::property_handler("expr")
+        .with_synopsis("<SQL-expression>")
+        .with_description("The SQL expression to execute for each input line. "
+                          "If expression evaluates to true, a 'log message "
+                          "detected' event will be published.")
+        .for_field(&logfile_sub_source_ns::watch_expression::we_expr),
+    yajlpp::property_handler("enabled")
+        .with_description("Indicates whether or not this expression should be "
+                          "evaluated during log processing.")
+        .for_field(&logfile_sub_source_ns::watch_expression::we_enabled),
+};
+
+static const struct json_path_container log_source_watch_handlers = {
+    yajlpp::pattern_property_handler("(?<watch_name>[\\w\\-]+)")
+        .with_synopsis("<name>")
+        .with_description("A log message watch expression")
+        .with_obj_provider<logfile_sub_source_ns::watch_expression,
+                           _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval = root->lc_log_source
+                                   .c_watch_exprs[ypc.ypc_extractor.get_substr(
+                                       "watch_name")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_log_source.c_watch_exprs) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_obj_deleter(
+            +[](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                root->lc_log_source.c_watch_exprs.erase(
+                    ypc.ypc_extractor.get_substr("watch_name"));
+            })
+        .with_children(log_source_watch_expr_handlers),
+};
+
+static const struct json_path_container log_source_handlers = {
+    yajlpp::property_handler("watch-expressions")
+        .with_description("Log message watch expressions")
+        .with_children(log_source_watch_handlers),
+};
+
 static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
@@ -1124,22 +1177,26 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 }
 
 const json_path_container lnav_config_handlers = json_path_container {
-        json_path_handler("$schema", read_id)
-            .with_synopsis("<schema-uri>")
-            .with_description("The URI that specifies the schema that describes this type of file")
-            .with_example(DEFAULT_CONFIG_SCHEMA),
+    json_path_handler("$schema", read_id)
+        .with_synopsis("<schema-uri>")
+        .with_description("The URI that specifies the schema that describes this type of file")
+        .with_example(DEFAULT_CONFIG_SCHEMA),
 
-        yajlpp::property_handler("tuning")
-            .with_description("Internal settings")
-            .with_children(tuning_handlers),
+    yajlpp::property_handler("tuning")
+        .with_description("Internal settings")
+        .with_children(tuning_handlers),
 
-        yajlpp::property_handler("ui")
-            .with_description("User-interface settings")
-            .with_children(ui_handlers),
+    yajlpp::property_handler("ui")
+        .with_description("User-interface settings")
+        .with_children(ui_handlers),
 
-        yajlpp::property_handler("global")
-            .with_description("Global variable definitions")
-            .with_children(global_var_handlers),
+    yajlpp::property_handler("log")
+        .with_description("Log message settings")
+        .with_children(log_source_handlers),
+
+    yajlpp::property_handler("global")
+        .with_description("Global variable definitions")
+        .with_children(global_var_handlers),
 }
     .with_schema_id(*SUPPORTED_CONFIG_SCHEMAS.cbegin());
 
@@ -1248,7 +1305,7 @@ load_config_from(_lnav_config& lconfig,
     }
 }
 
-static void
+static bool
 load_default_config(struct _lnav_config& config_obj,
                     const std::string& path,
                     const bin_src_file& bsf,
@@ -1276,16 +1333,22 @@ load_default_config(struct _lnav_config& config_obj,
     if (ypc_builtin.parse(bsf.to_string_fragment()) == yajl_status_ok) {
         ypc_builtin.complete_parse();
     }
+
+    return path == "*" || ypc_builtin.ypc_active_paths.empty();
 }
 
-static void
+static bool
 load_default_configs(struct _lnav_config& config_obj,
                      const std::string& path,
                      std::vector<lnav::console::user_message>& errors)
 {
+    auto retval = false;
+
     for (auto& bsf : lnav_config_json) {
-        load_default_config(config_obj, path, bsf, errors);
+        retval = load_default_config(config_obj, path, bsf, errors) || retval;
     }
+
+    return retval;
 }
 
 void
@@ -1298,21 +1361,23 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
         auto sample_path = lnav::paths::dotlnav() / "configs" / "default"
             / fmt::format(FMT_STRING("{}.sample"), bsf.get_name());
 
-        auto fd = auto_fd(lnav::filesystem::openp(
-            sample_path, O_WRONLY | O_TRUNC | O_CREAT, 0644));
-        auto sf = bsf.to_string_fragment();
-        if (fd == -1 || write(fd.get(), sf.data(), sf.length()) == -1) {
+        auto write_res = lnav::filesystem::write_file(sample_path,
+                                                      bsf.to_string_fragment());
+        if (write_res.isErr()) {
             fprintf(stderr,
                     "error:unable to write default config file: %s -- %s\n",
                     sample_path.c_str(),
-                    strerror(errno));
+                    write_res.unwrapErr().c_str());
         }
     }
 
     {
+        log_info("loading builtin configuration into default");
         load_default_configs(lnav_default_config, "*", errors);
+        log_info("loading builtin configuration into base");
         load_default_configs(lnav_config, "*", errors);
 
+        log_info("loading user configuration files");
         for (const auto& extra_path : extra_paths) {
             auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;
@@ -1342,6 +1407,7 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
             }
         }
 
+        log_info("loading user configuration");
         load_config_from(lnav_config, user_config, errors);
     }
 
@@ -1356,6 +1422,36 @@ reset_config(const std::string& path)
     std::vector<lnav::console::user_message> errors;
 
     load_default_configs(lnav_config, path, errors);
+    if (path != "*") {
+        static const auto INPUT_SRC = intern_string::lookup("input");
+
+        yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
+        ypc.set_path(path)
+            .with_obj(lnav_config)
+            .with_error_reporter([&errors](const auto& ypc, auto msg) {
+                errors.push_back(msg);
+            });
+        ypc.ypc_active_paths.insert(path);
+        ypc.update_callbacks();
+        const json_path_handler_base* jph = ypc.ypc_current_handler;
+
+        if (!ypc.ypc_handler_stack.empty()) {
+            jph = ypc.ypc_handler_stack.back();
+        }
+
+        if (jph != nullptr && jph->jph_children && jph->jph_obj_deleter) {
+            pcre_context_static<30> pc;
+            auto key_start = ypc.ypc_path_index_stack.back();
+            pcre_input pi(&ypc.ypc_path[key_start + 1],
+                          0,
+                          ypc.ypc_path.size() - key_start - 2);
+            yajlpp_provider_context provider_ctx{{pc, pi},
+                                                 static_cast<size_t>(-1)};
+            jph->jph_regex->match(pc, pi);
+
+            jph->jph_obj_deleter(provider_ctx, ypc.ypc_obj_stack.top());
+        }
+    }
 
     reload_config(errors);
 
@@ -1367,35 +1463,38 @@ reset_config(const std::string& path)
 std::string
 save_config()
 {
-    yajlpp_gen gen;
-    auto filename = fmt::format(FMT_STRING("config.json.{}.tmp"), getpid());
-    auto user_config_tmp = lnav::paths::dotlnav() / filename;
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
-    yajl_gen_config(gen, yajl_gen_beautify, true);
+    yajlpp_gen gen;
     yajlpp_gen_context ygc(gen, lnav_config_handlers);
-    std::vector<std::string> errors;
 
     ygc.with_default_obj(lnav_default_config).with_obj(lnav_config);
     ygc.gen();
 
-    {
-        auto_fd fd;
+    auto config_str = gen.to_string_fragment().to_string();
+    char errbuf[1024];
+    auto* tree = yajl_tree_parse(config_str.c_str(), errbuf, sizeof(errbuf));
 
-        if ((fd = lnav::filesystem::openp(
-                 user_config_tmp, O_WRONLY | O_CREAT | O_TRUNC, 0600))
-            == -1)
-        {
-            return "error: unable to save configuration -- "
-                + std::string(strerror(errno));
-        }
-
-        string_fragment bits = gen.to_string_fragment();
-
-        log_perror(write(fd, bits.data(), bits.length()));
+    if (tree == nullptr) {
+        return fmt::format(
+            FMT_STRING("error: unable to save configuration -- {}"), errbuf);
     }
 
-    rename(user_config_tmp.c_str(), user_config.c_str());
+    yajl_cleanup_tree(tree);
+
+    yajlpp_gen clean_gen;
+
+    yajl_gen_config(clean_gen, yajl_gen_beautify, true);
+    yajl_gen_tree(clean_gen, tree);
+
+    auto write_res = lnav::filesystem::write_file(
+        user_config, clean_gen.to_string_fragment());
+    if (write_res.isErr()) {
+        return fmt::format(
+            FMT_STRING("error: unable to write configuration file: {} -- {}"),
+            user_config.string(),
+            write_res.unwrapErr());
+    }
 
     return "info: configuration saved";
 }
@@ -1407,7 +1506,7 @@ reload_config(std::vector<lnav::console::user_message>& errors)
 
     while (curr != nullptr) {
         auto reporter = [&errors](const void* cfg_value,
-                                  const std::string& errmsg) {
+                                  const lnav::console::user_message& errmsg) {
             auto cb = [&cfg_value, &errors, &errmsg](
                           const json_path_handler_base& jph,
                           const std::string& path,
@@ -1431,7 +1530,8 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                         .with_snippet(
                             lnav::console::snippet::from(
                                 loc_iter->second.sl_source, "")
-                                .with_line(loc_iter->second.sl_line_number)));
+                                .with_line(loc_iter->second.sl_line_number))
+                        .with_help(jph.get_help_text(path)));
             };
 
             for (const auto& jph : lnav_config_handlers.jpc_children) {

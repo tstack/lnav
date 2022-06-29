@@ -59,7 +59,7 @@ public:
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
-    void extract(std::shared_ptr<logfile> lf,
+    void extract(logfile* lf,
                  uint64_t line_number,
                  shared_buffer_ref& line,
                  std::vector<logline_value>& values) override;

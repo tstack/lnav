@@ -38,7 +38,7 @@ A valid **lnav** configuration file must contain an object with the
 Options
 -------
 
-The following configuration options can be used to customize **lnav** to
+The following configuration options can be used to customize the **lnav** UI to
 your liking.  The options can be changed using the :code:`:config` command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap
@@ -200,6 +200,53 @@ Reference
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
 
+
+Log Handling
+------------
+
+The handling of logs is largely determined by the
+:ref:`log file formats<log_formats>`, this section covers options that are not
+specific to a particular format.
+
+Watch Expressions
+^^^^^^^^^^^^^^^^^
+
+Watch expressions can be used to fire an event when a log message matches a
+condition.  You can then install a listener for these events and trigger an
+action to be performed.  For example, to automate filtering based on
+identifiers, a watch expression can match messages that mention the ID and then
+a trigger can install a filter for that ID.  Creating a watch expression is
+done by adding an entry into the :code:`/log/watch-expressions` configuration
+tree.  For example, to create a watch named "dhcpdiscover" that matches
+DHCPDISCOVER messages from the :code:`dhclient` daemon, you would run the
+following:
+
+.. code-block:: lnav
+
+   :config /log/watch-expressions/dhcpdiscover/expr :log_procname = 'dhclient' AND startswith(:log_body, 'DHCPDISCOVER')
+
+The watch expression can refer to column names in the log message by prefixing
+them with a colon.  The expression is evaluated by passing the log message
+fields as bound parameters and not against a table.  The easiest way to test
+out an expression is with the :ref:`mark_expr` command, since it will behave
+similarly.  After changing the configuration, you'll need to restart lnav
+for the effect to take place.  You can then query the :code:`lnav_events`
+table to see any generated
+:code:`https://lnav.org/event-log-msg-detected-v1.schema.json` events from the
+logs that were loaded:
+
+.. code-block:: custsqlite
+
+   ;SELECT * FROM lnav_events
+
+From there, you can create a SQLite trigger on the :code:`lnav_events` table
+that will examine the event contents and perform an action.  See the
+:ref:`Events` section for more information on handling events.
+
+Reference
+^^^^^^^^^
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/([\w\-]+)
 
 .. _tuning:
 

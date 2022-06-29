@@ -210,6 +210,8 @@ public:
 
     file_range get_available();
 
+    bool is_likely_to_flush(file_range prev_line);
+
     void clear()
     {
         this->lb_buffer_size = 0;

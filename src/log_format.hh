@@ -428,7 +428,9 @@ public:
                             exttm log_tv,
                             timeval timeval1);
 
-    virtual std::string get_pattern_name(uint64_t line_number) const;
+    virtual std::string get_pattern_path(uint64_t line_number) const;
+
+    virtual intern_string_t get_pattern_name(uint64_t line_number) const;
 
     virtual std::string get_pattern_regex(uint64_t line_number) const
     {

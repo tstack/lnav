@@ -48,3 +48,6 @@ The following tables describe the schema of the event JSON objects.
 
 .. jsonschema:: ../schemas/event-file-format-detected-v1.schema.json#
     :lift_description:
+
+.. jsonschema:: ../schemas/event-log-msg-detected-v1.schema.json#
+    :lift_description:

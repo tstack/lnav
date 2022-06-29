@@ -78,7 +78,11 @@ libbase_a_SOURCES = \
     string_attr_type.cc \
     string_util.cc \
     strnatcmp.c \
-    time_util.cc
+    time_util.cc \
+	../third-party/xxHash/xxhash.h \
+	../third-party/xxHash/xxh_x86dispatch.h \
+	../third-party/xxHash/xxhash.c \
+	../third-party/xxHash/xxh_x86dispatch.c
 
 check_PROGRAMS = \
     test_base

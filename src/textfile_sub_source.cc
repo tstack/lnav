@@ -279,6 +279,9 @@ textfile_sub_source::text_crumbs_for_line(
     }
 
     auto lf = this->current_file();
+    if (lf->size() == 0) {
+        return;
+    }
     crumbs.emplace_back(
         lf->get_unique_path(),
         attr_line_t().append(lnav::roles::identifier(lf->get_unique_path())),

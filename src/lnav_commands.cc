@@ -4366,6 +4366,9 @@ com_reset_config(exec_context& ec,
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
         std::string option = args[1];
 
+        while (!option.empty() && option.back() == '/') {
+            option.pop_back();
+        }
         lnav_config = rollback_lnav_config;
         ypc.set_path(option).with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);

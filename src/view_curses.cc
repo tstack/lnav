@@ -39,6 +39,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "lnav_config.hh"
@@ -486,8 +487,15 @@ public:
         auto iter = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
 
         if (iter == lnav_config.lc_ui_theme_defs.end()) {
+            auto theme_names
+                = lnav_config.lc_ui_theme_defs | lnav::itertools::first();
+
             reporter(&lnav_config.lc_ui_theme,
-                     "unknown theme -- " + lnav_config.lc_ui_theme);
+                     lnav::console::user_message::error(
+                         attr_line_t("unknown theme -- ")
+                             .append_quoted(lnav_config.lc_ui_theme))
+                         .with_help(attr_line_t("The available themes are: ")
+                                        .join(theme_names, ", ")));
 
             vc.init_roles(lnav_config.lc_ui_theme_defs["default"], reporter);
             return;
@@ -558,7 +566,7 @@ view_colors::init()
     initialized = true;
 
     {
-        auto reporter = [](const void*, const std::string&) {
+        auto reporter = [](const void*, const lnav::console::user_message&) {
 
         };
 
@@ -631,12 +639,20 @@ view_colors::to_attrs(int& pair_base,
 
     auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
         [&](const auto& msg) {
-            reporter(&sc.sc_color, msg);
+            reporter(
+                &sc.sc_color,
+                lnav::console::user_message::error(
+                    attr_line_t("invalid color -- ").append_quoted(sc.sc_color))
+                    .with_reason(msg));
             return styling::color_unit::make_empty();
         });
     auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
         [&](const auto& msg) {
-            reporter(&sc.sc_background_color, msg);
+            reporter(&sc.sc_background_color,
+                     lnav::console::user_message::error(
+                         attr_line_t("invalid background color -- ")
+                             .append_quoted(sc.sc_background_color))
+                         .with_reason(msg));
             return styling::color_unit::make_empty();
         });
 
@@ -674,7 +690,12 @@ view_colors::init_roles(const lnav_theme& lt,
             shlex(ident_sc.sc_background_color).eval(bg_color, lt.lt_vars);
             auto rgb_bg = rgb_color::from_str(bg_color).unwrapOrElse(
                 [&](const auto& msg) {
-                    reporter(&ident_sc.sc_background_color, msg);
+                    reporter(
+                        &ident_sc.sc_background_color,
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid background color -- ")
+                                .append_quoted(ident_sc.sc_background_color))
+                            .with_reason(msg));
                     return rgb_color{};
                 });
             ident_bg = vc_active_palette->match_color(lab_color(rgb_bg));
@@ -710,12 +731,20 @@ view_colors::init_roles(const lnav_theme& lt,
 
                 auto rgb_fg = rgb_color::from_str(fg_str).unwrapOrElse(
                     [&](const auto& msg) {
-                        reporter(&fg_str, msg);
+                        reporter(&fg_str,
+                                 lnav::console::user_message::error(
+                                     attr_line_t("invalid color -- ")
+                                         .append_quoted(fg_str))
+                                     .with_reason(msg));
                         return rgb_color{};
                     });
                 auto rgb_bg = rgb_color::from_str(bg_str).unwrapOrElse(
                     [&](const auto& msg) {
-                        reporter(&fg_str, msg);
+                        reporter(&bg_str,
+                                 lnav::console::user_message::error(
+                                     attr_line_t("invalid background color -- ")
+                                         .append_quoted(bg_str))
+                                     .with_reason(msg));
                         return rgb_color{};
                     });
 

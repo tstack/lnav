@@ -36,6 +36,7 @@
 
 #include <sys/types.h>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "base/file_range.hh"
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
@@ -49,9 +50,15 @@ struct opid_time_range {
     struct timeval otr_end;
 };
 
-using log_opid_map = std::unordered_map<std::string, opid_time_range>;
+using log_opid_map = std::unordered_map<
+    string_fragment,
+    opid_time_range,
+    frag_hasher,
+    std::equal_to<string_fragment>,
+    ArenaAlloc::Alloc<std::pair<const string_fragment, opid_time_range>>>;
 
 struct scan_batch_context {
+    ArenaAlloc::Alloc<char>& sbc_allocator;
     log_opid_map sbc_opids;
 };
 

@@ -16,6 +16,7 @@
            [1m$schema[0m [4m<schema-uri>[0m
            [1mtuning[0m[1m/[0m 
            [1mui[0m[1m/[0m 
+           [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
 [31m✘ error[0m: invalid JSON
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:3
@@ -30,6 +31,7 @@
            [1m$schema[0m [4m<schema-uri>[0m
            [1mtuning[0m[1m/[0m 
            [1mui[0m[1m/[0m 
+           [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
 [31m✘ error[0m: invalid JSON
  [31mreason[0m: parse error: premature EOF

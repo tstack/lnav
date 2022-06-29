@@ -1382,6 +1382,9 @@ looper()
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
             }
+            breadcrumb_view.do_update();
+            // These updates need to be done last so their readline views can
+            // put the cursor in the right place.
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::FILTER:
                 case ln_mode_t::SEARCH_FILTERS:
@@ -1396,7 +1399,6 @@ looper()
                 default:
                     break;
             }
-            breadcrumb_view.do_update();
             if (lnav_data.ld_mode != ln_mode_t::FILTER
                 && lnav_data.ld_mode != ln_mode_t::FILES)
             {
@@ -1889,6 +1891,34 @@ main(int argc, char* argv[])
     log_install_handlers();
     sql_install_logger();
 
+    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to create sqlite memory database\n");
+        exit(EXIT_FAILURE);
+    }
+
+    {
+        int register_collation_functions(sqlite3 * db);
+
+        register_sqlite_funcs(lnav_data.ld_db.in(), sqlite_registration_funcs);
+        register_collation_functions(lnav_data.ld_db.in());
+    }
+
+    register_environ_vtab(lnav_data.ld_db.in());
+    {
+        static auto vtab_modules
+            = injector::get<std::vector<std::shared_ptr<vtab_module_base>>>();
+
+        for (const auto& mod : vtab_modules) {
+            mod->create(lnav_data.ld_db.in());
+        }
+    }
+
+    register_views_vtab(lnav_data.ld_db.in());
+    register_regexp_vtab(lnav_data.ld_db.in());
+    register_xpath_vtab(lnav_data.ld_db.in());
+    register_fstat_vtab(lnav_data.ld_db.in());
+    lnav::events::register_events_tab(lnav_data.ld_db.in());
+
 #ifdef HAVE_LIBCURL
     curl_global_init(CURL_GLOBAL_DEFAULT);
 #endif
@@ -2245,11 +2275,6 @@ main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to create sqlite memory database\n");
-        exit(EXIT_FAILURE);
-    }
-
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         if ((sqlite3_set_authorizer(
                 lnav_data.ld_db.in(), sqlite_authorizer, nullptr))
@@ -2267,29 +2292,6 @@ main(int argc, char* argv[])
     setenv("TERMINFO_DIRS",
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
-
-    {
-        int register_collation_functions(sqlite3 * db);
-
-        register_sqlite_funcs(lnav_data.ld_db.in(), sqlite_registration_funcs);
-        register_collation_functions(lnav_data.ld_db.in());
-    }
-
-    register_environ_vtab(lnav_data.ld_db.in());
-    {
-        static auto vtab_modules
-            = injector::get<std::vector<std::shared_ptr<vtab_module_base>>>();
-
-        for (const auto& mod : vtab_modules) {
-            mod->create(lnav_data.ld_db.in());
-        }
-    }
-
-    register_views_vtab(lnav_data.ld_db.in());
-    register_regexp_vtab(lnav_data.ld_db.in());
-    register_xpath_vtab(lnav_data.ld_db.in());
-    register_fstat_vtab(lnav_data.ld_db.in());
-    lnav::events::register_events_tab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
@@ -2637,7 +2639,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             "error:%s:%ld:line did not match format %s\n",
                             lf->get_filename().c_str(),
                             line_number,
-                            fmt->get_pattern_name(line_number).c_str());
+                            fmt->get_pattern_path(line_number).c_str());
                     fprintf(stderr,
                             "error:%s:%ld:         line -- %s\n",
                             lf->get_filename().c_str(),

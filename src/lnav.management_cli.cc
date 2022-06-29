@@ -151,6 +151,7 @@ struct subcmd_format_t {
             um.with_note(
                 ext_lformat->elf_pattern_order
                 | lnav::itertools::map(&external_log_format::pattern::p_name)
+                | lnav::itertools::map(&intern_string_t::to_string)
                 | lnav::itertools::fold(
                     symbol_reducer, attr_line_t{"the available regexes are:"}));
 
@@ -169,6 +170,7 @@ struct subcmd_format_t {
         um.with_note(
             (ext_lformat->elf_pattern_order
              | lnav::itertools::map(&external_log_format::pattern::p_name)
+             | lnav::itertools::map(&intern_string_t::to_string)
              | lnav::itertools::similar_to(this->sf_regex_name)
              | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
                 .add_header("did you mean one of the following?"));
@@ -193,7 +195,8 @@ struct subcmd_format_t {
                 .append(": ")
                 .join(ext_format->elf_pattern_order
                           | lnav::itertools::map(
-                              &external_log_format::pattern::p_name),
+                              &external_log_format::pattern::p_name)
+                          | lnav::itertools::map(&intern_string_t::to_string),
                       VC_ROLE.value(role_t::VCR_SYMBOL),
                       ", ");
         }
@@ -512,7 +515,7 @@ struct subcmd_format_t {
         if (get_meta_res.is<lnav::session::regex101::no_entry>()) {
             lnav::session::regex101::insert_entry({
                 format_regex_pair.first->get_name().to_string(),
-                format_regex_pair.second->p_name,
+                format_regex_pair.second->p_name.to_string(),
                 upsert_info.cr_permalink_fragment,
                 upsert_info.cr_delete_code,
             });

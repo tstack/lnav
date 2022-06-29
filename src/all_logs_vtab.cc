@@ -60,7 +60,7 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 }
 
 void
-all_logs_vtab::extract(std::shared_ptr<logfile> lf,
+all_logs_vtab::extract(logfile* lf,
                        uint64_t line_number,
                        shared_buffer_ref& line,
                        std::vector<logline_value>& values)

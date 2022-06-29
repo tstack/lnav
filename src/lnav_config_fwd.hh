@@ -35,10 +35,12 @@
 #include <functional>
 #include <string>
 
+#include "base/lnav.console.hh"
+
 class lnav_config_listener {
 public:
-    using error_reporter
-        = const std::function<void(const void*, const std::string msg)>;
+    using error_reporter = const std::function<void(
+        const void*, const lnav::console::user_message& msg)>;
 
     lnav_config_listener()
     {
@@ -48,9 +50,7 @@ public:
 
     virtual ~lnav_config_listener() = default;
 
-    virtual void reload_config(error_reporter& reporter){
-
-    };
+    virtual void reload_config(error_reporter& reporter) {}
 
     static lnav_config_listener* LISTENER_LIST;
 

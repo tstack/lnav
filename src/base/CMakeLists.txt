@@ -54,7 +54,13 @@ add_library(
         snippet_highlighters.hh
         string_attr_type.hh
         strnatcmp.h
-        time_util.hh)
+        time_util.hh
+
+        ../third-party/xxHash/xxhash.h
+        ../third-party/xxHash/xxh_x86dispatch.h
+        ../third-party/xxHash/xxhash.c
+        ../third-party/xxHash/xxh_x86dispatch.c
+)
 
 target_include_directories(base PUBLIC . .. ../fmtlib ../third-party
         ${CMAKE_CURRENT_BINARY_DIR}/..)

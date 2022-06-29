@@ -23,6 +23,7 @@ if ! test -d lnav; then
 fi
 
 cd ~/github/lnav
+git restore .
 git pull --rebase
 
 if test -n "$SRC_VERSION"; then
@@ -33,12 +34,13 @@ saved_PATH=${PATH}
 export PATH=${FAKE_ROOT}/bin:${PATH}
 saved_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FAKE_ROOT}/lib
-./autogen.sh
+if test ! -f "configure"; then
+    ./autogen.sh
+    rm -rf ~/github/lbuild
+    mkdir -p ~/github/lbuild
 
-rm -rf ~/github/lbuild
-mkdir -p ~/github/lbuild
-
-cd ~/github/lbuild
+    cd ~/github/lbuild
+fi
 
 TARGET_FILE='/vagrant/lnav-linux.zip'
 if test x"${OS}" != x"FreeBSD"; then

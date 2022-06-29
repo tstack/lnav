@@ -58,6 +58,22 @@ struct format_detected {
 
 }  // namespace file
 
+namespace log {
+
+struct msg_detected {
+    std::string md_watch_name;
+    std::string md_filename;
+    std::string md_format;
+    std::string md_timestamp;
+    std::map<std::string, json_any_t> md_values;
+    std::string md_schema{SCHEMA_ID};
+
+    static const std::string SCHEMA_ID;
+    static const typed_json_path_container<msg_detected> handlers;
+};
+
+}  // namespace log
+
 int register_events_tab(sqlite3* db);
 
 namespace details {

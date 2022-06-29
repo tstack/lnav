@@ -185,11 +185,11 @@ textview_curses::reload_config(error_reporter& reporter)
                                      nullptr))
                 == nullptr)
             {
-                reporter(
-                    &hl_pair.second.hc_regex,
-                    fmt::format(FMT_STRING("invalid highlight regex: {} at {}"),
-                                errptr,
-                                eoff));
+                reporter(&hl_pair.second.hc_regex,
+                         lnav::console::user_message::error(fmt::format(
+                             FMT_STRING("invalid highlight regex: {} at {}"),
+                             errptr,
+                             eoff)));
                 continue;
             }
 
@@ -205,13 +205,21 @@ textview_curses::reload_config(error_reporter& reporter)
 
             auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
                 [&](const auto& msg) {
-                    reporter(&sc.sc_color, errmsg);
+                    reporter(&sc.sc_color,
+                             lnav::console::user_message::error(
+                                 attr_line_t("invalid color -- ")
+                                     .append_quoted(sc.sc_color))
+                                 .with_reason(msg));
                     invalid = true;
                     return styling::color_unit::make_empty();
                 });
             auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
                 [&](const auto& msg) {
-                    reporter(&sc.sc_background_color, errmsg);
+                    reporter(&sc.sc_background_color,
+                             lnav::console::user_message::error(
+                                 attr_line_t("invalid background color -- ")
+                                     .append_quoted(sc.sc_background_color))
+                                 .with_reason(msg));
                     invalid = true;
                     return styling::color_unit::make_empty();
                 });

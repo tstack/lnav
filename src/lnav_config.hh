@@ -48,6 +48,7 @@
 #include "lnav_config_fwd.hh"
 #include "log_level.hh"
 #include "logfile.cfg.hh"
+#include "logfile_sub_source.cfg.hh"
 #include "styling.hh"
 #include "sysclip.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
@@ -101,6 +102,7 @@ struct _lnav_config {
     lnav::logfile::config lc_logfile;
     tailer::config lc_tailer;
     sysclip::config lc_sysclip;
+    logfile_sub_source_ns::config lc_log_source;
 };
 
 extern struct _lnav_config lnav_config;

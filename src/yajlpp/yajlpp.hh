@@ -72,6 +72,10 @@ yajl_gen_string(yajl_gen hand, const std::string& str)
         hand, (const unsigned char*) str.c_str(), str.length());
 }
 
+yajl_gen_status yajl_gen_tree(yajl_gen hand, yajl_val val);
+
+void yajl_cleanup_tree(yajl_val val);
+
 template<typename T>
 struct positioned_property {
     intern_string_t pp_path;
@@ -206,6 +210,8 @@ struct json_path_handler_base {
         jph_obj_provider;
     std::function<void(void* root, std::vector<std::string>& paths_out)>
         jph_path_provider;
+    std::function<void(const yajlpp_provider_context& pe, void* root)>
+        jph_obj_deleter;
     std::function<size_t(void* root)> jph_size_provider;
     const char* jph_synopsis{""};
     const char* jph_description{""};
@@ -241,6 +247,7 @@ struct json_path_handler_base {
                                   const std::string& value_str,
                                   const pcrepp::compile_error& ce) const;
 
+    attr_line_t get_help_text(const std::string& full_path) const;
     attr_line_t get_help_text(yajlpp_parse_context* ypc) const;
 };
 
@@ -425,6 +432,7 @@ private:
     static int array_start(void* ctx);
     static int array_end(void* ctx);
     static int handle_unused(void* ctx);
+    static int handle_unused_or_delete(void* ctx);
 };
 
 class yajlpp_generator {

@@ -67,6 +67,8 @@ struct find {
     T f_value;
 };
 
+struct first {};
+
 struct second {};
 
 template<typename F>
@@ -153,6 +155,12 @@ find(T value)
     return details::find<T>{
         value,
     };
+}
+
+inline details::first
+first()
+{
+    return details::first{};
 }
 
 inline details::second
@@ -344,6 +352,19 @@ operator|(const C& in, const lnav::itertools::details::nth indexer)
     }
 
     return nonstd::nullopt;
+}
+
+template<typename C>
+std::vector<typename C::key_type>
+operator|(const C& in, const lnav::itertools::details::first indexer)
+{
+    std::vector<typename C::key_type> retval;
+
+    for (const auto& pair : in) {
+        retval.emplace_back(pair.first);
+    }
+
+    return retval;
 }
 
 template<typename C>

@@ -1,0 +1,6 @@
+/log/watch-expressions = {
+    "http-errors": {
+        "expr": ":sc_status >= 400",
+        "enabled": true
+    }
+}

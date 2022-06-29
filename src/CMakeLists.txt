@@ -288,6 +288,7 @@ add_library(
         lnav_commands.cc
         lnav_config.cc
         lnav_util.cc
+        log.watch.cc
         log_accel.cc
         log_actions.cc
         log_data_helper.cc
@@ -391,6 +392,7 @@ add_library(
         lnav.management_cli.hh
         lnav_config.hh
         lnav_config_fwd.hh
+        log.watch.hh
         log_actions.hh
         log_data_helper.hh
         log_data_table.hh
@@ -401,6 +403,7 @@ add_library(
         log_gutter_source.hh
         log_level.hh
         log_search_table.hh
+        logfile_sub_source.cfg.hh
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
@@ -471,6 +474,9 @@ add_library(
         ghc/fs_std_impl.hpp
         ww898/cp_utf8.hpp
         log_level_re.cc
+
+        third-party/ArenaAlloc/arenaalloc.h
+        third-party/ArenaAlloc/arenaallocimpl.h
 
         third-party/CLI/StringTools.hpp
         third-party/CLI/App.hpp

@@ -100,6 +100,7 @@ LDADD = \
     $(CONFIG_OBJS) \
     $(TEXT2C_OBJS) \
     $(DUMMY_OBJS) \
+    ../src/lnav.events.$(OBJEXT) \
     $(top_builddir)/src/libdiag.a \
     $(top_builddir)/src/libdatascanner.a \
     $(top_builddir)/src/formats/logfmt/liblogfmt.a \
@@ -464,6 +465,7 @@ distclean-local:
 	$(RM_V)rm -rf test-config
 	$(RM_V)rm -rf .lnav
 	$(RM_V)rm -rf regex101-home
+	$(RM_V)rm -rf events-home
 	$(RM_V)rm -rf ../installer-test-home
 
 expected:

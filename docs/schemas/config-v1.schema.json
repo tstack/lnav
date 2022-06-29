@@ -637,6 +637,40 @@
             },
             "additionalProperties": false
         },
+        "log": {
+            "description": "Log message settings",
+            "title": "/log",
+            "type": "object",
+            "properties": {
+                "watch-expressions": {
+                    "description": "Log message watch expressions",
+                    "title": "/log/watch-expressions",
+                    "type": "object",
+                    "patternProperties": {
+                        "([\\w\\-]+)": {
+                            "description": "A log message watch expression",
+                            "title": "/log/watch-expressions/<watch_name>",
+                            "type": "object",
+                            "properties": {
+                                "expr": {
+                                    "title": "/log/watch-expressions/<watch_name>/expr",
+                                    "description": "The SQL expression to execute for each input line. If expression evaluates to true, a 'log message detected' event will be published.",
+                                    "type": "string"
+                                },
+                                "enabled": {
+                                    "title": "/log/watch-expressions/<watch_name>/enabled",
+                                    "description": "Indicates whether or not this expression should be evaluated during log processing.",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
         "global": {
             "description": "Global variable definitions",
             "title": "/global",

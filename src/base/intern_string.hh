@@ -562,4 +562,11 @@ to_string_fragment(const std::string& s)
     return string_fragment(s.c_str(), 0, s.length());
 }
 
+struct frag_hasher {
+    size_t operator()(const string_fragment& sf) const
+    {
+        return hash_str(sf.data(), sf.length());
+    }
+};
+
 #endif

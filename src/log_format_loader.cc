@@ -121,7 +121,7 @@ pattern_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
     }
 
     if (pat->p_config_path.empty()) {
-        pat->p_name = regex_name;
+        pat->p_name = intern_string::lookup(regex_name);
         pat->p_config_path = fmt::format(
             FMT_STRING("/{}/regex/{}"), elf->get_name(), regex_name);
     }

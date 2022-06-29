@@ -174,7 +174,7 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 }
 
 void
-log_data_table::extract(std::shared_ptr<logfile> lf,
+log_data_table::extract(logfile* lf,
                         uint64_t line_number,
                         shared_buffer_ref& line,
                         std::vector<logline_value>& values)

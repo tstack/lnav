@@ -63,14 +63,15 @@ static const char* LOG_COLUMNS = R"(  (
 
 static const char* LOG_FOOTER_COLUMNS = R"(
   -- END Format-specific fields
-  log_opid        TEXT HIDDEN,                       -- The message's OPID
-  log_format      TEXT HIDDEN,                       -- The name of the log file format
-  log_time_msecs  INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
-  log_path        TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
-  log_unique_path TEXT HIDDEN COLLATE naturalnocase, -- The unique portion of the path this message is from
-  log_text        TEXT HIDDEN,                       -- The full text of the log message
-  log_body        TEXT HIDDEN,                       -- The body of the log message
-  log_raw_text    TEXT HIDDEN                        -- The raw text from the log file
+  log_opid         TEXT HIDDEN,                       -- The message's OPID
+  log_format       TEXT HIDDEN,                       -- The name of the log file format
+  log_format_regex TEXT HIDDEN,                       -- The name of the regex used to parse this log message
+  log_time_msecs   INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
+  log_path         TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
+  log_unique_path  TEXT HIDDEN COLLATE naturalnocase, -- The unique portion of the path this message is from
+  log_text         TEXT HIDDEN,                       -- The full text of the log message
+  log_body         TEXT HIDDEN,                       -- The body of the log message
+  log_raw_text     TEXT HIDDEN                        -- The raw text from the log file
 );
 )";
 
@@ -182,7 +183,7 @@ log_vtab_impl::get_foreign_keys(std::vector<std::string>& keys_inout) const
 }
 
 void
-log_vtab_impl::extract(std::shared_ptr<logfile> lf,
+log_vtab_impl::extract(logfile* lf,
                        uint64_t line_number,
                        shared_buffer_ref& line,
                        std::vector<logline_value>& values)
@@ -197,7 +198,7 @@ bool
 log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
 {
     content_line_t cl(lss.at(lc.lc_curr_line));
-    std::shared_ptr<logfile> lf = lss.find(cl);
+    auto* lf = lss.find_file_ptr(cl);
     auto lf_iter = lf->begin() + cl;
 
     if (!lf_iter->is_message()) {
@@ -376,7 +377,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
     content_line_t cl(vt->lss->at(vc->log_cursor.lc_curr_line));
     uint64_t line_number;
     auto ld = vt->lss->find_data(cl, line_number);
-    auto lf = (*ld)->get_file();
+    auto lf = (*ld)->get_file_ptr();
     auto ll = lf->begin() + line_number;
 
     require(col >= 0);
@@ -616,24 +617,33 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case 2: {
-                        sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                        auto pat_name
+                            = lf->get_format()->get_pattern_name(line_number);
+                        sqlite3_result_text(ctx,
+                                            pat_name.get(),
+                                            pat_name.size(),
+                                            SQLITE_STATIC);
                         break;
                     }
                     case 3: {
+                        sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                        break;
+                    }
+                    case 4: {
                         const auto& fn = lf->get_filename();
 
                         sqlite3_result_text(
                             ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
                         break;
                     }
-                    case 4: {
+                    case 5: {
                         const auto& fn = lf->get_unique_path();
 
                         sqlite3_result_text(
                             ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
                         break;
                     }
-                    case 5: {
+                    case 6: {
                         shared_buffer_ref line;
 
                         lf->read_full_message(ll, line);
@@ -643,7 +653,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                             SQLITE_TRANSIENT);
                         break;
                     }
-                    case 6: {
+                    case 7: {
                         if (vc->line_values.empty()) {
                             lf->read_full_message(ll, vc->log_msg);
                             vt->vi->extract(
@@ -666,7 +676,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
                         break;
                     }
-                    case 7: {
+                    case 8: {
                         auto read_res = lf->read_raw_message(ll);
 
                         if (read_res.isErr()) {
@@ -988,9 +998,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
                                 continue;
                             }
-                            const auto* opid
+                            const auto* opid_str
                                 = (const char*) sqlite3_value_text(argv[lpc]);
                             auto opid_len = sqlite3_value_bytes(argv[lpc]);
+                            auto opid = string_fragment{opid_str, 0, opid_len};
                             for (const auto& file_data : *vt->lss) {
                                 if (file_data->get_file_ptr() == nullptr) {
                                     continue;
@@ -1016,7 +1027,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
                             opid_val = log_cursor::opid_hash{
                                 static_cast<unsigned int>(
-                                    hash_str(opid, opid_len))};
+                                    hash_str(opid_str, opid_len))};
                             log_debug("filter opid %d", opid_val.value().value);
                             break;
                         }
@@ -1480,7 +1491,7 @@ log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
     }
 
     auto cl = content_line_t(lss.at(lc.lc_curr_line));
-    auto lf = lss.find(cl);
+    auto* lf = lss.find_file_ptr(cl);
     auto lf_iter = lf->begin() + cl;
     uint8_t mod_id = lf_iter->get_module_id();
 

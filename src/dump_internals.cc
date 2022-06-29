@@ -48,6 +48,7 @@ dump_internals(const char* internals_dir)
              &root_format_handler,
              &lnav::events::file::open::handlers,
              &lnav::events::file::format_detected::handlers,
+             &lnav::events::log::msg_detected::handlers,
          })
     {
         dump_schema_to(*handlers, internals_dir);

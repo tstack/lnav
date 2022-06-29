@@ -1,0 +1,6 @@
+[31m✘ error[0m: unknown configuration option -- /bad/path
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mreset-config[0m[37m[40m /bad/path                 [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mreset-config[0m[4m [0m[4moption[0m
+         ══════════════════════════════════════════════════════════════════════
+           Reset the configuration option to its default value

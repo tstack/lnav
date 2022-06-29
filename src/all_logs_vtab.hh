@@ -46,7 +46,7 @@ public:
 
     void get_columns(std::vector<vtab_column>& cols) const override;
 
-    void extract(std::shared_ptr<logfile> lf,
+    void extract(logfile* lf,
                  uint64_t line_number,
                  shared_buffer_ref& line,
                  std::vector<logline_value>& values) override;

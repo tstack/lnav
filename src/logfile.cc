@@ -47,6 +47,7 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "lnav_util.hh"
+#include "log.watch.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
 
@@ -263,7 +264,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     }
 
     switch (found) {
-        case log_format::SCAN_MATCH:
+        case log_format::SCAN_MATCH: {
             if (!this->lf_index.empty()) {
                 this->lf_index.back().set_valid_utf(li.li_valid_utf);
             }
@@ -273,8 +274,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 retval = true;
             }
             if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
-                logline& second_to_last = this->lf_index[prescan_size - 1];
-                logline& latest = this->lf_index[prescan_size];
+                auto& second_to_last = this->lf_index[prescan_size - 1];
+                auto& latest = this->lf_index[prescan_size];
 
                 if (!second_to_last.is_ignored() && latest < second_to_last) {
                     if (this->lf_format->lf_time_ordered) {
@@ -282,7 +283,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         for (size_t lpc = prescan_size;
                              lpc < this->lf_index.size();
                              lpc++) {
-                            logline& line_to_update = this->lf_index[lpc];
+                            auto& line_to_update = this->lf_index[lpc];
 
                             line_to_update.set_time_skew(true);
                             line_to_update.set_time(second_to_last.get_time());
@@ -295,6 +296,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 }
             }
             break;
+        }
         case log_format::SCAN_NO_MATCH: {
             log_level_t last_level = LEVEL_UNKNOWN;
             time_t last_time = this->lf_index_time;
@@ -460,7 +462,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             log_debug(
                 "loading file... %s:%d", this->lf_filename.c_str(), begin_size);
         }
-        scan_batch_context sbc;
+        scan_batch_context sbc{this->lf_allocator};
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -559,6 +561,17 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             if (begin_size == 0 && !has_format
                 && li.li_file_range.fr_offset > 16 * 1024) {
                 break;
+            }
+#if 0
+            if (this->lf_line_buffer.is_likely_to_flush(prev_range)
+                && this->lf_index.size() - begin_size > 1)
+            {
+                log_debug("likely to flush, breaking");
+                break;
+            }
+#endif
+            if (this->lf_format && !this->back().is_continued()) {
+                lnav::log::watch::eval_with(*this, this->end() - 1);
             }
 
             limit -= 1;

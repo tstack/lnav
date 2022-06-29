@@ -24,6 +24,11 @@ lnav v0.10.2:
        within lnav (e.g. opening a file, format is detected).  You
        can then add SQLite TRIGGERs to this table that can perform a
        task by updating other tables.
+     * Log messages can now be detected automatically via "watch
+       expressions".  These are SQL expressions that are executed for
+       each log message.  If the expressions evaluates to true, an
+       event is published to the "lnav_events" table that includes the
+       message contents.
      * Added a "top_meta" column to the lnav_views table that contains
        metadata related to the top line in the view.
      * Added a "log_opid" hidden column to all log tables that contains

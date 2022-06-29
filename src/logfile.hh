@@ -44,6 +44,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "base/lnav_log.hh"
 #include "base/result.h"
 #include "byte_array.hh"
@@ -96,8 +97,8 @@ class logfile
     : public unique_path_source
     , public std::enable_shared_from_this<logfile> {
 public:
-    typedef std::vector<logline>::iterator iterator;
-    typedef std::vector<logline>::const_iterator const_iterator;
+    using iterator = std::vector<logline>::iterator;
+    using const_iterator = std::vector<logline>::const_iterator;
 
     /**
      * Construct a logfile with the given arguments.
@@ -416,6 +417,8 @@ private:
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     safe_opid_map lf_opids;
+    size_t lf_watch_count{0};
+    ArenaAlloc::Alloc<char> lf_allocator;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };

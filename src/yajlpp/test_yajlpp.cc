@@ -129,4 +129,35 @@ main(int argc, char* argv[])
 
         assert(FOO_COUNT == 1);
     }
+
+    {
+        const char* TEST_INPUT = R"({
+    "msg": "Hello, World!",
+    "parent1": {
+        "child": {}
+    },
+    "parent2": {
+        "child": {"name": "steve"}
+    },
+    "parent3": {
+        "child": {},
+        "sibling": {"name": "mongoose"}
+    }
+})";
+        const std::string EXPECTED_OUTPUT
+            = "{\"msg\":\"Hello, "
+              "World!\",\"parent2\":{\"child\":{\"name\":\"steve\"}},"
+              "\"parent3\":{\"sibling\":{\"name\":\"mongoose\"}}}";
+
+        char errbuf[1024];
+
+        auto tree = yajl_tree_parse(TEST_INPUT, errbuf, sizeof(errbuf));
+        yajl_cleanup_tree(tree);
+
+        yajlpp_gen gen;
+
+        yajl_gen_tree(gen, tree);
+        auto actual = gen.to_string_fragment().to_string();
+        assert(EXPECTED_OUTPUT == actual);
+    }
 }

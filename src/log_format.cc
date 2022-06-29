@@ -853,12 +853,18 @@ external_log_format::scan(logfile& lf,
         }
 
         if (opid_cap != nullptr && !opid_cap->empty()) {
-            auto opid_str = pi.get_substr(opid_cap);
+            auto opid_sf = pi.get_string_fragment(opid_cap);
             {
-                auto opid_iter = sbc.sbc_opids.find(opid_str);
+                auto opid_iter = sbc.sbc_opids.find(opid_sf);
 
                 if (opid_iter == sbc.sbc_opids.end()) {
-                    sbc.sbc_opids[opid_str] = opid_time_range{log_tv, log_tv};
+                    auto* opid_mem
+                        = sbc.sbc_allocator.allocate(opid_sf.length() + 1);
+                    memcpy(opid_mem, opid_sf.data(), opid_sf.length());
+                    opid_mem[opid_sf.length()] = '\0';
+                    auto otr = opid_time_range{log_tv, log_tv};
+                    sbc.sbc_opids.emplace(
+                        string_fragment{opid_mem, 0, opid_sf.length()}, otr);
                 } else {
                     opid_iter->second.otr_end = log_tv;
                 }
@@ -1044,9 +1050,12 @@ external_log_format::annotate(uint64_t line_number,
         return;
     }
 
+    values.reserve(this->elf_value_defs.size());
+
     int pat_index = this->pattern_index_for_line(line_number);
     pattern& pat = *this->elf_pattern_order[pat_index];
 
+    sa.reserve(pat.p_pcre->get_capture_count());
     if (!pat.p_pcre->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
         // A continued line still needs a body.
         lr.lr_start = 0;
@@ -2043,7 +2052,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     errors.emplace_back(
                         lnav::console::user_message::error(
                             attr_line_t("invalid pattern: ")
-                                .append_quoted(lnav::roles::symbol(pat.p_name)))
+                                .append_quoted(lnav::roles::symbol(
+                                    pat.p_name.to_string())))
                             .with_reason("pattern does not match entire "
                                          "multiline message")
                             .with_snippet(elf_sample.s_line.to_snippet())
@@ -2056,7 +2066,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (!found && !this->elf_pattern_order.empty()) {
-            std::vector<std::pair<ssize_t, std::string>> partial_indexes;
+            std::vector<std::pair<ssize_t, intern_string_t>> partial_indexes;
             attr_line_t notes;
             size_t max_name_width = 0;
 
@@ -2083,7 +2093,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         notes.append("   ")
                             .append(part_pair.first, ' ')
                             .append("^ "_snippet_border)
-                            .append(lnav::roles::symbol(part_pair.second))
+                            .append(lnav::roles::symbol(
+                                part_pair.second.to_string()))
                             .append(" matched up to here"_snippet_border)
                             .append("\n");
                     }
@@ -2435,7 +2446,7 @@ public:
         return false;
     };
 
-    virtual void extract(std::shared_ptr<logfile> lf,
+    virtual void extract(logfile* lf,
                          uint64_t line_number,
                          shared_buffer_ref& line,
                          std::vector<logline_value>& values)
@@ -2618,6 +2629,18 @@ external_log_format::json_append(
     }
 }
 
+intern_string_t
+external_log_format::get_pattern_name(uint64_t line_number) const
+{
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+        static auto structured = intern_string::lookup("structured");
+
+        return structured;
+    }
+    int pat_index = this->pattern_index_for_line(line_number);
+    return this->elf_pattern_order[pat_index]->p_name;
+}
+
 int
 log_format::pattern_index_for_line(uint64_t line_number) const
 {
@@ -2636,10 +2659,20 @@ log_format::pattern_index_for_line(uint64_t line_number) const
 }
 
 std::string
-log_format::get_pattern_name(uint64_t line_number) const
+log_format::get_pattern_path(uint64_t line_number) const
 {
     int pat_index = this->pattern_index_for_line(line_number);
     return fmt::format(FMT_STRING("builtin ({})"), pat_index);
+}
+
+intern_string_t
+log_format::get_pattern_name(uint64_t line_number) const
+{
+    char pat_str[128];
+
+    int pat_index = this->pattern_index_for_line(line_number);
+    snprintf(pat_str, sizeof(pat_str), "builtin (%d)", pat_index);
+    return intern_string::lookup(pat_str);
 }
 
 std::shared_ptr<log_format>

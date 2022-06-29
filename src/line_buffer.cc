@@ -52,6 +52,7 @@
 #include "fmtlib/fmt/format.h"
 #include "line_buffer.hh"
 
+static const ssize_t INITIAL_REQUEST_SIZE = 16 * 1024;
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
 static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
@@ -655,7 +656,7 @@ line_buffer::load_next_line(file_range prev_line)
 
     auto offset = prev_line.next_offset();
     ssize_t request_size = this->lb_buffer_size == 0 ? DEFAULT_INCREMENT
-                                                     : 16 * 1024;
+                                                     : INITIAL_REQUEST_SIZE;
     retval.li_file_range.fr_offset = offset;
     while (!done) {
         char *line_start, *lf;
@@ -837,4 +838,21 @@ line_buffer::gz_indexed::indexDict::apply(z_streamp s)
     s->total_out = this->out;
     inflateSetDictionary(s, this->index, GZ_WINSIZE);
     return ret;
+}
+
+bool
+line_buffer::is_likely_to_flush(file_range prev_line)
+{
+    auto avail = this->get_available();
+
+    if (prev_line.fr_offset < avail.fr_offset) {
+        return true;
+    }
+    auto prev_line_end = prev_line.fr_offset + prev_line.fr_size;
+    auto avail_end = avail.fr_offset + avail.fr_size;
+    if (avail_end < prev_line_end) {
+        return true;
+    }
+    auto remaining = avail_end - prev_line_end;
+    return remaining < INITIAL_REQUEST_SIZE;
 }

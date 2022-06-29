@@ -35,6 +35,7 @@
 #include <chrono>
 
 #include "config.h"
+#include "mapbox/variant.hpp"
 #include "relative_time.hh"
 #include "view_curses.hh"
 #include "yajlpp.hh"
@@ -65,6 +66,13 @@ assign(Container<std::string>& lhs, const string_fragment& rhs)
 
     return lhs;
 }
+
+struct json_null_t {
+    bool operator==(const json_null_t& other) const { return true; }
+};
+
+using json_any_t
+    = mapbox::util::variant<json_null_t, bool, int64_t, double, std::string>;
 
 struct json_path_container;
 
@@ -226,6 +234,17 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_path_provider
             = [provider](void* root, std::vector<std::string>& paths_out) {
                   provider((T*) root, paths_out);
+              };
+        return *this;
+    }
+
+    template<typename T>
+    json_path_handler& with_obj_deleter(
+        void (*provider)(const yajlpp_provider_context& pc, T* root))
+    {
+        this->jph_obj_deleter
+            = [provider](const yajlpp_provider_context& ypc, void* root) {
+                  provider(ypc, (T*) root);
               };
         return *this;
     }
@@ -684,6 +703,77 @@ struct json_path_handler : public json_path_handler_base {
                 for (const auto& pair : field) {
                     gen(pair.first);
                     gen(pair.second);
+                }
+            }
+
+            return yajl_gen_status_ok;
+        };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<
+                 LastIs<std::map<std::string, json_any_t>, Args...>::value,
+                 bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(bool_field_cb);
+        this->jph_bool_cb = [args...](yajlpp_parse_context* ypc, int val) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            auto key = ypc->get_path_fragment(-1);
+
+            json_path_handler::get_field(obj, args...)[key] = val ? true
+                                                                  : false;
+
+            return 1;
+        };
+        this->add_cb(int_field_cb);
+        this->jph_integer_cb
+            = [args...](yajlpp_parse_context* ypc, long long val) {
+                  auto* obj = ypc->ypc_obj_stack.top();
+                  auto key = ypc->get_path_fragment(-1);
+
+                  json_path_handler::get_field(obj, args...)[key] = val;
+
+                  return 1;
+              };
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            auto key = ypc->get_path_fragment(-1);
+
+            json_path_handler::get_field(obj, args...)[key]
+                = std::string((const char*) str, len);
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            {
+                yajlpp_generator gen(handle);
+
+                for (const auto& pair : field) {
+                    gen(pair.first);
+                    pair.second.match([&gen](json_null_t v) { gen(); },
+                                      [&gen](bool v) { gen(v); },
+                                      [&gen](int64_t v) { gen(v); },
+                                      [&gen](double v) { gen(v); },
+                                      [&gen](const std::string& v) { gen(v); });
                 }
             }
 

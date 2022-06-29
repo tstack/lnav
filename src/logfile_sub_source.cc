@@ -36,12 +36,17 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
+#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "k_merge_tree.h"
+#include "lnav.events.hh"
 #include "log_accel.hh"
+#include "logfile_sub_source.cfg.hh"
+#include "readline_highlighters.hh"
 #include "relative_time.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -650,7 +655,7 @@ logfile_sub_source::rebuild_index(
     bool time_left = true;
     for (const auto file_index : file_order) {
         auto& ld = *(this->lss_files[file_index]);
-        auto lf = ld.get_file_ptr();
+        auto* lf = ld.get_file_ptr();
 
         if (lf == nullptr) {
             if (ld.ld_lines_indexed > 0) {
@@ -760,7 +765,7 @@ logfile_sub_source::rebuild_index(
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
              iter++) {
             logfile_data& ld = *(*iter);
-            auto lf = ld.get_file_ptr();
+            auto* lf = ld.get_file_ptr();
 
             if (lf == nullptr) {
                 continue;
@@ -824,7 +829,7 @@ logfile_sub_source::rebuild_index(
         logline_cmp line_cmper(*this);
 
         for (auto& ld : this->lss_files) {
-            auto lf = ld->get_file_ptr();
+            auto* lf = ld->get_file_ptr();
 
             if (lf == nullptr) {
                 continue;
@@ -839,7 +844,7 @@ logfile_sub_source::rebuild_index(
 
         if (full_sort) {
             for (auto& ld : this->lss_files) {
-                auto lf = ld->get_file_ptr();
+                auto* lf = ld->get_file_ptr();
 
                 if (lf == nullptr) {
                     continue;
@@ -875,8 +880,8 @@ logfile_sub_source::rebuild_index(
 
             for (iter = this->lss_files.begin(); iter != this->lss_files.end();
                  iter++) {
-                logfile_data* ld = iter->get();
-                auto lf = ld->get_file_ptr();
+                auto* ld = iter->get();
+                auto* lf = ld->get_file_ptr();
                 if (lf == nullptr) {
                     continue;
                 }
@@ -921,7 +926,7 @@ logfile_sub_source::rebuild_index(
 
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
              iter++) {
-            auto lf = (*iter)->get_file_ptr();
+            auto* lf = (*iter)->get_file_ptr();
 
             if (lf == nullptr) {
                 continue;
@@ -951,7 +956,7 @@ logfile_sub_source::rebuild_index(
                 continue;
             }
 
-            auto lf = (*ld)->get_file_ptr();
+            auto* lf = (*ld)->get_file_ptr();
             auto line_iter = lf->begin() + line_number;
 
             if (line_iter->is_ignored()) {
@@ -1369,21 +1374,22 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
         return Ok(false);
     }
 
-    auto lf = (*ld)->get_file_ptr();
+    auto* lf = (*ld)->get_file_ptr();
     char timestamp_buffer[64];
     shared_buffer_ref sbr, raw_sbr;
     lf->read_full_message(ll, sbr);
     auto format = lf->get_format();
     string_attrs_t sa;
     std::vector<logline_value> values;
-    format->annotate(std::distance(lf->cbegin(), ll), sbr, sa, values);
+    auto line_number = std::distance(lf->cbegin(), ll);
+    format->annotate(line_number, sbr, sa, values);
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
 
     auto count = sqlite3_bind_parameter_count(stmt);
     for (int lpc = 0; lpc < count; lpc++) {
-        auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+        const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
 
         if (name[0] == '$') {
             const char* env_value;
@@ -1465,6 +1471,12 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
                               SQLITE_STATIC);
             continue;
         }
+        if (strcmp(name, ":log_format_regex") == 0) {
+            const auto pat_name = format->get_pattern_name(line_number);
+            sqlite3_bind_text(
+                stmt, lpc + 1, pat_name.get(), pat_name.size(), SQLITE_STATIC);
+            continue;
+        }
         if (strcmp(name, ":log_path") == 0) {
             const auto& filename = lf->get_filename();
             sqlite3_bind_text(stmt,
@@ -1491,7 +1503,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
         if (strcmp(name, ":log_body") == 0) {
             auto body_attr_opt = get_string_attr(sa, SA_BODY);
             if (body_attr_opt) {
-                auto& sar = body_attr_opt.value().saw_string_attr->sa_range;
+                const auto& sar
+                    = body_attr_opt.value().saw_string_attr->sa_range;
 
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
@@ -1506,7 +1519,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
         if (strcmp(name, ":log_opid") == 0) {
             auto opid_attr_opt = get_string_attr(sa, logline::L_OPID);
             if (opid_attr_opt) {
-                auto& sar = opid_attr_opt.value().saw_string_attr->sa_range;
+                const auto& sar
+                    = opid_attr_opt.value().saw_string_attr->sa_range;
 
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
@@ -2174,7 +2188,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         file_data->get_file_ptr()->get_opids());
 
                     for (const auto& pair : *r_opid_map) {
-                        retval.emplace_back(pair.first);
+                        retval.emplace_back(pair.first.to_string());
                     }
                 }
 

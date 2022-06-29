@@ -34,3 +34,6 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -I ${test_dir}/bad-config2 \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -nN \
+    -c ":reset-config /bad/path"

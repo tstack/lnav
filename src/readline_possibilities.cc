@@ -430,8 +430,10 @@ add_config_possibilities()
                     visited.insert(named_iter->pnc_name);
                 }
 
-                rc->add_possibility(
-                    ln_mode_t::COMMAND, named_iter->pnc_name, path);
+                ghc::filesystem::path path_obj(path);
+                rc->add_possibility(ln_mode_t::COMMAND,
+                                    named_iter->pnc_name,
+                                    path_obj.parent_path().filename().string());
             }
         } else {
             rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);

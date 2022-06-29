@@ -47,6 +47,7 @@
 #include "bookmarks.hh"
 #include "document.sections.hh"
 #include "filter_observer.hh"
+#include "lnav_config_fwd.hh"
 #include "log_accel.hh"
 #include "log_format.hh"
 #include "logfile.hh"
@@ -666,6 +667,7 @@ public:
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
         size_t ld_lines_indexed{0};
+        size_t ld_lines_watched{0};
         bool ld_visible;
     };
 

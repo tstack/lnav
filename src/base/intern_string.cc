@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "xxHash/xxhash.h"
 
 const static int TABLE_SIZE = 4095;
 
@@ -68,14 +69,7 @@ intern_string::get_table_lifetime()
 unsigned long
 hash_str(const char* str, size_t len)
 {
-    unsigned long retval = 5381;
-
-    for (size_t lpc = 0; lpc < len; lpc++) {
-        /* retval * 33 + c */
-        retval = ((retval << 5) + retval) + (unsigned char) str[lpc];
-    }
-
-    return retval;
+    return XXH3_64bits(str, len);
 }
 
 const intern_string*

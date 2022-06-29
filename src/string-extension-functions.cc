@@ -45,20 +45,19 @@ typedef struct {
 } cache_entry;
 
 static cache_entry*
-find_re(const char* re)
+find_re(string_fragment re)
 {
-    using safe_cache = safe::Safe<std::unordered_map<std::string, cache_entry>>;
-    static safe_cache CACHE;
+    using re_cache_t
+        = std::unordered_map<string_fragment, cache_entry, frag_hasher>;
+    static thread_local re_cache_t cache;
 
-    safe::WriteAccess<safe_cache> wcache(CACHE);
-    std::string re_str = re;
-    auto iter = wcache->find(re_str);
-
-    if (iter == wcache->end()) {
+    auto iter = cache.find(re);
+    if (iter == cache.end()) {
         cache_entry c;
 
-        c.re2 = std::make_shared<pcrepp>(re_str);
-        auto pair = wcache->insert(std::make_pair(re_str, c));
+        c.re2 = std::make_shared<pcrepp>(re.to_string());
+        auto pair = cache.insert(
+            std::make_pair(string_fragment{c.re2->get_pattern()}, c));
 
         iter = pair.first;
     }
@@ -67,7 +66,7 @@ find_re(const char* re)
 }
 
 static bool
-regexp(const char* re, const char* str)
+regexp(string_fragment re, string_fragment str)
 {
     cache_entry* reobj = find_re(re);
     pcre_context_static<30> pc;
@@ -77,7 +76,7 @@ regexp(const char* re, const char* str)
 }
 
 static util::variant<int64_t, double, const char*, string_fragment, json_string>
-regexp_match(const char* re, const char* str)
+regexp_match(string_fragment re, const char* str)
 {
     cache_entry* reobj = find_re(re);
     pcre_context_static<30> pc;
@@ -253,7 +252,7 @@ logfmt2json(string_fragment line)
 }
 
 static std::string
-regexp_replace(const char* str, const char* re, const char* repl)
+regexp_replace(const char* str, string_fragment re, const char* repl)
 {
     cache_entry* reobj = find_re(re);
 

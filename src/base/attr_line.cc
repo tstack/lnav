@@ -430,6 +430,12 @@ attr_line_t::rtrim()
     auto index = this->al_string.length();
 
     for (; index > 0; index--) {
+        if (find_string_attr_containing(
+                this->al_attrs, &SA_PREFORMATTED, index - 1)
+            != this->al_attrs.end())
+        {
+            break;
+        }
         if (!isspace(this->al_string[index - 1])) {
             break;
         }
@@ -446,6 +452,10 @@ attr_line_t::erase(size_t pos, size_t len)
     if (len == std::string::npos) {
         len = this->al_string.size() - pos;
     }
+    if (len == 0) {
+        return *this;
+    }
+
     this->al_string.erase(pos, len);
 
     shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
@@ -501,7 +511,11 @@ line_range::shift(int32_t start, int32_t amount)
         }
     } else if (this->lr_end != -1) {
         if (start < this->lr_end) {
-            this->lr_end = std::max(this->lr_start, this->lr_end + amount);
+            if (amount < 0 && amount < (start - this->lr_end)) {
+                this->lr_end = start;
+            } else {
+                this->lr_end = std::max(this->lr_start, this->lr_end + amount);
+            }
         }
     }
 

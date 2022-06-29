@@ -248,7 +248,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     if (!lf->get_pattern_regex(cl).empty()) {
         attr_line_t pattern_al;
         std::string& pattern_str = pattern_al.get_string();
-        pattern_str = " Pattern: " + lf->get_pattern_name(cl) + " = ";
+        pattern_str = " Pattern: " + lf->get_pattern_path(cl) + " = ";
         int skip = pattern_str.length();
         pattern_str += lf->get_pattern_regex(cl);
         lnav::snippets::regex_highlighter(

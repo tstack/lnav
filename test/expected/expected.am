@@ -206,6 +206,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_config.sh_2765ea0d4c037b8c935840604edb0ae796c97a04.out \
     $(srcdir)/%reldir%/test_config.sh_5105c29004e297521310ca0bd0fd560b01c2c549.err \
     $(srcdir)/%reldir%/test_config.sh_5105c29004e297521310ca0bd0fd560b01c2c549.out \
+    $(srcdir)/%reldir%/test_config.sh_5fd9fbccc35e9b06abdd913da0c16bdb306b926e.err \
+    $(srcdir)/%reldir%/test_config.sh_5fd9fbccc35e9b06abdd913da0c16bdb306b926e.out \
     $(srcdir)/%reldir%/test_config.sh_b08f7523659d1c12f0e59920cd40d17d4a83b72f.err \
     $(srcdir)/%reldir%/test_config.sh_b08f7523659d1c12f0e59920cd40d17d4a83b72f.out \
     $(srcdir)/%reldir%/test_config.sh_d622658dc98327b1b2fd346802d24bc633e34ac7.err \
@@ -214,8 +216,20 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_config.sh_d708b6fd32d83ce0ee00ca5383388308ba5a06e1.out \
     $(srcdir)/%reldir%/test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.err \
     $(srcdir)/%reldir%/test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.out \
+    $(srcdir)/%reldir%/test_events.sh_09ba47d70bfca88e89faf29598c1095292cad435.err \
+    $(srcdir)/%reldir%/test_events.sh_09ba47d70bfca88e89faf29598c1095292cad435.out \
+    $(srcdir)/%reldir%/test_events.sh_153e221f3cb50f4d3e4581be0bf311e62489c42d.err \
+    $(srcdir)/%reldir%/test_events.sh_153e221f3cb50f4d3e4581be0bf311e62489c42d.out \
     $(srcdir)/%reldir%/test_events.sh_3dae146ef3bf201c43656344803694a34a3dbfec.err \
     $(srcdir)/%reldir%/test_events.sh_3dae146ef3bf201c43656344803694a34a3dbfec.out \
+    $(srcdir)/%reldir%/test_events.sh_6f9523d43f174397829b6a7fe6ee0090d97df5f9.err \
+    $(srcdir)/%reldir%/test_events.sh_6f9523d43f174397829b6a7fe6ee0090d97df5f9.out \
+    $(srcdir)/%reldir%/test_events.sh_729f77b8e7136d64d22a6610a80ba6b584a2d896.err \
+    $(srcdir)/%reldir%/test_events.sh_729f77b8e7136d64d22a6610a80ba6b584a2d896.out \
+    $(srcdir)/%reldir%/test_events.sh_d9c7907f907b2335e1328b23fdc46d0968a608d9.err \
+    $(srcdir)/%reldir%/test_events.sh_d9c7907f907b2335e1328b23fdc46d0968a608d9.out \
+    $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.err \
+    $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.out \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.err \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.out \
     $(srcdir)/%reldir%/test_format_loader.sh_3f1d6f35e8a9ae4fd3e91ffaa82a037b5a847ab7.err \

@@ -138,7 +138,7 @@ public:
 
     virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const;
 
-    virtual void extract(std::shared_ptr<logfile> lf,
+    virtual void extract(logfile* lf,
                          uint64_t line_number,
                          shared_buffer_ref& line,
                          std::vector<logline_value>& values);

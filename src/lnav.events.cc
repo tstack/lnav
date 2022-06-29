@@ -65,6 +65,41 @@ const typed_json_path_container<format_detected> format_detected::handlers = typ
 
 }  // namespace file
 
+namespace log {
+
+const std::string msg_detected::SCHEMA_ID
+    = "https://lnav.org/event-log-msg-detected-v1.schema.json";
+
+static const json_path_container msg_values_handlers = {
+    yajlpp::pattern_property_handler("(?<name>[\\w\\-]+)")
+        .with_synopsis("<name>")
+        .for_field(&msg_detected::md_values),
+};
+
+const typed_json_path_container<msg_detected> msg_detected::handlers = typed_json_path_container<msg_detected>{
+    yajlpp::property_handler("$schema").for_field(&msg_detected::md_schema)
+        .with_example(msg_detected::SCHEMA_ID),
+    yajlpp::property_handler("watch-name")
+        .with_description("The name of the watch expression that matched this log message")
+        .for_field(&msg_detected::md_watch_name),
+    yajlpp::property_handler("filename")
+        .with_description("The path of the file containing the log message")
+        .for_field(&msg_detected::md_filename),
+    yajlpp::property_handler("format")
+        .with_description("The name of the log format that matched this log message")
+        .for_field(&msg_detected::md_format),
+    yajlpp::property_handler("timestamp")
+        .with_description("The timestamp of the log message")
+        .for_field(&msg_detected::md_timestamp),
+    yajlpp::property_handler("values")
+        .with_description("The log message values captured by the log format")
+        .with_children(msg_values_handlers),
+}
+    .with_schema_id2(msg_detected::SCHEMA_ID)
+    .with_description2("Event fired when a log message is detected by a watch expression.");
+
+}  // namespace log
+
 int
 register_events_tab(sqlite3* db)
 {

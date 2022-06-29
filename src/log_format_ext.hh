@@ -97,7 +97,7 @@ public:
     };
 
     struct pattern {
-        std::string p_name;
+        intern_string_t p_name;
         std::string p_config_path;
         std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> p_pcre;
         std::vector<indexed_value_def> p_value_by_index;
@@ -291,7 +291,7 @@ public:
         return iter != this->elf_value_defs.end();
     }
 
-    std::string get_pattern_name(uint64_t line_number) const
+    std::string get_pattern_path(uint64_t line_number) const
     {
         if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "structured";
@@ -299,6 +299,8 @@ public:
         int pat_index = this->pattern_index_for_line(line_number);
         return this->elf_pattern_order[pat_index]->p_config_path;
     }
+
+    intern_string_t get_pattern_name(uint64_t line_number) const;
 
     std::string get_pattern_regex(uint64_t line_number) const
     {
