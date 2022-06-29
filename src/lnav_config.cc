@@ -704,6 +704,23 @@ static const struct json_path_container theme_syntax_styles_handlers = {
         .with_description("Styling for diffs")
         .for_child(&lnav_theme::lt_style_diff_section)
         .with_children(style_config_handlers),
+
+    yajlpp::property_handler("spectrogram-low")
+        .with_description(
+            "Styling for the lower threshold values in the spectrogram view")
+        .for_child(&lnav_theme::lt_style_low_threshold)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("spectrogram-medium")
+        .with_description(
+            "Styling for the medium threshold values in the spectrogram view")
+        .for_child(&lnav_theme::lt_style_med_threshold)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("spectrogram-high")
+        .with_description(
+            "Styling for the high threshold values in the spectrogram view")
+        .for_child(&lnav_theme::lt_style_high_threshold)
+        .with_children(style_config_handlers),
+
     yajlpp::property_handler("file")
         .with_description("Styling for file names in source files")
         .for_child(&lnav_theme::lt_style_file)

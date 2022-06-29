@@ -497,6 +497,10 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ':spectrogram bro_response_body_len' \
+    ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -n \
     -c ';select log_time,sc_bytes from access_log order by log_time desc' \
     -c ':spectrogram sc_bytes' \
     ${test_dir}/logfile_access_log.0

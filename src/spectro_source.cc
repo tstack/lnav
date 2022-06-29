@@ -301,9 +301,8 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
         return;
     }
 
-    view_colors& vc = view_colors::singleton();
-    spectrogram_thresholds& st = this->ss_cached_thresholds;
-    spectrogram_row& s_row = this->load_row(tc, row);
+    const auto& st = this->ss_cached_thresholds;
+    const auto& s_row = this->load_row(tc, row);
 
     for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
         int col_value = s_row.sr_values[lpc].rb_counter;
@@ -312,18 +311,16 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
             continue;
         }
 
-        int color;
+        role_t role;
 
         if (col_value < st.st_green_threshold) {
-            color = COLOR_GREEN;
+            role = role_t::VCR_LOW_THRESHOLD;
         } else if (col_value < st.st_yellow_threshold) {
-            color = COLOR_YELLOW;
+            role = role_t::VCR_MED_THRESHOLD;
         } else {
-            color = COLOR_RED;
+            role = role_t::VCR_HIGH_THRESHOLD;
         }
-        value_out.emplace_back(line_range(lpc, lpc + 1),
-                               VC_STYLE.value(
-                                   vc.ansi_color_pair(COLOR_BLACK, color)));
+        value_out.emplace_back(line_range(lpc, lpc + 1), VC_ROLE.value(role));
     }
 }
 

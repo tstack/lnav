@@ -172,6 +172,15 @@
                     "diff-section": {
                         "color": "#656e76"
                     },
+                    "spectrogram-low": {
+                        "background-color": "$green"
+                    },
+                    "spectrogram-medium": {
+                        "background-color": "$yellow"
+                    },
+                    "spectrogram-high": {
+                        "background-color": "$red"
+                    },
                     "file": {
                         "color": "$blue"
                     },

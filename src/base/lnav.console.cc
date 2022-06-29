@@ -379,6 +379,15 @@ println(FILE* file, const attr_line_t& al)
                             default_bg_style
                                 = fmt::bg(fmt::terminal_color::black);
                             break;
+                        case role_t::VCR_LOW_THRESHOLD:
+                            line_style |= fmt::bg(fmt::terminal_color::green);
+                            break;
+                        case role_t::VCR_MED_THRESHOLD:
+                            line_style |= fmt::bg(fmt::terminal_color::yellow);
+                            break;
+                        case role_t::VCR_HIGH_THRESHOLD:
+                            line_style |= fmt::bg(fmt::terminal_color::red);
+                            break;
                         default:
                             break;
                     }

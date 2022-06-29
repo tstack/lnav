@@ -125,6 +125,15 @@
                     "diff-section": {
                         "color": "$magenta"
                     },
+                    "spectrogram-low": {
+                        "background-color": "$green"
+                    },
+                    "spectrogram-medium": {
+                        "background-color": "$yellow"
+                    },
+                    "spectrogram-high": {
+                        "background-color": "$red"
+                    },
                     "file": {
                         "color": "#82aaff"
                     }

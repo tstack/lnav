@@ -482,6 +482,21 @@
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/diff-section",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "spectrogram-low": {
+                                            "description": "Styling for the lower threshold values in the spectrogram view",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/spectrogram-low",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "spectrogram-medium": {
+                                            "description": "Styling for the medium threshold values in the spectrogram view",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/spectrogram-medium",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "spectrogram-high": {
+                                            "description": "Styling for the high threshold values in the spectrogram view",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/spectrogram-high",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "file": {
                                             "description": "Styling for file names in source files",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/file",

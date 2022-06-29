@@ -132,14 +132,10 @@ public:
     /**
      * Destructor that will close the file descriptor managed by this object.
      */
-    ~auto_fd()
-    {
-        this->reset(); }
+    ~auto_fd() { this->reset(); }
 
     /** @return The file descriptor as a plain integer. */
-    operator int() const
-    {
-        return this->af_fd; }
+    operator int() const { return this->af_fd; }
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -196,9 +192,7 @@ public:
     /**
      * @return The file descriptor.
      */
-    int get() const
-    {
-        return this->af_fd; }
+    int get() const { return this->af_fd; }
 
     /**
      * Closes the current file descriptor and replaces its value with the given
@@ -263,28 +257,19 @@ public:
                 this->ap_child_flags = O_WRONLY;
                 break;
         }
-    };
+    }
 
-    int open()
-    {
-        return auto_fd::pipe(this->ap_fd);
-    };
+    int open() { return auto_fd::pipe(this->ap_fd); }
 
     void close()
     {
         this->ap_fd[0].reset();
         this->ap_fd[1].reset();
-    };
+    }
 
-    auto_fd& read_end()
-    {
-        return this->ap_fd[0];
-    };
+    auto_fd& read_end() { return this->ap_fd[0]; }
 
-    auto_fd& write_end()
-    {
-        return this->ap_fd[1];
-    };
+    auto_fd& write_end() { return this->ap_fd[1]; }
 
     void after_fork(pid_t child_pid)
     {
@@ -323,10 +308,11 @@ public:
                 }
                 break;
         }
-    };
+    }
 
     int ap_child_flags;
     int ap_child_fd;
     auto_fd ap_fd[2];
 };
+
 #endif
