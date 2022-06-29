@@ -622,16 +622,16 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 auto_mem<FILE> pfile(pclose);
                 vis_bookmarks& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
-                vis_line_t vl = is_alt ? bv.prev(tc->get_top())
-                                       : bv.next(tc->get_top());
+                auto vl = is_alt ? bv.prev(tc->get_top())
+                                 : bv.next(tc->get_top());
 
                 pfile = sysclip::open(sysclip::type_t::FIND);
                 if (pfile.in() != nullptr) {
                     fmt::print(
                         pfile, FMT_STRING("{}"), rc->get_value().get_string());
                 }
-                if (vl != -1_vl) {
-                    tc->set_top(vl);
+                if (vl) {
+                    tc->set_top(vl.value());
                 } else {
                     tc->set_follow_search_for(2000, [tc, is_alt, &bm]() {
                         if (bm[&textview_curses::BM_SEARCH].empty()) {
@@ -642,7 +642,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                             return false;
                         }
 
-                        vis_line_t first_hit;
+                        nonstd::optional<vis_line_t> first_hit;
 
                         if (is_alt) {
                             first_hit = bm[&textview_curses::BM_SEARCH].prev(
@@ -651,11 +651,12 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                             first_hit = bm[&textview_curses::BM_SEARCH].next(
                                 vis_line_t(tc->get_top() - 1));
                         }
-                        if (first_hit != -1) {
-                            if (first_hit > 0) {
-                                --first_hit;
+                        if (first_hit) {
+                            auto first_hit_vl = first_hit.value();
+                            if (first_hit_vl > 0_vl) {
+                                --first_hit_vl;
                             }
-                            tc->set_top(first_hit);
+                            tc->set_top(first_hit_vl);
                         }
 
                         return true;

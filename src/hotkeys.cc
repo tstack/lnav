@@ -313,8 +313,8 @@ handle_paging_key(int ch)
 
         case 'f':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                tc->set_top(
-                    bm[&logfile_sub_source::BM_FILES].next(tc->get_top()));
+                bm[&logfile_sub_source::BM_FILES].next(tc->get_top()) |
+                    [&tc](auto vl) { tc->set_top(vl); };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 
@@ -327,8 +327,8 @@ handle_paging_key(int ch)
 
         case 'F':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                tc->set_top(
-                    bm[&logfile_sub_source::BM_FILES].prev(tc->get_top()));
+                bm[&logfile_sub_source::BM_FILES].prev(tc->get_top()) |
+                    [&tc](auto vl) { tc->set_top(vl); };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 

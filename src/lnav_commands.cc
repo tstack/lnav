@@ -3211,22 +3211,25 @@ com_clear_partition(exec_context& ec,
             = tc.get_bookmarks()[&textview_curses::BM_META];
         std::map<content_line_t, bookmark_metadata>& bm
             = lss.get_user_bookmark_metadata();
-        vis_line_t part_start;
+        nonstd::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_top())) {
             part_start = tc.get_top();
         } else {
             part_start = bv.prev(tc.get_top());
         }
-        if (part_start == -1) {
+        if (!part_start) {
             return ec.make_error("top line is not in a partition");
-        } else if (!ec.ec_dry_run) {
-            content_line_t cl = lss.at(part_start);
+        }
+
+        if (!ec.ec_dry_run) {
+            content_line_t cl = lss.at(part_start.value());
             bookmark_metadata& line_meta = bm[cl];
 
             line_meta.bm_name.clear();
             if (line_meta.empty()) {
-                tc.set_user_mark(&textview_curses::BM_META, part_start, false);
+                tc.set_user_mark(
+                    &textview_curses::BM_META, part_start.value(), false);
             }
 
             retval = "info: cleared partition name";

@@ -315,23 +315,25 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     if (this->lss_flags & F_TIME_OFFSET) {
         auto curr_tv = this->lss_token_line->get_timeval();
         struct timeval diff_tv;
+        auto row_vl = vis_line_t(row);
 
-        vis_line_t prev_mark
-            = tc.get_bookmarks()[&textview_curses::BM_USER].prev(
-                vis_line_t(row));
-        vis_line_t next_mark
-            = tc.get_bookmarks()[&textview_curses::BM_USER].next(
-                vis_line_t(row));
-        if (prev_mark == -1 && next_mark != -1) {
-            auto next_line = this->find_line(this->at(next_mark));
+        auto prev_umark
+            = tc.get_bookmarks()[&textview_curses::BM_USER].prev(row_vl);
+        auto next_umark
+            = tc.get_bookmarks()[&textview_curses::BM_USER].next(row_vl);
+        auto prev_emark
+            = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].prev(row_vl);
+        auto next_emark
+            = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].next(row_vl);
+        if (!prev_umark && !prev_emark && (next_umark || next_emark)) {
+            auto next_line = this->find_line(this->at(
+                std::max(next_umark.value_or(0), next_emark.value_or(0))));
 
             diff_tv = curr_tv - next_line->get_timeval();
         } else {
-            if (prev_mark == -1_vl) {
-                prev_mark = 0_vl;
-            }
-
-            auto first_line = this->find_line(this->at(prev_mark));
+            auto prev_row
+                = std::max(prev_umark.value_or(0), prev_emark.value_or(0));
+            auto first_line = this->find_line(this->at(prev_row));
             auto start_tv = first_line->get_timeval();
             diff_tv = curr_tv - start_tv;
         }
@@ -1918,10 +1920,11 @@ logfile_sub_source::meta_grepper::grep_next_line(vis_line_t& line)
     vis_bookmarks& bm = this->lmg_source.tss_view->get_bookmarks();
     bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_META];
 
-    line = bv.next(vis_line_t(line));
-    if (line == -1) {
+    auto line_opt = bv.next(vis_line_t(line));
+    if (!line_opt) {
         this->lmg_done = true;
     }
+    line = line_opt.value_or(-1_vl);
 }
 
 void

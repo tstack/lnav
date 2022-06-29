@@ -121,7 +121,7 @@ public:
      * the next bookmark is returned.  If the 'start' value is not a
      * bookmark, the next highest value in the vector is returned.
      */
-    LineType next(LineType start) const;
+    nonstd::optional<LineType> next(LineType start) const;
 
     /**
      * @param start The value to start the search for the previous
@@ -130,7 +130,7 @@ public:
      * are no more prior bookmarks.
      * @see next
      */
-    LineType prev(LineType start) const;
+    nonstd::optional<LineType> prev(LineType start) const;
 };
 
 /**
@@ -162,10 +162,10 @@ private:
 };
 
 template<typename LineType>
-LineType
+nonstd::optional<LineType>
 bookmark_vector<LineType>::next(LineType start) const
 {
-    LineType retval(-1);
+    nonstd::optional<LineType> retval;
 
     require(start >= -1);
 
@@ -174,16 +174,16 @@ bookmark_vector<LineType>::next(LineType start) const
         retval = *ub;
     }
 
-    ensure(retval == -1 || start < retval);
+    ensure(!retval || start < retval.value());
 
     return retval;
 }
 
 template<typename LineType>
-LineType
+nonstd::optional<LineType>
 bookmark_vector<LineType>::prev(LineType start) const
 {
-    LineType retval(-1);
+    nonstd::optional<LineType> retval;
 
     require(start >= 0);
 
@@ -193,7 +193,7 @@ bookmark_vector<LineType>::prev(LineType start) const
         retval = *lb;
     }
 
-    ensure(retval < start);
+    ensure(!retval || retval.value() < start);
 
     return retval;
 }

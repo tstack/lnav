@@ -83,11 +83,12 @@ void layout_views();
 void update_hits(textview_curses* tc);
 
 nonstd::optional<vis_line_t> next_cluster(
-    vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+    nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
+        const,
     const bookmark_type_t* bt,
     vis_line_t top);
-bool moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t)
-                        const,
+bool moveto_cluster(nonstd::optional<vis_line_t> (
+                        bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
                     const bookmark_type_t* bt,
                     vis_line_t top);
 void previous_cluster(const bookmark_type_t* bt, textview_curses* tc);

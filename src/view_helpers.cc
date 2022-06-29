@@ -700,10 +700,10 @@ update_hits(textview_curses* tc)
 
             auto prev_vl = bv.prev(tc->get_top());
 
-            if (prev_vl != -1_vl) {
+            if (prev_vl) {
                 attr_line_t al;
 
-                tc->textview_value_for_row(prev_vl, al);
+                tc->textview_value_for_row(prev_vl.value(), al);
                 if (preview_count > 0) {
                     all_matches.append("\n");
                 }
@@ -711,15 +711,16 @@ update_hits(textview_curses* tc)
                          sizeof(linebuf),
                          "L%*d: ",
                          max_line_width,
-                         (int) prev_vl);
+                         (int) prev_vl.value());
                 all_matches.append(linebuf).append(al);
                 preview_count += 1;
             }
 
-            while ((vl = bv.next(vl)) != -1_vl
-                   && preview_count < MAX_MATCH_COUNT) {
+            nonstd::optional<vis_line_t> next_vl;
+            while ((next_vl = bv.next(vl)) && preview_count < MAX_MATCH_COUNT) {
                 attr_line_t al;
 
+                vl = next_vl.value();
                 tc->textview_value_for_row(vl, al);
                 if (preview_count > 0) {
                     all_matches.append("\n");
@@ -887,7 +888,8 @@ ensure_view(lnav_view_t expected)
 }
 
 nonstd::optional<vis_line_t>
-next_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                 vis_line_t) const,
              const bookmark_type_t* bt,
              const vis_line_t top)
 {
@@ -895,36 +897,37 @@ next_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
     vis_bookmarks& bm = tc->get_bookmarks();
     bookmark_vector<vis_line_t>& bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
-    vis_line_t last_top(top), new_top(top), tc_height;
+    vis_line_t last_top(top), tc_height;
+    nonstd::optional<vis_line_t> new_top = top;
     unsigned long tc_width;
     int hit_count = 0;
 
     tc->get_dimensions(tc_height, tc_width);
 
-    while ((new_top = (bv.*f)(new_top)) != -1) {
-        int diff = new_top - last_top;
+    while ((new_top = (bv.*f)(new_top.value()))) {
+        int diff = new_top.value() - last_top;
 
         hit_count += 1;
         if (!top_is_marked || diff > 1) {
             return new_top;
         }
-        if (hit_count > 1 && std::abs(new_top - top) >= tc_height) {
-            return vis_line_t(new_top - diff);
+        if (hit_count > 1 && std::abs(new_top.value() - top) >= tc_height) {
+            return vis_line_t(new_top.value() - diff);
         }
         if (diff < -1) {
-            last_top = new_top;
-            while ((new_top = (bv.*f)(new_top)) != -1) {
-                if ((std::abs(last_top - new_top) > 1)
+            last_top = new_top.value();
+            while ((new_top = (bv.*f)(new_top.value()))) {
+                if ((std::abs(last_top - new_top.value()) > 1)
                     || (hit_count > 1
-                        && (std::abs(top - new_top) >= tc_height)))
+                        && (std::abs(top - new_top.value()) >= tc_height)))
                 {
                     break;
                 }
-                last_top = new_top;
+                last_top = new_top.value();
             }
             return last_top;
         }
-        last_top = new_top;
+        last_top = new_top.value();
     }
 
     if (last_top != top) {
@@ -935,7 +938,8 @@ next_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
 }
 
 bool
-moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                   vis_line_t) const,
                const bookmark_type_t* bt,
                vis_line_t top)
 {

@@ -79,31 +79,31 @@ main(int argc, char* argv[])
     }
 
     bv.clear();
-    assert(bv.next(vis_line_t(0)) == -1);
-    assert(bv.prev(vis_line_t(0)) == -1);
-    assert(bv.next(vis_line_t(100)) == -1);
-    assert(bv.prev(vis_line_t(100)) == -1);
+    assert(!bv.next(vis_line_t(0)));
+    assert(!bv.prev(vis_line_t(0)));
+    assert(!bv.next(vis_line_t(100)));
+    assert(!bv.prev(vis_line_t(100)));
 
     bv.insert_once(vis_line_t(2));
 
-    assert(bv.next(vis_line_t(0)) == 2);
-    assert(bv.next(vis_line_t(2)) == -1);
-    assert(bv.next(vis_line_t(3)) == -1);
+    assert(bv.next(vis_line_t(0)).value() == 2);
+    assert(!bv.next(vis_line_t(2)));
+    assert(!bv.next(vis_line_t(3)));
 
-    assert(bv.prev(vis_line_t(3)) == 2);
-    assert(bv.prev(vis_line_t(2)) == -1);
+    assert(bv.prev(vis_line_t(3)).value() == 2);
+    assert(!bv.prev(vis_line_t(2)));
 
     bv.insert_once(vis_line_t(4));
 
-    assert(bv.next(vis_line_t(0)) == 2);
-    assert(bv.next(vis_line_t(2)) == 4);
-    assert(bv.next(vis_line_t(3)) == 4);
-    assert(bv.next(vis_line_t(4)) == -1);
+    assert(bv.next(vis_line_t(0)).value() == 2);
+    assert(bv.next(vis_line_t(2)).value() == 4);
+    assert(bv.next(vis_line_t(3)).value() == 4);
+    assert(!bv.next(vis_line_t(4)));
 
-    assert(bv.prev(vis_line_t(10)) == 4);
-    assert(bv.prev(vis_line_t(5)) == 4);
-    assert(bv.prev(vis_line_t(4)) == 2);
-    assert(bv.prev(vis_line_t(2)) == -1);
+    assert(bv.prev(vis_line_t(10)).value() == 4);
+    assert(bv.prev(vis_line_t(5)).value() == 4);
+    assert(bv.prev(vis_line_t(4)).value() == 2);
+    assert(!bv.prev(vis_line_t(2)));
 
     bv.clear();
 
@@ -121,7 +121,8 @@ main(int argc, char* argv[])
     {
         vis_line_t last_line(-1);
 
-        for (lpc = 0; lpc != -1; lpc = bv.next(vis_line_t(lpc))) {
+        for (lpc = 0; lpc != -1; lpc = bv.next(vis_line_t(lpc)).value_or(-1_vl))
+        {
             assert(lpc >= 0);
             assert(lpc < LINE_COUNT);
             assert(last_line < lpc);
@@ -130,7 +131,9 @@ main(int argc, char* argv[])
         }
 
         last_line = vis_line_t(10000);
-        for (lpc = LINE_COUNT - 1; lpc != -1; lpc = bv.prev(vis_line_t(lpc))) {
+        for (lpc = LINE_COUNT - 1; lpc != -1;
+             lpc = bv.prev(vis_line_t(lpc)).value_or(-1_vl))
+        {
             assert(lpc >= 0);
             assert(lpc < LINE_COUNT);
             assert(last_line > lpc);
