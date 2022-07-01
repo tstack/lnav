@@ -16,6 +16,7 @@ Makefile
 Makefile.in
 TESTS_ENVIRONMENT
 aclocal.m4
+aminclude_static.am
 ar-lib
 autom4te.cache
 compile
