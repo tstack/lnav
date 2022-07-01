@@ -682,7 +682,6 @@ view_colors::init_roles(const lnav_theme& lt,
 
     if (COLORS == 256) {
         const auto& ident_sc = lt.lt_style_identifier;
-        int ident_bg = (lnav_config.lc_ui_default_colors ? -1 : COLOR_BLACK);
 
         if (!ident_sc.sc_background_color.empty()) {
             std::string bg_color;
@@ -698,7 +697,6 @@ view_colors::init_roles(const lnav_theme& lt,
                             .with_reason(msg));
                     return rgb_color{};
                 });
-            ident_bg = vc_active_palette->match_color(lab_color(rgb_bg));
         }
     } else {
         color_pair_base = VC_ANSI_END + HI_COLOR_COUNT;

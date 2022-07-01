@@ -417,7 +417,6 @@ private:
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     safe_opid_map lf_opids;
-    size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
