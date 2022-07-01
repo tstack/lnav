@@ -41,12 +41,11 @@
 
 class log_search_table : public log_vtab_impl {
 public:
-    static int pattern_options()
-    {
-        return PCRE_CASELESS;
-    }
+    static int pattern_options() { return PCRE_CASELESS | PCRE_MULTILINE; }
 
     log_search_table(pcrepp pattern, intern_string_t table_name);
+
+    void get_primary_keys(std::vector<std::string>& keys_out) const override;
 
     void get_columns_int(std::vector<vtab_column>& cols);
 
@@ -54,6 +53,7 @@ public:
     {
         cols = this->lst_cols;
     }
+    void filter(log_cursor& lc, logfile_sub_source& lss) override;
 
     void get_foreign_keys(std::vector<std::string>& keys_inout) const override;
 
@@ -65,10 +65,13 @@ public:
                  std::vector<logline_value>& values) override;
 
     pcrepp lst_regex;
+    log_format* lst_format{nullptr};
+    std::string lst_log_path_glob;
     shared_buffer_ref lst_current_line;
+    pcre_input lst_input{""};
     pcre_context_static<128> lst_match_context;
     std::vector<logline_value_meta> lst_column_metas;
-    int64_t lst_instance;
+    int64_t lst_match_index{-1};
     std::vector<vtab_column> lst_cols;
 };
 

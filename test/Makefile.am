@@ -197,11 +197,13 @@ dist_noinst_SCRIPTS = \
 	test_sql.sh \
 	test_sql_anno.sh \
 	test_sql_coll_func.sh \
+	test_sql_fs_func.sh \
+	test_sql_indexes.sh \
 	test_sql_json_func.sh \
+	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
 	test_sql_xml_func.sh \
-	test_sql_fs_func.sh \
 	test_tui.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
@@ -297,6 +299,7 @@ dist_noinst_DATA = \
 	logfile_openam.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
+	logfile_procstate.0 \
 	logfile_rollover.0 \
 	logfile_rollover.1 \
 	logfile_strace_log.0 \
@@ -389,8 +392,10 @@ TESTS = \
 	test_sql.sh \
 	test_sql_anno.sh \
 	test_sql_coll_func.sh \
-	test_sql_json_func.sh \
 	test_sql_fs_func.sh \
+	test_sql_indexes.sh \
+	test_sql_json_func.sh \
+	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
 	test_sql_xml_func.sh \

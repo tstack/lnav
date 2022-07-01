@@ -102,12 +102,5 @@ all_logs_vtab::extract(logfile* lf,
 bool
 all_logs_vtab::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    lc.lc_curr_line = lc.lc_curr_line + 1_vl;
-    lc.lc_sub_index = 0;
-
-    if (lc.is_eof()) {
-        return true;
-    }
-
-    return this->is_valid(lc, lss);
+    return true;
 }

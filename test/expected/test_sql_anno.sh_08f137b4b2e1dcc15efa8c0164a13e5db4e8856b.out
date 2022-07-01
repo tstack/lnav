@@ -1,0 +1,11 @@
+                 SELECT * from vmw_log, regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[^\n]+)')
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               -------
+       sql_comma                      -
+       sql_ident                        --------------
+        sql_func                        --------------------------------------------------------------------------------
+       sql_ident                                       --------
+       sql_comma                                               -
+      sql_string                                                 -------------------------------------------------------

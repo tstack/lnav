@@ -645,17 +645,11 @@ log_line
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ':filter-in sudo' \
     -c ";select * from logline" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_syslog.0
-
-check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2007-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
-EOF
-
 
 run_test ${lnav_test} -n \
     -c ':goto 1' \
@@ -884,6 +878,7 @@ CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
 CREATE VIEW lnav_view_filters_and_stats AS
   SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
+CREATE VIRTUAL TABLE regexp_capture_into_json USING regexp_capture_into_json_impl();
 CREATE VIRTUAL TABLE xpath USING xpath_impl();
 CREATE VIRTUAL TABLE fstat USING fstat_impl();
 CREATE TABLE lnav_events (
@@ -891,7 +886,6 @@ CREATE TABLE lnav_events (
    content TEXT
 );
 CREATE TABLE http_status_codes (
-    status integer PRIMARY KEY,
 EOF
 
 
@@ -1008,11 +1002,11 @@ check_output "write-json-to isn't working?" <<EOF
 EOF
 
 run_cap_test ${lnav_test} -d "/tmp/lnav.err" -n \
-    -c ";select log_line, log_msg_instance, col_0 from logline" \
+    -c ";select log_line, col_0 from logline" \
     ${test_dir}/logfile_for_join.0
 
 run_cap_test ${lnav_test} -d "/tmp/lnav.err" -n \
-    -c ";select log_msg_instance, col_0 from logline where log_line > 4" \
+    -c ";select col_0 from logline where log_line > 4" \
     ${test_dir}/logfile_for_join.0
 
 run_test ${lnav_test} -d "/tmp/lnav.err" -n \
@@ -1129,25 +1123,25 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (\w+), world!" \
-    -c ";select log_msg_instance, col_0 from search_test1" \
+    -c ";select col_0 from search_test1" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_multiline.0
 
 check_output "create-search-table is not working?" <<EOF
-log_msg_instance,col_0
-0,Hello
-1,Goodbye
+col_0
+Hello
+Goodbye
 EOF
 
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (\w+), World!" \
-    -c ";select log_msg_instance, col_0 from search_test1 where log_line > 0" \
+    -c ";select col_0 from search_test1 where log_line > 0" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_multiline.0
 
 check_output "create-search-table is not working with where clause?" <<EOF
-log_msg_instance,col_0
-1,Goodbye
+col_0
+Goodbye
 EOF
 
 run_test ${lnav_test} -n \

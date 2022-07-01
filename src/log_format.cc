@@ -556,13 +556,14 @@ json_array_end(void* ctx)
     return 1;
 }
 
-static struct json_path_container json_log_handlers
-    = {json_path_handler(pcrepp("\\w+"))
-           .add_cb(read_json_null)
-           .add_cb(read_json_bool)
-           .add_cb(read_json_int)
-           .add_cb(read_json_double)
-           .add_cb(read_json_field)};
+static struct json_path_container json_log_handlers = {
+    json_path_handler(pcrepp("\\w+"))
+        .add_cb(read_json_null)
+        .add_cb(read_json_bool)
+        .add_cb(read_json_int)
+        .add_cb(read_json_double)
+        .add_cb(read_json_field),
+};
 
 static int rewrite_json_field(yajlpp_parse_context* ypc,
                               const unsigned char* str,
@@ -2307,6 +2308,8 @@ external_log_format::register_vtabs(
 
         auto lst = std::make_shared<log_search_table>(
             *elf_search_table.second.std_pattern, elf_search_table.first);
+        lst->lst_format = this;
+        lst->lst_log_path_glob = elf_search_table.second.std_glob;
         auto errmsg = vtab_manager->register_vtab(lst);
         if (!errmsg.empty()) {
 #if 0
@@ -2343,10 +2346,12 @@ external_log_format::match_samples(const std::vector<sample>& samples) const
 
 class external_log_table : public log_format_vtab_impl {
 public:
-    external_log_table(const external_log_format& elf)
-        : log_format_vtab_impl(elf), elt_format(elf){};
+    explicit external_log_table(const external_log_format& elf)
+        : log_format_vtab_impl(elf), elt_format(elf)
+    {
+    }
 
-    void get_columns(std::vector<vtab_column>& cols) const
+    void get_columns(std::vector<vtab_column>& cols) const override
     {
         const external_log_format& elf = this->elt_format;
 
@@ -2368,9 +2373,9 @@ public:
             cols[vd->vd_meta.lvm_column].vc_collator = vd->vd_collate;
             cols[vd->vd_meta.lvm_column].vc_comment = vd->vd_description;
         }
-    };
+    }
 
-    void get_foreign_keys(std::vector<std::string>& keys_inout) const
+    void get_foreign_keys(std::vector<std::string>& keys_inout) const override
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
 
@@ -2379,19 +2384,16 @@ public:
                 keys_inout.emplace_back(elf_value_def.first.to_string());
             }
         }
-    };
+    }
 
-    virtual bool next(log_cursor& lc, logfile_sub_source& lss)
+    bool next(log_cursor& lc, logfile_sub_source& lss) override
     {
-        lc.lc_curr_line = lc.lc_curr_line + 1_vl;
-        lc.lc_sub_index = 0;
-
         if (lc.is_eof()) {
             return true;
         }
 
         content_line_t cl(lss.at(lc.lc_curr_line));
-        auto lf = lss.find_file_ptr(cl);
+        auto* lf = lss.find_file_ptr(cl);
         auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
@@ -2444,12 +2446,12 @@ public:
         }
 
         return false;
-    };
+    }
 
-    virtual void extract(logfile* lf,
-                         uint64_t line_number,
-                         shared_buffer_ref& line,
-                         std::vector<logline_value>& values)
+    void extract(logfile* lf,
+                 uint64_t line_number,
+                 shared_buffer_ref& line,
+                 std::vector<logline_value>& values) override
     {
         auto format = lf->get_format();
 
@@ -2467,7 +2469,7 @@ public:
             this->vi_attrs.clear();
             format->annotate(line_number, line, this->vi_attrs, values, false);
         }
-    };
+    }
 
     const external_log_format& elt_format;
     module_format elt_module_format;

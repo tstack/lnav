@@ -29,6 +29,9 @@ lnav v0.10.2:
        each log message.  If the expressions evaluates to true, an
        event is published to the "lnav_events" table that includes the
        message contents.
+     * Added the "regexp_capture_into_json()" table-valued-function that
+       is similar to "regexp_capture()", but returns a single row with a
+       JSON value for each match instead of a row for each capture.
      * Added a "top_meta" column to the lnav_views table that contains
        metadata related to the top line in the view.
      * Added a "log_opid" hidden column to all log tables that contains
@@ -36,6 +39,9 @@ lnav v0.10.2:
      * Moved the "log_format" column from the all_logs table to a hidden
        column on all tables.
      * Add format for UniFi gateway.
+     * Added a "glob" property to search tables defined in log formats
+       to constrain searches to log messages from files that have a
+       matching log_path value.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that
@@ -46,11 +52,25 @@ lnav v0.10.2:
      * Removed the summary overlay at the bottom of the log view that
        displayed things like "Error rate" and the time span.  It doesn't
        seem like anyone used it.
+     * Removed the "log_msg_instance" column from the logline and search
+       tables since it causes problems with performance.
+     * Search tables now search for multiple matches within a message
+       instead of stopping at the first hit.  Each additional match is
+       returned as a separate row.  A "match_index" column has been
+       added to capture the index of the match within the message.
+       The table regex is also compiled with the "multiline" flag enabled
+       so the meaning of the '^' and '$' metacharacters are changed
+       to match the start/end of a line instead of the start/end of
+       the entire message string.
+     * Search tables defined in formats are now constrained to only
+       match log messages that are in that log format instead of all
+       log messages.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression
        no longer causes a crash.
      * Fix a crash related to long lines that are word wrapped.
+     *
 
 lnav v0.10.1:
      Features:

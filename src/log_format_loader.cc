@@ -731,6 +731,11 @@ static struct json_path_container search_table_def_handlers = {
         .with_synopsis("<regex>")
         .with_description("The regular expression for this search table.")
         .for_field(&external_log_format::search_table_def::std_pattern),
+    json_path_handler("glob")
+        .with_synopsis("<glob>")
+        .with_description("Glob pattern used to constrain hits to messages "
+                          "that match the given pattern.")
+        .for_field(&external_log_format::search_table_def::std_glob),
 };
 
 static struct json_path_container search_table_handlers = {

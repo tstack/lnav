@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,46 +25,44 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file column_namer.hh
  */
 
-#ifndef lnav_column_namer_hh
-#define lnav_column_namer_hh
+#include <iostream>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "config.h"
 
-#include "ArenaAlloc/arenaalloc.h"
-#include "base/intern_string.hh"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "column_namer.hh"
+#include "doctest/doctest.h"
 
-class column_namer {
-public:
-    enum class language {
-        SQL,
-        JSON,
-    };
+TEST_CASE("column_namer::default")
+{
+    column_namer cn{column_namer::language::SQL};
 
-    column_namer(language lang);
+    auto def_name0 = cn.add_column(string_fragment{});
+    CHECK(def_name0 == "col_0");
+    auto def_name1 = cn.add_column(string_fragment{});
+    CHECK(def_name1 == "col_1");
+}
 
-    bool existing_name(const string_fragment& in_name) const;
+TEST_CASE("column_namer::no-collision")
+{
+    column_namer cn{column_namer::language::SQL};
 
-    string_fragment add_column(const string_fragment& in_name);
+    auto name0 = cn.add_column(string_fragment{"abc"});
+    CHECK(name0 == "abc");
+    auto name1 = cn.add_column(string_fragment{"def"});
+    CHECK(name1 == "def");
+}
 
-    static const char* BUILTIN_COL;
+TEST_CASE("column_namer::collisions")
+{
+    column_namer cn{column_namer::language::SQL};
 
-    ArenaAlloc::Alloc<char> cn_alloc;
-    language cn_language;
-    std::vector<string_fragment> cn_builtin_names{string_fragment(BUILTIN_COL)};
-    std::vector<string_fragment> cn_names;
-    std::unordered_map<
-        string_fragment,
-        size_t,
-        frag_hasher,
-        std::equal_to<string_fragment>,
-        ArenaAlloc::Alloc<std::pair<const string_fragment, size_t>>>
-        cn_name_counters;
-};
-
-#endif
+    auto name0 = cn.add_column(string_fragment{"abc"});
+    CHECK(name0 == "abc");
+    auto name1 = cn.add_column(string_fragment{"abc"});
+    CHECK(name1 == "abc_0");
+    auto name2 = cn.add_column(string_fragment{"abc"});
+    CHECK(name2 == "abc_1");
+}

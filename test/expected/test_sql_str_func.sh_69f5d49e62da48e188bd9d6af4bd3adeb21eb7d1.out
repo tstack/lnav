@@ -1,0 +1,6 @@
+Row 0:
+  Column match_index: 0
+  Column    content: {"col_0":1,"col_1":2}
+Row 1:
+  Column match_index: 1
+  Column    content: {"col_0":3,"col_1":4}

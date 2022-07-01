@@ -61,13 +61,28 @@ struct log_cursor {
         unsigned int value : 6;
     };
 
+    struct string_constraint {
+        unsigned char sc_op;
+        std::string sc_value;
+        std::shared_ptr<pcrepp> sc_pattern;
+
+        string_constraint(unsigned char op, std::string value);
+
+        bool matches(const std::string& sf) const;
+    };
+
     vis_line_t lc_curr_line;
     int lc_sub_index;
     vis_line_t lc_end_line;
 
+    intern_string_t lc_format_name;
     nonstd::optional<opid_hash> lc_opid;
-    nonstd::optional<std::string> lc_log_path;
-    nonstd::optional<std::string> lc_unique_path;
+    std::vector<string_constraint> lc_log_path;
+    logfile* lc_last_log_path_match{nullptr};
+    logfile* lc_last_log_path_mismatch{nullptr};
+    std::vector<string_constraint> lc_unique_path;
+    logfile* lc_last_unique_path_match{nullptr};
+    logfile* lc_last_unique_path_mismatch{nullptr};
 
     enum class constraint_t {
         none,
@@ -124,7 +139,7 @@ public:
 
     virtual ~log_vtab_impl() = default;
 
-    const intern_string_t get_name() const { return this->vi_name; }
+    intern_string_t get_name() const { return this->vi_name; }
 
     intern_string_t get_tags_name() const { return this->vi_tags_name; }
 
@@ -132,11 +147,15 @@ public:
 
     virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss);
 
+    virtual void filter(log_cursor& lc, logfile_sub_source& lss) {}
+
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column>& cols) const {}
 
     virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const;
+
+    virtual void get_primary_keys(std::vector<std::string>& keys_out) const {}
 
     virtual void extract(logfile* lf,
                          uint64_t line_number,

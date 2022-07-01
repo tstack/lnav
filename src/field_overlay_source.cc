@@ -239,7 +239,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             = this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->front());
 
-        colname = this->fos_log_helper.ldh_namer->add_column(colname);
+        colname
+            = this->fos_log_helper.ldh_namer->add_column(colname).to_string();
         this->fos_unknown_key_size
             = std::max(this->fos_unknown_key_size, (int) colname.length());
     }
@@ -410,14 +411,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_parser->dp_pairs.size();
          lpc++, ++iter)
     {
-        auto& name = this->fos_log_helper.ldh_namer->cn_names[lpc];
+        auto name = this->fos_log_helper.ldh_namer->cn_names[lpc];
         auto val = this->fos_log_helper.ldh_parser->get_element_string(
             iter->e_sub_elements->back());
         attr_line_t al(fmt::format(FMT_STRING("   {} = {}"), name, val));
 
         al.with_attr(
             string_attr(line_range(3, 3 + name.length()),
-                        VC_STYLE.value(vc.attrs_for_ident(name))));
+                        VC_STYLE.value(vc.attrs_for_ident(name.to_string()))));
 
         this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(

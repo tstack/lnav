@@ -745,7 +745,7 @@ public:
 
     class bro_log_table : public log_format_vtab_impl {
     public:
-        bro_log_table(const bro_log_format& format)
+        explicit bro_log_table(const bro_log_format& format)
             : log_format_vtab_impl(format), blt_format(format)
         {
         }

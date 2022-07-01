@@ -132,6 +132,8 @@ set(FORMAT_FILES
         formats/openstack_log.json
         formats/page_log.json
         formats/papertrail_log.json
+        formats/pcap_log.json
+        formats/procstate_log.json
         formats/snaplogic_log.json
         formats/sssd_log.json
         formats/strace_log.json

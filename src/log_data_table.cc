@@ -36,7 +36,7 @@ log_data_table::log_data_table(logfile_sub_source& lss,
                                content_line_t template_line,
                                intern_string_t table_name)
     : log_vtab_impl(table_name), ldt_log_source(lss),
-      ldt_template_line(template_line), ldt_instance(-1)
+      ldt_template_line(template_line)
 {
     std::shared_ptr<logfile> lf = lss.find(template_line);
     auto format = lf->get_format();
@@ -49,9 +49,6 @@ log_data_table::log_data_table(logfile_sub_source& lss,
 void
 log_data_table::get_columns_int()
 {
-    static intern_string_t instance_name
-        = intern_string::lookup("log_msg_instance");
-
     auto& cols = this->ldt_cols;
     auto& metas = this->ldt_value_metas;
     content_line_t cl_copy = this->ldt_template_line;
@@ -75,19 +72,16 @@ log_data_table::get_columns_int()
 
     data_scanner ds(line, body.lr_start, body.lr_end);
     data_parser dp(&ds);
-    column_namer cn;
+    column_namer cn{column_namer::language::SQL};
 
     dp.parse();
 
-    metas.emplace_back(
-        instance_name, value_kind_t::VALUE_INTEGER, cols.size(), format.get());
-    cols.emplace_back("log_msg_instance", SQLITE_INTEGER);
     for (auto pair_iter = dp.dp_pairs.begin(); pair_iter != dp.dp_pairs.end();
          ++pair_iter)
     {
         std::string key_str
             = dp.get_element_string(pair_iter->e_sub_elements->front());
-        std::string colname = cn.add_column(key_str);
+        auto colname = cn.add_column(key_str).to_string();
         int sql_type = SQLITE3_TEXT;
         value_kind_t kind = value_kind_t::VALUE_TEXT;
         std::string collator;
@@ -117,14 +111,7 @@ log_data_table::get_columns_int()
 bool
 log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    if (lc.lc_curr_line == -1_vl) {
-        this->ldt_instance = -1;
-    }
-
-    lc.lc_curr_line = lc.lc_curr_line + 1_vl;
-    lc.lc_sub_index = 0;
-
-    if (lc.lc_curr_line == (int) lss.text_line_count()) {
+    if (lc.is_eof()) {
         return true;
     }
 
@@ -168,7 +155,6 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 
     this->ldt_pairs.clear();
     this->ldt_pairs.swap(dp.dp_pairs, __FILE__, __LINE__);
-    this->ldt_instance += 1;
 
     return true;
 }
@@ -182,10 +168,8 @@ log_data_table::extract(logfile* lf,
     auto meta_iter = this->ldt_value_metas.begin();
 
     this->ldt_format_impl->extract(lf, line_number, line, values);
-    values.emplace_back(*meta_iter, this->ldt_instance);
-    ++meta_iter;
-    for (auto& ldt_pair : this->ldt_pairs) {
-        const data_parser::element& pvalue = ldt_pair.get_pair_value();
+    for (const auto& ldt_pair : this->ldt_pairs) {
+        const auto& pvalue = ldt_pair.get_pair_value();
 
         switch (pvalue.value_token()) {
             case DT_NUMBER: {

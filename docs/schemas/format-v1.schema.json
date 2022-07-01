@@ -441,6 +441,11 @@
                                     "title": "/<format_name>/search-table/<table_name>/pattern",
                                     "description": "The regular expression for this search table.",
                                     "type": "string"
+                                },
+                                "glob": {
+                                    "title": "/<format_name>/search-table/<table_name>/glob",
+                                    "description": "Glob pattern used to constrain hits to messages that match the given pattern.",
+                                    "type": "string"
                                 }
                             },
                             "additionalProperties": false

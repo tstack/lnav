@@ -35,17 +35,28 @@
 
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
-#include "base/string_util.hh"
 #include "config.h"
 #include "sql_util.hh"
 
+const char* column_namer::BUILTIN_COL = "col";
+
+column_namer::column_namer(language lang) : cn_language(lang) {}
+
 bool
-column_namer::existing_name(const std::string& in_name) const
+column_namer::existing_name(const string_fragment& in_name) const
 {
-    if (std::binary_search(
-            std::begin(sql_keywords), std::end(sql_keywords), toupper(in_name)))
-    {
-        return true;
+    switch (this->cn_language) {
+        case language::SQL: {
+            auto upped = toupper(in_name.to_string());
+
+            if (std::binary_search(
+                    std::begin(sql_keywords), std::end(sql_keywords), upped)) {
+                return true;
+            }
+            break;
+        }
+        case language::JSON:
+            break;
     }
 
     if (this->cn_builtin_names | lnav::itertools::find(in_name)) {
@@ -59,35 +70,44 @@ column_namer::existing_name(const std::string& in_name) const
     return false;
 }
 
-std::string
-column_namer::add_column(const std::string& in_name)
+string_fragment
+column_namer::add_column(const string_fragment& in_name)
 {
-    auto base_name = in_name;
-    std::string retval;
+    string_fragment base_name;
+    string_fragment retval;
+    fmt::memory_buffer buf;
     int num = 0;
 
     if (in_name.empty()) {
-        base_name = "col";
+        base_name = string_fragment{BUILTIN_COL};
+    } else {
+        base_name = in_name;
     }
 
     retval = base_name;
-
     auto counter_iter = this->cn_name_counters.find(retval);
     if (counter_iter != this->cn_name_counters.end()) {
         num = ++counter_iter->second;
-        retval = fmt::format(FMT_STRING("{}_{}"), base_name, num);
+        fmt::format_to(buf, FMT_STRING("{}_{}"), base_name, num);
+        retval = string_fragment{buf.data(), 0, (int) buf.size()};
     }
 
     while (this->existing_name(retval)) {
         if (num == 0) {
-            this->cn_name_counters[retval] = num;
+            this->cn_name_counters[base_name] = num;
         }
 
-        log_debug("column name already exists: %s", retval.c_str());
-        retval = fmt::format(FMT_STRING("{}_{}"), base_name, num);
+        log_debug(
+            "column name already exists: %.*s", retval.length(), retval.data());
+        fmt::format_to(buf, FMT_STRING("{}_{}"), base_name, num);
+        retval = string_fragment{buf.data(), 0, (int) buf.size()};
         num += 1;
     }
 
+    auto* mem = this->cn_alloc.allocate(retval.length() + 1);
+    memcpy(mem, retval.data(), retval.length());
+    mem[retval.length()] = '\0';
+    retval = string_fragment{mem, 0, retval.length()};
     this->cn_names.emplace_back(retval);
 
     return retval;

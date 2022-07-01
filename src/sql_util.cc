@@ -256,7 +256,28 @@ const char* sql_function_names[] = {
     "julianday(",
     "strftime(",
 
-    nullptr};
+    nullptr,
+};
+
+const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
+    {SQLITE_INDEX_CONSTRAINT_EQ, "="},
+    {SQLITE_INDEX_CONSTRAINT_GT, ">"},
+    {SQLITE_INDEX_CONSTRAINT_LE, "<="},
+    {SQLITE_INDEX_CONSTRAINT_LT, "<"},
+    {SQLITE_INDEX_CONSTRAINT_GE, ">="},
+    {SQLITE_INDEX_CONSTRAINT_MATCH, "MATCH"},
+    {SQLITE_INDEX_CONSTRAINT_LIKE, "LIKE"},
+    {SQLITE_INDEX_CONSTRAINT_GLOB, "GLOB"},
+    {SQLITE_INDEX_CONSTRAINT_REGEXP, "REGEXP"},
+    {SQLITE_INDEX_CONSTRAINT_NE, "!="},
+    {SQLITE_INDEX_CONSTRAINT_ISNOT, "IS NOT"},
+    {SQLITE_INDEX_CONSTRAINT_ISNOTNULL, "IS NOT NULL"},
+    {SQLITE_INDEX_CONSTRAINT_ISNULL, "IS NULL"},
+    {SQLITE_INDEX_CONSTRAINT_IS, "IS"},
+    {SQLITE_INDEX_CONSTRAINT_LIMIT, "LIMIT"},
+    {SQLITE_INDEX_CONSTRAINT_OFFSET, "OFFSET"},
+    {SQLITE_INDEX_CONSTRAINT_FUNCTION, "function"},
+};
 
 std::multimap<std::string, help_text*> sqlite_function_help;
 
@@ -917,7 +938,7 @@ annotate_sql_statement(attr_line_t& al)
 {
     static const std::string keyword_re_str = R"(\A)" + sql_keyword_re();
 
-    static struct {
+    static const struct {
         pcrepp re;
         string_attr_type<void>* type;
     } PATTERNS[] = {
@@ -926,7 +947,7 @@ annotate_sql_statement(attr_line_t& al)
         {pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR},
         {pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR},
         {pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR},
-        {pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])",
+        {pcrepp{R"(\A(((\$|:|@)?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)]))",
                 PCRE_CASELESS},
          &SQL_IDENTIFIER_ATTR},
         {pcrepp{R"(\A--.*)"}, &SQL_COMMENT_ATTR},
@@ -934,7 +955,7 @@ annotate_sql_statement(attr_line_t& al)
         {pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR},
     };
 
-    static pcrepp ws_pattern(R"(\A\s+)");
+    static const pcrepp ws_pattern(R"(\A\s+)");
 
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string());
@@ -947,7 +968,7 @@ annotate_sql_statement(attr_line_t& al)
         }
         for (const auto& pat : PATTERNS) {
             if (pat.re.match(pc, pi, PCRE_ANCHORED)) {
-                pcre_context::capture_t* cap = pc.all();
+                auto* cap = pc.all();
                 struct line_range lr(cap->c_begin, cap->c_end);
 
                 sa.emplace_back(lr, pat.type->value());

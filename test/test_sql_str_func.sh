@@ -97,3 +97,5 @@ run_cap_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '(')"
 run_cap_test ./drive_sql "SELECT * FROM regexp_capture('1 2 3 45', '(\d+)')"
 
 run_cap_test ./drive_sql "SELECT * FROM regexp_capture('foo foo', '^foo')"
+
+run_cap_test ./drive_sql "SELECT * FROM regexp_capture_into_json('foo=1 bar=2; foo=3 bar=4', 'foo=(\d+) bar=(\d+)')"

@@ -966,12 +966,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To set a filter expression that matched syslog messages from 'syslogd':
-   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'syslogd'[0m[37m[40m            [0m
+   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[37m[40m:log_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'syslogd'[0m[37m[40m            [0m
    
 
 #2 To set a filter expression that matches log messages where 'id' is followed by a
    number and contains the string 'foo':
-   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'id\d+'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'foo'[0m
+   [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[37m[40m:log_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'id\d+'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m [0m[37m[40m:log_body[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[37m[40m'foo'[0m
    
 
 
@@ -1140,7 +1140,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1m:clear-mark-expr[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m
 [4mExample[0m
 #1 To mark lines from 'dhclient' that mention 'eth0':
-   [37m[40m:[0m[1m[36m[40mmark-expr[0m[37m[40m :[0m[37m[40mlog_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'dhclient'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m :[0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mLIKE[0m[37m[40m [0m[37m[40m'%eth0%'[0m
+   [37m[40m:[0m[1m[36m[40mmark-expr[0m[37m[40m [0m[37m[40m:log_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m'dhclient'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m [0m[37m[40m:log_body[0m[37m[40m [0m[1m[36m[40mLIKE[0m[37m[40m [0m[37m[40m'%eth0%'[0m
    
 
 
@@ -1958,10 +1958,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get a string with the code points 0x48 and 0x49:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m(0[0m[37m[40mx48[0m[37m[40m, 0[0m[37m[40mx49[0m[37m[40m)                           [0m
@@ -1982,10 +1983,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
   [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To search for the string 'abc' within 'abcabc' and starting at position 2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'abcabc'[0m[37m[40m, 2)              [0m
@@ -2143,10 +2144,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
   [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'notbad.jpg' ends with '.jpg':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40m'notbad.jpg'[0m[37m[40m, [0m[37m[40m'.jpg'[0m[37m[40m)             [0m
@@ -2182,10 +2183,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
   [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To extract key/value pairs from a string:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m) [0m
@@ -2296,10 +2297,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_spooky_hash()[0m, 
   [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To concatenate the values of the column 'ex_procname' from the table
    'lnav_example_log':
@@ -2325,10 +2326,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgunzip()[0m, 
   [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To produce a hash of all of the values of 'column1':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[37m[40m'abc'[0m[37m[40m), ([0m[37m[40m'123'[0m[37m[40m))[0m
@@ -2344,10 +2345,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 
 [1m[4mgzip[0m[4m([0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2358,10 +2359,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 
 [1m[4mhex[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2385,10 +2387,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To format an amount:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m(10 [0m[1m[37m[40m*[0m[37m[40m 1024 [0m[1m[37m[40m*[0m[37m[40m 1024)       [0m
@@ -2421,10 +2423,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To test get the position of 'b' in the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40minstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'b'[0m[37m[40m)                          [0m
@@ -2640,10 +2642,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the first character of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                          [0m
@@ -2664,10 +2666,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the length of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlength[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                              [0m
@@ -2783,10 +2785,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract key/value pairs from a log message:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlogfmt2json[0m[37m[40m([0m[37m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m)[0m
@@ -2803,10 +2805,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To lowercase the string 'AbC':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlower[0m[37m[40m([0m[37m[40m'AbC'[0m[37m[40m)                               [0m
@@ -2824,10 +2826,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the leading whitespace from the string '   abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[37m[40m'   abc'[0m[37m[40m)                            [0m
@@ -2931,10 +2933,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
@@ -2956,10 +2958,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6)                             [0m
@@ -2981,10 +2983,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m'def'[0m[37m[40m                    [0m
@@ -3046,10 +3048,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To substitute 'World' into the string 'Hello, %s!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[37m[40m'Hello, %s!'[0m[37m[40m, [0m[37m[40m'World'[0m[37m[40m)              [0m
@@ -3073,10 +3075,10 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To capitalize the words in the string 'hello, world!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mproper[0m[37m[40m([0m[37m[40m'hello, world!'[0m[37m[40m)                    [0m
@@ -3195,13 +3197,41 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture[0m[37m[40m([0m[37m[40m'a=1; b=2'[0m[37m[40m, [0m[37m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
+   
+
+
+[1m[4mregexp_capture_into_json[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued function that executes a regular-expression over a
+  string and returns the captured values as a JSON object.  If the
+  regex only matches a subset of the input string, it will be rerun on
+  the remaining parts of the string until no more matches are found.
+[4mParameters[0m
+  [4mstring[0m    The string to match against the given pattern.
+  [4mpattern[0m   The regular expression to match.
+[4mResults[0m
+  [4mmatch_index[0m   The match iteration.  This value will
+                increase each time a new match is found in the input
+                string.
+  [4mcontent[0m       The captured values from the string.
+[4mSee Also[0m
+  [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
+  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+[4mExample[0m
+#1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[37m[40m'a=1; b=2'[0m[37m[40m, [0m[37m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
    
 
 
@@ -3216,10 +3246,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_replace()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_replace()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To capture the digits from the string '123':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[37m[40m'(\d+)'[0m[37m[40m, [0m[37m[40m'123'[0m[37m[40m)               [0m
@@ -3249,10 +3280,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_match()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_match()[0m, [1mreplace()[0m, 
+  [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m, [0m[37m[40m'^(\w+)'[0m[37m[40m, [0m[37m[40m'Goodbye'[0m[37m[40m)[0m
@@ -3276,10 +3308,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the string 'x' with 'z' in 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mreplace[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, [0m[37m[40m'x'[0m[37m[40m, [0m[37m[40m'z'[0m[37m[40m)                   [0m
@@ -3300,10 +3333,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To repeat the string 'abc' three times:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 3)                        [0m
@@ -3319,10 +3353,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mrightstr()[0m, [1mrtrim()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To reverse the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreverse[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
@@ -3340,10 +3375,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrtrim()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To get the last character of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m, 1)                         [0m
@@ -3406,10 +3442,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the whitespace from the end of the string 'abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[37m[40m'abc   '[0m[37m[40m)                            [0m
@@ -3459,10 +3496,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, 
-  [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To get the unicode block element for the value 32 in the range of 0-128:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m(32, 128)                         [0m
@@ -3482,10 +3520,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, 
-  [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To produce a hash for the string 'Hello, World!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[37m[40m'Hello, World!'[0m[37m[40m)               [0m
@@ -3562,10 +3601,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, 
-  [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'foobar' starts with 'foo':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[37m[40m'foobar'[0m[37m[40m, [0m[37m[40m'foo'[0m[37m[40m)                [0m
@@ -3587,10 +3627,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1msubstr()[0m, [1mtrim()[0m, 
-  [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To get the 'b', 'c', and 'd' characters from the string 'abcabc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrfilter[0m[37m[40m([0m[37m[40m'abcabc'[0m[37m[40m, [0m[37m[40m'bcd'[0m[37m[40m)                 [0m
@@ -3642,10 +3683,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mtrim()[0m, 
-  [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To get the substring starting at the second character until the end of the string
    'abc':
@@ -3787,10 +3829,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1municode()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To trim whitespace from the start and end of the string '    abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[37m[40m'    abc   '[0m[37m[40m)                         [0m
@@ -3828,10 +3871,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To get the unicode code point for the first character of 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40municode[0m[37m[40m([0m[37m[40m'abc'[0m[37m[40m)                             [0m
@@ -3855,10 +3899,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mxpath()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To uppercase the string 'aBc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mupper[0m[37m[40m([0m[37m[40m'aBc'[0m[37m[40m)                               [0m
@@ -3883,21 +3928,22 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mchar()[0m, [1mcharindex()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, 
   [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m
 [4mExamples[0m
 #1 To select the XML nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[37m[40m'/abc/def'[0m[37m[40m, [0m[37m[40m'<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a="b">Hello</[0m[37m[40mdef[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m>Bye</[0m[37m[40mdef[0m[37m[40m></[0m[37m[40mabc[0m[37m[40m>'[0m[37m[40m)[0m
    
 
 #2 To select all 'a' attributes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/@a', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40mdef[0m[1m[37m[40m>[0m[37m[40mBye[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[37m[40m'/abc/def/@a'[0m[37m[40m, [0m[37m[40m'<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a="b">Hello</[0m[37m[40mdef[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m>Bye</[0m[37m[40mdef[0m[37m[40m></[0m[37m[40mabc[0m[37m[40m>'[0m[37m[40m)[0m
    
 
 #3 To select the text nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m * FROM xpath('/abc/def/text()', '<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a=[0m[37m[40m"b"[0m[1m[37m[40m>[0m[37m[40mHello[0m[37m[40m &#[0m[37m[40mx2605[0m[37m[40m;[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mdef[0m[1m[37m[40m>[0m[1m[37m[40m<[0m[37m[40m/[0m[37m[40mabc[0m[1m[37m[40m>[0m[7m[31m[40m'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[37m[40m'/abc/def/text()'[0m[37m[40m, [0m[37m[40m'<[0m[37m[40mabc[0m[37m[40m><[0m[37m[40mdef[0m[37m[40m a="b">Hello &#x2605;</[0m[37m[40mdef[0m[37m[40m></[0m[37m[40mabc[0m[37m[40m>'[0m[37m[40m)[0m
    
 
 

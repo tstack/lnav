@@ -41,3 +41,6 @@ run_cap_test ./drive_sql_anno "SELECT (1 + 2) AS three"
 
 # subqueries
 run_cap_test ./drive_sql_anno "SELECT * FROM (SELECT foo, bar FROM baz)"
+
+run_cap_test ./drive_sql_anno \
+   "SELECT * from vmw_log, regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[^\n]+)')"

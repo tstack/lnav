@@ -40,9 +40,11 @@
 
 using namespace mapbox;
 
-typedef struct {
+struct cache_entry {
     std::shared_ptr<pcrepp> re2;
-} cache_entry;
+    std::shared_ptr<column_namer> cn{
+        std::make_shared<column_namer>(column_namer::language::JSON)};
+};
 
 static cache_entry*
 find_re(string_fragment re)
@@ -58,6 +60,10 @@ find_re(string_fragment re)
         c.re2 = std::make_shared<pcrepp>(re.to_string());
         auto pair = cache.insert(
             std::make_pair(string_fragment{c.re2->get_pattern()}, c));
+
+        for (int lpc = 0; lpc < c.re2->get_capture_count(); lpc++) {
+            c.cn->add_column(string_fragment{c.re2->name_for_capture(lpc)});
+        }
 
         iter = pair.first;
     }
@@ -87,7 +93,7 @@ regexp_match(string_fragment re, const char* str)
         throw pcrepp::error("regular expression does not have any captures");
     }
 
-    if (!extractor.match(pc, pi)) {
+    if (!extractor.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
         return static_cast<const char*>(nullptr);
     }
 
@@ -123,14 +129,12 @@ regexp_match(string_fragment re, const char* str)
         return string_fragment(str, cap->c_begin, cap->c_end);
     } else {
         yajlpp_map root_map(gen);
-        column_namer cn;
 
         for (int lpc = 0; lpc < extractor.get_capture_count(); lpc++) {
-            std::string colname
-                = cn.add_column(extractor.name_for_capture(lpc));
-            pcre_context::capture_t* cap = pc[lpc];
+            const auto& colname = reobj->cn->cn_names[lpc];
+            const auto* cap = pc[lpc];
 
-            yajl_gen_string(gen, colname);
+            yajl_gen_pstring(gen, colname.data(), colname.length());
 
             if (!cap->is_valid()) {
                 yajl_gen_null(gen);

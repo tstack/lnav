@@ -58,7 +58,6 @@ public:
     void get_foreign_keys(std::vector<std::string>& keys_inout) const override
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
-        keys_inout.emplace_back("log_msg_instance");
     }
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;
@@ -75,7 +74,6 @@ private:
     shared_buffer_ref ldt_current_line;
     data_parser::element_list_t ldt_pairs;
     std::shared_ptr<log_vtab_impl> ldt_format_impl;
-    int64_t ldt_instance;
     std::vector<vtab_column> ldt_cols;
     std::vector<logline_value_meta> ldt_value_metas;
 };

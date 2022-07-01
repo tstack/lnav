@@ -92,7 +92,8 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_msg_format.clear();
         this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
         this->ldh_parser->parse();
-        this->ldh_namer = std::make_unique<column_namer>();
+        this->ldh_namer
+            = std::make_unique<column_namer>(column_namer::language::SQL);
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
 

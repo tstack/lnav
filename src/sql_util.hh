@@ -34,6 +34,7 @@
 
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <sqlite3.h>
@@ -47,10 +48,23 @@
 
 extern const char* sql_keywords[145];
 extern const char* sql_function_names[];
+extern const std::unordered_map<unsigned char, const char*>
+    sql_constraint_names;
 
-typedef int (*sqlite_exec_callback)(void*, int, char**, char**);
+inline const char*
+sql_constraint_op_name(unsigned char op)
+{
+    auto iter = sql_constraint_names.find(op);
+    if (iter == sql_constraint_names.end()) {
+        return "??";
+    }
+
+    return iter->second;
+}
+
+using sqlite_exec_callback = int (*)(void*, int, char**, char**);
 typedef std::vector<std::string> db_table_list_t;
-typedef std::map<std::string, db_table_list_t> db_table_map_t;
+using db_table_map_t = std::map<std::string, db_table_list_t>;
 
 struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_collation_list;

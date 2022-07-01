@@ -1460,7 +1460,7 @@ com_pipe_to(exec_context& ec,
                      lpc++, ++iter) {
                     std::string colname = ldh.ldh_parser->get_element_string(
                         iter->e_sub_elements->front());
-                    colname = ldh.ldh_namer->add_column(colname);
+                    colname = ldh.ldh_namer->add_column(colname).to_string();
                     std::string val = ldh.ldh_parser->get_element_string(
                         iter->e_sub_elements->back());
                     setenv(colname.c_str(), val.c_str(), 1);
@@ -4832,14 +4832,14 @@ command_prompt(std::vector<std::string>& args)
 
         for (auto& cn_name : ldh.ldh_namer->cn_names) {
             lnav_data.ld_rl_view->add_possibility(
-                ln_mode_t::COMMAND, "colname", cn_name);
+                ln_mode_t::COMMAND, "colname", cn_name.to_string());
         }
         for (const auto& iter : ldh.ldh_namer->cn_builtin_names) {
-            if (iter == "col") {
+            if (iter == column_namer::BUILTIN_COL) {
                 continue;
             }
             lnav_data.ld_rl_view->add_possibility(
-                ln_mode_t::COMMAND, "colname", iter);
+                ln_mode_t::COMMAND, "colname", iter.to_string());
         }
 
         ldh.clear();
