@@ -274,8 +274,10 @@ const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
     {SQLITE_INDEX_CONSTRAINT_ISNOTNULL, "IS NOT NULL"},
     {SQLITE_INDEX_CONSTRAINT_ISNULL, "IS NULL"},
     {SQLITE_INDEX_CONSTRAINT_IS, "IS"},
+#if defined(SQLITE_INDEX_CONSTRAINT_LIMIT)
     {SQLITE_INDEX_CONSTRAINT_LIMIT, "LIMIT"},
     {SQLITE_INDEX_CONSTRAINT_OFFSET, "OFFSET"},
+#endif
     {SQLITE_INDEX_CONSTRAINT_FUNCTION, "function"},
 };
 
