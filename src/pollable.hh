@@ -30,6 +30,7 @@
 #ifndef lnav_pollable_hh
 #define lnav_pollable_hh
 
+#include <memory>
 #include <vector>
 
 #include <poll.h>

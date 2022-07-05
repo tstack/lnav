@@ -50,8 +50,12 @@ public:
 
     void detach(T* component)
     {
-        auto iter = std::find(
-            this->b_components.begin(), this->b_components.end(), component);
+        auto iter = this->b_components.begin();
+        for (; iter != this->b_components.end(); ++iter) {
+            if (*iter == component) {
+                break;
+            }
+        }
         require(iter != this->b_components.end());
 
         this->b_components.erase(iter);
