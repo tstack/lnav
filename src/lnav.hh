@@ -54,7 +54,6 @@
 #include "file_collection.hh"
 #include "files_sub_source.hh"
 #include "filter_status_source.hh"
-#include "filter_sub_source.hh"
 #include "grep_highlighter.hh"
 #include "hist_source.hh"
 #include "input_dispatcher.hh"
@@ -68,11 +67,13 @@
 #include "readline_curses.hh"
 #include "relative_time.hh"
 #include "safe/safe.h"
-#include "spectro_source.hh"
 #include "sql_util.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
 #include "view_helpers.hh"
+
+class spectrogram_source;
+class spectro_status_source;
 
 enum {
     LNB_HEADLESS,
@@ -96,6 +97,7 @@ typedef enum {
     LNS_FILTER_HELP,
     LNS_DOC,
     LNS_PREVIEW,
+    LNS_SPECTRO,
 
     LNS__MAX
 } lnav_status_t;
@@ -198,6 +200,7 @@ struct lnav_data_t {
     filter_help_status_source ld_filter_help_status_source;
     doc_status_source ld_doc_status_source;
     preview_status_source ld_preview_status_source;
+    std::unique_ptr<spectro_status_source> ld_spectro_status_source;
     bool ld_preview_hidden;
     int64_t ld_preview_generation{0};
     action_broadcaster<listview_curses> ld_scroll_broadcaster;
@@ -207,7 +210,6 @@ struct lnav_data_t {
 
     plain_text_source ld_doc_source;
     textview_curses ld_doc_view;
-    filter_sub_source ld_filter_source;
     textview_curses ld_filter_view;
     files_sub_source ld_files_source;
     files_overlay_source ld_files_overlay;
@@ -222,18 +224,19 @@ struct lnav_data_t {
     textview_curses ld_user_message_view;
     std::chrono::time_point<std::chrono::steady_clock>
         ld_user_message_expiration;
+    textview_curses ld_spectro_details_view;
+    plain_text_source ld_spectro_no_details_source;
 
     view_stack<textview_curses> ld_view_stack;
     textview_curses* ld_last_view;
     textview_curses ld_views[LNV__MAX];
-    std::shared_ptr<grep_proc<vis_line_t>> ld_meta_search;
     vis_line_t ld_search_start_line;
     readline_curses* ld_rl_view;
 
     logfile_sub_source ld_log_source;
     hist_source2 ld_hist_source2;
     int ld_zoom_level;
-    spectrogram_source ld_spectro_source;
+    std::unique_ptr<spectrogram_source> ld_spectro_source;
 
     textfile_sub_source ld_text_source;
 

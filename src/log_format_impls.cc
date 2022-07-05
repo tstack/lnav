@@ -735,6 +735,22 @@ public:
         return retval;
     }
 
+    bool hide_field(const intern_string_t field_name, bool val) override
+    {
+        auto fd_iter
+            = std::find_if(this->blf_field_defs.begin(),
+                           this->blf_field_defs.end(),
+                           [field_name](const field_def& elem) {
+                               return elem.fd_meta.lvm_name == field_name;
+                           });
+        if (fd_iter == this->blf_field_defs.end()) {
+            return false;
+        }
+
+        fd_iter->fd_meta.lvm_user_hidden = val;
+        return true;
+    }
+
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
     {
         auto retval = std::make_shared<bro_log_format>(*this);
@@ -1335,6 +1351,22 @@ public:
         }
 
         return retval;
+    }
+
+    bool hide_field(const intern_string_t field_name, bool val) override
+    {
+        auto fd_iter
+            = std::find_if(this->wlf_field_defs.begin(),
+                           this->wlf_field_defs.end(),
+                           [field_name](const field_def& elem) {
+                               return elem.fd_meta.lvm_name == field_name;
+                           });
+        if (fd_iter == this->wlf_field_defs.end()) {
+            return false;
+        }
+
+        fd_iter->fd_meta.lvm_user_hidden = val;
+        return true;
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override

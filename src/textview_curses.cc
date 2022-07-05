@@ -33,6 +33,7 @@
 #include "textview_curses.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/injector.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_parser.hh"
@@ -609,7 +610,8 @@ textview_curses::execute_search(const std::string& regex_orig)
             highlight_map_t& hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
-            auto gp = std::make_unique<grep_proc<vis_line_t>>(code, *this);
+            auto gp = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
+                code, *this);
 
             gp->set_sink(this);
             auto top = this->get_top();
@@ -624,13 +626,14 @@ textview_curses::execute_search(const std::string& regex_orig)
             }
             gp->start();
 
-            this->tc_search_child = std::make_unique<grep_highlighter>(
+            this->tc_search_child = std::make_shared<grep_highlighter>(
                 gp, highlight_source_t::PREVIEW, "search", hm);
 
             if (this->tc_sub_source != nullptr) {
                 this->tc_sub_source->get_grepper() | [this, code](auto pair) {
-                    auto sgp = std::make_shared<grep_proc<vis_line_t>>(
-                        code, *pair.first);
+                    auto sgp
+                        = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
+                            code, *pair.first);
 
                     sgp->set_sink(pair.second);
                     sgp->queue_request(0_vl);
@@ -788,6 +791,39 @@ textview_curses::redo_search()
                 .start();
         }
     }
+}
+
+bool
+textview_curses::listview_is_row_selectable(const listview_curses& lv,
+                                            vis_line_t row)
+{
+    if (this->tc_sub_source != nullptr) {
+        return this->tc_sub_source->text_is_row_selectable(*this, row);
+    }
+
+    return true;
+}
+
+void
+textview_curses::listview_selection_changed(const listview_curses& lv)
+{
+    if (this->tc_sub_source != nullptr) {
+        this->tc_sub_source->text_selection_changed(*this);
+    }
+}
+
+textview_curses&
+textview_curses::set_sub_source(text_sub_source* src)
+{
+    if (this->tc_sub_source != src) {
+        this->tc_bookmarks.clear();
+        this->tc_sub_source = src;
+        if (src) {
+            src->register_view(this);
+        }
+        this->reload_data();
+    }
+    return *this;
 }
 
 void

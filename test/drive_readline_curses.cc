@@ -92,8 +92,9 @@ main(int argc, char* argv[])
         }
     }
 
+    auto psuperv = std::make_shared<pollable_supervisor>();
     readline_context context("test", &COMMANDS);
-    readline_curses rlc;
+    readline_curses rlc(psuperv);
 
     rlc.add_context(1, context);
     rlc.start();
@@ -119,7 +120,7 @@ main(int argc, char* argv[])
         int rc;
 
         pollfds.push_back((struct pollfd){STDIN_FILENO, POLLIN, 0});
-        rlc.update_poll_set(pollfds);
+        psuperv->update_poll_set(pollfds);
 
         rlc.do_update();
         refresh();
@@ -145,7 +146,7 @@ main(int argc, char* argv[])
                     }
                 }
             }
-            rlc.check_poll_set(pollfds);
+            psuperv->check_poll_set(pollfds);
         }
     }
 

@@ -76,6 +76,14 @@ public:
     {
         return "";
     }
+
+    virtual bool listview_is_row_selectable(const listview_curses& lv,
+                                            vis_line_t row)
+    {
+        return true;
+    }
+
+    virtual void listview_selection_changed(const listview_curses& lv) {}
 };
 
 class list_gutter_source {
@@ -194,14 +202,7 @@ public:
 
     bool is_selectable() const { return this->lv_selectable; }
 
-    void set_selection(vis_line_t sel)
-    {
-        if (this->lv_selection != sel) {
-            this->lv_selection = sel;
-            this->scroll_selection_into_view();
-            this->set_needs_update();
-        }
-    }
+    void set_selection(vis_line_t sel);
 
     void scroll_selection_into_view();
 
@@ -209,7 +210,10 @@ public:
 
     vis_line_t get_selection() const
     {
-        return this->lv_selection;
+        if (this->lv_selectable) {
+            return this->lv_selection;
+        }
+        return this->lv_top;
     }
 
     listview_curses& set_word_wrap(bool ww)
@@ -553,4 +557,5 @@ protected:
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
     vis_line_t lv_tail_space{1};
 };
+
 #endif

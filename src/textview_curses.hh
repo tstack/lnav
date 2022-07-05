@@ -292,6 +292,13 @@ public:
 
     virtual size_t text_line_width(textview_curses& curses) { return INT_MAX; }
 
+    virtual bool text_is_row_selectable(textview_curses& tc, vis_line_t row)
+    {
+        return true;
+    }
+
+    virtual void text_selection_changed(textview_curses& tc) {}
+
     /**
      * Get the value for a line.
      *
@@ -490,15 +497,7 @@ public:
 
     void set_user_mark(const bookmark_type_t* bm, vis_line_t vl, bool marked);
 
-    textview_curses& set_sub_source(text_sub_source* src)
-    {
-        this->tc_sub_source = src;
-        if (src) {
-            src->register_view(this);
-        }
-        this->reload_data();
-        return *this;
-    }
+    textview_curses& set_sub_source(text_sub_source* src);
 
     text_sub_source* get_sub_source() const { return this->tc_sub_source; }
 
@@ -546,6 +545,10 @@ public:
                                  std::vector<attr_line_t>& rows_out);
 
     void textview_value_for_row(vis_line_t line, attr_line_t& value_out);
+
+    bool listview_is_row_selectable(const listview_curses& lv, vis_line_t row);
+
+    void listview_selection_changed(const listview_curses& lv);
 
     size_t listview_size_for_row(const listview_curses& lv, vis_line_t row)
     {
@@ -669,26 +672,6 @@ public:
         }
     }
 
-    void update_poll_set(std::vector<struct pollfd>& pollfds)
-    {
-        if (this->tc_search_child) {
-            this->tc_search_child->get_grep_proc()->update_poll_set(pollfds);
-        }
-        if (this->tc_source_search_child) {
-            this->tc_source_search_child->update_poll_set(pollfds);
-        }
-    }
-
-    void check_poll_set(const std::vector<struct pollfd>& pollfds)
-    {
-        if (this->tc_search_child) {
-            this->tc_search_child->get_grep_proc()->check_poll_set(pollfds);
-        }
-        if (this->tc_source_search_child) {
-            this->tc_source_search_child->check_poll_set(pollfds);
-        }
-    }
-
     std::string get_current_search() const
     {
         return this->tc_current_search;
@@ -717,7 +700,7 @@ public:
 protected:
     class grep_highlighter {
     public:
-        grep_highlighter(std::unique_ptr<grep_proc<vis_line_t>>& gp,
+        grep_highlighter(std::shared_ptr<grep_proc<vis_line_t>>& gp,
                          highlight_source_t source,
                          std::string hl_name,
                          highlight_map_t& hl_map)
@@ -738,7 +721,7 @@ protected:
         }
 
     private:
-        std::unique_ptr<grep_proc<vis_line_t>> gh_grep_proc;
+        std::shared_ptr<grep_proc<vis_line_t>> gh_grep_proc;
         highlight_source_t gh_hl_source;
         std::string gh_hl_name;
         highlight_map_t& gh_hl_map;
@@ -768,7 +751,7 @@ protected:
 
     std::string tc_current_search;
     std::string tc_previous_search;
-    std::unique_ptr<grep_highlighter> tc_search_child;
+    std::shared_ptr<grep_highlighter> tc_search_child;
     std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
 };
 

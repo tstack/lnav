@@ -58,6 +58,7 @@
 #include "base/result.h"
 #include "help_text_formatter.hh"
 #include "log_format.hh"
+#include "pollable.hh"
 #include "readline_context.hh"
 #include "vt52_curses.hh"
 
@@ -70,7 +71,9 @@ extern exec_context INIT_EXEC_CONTEXT;
  * vt52 translation is done by the parent class, vt52_curses, while this class
  * takes care of the communication between the two processes.
  */
-class readline_curses : public vt52_curses {
+class readline_curses
+    : public vt52_curses
+    , public pollable {
 public:
     using action = std::function<void(readline_curses*)>;
 
@@ -85,8 +88,10 @@ public:
 
     static const int VALUE_EXPIRATION = 20;
 
-    readline_curses();
+    readline_curses(std::shared_ptr<pollable_supervisor>);
     ~readline_curses() override;
+
+    using injectable = readline_curses(std::shared_ptr<pollable_supervisor>);
 
     void add_context(int id, readline_context& rc)
     {
@@ -156,16 +161,11 @@ public:
 
     std::string get_alt_value() const { return this->rc_alt_value; }
 
-    void update_poll_set(std::vector<struct pollfd>& pollfds)
-    {
-        pollfds.push_back((struct pollfd){this->rc_pty[RCF_MASTER], POLLIN, 0});
-        pollfds.push_back(
-            (struct pollfd){this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
-    }
+    void update_poll_set(std::vector<struct pollfd>& pollfds) override;
 
     void handle_key(int ch);
 
-    void check_poll_set(const std::vector<struct pollfd>& pollfds);
+    void check_poll_set(const std::vector<struct pollfd>& pollfds) override;
 
     void focus(int context,
                const std::string& prompt,

@@ -30,6 +30,7 @@ add_library(
         auto_fd.hh
         auto_mem.hh
         auto_pid.hh
+        bus.hh
         date_time_scanner.hh
         enum_util.hh
         fs_util.hh

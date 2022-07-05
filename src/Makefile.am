@@ -258,6 +258,7 @@ noinst_HEADERS = \
 	pcap_manager.hh \
 	piper_proc.hh \
 	plain_text_source.hh \
+	pollable.hh \
 	pretty_printer.hh \
 	preview_status_source.hh \
 	ptimec.hh \
@@ -281,6 +282,7 @@ noinst_HEADERS = \
 	shlex.hh \
 	shlex.resolver.hh \
 	simdutf8check.h \
+	spectro_impls.hh \
 	spectro_source.hh \
 	sqlitepp.hh \
 	sql_help.hh \
@@ -422,6 +424,7 @@ libdiag_a_SOURCES = \
 	papertrail_proc.cc \
 	pcap_manager.cc \
 	plain_text_source.cc \
+	pollable.cc \
 	pretty_printer.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \
@@ -435,6 +438,7 @@ libdiag_a_SOURCES = \
 	session_data.cc \
 	shared_buffer.cc \
 	shlex.cc \
+	spectro_impls.cc \
 	spectro_source.cc \
 	sqlite-extension-func.cc \
 	statusview_curses.cc \

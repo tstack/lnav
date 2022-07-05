@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -73,6 +73,7 @@
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "shlex.hh"
+#include "spectro_impls.hh"
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
@@ -221,7 +222,7 @@ com_adjust_log_time(exec_context& ec,
     } else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
         return ec.make_error("no log messages");
     } else if (args.size() >= 2) {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto& lss = lnav_data.ld_log_source;
         struct timeval top_time, time_diff;
         struct timeval new_time = {0, 0};
         content_line_t top_content;
@@ -230,7 +231,7 @@ com_adjust_log_time(exec_context& ec,
         struct exttm tm;
         std::shared_ptr<logfile> lf;
 
-        top_line = lnav_data.ld_views[LNV_LOG].get_top();
+        top_line = lnav_data.ld_views[LNV_LOG].get_selection();
         top_content = lss.at(top_line);
         lf = lss.find(top_content);
 
@@ -375,7 +376,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     } else if (args.size() > 1) {
         std::string all_args = remaining_args(cmdline, args);
         auto* tc = *lnav_data.ld_view_stack.top();
-        auto ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
+        auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
         int line_number, consumed;
         date_time_scanner dts;
         const char* scan_end = nullptr;
@@ -508,7 +509,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             } else {
                 tc->get_sub_source()->get_location_history() |
                     [new_top](auto lh) { lh->loc_history_append(new_top); };
-                tc->set_top(new_top);
+                tc->set_selection(new_top);
 
                 retval = "";
             }
@@ -564,7 +565,7 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     if (args.empty() || lnav_data.ld_view_stack.empty()) {
     } else if (!ec.ec_dry_run) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
         lnav_data.ld_last_user_mark[tc] = tc->get_top();
         tc->toggle_user_mark(&textview_curses::BM_USER,
                              vis_line_t(lnav_data.ld_last_user_mark[tc]));
@@ -761,7 +762,7 @@ com_goto_mark(exec_context& ec,
                     [new_top](auto lh) {
                         lh->loc_history_append(new_top.value());
                     };
-                tc->set_top(new_top.value());
+                tc->set_selection(new_top.value());
             }
             lnav_data.ld_bottom_source.grep_error("");
         }
@@ -783,10 +784,10 @@ com_goto_location(exec_context& ec,
             tc->get_sub_source()->get_location_history() |
                 [tc, &args](auto lh) {
                     return args[0] == "prev-location"
-                        ? lh->loc_history_back(tc->get_top())
-                        : lh->loc_history_forward(tc->get_top());
+                        ? lh->loc_history_back(tc->get_selection())
+                        : lh->loc_history_forward(tc->get_selection());
                 }
-                | [tc](auto new_top) { tc->set_top(new_top); };
+                | [tc](auto new_top) { tc->set_selection(new_top); };
         };
     }
 
@@ -2900,15 +2901,14 @@ com_comment(exec_context& ec,
             return ec.make_error(
                 "The :comment command only works in the log view");
         }
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& lss = lnav_data.ld_log_source;
+        auto& bm = lss.get_user_bookmark_metadata();
 
         args[1] = trim(remaining_args(cmdline, args));
 
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
 
-        bookmark_metadata& line_meta = bm[lss.at(tc->get_top())];
+        auto& line_meta = bm[lss.at(tc->get_top())];
 
         line_meta.bm_comment = args[1];
         lss.set_line_meta_changed();
@@ -3207,10 +3207,8 @@ com_clear_partition(exec_context& ec,
     } else if (args.size() == 1) {
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
-        bookmark_vector<vis_line_t>& bv
-            = tc.get_bookmarks()[&textview_curses::BM_META];
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& bv = tc.get_bookmarks()[&textview_curses::BM_META];
+        auto& bm = lss.get_user_bookmark_metadata();
         nonstd::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_top())) {
@@ -3621,12 +3619,12 @@ com_zoom_to(exec_context& ec,
         for (int lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc].c_str())
                 == 0) {
-                spectrogram_source& ss = lnav_data.ld_spectro_source;
+                auto& ss = *lnav_data.ld_spectro_source;
                 struct timeval old_time;
 
                 lnav_data.ld_zoom_level = lpc;
 
-                textview_curses& hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
+                auto& hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
 
                 if (hist_view.get_inner_height() > 0) {
                     auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
@@ -3642,19 +3640,20 @@ com_zoom_to(exec_context& ec,
                     }
                 }
 
-                textview_curses& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
+                auto& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
 
                 if (spectro_view.get_inner_height() > 0) {
                     auto old_time_opt
-                        = lnav_data.ld_spectro_source.time_for_row(
-                            lnav_data.ld_views[LNV_SPECTRO].get_top());
+                        = lnav_data.ld_spectro_source->time_for_row(
+                            lnav_data.ld_views[LNV_SPECTRO].get_selection());
                     ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
                     ss.invalidate();
+                    spectro_view.reload_data();
                     if (old_time_opt) {
-                        lnav_data.ld_spectro_source.row_for_time(
+                        lnav_data.ld_spectro_source->row_for_time(
                             old_time_opt.value())
                             | [](auto new_top) {
-                                  lnav_data.ld_views[LNV_SPECTRO].set_top(
+                                  lnav_data.ld_views[LNV_SPECTRO].set_selection(
                                       new_top);
                               };
                     }
@@ -4399,306 +4398,6 @@ com_reset_config(exec_context& ec,
     return Ok(retval);
 }
 
-class log_spectro_value_source : public spectrogram_value_source {
-public:
-    log_spectro_value_source(intern_string_t colname)
-        : lsvs_colname(colname), lsvs_begin_time(0), lsvs_end_time(0),
-          lsvs_found(false)
-    {
-        this->update_stats();
-    };
-
-    void update_stats()
-    {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        logfile_sub_source::iterator iter;
-
-        this->lsvs_begin_time = 0;
-        this->lsvs_end_time = 0;
-        this->lsvs_stats.clear();
-        for (iter = lss.begin(); iter != lss.end(); iter++) {
-            std::shared_ptr<logfile> lf = (*iter)->get_file();
-
-            if (lf == NULL) {
-                continue;
-            }
-
-            auto format = lf->get_format();
-            const auto* stats = format->stats_for_value(this->lsvs_colname);
-
-            if (stats == NULL) {
-                continue;
-            }
-
-            auto ll = lf->begin();
-
-            if (this->lsvs_begin_time == 0
-                || ll->get_time() < this->lsvs_begin_time) {
-                this->lsvs_begin_time = ll->get_time();
-            }
-            ll = lf->end();
-            --ll;
-            if (ll->get_time() > this->lsvs_end_time) {
-                this->lsvs_end_time = ll->get_time();
-            }
-
-            this->lsvs_found = true;
-            this->lsvs_stats.merge(*stats);
-        }
-
-        if (this->lsvs_begin_time) {
-            time_t filtered_begin_time
-                = lss.find_line(lss.at(0_vl))->get_time();
-            time_t filtered_end_time
-                = lss.find_line(lss.at(vis_line_t(lss.text_line_count() - 1)))
-                      ->get_time();
-
-            if (filtered_begin_time > this->lsvs_begin_time) {
-                this->lsvs_begin_time = filtered_begin_time;
-            }
-            if (filtered_end_time < this->lsvs_end_time) {
-                this->lsvs_end_time = filtered_end_time;
-            }
-        }
-    };
-
-    void spectro_bounds(spectrogram_bounds& sb_out)
-    {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-
-        if (lss.text_line_count() == 0) {
-            return;
-        }
-
-        this->update_stats();
-
-        sb_out.sb_begin_time = this->lsvs_begin_time;
-        sb_out.sb_end_time = this->lsvs_end_time;
-        sb_out.sb_min_value_out = this->lsvs_stats.lvs_min_value;
-        sb_out.sb_max_value_out = this->lsvs_stats.lvs_max_value;
-        sb_out.sb_count = this->lsvs_stats.lvs_count;
-    };
-
-    void spectro_row(spectrogram_request& sr, spectrogram_row& row_out)
-    {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        vis_line_t begin_line
-            = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
-        vis_line_t end_line = lss.find_from_time(sr.sr_end_time)
-                                  .value_or(lss.text_line_count());
-        std::vector<logline_value> values;
-        string_attrs_t sa;
-
-        for (vis_line_t curr_line = begin_line; curr_line < end_line;
-             ++curr_line) {
-            content_line_t cl = lss.at(curr_line);
-            std::shared_ptr<logfile> lf = lss.find(cl);
-            auto ll = lf->begin() + cl;
-            auto format = lf->get_format();
-            shared_buffer_ref sbr;
-
-            if (!ll->is_message()) {
-                continue;
-            }
-
-            lf->read_full_message(ll, sbr);
-            sa.clear();
-            values.clear();
-            format->annotate(cl, sbr, sa, values, false);
-
-            std::vector<logline_value>::iterator lv_iter;
-
-            lv_iter = find_if(values.begin(),
-                              values.end(),
-                              logline_value_cmp(&this->lsvs_colname));
-
-            if (lv_iter != values.end()) {
-                switch (lv_iter->lv_meta.lvm_kind) {
-                    case value_kind_t::VALUE_FLOAT:
-                        row_out.add_value(
-                            sr, lv_iter->lv_value.d, ll->is_marked());
-                        break;
-                    case value_kind_t::VALUE_INTEGER:
-                        row_out.add_value(
-                            sr, lv_iter->lv_value.i, ll->is_marked());
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    };
-
-    void spectro_mark(textview_curses& tc,
-                      time_t begin_time,
-                      time_t end_time,
-                      double range_min,
-                      double range_max)
-    {
-        // XXX need to refactor this and the above method
-        textview_curses& log_tc = lnav_data.ld_views[LNV_LOG];
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
-        vis_line_t end_line
-            = lss.find_from_time(end_time).value_or(lss.text_line_count());
-        std::vector<logline_value> values;
-        string_attrs_t sa;
-
-        for (vis_line_t curr_line = begin_line; curr_line < end_line;
-             ++curr_line) {
-            content_line_t cl = lss.at(curr_line);
-            std::shared_ptr<logfile> lf = lss.find(cl);
-            auto ll = lf->begin() + cl;
-            auto format = lf->get_format();
-            shared_buffer_ref sbr;
-
-            if (!ll->is_message()) {
-                continue;
-            }
-
-            lf->read_full_message(ll, sbr);
-            sa.clear();
-            values.clear();
-            format->annotate(cl, sbr, sa, values, false);
-
-            std::vector<logline_value>::iterator lv_iter;
-
-            lv_iter = find_if(values.begin(),
-                              values.end(),
-                              logline_value_cmp(&this->lsvs_colname));
-
-            if (lv_iter != values.end()) {
-                switch (lv_iter->lv_meta.lvm_kind) {
-                    case value_kind_t::VALUE_FLOAT:
-                        if (range_min <= lv_iter->lv_value.d
-                            && lv_iter->lv_value.d <= range_max) {
-                            log_tc.toggle_user_mark(&textview_curses::BM_USER,
-                                                    curr_line);
-                        }
-                        break;
-                    case value_kind_t::VALUE_INTEGER:
-                        if (range_min <= lv_iter->lv_value.i
-                            && lv_iter->lv_value.i <= range_max) {
-                            log_tc.toggle_user_mark(&textview_curses::BM_USER,
-                                                    curr_line);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    };
-
-    intern_string_t lsvs_colname;
-    logline_value_stats lsvs_stats;
-    time_t lsvs_begin_time;
-    time_t lsvs_end_time;
-    bool lsvs_found;
-};
-
-class db_spectro_value_source : public spectrogram_value_source {
-public:
-    db_spectro_value_source(std::string colname)
-        : dsvs_colname(std::move(colname))
-    {
-        this->update_stats();
-    }
-
-    void update_stats()
-    {
-        this->dsvs_begin_time = 0;
-        this->dsvs_end_time = 0;
-        this->dsvs_stats.clear();
-
-        db_label_source& dls = lnav_data.ld_db_row_source;
-        stacked_bar_chart<std::string>& chart = dls.dls_chart;
-        date_time_scanner dts;
-
-        this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
-
-        if (!dls.has_log_time_column()) {
-            this->dsvs_error_msg
-                = "no 'log_time' column found or not in ascending order, "
-                  "unable to create spectrogram";
-            return;
-        }
-
-        if (!this->dsvs_column_index) {
-            this->dsvs_error_msg = "unknown column -- " + this->dsvs_colname;
-            return;
-        }
-
-        if (!dls.dls_headers[this->dsvs_column_index.value()].hm_graphable) {
-            this->dsvs_error_msg
-                = "column is not numeric -- " + this->dsvs_colname;
-            return;
-        }
-
-        if (dls.dls_rows.empty()) {
-            this->dsvs_error_msg = "empty result set";
-            return;
-        }
-
-        stacked_bar_chart<std::string>::bucket_stats_t bs
-            = chart.get_stats_for(this->dsvs_colname);
-
-        this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
-        this->dsvs_end_time = dls.dls_time_column.back().tv_sec;
-        this->dsvs_stats.lvs_min_value = bs.bs_min_value;
-        this->dsvs_stats.lvs_max_value = bs.bs_max_value;
-        this->dsvs_stats.lvs_count = dls.dls_rows.size();
-    }
-
-    void spectro_bounds(spectrogram_bounds& sb_out) override
-    {
-        db_label_source& dls = lnav_data.ld_db_row_source;
-
-        if (dls.text_line_count() == 0) {
-            return;
-        }
-
-        this->update_stats();
-
-        sb_out.sb_begin_time = this->dsvs_begin_time;
-        sb_out.sb_end_time = this->dsvs_end_time;
-        sb_out.sb_min_value_out = this->dsvs_stats.lvs_min_value;
-        sb_out.sb_max_value_out = this->dsvs_stats.lvs_max_value;
-        sb_out.sb_count = this->dsvs_stats.lvs_count;
-    }
-
-    void spectro_row(spectrogram_request& sr, spectrogram_row& row_out) override
-    {
-        db_label_source& dls = lnav_data.ld_db_row_source;
-        auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
-        auto end_row = dls.row_for_time({sr.sr_end_time, 0})
-                           .value_or(dls.dls_rows.size());
-
-        for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-            double value = 0.0;
-
-            sscanf(dls.dls_rows[lpc][this->dsvs_column_index.value()],
-                   "%lf",
-                   &value);
-
-            row_out.add_value(sr, value, false);
-        }
-    }
-
-    void spectro_mark(textview_curses& tc,
-                      time_t begin_time,
-                      time_t end_time,
-                      double range_min,
-                      double range_max) override{};
-
-    std::string dsvs_colname;
-    logline_value_stats dsvs_stats;
-    time_t dsvs_begin_time{0};
-    time_t dsvs_end_time{0};
-    nonstd::optional<size_t> dsvs_column_index;
-    std::string dsvs_error_msg;
-};
-
 static Result<std::string, lnav::console::user_message>
 com_spectrogram(exec_context& ec,
                 std::string cmdline,
@@ -4712,13 +4411,13 @@ com_spectrogram(exec_context& ec,
         retval = "";
     } else if (args.size() == 2) {
         std::string colname = remaining_args(cmdline, args);
-        spectrogram_source& ss = lnav_data.ld_spectro_source;
+        auto& ss = *lnav_data.ld_spectro_source;
         bool found = false;
 
         ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
-        if (ss.ss_value_source != NULL) {
+        if (ss.ss_value_source != nullptr) {
             delete ss.ss_value_source;
-            ss.ss_value_source = NULL;
+            ss.ss_value_source = nullptr;
         }
         ss.invalidate();
 
@@ -4728,10 +4427,9 @@ com_spectrogram(exec_context& ec,
 
             if (!dsvs->dsvs_error_msg.empty()) {
                 return ec.make_error("{}", dsvs->dsvs_error_msg);
-            } else {
-                ss.ss_value_source = dsvs.release();
-                found = true;
             }
+            ss.ss_value_source = dsvs.release();
+            found = true;
         } else {
             std::unique_ptr<log_spectro_value_source> lsvs(
                 new log_spectro_value_source(intern_string::lookup(colname)));
@@ -4739,16 +4437,16 @@ com_spectrogram(exec_context& ec,
             if (!lsvs->lsvs_found) {
                 return ec.make_error("unknown numeric message field -- {}",
                                      colname);
-            } else {
-                ss.ss_value_source = lsvs.release();
-                found = true;
             }
+            ss.ss_value_source = lsvs.release();
+            found = true;
         }
 
         if (found) {
+            ss.text_selection_changed(lnav_data.ld_views[LNV_SPECTRO]);
             ensure_view(&lnav_data.ld_views[LNV_SPECTRO]);
 
-            if (lnav_data.ld_rl_view != NULL) {
+            if (lnav_data.ld_rl_view != nullptr) {
                 lnav_data.ld_rl_view->set_alt_value(
                     HELP_MSG_2(z, Z, "to zoom in/out"));
             }
@@ -4979,6 +4677,24 @@ search_files_prompt(std::vector<std::string>& args)
 }
 
 static void
+search_spectro_details_prompt(std::vector<std::string>& args)
+{
+    lnav_data.ld_mode = ln_mode_t::SEARCH_SPECTRO_DETAILS;
+    add_view_text_possibilities(lnav_data.ld_rl_view,
+                                ln_mode_t::SEARCH_SPECTRO_DETAILS,
+                                "*",
+                                &lnav_data.ld_spectro_details_view,
+                                text_quoting::regex);
+    lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH_SPECTRO_DETAILS,
+                                cget(args, 2).value_or("/"),
+                                cget(args, 3).value_or(""));
+    lnav_data.ld_bottom_source.set_prompt(
+        "Search for:  "
+        "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
+        ANSI_BOLD("CTRL+]") " to abort)");
+}
+
+static void
 sql_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
@@ -5032,6 +4748,7 @@ com_prompt(exec_context& ec,
             {"search", search_prompt},
             {"search-filters", search_filters_prompt},
             {"search-files", search_files_prompt},
+            {"search-spectro-details", search_spectro_details_prompt},
             {"sql", sql_prompt},
             {"user", user_prompt},
         };

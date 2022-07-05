@@ -65,11 +65,28 @@ create_factory() noexcept
 
 template<typename T, typename... Annotations>
 struct bind : singleton_storage<T, Annotations...> {
+    template<typename I = T,
+             std::enable_if_t<has_injectable<I>::value, bool> = true>
     static bool to_singleton() noexcept
     {
-        static T storage;
+        typename I::injectable* i = nullptr;
+        singleton_storage<T, Annotations...>::ss_owner
+            = create_from_injectable<I>(i)();
+        singleton_storage<T, Annotations...>::ss_data
+            = singleton_storage<T, Annotations...>::ss_owner.get();
+        singleton_storage<T, Annotations...>::ss_scope = scope::singleton;
 
-        singleton_storage<T, Annotations...>::ss_data = &storage;
+        return true;
+    }
+
+    template<typename I = T,
+             std::enable_if_t<!has_injectable<I>::value, bool> = true>
+    static bool to_singleton() noexcept
+    {
+        singleton_storage<T, Annotations...>::ss_owner = std::make_shared<T>();
+        singleton_storage<T, Annotations...>::ss_data
+            = singleton_storage<T, Annotations...>::ss_owner.get();
+        singleton_storage<T, Annotations...>::ss_scope = scope::singleton;
         return true;
     }
 
@@ -78,12 +95,14 @@ struct bind : singleton_storage<T, Annotations...> {
     {
         singleton_storage<T, Annotations...>::ss_data
             = f(::injector::get<Args>()...);
+        singleton_storage<T, Annotations...>::ss_scope = scope::singleton;
         return true;
     }
 
     static bool to_instance(T* data) noexcept
     {
         singleton_storage<T, Annotations...>::ss_data = data;
+        singleton_storage<T, Annotations...>::ss_scope = scope::singleton;
         return true;
     }
 
@@ -92,6 +111,7 @@ struct bind : singleton_storage<T, Annotations...> {
     {
         singleton_storage<T, Annotations...>::ss_factory
             = details::create_factory<I>();
+        singleton_storage<T, Annotations...>::ss_scope = scope::none;
         return true;
     }
 };

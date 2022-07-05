@@ -32,13 +32,16 @@
 #ifndef spectro_source_hh
 #define spectro_source_hh
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include <math.h>
 #include <time.h>
 
+#include "statusview_curses.hh"
 #include "textview_curses.hh"
+
+struct exec_context;
 
 struct spectrogram_bounds {
     time_t sb_begin_time{0};
@@ -64,30 +67,33 @@ struct spectrogram_request {
 };
 
 struct spectrogram_row {
-    ~spectrogram_row()
-    {
-        delete[] this->sr_values;
-    }
+    spectrogram_row() = default;
+    spectrogram_row(const spectrogram_row&) = delete;
 
     struct row_bucket {
         int rb_counter{0};
         int rb_marks{0};
     };
 
-    row_bucket* sr_values{nullptr};
+    std::vector<row_bucket> sr_values;
     unsigned long sr_width{0};
     double sr_column_size{0.0};
+    std::function<std::unique_ptr<text_sub_source>(
+        const spectrogram_request&, double range_min, double range_max)>
+        sr_details_source_provider;
 
     void add_value(spectrogram_request& sr, double value, bool marked)
     {
-        long index = lrint((value - sr.sr_bounds.sb_min_value_out)
-                           / sr.sr_column_size);
+        long index = std::floor((value - sr.sr_bounds.sb_min_value_out)
+                                / sr.sr_column_size);
 
         this->sr_values[index].rb_counter += 1;
         if (marked) {
             this->sr_values[index].rb_marks += 1;
         }
     }
+
+    nonstd::optional<size_t> nearest_column(size_t current) const;
 };
 
 class spectrogram_value_source {
@@ -119,7 +125,7 @@ public:
     {
         this->ss_cached_bounds.sb_count = 0;
         this->ss_row_cache.clear();
-        this->ss_cursor_column = -1;
+        this->ss_cursor_column = nonstd::nullopt;
     }
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
@@ -141,6 +147,10 @@ public:
         return 0;
     }
 
+    bool text_is_row_selectable(textview_curses& tc, vis_line_t row) override;
+
+    void text_selection_changed(textview_curses& tc) override;
+
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 
     nonstd::optional<vis_line_t> row_for_time(
@@ -157,16 +167,38 @@ public:
 
     void cache_bounds();
 
-    spectrogram_row& load_row(textview_curses& tc, int row);
+    const spectrogram_row& load_row(const listview_curses& lv, int row);
 
+    textview_curses* ss_details_view;
+    text_sub_source* ss_no_details_source;
+    exec_context* ss_exec_context;
+    std::unique_ptr<text_sub_source> ss_details_source;
     int ss_granularity{60};
     spectrogram_value_source* ss_value_source{nullptr};
     spectrogram_bounds ss_cached_bounds;
     spectrogram_thresholds ss_cached_thresholds;
     size_t ss_cached_line_count{0};
-    std::map<time_t, spectrogram_row> ss_row_cache;
-    vis_line_t ss_cursor_top;
-    int ss_cursor_column{-1};
+    std::unordered_map<time_t, spectrogram_row> ss_row_cache;
+    nonstd::optional<size_t> ss_cursor_column;
+};
+
+class spectro_status_source : public status_data_source {
+public:
+    enum field_t {
+        F_TITLE,
+        F_HELP,
+
+        F_MAX
+    };
+
+    spectro_status_source();
+
+    size_t statusview_fields() override;
+
+    status_field& statusview_value_for_field(int field) override;
+
+private:
+    status_field sss_fields[F_MAX];
 };
 
 #endif

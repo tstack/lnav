@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,66 +27,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "base/injector.hh"
-#include "bound_tags.hh"
-#include "config.h"
-#include "lnav.hh"
-#include "service_tags.hh"
-#include "spectro_source.hh"
+#ifndef lnav_bus_hh
+#define lnav_bus_hh
 
-struct lnav_data_t lnav_data;
+#include <vector>
 
-void
-rebuild_hist()
-{
-}
+#include "lnav_log.hh"
 
-bool
-setup_logline_table(exec_context& ec)
-{
-    return false;
-}
+template<typename T>
+class bus {
+public:
+    bus() = default;
 
-bool
-rescan_files(bool required)
-{
-    return false;
-}
+    virtual ~bus() { require(this->b_components.empty()); }
 
-void
-wait_for_children()
-{
-}
+    bus(const bus<T>&) = delete;
 
-size_t
-rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
-{
-    return 0;
-}
+    void attach(T* component)
+    {
+        this->b_components.template emplace_back(component);
+    }
 
-void
-rebuild_indexes_repeatedly()
-{
-}
+    void detach(T* component)
+    {
+        auto iter = std::find(
+            this->b_components.begin(), this->b_components.end(), component);
+        require(iter != this->b_components.end());
 
-readline_context::command_map_t lnav_commands;
+        this->b_components.erase(iter);
+    }
 
-namespace injector {
-template<>
-void
-force_linking(sqlite_db_tag anno)
-{
-}
+protected:
+    std::vector<T*> b_components;
+};
 
-template<>
-void
-force_linking(services::curl_streamer_t anno)
-{
-}
-
-template<>
-void
-force_linking(services::remote_tailer_t anno)
-{
-}
-}  // namespace injector
+#endif

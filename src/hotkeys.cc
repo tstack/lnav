@@ -828,6 +828,8 @@ handle_paging_key(int ch)
                     });
 
                 tc->reload_data();
+            } else if (tc == &lnav_data.ld_views[LNV_SPECTRO]) {
+                lnav_data.ld_mode = ln_mode_t::SPECTRO_DETAILS;
             } else if (tc_tss != nullptr && tc_tss->tss_supports_filtering) {
                 lnav_data.ld_mode = lnav_data.ld_last_config_mode;
                 lnav_data.ld_filter_view.reload_data();

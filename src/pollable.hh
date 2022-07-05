@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,66 +27,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "base/injector.hh"
-#include "bound_tags.hh"
-#include "config.h"
-#include "lnav.hh"
-#include "service_tags.hh"
-#include "spectro_source.hh"
+#ifndef lnav_pollable_hh
+#define lnav_pollable_hh
 
-struct lnav_data_t lnav_data;
+#include <vector>
 
-void
-rebuild_hist()
-{
-}
+#include <poll.h>
 
-bool
-setup_logline_table(exec_context& ec)
-{
-    return false;
-}
+#include "base/bus.hh"
 
-bool
-rescan_files(bool required)
-{
-    return false;
-}
+class pollable_supervisor;
 
-void
-wait_for_children()
-{
-}
+class pollable {
+public:
+    enum class category {
+        background,
+        interactive,
+    };
 
-size_t
-rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
-{
-    return 0;
-}
+    pollable(std::shared_ptr<pollable_supervisor> supervisor, category cat);
 
-void
-rebuild_indexes_repeatedly()
-{
-}
+    pollable(const pollable&) = delete;
 
-readline_context::command_map_t lnav_commands;
+    virtual ~pollable();
 
-namespace injector {
-template<>
-void
-force_linking(sqlite_db_tag anno)
-{
-}
+    category get_category() const { return this->p_category; }
 
-template<>
-void
-force_linking(services::curl_streamer_t anno)
-{
-}
+    virtual void update_poll_set(std::vector<struct pollfd>& pollfds) = 0;
 
-template<>
-void
-force_linking(services::remote_tailer_t anno)
-{
-}
-}  // namespace injector
+    virtual void check_poll_set(const std::vector<struct pollfd>& pollfds) = 0;
+
+private:
+    std::shared_ptr<pollable_supervisor> p_supervisor;
+    const category p_category;
+};
+
+class pollable_supervisor : public bus<pollable> {
+public:
+    struct update_result {
+        size_t ur_background{0};
+        size_t ur_interactive{0};
+    };
+
+    update_result update_poll_set(std::vector<struct pollfd>& pollfds);
+
+    void check_poll_set(const std::vector<struct pollfd>& pollfds);
+
+    size_t count(pollable::category cat);
+};
+
+#endif

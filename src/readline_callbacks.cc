@@ -410,6 +410,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::SEARCH:
         case ln_mode_t::SEARCH_FILTERS:
         case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
             name = "$search";
             break;
 
@@ -492,6 +493,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::FILES:
         case ln_mode_t::EXEC:
         case ln_mode_t::USER:
+        case ln_mode_t::SPECTRO_DETAILS:
             return;
     }
 
@@ -573,6 +575,9 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::SEARCH_FILES:
             new_mode = ln_mode_t::FILES;
             break;
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
+            new_mode = ln_mode_t::SPECTRO_DETAILS;
+            break;
         default:
             break;
     }
@@ -583,6 +588,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::SPECTRO_DETAILS:
             require(0);
             break;
 
@@ -616,6 +622,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::SEARCH:
         case ln_mode_t::SEARCH_FILTERS:
         case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
         case ln_mode_t::CAPTURE:
             rl_search_internal(rc, old_mode, true);
             if (!rc->get_value().empty()) {

@@ -18,6 +18,12 @@ lnav v0.10.2:
        (activated by the -m option), a log format can be created from
        a regular expression entry on regex101.com and existing patterns
        can be edited.
+     * In the spectrogram view, the selected value range is now shown by
+       an overlay that includes a summary of the range and the number of
+       values that fall in that range.  There is also a detail panel at
+       the bottom that shows the log-messages/DB-rows whose values are in
+       that range.  You can then press TAB to focus on the detail view
+       and scroll around.
      * Add initial support for pcap(3) files using tshark(1).
      * To make it possible to automate some operations, there is now an
        "lnav_events" table that is updated when internal events occur

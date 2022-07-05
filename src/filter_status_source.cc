@@ -33,6 +33,7 @@
 #include "base/opt_util.hh"
 #include "config.h"
 #include "files_sub_source.hh"
+#include "filter_sub_source.hh"
 #include "lnav.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
@@ -246,11 +247,11 @@ filter_help_status_source::statusview_fields()
         }
 
         if (lnav_data.ld_mode == ln_mode_t::FILTER) {
-            auto& editor = lnav_data.ld_filter_source;
+            static auto* editor = injector::get<filter_sub_source*>();
             auto& lv = lnav_data.ld_filter_view;
             auto& fs = tss->get_filters();
 
-            if (editor.fss_editing) {
+            if (editor->fss_editing) {
                 auto tf = *(fs.begin() + lv.get_selection());
                 auto lang = tf->get_lang() == filter_lang_t::SQL ? "an SQL"
                                                                  : "a regular";

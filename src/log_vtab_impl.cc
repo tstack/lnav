@@ -1340,7 +1340,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             if (vl_max_opt) {
                 p_cur->log_cursor.lc_end_line = vl_max_opt.value();
                 for (const auto& msg_info :
-                     vt->lss->window_at(vl_max_opt.value())) {
+                     vt->lss->window_at(vl_max_opt.value(),
+                                        vis_line_t(vt->lss->text_line_count())))
+                {
                     if (log_time_range->tr_end.value()
                         < msg_info.get_logline().get_timeval()) {
                         break;

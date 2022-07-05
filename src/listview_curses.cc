@@ -54,10 +54,17 @@ listview_curses::reload_data()
             this->lv_top
                 = std::max(0_vl, vis_line_t(this->get_inner_height() - 1));
         }
-        if (this->get_inner_height() == 0) {
-            this->lv_selection = 0_vl;
-        } else if (this->lv_selection >= this->get_inner_height()) {
-            this->lv_selection = this->get_inner_height() - 1_vl;
+        if (this->lv_selectable) {
+            if (this->get_inner_height() == 0) {
+                this->lv_selection = 0_vl;
+            } else if (this->lv_selection >= this->get_inner_height()) {
+                this->set_selection(this->get_inner_height() - 1_vl);
+            } else {
+                auto curr_sel = this->lv_selection;
+
+                this->lv_selection = -1_vl;
+                this->set_selection(curr_sel);
+            }
         }
     }
     this->vc_needs_update = true;
@@ -482,8 +489,8 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 auto bot = this->get_bottom();
 
                 if (bot != -1_vl) {
-                    if (this->lv_selection > bot) {
-                        this->lv_selection = bot;
+                    if (this->lv_selection > (bot - this->lv_tail_space)) {
+                        this->lv_selection = bot - this->lv_tail_space;
                     }
                 }
             }
@@ -559,9 +566,48 @@ listview_curses::scroll_selection_into_view()
     }
     if (this->lv_selection < 0_vl) {
         this->set_top(0_vl);
-    } else if (this->lv_selection >= (this->lv_top + height - 1)) {
-        this->set_top(this->lv_selection - height + 2_vl, true);
+    } else if (this->lv_selection
+               >= (this->lv_top + height - this->lv_tail_space)) {
+        this->set_top(this->lv_selection - height + 1_vl + this->lv_tail_space,
+                      true);
     } else if (this->lv_selection < this->lv_top) {
         this->set_top(this->lv_selection, true);
+    }
+}
+
+void
+listview_curses::set_selection(vis_line_t sel)
+{
+    if (this->lv_selectable) {
+        auto inner_height = this->get_inner_height();
+        if (this->lv_selection != sel && sel >= 0_vl && sel < inner_height) {
+            auto found = false;
+            vis_line_t step;
+
+            if (sel == 0_vl) {
+                step = 1_vl;
+            } else if (sel == inner_height - 1_vl) {
+                step = -1_vl;
+            } else if (sel < this->lv_selection) {
+                step = -1_vl;
+            } else {
+                step = 1_vl;
+            }
+            while (sel < inner_height) {
+                if (this->lv_source->listview_is_row_selectable(*this, sel)) {
+                    found = true;
+                    break;
+                }
+                sel += step;
+            }
+            if (found) {
+                this->lv_selection = sel;
+                this->scroll_selection_into_view();
+                this->lv_source->listview_selection_changed(*this);
+                this->set_needs_update();
+            }
+        }
+    } else {
+        this->set_top(sel);
     }
 }

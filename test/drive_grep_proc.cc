@@ -70,7 +70,7 @@ public:
                     retval = read_result.isOk();
                 }
             }
-        } catch (line_buffer::error& e) {
+        } catch (const line_buffer::error& e) {
             fprintf(stderr,
                     "error: source buffer error %d %s\n",
                     this->ms_buffer.get_fd(),
@@ -87,7 +87,7 @@ private:
 
 class my_sink : public grep_proc_sink<vis_line_t> {
 public:
-    my_sink() : ms_finished(false){};
+    my_sink() : ms_finished(false) {}
 
     void grep_match(grep_proc<vis_line_t>& gp,
                     vis_line_t line,
@@ -95,7 +95,7 @@ public:
                     int end)
     {
         printf("%d:%d:%d\n", (int) line, start, end);
-    };
+    }
 
     void grep_capture(grep_proc<vis_line_t>& gp,
                       vis_line_t line,
@@ -104,12 +104,9 @@ public:
                       char* capture)
     {
         fprintf(stderr, "%d(%d:%d)%s\n", (int) line, start, end, capture);
-    };
+    }
 
-    void grep_end(grep_proc<vis_line_t>& gp)
-    {
-        this->ms_finished = true;
-    };
+    void grep_end(grep_proc<vis_line_t>& gp) { this->ms_finished = true; }
 
     bool ms_finished;
 };
@@ -135,10 +132,11 @@ main(int argc, char* argv[])
     {
         fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
     } else {
+        auto psuperv = std::make_shared<pollable_supervisor>();
         my_source ms(fd);
         my_sink msink;
 
-        grep_proc<vis_line_t> gp(code, ms);
+        grep_proc<vis_line_t> gp(code, ms, psuperv);
 
         gp.set_sink(&msink);
         gp.queue_request();
@@ -147,10 +145,10 @@ main(int argc, char* argv[])
         while (!msink.ms_finished) {
             vector<struct pollfd> pollfds;
 
-            gp.update_poll_set(pollfds);
+            psuperv->update_poll_set(pollfds);
             poll(&pollfds[0], pollfds.size(), -1);
 
-            gp.check_poll_set(pollfds);
+            psuperv->check_poll_set(pollfds);
         }
     }
 

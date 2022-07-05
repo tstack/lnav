@@ -51,6 +51,8 @@ set(TIME_FORMATS
         "%a %b %d %H:%M:%S %Z %Y"
         "%a %b %d %H:%M:%S "
         "%a %b %d %H:%M:%S.%L "
+        "%a %b %d %H:%M "
+        "%a %b %e %H:%M:%S %Z %Y"
         "%d/%b/%Y:%H:%M:%S +0000"
         "%d/%b/%Y:%H:%M:%S %z"
         "%d-%b-%Y %H:%M:%S %z"
@@ -328,6 +330,8 @@ add_library(
         string-extension-functions.cc
         sysclip.cc
         piper_proc.cc
+        pollable.cc
+        spectro_impls.cc
         spectro_source.cc
         sql_commands.cc
         sql_util.cc
@@ -415,6 +419,7 @@ add_library(
         papertrail_proc.hh
         pcap_manager.hh
         plain_text_source.hh
+        pollable.hh
         pretty_printer.hh
         preview_status_source.hh
         pugixml/pugiconfig.hpp
@@ -436,6 +441,7 @@ add_library(
         shlex.hh
         shlex.resolver.hh
         simdutf8check.h
+        spectro_impls.hh
         spectro_source.hh
         sqlitepp.hh
         sql_help.hh

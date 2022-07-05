@@ -47,8 +47,11 @@
 #include "vis_line.hh"
 
 template<typename LineType>
-grep_proc<LineType>::grep_proc(pcre* code, grep_proc_source<LineType>& gps)
-    : gp_pcre(code), gp_source(gps)
+grep_proc<LineType>::grep_proc(pcre* code,
+                               grep_proc_source<LineType>& gps,
+                               std::shared_ptr<pollable_supervisor> ps)
+    : pollable(ps, pollable::category::background), gp_pcre(code),
+      gp_source(gps)
 {
     require(this->invariant());
 
@@ -88,7 +91,9 @@ grep_proc<LineType>::start()
 {
     require(this->invariant());
 
+    log_debug("grep_proc(%p): start", this);
     if (this->gp_child_started || this->gp_queue.empty()) {
+        log_debug("grep_proc(%p): nothing to do?", this);
         return;
     }
 
@@ -126,6 +131,8 @@ grep_proc<LineType>::start()
         this->gp_child_queue_size = this->gp_queue.size();
 
         this->gp_queue.clear();
+
+        log_debug("grep_proc(%p): started child %d", this, this->gp_child);
         return;
     }
 
@@ -400,6 +407,19 @@ grep_proc<LineType>::invalidate()
     this->gp_queue.clear();
     this->cleanup();
     return *this;
+}
+
+template<typename LineType>
+void
+grep_proc<LineType>::update_poll_set(std::vector<struct pollfd>& pollfds)
+{
+    if (this->gp_line_buffer.get_fd() != -1) {
+        pollfds.push_back(
+            (struct pollfd){this->gp_line_buffer.get_fd(), POLLIN, 0});
+    }
+    if (this->gp_err_pipe != -1) {
+        pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
+    }
 }
 
 template class grep_proc<vis_line_t>;

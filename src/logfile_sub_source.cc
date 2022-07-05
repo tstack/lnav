@@ -1963,7 +1963,7 @@ logline_window::begin()
 logline_window::iterator
 logline_window::end()
 {
-    return {this->lw_source, vis_line_t(this->lw_source.text_line_count())};
+    return {this->lw_source, this->lw_end_line};
 }
 
 logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)

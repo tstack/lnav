@@ -93,6 +93,7 @@
 #include "CLI/CLI.hpp"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
+#include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
 #include "grep_proc.hh"
 #include "help-txt.h"
@@ -119,6 +120,7 @@
 #include "regexp_vtab.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
+#include "spectro_source.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
@@ -167,8 +169,6 @@ using namespace lnav::roles::literals;
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-struct lnav_data_t lnav_data;
-
 const int ZOOM_LEVELS[] = {
     1,
     30,
@@ -216,6 +216,12 @@ static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
 };
 
 const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
+
+static auto bound_pollable_supervisor
+    = injector::bind<pollable_supervisor>::to_singleton();
+
+static auto bound_filter_sub_source
+    = injector::bind<filter_sub_source>::to_singleton();
 
 static auto bound_active_files = injector::bind<file_collection>::to_instance(
     +[]() { return &lnav_data.ld_active_files; });
@@ -277,6 +283,8 @@ force_linking(services::main_t anno)
 }  // namespace injector
 
 static breadcrumb_curses breadcrumb_view;
+
+struct lnav_data_t lnav_data;
 
 bool
 setup_logline_table(exec_context& ec)
@@ -848,10 +856,39 @@ handle_key(int ch)
                 case ln_mode_t::FILES:
                     return handle_config_ui_key(ch);
 
+                case ln_mode_t::SPECTRO_DETAILS: {
+                    if (ch == '\t' || ch == 'q') {
+                        lnav_data.ld_mode = ln_mode_t::PAGING;
+                        return true;
+                    }
+                    if (lnav_data.ld_spectro_details_view.handle_key(ch)) {
+                        return true;
+                    }
+                    switch (ch) {
+                        case 'n': {
+                            execute_command(lnav_data.ld_exec_context,
+                                            "next-mark search");
+                            return true;
+                        }
+                        case 'N': {
+                            execute_command(lnav_data.ld_exec_context,
+                                            "prev-mark search");
+                            return true;
+                        }
+                        case '/': {
+                            execute_command(lnav_data.ld_exec_context,
+                                            "prompt search-spectro-details");
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
                 case ln_mode_t::COMMAND:
                 case ln_mode_t::SEARCH:
                 case ln_mode_t::SEARCH_FILTERS:
                 case ln_mode_t::SEARCH_FILES:
+                case ln_mode_t::SEARCH_SPECTRO_DETAILS:
                 case ln_mode_t::CAPTURE:
                 case ln_mode_t::SQL:
                 case ln_mode_t::EXEC:
@@ -946,6 +983,9 @@ wait_for_pipers()
 static void
 looper()
 {
+    static auto* ps = injector::get<pollable_supervisor*>();
+    static auto* filter_source = injector::get<filter_sub_source*>();
+
     try {
         auto_fd errpipe[2];
         auto_fd::pipe(errpipe);
@@ -964,11 +1004,13 @@ looper()
         readline_context search_filters_context(
             "search-filters", nullptr, false);
         readline_context search_files_context("search-files", nullptr, false);
+        readline_context search_spectro_details_context(
+            "search-spectro-details", nullptr, false);
         readline_context index_context("capture");
         readline_context sql_context("sql", sql_cmd_map, false);
         readline_context exec_context("exec");
         readline_context user_context("user");
-        readline_curses rlc;
+        auto rlc = injector::get<std::shared_ptr<readline_curses>>();
         sig_atomic_t overlay_counter = 0;
         int lpc;
 
@@ -978,6 +1020,8 @@ looper()
         search_filters_context.set_append_character(0).set_highlighter(
             readline_regex_highlighter);
         search_files_context.set_append_character(0).set_highlighter(
+            readline_regex_highlighter);
+        search_spectro_details_context.set_append_character(0).set_highlighter(
             readline_regex_highlighter);
         sql_context.set_highlighter(readline_sqlite_highlighter)
             .set_quote_chars("\"")
@@ -994,19 +1038,21 @@ looper()
         auto& sb = lnav_data.ld_scroll_broadcaster;
         auto& vsb = lnav_data.ld_view_stack_broadcaster;
 
-        rlc.add_context(ln_mode_t::COMMAND, command_context);
-        rlc.add_context(ln_mode_t::SEARCH, search_context);
-        rlc.add_context(ln_mode_t::SEARCH_FILTERS, search_filters_context);
-        rlc.add_context(ln_mode_t::SEARCH_FILES, search_files_context);
-        rlc.add_context(ln_mode_t::CAPTURE, index_context);
-        rlc.add_context(ln_mode_t::SQL, sql_context);
-        rlc.add_context(ln_mode_t::EXEC, exec_context);
-        rlc.add_context(ln_mode_t::USER, user_context);
-        rlc.start();
+        rlc->add_context(ln_mode_t::COMMAND, command_context);
+        rlc->add_context(ln_mode_t::SEARCH, search_context);
+        rlc->add_context(ln_mode_t::SEARCH_FILTERS, search_filters_context);
+        rlc->add_context(ln_mode_t::SEARCH_FILES, search_files_context);
+        rlc->add_context(ln_mode_t::SEARCH_SPECTRO_DETAILS,
+                         search_spectro_details_context);
+        rlc->add_context(ln_mode_t::CAPTURE, index_context);
+        rlc->add_context(ln_mode_t::SQL, sql_context);
+        rlc->add_context(ln_mode_t::EXEC, exec_context);
+        rlc->add_context(ln_mode_t::USER, user_context);
+        rlc->start();
 
-        lnav_data.ld_filter_source.fss_editor.start();
+        filter_source->fss_editor->start();
 
-        lnav_data.ld_rl_view = &rlc;
+        lnav_data.ld_rl_view = rlc.get();
 
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::COMMAND, "viewname", lnav_view_strings);
@@ -1088,19 +1134,19 @@ looper()
 
         execute_examples();
 
-        rlc.set_window(lnav_data.ld_window);
-        rlc.set_y(-1);
-        rlc.set_focus_action(rl_focus);
-        rlc.set_change_action(rl_change);
-        rlc.set_perform_action(rl_callback);
-        rlc.set_alt_perform_action(rl_alt_callback);
-        rlc.set_timeout_action(rl_search);
-        rlc.set_abort_action(lnav_rl_abort);
-        rlc.set_display_match_action(rl_display_matches);
-        rlc.set_display_next_action(rl_display_next);
-        rlc.set_blur_action(rl_blur);
-        rlc.set_completion_request_action(rl_completion_request);
-        rlc.set_alt_value(HELP_MSG_2(
+        rlc->set_window(lnav_data.ld_window);
+        rlc->set_y(-1);
+        rlc->set_focus_action(rl_focus);
+        rlc->set_change_action(rl_change);
+        rlc->set_perform_action(rl_callback);
+        rlc->set_alt_perform_action(rl_alt_callback);
+        rlc->set_timeout_action(rl_search);
+        rlc->set_abort_action(lnav_rl_abort);
+        rlc->set_display_match_action(rl_display_matches);
+        rlc->set_display_next_action(rl_display_next);
+        rlc->set_blur_action(rl_blur);
+        rlc->set_completion_request_action(rl_completion_request);
+        rlc->set_alt_value(HELP_MSG_2(
             e, E, "to move forward/backward through error messages"));
 
         (void) curs_set(0);
@@ -1127,20 +1173,21 @@ looper()
         breadcrumb_view.set_y(0);
         breadcrumb_view.set_window(lnav_data.ld_window);
         breadcrumb_view.set_line_source(lnav_crumb_source);
+        auto event_handler = [](auto&& tc) {
+            auto top_view = lnav_data.ld_view_stack.top();
+
+            if (top_view && *top_view == &tc) {
+                lnav_data.ld_bottom_source.update_search_term(tc);
+            }
+        };
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
             lnav_data.ld_views[lpc].set_y(1);
             lnav_data.ld_views[lpc].set_height(
-                vis_line_t(-(rlc.get_height() + 1)));
+                vis_line_t(-(rlc->get_height() + 1)));
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
-            lnav_data.ld_views[lpc].tc_state_event_handler = [](auto&& tc) {
-                auto top_view = lnav_data.ld_view_stack.top();
-
-                if (top_view && *top_view == &tc) {
-                    lnav_data.ld_bottom_source.update_search_term(tc);
-                }
-            };
+            lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         }
 
         lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
@@ -1167,7 +1214,25 @@ looper()
 
         lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
-        lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
+        lnav_data.ld_spectro_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_spectro_details_view.set_show_scrollbar(true);
+        lnav_data.ld_spectro_details_view.set_height(5_vl);
+        lnav_data.ld_spectro_details_view.set_sub_source(
+            &lnav_data.ld_spectro_no_details_source);
+        lnav_data.ld_spectro_details_view.tc_state_event_handler
+            = event_handler;
+        lnav_data.ld_spectro_details_view.set_scroll_action(sb);
+        lnav_data.ld_spectro_no_details_source.replace_with(
+            attr_line_t().append(
+                lnav::roles::comment(" No details available")));
+        lnav_data.ld_spectro_source->ss_details_view
+            = &lnav_data.ld_spectro_details_view;
+        lnav_data.ld_spectro_source->ss_no_details_source
+            = &lnav_data.ld_spectro_no_details_source;
+        lnav_data.ld_spectro_source->ss_exec_context
+            = &lnav_data.ld_exec_context;
+
+        lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
         for (auto& sc : lnav_data.ld_status) {
             sc.set_window(lnav_data.ld_window);
         }
@@ -1181,6 +1246,10 @@ looper()
             &lnav_data.ld_doc_status_source);
         lnav_data.ld_status[LNS_PREVIEW].set_data_source(
             &lnav_data.ld_preview_status_source);
+        lnav_data.ld_spectro_status_source
+            = std::make_unique<spectro_status_source>();
+        lnav_data.ld_status[LNS_SPECTRO].set_data_source(
+            lnav_data.ld_spectro_status_source.get());
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
         lnav_data.ld_user_message_view.set_show_bottom_border(true);
@@ -1372,6 +1441,7 @@ looper()
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_preview_view.do_update();
+            lnav_data.ld_spectro_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 for (auto& sc : lnav_data.ld_status) {
@@ -1379,8 +1449,8 @@ looper()
                 }
                 next_status_update_time = ui_clock::now() + 100ms;
             }
-            if (lnav_data.ld_filter_source.fss_editing) {
-                lnav_data.ld_filter_source.fss_match_view.set_needs_update();
+            if (filter_source->fss_editing) {
+                filter_source->fss_match_view.set_needs_update();
             }
             breadcrumb_view.do_update();
             // These updates need to be done last so their readline views can
@@ -1402,7 +1472,7 @@ looper()
             if (lnav_data.ld_mode != ln_mode_t::FILTER
                 && lnav_data.ld_mode != ln_mode_t::FILES)
             {
-                rlc.do_update();
+                rlc->do_update();
             }
             refresh();
 
@@ -1415,10 +1485,11 @@ looper()
                         case ln_mode_t::SEARCH:
                         case ln_mode_t::SEARCH_FILTERS:
                         case ln_mode_t::SEARCH_FILES:
+                        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
                         case ln_mode_t::SQL:
                         case ln_mode_t::EXEC:
                         case ln_mode_t::USER:
-                            if (rlc.consume_ready_for_input()) {
+                            if (rlc->consume_ready_for_input()) {
                                 // log_debug("waiting for readline input")
                                 view_curses::awaiting_user_input();
                             }
@@ -1430,15 +1501,8 @@ looper()
                     }
                 }
             }
-            rlc.update_poll_set(pollfds);
-            lnav_data.ld_filter_source.fss_editor.update_poll_set(pollfds);
 
-            for (auto& tc : lnav_data.ld_views) {
-                tc.update_poll_set(pollfds);
-            }
-            lnav_data.ld_filter_view.update_poll_set(pollfds);
-            lnav_data.ld_files_view.update_poll_set(pollfds);
-
+            ps->update_poll_set(pollfds);
             ui_now = ui_clock::now();
             auto poll_to
                 = (!changes && ui_now < loop_deadline && session_stage >= 1)
@@ -1505,6 +1569,7 @@ looper()
                         case ln_mode_t::PAGING:
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
+                        case ln_mode_t::SPECTRO_DETAILS:
                             if (old_gen
                                 == lnav_data.ld_active_files
                                        .fc_files_generation) {
@@ -1518,6 +1583,7 @@ looper()
                         case ln_mode_t::SEARCH:
                         case ln_mode_t::SEARCH_FILTERS:
                         case ln_mode_t::SEARCH_FILES:
+                        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
                         case ln_mode_t::CAPTURE:
                         case ln_mode_t::SQL:
                         case ln_mode_t::EXEC:
@@ -1528,20 +1594,13 @@ looper()
                     next_rebuild_time = next_rescan_time;
                 }
 
-                for (auto& tc : lnav_data.ld_views) {
-                    tc.check_poll_set(pollfds);
-                }
-
+                ps->check_poll_set(pollfds);
                 lnav_data.ld_view_stack.top() |
                     [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
 
                 auto old_mode = lnav_data.ld_mode;
                 auto old_file_names_size
                     = lnav_data.ld_active_files.fc_file_names.size();
-                rlc.check_poll_set(pollfds);
-                lnav_data.ld_filter_source.fss_editor.check_poll_set(pollfds);
-                lnav_data.ld_filter_view.check_poll_set(pollfds);
-                lnav_data.ld_files_view.check_poll_set(pollfds);
 
                 if (lnav_data.ld_mode != old_mode) {
                     switch (lnav_data.ld_mode) {
@@ -1692,9 +1751,9 @@ looper()
                 if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
                     resizeterm(size.ws_row, size.ws_col);
                 }
-                rlc.do_update();
-                rlc.window_change();
-                lnav_data.ld_filter_source.fss_editor.window_change();
+                rlc->do_update();
+                rlc->window_change();
+                filter_source->fss_editor->window_change();
                 for (auto& sc : lnav_data.ld_status) {
                     sc.window_change();
                 }
@@ -1704,6 +1763,7 @@ looper()
                 lnav_data.ld_match_view.set_needs_update();
                 lnav_data.ld_filter_view.set_needs_update();
                 lnav_data.ld_files_view.set_needs_update();
+                lnav_data.ld_spectro_details_view.set_needs_update();
                 lnav_data.ld_user_message_view.set_needs_update();
             }
 
@@ -1728,10 +1788,6 @@ looper()
                 gather_pipers();
             }
 
-            if (lnav_data.ld_meta_search) {
-                lnav_data.ld_meta_search->start();
-            }
-
             if (lnav_data.ld_view_stack.empty()
                 || (lnav_data.ld_view_stack.size() == 1
                     && starting_view_stack_size == 2
@@ -1751,22 +1807,15 @@ wait_for_children()
 {
     std::vector<struct pollfd> pollfds;
     struct timeval to = {0, 333000};
-
-    if (lnav_data.ld_meta_search) {
-        lnav_data.ld_meta_search->start();
-    }
+    static auto* ps = injector::get<pollable_supervisor*>();
 
     do {
         pollfds.clear();
 
-        for (auto& tc : lnav_data.ld_views) {
-            tc.update_poll_set(pollfds);
-        }
-        lnav_data.ld_filter_view.update_poll_set(pollfds);
-        lnav_data.ld_files_view.update_poll_set(pollfds);
+        auto update_res = ps->update_poll_set(pollfds);
 
-        if (pollfds.empty()) {
-            return;
+        if (update_res.ur_background == 0) {
+            break;
         }
 
         int rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
@@ -1781,15 +1830,10 @@ wait_for_children()
             }
         }
 
-        for (auto& tc : lnav_data.ld_views) {
-            tc.check_poll_set(pollfds);
-
-            lnav_data.ld_view_stack.top() |
-                [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
-        }
-        lnav_data.ld_filter_view.check_poll_set(pollfds);
-        lnav_data.ld_files_view.check_poll_set(pollfds);
-    } while (true);
+        ps->check_poll_set(pollfds);
+        lnav_data.ld_view_stack.top() |
+            [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
+    } while (lnav_data.ld_looping);
 }
 
 static int
@@ -2293,6 +2337,7 @@ main(int argc, char* argv[])
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
 
+    auto* filter_source = injector::get<filter_sub_source*>();
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
 
@@ -2326,20 +2371,22 @@ main(int argc, char* argv[])
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
     lnav_data.ld_views[LNV_DB].set_overlay_source(&lnav_data.ld_db_overlay);
+    lnav_data.ld_spectro_source = std::make_unique<spectrogram_source>();
     lnav_data.ld_views[LNV_SPECTRO]
-        .set_sub_source(&lnav_data.ld_spectro_source)
-        .set_overlay_source(&lnav_data.ld_spectro_source)
-        .add_input_delegate(lnav_data.ld_spectro_source)
-        .set_tail_space(2_vl);
+        .set_sub_source(lnav_data.ld_spectro_source.get())
+        .set_overlay_source(lnav_data.ld_spectro_source.get())
+        .add_input_delegate(*lnav_data.ld_spectro_source)
+        .set_tail_space(4_vl);
+    lnav_data.ld_views[LNV_SPECTRO].set_selectable(true);
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
     lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
-    lnav_data.ld_filter_view.set_sub_source(&lnav_data.ld_filter_source)
-        .add_input_delegate(lnav_data.ld_filter_source)
-        .add_child_view(&lnav_data.ld_filter_source.fss_match_view)
-        .add_child_view(&lnav_data.ld_filter_source.fss_editor);
+    lnav_data.ld_filter_view.set_sub_source(filter_source)
+        .add_input_delegate(*filter_source)
+        .add_child_view(&filter_source->fss_match_view)
+        .add_child_view(filter_source->fss_editor.get());
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
     lnav_data.ld_user_message_view.set_sub_source(

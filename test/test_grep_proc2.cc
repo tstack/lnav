@@ -124,9 +124,10 @@ main(int argc, char* argv[])
     pcre_refcount(code, 1);
     assert(code != NULL);
 
+    auto psuperv = std::make_shared<pollable_supervisor>();
     {
         my_source ms;
-        grep_proc<vis_line_t> gp(code, ms);
+        grep_proc<vis_line_t> gp(code, ms, psuperv);
 
         gp.queue_request(10_vl, 14_vl);
         gp.queue_request(0_vl, 3_vl);
@@ -136,7 +137,8 @@ main(int argc, char* argv[])
 
     {
         my_sleeper_source mss;
-        grep_proc<vis_line_t>* gp = new grep_proc<vis_line_t>(code, mss);
+        grep_proc<vis_line_t>* gp
+            = new grep_proc<vis_line_t>(code, mss, psuperv);
         int status;
 
         gp->queue_request();

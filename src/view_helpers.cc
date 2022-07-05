@@ -535,8 +535,11 @@ layout_views()
     bool preview_status_open
         = !lnav_data.ld_preview_status_source.get_description().empty();
     bool filter_status_open = false;
+    auto is_spectro = false;
 
     lnav_data.ld_view_stack.top() | [&](auto tc) {
+        is_spectro = (tc == &lnav_data.ld_views[LNV_SPECTRO]);
+
         text_sub_source* tss = tc->get_sub_source();
 
         if (tss == nullptr) {
@@ -601,7 +604,8 @@ layout_views()
 
     int bottom_height = (doc_open ? 1 : 0) + doc_height
         + (preview_status_open ? 1 : 0) + preview_height + 1  // bottom status
-        + match_height + um_height + lnav_data.ld_rl_view->get_height();
+        + match_height + um_height + lnav_data.ld_rl_view->get_height()
+        + (is_spectro && !doc_open ? 5 : 0);
 
     for (auto& tc : lnav_data.ld_views) {
         tc.set_height(vis_line_t(-(bottom_height + (filter_status_open ? 1 : 0)
@@ -622,6 +626,10 @@ layout_views()
     lnav_data.ld_status[LNS_PREVIEW].set_top(height - bottom_height
                                              + (doc_open ? 1 : 0) + doc_height);
     lnav_data.ld_status[LNS_PREVIEW].set_visible(preview_status_open);
+    lnav_data.ld_status[LNS_SPECTRO].set_top(height - bottom_height - 1);
+    lnav_data.ld_status[LNS_SPECTRO].set_visible(is_spectro);
+    lnav_data.ld_status[LNS_SPECTRO].set_enabled(lnav_data.ld_mode
+                                                 == ln_mode_t::SPECTRO_DETAILS);
 
     if (!doc_open || doc_side_by_side) {
         lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
@@ -656,6 +664,13 @@ layout_views()
                                     + (doc_open ? 1 : 0) + doc_height);
     lnav_data.ld_user_message_view.set_y(
         height - lnav_data.ld_rl_view->get_height() - match_height - um_height);
+
+    lnav_data.ld_spectro_details_view.set_y(height - bottom_height);
+    lnav_data.ld_spectro_details_view.set_height(
+        is_spectro && !doc_open ? 5_vl : 0_vl);
+    lnav_data.ld_spectro_details_view.set_width(width);
+    lnav_data.ld_spectro_details_view.set_title("spectro-details");
+
     lnav_data.ld_match_view.set_y(height - lnav_data.ld_rl_view->get_height()
                                   - match_height);
     lnav_data.ld_rl_view->set_width(width);
@@ -893,9 +908,9 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
              const bookmark_type_t* bt,
              const vis_line_t top)
 {
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
-    vis_bookmarks& bm = tc->get_bookmarks();
-    bookmark_vector<vis_line_t>& bv = bm[bt];
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto& bm = tc->get_bookmarks();
+    auto& bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
     vis_line_t last_top(top), tc_height;
     nonstd::optional<vis_line_t> new_top = top;
@@ -1009,7 +1024,7 @@ search_forward_from(textview_curses* tc)
 {
     vis_line_t height,
         retval = tc->is_selectable() ? tc->get_selection() : tc->get_top();
-    key_repeat_history& krh = lnav_data.ld_key_repeat_history;
+    auto& krh = lnav_data.ld_key_repeat_history;
     unsigned long width;
 
     tc->get_dimensions(height, width);
@@ -1031,6 +1046,9 @@ get_textview_for_mode(ln_mode_t mode)
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::FILES:
             return &lnav_data.ld_files_view;
+        case ln_mode_t::SPECTRO_DETAILS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
+            return &lnav_data.ld_spectro_details_view;
         default:
             return *lnav_data.ld_view_stack.top();
     }

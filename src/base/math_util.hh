@@ -63,4 +63,11 @@ roundup_size(size_t size, int step)
     return retval;
 }
 
+template<typename T>
+T
+abs_diff(T a, T b)
+{
+    return a > b ? a - b : b - a;
+}
+
 #endif

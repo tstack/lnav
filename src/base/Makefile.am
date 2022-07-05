@@ -25,6 +25,7 @@ noinst_HEADERS = \
     auto_fd.hh \
     auto_mem.hh \
     auto_pid.hh \
+    bus.hh \
     date_time_scanner.hh \
     enum_util.hh \
     file_range.hh \

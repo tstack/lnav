@@ -115,7 +115,13 @@ const char* lnav_log_crash_dir;
 nonstd::optional<const struct termios*> lnav_log_orig_termios;
 // NOTE: This mutex is leaked so that it is not destroyed during exit.
 // Otherwise, any attempts to log will fail.
-static std::mutex* lnav_log_mutex = new std::mutex();
+static std::mutex*
+lnav_log_mutex()
+{
+    static auto* retval = new std::mutex();
+
+    return retval;
+}
 
 static std::vector<log_state_dumper*>&
 DUMPER_LIST()
@@ -306,7 +312,7 @@ log_msg(lnav_log_level_t level,
         return;
     }
 
-    std::lock_guard<std::mutex> log_lock(*lnav_log_mutex);
+    std::lock_guard<std::mutex> log_lock(*lnav_log_mutex());
 
     {
         // get the base name of the file.  NB: can't use basename() since it
@@ -365,7 +371,7 @@ log_msg(lnav_log_level_t level,
 void
 log_msg_extra(const char* fmt, ...)
 {
-    std::lock_guard<std::mutex> mg(*lnav_log_mutex);
+    std::lock_guard<std::mutex> mg(*lnav_log_mutex());
     va_list args;
 
     va_start(args, fmt);
@@ -382,7 +388,7 @@ log_msg_extra(const char* fmt, ...)
 void
 log_msg_extra_complete()
 {
-    std::lock_guard<std::mutex> mg(*lnav_log_mutex);
+    std::lock_guard<std::mutex> mg(*lnav_log_mutex());
     auto line = log_alloc();
     line[0] = '\n';
     log_ring.lr_length += 1;

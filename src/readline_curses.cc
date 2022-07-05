@@ -591,8 +591,10 @@ readline_context::save()
     hs = nullptr;
 }
 
-readline_curses::readline_curses()
-    : rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
+readline_curses::readline_curses(
+    std::shared_ptr<pollable_supervisor> supervisor)
+    : pollable(supervisor, pollable::category::interactive),
+      rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
       rc_alt_perform(noop_func{}), rc_timeout(noop_func{}),
       rc_abort(noop_func{}), rc_display_match(noop_func{}),
       rc_display_next(noop_func{}), rc_blur(noop_func{}),
@@ -1467,4 +1469,16 @@ readline_curses::set_attr_value(const attr_line_t& value)
     }
     this->rc_value_expiration = time(nullptr) + VALUE_EXPIRATION;
     this->set_needs_update();
+}
+
+void
+readline_curses::update_poll_set(std::vector<struct pollfd>& pollfds)
+{
+    if (this->rc_pty[RCF_MASTER] != -1) {
+        pollfds.push_back((struct pollfd){this->rc_pty[RCF_MASTER], POLLIN, 0});
+    }
+    if (this->rc_command_pipe[RCF_MASTER] != -1) {
+        pollfds.push_back(
+            (struct pollfd){this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
+    }
 }

@@ -37,23 +37,25 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 
-filter_sub_source::filter_sub_source()
+filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
+    : fss_editor(editor)
 {
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(filter_lang_t::REGEX, this->fss_regex_context);
+    this->fss_editor->add_context(filter_lang_t::REGEX,
+                                  this->fss_regex_context);
     this->fss_sql_context.set_highlighter(readline_sqlite_highlighter)
         .set_append_character(0);
-    this->fss_editor.add_context(filter_lang_t::SQL, this->fss_sql_context);
-    this->fss_editor.set_change_action(
+    this->fss_editor->add_context(filter_lang_t::SQL, this->fss_sql_context);
+    this->fss_editor->set_change_action(
         bind_mem(&filter_sub_source::rl_change, this));
-    this->fss_editor.set_perform_action(
+    this->fss_editor->set_perform_action(
         bind_mem(&filter_sub_source::rl_perform, this));
-    this->fss_editor.set_abort_action(
+    this->fss_editor->set_abort_action(
         bind_mem(&filter_sub_source::rl_abort, this));
-    this->fss_editor.set_display_match_action(
+    this->fss_editor->set_display_match_action(
         bind_mem(&filter_sub_source::rl_display_matches, this));
-    this->fss_editor.set_display_next_action(
+    this->fss_editor->set_display_next_action(
         bind_mem(&filter_sub_source::rl_display_next, this));
     this->fss_match_view.set_sub_source(&this->fss_match_source);
     this->fss_match_view.set_height(0_vl);
@@ -67,10 +69,10 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
     if (this->fss_editing) {
         switch (ch) {
             case KEY_CTRL_RBRACKET:
-                this->fss_editor.abort();
+                this->fss_editor->abort();
                 return true;
             default:
-                this->fss_editor.handle_key(ch);
+                this->fss_editor->handle_key(ch);
                 return true;
         }
     }
@@ -156,26 +158,26 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor,
+            add_view_text_possibilities(this->fss_editor.get(),
                                         filter_lang_t::REGEX,
                                         "*",
                                         top_view,
                                         text_quoting::regex);
-            this->fss_editor.set_window(lv.get_window());
-            this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y()
-                                   + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(25);
-            this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(filter_lang_t::REGEX, "", "");
+            this->fss_editor->set_window(lv.get_window());
+            this->fss_editor->set_visible(true);
+            this->fss_editor->set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor->set_left(25);
+            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
+            this->fss_editor->focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
         }
         case 'o': {
-            textview_curses* top_view = *lnav_data.ld_view_stack.top();
-            text_sub_source* tss = top_view->get_sub_source();
-            filter_stack& fs = tss->get_filters();
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* tss = top_view->get_sub_source();
+            auto& fs = tss->get_filters();
             auto filter_index = fs.next_index();
 
             if (!filter_index) {
@@ -192,18 +194,18 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             this->fss_editing = true;
 
-            add_view_text_possibilities(&this->fss_editor,
+            add_view_text_possibilities(this->fss_editor.get(),
                                         filter_lang_t::REGEX,
                                         "*",
                                         top_view,
                                         text_quoting::regex);
-            this->fss_editor.set_window(lv.get_window());
-            this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y()
-                                   + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(25);
-            this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(filter_lang_t::REGEX, "", "");
+            this->fss_editor->set_window(lv.get_window());
+            this->fss_editor->set_visible(true);
+            this->fss_editor->set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor->set_left(25);
+            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
+            this->fss_editor->focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
             return true;
@@ -226,17 +228,17 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 ? text_quoting::sql
                 : text_quoting::regex;
             add_view_text_possibilities(
-                &this->fss_editor, tf->get_lang(), "*", top_view, tq);
+                this->fss_editor.get(), tf->get_lang(), "*", top_view, tq);
             add_filter_expr_possibilities(
-                &this->fss_editor, filter_lang_t::SQL, "*");
-            this->fss_editor.set_window(lv.get_window());
-            this->fss_editor.set_visible(true);
-            this->fss_editor.set_y(lv.get_y()
-                                   + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(25);
-            this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(tf->get_lang(), "");
-            this->fss_editor.rewrite_line(0, tf->get_id().c_str());
+                this->fss_editor.get(), filter_lang_t::SQL, "*");
+            this->fss_editor->set_window(lv.get_window());
+            this->fss_editor->set_visible(true);
+            this->fss_editor->set_y(
+                lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
+            this->fss_editor->set_left(25);
+            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
+            this->fss_editor->focus(tf->get_lang(), "");
+            this->fss_editor->rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
             tf->disable();
             tss->text_filters_changed();
@@ -565,7 +567,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
-    this->fss_editor.set_visible(false);
+    this->fss_editor->set_visible(false);
     this->tss_view->reload_data();
 }
 
@@ -585,7 +587,7 @@ filter_sub_source::rl_abort(readline_curses* rc)
     top_view->reload_data();
     fs.delete_filter("");
     this->tss_view->reload_data();
-    this->fss_editor.set_visible(false);
+    this->fss_editor->set_visible(false);
     this->fss_editing = false;
     this->tss_view->set_needs_update();
     tf->set_enabled(this->fss_filter_state);

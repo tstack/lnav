@@ -47,6 +47,7 @@
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"
 #include "pcrepp/pcrepp.hh"
+#include "pollable.hh"
 #include "strong_int.hh"
 
 template<typename LineType>
@@ -159,7 +160,7 @@ public:
  * library directly.
  */
 template<typename LineType>
-class grep_proc {
+class grep_proc : public pollable {
 public:
     class error : public std::exception {
     public:
@@ -175,16 +176,22 @@ public:
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.
      */
-    grep_proc(pcre* code, grep_proc_source<LineType>& gps);
+    grep_proc(pcre* code,
+              grep_proc_source<LineType>& gps,
+              std::shared_ptr<pollable_supervisor> ps);
+
+    grep_proc(std::shared_ptr<pollable_supervisor>);
+
+    using injectable = grep_proc(std::shared_ptr<pollable_supervisor>);
 
     virtual ~grep_proc();
 
-    /** @param gpd The sink to send resuls to. */
+    /** @param gpd The sink to send results to. */
     void set_sink(grep_proc_sink<LineType>* gpd) { this->gp_sink = gpd; }
 
     grep_proc& invalidate();
 
-    /** @param gpd The sink to send results to. */
+    /** @param gpc The control to send results to. */
     void set_control(grep_proc_control* gpc) { this->gp_control = gpc; }
 
     /** @return The sink to send results to. */
@@ -216,23 +223,14 @@ public:
      */
     void start();
 
-    void update_poll_set(std::vector<struct pollfd>& pollfds)
-    {
-        if (this->gp_line_buffer.get_fd() != -1) {
-            pollfds.push_back(
-                (struct pollfd){this->gp_line_buffer.get_fd(), POLLIN, 0});
-        }
-        if (this->gp_err_pipe != -1) {
-            pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
-        }
-    }
+    void update_poll_set(std::vector<struct pollfd>& pollfds) override;
 
     /**
      * Check the fd_set to see if there is any new data to be processed.
      *
      * @param ready_rfds The set of ready-to-read file descriptors.
      */
-    void check_poll_set(const std::vector<struct pollfd>& pollfds);
+    void check_poll_set(const std::vector<struct pollfd>& pollfds) override;
 
     /** Check the invariants for this object. */
     bool invariant()

@@ -156,8 +156,10 @@ private:
 
 class logline_window {
 public:
-    logline_window(logfile_sub_source& lss, vis_line_t start_line)
-        : lw_source(lss), lw_start_line(start_line)
+    logline_window(logfile_sub_source& lss,
+                   vis_line_t start_vl,
+                   vis_line_t end_vl)
+        : lw_source(lss), lw_start_line(start_vl), lw_end_line(end_vl)
     {
     }
 
@@ -175,6 +177,12 @@ public:
         {
             this->load_msg();
             return this->li_string_attrs;
+        }
+
+        const std::vector<logline_value>& get_values() const
+        {
+            this->load_msg();
+            return this->li_line_values;
         }
 
         std::string to_string(const struct line_range& lr) const;
@@ -218,6 +226,7 @@ public:
 private:
     logfile_sub_source& lw_source;
     vis_line_t lw_start_line;
+    vis_line_t lw_end_line;
 };
 
 /**
@@ -615,9 +624,9 @@ public:
         return this->at(vl);
     }
 
-    logline_window window_at(vis_line_t vl)
+    logline_window window_at(vis_line_t start_vl, vis_line_t end_vl)
     {
-        return logline_window(*this, vl);
+        return logline_window(*this, start_vl, end_vl);
     }
 
     log_accel::direction_t get_line_accel_direction(vis_line_t vl);

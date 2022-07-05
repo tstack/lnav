@@ -61,6 +61,8 @@ enum class ln_mode_t : int {
     BREADCRUMBS,
     FILTER,
     FILES,
+    SPECTRO_DETAILS,
+    SEARCH_SPECTRO_DETAILS,
     COMMAND,
     SEARCH,
     SEARCH_FILTERS,

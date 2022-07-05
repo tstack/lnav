@@ -30,6 +30,7 @@
 #ifndef filter_sub_source_hh
 #define filter_sub_source_hh
 
+#include "base/injector.hh"
 #include "plain_text_source.hh"
 #include "readline_curses.hh"
 #include "textview_curses.hh"
@@ -38,7 +39,12 @@ class filter_sub_source
     : public text_sub_source
     , public list_input_delegate {
 public:
-    filter_sub_source();
+    filter_sub_source(std::shared_ptr<readline_curses> editor);
+
+    using injectable
+        = filter_sub_source(std::shared_ptr<readline_curses> editor);
+
+    filter_sub_source(const filter_sub_source*) = delete;
 
     ~filter_sub_source() override = default;
 
@@ -75,7 +81,7 @@ public:
 
     readline_context fss_regex_context{"filter-regex", nullptr, false};
     readline_context fss_sql_context{"filter-sql", nullptr, false};
-    readline_curses fss_editor;
+    std::shared_ptr<readline_curses> fss_editor;
     plain_text_source fss_match_source;
     textview_curses fss_match_view;
 
