@@ -126,9 +126,9 @@ lnav_log_mutex()
 static std::vector<log_state_dumper*>&
 DUMPER_LIST()
 {
-    static std::vector<log_state_dumper*> retval;
+    static auto* retval = new std::vector<log_state_dumper*>();
 
-    return retval;
+    return *retval;
 }
 static std::vector<log_crash_recoverer*> CRASH_LIST;
 
