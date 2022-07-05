@@ -27,6 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __CYGWIN__
+#    include <alloca.h>
+#endif
+
 #include "base/lnav_log.hh"
 #include "column_namer.hh"
 #include "config.h"
