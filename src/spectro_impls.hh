@@ -81,7 +81,7 @@ public:
     time_t dsvs_begin_time{0};
     time_t dsvs_end_time{0};
     nonstd::optional<size_t> dsvs_column_index;
-    std::string dsvs_error_msg;
+    nonstd::optional<lnav::console::user_message> dsvs_error_msg;
 };
 
 #endif

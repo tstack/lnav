@@ -1,6 +1,6 @@
-[31m✘ error[0m: no 'log_time' column found or not in ascending order, unable to create spectrogram
+[31m✘ error[0m: Cannot generate spectrogram for database results
+ [31mreason[0m: The “[4mlog_time[0m” column is not in ascending order between rows 1 and 2
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                   [0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
-         ══════════════════════════════════════════════════════════════════════
-           Visualize the given message field using a spectrogram
+[36m =[0m [36mnote[0m: An ascending “[4mlog_time[0m” column is needed to render a spectrogram
+[36m =[0m [36mhelp[0m: Add an “[1m[36mORDER BY[0m [4mlog_time[0m [1m[36mASC[0m” clause to your [1m[36mSELECT[0m statement

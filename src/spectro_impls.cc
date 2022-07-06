@@ -29,6 +29,7 @@
 
 #include "spectro_impls.hh"
 
+#include "base/itertools.hh"
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
 
@@ -43,40 +44,50 @@ public:
                              std::string& value_out,
                              line_flags_t flags) override
     {
-        this->fss_delegate->text_value_for_line(
-            tc, this->fss_lines[line], value_out, flags);
+        this->fss_lines | lnav::itertools::nth(line)
+            | lnav::itertools::for_each([&](const auto row) {
+                  this->fss_delegate->text_value_for_line(
+                      tc, *row, value_out, flags);
+              });
     }
 
     size_t text_size_for_line(textview_curses& tc,
                               int line,
                               line_flags_t raw) override
     {
-        return this->fss_delegate->text_size_for_line(
-            tc, this->fss_lines[line], raw);
+        return this->fss_lines | lnav::itertools::nth(line)
+            | lnav::itertools::map([&](const auto row) {
+                   return this->fss_delegate->text_size_for_line(tc, *row, raw);
+               })
+            | lnav::itertools::unwrap_or(size_t{0});
     }
 
     void text_attrs_for_line(textview_curses& tc,
                              int line,
                              string_attrs_t& value_out) override
     {
-        this->fss_delegate->text_attrs_for_line(
-            tc, this->fss_lines[line], value_out);
+        this->fss_lines | lnav::itertools::nth(line)
+            | lnav::itertools::for_each([&](const auto row) {
+                  this->fss_delegate->text_attrs_for_line(tc, *row, value_out);
+              });
     }
 
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override
     {
-        return dynamic_cast<text_time_translator*>(this->fss_delegate)
-            ->row_for_time(time_bucket);
+        return this->fss_time_delegate->row_for_time(time_bucket);
     }
 
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override
     {
-        return dynamic_cast<text_time_translator*>(this->fss_delegate)
-            ->time_for_row(this->fss_lines[row]);
+        return this->fss_lines | lnav::itertools::nth(row)
+            | lnav::itertools::flat_map([this](const auto row) {
+                   return this->fss_time_delegate->time_for_row(*row);
+               });
     }
 
     text_sub_source* fss_delegate;
+    text_time_translator* fss_time_delegate;
     std::vector<vis_line_t> fss_lines;
 };
 
@@ -202,6 +213,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                             .value_or(lss.text_line_count());
 
         retval->fss_delegate = &lss;
+        retval->fss_time_delegate = &lss;
         for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
             const auto& ll = msg_info.get_logline();
             if (ll.get_time() >= sr.sr_end_time) {
@@ -311,36 +323,103 @@ db_spectro_value_source::update_stats()
     this->dsvs_end_time = 0;
     this->dsvs_stats.clear();
 
-    db_label_source& dls = lnav_data.ld_db_row_source;
-    stacked_bar_chart<std::string>& chart = dls.dls_chart;
+    auto& dls = lnav_data.ld_db_row_source;
+    auto& chart = dls.dls_chart;
     date_time_scanner dts;
 
     this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
 
     if (!dls.has_log_time_column()) {
-        this->dsvs_error_msg
-            = "no 'log_time' column found or not in ascending order, "
-              "unable to create spectrogram";
+        if (dls.dls_time_column_invalidated_at) {
+            static const auto order_by_help
+                = attr_line_t()
+                      .append(lnav::roles::keyword("ORDER BY"))
+                      .append(" ")
+                      .append(lnav::roles::variable("log_time"))
+                      .append(" ")
+                      .append(lnav::roles::keyword("ASC"));
+
+            this->dsvs_error_msg
+                = lnav::console::user_message::error(
+                      "Cannot generate spectrogram for database results")
+                      .with_reason(
+                          attr_line_t()
+                              .append("The ")
+                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append(
+                                  " column is not in ascending order between "
+                                  "rows {} and {}",
+                                  dls.dls_time_column_invalidated_at.value()
+                                      - 1,
+                                  dls.dls_time_column_invalidated_at.value()))
+                      .with_note(
+                          attr_line_t("An ascending ")
+                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append(
+                                  " column is needed to render a spectrogram"))
+                      .with_help(attr_line_t("Add an ")
+                                     .append_quoted(order_by_help)
+                                     .append(" clause to your ")
+                                     .append(lnav::roles::keyword("SELECT"))
+                                     .append(" statement"));
+        } else {
+            this->dsvs_error_msg
+                = lnav::console::user_message::error(
+                      "Cannot generate spectrogram for database results")
+                      .with_reason(
+                          attr_line_t()
+                              .append("No ")
+                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append(" column found in the result set"))
+                      .with_note(
+                          attr_line_t("An ascending ")
+                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append(
+                                  " column is needed to render a spectrogram"))
+                      .with_help(
+                          attr_line_t("Include a ")
+                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append(" column in your ")
+                              .append(" statement. Use an ")
+                              .append(lnav::roles::keyword("AS"))
+                              .append(
+                                  " directive to alias a computed timestamp"));
+        }
         return;
     }
 
     if (!this->dsvs_column_index) {
-        this->dsvs_error_msg = "unknown column -- " + this->dsvs_colname;
+        this->dsvs_error_msg
+            = lnav::console::user_message::error(
+                  "Cannot generate spectrogram for database results")
+                  .with_reason(attr_line_t("unknown column -- ")
+                                   .append_quoted(lnav::roles::variable(
+                                       this->dsvs_colname)))
+                  .with_help("Expecting a numeric column to visualize");
         return;
     }
 
     if (!dls.dls_headers[this->dsvs_column_index.value()].hm_graphable) {
-        this->dsvs_error_msg = "column is not numeric -- " + this->dsvs_colname;
+        this->dsvs_error_msg
+            = lnav::console::user_message::error(
+                  "Cannot generate spectrogram for database results")
+                  .with_reason(attr_line_t()
+                                   .append_quoted(lnav::roles::variable(
+                                       this->dsvs_colname))
+                                   .append(" is not a numeric column"))
+                  .with_help("Only numeric columns can be visualized");
         return;
     }
 
     if (dls.dls_rows.empty()) {
-        this->dsvs_error_msg = "empty result set";
+        this->dsvs_error_msg
+            = lnav::console::user_message::error(
+                  "Cannot generate spectrogram for database results")
+                  .with_reason("Result set is empty");
         return;
     }
 
-    stacked_bar_chart<std::string>::bucket_stats_t bs
-        = chart.get_stats_for(this->dsvs_colname);
+    auto bs = chart.get_stats_for(this->dsvs_colname);
 
     this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
     this->dsvs_end_time = dls.dls_time_column.back().tv_sec;
@@ -392,6 +471,7 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         auto retval = std::make_unique<filtered_sub_source>();
 
         retval->fss_delegate = &dls;
+        retval->fss_time_delegate = &dls;
         auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
         auto end_row = dls.row_for_time({sr.sr_end_time, 0})
                            .value_or(dls.dls_rows.size());

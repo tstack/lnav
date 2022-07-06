@@ -171,6 +171,8 @@ public:
 
     const spectrogram_row& load_row(const listview_curses& lv, int row);
 
+    void reset_details_source();
+
     textview_curses* ss_details_view;
     text_sub_source* ss_no_details_source;
     exec_context* ss_exec_context;

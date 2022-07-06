@@ -205,6 +205,7 @@ db_label_source::push_column(const char* colstr)
         }
         if (!this->dls_time_column.empty() && tv < this->dls_time_column.back())
         {
+            this->dls_time_column_invalidated_at = this->dls_time_column.size();
             this->dls_time_column_index = -1;
             this->dls_time_column.clear();
         } else {

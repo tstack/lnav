@@ -1240,7 +1240,7 @@
 :spectrogram *field-name*
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Visualize the given message field using a spectrogram
+  Visualize the given message field or database column using a spectrogram
 
   **Parameters**
     * **field-name\*** --- The name of the numeric field to visualize.

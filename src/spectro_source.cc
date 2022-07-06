@@ -210,24 +210,30 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                 + this->ss_cursor_column.value() * sr.sr_column_size;
             auto range_max = range_min + sr.sr_column_size;
 
-            const auto desc = fmt::format(
-                FMT_STRING("{} value{} in the range {:.6Lg}-{:.6Lg} "),
-                bucket.rb_counter,
-                bucket.rb_counter == 1 ? "" : "s",
-                range_min,
-                range_max);
+            auto desc = attr_line_t()
+                            .append(lnav::roles::number(
+                                fmt::to_string(bucket.rb_counter)))
+                            .append(lnav::roles::comment(fmt::format(
+                                FMT_STRING(" value{} in the range "),
+                                bucket.rb_counter == 1 ? "" : "s")))
+                            .append(lnav::roles::number(
+                                fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
+                            .append(lnav::roles::comment("-"))
+                            .append(lnav::roles::number(
+                                fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
+                            .append(" ");
             auto mark_offset = this->ss_cursor_column.value();
             auto mark_is_before = true;
 
-            if (this->ss_cursor_column.value() + desc.size() > width) {
-                mark_offset -= desc.size();
+            if (this->ss_cursor_column.value() + desc.length() + 1 > width) {
+                mark_offset -= desc.length();
                 mark_is_before = false;
             }
             value_out.append(mark_offset, ' ');
             if (mark_is_before) {
                 value_out.append("\u25b2 ");
             }
-            value_out.append(lnav::roles::comment(desc));
+            value_out.append(desc);
             if (!mark_is_before) {
                 value_out.append("\u25b2 ");
             }
@@ -257,7 +263,10 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     this->cache_bounds();
 
     if (this->ss_cached_line_count == 0) {
-        value_out.append(lnav::roles::error("error: no log data"));
+        value_out
+            .append(lnav::roles::error("error: no data available, use the "))
+            .append_quoted(lnav::roles::keyword(":spectrogram"))
+            .append(lnav::roles::error(" command to visualize numeric data"));
         return true;
     }
 
@@ -434,11 +443,22 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
 }
 
 void
+spectrogram_source::reset_details_source()
+{
+    if (this->ss_details_view != nullptr) {
+        this->ss_details_view->set_sub_source(this->ss_no_details_source);
+    }
+    this->ss_details_source.reset();
+}
+
+void
 spectrogram_source::cache_bounds()
 {
     if (this->ss_value_source == nullptr) {
         this->ss_cached_bounds.sb_count = 0;
         this->ss_cached_bounds.sb_begin_time = 0;
+        this->ss_cursor_column = nonstd::nullopt;
+        this->reset_details_source();
         return;
     }
 
@@ -454,6 +474,8 @@ spectrogram_source::cache_bounds()
 
     if (sb.sb_count == 0) {
         this->ss_cached_line_count = 0;
+        this->ss_cursor_column = nonstd::nullopt;
+        this->reset_details_source();
         return;
     }
 
@@ -533,7 +555,8 @@ spectrogram_source::text_is_row_selectable(textview_curses& tc, vis_line_t row)
 void
 spectrogram_source::text_selection_changed(textview_curses& tc)
 {
-    if (this->ss_value_source == nullptr) {
+    if (this->ss_value_source == nullptr || this->text_line_count() == 0) {
+        this->ss_cursor_column = nonstd::nullopt;
         return;
     }
 

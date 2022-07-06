@@ -1100,6 +1100,7 @@ void
 hist_index_delegate::index_complete(logfile_sub_source& lss)
 {
     this->hid_view.reload_data();
+    lnav_data.ld_views[LNV_SPECTRO].reload_data();
 }
 
 static std::vector<breadcrumb::possibility>

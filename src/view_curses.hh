@@ -291,6 +291,8 @@ private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 
+    view_colors(const view_colors&) = delete;
+
     struct dyn_pair {
         int dp_color_pair;
     };

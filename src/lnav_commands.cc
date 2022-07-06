@@ -4410,7 +4410,7 @@ com_spectrogram(exec_context& ec,
     } else if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 2) {
-        std::string colname = remaining_args(cmdline, args);
+        auto colname = remaining_args(cmdline, args);
         auto& ss = *lnav_data.ld_spectro_source;
         bool found = false;
 
@@ -4422,17 +4422,17 @@ com_spectrogram(exec_context& ec,
         ss.invalidate();
 
         if (*lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
-            std::unique_ptr<db_spectro_value_source> dsvs(
-                new db_spectro_value_source(colname));
+            auto dsvs = std::make_unique<db_spectro_value_source>(colname);
 
-            if (!dsvs->dsvs_error_msg.empty()) {
-                return ec.make_error("{}", dsvs->dsvs_error_msg);
+            if (dsvs->dsvs_error_msg) {
+                return Err(
+                    dsvs->dsvs_error_msg.value().with_snippets(ec.ec_source));
             }
             ss.ss_value_source = dsvs.release();
             found = true;
         } else {
-            std::unique_ptr<log_spectro_value_source> lsvs(
-                new log_spectro_value_source(intern_string::lookup(colname)));
+            auto lsvs = std::make_unique<log_spectro_value_source>(
+                intern_string::lookup(colname));
 
             if (!lsvs->lsvs_found) {
                 return ec.make_error("unknown numeric message field -- {}",
@@ -5594,7 +5594,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_spectrogram,
 
      help_text(":spectrogram")
-         .with_summary("Visualize the given message field using a spectrogram")
+         .with_summary("Visualize the given message field or database column "
+                       "using a spectrogram")
          .with_parameter(help_text(
              "field-name", "The name of the numeric field to visualize."))
          .with_example(
@@ -5605,12 +5606,10 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":quit").with_summary("Quit lnav")}};
 
-static std::unordered_map<char const*, std::vector<char const*>> aliases
-    = {{"quit", {"q", "q!"}},
-       {"write-table-to",
-        {
-            "write-cols-to",
-        }}};
+static std::unordered_map<char const*, std::vector<char const*>> aliases = {
+    {"quit", {"q", "q!"}},
+    {"write-table-to", {"write-cols-to"}},
+};
 
 void
 init_lnav_commands(readline_context::command_map_t& cmd_map)

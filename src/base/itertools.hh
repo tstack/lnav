@@ -93,6 +93,16 @@ struct mapper {
     F m_func;
 };
 
+template<typename F>
+struct flat_mapper {
+    F fm_func;
+};
+
+template<typename F>
+struct for_eacher {
+    F fe_func;
+};
+
 template<typename R, typename T>
 struct folder {
     R f_func;
@@ -241,6 +251,20 @@ inline details::mapper<F>
 map(F func)
 {
     return details::mapper<F>{func};
+}
+
+template<typename F>
+inline details::flat_mapper<F>
+flat_map(F func)
+{
+    return details::flat_mapper<F>{func};
+}
+
+template<typename F>
+inline details::for_eacher<F>
+for_each(F func)
+{
+    return details::for_eacher<F>{func};
 }
 
 inline auto
@@ -532,6 +556,36 @@ operator|(T in, const lnav::itertools::details::sorted& sorter)
     std::sort(in.begin(), in.end());
 
     return in;
+}
+
+template<typename T,
+         typename F,
+         std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
+auto
+operator|(nonstd::optional<T> in,
+          const lnav::itertools::details::flat_mapper<F>& mapper) ->
+    typename std::remove_const_t<typename std::remove_reference_t<
+        decltype(lnav::func::invoke(mapper.fm_func, in.value()))>>
+{
+    if (!in) {
+        return nonstd::nullopt;
+    }
+
+    return lnav::func::invoke(mapper.fm_func, in.value());
+}
+
+template<typename T,
+         typename F,
+         std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
+void
+operator|(nonstd::optional<T> in,
+          const lnav::itertools::details::for_eacher<F>& eacher)
+{
+    if (!in) {
+        return;
+    }
+
+    lnav::func::invoke(eacher.fe_func, in.value());
 }
 
 template<typename T,

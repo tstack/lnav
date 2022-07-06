@@ -43,21 +43,20 @@ class db_label_source
     : public text_sub_source
     , public text_time_translator {
 public:
-    ~db_label_source()
-    {
-        this->clear();
-    }
+    ~db_label_source() override { this->clear(); }
 
     bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
-    size_t text_line_count() { return this->dls_rows.size(); }
+    size_t text_line_count() override { return this->dls_rows.size(); }
 
-    size_t text_size_for_line(textview_curses& tc, int line, line_flags_t flags)
+    size_t text_size_for_line(textview_curses& tc,
+                              int line,
+                              line_flags_t flags) override
     {
         return this->text_line_width(tc);
     }
 
-    size_t text_line_width(textview_curses& curses)
+    size_t text_line_width(textview_curses& curses) override
     {
         size_t retval = 0;
 
@@ -70,9 +69,11 @@ public:
     void text_value_for_line(textview_curses& tc,
                              int row,
                              std::string& label_out,
-                             line_flags_t flags);
+                             line_flags_t flags) override;
 
-    void text_attrs_for_line(textview_curses& tc, int row, string_attrs_t& sa);
+    void text_attrs_for_line(textview_curses& tc,
+                             int row,
+                             string_attrs_t& sa) override;
 
     void push_header(const std::string& colstr, int type, bool graphable);
 
@@ -83,9 +84,10 @@ public:
     nonstd::optional<size_t> column_name_to_index(
         const std::string& name) const;
 
-    nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket);
+    nonstd::optional<vis_line_t> row_for_time(
+        struct timeval time_bucket) override;
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row)
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override
     {
         if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
             return nonstd::nullopt;
@@ -106,7 +108,6 @@ public:
         int hm_column_type{SQLITE3_TEXT};
         unsigned int hm_sub_type{0};
         bool hm_graphable{false};
-        bool hm_log_time{false};
         size_t hm_column_size{0};
     };
 
@@ -116,6 +117,7 @@ public:
     std::vector<struct timeval> dls_time_column;
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
+    nonstd::optional<size_t> dls_time_column_invalidated_at;
 
     static const char* NULL_STR;
 };

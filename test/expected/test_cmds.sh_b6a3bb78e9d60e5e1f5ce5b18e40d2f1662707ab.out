@@ -1416,7 +1416,8 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
-  Visualize the given message field using a spectrogram
+  Visualize the given message field or database column using a
+  spectrogram
 [4mParameter[0m
   [4mfield-name[0m   The name of the numeric field to
                visualize.

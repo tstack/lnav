@@ -501,6 +501,15 @@ public:
         return *this;
     }
 
+    attr_line_t& append_quoted(const attr_line_t& al)
+    {
+        this->al_string.append("\u201c");
+        this->append(al);
+        this->al_string.append("\u201d");
+
+        return *this;
+    }
+
     template<typename S>
     attr_line_t& append_quoted(S s)
     {
