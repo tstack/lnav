@@ -114,7 +114,9 @@ struct logline_value_meta {
                        int col = -1,
                        const nonstd::optional<log_format*>& format
                        = nonstd::nullopt)
-        : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format){};
+        : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
+    {
+    }
 
     bool is_hidden() const
     {
@@ -435,6 +437,11 @@ public:
     virtual std::string get_pattern_regex(uint64_t line_number) const
     {
         return "";
+    }
+
+    virtual std::vector<logline_value_meta> get_value_metadata() const
+    {
+        return {};
     }
 
     struct pattern_for_lines {

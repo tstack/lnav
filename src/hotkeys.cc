@@ -231,8 +231,8 @@ handle_paging_key(int ch)
             if (lnav_data.ld_last_view == nullptr) {
                 alerter::singleton().chime();
             } else {
-                textview_curses* tc = lnav_data.ld_last_view;
-                textview_curses* top_tc = *lnav_data.ld_view_stack.top();
+                auto* tc = lnav_data.ld_last_view;
+                auto* top_tc = *lnav_data.ld_view_stack.top();
                 auto* dst_view
                     = dynamic_cast<text_time_translator*>(tc->get_sub_source());
                 auto* src_view = dynamic_cast<text_time_translator*>(
@@ -243,7 +243,7 @@ handle_paging_key(int ch)
                     src_view->time_for_row(top_tc->get_top()) |
                         [dst_view, tc](auto top_time) {
                             dst_view->row_for_time(top_time) |
-                                [tc](auto row) { tc->set_top(row); };
+                                [tc](auto row) { tc->set_selection(row); };
                         };
                 }
                 ensure_view(tc);

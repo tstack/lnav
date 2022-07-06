@@ -35,20 +35,35 @@
 
 const static std::string MATCH_INDEX = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
-static auto match_index_meta
-    = logline_value_meta(match_index_name, value_kind_t::VALUE_INTEGER, 0);
 
 log_search_table::log_search_table(pcrepp pattern, intern_string_t table_name)
     : log_vtab_impl(table_name), lst_regex(std::move(pattern))
 {
-    this->get_columns_int(this->lst_cols);
 }
 
 void
-log_search_table::get_columns_int(std::vector<vtab_column>& cols)
+log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
 {
     column_namer cn{column_namer::language::SQL};
 
+    if (this->lst_format != nullptr) {
+        this->lst_column_metas = this->lst_format->get_value_metadata();
+        this->lst_format_column_count = this->lst_column_metas.size();
+        cols.resize(this->lst_column_metas.size());
+        for (const auto& meta : this->lst_column_metas) {
+            if (meta.lvm_column == -1) {
+                continue;
+            }
+            auto type_pair
+                = log_vtab_impl::logline_value_to_sqlite_type(meta.lvm_kind);
+            cols[meta.lvm_column].vc_name = meta.lvm_name.to_string();
+            cols[meta.lvm_column].vc_type = type_pair.first;
+            cols[meta.lvm_column].vc_subtype = type_pair.second;
+        }
+    }
+
+    this->lst_column_metas.emplace_back(
+        match_index_name, value_kind_t::VALUE_INTEGER, cols.size());
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
         std::string collator;
@@ -100,6 +115,9 @@ log_search_table::get_foreign_keys(std::vector<std::string>& keys_inout) const
 bool
 log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
+    this->vi_attrs.clear();
+    this->lst_line_values_cache.clear();
+
     if (this->lst_match_index >= 0) {
         this->lst_input.pi_offset = this->lst_input.pi_next_offset;
         if (this->lst_regex.match(
@@ -133,12 +151,12 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
-    string_attrs_t sa;
-    std::vector<logline_value> line_values;
-
     lf->read_full_message(lf_iter, this->lst_current_line);
-    lf->get_format()->annotate(
-        cl, this->lst_current_line, sa, line_values, false);
+    lf->get_format()->annotate(cl,
+                               this->lst_current_line,
+                               this->vi_attrs,
+                               this->lst_line_values_cache,
+                               false);
     this->lst_input.reset(
         this->lst_current_line.get_data(), 0, this->lst_current_line.length());
 
@@ -159,12 +177,15 @@ log_search_table::extract(logfile* lf,
                           shared_buffer_ref& line,
                           std::vector<logline_value>& values)
 {
-    values.emplace_back(match_index_meta, this->lst_match_index);
+    values = this->lst_line_values_cache;
+    values.emplace_back(this->lst_column_metas[this->lst_format_column_count],
+                        this->lst_match_index);
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
         const auto* cap = this->lst_match_context[lpc];
-        values.emplace_back(this->lst_column_metas[lpc],
-                            line,
-                            line_range{cap->c_begin, cap->c_end});
+        values.emplace_back(
+            this->lst_column_metas[this->lst_format_column_count + 1 + lpc],
+            line,
+            line_range{cap->c_begin, cap->c_end});
     }
 }
 

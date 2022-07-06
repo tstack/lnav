@@ -70,7 +70,8 @@ lnav v0.10.2:
        the entire message string.
      * Search tables defined in formats are now constrained to only
        match log messages that are in that log format instead of all
-       log messages.
+       log messages.  As a benefit, the search table now includes
+       the columns that are defined as part of the format.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression

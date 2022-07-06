@@ -167,6 +167,8 @@ public:
 
     void cache_bounds();
 
+    nonstd::optional<struct timeval> time_for_row_int(vis_line_t row);
+
     const spectrogram_row& load_row(const listview_curses& lv, int row);
 
     textview_curses* ss_details_view;

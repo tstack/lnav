@@ -2730,5 +2730,17 @@ logline_value_stats::add_value(double value)
     this->lvs_total += value;
 }
 
+std::vector<logline_value_meta>
+external_log_format::get_value_metadata() const
+{
+    std::vector<logline_value_meta> retval;
+
+    for (const auto& vd : this->elf_value_def_order) {
+        retval.emplace_back(vd->vd_meta);
+    }
+
+    return retval;
+}
+
 /* XXX */
 #include "log_format_impls.cc"

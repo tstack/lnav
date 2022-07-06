@@ -1,0 +1,12 @@
+2022-06-02T11:58:12.193Z info vpxd[45715] [Originator@6876 sub=vpxLro opID=7e1280cf] [VpxLRO] -- BEGIN lro-846063 -- SessionManager -- vim.SessionManager.sessionIsActive -- 528e6e0c-246d-58b5-3234-278c6e0c5d0d(52c289ac-2563-48d5-8a8e-f178da022c0d)
+2022-06-02T11:58:12.194Z info vpxd[45715] [Originator@6876 sub=vpxLro opID=7e1280cf] [VpxLRO] -- FINISH lro-846063
+2022-06-02T11:58:12.376Z info vpxd[45709] [Originator@6876 sub=vpxLro opID=e3979f6] [VpxLRO] -- BEGIN lro-846064 -- SessionManager -- vim.SessionManager.sessionIsActive -- 52626140-422b-6287-b4e4-344192c6a01d(523e0a4b-6e83-6bcd-9342-22502dd89866)
+2022-06-02T11:58:12.377Z info vpxd[45709] [Originator@6876 sub=vpxLro opID=e3979f6] [VpxLRO] -- FINISH lro-846064
+2022-06-02T11:58:12.623Z info vpxd[47524] [Originator@6876 sub=vpxLro opID=l3wrhr4o-cbf-h5:70001034-60] [VpxLRO] -- BEGIN lro-846066 -- ChangeLogCollector -- vim.cdc.ChangeLogCollector.waitForChanges -- 526861fc-0c28-1930-ae5e-d8c2772bf8c2(52a7a308-9646-c054-f1e7-16131c1a7db6)
+2022-06-02T11:58:12.623Z info vpxd[47524] [Originator@6876 sub=vpxLro opID=l3wrhr4o-cbf-h5:70001034-60] [VpxLRO] -- FINISH lro-846066
+2022-06-02T11:58:12.736Z info vpxd[48432] [Originator@6876 sub=vpxLro opID=499b440] [VpxLRO] -- BEGIN lro-846067 -- SessionManager -- vim.SessionManager.sessionIsActive -- 521fe9f6-d061-11a2-ac86-badb3c071373(524cba9b-2cc4-9b70-32e4-421452a404d7)
+2022-06-02T11:58:12.736Z info vpxd[48432] [Originator@6876 sub=vpxLro opID=499b440] [VpxLRO] -- FINISH lro-846067
+2022-06-02T11:58:12.740Z info vpxd[48035] [Originator@6876 sub=vpxLro opID=55a419df] [VpxLRO] -- BEGIN lro-846068 -- SessionManager -- vim.SessionManager.sessionIsActive -- 52585600-b0bc-76b1-c4d5-4d7708671c5e(523b68ba-e312-9909-a3ca-39cc86aaf206)
+2022-06-02T11:58:12.740Z info vpxd[48035] [Originator@6876 sub=vpxLro opID=55a419df] [VpxLRO] -- FINISH lro-846068
+2022-06-02T11:58:12.796Z info vpxd[47240] [Originator@6876 sub=MoCluster opID=HB-host-363@2022-389ab9b1] Host [vim.HostSystem:host-363,esx-2-121.vlcm.com] has 1 HDCS resources
+2022-06-02T11:58:12.914Z info vpxd[47370] [Originator@6876 sub=MoCluster opID=HB-host-493@2000-2922fd96] Host [vim.HostSystem:host-493,esx-2-192.vlcm.com] has 1 HDCS resources

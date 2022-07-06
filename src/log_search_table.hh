@@ -47,12 +47,14 @@ public:
 
     void get_primary_keys(std::vector<std::string>& keys_out) const override;
 
-    void get_columns_int(std::vector<vtab_column>& cols);
+    void get_columns_int(std::vector<vtab_column>& cols) const;
 
     void get_columns(std::vector<vtab_column>& cols) const override
     {
+        this->get_columns_int(this->lst_cols);
         cols = this->lst_cols;
     }
+
     void filter(log_cursor& lc, logfile_sub_source& lss) override;
 
     void get_foreign_keys(std::vector<std::string>& keys_inout) const override;
@@ -66,13 +68,15 @@ public:
 
     pcrepp lst_regex;
     log_format* lst_format{nullptr};
+    mutable size_t lst_format_column_count{0};
     std::string lst_log_path_glob;
     shared_buffer_ref lst_current_line;
     pcre_input lst_input{""};
     pcre_context_static<128> lst_match_context;
-    std::vector<logline_value_meta> lst_column_metas;
+    mutable std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_match_index{-1};
-    std::vector<vtab_column> lst_cols;
+    mutable std::vector<vtab_column> lst_cols;
+    std::vector<logline_value> lst_line_values_cache;
 };
 
 #endif

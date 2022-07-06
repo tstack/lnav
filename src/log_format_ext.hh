@@ -195,7 +195,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
@@ -219,6 +219,8 @@ public:
     {
         return this->elf_source_path;
     }
+
+    std::vector<logline_value_meta> get_value_metadata() const;
 
     enum class json_log_field {
         CONSTANT,

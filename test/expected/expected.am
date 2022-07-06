@@ -680,6 +680,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_json_func.sh_f34f5dfa938a1ac7721f924beb16bbceec127a1b.out \
     $(srcdir)/%reldir%/test_sql_search_table.sh_df0fd242f57a96d40f466493938cda0789a094fa.err \
     $(srcdir)/%reldir%/test_sql_search_table.sh_df0fd242f57a96d40f466493938cda0789a094fa.out \
+    $(srcdir)/%reldir%/test_sql_search_table.sh_ef9373a76853f345d06234f6e0fe11b5d40da27b.err \
+    $(srcdir)/%reldir%/test_sql_search_table.sh_ef9373a76853f345d06234f6e0fe11b5d40da27b.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_005b9365ac99596e539f47c9fe432668c209b21f.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_005b9365ac99596e539f47c9fe432668c209b21f.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_04712488fe50554eb36d3ced80f9a033602f3daa.err \

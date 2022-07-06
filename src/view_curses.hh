@@ -69,6 +69,8 @@
 #include "optional.hpp"
 #include "styling.hh"
 
+#define KEY_CTRL_A 0x01
+#define KEY_CTRL_E 0x05
 #define KEY_CTRL_G 7
 #define KEY_CTRL_L 12
 #define KEY_CTRL_P 16

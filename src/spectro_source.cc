@@ -77,7 +77,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             width -= 2;
 
             auto& sb = this->ss_cached_bounds;
-            auto begin_time_opt = this->time_for_row(sel);
+            auto begin_time_opt = this->time_for_row_int(sel);
             if (!begin_time_opt) {
                 return true;
             }
@@ -99,6 +99,24 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
                                                 range_max);
             this->invalidate();
             lv.reload_data();
+            return true;
+        }
+
+        case KEY_CTRL_A: {
+            if (this->ss_value_source != nullptr) {
+                this->ss_cursor_column = 0;
+                this->text_selection_changed((textview_curses&) lv);
+                lv.set_needs_update();
+            }
+            return true;
+        }
+
+        case KEY_CTRL_E: {
+            if (this->ss_value_source != nullptr) {
+                this->ss_cursor_column = INT_MAX;
+                this->text_selection_changed((textview_curses&) lv);
+                lv.set_needs_update();
+            }
             return true;
         }
 
@@ -303,6 +321,21 @@ spectrogram_source::text_line_width(textview_curses& tc)
 nonstd::optional<struct timeval>
 spectrogram_source::time_for_row(vis_line_t row)
 {
+    if (this->ss_details_source != nullptr) {
+        auto* details_tss = dynamic_cast<text_time_translator*>(
+            this->ss_details_source.get());
+
+        if (details_tss != nullptr) {
+            return details_tss->time_for_row(this->ss_details_view->get_top());
+        }
+    }
+
+    return this->time_for_row_int(row);
+}
+
+nonstd::optional<struct timeval>
+spectrogram_source::time_for_row_int(vis_line_t row)
+{
     struct timeval retval {
         0, 0
     };
@@ -326,11 +359,13 @@ spectrogram_source::row_for_time(struct timeval time_bucket)
     int retval;
 
     this->cache_bounds();
-    if (time_bucket.tv_sec < this->ss_cached_bounds.sb_begin_time) {
+    auto grain_begin_time
+        = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity);
+    if (time_bucket.tv_sec < grain_begin_time) {
         return 0_vl;
     }
 
-    diff = time_bucket.tv_sec - this->ss_cached_bounds.sb_begin_time;
+    diff = time_bucket.tv_sec - grain_begin_time;
     retval = diff / this->ss_granularity;
 
     return vis_line_t(retval);
@@ -346,7 +381,7 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
     char tm_buffer[128];
     struct tm tm;
 
-    auto row_time_opt = this->time_for_row(vis_line_t(row));
+    auto row_time_opt = this->time_for_row_int(vis_line_t(row));
     if (!row_time_opt) {
         value_out.clear();
         return;

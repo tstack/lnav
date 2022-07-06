@@ -32,7 +32,9 @@
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
 
-class filtered_sub_source : public text_sub_source {
+class filtered_sub_source
+    : public text_sub_source
+    , public text_time_translator {
 public:
     size_t text_line_count() override { return this->fss_lines.size(); }
 
@@ -59,6 +61,19 @@ public:
     {
         this->fss_delegate->text_attrs_for_line(
             tc, this->fss_lines[line], value_out);
+    }
+
+    nonstd::optional<vis_line_t> row_for_time(
+        struct timeval time_bucket) override
+    {
+        return dynamic_cast<text_time_translator*>(this->fss_delegate)
+            ->row_for_time(time_bucket);
+    }
+
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override
+    {
+        return dynamic_cast<text_time_translator*>(this->fss_delegate)
+            ->time_for_row(this->fss_lines[row]);
     }
 
     text_sub_source* fss_delegate;

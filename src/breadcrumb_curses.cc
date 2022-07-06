@@ -218,6 +218,22 @@ breadcrumb_curses::handle_key(int ch)
     bool retval = false;
 
     switch (ch) {
+        case KEY_CTRL_A:
+            if (this->bc_selected_crumb) {
+                this->bc_selected_crumb = 0;
+                this->bc_current_search.clear();
+                this->reload_data();
+            }
+            retval = true;
+            break;
+        case KEY_CTRL_E:
+            if (this->bc_selected_crumb) {
+                this->bc_selected_crumb = this->bc_focused_crumbs.size() - 1;
+                this->bc_current_search.clear();
+                this->reload_data();
+            }
+            retval = true;
+            break;
         case KEY_BTAB:
         case KEY_LEFT:
             if (this->bc_selected_crumb) {
