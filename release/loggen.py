@@ -156,8 +156,16 @@ while True:
     for fname, gen in FILES:
         for i in range(random.randrange(0, 4)):
             with open(fname, "a+") as fp:
-                fp.write(next(gen))
-                #if random.uniform(0.0, 1.0) < 0.010:
+                if random.uniform(0.0, 1.0) < 0.01:
+                    line = next(gen)
+                    prefix = line[:50]
+                    suffix = line[50:]
+                    fp.write(prefix)
+                    time.sleep(random.uniform(0.5, 0.6))
+                    fp.write(suffix)
+                else:
+                    fp.write(next(gen))
+                # if random.uniform(0.0, 1.0) < 0.010:
                 #    fp.truncate(0)
             time.sleep(random.uniform(0.01, 0.02))
             #if random.uniform(0.0, 1.0) < 0.001:

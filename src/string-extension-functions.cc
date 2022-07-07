@@ -387,10 +387,8 @@ sql_gunzip(sqlite3_value* val)
             auto len = sqlite3_value_bytes(val);
 
             if (!lnav::gzip::is_gzipped((const char*) buffer, len)) {
-                auto retval = auto_buffer::alloc(len);
-
-                memcpy(retval.in(), buffer, len);
-                return blob_auto_buffer{std::move(retval)};
+                return blob_auto_buffer{
+                    auto_buffer::from((const char*) buffer, len)};
             }
 
             auto res = lnav::gzip::uncompress("", buffer, len);

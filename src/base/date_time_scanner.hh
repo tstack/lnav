@@ -55,6 +55,8 @@ struct date_time_scanner {
         this->dts_base_tm = exttm{};
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
+        this->dts_last_tv = timeval{};
+        this->dts_last_tm = exttm{};
     }
 
     /**
@@ -70,6 +72,8 @@ struct date_time_scanner {
     {
         this->dts_base_time = base_time;
         localtime_r(&base_time, &this->dts_base_tm.et_tm);
+        this->dts_last_tm = exttm{};
+        this->dts_last_tv = timeval{};
     }
 
     /**
@@ -87,6 +91,8 @@ struct date_time_scanner {
     struct exttm dts_base_tm;
     int dts_fmt_lock{-1};
     int dts_fmt_len{-1};
+    struct exttm dts_last_tm {};
+    struct timeval dts_last_tv {};
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};
     time_t dts_local_offset_expiry{0};

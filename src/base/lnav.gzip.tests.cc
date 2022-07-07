@@ -53,3 +53,15 @@ TEST_CASE("lnav::gzip::uncompress")
               == "unable to uncompress: garbage -- incorrect header check");
     }
 }
+
+TEST_CASE("lnav::gzip::roundtrip")
+{
+    const char msg[] = "Hello, World!";
+
+    auto c_res = lnav::gzip::compress(msg, sizeof(msg));
+    auto buf = c_res.unwrap();
+    auto u_res = lnav::gzip::uncompress("test", buf.in(), buf.size());
+    auto buf2 = u_res.unwrap();
+
+    CHECK(std::string(msg) == std::string(buf2.in()));
+}

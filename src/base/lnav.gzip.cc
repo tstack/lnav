@@ -56,7 +56,7 @@ compress(const void* input, size_t len)
     zs.opaque = Z_NULL;
     zs.avail_in = (uInt) len;
     zs.next_in = (Bytef*) input;
-    zs.avail_out = (uInt) retval.size();
+    zs.avail_out = (uInt) retval.capacity();
     zs.next_out = (Bytef*) retval.in();
     zs.total_out = 0;
 
@@ -76,7 +76,7 @@ compress(const void* input, size_t len)
         return Err(fmt::format(
             FMT_STRING("unable to finalize compression -- {}"), zError(rc)));
     }
-    return Ok(std::move(retval.shrink_to(zs.total_out)));
+    return Ok(std::move(retval.resize(zs.total_out)));
 }
 
 Result<auto_buffer, std::string>
@@ -107,7 +107,7 @@ uncompress(const std::string& src, const void* buffer, size_t size)
         }
 
         strm.next_out = (Bytef*) (uncomp.in() + strm.total_out);
-        strm.avail_out = uncomp.size() - strm.total_out;
+        strm.avail_out = uncomp.capacity() - strm.total_out;
 
         // Inflate another chunk.
         err = inflate(&strm, Z_SYNC_FLUSH);
@@ -127,7 +127,7 @@ uncompress(const std::string& src, const void* buffer, size_t size)
                                strm.msg ? strm.msg : zError(err)));
     }
 
-    return Ok(std::move(uncomp.shrink_to(strm.total_out)));
+    return Ok(std::move(uncomp.resize(strm.total_out)));
 }
 
 }  // namespace gzip

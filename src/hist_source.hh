@@ -36,6 +36,7 @@
 #include <limits>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "base/lnav_log.hh"
@@ -300,7 +301,7 @@ protected:
     bool sbc_do_stacking{true};
     unsigned long sbc_left{0}, sbc_right{0};
     std::vector<struct chart_ident> sbc_idents;
-    std::map<T, unsigned int> sbc_ident_lookup;
+    std::unordered_map<T, unsigned int> sbc_ident_lookup;
     show_state sbc_show_state{show_all()};
 };
 

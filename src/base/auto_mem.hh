@@ -149,16 +149,29 @@ private:
 
 class auto_buffer {
 public:
-    static auto_buffer alloc(size_t size)
+    static auto_buffer alloc(size_t capacity)
     {
-        return auto_buffer{(char*) malloc(size), size};
+        return auto_buffer{(char*) malloc(capacity), capacity};
     }
 
+    static auto_buffer from(const char* mem, size_t size)
+    {
+        auto retval = alloc(size);
+
+        retval.resize(size);
+        memcpy(retval.in(), mem, size);
+        return retval;
+    }
+
+    auto_buffer(const auto_buffer&) = delete;
+
     auto_buffer(auto_buffer&& other) noexcept
-        : ab_buffer(other.ab_buffer), ab_size(other.ab_size)
+        : ab_buffer(other.ab_buffer), ab_size(other.ab_size),
+          ab_capacity(other.ab_capacity)
     {
         other.ab_buffer = nullptr;
         other.ab_size = 0;
+        other.ab_capacity = 0;
     }
 
     ~auto_buffer()
@@ -166,9 +179,59 @@ public:
         free(this->ab_buffer);
         this->ab_buffer = nullptr;
         this->ab_size = 0;
+        this->ab_capacity = 0;
+    }
+
+    auto_buffer& operator=(auto_buffer&) = delete;
+
+    auto_buffer& operator=(auto_buffer&& other) noexcept
+    {
+        this->ab_buffer = other.ab_buffer;
+        this->ab_size = other.ab_size;
+        this->ab_capacity = other.ab_capacity;
+        return *this;
+    }
+
+    void swap(auto_buffer& other)
+    {
+        std::swap(this->ab_buffer, other.ab_buffer);
+        std::swap(this->ab_size, other.ab_size);
+        std::swap(this->ab_capacity, other.ab_capacity);
     }
 
     char* in() { return this->ab_buffer; }
+
+    char* at(size_t offset) { return &this->ab_buffer[offset]; }
+
+    const char* at(size_t offset) const { return &this->ab_buffer[offset]; }
+
+    char* begin() { return this->ab_buffer; }
+
+    const char* begin() const { return this->ab_buffer; }
+
+    std::reverse_iterator<char*> rbegin()
+    {
+        return std::reverse_iterator<char*>(this->end());
+    }
+
+    std::reverse_iterator<const char*> rbegin() const
+    {
+        return std::reverse_iterator<const char*>(this->end());
+    }
+
+    char* end() { return &this->ab_buffer[this->ab_size]; }
+
+    const char* end() const { return &this->ab_buffer[this->ab_size]; }
+
+    std::reverse_iterator<char*> rend()
+    {
+        return std::reverse_iterator<char*>(this->begin());
+    }
+
+    std::reverse_iterator<const char*> rend() const
+    {
+        return std::reverse_iterator<const char*>(this->begin());
+    }
 
     std::pair<char*, size_t> release()
     {
@@ -176,38 +239,68 @@ public:
 
         this->ab_buffer = nullptr;
         this->ab_size = 0;
+        this->ab_capacity = 0;
         return retval;
     }
 
     size_t size() const { return this->ab_size; }
 
-    void expand_by(size_t amount)
+    bool empty() const { return this->ab_size == 0; }
+
+    bool full() const { return this->ab_size == this->ab_capacity; }
+
+    size_t capacity() const { return this->ab_capacity; }
+
+    size_t available() const { return this->ab_capacity - this->ab_size; }
+
+    void clear() { this->resize(0); }
+
+    auto_buffer& resize(size_t new_size)
     {
-        if (amount == 0) {
+        assert(new_size <= this->ab_capacity);
+
+        this->ab_size = new_size;
+        return *this;
+    }
+
+    auto_buffer& resize_by(ssize_t amount)
+    {
+        return this->resize(this->ab_size + amount);
+    }
+
+    void expand_to(size_t new_capacity)
+    {
+        if (new_capacity <= this->ab_capacity) {
             return;
         }
-        auto new_size = this->ab_size + amount;
-        auto new_buffer = (char*) realloc(this->ab_buffer, new_size);
+        auto* new_buffer = (char*) realloc(this->ab_buffer, new_capacity);
 
         if (new_buffer == nullptr) {
             throw std::bad_alloc();
         }
 
         this->ab_buffer = new_buffer;
-        this->ab_size = new_size;
+        this->ab_capacity = new_capacity;
     }
 
-    auto_buffer& shrink_to(size_t new_size)
+    void expand_by(size_t amount)
     {
-        this->ab_size = new_size;
-        return *this;
+        if (amount == 0) {
+            return;
+        }
+
+        this->expand_to(this->ab_capacity + amount);
     }
 
 private:
-    auto_buffer(char* buffer, size_t size) : ab_buffer(buffer), ab_size(size) {}
+    auto_buffer(char* buffer, size_t capacity)
+        : ab_buffer(buffer), ab_capacity(capacity)
+    {
+    }
 
     char* ab_buffer;
-    size_t ab_size;
+    size_t ab_size{0};
+    size_t ab_capacity;
 };
 
 struct text_auto_buffer {

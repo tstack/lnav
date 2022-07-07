@@ -31,6 +31,7 @@
 #define textfile_sub_source_hh
 
 #include <deque>
+#include <unordered_map>
 
 #include "filter_observer.hh"
 #include "logfile.hh"

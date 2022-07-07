@@ -79,7 +79,7 @@ main(int argc, char* argv[])
 
         auto fd = auto_fd(mkstemp(fn_template));
         remove(fn_template);
-        auto lb = line_buffer();
+        line_buffer lb;
 
         write(fd, TEST_DATA, strlen(TEST_DATA));
         lseek(fd, SEEK_SET, 0);

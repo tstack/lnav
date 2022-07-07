@@ -127,6 +127,7 @@ logfile::open(std::string filename, logfile_open_options& loo)
 logfile::logfile(std::string filename, logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(std::move(loo))
 {
+    this->lf_opids.writeAccess()->reserve(64);
 }
 
 logfile::~logfile() {}
@@ -414,12 +415,13 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             this->lf_index.pop_back();
             rollback_size += 1;
 
-            this->lf_line_buffer.clear();
             if (!this->lf_index.empty()) {
                 auto last_line = this->lf_index.end();
                 --last_line;
                 auto check_line_off = last_line->get_offset();
                 auto last_length = ssize_t(this->line_length(last_line, false));
+                log_debug("flushing at %d", check_line_off);
+                this->lf_line_buffer.flush_at(check_line_off);
 
                 auto read_result = this->lf_line_buffer.read_range(
                     {check_line_off, last_length});
@@ -463,6 +465,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 "loading file... %s:%d", this->lf_filename.c_str(), begin_size);
         }
         scan_batch_context sbc{this->lf_allocator};
+        sbc.sbc_opids.reserve(32);
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -525,7 +528,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 return rebuild_result_t::INVALID;
             }
 
-            auto sbr = read_result.unwrap().rtrim(is_line_ending);
+            auto sbr = read_result.unwrap();
+            sbr.rtrim(is_line_ending);
             this->lf_longest_line
                 = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = li.li_partial;
@@ -622,6 +626,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         this->lf_index_size = prev_range.next_offset();
         this->lf_stat = st;
 
+        log_debug("batch opid count %d", sbc.sbc_opids.size());
         {
             safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
                 this->lf_opids);

@@ -32,8 +32,6 @@
 #ifndef lnav_log_format_fwd_hh
 #define lnav_log_format_fwd_hh
 
-#include <unordered_map>
-
 #include <sys/types.h>
 
 #include "ArenaAlloc/arenaalloc.h"
@@ -42,6 +40,7 @@
 #include "byte_array.hh"
 #include "log_level.hh"
 #include "ptimec.hh"
+#include "robin_hood/robin_hood.h"
 
 class log_format;
 
@@ -50,16 +49,17 @@ struct opid_time_range {
     struct timeval otr_end;
 };
 
-using log_opid_map = std::unordered_map<
-    string_fragment,
-    opid_time_range,
-    frag_hasher,
-    std::equal_to<string_fragment>,
-    ArenaAlloc::Alloc<std::pair<const string_fragment, opid_time_range>>>;
+using log_opid_map = robin_hood::unordered_map<string_fragment,
+                                               opid_time_range,
+                                               frag_hasher,
+                                               std::equal_to<string_fragment>>;
 
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     log_opid_map sbc_opids;
+    std::string sbc_cached_level_strings[4];
+    log_level_t sbc_cached_level_values[4];
+    size_t sbc_cached_level_count{0};
 };
 
 /**

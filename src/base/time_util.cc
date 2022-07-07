@@ -114,8 +114,9 @@ secs2wday(const struct timeval& tv, struct tm* res)
     }
 
     /* compute day of week */
-    if ((res->tm_wday = ((EPOCH_WDAY + days) % DAYSPERWEEK)) < 0)
+    if ((res->tm_wday = ((EPOCH_WDAY + days) % DAYSPERWEEK)) < 0) {
         res->tm_wday += DAYSPERWEEK;
+    }
 }
 
 struct tm*

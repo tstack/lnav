@@ -48,6 +48,9 @@ lnav v0.10.2:
      * Added a "glob" property to search tables defined in log formats
        to constrain searches to log messages from files that have a
        matching log_path value.
+     * Initial indexing of large files should be faster.  Decompression
+       and searching for line-endings are now pipelined, so they happen
+       in a thread that is separate from the regular expression matcher.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that
@@ -77,7 +80,6 @@ lnav v0.10.2:
      * Toggling enabled/disabled filters when there is a SQL expression
        no longer causes a crash.
      * Fix a crash related to long lines that are word wrapped.
-     *
 
 lnav v0.10.1:
      Features:

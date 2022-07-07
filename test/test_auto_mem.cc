@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include <assert.h>
 #include <stdlib.h>
 
@@ -80,6 +82,21 @@ main(int argc, char* argv[])
 
     assert(free_count == 3);
     assert(last_free == &md1_val);
+
+    {
+        static const char* msg = "Hello, World!\nGoodbye, World!\nTest";
+
+        auto buf = auto_buffer::from(msg, strlen(msg));
+        auto first_lf = std::find(buf.begin(), buf.end(), '\n');
+        auto last_lf = std::find(buf.rbegin(), buf.rend(), '\n');
+
+        assert(std::distance(buf.begin(), first_lf) == 13);
+        assert(*first_lf == '\n');
+        assert(*last_lf == '\n');
+        auto last_lf_index = std::distance(last_lf, buf.rend()) - 1;
+        auto* last_lf_rchr = strrchr(msg, '\n');
+        assert(last_lf_index == (last_lf_rchr - msg));
+    }
 
     return retval;
 }

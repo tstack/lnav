@@ -506,6 +506,8 @@ add_library(
         third-party/intervaltree/IntervalTree.h
 
         third-party/md4c/md4c.h
+
+        third-party/robin_hood/robin_hood.h
 )
 
 set(lnav_SRCS lnav.cc)

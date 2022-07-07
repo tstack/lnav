@@ -93,11 +93,13 @@ shared_buffer_ref::shared_buffer_ref(shared_buffer_ref&& other) noexcept
         this->sb_data = nullptr;
         this->sb_length = 0;
     } else if (other.sb_owner != nullptr) {
-        other.sb_owner->add_ref(*this);
-        this->sb_owner = other.sb_owner;
-        this->sb_data = other.sb_data;
-        this->sb_length = other.sb_length;
-        other.disown();
+        auto owner_ref_iter = std::find(other.sb_owner->sb_refs.begin(),
+                                        other.sb_owner->sb_refs.end(),
+                                        &other);
+        *owner_ref_iter = this;
+        this->sb_owner = std::exchange(other.sb_owner, nullptr);
+        this->sb_data = std::exchange(other.sb_data, nullptr);
+        this->sb_length = std::exchange(other.sb_length, 0);
     } else {
         this->sb_owner = nullptr;
         this->sb_data = other.sb_data;

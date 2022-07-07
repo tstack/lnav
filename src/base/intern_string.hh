@@ -334,6 +334,12 @@ struct string_fragment {
 };
 
 inline bool
+operator==(const std::string& left, const string_fragment& right)
+{
+    return right == left;
+}
+
+inline bool
 operator<(const char* left, const string_fragment& right)
 {
     int rc = strncmp(left, right.data(), right.length());

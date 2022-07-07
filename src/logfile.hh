@@ -34,7 +34,6 @@
 #define logfile_hh
 
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -420,7 +419,7 @@ private:
     safe_notes lf_notes;
     safe_opid_map lf_opids;
     size_t lf_watch_count{0};
-    ArenaAlloc::Alloc<char> lf_allocator;
+    ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };

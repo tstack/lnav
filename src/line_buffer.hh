@@ -33,6 +33,7 @@
 #define line_buffer_hh
 
 #include <exception>
+#include <future>
 #include <vector>
 
 #include <errno.h>
@@ -45,6 +46,7 @@
 #include "base/file_range.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"
+#include "safe/safe.h"
 #include "shared_buffer.hh"
 
 struct line_info {
@@ -139,7 +141,7 @@ public:
     /** Construct an empty line_buffer. */
     line_buffer();
 
-    line_buffer(line_buffer&& other) = default;
+    line_buffer(line_buffer&& other) = delete;
 
     virtual ~line_buffer();
 
@@ -177,16 +179,15 @@ public:
 
     bool is_compressed() const
     {
-        return this->lb_gz_file || this->lb_bz_file;
+        return this->lb_compressed;
     }
 
     file_off_t get_read_offset(file_off_t off) const
     {
         if (this->is_compressed()) {
             return this->lb_compressed_offset;
-        } else {
-            return off;
         }
+        return off;
     }
 
     bool is_data_available(file_off_t off, file_off_t stat_size) const
@@ -212,9 +213,13 @@ public:
 
     bool is_likely_to_flush(file_range prev_line);
 
-    void clear()
+    void flush_at(file_off_t off)
     {
-        this->lb_buffer_size = 0;
+        if (this->in_range(off)) {
+            this->lb_buffer.resize(off - this->lb_file_offset);
+        } else {
+            this->lb_buffer.clear();
+        }
     }
 
     /** Release any resources held by this object. */
@@ -224,15 +229,14 @@ public:
 
         this->lb_file_offset = 0;
         this->lb_file_size = (ssize_t) -1;
-        this->lb_buffer_size = 0;
+        this->lb_buffer.resize(0);
         this->lb_last_line_offset = -1;
     }
 
     /** Check the invariants for this object. */
     bool invariant() const
     {
-        require(this->lb_buffer != nullptr);
-        require(this->lb_buffer_size <= this->lb_buffer_max);
+        require(this->lb_buffer.size() <= this->lb_buffer.capacity());
 
         return true;
     }
@@ -245,7 +249,7 @@ private:
     bool in_range(file_off_t off) const
     {
         return this->lb_file_offset <= off
-            && off < (this->lb_file_offset + this->lb_buffer_size);
+            && off < (this->lb_file_offset + this->lb_buffer.size());
     }
 
     void resize_buffer(size_t new_max);
@@ -284,43 +288,56 @@ private:
      * @return A pointer to the start of the cached data in the internal
      * buffer.
      */
-    char* get_range(file_off_t start, file_ssize_t& avail_out) const
+    char* get_range(file_off_t start, file_ssize_t& avail_out)
     {
         auto buffer_offset = start - this->lb_file_offset;
         char* retval;
 
         require(buffer_offset >= 0);
-        require(this->lb_buffer_size >= buffer_offset);
+        require(this->lb_buffer.size() >= buffer_offset);
 
-        retval = &this->lb_buffer[buffer_offset];
-        avail_out = this->lb_buffer_size - buffer_offset;
+        retval = this->lb_buffer.at(buffer_offset);
+        avail_out = this->lb_buffer.size() - buffer_offset;
 
         return retval;
     }
 
+    bool load_next_buffer();
+
+    using safe_gz_indexed = safe::Safe<gz_indexed>;
+
     shared_buffer lb_share_manager;
 
     auto_fd lb_fd; /*< The file to read data from. */
-    gz_indexed lb_gz_file; /*< File reader for gzipped files. */
-    bool lb_bz_file; /*< Flag set for bzip2 compressed files. */
-    file_off_t lb_compressed_offset; /*< The offset into the compressed file. */
+    safe_gz_indexed lb_gz_file; /*< File reader for gzipped files. */
+    bool lb_bz_file{false}; /*< Flag set for bzip2 compressed files. */
 
-    auto_mem<char> lb_buffer; /*< The internal buffer where data is cached */
+    auto_buffer lb_buffer{auto_buffer::alloc(DEFAULT_LINE_BUFFER_SIZE)};
+    nonstd::optional<auto_buffer> lb_alt_buffer;
+    std::vector<uint32_t> lb_alt_line_starts;
+    std::vector<bool> lb_alt_line_is_utf;
+    std::future<bool> lb_loader_future;
+    nonstd::optional<file_off_t> lb_loader_file_offset;
 
-    file_ssize_t lb_file_size; /*<
-                                * The size of the file.  When lb_fd refers to
-                                * a pipe, this is set to the amount of data
-                                * read from the pipe when EOF is reached.
-                                */
-    file_off_t lb_file_offset; /*<
-                                * Data cached in the buffer comes from this
-                                * offset in the file.
-                                */
-    time_t lb_file_time;
-    ssize_t lb_buffer_size; /*< The amount of cached data in the buffer. */
-    ssize_t lb_buffer_max; /*< The amount of allocated memory for the
-                            *  buffer. */
-    bool lb_seekable; /*< Flag set for seekable file descriptors. */
-    file_off_t lb_last_line_offset; /*< */
+    file_off_t lb_compressed_offset{
+        0}; /*< The offset into the compressed file. */
+    file_ssize_t lb_file_size{
+        -1}; /*<
+              * The size of the file.  When lb_fd refers to
+              * a pipe, this is set to the amount of data
+              * read from the pipe when EOF is reached.
+              */
+    file_off_t lb_file_offset{0}; /*<
+                                   * Data cached in the buffer comes from this
+                                   * offset in the file.
+                                   */
+    time_t lb_file_time{0};
+    bool lb_seekable{false}; /*< Flag set for seekable file descriptors. */
+    bool lb_compressed{false};
+    file_off_t lb_last_line_offset{-1}; /*< */
+
+    std::vector<uint32_t> lb_line_starts;
+    std::vector<bool> lb_line_is_utf;
 };
+
 #endif

@@ -154,9 +154,25 @@ date_time_scanner::scan(const char* time_dest,
 
                     this->to_localtime(gmt, *tm_out);
                 }
-                tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+                const auto& last_tm = this->dts_last_tm.et_tm;
+                if (last_tm.tm_year == tm_out->et_tm.tm_year
+                    && last_tm.tm_mon == tm_out->et_tm.tm_mon
+                    && last_tm.tm_mday == tm_out->et_tm.tm_mday
+                    && last_tm.tm_hour == tm_out->et_tm.tm_hour
+                    && last_tm.tm_min == tm_out->et_tm.tm_min)
+                {
+                    const auto sec_diff = tm_out->et_tm.tm_sec - last_tm.tm_sec;
+
+                    // log_debug("diff %d", sec_diff);
+                    tv_out = this->dts_last_tv;
+                    tv_out.tv_sec += sec_diff;
+                    tm_out->et_tm.tm_wday = last_tm.tm_wday;
+                } else {
+                    // log_debug("doing tm2sec");
+                    tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+                    secs2wday(tv_out, &tm_out->et_tm);
+                }
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
-                secs2wday(tv_out, &tm_out->et_tm);
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = retval - time_dest;
@@ -209,6 +225,11 @@ date_time_scanner::scan(const char* time_dest,
 
     if (!found) {
         retval = nullptr;
+    }
+
+    if (retval != nullptr) {
+        this->dts_last_tm = *tm_out;
+        this->dts_last_tv = tv_out;
     }
 
     if (retval != nullptr && static_cast<size_t>(retval - time_dest) < time_len)

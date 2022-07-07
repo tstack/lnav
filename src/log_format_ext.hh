@@ -314,7 +314,8 @@ public:
     }
 
     log_level_t convert_level(const pcre_input& pi,
-                              const pcre_context::capture_t* level_cap) const;
+                              const pcre_context::capture_t* level_cap,
+                              scan_batch_context* sbc) const;
 
     using mod_map_t = std::map<intern_string_t, module_format>;
     static mod_map_t MODULE_FORMATS;

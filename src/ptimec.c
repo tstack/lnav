@@ -63,10 +63,12 @@ int main(int argc, char *argv[])
         const char* arg = argv[lpc];
 
         printf(
+            "// %s\n"
             "bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, "
             "ssize_t len) {\n"
             "    dst->et_flags = 0;\n"
             "    // log_debug(\"ptime_f%d\");\n",
+            arg,
             lpc,
             lpc);
         for (int index = 0; arg[index]; arg++) {

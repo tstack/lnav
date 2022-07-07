@@ -409,7 +409,10 @@ log_format::check_for_new_year(std::vector<logline>& dst,
  * XXX This needs some cleanup.
  */
 struct json_log_userdata {
-    json_log_userdata(shared_buffer_ref& sbr) : jlu_shared_buffer(sbr) {}
+    json_log_userdata(shared_buffer_ref& sbr, scan_batch_context* sbc)
+        : jlu_shared_buffer(sbr), jlu_batch_context(sbc)
+    {
+    }
 
     external_log_format* jlu_format{nullptr};
     const logline* jlu_line{nullptr};
@@ -420,6 +423,7 @@ struct json_log_userdata {
     size_t jlu_line_size{0};
     size_t jlu_sub_start{0};
     shared_buffer_ref& jlu_shared_buffer;
+    scan_batch_context* jlu_batch_context;
 };
 
 static int read_json_field(yajlpp_parse_context* ypc,
@@ -472,8 +476,8 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
             pcre_input pi(level_buf);
             pcre_context::capture_t level_cap = {0, (int) strlen(level_buf)};
 
-            jlu->jlu_base_line->set_level(
-                jlu->jlu_format->convert_level(pi, &level_cap));
+            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
+                pi, &level_cap, jlu->jlu_batch_context));
         } else {
             std::vector<std::pair<int64_t, log_level_t>>::iterator iter;
 
@@ -690,7 +694,7 @@ external_log_format::scan(logfile& lf,
         yajlpp_parse_context& ypc = *(this->jlf_parse_context);
         logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.get();
-        json_log_userdata jlu(sbr);
+        json_log_userdata jlu(sbr, &sbc);
 
         if (!this->lf_specialized && dst.size() >= 3) {
             return log_format::SCAN_NO_MATCH;
@@ -842,7 +846,7 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        auto level = this->convert_level(pi, level_cap);
+        auto level = this->convert_level(pi, level_cap, &sbc);
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
 
@@ -901,11 +905,13 @@ external_log_format::scan(logfile& lf,
                     pattern& mod_pat
                         = *mod_elf->elf_pattern_order[mod_pat_index];
 
-                    if (mod_pat.p_pcre->match(mod_pc, mod_pi)) {
+                    if (mod_pat.p_pcre->match(
+                            mod_pc, mod_pi, PCRE_NO_UTF8_CHECK)) {
                         auto* mod_level_cap
                             = mod_pc[mod_pat.p_level_field_index];
 
-                        level = mod_elf->convert_level(mod_pi, mod_level_cap);
+                        level = mod_elf->convert_level(
+                            mod_pi, mod_level_cap, &sbc);
                     }
                 }
             }
@@ -974,6 +980,7 @@ external_log_format::scan(logfile& lf,
     if (this->lf_specialized && !this->lf_multiline) {
         auto& last_line = dst.back();
 
+        log_debug("invalid line %d %d", dst.size(), li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,
                          last_line.get_timeval(),
                          log_level_t::LEVEL_INVALID);
@@ -1246,19 +1253,20 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         pcre_context_static<30> pc;
         pcre_input pi(field_name);
 
-        if (jlu->jlu_format->elf_level_pointer.match(pc, pi)) {
+        if (jlu->jlu_format->elf_level_pointer.match(
+                pc, pi, PCRE_NO_UTF8_CHECK)) {
             pcre_input pi_level((const char*) str, 0, len);
             pcre_context::capture_t level_cap = {0, (int) len};
 
-            jlu->jlu_base_line->set_level(
-                jlu->jlu_format->convert_level(pi_level, &level_cap));
+            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
+                pi_level, &level_cap, jlu->jlu_batch_context));
         }
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         pcre_input pi((const char*) str, 0, len);
         pcre_context::capture_t level_cap = {0, (int) len};
 
-        jlu->jlu_base_line->set_level(
-            jlu->jlu_format->convert_level(pi, &level_cap));
+        jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
+            pi, &level_cap, jlu->jlu_batch_context));
     } else if (jlu->jlu_format->elf_opid_field == field_name) {
         uint8_t opid = hash_str((const char*) str, len);
         jlu->jlu_base_line->set_opid(opid);
@@ -1359,7 +1367,7 @@ external_log_format::get_subline(const logline& ll,
     {
         yajlpp_parse_context& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
-        json_log_userdata jlu(sbr);
+        json_log_userdata jlu(sbr, nullptr);
 
         this->jlf_share_manager.invalidate_refs();
         this->jlf_cached_line.clear();
@@ -2025,7 +2033,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                        .append(" property")));
             }
 
-            log_level_t level = this->convert_level(pi, level_cap);
+            log_level_t level = this->convert_level(pi, level_cap, nullptr);
 
             if (elf_sample.s_level != LEVEL_UNKNOWN
                 && elf_sample.s_level != level) {
@@ -2565,12 +2573,37 @@ external_log_format::value_line_count(const intern_string_t ist,
 }
 
 log_level_t
-external_log_format::convert_level(
-    const pcre_input& pi, const pcre_context::capture_t* level_cap) const
+external_log_format::convert_level(const pcre_input& pi,
+                                   const pcre_context::capture_t* level_cap,
+                                   scan_batch_context* sbc) const
 {
     log_level_t retval = LEVEL_INFO;
 
     if (level_cap != nullptr && level_cap->is_valid()) {
+        if (sbc != nullptr && sbc->sbc_cached_level_count > 0) {
+            auto sf = pi.get_string_fragment(level_cap);
+            auto cached_level_iter
+                = std::find(std::begin(sbc->sbc_cached_level_strings),
+                            std::begin(sbc->sbc_cached_level_strings)
+                                + sbc->sbc_cached_level_count,
+                            sf);
+            if (cached_level_iter
+                != std::begin(sbc->sbc_cached_level_strings)
+                    + sbc->sbc_cached_level_count)
+            {
+                auto cache_index
+                    = std::distance(std::begin(sbc->sbc_cached_level_strings),
+                                    cached_level_iter);
+                if (cache_index != 0) {
+                    std::swap(sbc->sbc_cached_level_strings[cache_index],
+                              sbc->sbc_cached_level_strings[0]);
+                    std::swap(sbc->sbc_cached_level_values[cache_index],
+                              sbc->sbc_cached_level_values[0]);
+                }
+                return sbc->sbc_cached_level_values[0];
+            }
+        }
+
         pcre_context_static<128> pc_level;
         pcre_input pi_level(
             pi.get_substr_start(level_cap), 0, level_cap->length());
@@ -2579,12 +2612,27 @@ external_log_format::convert_level(
             retval = string2level(pi_level.get_string(), level_cap->length());
         } else {
             for (const auto& elf_level_pattern : this->elf_level_patterns) {
-                if (elf_level_pattern.second.lp_pcre->match(pc_level, pi_level))
+                if (elf_level_pattern.second.lp_pcre->match(
+                        pc_level, pi_level, PCRE_NO_UTF8_CHECK))
                 {
                     retval = elf_level_pattern.first;
                     break;
                 }
             }
+        }
+
+        if (sbc != nullptr && level_cap->length() < 10) {
+            size_t cache_index;
+
+            if (sbc->sbc_cached_level_count == 4) {
+                cache_index = sbc->sbc_cached_level_count - 1;
+            } else {
+                cache_index = sbc->sbc_cached_level_count;
+                sbc->sbc_cached_level_count += 1;
+            }
+            sbc->sbc_cached_level_strings[cache_index]
+                = std::string(pi_level.get_string(), pi_level.pi_length);
+            sbc->sbc_cached_level_values[cache_index] = retval;
         }
     }
 

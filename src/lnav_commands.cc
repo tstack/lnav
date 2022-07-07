@@ -1365,8 +1365,9 @@ com_save_to(exec_context& ec,
         lnav_data.ld_preview_status_source.get_description().set_value(
             "First lines of file: %s", split_args[0].c_str());
     } else {
-        retval = "info: Wrote " + std::to_string(line_count) + " rows to "
-            + split_args[0];
+        retval = fmt::format(FMT_STRING("info: Wrote {:L} rows to {}"),
+                             line_count,
+                             split_args[0]);
     }
     if (toclose != nullptr) {
         closer(toclose);
