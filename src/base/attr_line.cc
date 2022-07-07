@@ -31,6 +31,8 @@
 
 #include "attr_line.hh"
 
+#include <stdarg.h>
+
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "config.h"
