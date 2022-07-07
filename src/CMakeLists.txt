@@ -231,6 +231,7 @@ add_library(
         fmtlib/fmt/ostream.h
         fmtlib/fmt/printf.h
         fmtlib/fmt/ranges.h
+        fmtlib/fmt/std.h
         fmtlib/fmt/xchar.h
 )
 target_include_directories(cppfmt PUBLIC fmtlib)
@@ -238,10 +239,12 @@ target_include_directories(cppfmt PUBLIC fmtlib)
 add_library(lnavfileio STATIC
         grep_proc.hh
         line_buffer.hh
+        pollable.hh
         shared_buffer.hh
 
         grep_proc.cc
         line_buffer.cc
+        pollable.cc
         shared_buffer.cc
         )
 target_include_directories(lnavfileio PRIVATE . ${CMAKE_CURRENT_BINARY_DIR})
@@ -330,7 +333,6 @@ add_library(
         string-extension-functions.cc
         sysclip.cc
         piper_proc.cc
-        pollable.cc
         spectro_impls.cc
         spectro_source.cc
         sql_commands.cc
@@ -419,7 +421,6 @@ add_library(
         papertrail_proc.hh
         pcap_manager.hh
         plain_text_source.hh
-        pollable.hh
         pretty_printer.hh
         preview_status_source.hh
         pugixml/pugiconfig.hpp

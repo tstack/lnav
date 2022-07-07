@@ -346,9 +346,9 @@ db_spectro_value_source::update_stats()
                           attr_line_t()
                               .append("The ")
                               .append_quoted(lnav::roles::variable("log_time"))
-                              .append(
-                                  " column is not in ascending order between "
-                                  "rows {} and {}",
+                              .appendf(
+                                  FMT_STRING(" column is not in ascending "
+                                             "order between rows {} and {}"),
                                   dls.dls_time_column_invalidated_at.value()
                                       - 1,
                                   dls.dls_time_column_invalidated_at.value()))

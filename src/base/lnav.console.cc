@@ -149,8 +149,8 @@ user_message::to_attr_line(std::set<render_flags> flags) const
             header.append(" --> "_snippet_border)
                 .append(lnav::roles::file(snip.s_location.sl_source.get()));
             if (snip.s_location.sl_line_number > 0) {
-                header.append(":").append(FMT_STRING("{}"),
-                                          snip.s_location.sl_line_number);
+                header.append(":").appendf(FMT_STRING("{}"),
+                                           snip.s_location.sl_line_number);
             }
             retval.append(header).append("\n");
             if (!snip.s_content.blank()) {

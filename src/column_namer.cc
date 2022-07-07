@@ -88,7 +88,8 @@ column_namer::add_column(const string_fragment& in_name)
     auto counter_iter = this->cn_name_counters.find(retval);
     if (counter_iter != this->cn_name_counters.end()) {
         num = ++counter_iter->second;
-        fmt::format_to(buf, FMT_STRING("{}_{}"), base_name, num);
+        fmt::format_to(
+            std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
         retval = string_fragment{buf.data(), 0, (int) buf.size()};
     }
 
@@ -99,7 +100,8 @@ column_namer::add_column(const string_fragment& in_name)
 
         log_debug(
             "column name already exists: %.*s", retval.length(), retval.data());
-        fmt::format_to(buf, FMT_STRING("{}_{}"), base_name, num);
+        fmt::format_to(
+            std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
         retval = string_fragment{buf.data(), 0, (int) buf.size()};
         num += 1;
     }

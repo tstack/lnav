@@ -12,6 +12,7 @@ noinst_HEADERS = \
     fmt/ostream.h \
     fmt/printf.h \
     fmt/ranges.h \
+    fmt/std.h \
     fmt/xchar.h
 
 noinst_LIBRARIES = libcppfmt.a

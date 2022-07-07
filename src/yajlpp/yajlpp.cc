@@ -880,8 +880,9 @@ yajlpp_parse_context::handle_unused(void* ctx)
             expected_types.emplace_back("string");
         }
         if (!expected_types.empty()) {
-            help_text.append("  expecting one of the following types: {}",
-                             fmt::join(expected_types, ", "));
+            help_text.appendf(
+                FMT_STRING("  expecting one of the following types: {}"),
+                fmt::join(expected_types, ", "));
         }
         msg = lnav::console::user_message::warning(
                   attr_line_t("unexpected data for property ")
@@ -1293,7 +1294,8 @@ yajlpp_parse_context::get_snippet() const
             if (line_end) {
                 text_len_remaining = (line_end - line_start);
             }
-            content.append((const char*) line_start, text_len_remaining);
+            content.append(string_fragment{
+                (const char*) line_start, 0, (int) text_len_remaining});
         }
     }
 
@@ -1353,7 +1355,7 @@ json_path_handler_base::get_help_text(const std::string& full_path) const
             .append("\n");
 
         for (const auto& ex : this->jph_examples) {
-            retval.append("  {}\n", ex);
+            retval.appendf(FMT_STRING("  {}\n"), ex);
         }
     }
 

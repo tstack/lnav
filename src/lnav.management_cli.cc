@@ -698,10 +698,10 @@ struct subcmd_regex101_t {
                         attr_line_t(
                             "use the following command to patch the regex as "
                             "more changes are made on regex101.com:\n")
-                            .append(FMT_STRING("   lnav -m format {} regex {} "
-                                               "regex101 pull"),
-                                    sr.sr_import_name,
-                                    sr.sr_import_regex_name)),
+                            .appendf(FMT_STRING("   lnav -m format {} regex {} "
+                                                "regex101 pull"),
+                                     sr.sr_import_name,
+                                     sr.sr_import_regex_name)),
             };
         }
 

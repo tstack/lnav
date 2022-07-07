@@ -8,6 +8,7 @@
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
 
+#include <fstream>
 #include <ostream>
 
 #include "format.h"
@@ -45,15 +46,59 @@ struct is_streamable<
     enable_if_t<
         std::is_arithmetic<T>::value || std::is_array<T>::value ||
         std::is_pointer<T>::value || std::is_same<T, char8_type>::value ||
-        std::is_same<T, std::basic_string<Char>>::value ||
+        std::is_convertible<T, fmt::basic_string_view<Char>>::value ||
         std::is_same<T, std_string_view<Char>>::value ||
         (std::is_convertible<T, int>::value && !std::is_enum<T>::value)>>
     : std::false_type {};
+
+template <typename Char> FILE* get_file(std::basic_filebuf<Char>&) {
+  return nullptr;
+}
+
+struct dummy_filebuf {
+  FILE* _Myfile;
+};
+template <typename T, typename U = int> struct ms_filebuf {
+  using type = dummy_filebuf;
+};
+template <typename T> struct ms_filebuf<T, decltype(T::_Myfile, 0)> {
+  using type = T;
+};
+using filebuf_type = ms_filebuf<std::filebuf>::type;
+
+FILE* get_file(filebuf_type& buf);
+
+// Generate a unique explicit instantion in every translation unit using a tag
+// type in an anonymous namespace.
+namespace {
+struct filebuf_access_tag {};
+}  // namespace
+template <typename Tag, typename FileMemberPtr, FileMemberPtr file>
+class filebuf_access {
+  friend FILE* get_file(filebuf_type& buf) { return buf.*file; }
+};
+template class filebuf_access<filebuf_access_tag,
+                              decltype(&filebuf_type::_Myfile),
+                              &filebuf_type::_Myfile>;
+
+inline bool write(std::filebuf& buf, fmt::string_view data) {
+  FILE* f = get_file(buf);
+  if (!f) return false;
+  print(f, data);
+  return true;
+}
+inline bool write(std::wfilebuf&, fmt::basic_string_view<wchar_t>) {
+  return false;
+}
 
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
+  if (const_check(FMT_MSC_VERSION)) {
+    auto filebuf = dynamic_cast<std::basic_filebuf<Char>*>(os.rdbuf());
+    if (filebuf && write(*filebuf, {buf.data(), buf.size()})) return;
+  }
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
@@ -76,38 +121,65 @@ void format_value(buffer<Char>& buf, const T& value,
 #endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-  buf.try_resize(buf.size());
 }
 
-// Formats an object of type T that has an overloaded ostream operator<<.
-template <typename T, typename Char>
-struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
-    : private formatter<basic_string_view<Char>, Char> {
-  using formatter<basic_string_view<Char>, Char>::parse;
+template <typename T> struct streamed_view { const T& value; };
 
-  template <typename OutputIt>
-  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx)
+}  // namespace detail
+
+// Formats an object of type T that has an overloaded ostream operator<<.
+template <typename Char>
+struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
+  template <typename T, typename OutputIt>
+  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
       -> OutputIt {
     auto buffer = basic_memory_buffer<Char>();
     format_value(buffer, value, ctx.locale());
     return formatter<basic_string_view<Char>, Char>::format(
         {buffer.data(), buffer.size()}, ctx);
   }
+};
 
-  // DEPRECATED!
+using ostream_formatter = basic_ostream_formatter<char>;
+
+template <typename T>
+struct formatter<detail::streamed_view<T>> : ostream_formatter {
   template <typename OutputIt>
-  auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx)
-      -> OutputIt {
-    auto buffer = basic_memory_buffer<Char>();
-    format_value(buffer, value, ctx.locale());
-    return std::copy(buffer.begin(), buffer.end(), ctx.out());
+  auto format(detail::streamed_view<T> view,
+              basic_format_context<OutputIt, char>& ctx) const -> OutputIt {
+    return ostream_formatter::format(view.value, ctx);
   }
 };
+
+/**
+  \rst
+  Returns a view that formats `value` via an ostream ``operator<<``.
+
+  **Example**::
+
+    fmt::print("Current thread id: {}\n",
+               fmt::streamed(std::this_thread::get_id()));
+  \endrst
+ */
+template <typename T>
+auto streamed(const T& value) -> detail::streamed_view<T> {
+  return {value};
+}
+
+namespace detail {
+
+// Formats an object of type T that has an overloaded ostream operator<<.
+template <typename T, typename Char>
+struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
+    : basic_ostream_formatter<Char> {
+  using basic_ostream_formatter<Char>::format;
+};
+
 }  // namespace detail
 
-FMT_MODULE_EXPORT
-template <typename Char>
-void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
+FMT_MODULE_EXPORT template <typename Char>
+void vprint(std::basic_ostream<Char>& os,
+            basic_string_view<type_identity_t<Char>> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, format_str, args);
@@ -123,13 +195,19 @@ void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
     fmt::print(cerr, "Don't {}!", "panic");
   \endrst
  */
-FMT_MODULE_EXPORT
-template <typename S, typename... Args,
-          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
-void print(std::basic_ostream<Char>& os, const S& format_str, Args&&... args) {
-  vprint(os, to_string_view(format_str),
-         fmt::make_args_checked<Args...>(format_str, args...));
+FMT_MODULE_EXPORT template <typename... T>
+void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
+  vprint(os, fmt, fmt::make_format_args(args...));
 }
+
+FMT_MODULE_EXPORT
+template <typename... Args>
+void print(std::wostream& os,
+           basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
+           Args&&... args) {
+  vprint(os, fmt, fmt::make_format_args<buffer_context<wchar_t>>(args...));
+}
+
 FMT_END_NAMESPACE
 
 #endif  // FMT_OSTREAM_H_

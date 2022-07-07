@@ -508,7 +508,7 @@ md2attr_line::append_url_footnote(std::string href_str)
     }
 
     auto& last_block = this->ml_blocks.back();
-    last_block.append(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
+    last_block.appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
     last_block.with_attr(string_attr{
         line_range{
             (int) this->ml_span_starts.back(),

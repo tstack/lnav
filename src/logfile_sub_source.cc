@@ -2138,7 +2138,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         lf->get_unique_path(),
         attr_line_t()
             .append(lnav::roles::identifier(lf->get_unique_path()))
-            .append(FMT_STRING("[{:L}]"), file_line_number),
+            .appendf(FMT_STRING("[{:L}]"), file_line_number),
         [this]() -> std::vector<breadcrumb::possibility> {
             return this->lss_files
                 | lnav::itertools::filter_in([](const auto& file_data) {

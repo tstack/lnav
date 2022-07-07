@@ -705,7 +705,8 @@ sql_compile_script(sqlite3* db,
             attr_line_t sql_content;
 
             if (tail != nullptr) {
-                sql_content.append(script, (size_t) (tail - script));
+                sql_content.append(
+                    string_fragment{script, 0, (int) (tail - script)});
             } else {
                 sql_content.append(script);
             }

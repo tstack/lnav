@@ -335,14 +335,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             al.clear()
                 .append("   extract(")
                 .append(lv.lv_meta.lvm_name.get(),
-                        VC_STYLE.value(
-                            vc.attrs_for_ident(lv.lv_meta.lvm_name)))
+                        VC_STYLE.value(vc.attrs_for_ident(lv.lv_meta.lvm_name)))
                 .append(")")
                 .append(this->fos_known_key_size - lv.lv_meta.lvm_name.size()
                             - 9 + 3,
                         ' ')
                 .append(" = ")
-                .append((const char*) js.js_content.in(), js.js_len);
+                .append(string_fragment{
+                    (const char*) js.js_content.in(), 0, (int) js.js_len});
             this->fos_lines.emplace_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }

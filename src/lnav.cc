@@ -711,9 +711,9 @@ make it easier to navigate through files quickly.
         .append("Contact"_h1)
         .append("\n")
         .append("  \U0001F4AC https://github.com/tstack/lnav/discussions\n")
-        .append(FMT_STRING("  \U0001F4EB {}\n"), PACKAGE_BUGREPORT)
+        .appendf(FMT_STRING("  \U0001F4EB {}\n"), PACKAGE_BUGREPORT)
         .append("Version"_h1)
-        .append(FMT_STRING(": {}"), VCS_PACKAGE_STRING);
+        .appendf(FMT_STRING(": {}"), VCS_PACKAGE_STRING);
 
     lnav::console::println(stderr, usage_al);
 }
@@ -3016,7 +3016,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             .append(" of data from stdin was captured and "
                                     "will be saved for one day.  You can "
                                     "reopen it by running:\n")
-                            .append("   {} ", lnav_data.ld_program_name)
+                            .appendf(FMT_STRING("   {} "),
+                                     lnav_data.ld_program_name)
                             .append(lnav::roles::file(path_str))));
             }
         }

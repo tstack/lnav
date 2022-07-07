@@ -1134,9 +1134,9 @@ view_title_poss()
                 .append(lnav::roles::number(
                     quantity.value() == 0 ? "no"
                                           : fmt::to_string(quantity.value())))
-                .append(FMT_STRING(" {}{})"),
-                        units,
-                        quantity.value() == 1 ? "" : "s");
+                .appendf(FMT_STRING(" {}{})"),
+                         units,
+                         quantity.value() == 1 ? "" : "s");
         }
         retval.emplace_back(lnav_view_titles[view_index], display_value);
     }

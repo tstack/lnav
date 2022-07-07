@@ -540,17 +540,10 @@ public:
     }
 
     template<typename... Args>
-    attr_line_t& append(fmt::string_view format_str, const Args&... args)
+    attr_line_t& appendf(fmt::format_string<Args...> fstr, Args&&... args)
     {
-        this->template append(fmt::vformat(
-            format_str, fmt::make_args_checked<Args...>(format_str, args...)));
-        return *this;
-    }
-
-    attr_line_t& append(const char* str, size_t len)
-    {
-        this->al_string.append(str, len);
-
+        this->template append(
+            fmt::vformat(fstr, fmt::make_format_args(args...)));
         return *this;
     }
 

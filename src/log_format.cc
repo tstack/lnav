@@ -1963,6 +1963,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             const auto* ts_cap = pc[this->lf_timestamp_field.get()];
             const auto* level_cap = pc[pat.p_level_field_index];
             const char* ts = pi.get_substr_start(ts_cap);
+            auto ts_frag = pi.get_string_fragment(ts_cap);
             ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
             const char* const* custom_formats = this->get_timestamp_formats();
             date_time_scanner dts;
@@ -1984,7 +1985,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
                         PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
                         notes.append("\n  ")
-                            .append(ts, (size_t) ts_len)
+                            .append(ts_frag)
                             .append("\n")
                             .append(2 + off, ' ')
                             .append("^ "_snippet_border)
@@ -1999,7 +2000,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
                         ptime_fmt(custom_formats[lpc], &tm, ts, off, ts_len);
                         notes.append("\n  ")
-                            .append(ts, (size_t) ts_len)
+                            .append(ts_frag)
                             .append("\n")
                             .append(2 + off, ' ')
                             .append("^ "_snippet_border)
@@ -2014,7 +2015,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         attr_line_t("invalid sample log message: ")
                             .append(lnav::to_json(elf_sample.s_line.pp_value)))
                         .with_reason(attr_line_t("unrecognized timestamp -- ")
-                                         .append(ts, (size_t) ts_len))
+                                         .append(ts_frag))
                         .with_snippet(elf_sample.s_line.to_snippet())
                         .with_note(notes)
                         .with_help(attr_line_t("If the timestamp format is not "
