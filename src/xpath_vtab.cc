@@ -109,7 +109,7 @@ CREATE TABLE xpath (
         pugi::xml_document c_doc;
         pugi::xpath_node_set c_results;
 
-        cursor(sqlite3_vtab* vt) : base({vt}){};
+        cursor(sqlite3_vtab* vt) : base({vt}) {}
 
         ~cursor()
         {
@@ -122,26 +122,25 @@ CREATE TABLE xpath (
             checkin_query(this->c_xpath, std::move(this->c_query));
 
             return SQLITE_OK;
-        };
+        }
 
         int next()
         {
             this->c_rowid += 1;
 
             return SQLITE_OK;
-        };
+        }
 
         int eof()
         {
-            return this->c_rowid >= (int64_t) this->c_results.size();
-        };
+            return this->c_rowid >= (int64_t) this->c_results.size(); }
 
         int get_rowid(sqlite3_int64& rowid_out)
         {
             rowid_out = this->c_rowid;
 
             return SQLITE_OK;
-        };
+        }
     };
 
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)
