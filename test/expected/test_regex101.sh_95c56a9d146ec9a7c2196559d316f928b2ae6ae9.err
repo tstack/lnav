@@ -1,4 +1,4 @@
 [31m✘ error[0m: unable to import: [1mabc[0m
  [31mreason[0m: expecting a format name that matches the regular expression “^\w+$”
 [36m =[0m [36mnote[0m:    “def-jkl”
-                [36m^ matched up to here[0m
+                [32m^ matched up to here[0m

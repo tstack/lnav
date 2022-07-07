@@ -1,2 +1,0 @@
-[1m[7mid [0m[1m[7mparent [0m[1m[7mnotused [0m[1m                                   detail                                     [0m
-[1m[7m 2[0m[1m[7m [0m[1m[7m     0[0m[1m[7m [0m[1m[7m      0[0m[1m[7m [0m[1m[7mSCAN syslog_log VIRTUAL TABLE INDEX 1:SEARCH syslog_log USING log_path GLOB[0m[1m ? [0m

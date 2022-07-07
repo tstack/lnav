@@ -2,6 +2,6 @@
 [36m =[0m [36mnote[0m: this regex is currently associated with the following regex101.com entry:
             [1mhttps://regex101.com/r/zpEnjV[0m
 [36m =[0m [36mhelp[0m: the available subcommands are:
-          • [1m[34mpush[0m: create/update an entry for this regex on regex101.com
-          • [1m[34mpull[0m: create a patch format file for this regular expression based on the entry in regex101.com
-          • [1m[34mdelete[0m: delete the entry regex101.com that was created by a push operation
+          • [1m[36mpush[0m: create/update an entry for this regex on regex101.com
+          • [1m[36mpull[0m: create a patch format file for this regular expression based on the entry in regex101.com
+          • [1m[36mdelete[0m: delete the entry regex101.com that was created by a push operation
