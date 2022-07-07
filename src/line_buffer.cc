@@ -41,6 +41,7 @@
 #    include <bzlib.h>
 #endif
 
+#include <algorithm>
 #include <set>
 
 #ifdef HAVE_X86INTRIN_H
