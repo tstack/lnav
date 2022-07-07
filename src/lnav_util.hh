@@ -141,16 +141,9 @@ is_glob(const std::string& fn)
 
 short pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd);
 
-inline bool
-pollfd_ready(const std::vector<struct pollfd>& pollfds,
-             int fd,
-             short events = POLLIN | POLLHUP)
-{
-    return std::any_of(
-        pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {
-            return entry.fd == fd && entry.revents & events;
-        });
-};
+bool pollfd_ready(const std::vector<struct pollfd>& pollfds,
+                  int fd,
+                  short events = POLLIN | POLLHUP);
 
 inline void
 rusagesub(const struct rusage& left,

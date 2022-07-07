@@ -31,6 +31,8 @@
  * Dumping ground for useful functions with no other home.
  */
 
+#include <algorithm>
+
 #include "lnav_util.hh"
 
 #include <stdio.h>
@@ -135,6 +137,15 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     } else {
         lnav::console::println(outfile, al.subline(lr.lr_start, lr.length()));
     }
+}
+
+bool
+pollfd_ready(const std::vector<struct pollfd>& pollfds, int fd, short events)
+{
+    return std::any_of(
+        pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {
+            return entry.fd == fd && entry.revents & events;
+        });
 }
 
 namespace lnav {
