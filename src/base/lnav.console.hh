@@ -120,11 +120,14 @@ struct user_message {
                                  std::make_move_iterator(std::begin(snippets)),
                                  std::make_move_iterator(std::end(snippets)));
         if (this->um_snippets.size() > 1) {
-            auto last_iter = std::remove_if(
-                this->um_snippets.begin(),
-                this->um_snippets.end(),
-                [](const auto& elem) { return elem.s_content.empty(); });
-            this->um_snippets.erase(last_iter, this->um_snippets.end());
+            for (auto iter = this->um_snippets.begin();
+                 iter != this->um_snippets.end();) {
+                if (iter->s_content.empty()) {
+                    iter = this->um_snippets.erase(iter);
+                } else {
+                    ++iter;
+                }
+            }
         }
         return *this;
     }
