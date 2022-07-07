@@ -282,7 +282,8 @@ to_sqlite(sqlite3_context* ctx, double val)
     sqlite3_result_double(ctx, val);
 }
 
-#define JSON_SUBTYPE 74 /* Ascii for "J" */
+#define JSON_SUBTYPE    74 /* Ascii for "J" */
+#define FLATTEN_SUBTYPE 0x5f
 
 template<typename T>
 inline void

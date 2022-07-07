@@ -203,7 +203,7 @@ public:
 
         lr.lr_start = left;
 
-        const struct chart_ident& ci = this->sbc_idents[ident_index];
+        const auto& ci = this->sbc_idents[ident_index];
         int amount;
 
         if (value == 0.0) {
@@ -240,8 +240,9 @@ public:
 
     struct bucket_stats_t {
         bucket_stats_t()
-            : bs_min_value(std::numeric_limits<double>::max()),
-              bs_max_value(0){};
+            : bs_min_value(std::numeric_limits<double>::max()), bs_max_value(0)
+        {
+        }
 
         void merge(const bucket_stats_t& rhs, bool do_stacking)
         {
@@ -252,18 +253,18 @@ public:
                 this->bs_max_value
                     = std::max(this->bs_max_value, rhs.bs_max_value);
             }
-        };
+        }
 
         double width() const
         {
             return std::fabs(this->bs_max_value - this->bs_min_value);
-        };
+        }
 
         void update(double value)
         {
             this->bs_max_value = std::max(this->bs_max_value, value);
             this->bs_min_value = std::min(this->bs_min_value, value);
-        };
+        }
 
         double bs_min_value;
         double bs_max_value;
@@ -278,7 +279,7 @@ public:
 
 protected:
     struct chart_ident {
-        chart_ident(const T& ident) : ci_ident(ident) {}
+        explicit chart_ident(const T& ident) : ci_ident(ident) {}
 
         T ci_ident;
         int ci_attrs{0};
@@ -287,12 +288,10 @@ protected:
 
     struct chart_ident& find_ident(const T& ident)
     {
-        typename std::map<T, unsigned int>::iterator iter;
-
-        iter = this->sbc_ident_lookup.find(ident);
+        auto iter = this->sbc_ident_lookup.find(ident);
         if (iter == this->sbc_ident_lookup.end()) {
             this->sbc_ident_lookup[ident] = this->sbc_idents.size();
-            this->sbc_idents.push_back(ident);
+            this->sbc_idents.emplace_back(ident);
             return this->sbc_idents.back();
         }
         return this->sbc_idents[iter->second];

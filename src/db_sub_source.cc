@@ -40,6 +40,7 @@
 const char* db_label_source::NULL_STR = "<NULL>";
 
 constexpr size_t MAX_COLUMN_WIDTH = 120;
+constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
 
 void
 db_label_source::text_value_for_line(textview_curses& tc,
@@ -134,7 +135,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                     tc, left, this->dls_headers[lpc].hm_name, num_value, sa);
             }
         }
-        if (row_len > 2 && row_len < MAX_COLUMN_WIDTH
+        if (row_len > 2 && row_len < MAX_JSON_WIDTH
             && ((row_value[0] == '{' && row_value[row_len - 1] == '}')
                 || (row_value[0] == '[' && row_value[row_len - 1] == ']')))
         {
@@ -143,7 +144,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
             if (jpw.parse(row_value, row_len) == yajl_status_ok
                 && jpw.complete_parse() == yajl_status_ok)
             {
-                for (auto& jpw_value : jpw.jpw_values) {
+                for (const auto& jpw_value : jpw.jpw_values) {
                     double num_value;
 
                     if (jpw_value.wt_type == yajl_t_number

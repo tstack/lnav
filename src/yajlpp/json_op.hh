@@ -59,7 +59,9 @@ public:
     const static yajl_callbacks ptr_callbacks;
 
     explicit json_op(const json_ptr& ptr)
-        : jo_ptr(ptr), jo_ptr_callbacks(gen_callbacks){};
+        : jo_ptr(ptr), jo_ptr_callbacks(gen_callbacks)
+    {
+    }
 
     bool check_index(bool primitive = true)
     {

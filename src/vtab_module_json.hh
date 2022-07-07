@@ -35,6 +35,18 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
+struct flattened_json_string : json_string {
+    explicit flattened_json_string(yajl_gen_t* gen) : json_string(gen) {}
+};
+
+inline void
+to_sqlite(sqlite3_context* ctx, flattened_json_string& val)
+{
+    sqlite3_result_text(
+        ctx, (const char*) val.js_content.release(), val.js_len, free);
+    sqlite3_result_subtype(ctx, FLATTEN_SUBTYPE);
+}
+
 inline void
 to_sqlite(sqlite3_context* ctx, json_string& val)
 {

@@ -138,6 +138,23 @@ struct string_fragment {
         return *prefix == '\0';
     }
 
+    bool endswith(const char* suffix) const
+    {
+        auto suffix_len = strlen(suffix);
+
+        if (suffix_len > this->length()) {
+            return false;
+        }
+
+        const auto* curr = this->end() - suffix_len;
+        while (*suffix != '\0' && *curr == *suffix) {
+            suffix += 1;
+            curr += 1;
+        }
+
+        return *suffix == '\0';
+    }
+
     string_fragment substr(int begin) const
     {
         return string_fragment{

@@ -517,7 +517,7 @@ json_concat(nonstd::optional<const char*> json_in,
                     array.gen(sqlite3_value_double(val));
                     break;
                 case SQLITE3_TEXT: {
-                    auto text_val = sqlite3_value_text(val);
+                    const auto* text_val = sqlite3_value_text(val);
 
                     if (sqlite3_value_subtype(val) == JSON_SUBTYPE) {
                         concat_gen_elements(
@@ -533,6 +533,47 @@ json_concat(nonstd::optional<const char*> json_in,
 
     return json_string(gen);
 }
+
+#if 0
+static flattened_json_string
+sql_flatten_json_object(string_fragment sf)
+{
+    yajlpp_gen gen;
+
+    {
+        json_ptr jp("/");
+        json_op jo(jp);
+        auto_mem<yajl_handle_t> handle(yajl_free);
+
+        jo.jo_ptr_data = gen.get_handle();
+        yajl_gen_config(gen, yajl_gen_beautify, false);
+        handle.reset(yajl_alloc(&json_op::gen_callbacks, nullptr, &jo));
+        switch (yajl_parse(
+            handle.in(), (const unsigned char*) sf.data(), sf.length())) {
+            case yajl_status_error:
+            case yajl_status_client_canceled:
+                throw yajlpp_error(handle.in(), sf.data(), sf.length());
+            case yajl_status_ok:
+                break;
+        }
+        switch (yajl_complete_parse(handle.in())) {
+            case yajl_status_error:
+            case yajl_status_client_canceled:
+                throw yajlpp_error(handle.in(), sf.data(), sf.length());
+            case yajl_status_ok:
+                break;
+        }
+    }
+
+    auto result = gen.to_string_fragment();
+    if (!result.startswith("{") || !result.endswith("}")) {
+        throw std::runtime_error(
+            "flatten_json_object() requires a JSON object");
+    }
+
+    return flattened_json_string(gen);
+}
+#endif
 
 struct json_agg_context {
     yajl_gen_t* jac_yajl_gen;
@@ -796,6 +837,14 @@ json_extension_functions(struct FuncDef** basic_funcs,
                     "SELECT jget(null, '/msg', 'Hello')",
                 }),
         },
+
+#if 0
+        sqlite_func_adapter<decltype(&sql_flatten_json_object),
+                            sql_flatten_json_object>::
+            builder(help_text("flatten_json_object", "hello")
+                        .sql_function()
+                        .with_parameter({"json", "The JSON"})),
+#endif
 
         {nullptr},
     };
