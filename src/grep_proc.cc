@@ -39,6 +39,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "base/auto_pid.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
@@ -137,6 +138,7 @@ grep_proc<LineType>::start()
     }
 
     /* In the child... */
+    lnav::pid::in_child = true;
 
     /*
      * Restore the default signal handlers so we don't hang around
@@ -355,6 +357,8 @@ grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd>& pollfds)
                     = this->gp_line_buffer.load_next_line(this->gp_pipe_range);
 
                 if (load_result.isErr()) {
+                    log_error("failed to read from grep_proc child: %s",
+                              load_result.unwrapErr().c_str());
                     break;
                 }
 
@@ -417,7 +421,7 @@ grep_proc<LineType>::update_poll_set(std::vector<struct pollfd>& pollfds)
         pollfds.push_back(
             (struct pollfd){this->gp_line_buffer.get_fd(), POLLIN, 0});
     }
-    if (this->gp_err_pipe != -1) {
+    if (this->gp_err_pipe.get() != -1) {
         pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
     }
 }

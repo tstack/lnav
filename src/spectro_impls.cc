@@ -33,6 +33,8 @@
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
 
+using namespace lnav::roles::literals;
+
 class filtered_sub_source
     : public text_sub_source
     , public text_time_translator {
@@ -331,13 +333,12 @@ db_spectro_value_source::update_stats()
 
     if (!dls.has_log_time_column()) {
         if (dls.dls_time_column_invalidated_at) {
-            static const auto order_by_help
-                = attr_line_t()
-                      .append(lnav::roles::keyword("ORDER BY"))
-                      .append(" ")
-                      .append(lnav::roles::variable("log_time"))
-                      .append(" ")
-                      .append(lnav::roles::keyword("ASC"));
+            static const auto order_by_help = attr_line_t()
+                                                  .append("ORDER BY"_keyword)
+                                                  .append(" ")
+                                                  .append("log_time"_variable)
+                                                  .append(" ")
+                                                  .append("ASC"_keyword);
 
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -345,7 +346,7 @@ db_spectro_value_source::update_stats()
                       .with_reason(
                           attr_line_t()
                               .append("The ")
-                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append_quoted("log_time"_variable)
                               .appendf(
                                   FMT_STRING(" column is not in ascending "
                                              "order between rows {} and {}"),
@@ -354,13 +355,13 @@ db_spectro_value_source::update_stats()
                                   dls.dls_time_column_invalidated_at.value()))
                       .with_note(
                           attr_line_t("An ascending ")
-                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append_quoted("log_time"_variable)
                               .append(
                                   " column is needed to render a spectrogram"))
                       .with_help(attr_line_t("Add an ")
                                      .append_quoted(order_by_help)
                                      .append(" clause to your ")
-                                     .append(lnav::roles::keyword("SELECT"))
+                                     .append("SELECT"_keyword)
                                      .append(" statement"));
         } else {
             this->dsvs_error_msg
@@ -369,19 +370,19 @@ db_spectro_value_source::update_stats()
                       .with_reason(
                           attr_line_t()
                               .append("No ")
-                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append_quoted("log_time"_variable)
                               .append(" column found in the result set"))
                       .with_note(
                           attr_line_t("An ascending ")
-                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append_quoted("log_time"_variable)
                               .append(
                                   " column is needed to render a spectrogram"))
                       .with_help(
                           attr_line_t("Include a ")
-                              .append_quoted(lnav::roles::variable("log_time"))
+                              .append_quoted("log_time"_variable)
                               .append(" column in your ")
                               .append(" statement. Use an ")
-                              .append(lnav::roles::keyword("AS"))
+                              .append("AS"_keyword)
                               .append(
                                   " directive to alias a computed timestamp"));
         }

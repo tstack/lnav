@@ -48,6 +48,7 @@
 #    include "simdutf8check.h"
 #endif
 
+#include "base/auto_pid.hh"
 #include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "base/is_utf8.hh"
@@ -683,7 +684,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
               this->lb_file_offset,
               this->lb_buffer.size());
 #endif
-    if (this->lb_loader_future.valid()
+    if (!lnav::pid::in_child && this->lb_loader_future.valid()
         && start >= this->lb_loader_file_offset.value())
     {
 #if 0
@@ -718,8 +719,9 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
     if (this->in_range(start) && this->in_range(start + max_length - 1)) {
         /* Cache already has the data, nothing to do. */
         retval = true;
-        if (this->lb_seekable && this->lb_buffer.full()
-            && !this->lb_loader_file_offset) {
+        if (!lnav::pid::in_child && this->lb_seekable && this->lb_buffer.full()
+            && !this->lb_loader_file_offset)
+        {
             // log_debug("loader available start=%d", start);
             auto last_lf_iter = std::find(
                 this->lb_buffer.rbegin(), this->lb_buffer.rend(), '\n');
@@ -900,8 +902,9 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                 break;
         }
 
-        if (this->lb_seekable && this->lb_buffer.full()
-            && !this->lb_loader_file_offset) {
+        if (!lnav::pid::in_child && this->lb_seekable && this->lb_buffer.full()
+            && !this->lb_loader_file_offset)
+        {
             // log_debug("loader available2 start=%d", start);
             auto last_lf_iter = std::find(
                 this->lb_buffer.rbegin(), this->lb_buffer.rend(), '\n');

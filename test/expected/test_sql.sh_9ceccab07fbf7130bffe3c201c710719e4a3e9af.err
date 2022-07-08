@@ -1,5 +1,5 @@
-[31m✘ error[0m: Cannot generate spectrogram for database results
- [31mreason[0m: The “[4mlog_time[0m” column is not in ascending order between rows 1 and 2
+[1m[31m✘ error[0m: Cannot generate spectrogram for database results
+ [1m[31mreason[0m: The “[4mlog_time[0m” column is not in ascending order between rows 1 and 2
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                   [0m
 [36m =[0m [36mnote[0m: An ascending “[4mlog_time[0m” column is needed to render a spectrogram

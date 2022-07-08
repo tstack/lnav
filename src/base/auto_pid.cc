@@ -37,6 +37,9 @@
 
 namespace lnav {
 namespace pid {
+
+bool in_child = false;
+
 Result<auto_pid<process_state::running>, std::string>
 from_fork()
 {
@@ -49,9 +52,12 @@ from_fork()
 
     if (pid != 0) {
         log_debug("started child: %d", pid);
+    } else {
+        in_child = true;
     }
 
     return Ok(auto_pid<process_state::running>(pid));
 }
+
 }  // namespace pid
 }  // namespace lnav

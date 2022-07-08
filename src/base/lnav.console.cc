@@ -324,7 +324,8 @@ println(FILE* file, const attr_line_t& al)
 
                     switch (role) {
                         case role_t::VCR_ERROR:
-                            line_style |= fmt::fg(fmt::terminal_color::red);
+                            line_style |= fmt::fg(fmt::terminal_color::red)
+                                | fmt::emphasis::bold;
                             break;
                         case role_t::VCR_WARNING:
                         case role_t::VCR_RE_REPEAT:
@@ -348,6 +349,9 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_RE_SPECIAL:
                             line_style |= fmt::emphasis::bold
                                 | fmt::fg(fmt::terminal_color::cyan);
+                            break;
+                        case role_t::VCR_STRING:
+                            line_style |= fmt::fg(fmt::terminal_color::magenta);
                             break;
                         case role_t::VCR_VARIABLE:
                             line_style |= fmt::emphasis::underline;

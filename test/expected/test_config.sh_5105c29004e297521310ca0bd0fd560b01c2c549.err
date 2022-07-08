@@ -1,4 +1,4 @@
-[31m✘ error[0m: '[1mbad[0m' is not a supported configuration $schema version
+[1m[31m✘ error[0m: '[1mbad[0m' is not a supported configuration $schema version
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.bad-schema.json[0m:2
 [36m | [0m[37m[40m    "$schema": "bad"                    [0m
 [36m =[0m [36mnote[0m: expecting one of the following $schema values:
@@ -18,7 +18,7 @@
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
-[31m✘ error[0m: invalid JSON
+[1m[31m✘ error[0m: invalid JSON
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:3
 [36m | [0mparse error: object key and value must be separated by a colon (':')
 [36m | [0m               "ui": "theme",     "abc",     "def": "" }            
@@ -33,6 +33,6 @@
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
-[31m✘ error[0m: invalid JSON
- [31mreason[0m: parse error: premature EOF
+[1m[31m✘ error[0m: invalid JSON
+ [1m[31mreason[0m: parse error: premature EOF
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:3

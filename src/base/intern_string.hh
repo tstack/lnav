@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include <assert.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -173,6 +174,50 @@ struct string_fragment {
     }
 
     template<typename P>
+    string_fragment find_left_boundary(size_t start, P&& predicate) const
+    {
+        assert(start < this->length());
+
+        while (start > 0) {
+            if (predicate(this->data()[start])) {
+                start += 1;
+                break;
+            }
+            start -= 1;
+        }
+
+        return string_fragment{
+            this->sf_string,
+            (int) start,
+            this->sf_end,
+        };
+    }
+
+    template<typename P>
+    string_fragment find_right_boundary(size_t start, P&& predicate) const
+    {
+        while (start < this->length()) {
+            if (predicate(this->data()[start])) {
+                break;
+            }
+            start += 1;
+        }
+
+        return string_fragment{
+            this->sf_string,
+            this->sf_begin,
+            this->sf_begin + (int) start,
+        };
+    }
+
+    template<typename P>
+    string_fragment find_boundaries_around(size_t start, P&& predicate) const
+    {
+        return this->template find_left_boundary(start, predicate)
+            .find_right_boundary(0, predicate);
+    }
+
+    template<typename P>
     nonstd::optional<string_fragment> consume(P predicate) const
     {
         int consumed = 0;
@@ -216,7 +261,7 @@ struct string_fragment {
         = nonstd::optional<std::pair<string_fragment, string_fragment>>;
 
     template<typename P>
-    split_result split_while(P& predicate) const
+    split_result split_while(P&& predicate) const
     {
         int consumed = 0;
         while (consumed < this->length()) {

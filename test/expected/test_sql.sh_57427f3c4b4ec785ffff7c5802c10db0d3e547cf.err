@@ -1,5 +1,5 @@
-[31m✘ error[0m: Cannot generate spectrogram for database results
- [31mreason[0m: “[4mc_ip[0m” is not a numeric column
+[1m[31m✘ error[0m: Cannot generate spectrogram for database results
+ [1m[31mreason[0m: “[4mc_ip[0m” is not a numeric column
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m c_ip                       [0m
 [36m =[0m [36mhelp[0m: Only numeric columns can be visualized

@@ -1,48 +1,48 @@
-[31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
- [31mreason[0m: missing )
+[1m[31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
+ [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
 [36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
 [36m | [0mabc[1m[7m[32m([0mdef                                 
-[36m | [0m       [31m^ [0m[31mmissing )[0m                      
+[36m | [0m       [1m[31m^ [0m[1m[31mmissing )[0m                      
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/search-table/bad_table_regex/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            The regular expression for this search table.
-[31m✘ error[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression for property “[1m/bad_regex_log/regex/std/pattern[0m”
- [31mreason[0m: missing )
+[1m[31m✘ error[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression for property “[1m/bad_regex_log/regex/std/pattern[0m”
+ [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:6
 [36m | [0m[37m[40m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"[0m
 [36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
 [36m | [0m[1m[36m^[0m[1m[7m[32m([0m[1m[32m?<[0mtimestamp>[1m\d[0m[1m[36m+[0m: [1m[32m([0m[1m[32m?<[0mbody>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m           
-[36m | [0m                               [31m^ [0m[31mmissing )[0m
+[36m | [0m                               [1m[31m^ [0m[1m[31mmissing )[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/regex/std/pattern[0m [4m<message-regex>[0m
          [1mDescription[0m
            The regular expression to match a log message and capture fields.
-[31m✘ error[0m: “(foo” is not a valid regular expression for property “[1m/bad_regex_log/level/error[0m”
- [31mreason[0m: missing )
+[1m[31m✘ error[0m: “(foo” is not a valid regular expression for property “[1m/bad_regex_log/level/error[0m”
+ [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:10
 [36m | [0m[37m[40m            "error" : "(foo"            [0m
 [36m --> [0m[1m/bad_regex_log/level/error[0m
 [36m | [0m[1m[7m[32m([0mfoo                                    
-[36m | [0m    [31m^ [0m[31mmissing )[0m                         
+[36m | [0m    [1m[31m^ [0m[1m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/level/error[0m [4m<pattern|integer>[0m
          [1mDescription[0m
            The regular expression used to match the log text for this level.  For JSON logs with numeric levels, this should be the number for the corresponding level.
-[31m✘ error[0m: “abc(” is not a valid regular expression for property “[1m/bad_regex_log/highlights/foobar/pattern[0m”
- [31mreason[0m: missing )
+[1m[31m✘ error[0m: “abc(” is not a valid regular expression for property “[1m/bad_regex_log/highlights/foobar/pattern[0m”
+ [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:22
 [36m | [0m[37m[40m                "pattern": "abc("       [0m
 [36m --> [0m[1m/bad_regex_log/highlights/foobar/pattern[0m
 [36m | [0mabc[1m[7m[32m([0m                                    
-[36m | [0m    [31m^ [0m[31mmissing )[0m                         
+[36m | [0m    [1m[31m^ [0m[1m[31mmissing )[0m                         
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/highlights/foobar/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            A regular expression to highlight in logs of this format.
-[31m✘ error[0m: “foo” is not a valid value for option “[1m/bad_sample_log/value/pid/kind[0m”
+[1m[31m✘ error[0m: “foo” is not a valid value for option “[1m/bad_sample_log/value/pid/kind[0m”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:24
 [36m | [0m[37m[40m                "kind": "foo"           [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
@@ -51,7 +51,7 @@
            The type of data in the field
          [1mAllowed Values[0m
            [1mstring[0m, [1minteger[0m, [1mfloat[0m, [1mboolean[0m, [1mjson[0m, [1mstruct[0m, [1mquoted[0m, [1mxml[0m
-[31m✘ error[0m: '[1mbad[0m' is not a supported log format $schema version
+[1m[31m✘ error[0m: '[1mbad[0m' is not a supported log format $schema version
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-schema/format.json[0m:2
 [36m | [0m[37m[40m    "$schema": "bad"                    [0m
 [36m =[0m [36mnote[0m: expecting one of the following $schema values:
@@ -60,22 +60,22 @@
            [1m/$schema[0m [4mThe URI of the schema for this file[0m
          [1mDescription[0m
            Specifies the type of this file
-[31m✘ error[0m: invalid sample log message: "abc: foo"
- [31mreason[0m: unrecognized timestamp -- abc
+[1m[31m✘ error[0m: invalid sample log message: "abc: foo"
+ [1m[31mreason[0m: unrecognized timestamp -- abc
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:30
 [36m =[0m [36mnote[0m: the following custom formats were tried:
            abc
            [36m^ [0m“[1m%i[0m”[36m matched up to here[0m
 [36m =[0m [36mhelp[0m: If the timestamp format is not supported by default, you can add a custom format with the “[1mtimestamp-format[0m” property
-[31m✘ error[0m: invalid sample log message: "1428634687123| debug hello"
- [31mreason[0m: “[1mdebug[0m” does not match the expected level of “[1minfo[0m”
+[1m[31m✘ error[0m: invalid sample log message: "1428634687123| debug hello"
+ [1m[31mreason[0m: “[1mdebug[0m” does not match the expected level of “[1minfo[0m”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:33
-[31m✘ error[0m: invalid pattern: “[1mwith-level[0m”
- [31mreason[0m: pattern does not match entire multiline message
+[1m[31m✘ error[0m: invalid pattern: “[1mwith-level[0m”
+ [1m[31mreason[0m: pattern does not match entire multiline message
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:37
 [36m =[0m [36mhelp[0m: using “.*” when capturing the body will match new-lines
-[31m✘ error[0m: invalid sample log message: "1428634687123; foo bar"
- [31mreason[0m: sample does not match any patterns
+[1m[31m✘ error[0m: invalid sample log message: "1428634687123; foo bar"
+ [1m[31mreason[0m: sample does not match any patterns
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:41
 [36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
             1428634687123; foo bar
@@ -88,33 +88,34 @@
          [1mstd       [0m = “^(?<timestamp>\d+): (?<pid>\w+) (?<body>.*)$”
          [1mwith-level[0m = “^(?<timestamp>\d+)\| (?<level>\w+) (?<body>\w+)$”
          
-[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
- [31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
+[1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
+ [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
 [36m =[0m [36mnote[0m: the following captures are available:
            [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
-[31m✘ error[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
- [31mreason[0m: Unknown color: 'not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
+[1m[31m✘ error[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
+ [1m[31mreason[0m: Unknown color: 'not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:18
-[31m✘ error[0m: “also not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/background-color[0m”
- [31mreason[0m: Unknown color: 'also not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
+[1m[31m✘ error[0m: “also not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/background-color[0m”
+ [1m[31mreason[0m: Unknown color: 'also not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:19
-[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
- [31mreason[0m: no regexes specified
+[1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
+ [1m[31mreason[0m: no regexes specified
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4
-[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
- [31mreason[0m: log message samples must be included in a format definition
+[1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
+ [1m[31mreason[0m: log message samples must be included in a format definition
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4
-[31m✘ error[0m: “[1mno_sample_log[0m” is not a valid log format
- [31mreason[0m: log message samples must be included in a format definition
+[1m[31m✘ error[0m: “[1mno_sample_log[0m” is not a valid log format
+ [1m[31mreason[0m: log message samples must be included in a format definition
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-samples/format.json[0m:4
-[31m✘ error[0m: failed to compile SQL statement
- [31mreason[0m: near "TALE": syntax error
+[1m[31m✘ error[0m: failed to compile SQL statement
+ [1m[31mreason[0m: near "TALE": syntax error
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init.sql[0m:4
 [36m | [0m[32m[40m-- comment test                         [0m
-[36m | [0m[1m[36m[40mCREATE[0m[37m[40m TALE                             [0m
-[31m✘ error[0m: failed to execute SQL statement
- [31mreason[0m: missing )
+[36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[37m[40mTALE[0m[37m[40m [0m[1m[37m[40minvalid[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mx[0m[37m[40m [0m[37m[40my[0m[37m[40m [0m[37m[40mz[0m[37m[40m);            [0m
+[36m | [0m[37m[40m       [0m[36m[40m^ [0m[1m[31m[40mnear "TALE": syntax error[0m[37m[40m      [0m
+[1m[31m✘ error[0m: failed to execute SQL statement
+ [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init2.sql[0m
-[36m | [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[1m[7m[31m[40m([0m[37m[40m'abc('[0m[37m[40m, [0m[37m[40m'123'[0m[37m[40m)      [0m
+[36m | [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[1m[7m[31m[40m([0m[35m[40m'abc('[0m[37m[40m, [0m[35m[40m'123'[0m[37m[40m)      [0m
 [36m | [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msqlite_master[0m[37m[40m;                     [0m

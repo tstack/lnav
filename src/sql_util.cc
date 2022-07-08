@@ -52,6 +52,8 @@
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 
+using namespace lnav::roles::literals;
+
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
  */
@@ -702,17 +704,51 @@ sql_compile_script(sqlite3* db,
         log_debug("retcode %d  %p %p", retcode, script, tail);
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(db);
+            int erroff = -1;
             attr_line_t sql_content;
 
+#if defined(HAVE_SQLITE3_ERROR_OFFSET)
+            erroff = sqlite3_error_offset(db);
+#endif
             if (tail != nullptr) {
+                const auto* tail_lf = strchr(tail, '\n');
+                if (tail_lf == nullptr) {
+                    tail = tail + strlen(tail);
+                } else {
+                    tail = tail_lf;
+                }
                 sql_content.append(
                     string_fragment{script, 0, (int) (tail - script)});
             } else {
                 sql_content.append(script);
             }
+            if (erroff >= sql_content.length()) {
+                erroff -= 1;
+            }
+            if (erroff != -1 && !endswith(sql_content.get_string(), "\n")) {
+                sql_content.append("\n");
+            }
             sql_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             readline_sqlite_highlighter(sql_content, sql_content.length());
+
+            if (erroff != -1) {
+                auto line_with_error
+                    = string_fragment(sql_content.get_string())
+                          .find_boundaries_around(erroff,
+                                                  string_fragment::tag1{'\n'});
+                auto erroff_in_line = erroff - line_with_error.sf_begin;
+
+                attr_line_t pointer;
+
+                pointer.append(erroff_in_line, ' ')
+                    .append("^ "_snippet_border)
+                    .append(lnav::roles::error(errmsg))
+                    .append("\n");
+
+                sql_content.insert(line_with_error.sf_end + 1, pointer).rtrim();
+            }
+
             errors.emplace_back(
                 lnav::console::user_message::error(
                     "failed to compile SQL statement")

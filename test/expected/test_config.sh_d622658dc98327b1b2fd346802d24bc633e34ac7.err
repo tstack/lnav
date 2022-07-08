@@ -1,6 +1,6 @@
-[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/default/styles/text/color[0m”
- [31mreason[0m: invalid color -- “#f”
-[31m |      [0m  [31mreason[0m: Could not parse color: #f
+[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/default/styles/text/color[0m”
+ [1m[31mreason[0m: invalid color -- “#f”
+[1m[31m |      [0m  [1m[31mreason[0m: Could not parse color: #f
 [36m --> [0m[1mcommand-option[0m:1
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/ui/theme-defs/default/styles/text/color[0m [4m#hex|color_name[0m

@@ -38,9 +38,8 @@ if test ! -f "configure"; then
     ./autogen.sh
     rm -rf ~/github/lbuild
     mkdir -p ~/github/lbuild
-
-    cd ~/github/lbuild
 fi
+cd ~/github/lbuild
 
 TARGET_FILE='/vagrant/lnav-linux.zip'
 if test x"${OS}" != x"FreeBSD"; then

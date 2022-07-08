@@ -110,3 +110,35 @@ TEST_CASE("consume")
     CHECK(empty.has_value());
     CHECK(empty->empty());
 }
+
+TEST_CASE("find_left_boundary")
+{
+    std::string in1 = "Hello,\nWorld!\n";
+
+    {
+        auto sf = string_fragment{in1};
+
+        auto world_sf = sf.find_left_boundary(
+            in1.length() - 3, [](auto ch) { return ch == '\n'; });
+        CHECK(world_sf.to_string() == "World!\n");
+        auto full_sf
+            = sf.find_left_boundary(3, [](auto ch) { return ch == '\n'; });
+        CHECK(full_sf.to_string() == in1);
+    }
+}
+
+TEST_CASE("find_right_boundary")
+{
+    std::string in1 = "Hello,\nWorld!\n";
+
+    {
+        auto sf = string_fragment{in1};
+
+        auto world_sf = sf.find_right_boundary(
+            in1.length() - 3, [](auto ch) { return ch == '\n'; });
+        CHECK(world_sf.to_string() == "Hello,\nWorld!");
+        auto hello_sf
+            = sf.find_right_boundary(3, [](auto ch) { return ch == '\n'; });
+        CHECK(hello_sf.to_string() == "Hello,");
+    }
+}

@@ -1497,6 +1497,9 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
         p_info->idxStr = static_cast<char*>(storage);
         p_info->needToFreeIdxStr = 1;
         p_info->estimatedCost = 10.0;
+    } else {
+        p_info->idxStr = "fullscan";
+        p_info->estimatedCost = 1000000000.0;
     }
 
     return SQLITE_OK;

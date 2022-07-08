@@ -97,6 +97,14 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
 
     AC_SUBST(HAVE_SQLITE3_VALUE_SUBTYPE)
 
+    AC_CHECK_FUNC(sqlite3_error_offset,
+        AC_DEFINE([HAVE_SQLITE3_ERROR_OFFSET], [],
+            [Have the sqlite3_error_offset function]
+        )
+    )
+
+    AC_SUBST(HAVE_SQLITE3_ERROR_OFFSET)
+
     AS_VAR_SET(CFLAGS, $saved_CFLAGS)
     AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
