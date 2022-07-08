@@ -5,8 +5,10 @@ export YES_COLOR=1
 run_cap_test ${lnav_test} -C \
     -I ${test_dir}/bad-config-json
 
-run_cap_test env LC_ALL=C ${lnav_test} -C \
-    -I ${test_dir}/bad-config
+if x"$HAVE_SQLITE3_ERROR_OFFSET" != x""; then
+    run_cap_test env LC_ALL=C ${lnav_test} -C \
+        -I ${test_dir}/bad-config
+fi
 
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \

@@ -83,14 +83,14 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
     AC_LANG_POP([C++])
 
     AC_CHECK_FUNC(sqlite3_stmt_readonly,
-        AC_DEFINE([HAVE_SQLITE3_STMT_READONLY], [],
+        AC_DEFINE([HAVE_SQLITE3_STMT_READONLY], [1],
             [Have the sqlite3_stmt_readonly function]
         )
     )
 
     AC_CHECK_FUNC(sqlite3_value_subtype,
         HAVE_SQLITE3_VALUE_SUBTYPE=1
-        AC_DEFINE([HAVE_SQLITE3_VALUE_SUBTYPE], [],
+        AC_DEFINE([HAVE_SQLITE3_VALUE_SUBTYPE], [1],
             [Have the sqlite3_value_subtype function]
         )
     )
@@ -98,7 +98,8 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
     AC_SUBST(HAVE_SQLITE3_VALUE_SUBTYPE)
 
     AC_CHECK_FUNC(sqlite3_error_offset,
-        AC_DEFINE([HAVE_SQLITE3_ERROR_OFFSET], [],
+        HAVE_SQLITE3_ERROR_OFFSET=1
+        AC_DEFINE([HAVE_SQLITE3_ERROR_OFFSET], [1],
             [Have the sqlite3_error_offset function]
         )
     )
