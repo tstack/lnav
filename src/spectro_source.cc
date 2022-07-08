@@ -225,6 +225,10 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
             auto mark_offset = this->ss_cursor_column.value();
             auto mark_is_before = true;
 
+            if (desc.length() + 8 > width) {
+                desc.clear();
+            }
+
             if (this->ss_cursor_column.value() + desc.length() + 1 > width) {
                 mark_offset -= desc.length();
                 mark_is_before = false;
@@ -287,16 +291,26 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
              st.st_yellow_threshold - 1,
              role_t::VCR_HIGH_THRESHOLD,
              st.st_yellow_threshold);
-    line.append(width / 2 - strlen(buf) / 3 - line.length(), ' ');
+    auto buflen = strlen(buf);
+    if (line.length() + buflen + 20 < width) {
+        line.append(width / 2 - buflen / 3 - line.length(), ' ');
+    } else {
+        line.append(" ");
+    }
     line.append(buf);
     scrub_ansi_string(line, value_out.get_attrs());
 
     snprintf(buf, sizeof(buf), "Max: %'.10lg", sb.sb_max_value_out);
-    line.append(width - strlen(buf) - line.length() - 2, ' ');
+    buflen = strlen(buf);
+    if (line.length() + buflen + 4 < width) {
+        line.append(width - buflen - line.length() - 2, ' ');
+    } else {
+        line.append(" ");
+    }
     line.append(buf);
 
-    value_out.with_attr(string_attr(line_range(0, -1),
-                                    VC_STYLE.value(A_UNDERLINE)));
+    value_out.with_attr(
+        string_attr(line_range(0, -1), VC_STYLE.value(A_UNDERLINE)));
 
     return true;
 }

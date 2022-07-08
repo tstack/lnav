@@ -458,6 +458,9 @@ public:
             if (this->lv_height < 0) {
                 height_out = vis_line_t(height) + this->lv_height
                     - vis_line_t(this->lv_y);
+                if (height_out < 0_vl) {
+                    height_out = 0_vl;
+                }
             } else {
                 height_out = this->lv_height;
             }

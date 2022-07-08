@@ -36,7 +36,7 @@ namespace lnav {
 namespace logfile {
 
 struct config {
-    uint64_t lc_max_unrecognized_lines{15000};
+    uint64_t lc_max_unrecognized_lines{1000};
 };
 
 }  // namespace logfile

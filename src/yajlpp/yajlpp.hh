@@ -489,6 +489,16 @@ public:
     }
 
     template<typename T>
+    yajl_gen_status operator()(nonstd::optional<T> value)
+    {
+        if (!value.has_value()) {
+            return yajl_gen_status_ok;
+        }
+
+        return (*this)(value.value());
+    }
+
+    template<typename T>
     yajl_gen_status operator()(
         const T& container,
         typename std::enable_if<!std::is_integral<T>::value>::type* dummy = 0)

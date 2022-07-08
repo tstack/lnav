@@ -229,17 +229,19 @@ com_adjust_log_time(exec_context& ec,
         date_time_scanner dts;
         vis_line_t top_line;
         struct exttm tm;
+        struct tm base_tm;
         std::shared_ptr<logfile> lf;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_selection();
         top_content = lss.at(top_line);
         lf = lss.find(top_content);
 
-        logline& ll = (*lf)[top_content];
+        auto& ll = (*lf)[top_content];
 
         top_time = ll.get_timeval();
+        localtime_r(&top_time.tv_sec, &base_tm);
 
-        dts.set_base_time(top_time.tv_sec);
+        dts.set_base_time(top_time.tv_sec, base_tm);
         args[1] = remaining_args(cmdline, args);
 
         auto parse_res = relative_time::from_str(args[1]);
@@ -3279,11 +3281,13 @@ com_pt_time(exec_context& ec,
         date_time_scanner dts;
         struct exttm tm;
         time_t now;
+        struct tm base_tm;
         auto parse_res = relative_time::from_str(all_args);
 
         time(&now);
+        localtime_r(&now, &base_tm);
         dts.dts_keep_base_tz = true;
-        dts.set_base_time(now);
+        dts.set_base_time(now, base_tm);
         if (parse_res.isOk()) {
             tm.et_tm = *gmtime(&now);
             tm = parse_res.unwrap().adjust(tm);

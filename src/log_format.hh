@@ -489,14 +489,16 @@ public:
     bool lf_is_self_describing{false};
     bool lf_time_ordered{true};
     bool lf_specialized{false};
+    nonstd::optional<int64_t> lf_max_unrecognized_lines;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
 
     struct pcre_format {
-        pcre_format(const char* regex) : name(regex), pcre(regex)
+        explicit pcre_format(const char* regex)
+            : name(regex), pcre(regex),
+              pf_timestamp_index(this->pcre.name_index("timestamp"))
         {
-            this->pf_timestamp_index = this->pcre.name_index("timestamp");
         }
 
         pcre_format() : name(nullptr), pcre("") {}

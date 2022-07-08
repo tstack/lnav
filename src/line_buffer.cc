@@ -398,7 +398,6 @@ line_buffer::set_fd(auto_fd& fd)
             this->lb_seekable = true;
         }
     }
-    log_debug("newoff %d", newoff);
     this->lb_file_offset = newoff;
     this->lb_buffer.clear();
     this->lb_fd = std::move(fd);
@@ -839,12 +838,6 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 #endif
         else if (this->lb_seekable)
         {
-#if 1
-            log_debug("doing pread file_off=%d read_off=%d count=%d",
-                      this->lb_file_offset,
-                      this->lb_file_offset + this->lb_buffer.size(),
-                      this->lb_buffer.available());
-#endif
             rc = pread(this->lb_fd,
                        this->lb_buffer.end(),
                        this->lb_buffer.available(),

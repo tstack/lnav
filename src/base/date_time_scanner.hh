@@ -68,13 +68,7 @@ struct date_time_scanner {
         this->dts_fmt_len = -1;
     }
 
-    void set_base_time(time_t base_time)
-    {
-        this->dts_base_time = base_time;
-        localtime_r(&base_time, &this->dts_base_tm.et_tm);
-        this->dts_last_tm = exttm{};
-        this->dts_last_tv = timeval{};
-    }
+    void set_base_time(time_t base_time, const tm& local_tm);
 
     /**
      * Convert a timestamp to local time.

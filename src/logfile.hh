@@ -420,6 +420,8 @@ private:
     safe_opid_map lf_opids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
+    nonstd::optional<time_t> lf_cached_base_time;
+    nonstd::optional<tm> lf_cached_base_tm;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
 };

@@ -270,6 +270,15 @@ date_time_scanner::scan(const char* time_dest,
 }
 
 void
+date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
+{
+    this->dts_base_time = base_time;
+    this->dts_base_tm.et_tm = local_tm;
+    this->dts_last_tm = exttm{};
+    this->dts_last_tv = timeval{};
+}
+
+void
 date_time_scanner::to_localtime(time_t t, exttm& tm_out)
 {
     if (t < (24 * 60 * 60)) {

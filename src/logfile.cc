@@ -172,7 +172,17 @@ logfile::set_format_base_time(log_format* lf)
     if (file_time == 0) {
         file_time = this->lf_stat.st_mtime;
     }
-    lf->lf_date_time.set_base_time(file_time);
+
+    if (!this->lf_cached_base_time
+        || this->lf_cached_base_time.value() != file_time)
+    {
+        struct tm new_base_tm;
+        this->lf_cached_base_time = file_time;
+        localtime_r(&file_time, &new_base_tm);
+        this->lf_cached_base_tm = new_base_tm;
+    }
+    lf->lf_date_time.set_base_time(this->lf_cached_base_time.value(),
+                                   this->lf_cached_base_tm.value());
 }
 
 bool
@@ -180,6 +190,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         const line_info& li,
                         scan_batch_context& sbc)
 {
+    static auto max_unrecognized_lines
+        = injector::get<const lnav::logfile::config&>()
+              .lc_max_unrecognized_lines;
+
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
     size_t prescan_size = this->lf_index.size();
     time_t prescan_time = 0;
@@ -191,11 +205,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
-    } else if (this->lf_options.loo_detect_format
-               && this->lf_index.size()
-                   < injector::get<const lnav::logfile::config&>()
-                         .lc_max_unrecognized_lines)
-    {
+    } else if (this->lf_options.loo_detect_format) {
         const auto& root_formats = log_format::get_root_formats();
 
         /*
@@ -206,6 +216,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
              iter != root_formats.end() && (found != log_format::SCAN_MATCH);
              ++iter)
         {
+            if (this->lf_index.size()
+                >= (*iter)->lf_max_unrecognized_lines.value_or(
+                    max_unrecognized_lines))
+            {
+                continue;
+            }
+
             if (!(*iter)->match_name(this->lf_filename)) {
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file name: %s",

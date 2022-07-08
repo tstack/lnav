@@ -869,6 +869,13 @@ struct json_path_container format_handlers = {
         .with_description("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
         .for_field(&external_log_format::elf_type),
+
+    yajlpp::property_handler("max-unrecognized-lines")
+        .with_synopsis("<lines>")
+        .with_description("The maximum number of lines in a file to use when "
+                          "detecting the format")
+        .with_min_value(1)
+        .for_field(&log_format::lf_max_unrecognized_lines),
 };
 
 static int

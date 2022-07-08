@@ -279,9 +279,6 @@ textfile_sub_source::text_crumbs_for_line(
     }
 
     auto lf = this->current_file();
-    if (lf->size() == 0) {
-        return;
-    }
     crumbs.emplace_back(
         lf->get_unique_path(),
         attr_line_t().append(lnav::roles::identifier(lf->get_unique_path())),
@@ -308,6 +305,9 @@ textfile_sub_source::text_crumbs_for_line(
             this->to_front(lf_opt.value());
             this->tss_view->reload_data();
         });
+    if (lf->size() == 0) {
+        return;
+    }
 
     auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
     if (rend_iter != this->tss_rendered_files.end()) {

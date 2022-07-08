@@ -2186,7 +2186,6 @@ main(int argc, char* argv[])
                                      "missing format files to install")
                                      .with_reason(install_reason)
                                      .with_help(install_help));
-            usage();
             return EXIT_FAILURE;
         }
 
@@ -2771,19 +2770,24 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    if (lnav_data.ld_active_files.fc_file_names.empty()
+    if (retval == EXIT_SUCCESS
+        && lnav_data.ld_active_files.fc_file_names.empty()
         && lnav_data.ld_commands.empty() && lnav_data.ld_pt_search.empty()
         && !(lnav_data.ld_show_help_view || mode_flags.mf_no_default))
     {
         lnav::console::print(
             stderr,
-            lnav::console::user_message::error("no log files given/found"));
+            lnav::console::user_message::error("nothing to do")
+                .with_reason("no files given or default files found")
+                .with_help(
+                    attr_line_t("use the ")
+                        .append_quoted(lnav::roles::keyword("-N"))
+                        .append(
+                            " option to open lnav without loading any files")));
         retval = EXIT_FAILURE;
     }
 
-    if (retval != EXIT_SUCCESS) {
-        usage();
-    } else {
+    if (retval == EXIT_SUCCESS) {
         isc::supervisor root_superv(injector::get<isc::service_list>());
 
         try {

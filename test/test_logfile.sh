@@ -230,7 +230,6 @@ mv test_logfile.unreadable.out `test_err_filename`
 check_error_output "able to read an unreadable log file?" <<EOF
 ✘ error: cannot read file: unreadable.log
  reason: Permission denied
-✘ error: no log files given/found
 EOF
 
 run_test ${lnav_test} -n 'unreadable.*'

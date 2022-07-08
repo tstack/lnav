@@ -1070,8 +1070,10 @@ public:
                                      nullptr,
                                      &tm,
                                      tv)) {
-                            this->lf_date_time.set_base_time(tv.tv_sec);
-                            this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                            this->lf_date_time.set_base_time(tv.tv_sec,
+                                                             tm.et_tm);
+                            this->wlf_time_scanner.set_base_time(tv.tv_sec,
+                                                                 tm.et_tm);
                         }
                     }
                 }
@@ -1210,8 +1212,8 @@ public:
                              &tm,
                              tv))
                 {
-                    this->lf_date_time.set_base_time(tv.tv_sec);
-                    this->wlf_time_scanner.set_base_time(tv.tv_sec);
+                    this->lf_date_time.set_base_time(tv.tv_sec, tm.et_tm);
+                    this->wlf_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
                 }
             } else if (directive == "#Fields:" && this->wlf_field_defs.empty())
             {

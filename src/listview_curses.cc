@@ -196,7 +196,6 @@ listview_curses::do_update()
         attr_line_t overlay_line;
         struct line_range lr;
         unsigned long width, wrap_width;
-        size_t row_count;
         int y = this->lv_y, bottom;
         attr_t role_attrs = vc.attrs_for_role(this->vc_default_role);
 
@@ -211,7 +210,7 @@ listview_curses::do_update()
                    : this->lv_show_scrollbar ? 1
                                              : 0);
 
-        row_count = this->get_inner_height();
+        size_t row_count = this->get_inner_height();
         row = this->lv_top;
         bottom = y + height;
         std::vector<attr_line_t> rows(
@@ -484,13 +483,17 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
-                this->lv_selection = top;
+                this->set_selection(top);
             } else {
                 auto bot = this->get_bottom();
+                unsigned long width;
+                vis_line_t height;
 
-                if (bot != -1_vl) {
+                this->get_dimensions(height, width);
+
+                if (bot != -1_vl && (bot - top) >= (height - 1)) {
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
-                        this->lv_selection = bot - this->lv_tail_space;
+                        this->set_selection(bot - this->lv_tail_space);
                     }
                 }
             }
@@ -567,7 +570,8 @@ listview_curses::scroll_selection_into_view()
     if (this->lv_selection < 0_vl) {
         this->set_top(0_vl);
     } else if (this->lv_selection
-               >= (this->lv_top + height - this->lv_tail_space)) {
+               >= (this->lv_top + height - this->lv_tail_space - 1_vl))
+    {
         this->set_top(this->lv_selection - height + 1_vl + this->lv_tail_space,
                       true);
     } else if (this->lv_selection < this->lv_top) {

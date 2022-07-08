@@ -503,6 +503,12 @@
                         "json",
                         "csv"
                     ]
+                },
+                "max-unrecognized-lines": {
+                    "title": "/<format_name>/max-unrecognized-lines",
+                    "description": "The maximum number of lines in a file to use when detecting the format",
+                    "type": "integer",
+                    "minimum": 1
                 }
             },
             "additionalProperties": false

@@ -152,7 +152,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         date_time_scanner dts;
         struct exttm tm;
 
-        dts.set_base_time(format->lf_date_time.dts_base_time);
+        dts.set_base_time(format->lf_date_time.dts_base_time,
+                          format->lf_date_time.dts_base_tm.et_tm);
         if (format->lf_date_time.scan(time_src,
                                       time_range.length(),
                                       format->get_timestamp_formats(),

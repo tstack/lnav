@@ -570,6 +570,12 @@ struct json_path_handler : public json_path_handler_base {
             = std::is_integral<U>::value && !std::is_same<U, bool>::value;
     };
 
+    template<typename T, typename U>
+    struct LastIsNumber<nonstd::optional<U> T::*> {
+        static constexpr bool value
+            = std::is_integral<U>::value && !std::is_same<U, bool>::value;
+    };
+
     template<typename T, typename... Args>
     struct LastIsVector {
         static constexpr bool value = LastIsVector<Args...>::value;
@@ -584,6 +590,18 @@ struct json_path_handler : public json_path_handler_base {
     struct LastIsVector<U T::*> {
         static constexpr bool value = false;
     };
+
+    template<typename T>
+    static bool is_field_set(const nonstd::optional<T>& field)
+    {
+        return field.has_value();
+    }
+
+    template<typename T>
+    static bool is_field_set(const T&)
+    {
+        return true;
+    }
 
     template<typename... Args,
              std::enable_if_t<LastIs<bool, Args...>::value, bool> = true>
@@ -1151,6 +1169,10 @@ struct json_path_handler : public json_path_handler_base {
                 if (field == field_def) {
                     return yajl_gen_status_ok;
                 }
+            }
+
+            if (!is_field_set(field)) {
+                return yajl_gen_status_ok;
             }
 
             if (ygc.ygc_depth) {
