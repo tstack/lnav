@@ -1,0 +1,7 @@
+                 SELECT (1.5 + 2.2) AS decim
+     sql_keyword ------
+      sql_number         ---
+        sql_oper             -
+      sql_number               ---
+     sql_keyword                    --
+       sql_ident                       -----

@@ -206,4 +206,5 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
         lc.lc_log_path.emplace_back(SQLITE_INDEX_CONSTRAINT_GLOB,
                                     this->lst_log_path_glob);
     }
+    this->lst_match_index = -1;
 }

@@ -8,4 +8,4 @@
 [1m[31m |      [0m          [1mDescription[0m
 [1m[31m |      [0m            A tag for the log line
 [36m --> [0m[1mcommand-option[0m:1
-[36m | [0m[37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_tags[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40mjson_array[0m[37m[40m([0m[35m[40m'foo'[0m[37m[40m) [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 1[0m
+[36m | [0m[37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_tags[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40mjson_array[0m[37m[40m([0m[35m[40m'foo'[0m[37m[40m) [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m1[0m

@@ -452,7 +452,7 @@ that is supported by Sqlite3. For example, to get the top ten URLs
 being accessed in any loaded Apache log files, you can execute:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m    [0m
- ▌[37m[40m   [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m [0m[1m[36m[40mLIMIT[0m[37m[40m 10;     [0m
+ ▌[37m[40m   [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m;     [0m
 
 The query result view shows the results and graphs any numeric values
 found in the result, much like the histogram view.
@@ -547,7 +547,7 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
  ▌[37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'/tmp/topten.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
  ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[1m[36m[40m.foo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
  ▌[37m[40m   [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m          [0m
- ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m 10;                                                         [0m
+ ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m;                                                         [0m
 
 [1mDynamic logline Table (experimental)[0m
 
@@ -1716,7 +1716,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To cast the value 1.23 as an integer:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCAST[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mINTEGER[0m[37m[40m)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCAST[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mINTEGER[0m[37m[40m)                      [0m
    
 
 
@@ -1746,7 +1746,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the absolute value of -1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mabs[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m1)                                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mabs[0m[37m[40m([0m[1m[37m[40m-1[0m[37m[40m)                                    [0m
    
 
 
@@ -1761,7 +1761,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arccosine of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macos[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macos[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1776,7 +1776,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arccosine of 1.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m(1[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m([0m[1m[37m[40m1.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1791,7 +1791,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arcsine of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masin[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masin[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1806,7 +1806,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arcsine of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masinh[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masinh[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1821,7 +1821,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arctangent of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matan[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matan[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
    
 
 
@@ -1838,7 +1838,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matan2[0m[37m[40m(5, 5))                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matan2[0m[37m[40m([0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m))                       [0m
    
 
 
@@ -1853,7 +1853,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arctangent of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matanh[0m[37m[40m(0[0m[1m[36m[40m.2[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matanh[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                 [0m
    
 
 
@@ -1870,7 +1870,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matn2[0m[37m[40m(5, 5))                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matn2[0m[37m[40m([0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m))                        [0m
    
 
 
@@ -1939,7 +1939,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the ceiling of 1.23:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mceil[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mceil[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m)                                 [0m
    
 
 
@@ -1966,7 +1966,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get a string with the code points 0x48 and 0x49:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m(0[0m[37m[40mx48[0m[37m[40m, 0[0m[37m[40mx49[0m[37m[40m)                           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40mx48[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40mx49[0m[37m[40m)                           [0m
    
 
 
@@ -1990,11 +1990,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To search for the string 'abc' within 'abcabc' and starting at position 2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'abcabc'[0m[37m[40m, 2)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'abcabc'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)              [0m
    
 
 #2 To search for the string 'abc' within 'abcdef' and starting at position 2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'abcdef'[0m[37m[40m, 2)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'abcdef'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)              [0m
    
 
 
@@ -2008,7 +2008,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get the first non-null value from three parameters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcoalesce[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, 0, [0m[1m[36m[40mnull[0m[37m[40m)                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcoalesce[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40m, [0m[1m[36m[40mnull[0m[37m[40m)                    [0m
    
 
 
@@ -2055,7 +2055,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To get the date portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m(1491341842, [0m[35m[40m'unixepoch'[0m[37m[40m)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[1m[37m[40m1491341842[0m[37m[40m, [0m[35m[40m'unixepoch'[0m[37m[40m)              [0m
    
 
 
@@ -2079,7 +2079,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To get the date and time portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m(1491341842, [0m[35m[40m'unixepoch'[0m[37m[40m)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[1m[37m[40m1491341842[0m[37m[40m, [0m[35m[40m'unixepoch'[0m[37m[40m)          [0m
    
 
 
@@ -2171,7 +2171,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To raise e to 2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mexp[0m[37m[40m(2)                                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mexp[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m)                                     [0m
    
 
 
@@ -2219,7 +2219,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the floor of 1.23:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfloor[0m[37m[40m(1[0m[1m[36m[40m.23[0m[37m[40m)                                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfloor[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m)                                [0m
    
 
 
@@ -2236,15 +2236,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To generate the numbers in the range [10, 14]:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m)         [0m
    
 
 #2 To generate every other number in the range [10, 14]:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(10, 14, 2)      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)      [0m
    
 
 #3 To count down from five to 1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m(1, 5, [0m[1m[37m[40m-[0m[37m[40m1)       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)       [0m
    
 
 
@@ -2394,7 +2394,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To format an amount:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m(10 [0m[1m[37m[40m*[0m[37m[40m 1024 [0m[1m[37m[40m*[0m[37m[40m 1024)       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m)       [0m
    
 
 
@@ -2408,7 +2408,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To get the first non-null value between null and zero:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, 0)                            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[1m[36m[40mnull[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40m)                            [0m
    
 
 
@@ -2501,11 +2501,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To append the number 4 to null:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[1m[36m[40mNULL[0m[37m[40m, 4)                       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[1m[36m[40mNULL[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m)                       [0m
    
 
 #2 To append 4 and 5 to the array [1, 2, 3]:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m, 4, 5)             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m)             [0m
    
 
 #3 To concatenate two arrays together:
@@ -2523,7 +2523,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To test if a JSON array contains the number 4:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m, 4)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m)              [0m
    
 
 #2 To test if a JSON array contains the string 'def':
@@ -2540,11 +2540,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_object()[0m
 [4mExamples[0m
 #1 To create an array from arguments:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[35m[40m'one'[0m[37m[40m, 2, 3[0m[1m[36m[40m.4[0m[37m[40m)            [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[35m[40m'one'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m3.4[0m[37m[40m)            [0m
    
 
 #2 To create an array from a column of values:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m (1), (2), (3))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[37m[40m1[0m[37m[40m), ([0m[1m[37m[40m2[0m[37m[40m), ([0m[1m[37m[40m3[0m[37m[40m))[0m
    
 
 
@@ -2558,11 +2558,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m
 [4mExamples[0m
 #1 To create an object from arguments:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[35m[40m'a'[0m[37m[40m, 1, [0m[35m[40m'b'[0m[37m[40m, 2)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)          [0m
    
 
 #2 To create an object from a pair of columns:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'a'[0m[37m[40m, 1), ([0m[35m[40m'b'[0m[37m[40m, 2))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m))[0m
    
 
 
@@ -2586,7 +2586,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To get the julian day from the timestamp 1491341842:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m(1491341842, [0m[35m[40m'unixepoch'[0m[37m[40m)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[1m[37m[40m1491341842[0m[37m[40m, [0m[35m[40m'unixepoch'[0m[37m[40m)         [0m
    
 
 
@@ -2649,11 +2649,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the first character of the string 'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                          [0m
    
 
 #2 To get the first ten characters of a string, regardless of size:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 10)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m10[0m[37m[40m)                         [0m
    
 
 
@@ -2748,7 +2748,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To get the natual logarithm of 8:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog[0m[37m[40m(8)                                     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog[0m[37m[40m([0m[1m[37m[40m8[0m[37m[40m)                                     [0m
    
 
 
@@ -2763,7 +2763,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the logarithm of 100:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog10[0m[37m[40m(100)                                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog10[0m[37m[40m([0m[1m[37m[40m100[0m[37m[40m)                                 [0m
    
 
 
@@ -2855,7 +2855,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the largest value from the parameters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m(2, 1, 3)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                               [0m
    
 
 #2 To get the largest value from an aggregate:
@@ -2877,7 +2877,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the smallest value from the parameters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m(2, 1, 3)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                               [0m
    
 
 #2 To get the smallest value from an aggregate:
@@ -2915,11 +2915,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To test if 1 is different from 1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 1)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                               [0m
    
 
 #2 To test if 1 is different from 2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m(1, 2)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mnullif[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)                               [0m
    
 
 
@@ -2940,11 +2940,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
    
 
 #2 To pad the string 'abcdef' to a length of eight characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, 8) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'ghi'[0m[37m[40m                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, [0m[1m[37m[40m8[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'ghi'[0m[37m[40m                 [0m
    
 
 
@@ -2965,11 +2965,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 6)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m)                             [0m
    
 
 #2 To pad the string 'abcdef' to a length of four characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, 4)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m)                          [0m
    
 
 
@@ -2990,11 +2990,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 6) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
    
 
 #2 To pad the string 'abcdef' to a length of four characters:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, 4) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'ghi'[0m[37m[40m                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'ghi'[0m[37m[40m                 [0m
    
 
 
@@ -3032,7 +3032,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To raise two to the power of three:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpower[0m[37m[40m(2, 3)                                [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpower[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                                [0m
    
 
 
@@ -3063,7 +3063,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To format 11 with a width of five characters and leading zeroes:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'value: %05d'[0m[37m[40m, 11)                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'value: %05d'[0m[37m[40m, [0m[1m[37m[40m11[0m[37m[40m)                  [0m
    
 
 
@@ -3114,7 +3114,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To convert 180 degrees to radians:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mradians[0m[37m[40m(180)                               [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mradians[0m[37m[40m([0m[1m[37m[40m180[0m[37m[40m)                               [0m
    
 
 
@@ -3341,7 +3341,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mxpath()[0m
 [4mExample[0m
 #1 To repeat the string 'abc' three times:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 3)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                        [0m
    
 
 
@@ -3383,11 +3383,11 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mxpath()[0m
 [4mExamples[0m
 #1 To get the last character of the string 'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 1)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                         [0m
    
 
 #2 To get the last ten characters of a string, regardless of size:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 10)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m10[0m[37m[40m)                        [0m
    
 
 
@@ -3406,15 +3406,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To round the number 123.456 to an integer:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m)                             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m([0m[1m[37m[40m123.456[0m[37m[40m)                             [0m
    
 
 #2 To round the number 123.456 to a precision of 1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m, 1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m([0m[1m[37m[40m123.456[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                          [0m
    
 
 #3 To round the number 123.456 to a precision of 5:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m(123[0m[1m[36m[40m.456[0m[37m[40m, 5)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m([0m[1m[37m[40m123.456[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m)                          [0m
    
 
 
@@ -3470,15 +3470,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the sign of 10:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(10)                                   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m)                                   [0m
    
 
 #2 To get the sign of 0:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m(0)                                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40m)                                    [0m
    
 
 #3 To get the sign of -10:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m-[0m[37m[40m10)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m-10[0m[37m[40m)                                  [0m
    
 
 
@@ -3504,7 +3504,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mxpath()[0m
 [4mExamples[0m
 #1 To get the unicode block element for the value 32 in the range of 0-128:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m(32, 128)                         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[1m[37m[40m32[0m[37m[40m, [0m[1m[37m[40m128[0m[37m[40m)                         [0m
    
 
 #2 To chart the values in a JSON array:
@@ -3540,7 +3540,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #4 To produce a hash for the parameters where one is a number:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m, 123)          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m, [0m[1m[37m[40m123[0m[37m[40m)          [0m
    
 
 
@@ -3588,7 +3588,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mtotal()[0m
 [4mExample[0m
 #1 To get the square of two:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msquare[0m[37m[40m(2)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msquare[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m)                                  [0m
    
 
 
@@ -3662,7 +3662,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To create a string with the Julian day from the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[35m[40m'Julian day: %J'[0m[37m[40m, 1491341842, [0m[35m[40m'unixepoch'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[35m[40m'Julian day: %J'[0m[37m[40m, [0m[1m[37m[40m1491341842[0m[37m[40m, [0m[35m[40m'unixepoch'[0m[37m[40m)[0m
    
 
 
@@ -3692,22 +3692,22 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mExamples[0m
 #1 To get the substring starting at the second character until the end of the string
    'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 2)                           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)                           [0m
    
 
 #2 To get the substring of size one starting at the second character of the string
    'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, 2, 1)                        [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                        [0m
    
 
 #3 To get the substring starting at the last character until the end of the string
    'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1)                          [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)                          [0m
    
 
 #4 To get the substring starting at the last character and going backwards one step of
    the string 'abc':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-[0m[37m[40m1, [0m[1m[37m[40m-[0m[37m[40m1)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msubstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)                      [0m
    
 
 
@@ -3747,7 +3747,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #3 To get the time portion of the epoch timestamp 1491341842:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m(1491341842, [0m[35m[40m'unixepoch'[0m[37m[40m)              [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[1m[37m[40m1491341842[0m[37m[40m, [0m[35m[40m'unixepoch'[0m[37m[40m)              [0m
    
 
 
@@ -3784,12 +3784,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #2 To group log messages into five minute buckets and count them:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
    [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    
 
 #3 To group log messages by those before 4:30am and after:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m(1) [0m[1m[36m[40mFROM[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    
 
@@ -3854,7 +3854,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExamples[0m
 #1 To get the type of the number 1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m(1)                                  [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtypeof[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)                                  [0m
    
 
 #2 To get the type of the string 'abc':
@@ -3983,7 +3983,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To evaluate the number one and return the string 'one':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCASE[0m[37m[40m 1 [0m[1m[36m[40mWHEN[0m[37m[40m 0 [0m[1m[36m[40mTHEN[0m[37m[40m [0m[35m[40m'zero'[0m[37m[40m [0m[1m[36m[40mWHEN[0m[37m[40m 1 [0m[1m[36m[40mTHEN[0m[37m[40m [0m[35m[40m'one'[0m[37m[40m [0m[1m[36m[40mEND[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCASE[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mWHEN[0m[37m[40m [0m[1m[37m[40m0[0m[37m[40m [0m[1m[36m[40mTHEN[0m[37m[40m [0m[35m[40m'zero'[0m[37m[40m [0m[1m[36m[40mWHEN[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mTHEN[0m[37m[40m [0m[35m[40m'one'[0m[37m[40m [0m[1m[36m[40mEND[0m
    
 
 
@@ -4077,7 +4077,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 [4mExample[0m
 #1 To mark the syslog message at line 40:
-   [37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_mark[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 1 [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m 40[0m
+   [37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_mark[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m40[0m
    
 
 

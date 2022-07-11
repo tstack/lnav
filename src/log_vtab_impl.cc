@@ -40,6 +40,8 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+// #define DEBUG_INDEXING 1
+
 using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
@@ -474,7 +476,7 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
 
         if (!vc->log_cursor.lc_indexed_lines.empty()) {
             vc->log_cursor.lc_curr_line
-                = vc->log_cursor.lc_indexed_lines.back() - 1_vl;
+                = vc->log_cursor.lc_indexed_lines.back();
             vc->log_cursor.lc_indexed_lines.pop_back();
         }
 
@@ -482,6 +484,13 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
         if (!done) {
             vc->log_cursor.lc_curr_line += 1_vl;
             vc->log_cursor.lc_sub_index = 0;
+            for (auto& col_constraint : vc->log_cursor.lc_indexed_columns) {
+                vt->vi->vi_column_indexes[col_constraint.cc_column].ci_max_line
+                    = std::max(
+                        vt->vi->vi_column_indexes[col_constraint.cc_column]
+                            .ci_max_line,
+                        vc->log_cursor.lc_curr_line);
+            }
         }
     } while (!done);
 
@@ -494,7 +503,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
     auto* vc = (vtab_cursor*) cur;
     auto* vt = (vtab*) cur->pVtab;
 
-#if 0
+#ifdef DEBUG_INDEXING
     log_debug("vt_column(%s, %d:%d)",
               vt->vi->get_name().get(),
               (int) vc->log_cursor.lc_curr_line,
@@ -937,7 +946,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                         >= ci.ci_max_line) {
                                     std::string value{lv_iter->text_value(),
                                                       lv_iter->text_length()};
-#if 0
+#ifdef DEBUG_INDEXING
                                     log_debug(
                                         "updated index for column %d %s -> %d",
                                         col,
@@ -1186,7 +1195,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             index_storage);
     }
 
-    log_info("vt_filter(%s, %d)", vt->vi->get_name().get(), idxNum);
+#ifdef DEBUG_INDEXING
+    log_debug("vt_filter(%s, %d)", vt->vi->get_name().get(), idxNum);
+#endif
     p_cur->log_cursor.lc_format_name.clear();
     p_cur->log_cursor.lc_opid = nonstd::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
@@ -1382,9 +1393,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         auto value_len
                             = (size_t) sqlite3_value_bytes(argv[lpc]);
 
-#if 0
-                    log_debug(
-                        "adding index request for column %d = %s", col, value);
+#ifdef DEBUG_INDEXING
+                        log_debug("adding index request for column %d = %s",
+                                  col,
+                                  value);
 #endif
 
                         p_cur->log_cursor.lc_indexed_columns.emplace_back(
@@ -1430,7 +1442,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         continue;
                     }
 
-                    // log_debug("adding indexed line %d", (int) vl);
+#ifdef DEBUG_INDEXING
+                    log_debug("adding indexed line %d", (int) vl);
+#endif
                     p_cur->log_cursor.lc_indexed_lines.push_back(vl);
                 }
             }
@@ -1445,7 +1459,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                   p_cur->log_cursor.lc_indexed_lines.end(),
                   std::greater<>());
 
-#if 0
+#ifdef DEBUG_INDEXING
         log_debug("indexed lines:");
         for (auto indline : p_cur->log_cursor.lc_indexed_lines) {
             log_debug("  %d", (int) indline);
@@ -1492,21 +1506,19 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
     vt->vi->filter(p_cur->log_cursor, *vt->lss);
 
-    while (!p_cur->log_cursor.is_eof()
-           && (!vt->vi->is_valid(p_cur->log_cursor, *vt->lss)
-               || !vt->vi->next(p_cur->log_cursor, *vt->lss)))
-    {
-        p_cur->log_cursor.lc_curr_line += 1_vl;
-        p_cur->log_cursor.lc_sub_index = 0;
+    if (p_cur->log_cursor.lc_indexed_lines.empty()) {
+        p_cur->log_cursor.lc_indexed_lines.push_back(
+            p_cur->log_cursor.lc_curr_line);
     }
+    auto rc = vt->base.pModule->xNext(p_vtc);
 
-#if 0
+#ifdef DEBUG_INDEXING
     log_debug("vt_filter() -> cursor_range(%d:%d)",
               (int) p_cur->log_cursor.lc_curr_line,
               (int) p_cur->log_cursor.lc_end_line);
 #endif
 
-    return SQLITE_OK;
+    return rc;
 }
 
 static int

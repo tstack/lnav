@@ -524,6 +524,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_anno.sh_99da5994c8c90536dbdb1b8ad7dbfb41698a5e8c.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_b1a2ddce48beb3e4b1e3ca4b4229a7c21b83b7c4.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_b1a2ddce48beb3e4b1e3ca4b4229a7c21b83b7c4.out \
+    $(srcdir)/%reldir%/test_sql_anno.sh_be6839712d088fc7b31618ed90f8ce706c35a9c0.err \
+    $(srcdir)/%reldir%/test_sql_anno.sh_be6839712d088fc7b31618ed90f8ce706c35a9c0.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_c879ba94fdc1a099cf56bd33e5b3e9be65310036.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_c879ba94fdc1a099cf56bd33e5b3e9be65310036.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_c909647ed0e585002074f55c946f3033df1815b2.err \

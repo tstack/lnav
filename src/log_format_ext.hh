@@ -350,7 +350,8 @@ public:
     bool elf_builtin_format{false};
 
     struct search_table_def {
-        std::shared_ptr<pcrepp_with_options<PCRE_CASELESS | PCRE_MULTILINE>>
+        std::shared_ptr<
+            pcrepp_with_options<PCRE_CASELESS | PCRE_MULTILINE | PCRE_DOTALL>>
             std_pattern;
         std::string std_glob;
     };

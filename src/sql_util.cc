@@ -965,6 +965,7 @@ string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
 string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
 string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
 string_attr_type<void> SQL_STRING_ATTR("sql_string");
+string_attr_type<void> SQL_NUMBER_ATTR("sql_number");
 string_attr_type<void> SQL_UNTERMINATED_STRING_ATTR("sql_unstring");
 string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
 string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
@@ -986,6 +987,10 @@ annotate_sql_statement(attr_line_t& al)
         {pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR},
         {pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR},
         {pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR},
+        {
+            pcrepp{R"(\A-?\d+(?:\.\d*(?:[eE][\-\+]?\d+)?)?|0x[0-9a-fA-F]+$)"},
+            &SQL_NUMBER_ATTR,
+        },
         {pcrepp{R"(\A(((\$|:|@)?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)]))",
                 PCRE_CASELESS},
          &SQL_IDENTIFIER_ATTR},

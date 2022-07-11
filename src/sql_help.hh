@@ -42,6 +42,7 @@ extern string_attr_type<void> SQL_KEYWORD_ATTR;
 extern string_attr_type<void> SQL_IDENTIFIER_ATTR;
 extern string_attr_type<void> SQL_FUNCTION_ATTR;
 extern string_attr_type<void> SQL_STRING_ATTR;
+extern string_attr_type<void> SQL_NUMBER_ATTR;
 extern string_attr_type<void> SQL_OPERATOR_ATTR;
 extern string_attr_type<void> SQL_PAREN_ATTR;
 extern string_attr_type<void> SQL_GARBAGE_ATTR;

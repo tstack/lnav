@@ -272,6 +272,8 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
             alb.overlay_attr(
                 line_range{lr.lr_start, (int) line.find('(', lr.lr_start)},
                 VC_ROLE.value(role_t::VCR_SYMBOL));
+        } else if (attr.sa_type == &SQL_NUMBER_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_NUMBER));
         } else if (attr.sa_type == &SQL_STRING_ATTR) {
             if (lr.length() > 1 && al.al_string[lr.lr_end - 1] == '\'') {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));

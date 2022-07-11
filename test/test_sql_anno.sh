@@ -39,6 +39,8 @@ run_cap_test ./drive_sql_anno "SELECT 'hello, world!' FROM \"my table\""
 # math
 run_cap_test ./drive_sql_anno "SELECT (1 + 2) AS three"
 
+run_cap_test ./drive_sql_anno "SELECT (1.5 + 2.2) AS decim"
+
 # subqueries
 run_cap_test ./drive_sql_anno "SELECT * FROM (SELECT foo, bar FROM baz)"
 
