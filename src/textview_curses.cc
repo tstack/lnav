@@ -779,7 +779,7 @@ void
 textview_curses::redo_search()
 {
     if (this->tc_search_child) {
-        grep_proc<vis_line_t>* gp = this->tc_search_child->get_grep_proc();
+        auto* gp = this->tc_search_child->get_grep_proc();
 
         gp->invalidate();
         this->match_reset();

@@ -133,6 +133,8 @@ public:
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
 
+    void quiesce() override;
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {

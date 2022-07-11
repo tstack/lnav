@@ -813,6 +813,10 @@ public:
     std::function<void(logfile_sub_source&, file_off_t, file_size_t)>
         lss_sorting_observer;
 
+    uint32_t lss_index_generation{0};
+
+    void quiesce();
+
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
 

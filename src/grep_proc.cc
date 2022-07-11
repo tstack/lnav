@@ -92,6 +92,12 @@ grep_proc<LineType>::start()
 {
     require(this->invariant());
 
+    if (this->gp_sink) {
+        // XXX hack to make sure threads used by line_buffer are not active
+        // before the fork.
+        this->gp_sink->grep_quiesce();
+    }
+
     log_debug("grep_proc(%p): start", this);
     if (this->gp_child_started || this->gp_queue.empty()) {
         log_debug("grep_proc(%p): nothing to do?", this);
@@ -231,6 +237,7 @@ grep_proc<LineType>::child_loop()
             // continues from the end works properly.
             fprintf(stdout, "h%d\n", line - 1);
         }
+        this->gp_highest_line = line - 1_vl;
         this->child_term();
     }
 }

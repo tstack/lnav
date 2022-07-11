@@ -643,7 +643,6 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         this->lf_index_size = prev_range.next_offset();
         this->lf_stat = st;
 
-        log_debug("batch opid count %d", sbc.sbc_opids.size());
         {
             safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
                 this->lf_opids);

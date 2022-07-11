@@ -367,7 +367,7 @@ line_buffer::set_fd(auto_fd& fd)
                         close(gzfd);
                         throw error(errno);
                     }
-                    lb_gz_file.writeAccess()->open(gzfd);
+                    this->lb_gz_file.writeAccess()->open(gzfd);
                     this->lb_compressed = true;
                     this->lb_file_time
                         = read_le32((const unsigned char*) &gz_id[4]);
@@ -459,7 +459,6 @@ line_buffer::ensure_available(file_off_t start, ssize_t max_length)
         } else {
             this->lb_file_offset = start;
         }
-        log_debug("adjusted file offset %d %d", start, this->lb_file_offset);
     } else {
         /* The request is in the cached range.  Record how much extra data is in
          * the buffer before the requested range.
@@ -701,7 +700,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                 = nonstd::make_optional(std::chrono::system_clock::now());
         }
         retval = this->lb_loader_future.get();
-        if (wait_start) {
+        if (false && wait_start) {
             auto diff = std::chrono::system_clock::now() - wait_start.value();
             log_debug("wait done! %d", diff.count());
         }
@@ -1199,4 +1198,12 @@ line_buffer::is_likely_to_flush(file_range prev_line)
     }
     auto remaining = avail_end - prev_line_end;
     return remaining < INITIAL_REQUEST_SIZE;
+}
+
+void
+line_buffer::quiesce()
+{
+    if (this->lb_loader_future.valid()) {
+        this->lb_loader_future.wait();
+    }
 }

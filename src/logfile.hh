@@ -371,6 +371,8 @@ public:
 
     safe_opid_map& get_opids() { return this->lf_opids; }
 
+    void quiesce() { this->lf_line_buffer.quiesce(); }
+
 protected:
     /**
      * Process a line from the file.

@@ -106,10 +106,14 @@ class grep_proc_sink {
 public:
     virtual ~grep_proc_sink() = default;
 
+    virtual void grep_quiesce() {}
+
     /** Called at the start of a new grep run. */
     virtual void grep_begin(grep_proc<LineType>& gp,
                             LineType start,
-                            LineType stop){};
+                            LineType stop)
+    {
+    }
 
     /** Called periodically between grep_begin and grep_end. */
     virtual void grep_end_batch(grep_proc<LineType>& gp) {}

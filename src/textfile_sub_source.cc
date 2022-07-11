@@ -617,3 +617,11 @@ textfile_sub_source::set_top_from_off(file_off_t off)
         }
     };
 }
+
+void
+textfile_sub_source::quiesce()
+{
+    for (auto& lf : this->tss_files) {
+        lf->quiesce();
+    }
+}

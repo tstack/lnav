@@ -241,6 +241,8 @@ public:
         return true;
     }
 
+    void quiesce();
+
 private:
     /**
      * @param off The file offset to check for in the buffer.

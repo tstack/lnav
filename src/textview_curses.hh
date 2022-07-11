@@ -402,6 +402,8 @@ public:
     virtual void text_crumbs_for_line(int line,
                                       std::vector<breadcrumb::crumb>& crumbs);
 
+    virtual void quiesce() {}
+
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
 
@@ -575,6 +577,8 @@ public:
 
         return retval;
     }
+
+    void grep_quiesce() { this->tc_sub_source->quiesce(); }
 
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,

@@ -1003,10 +1003,12 @@ logfile_sub_source::rebuild_index(
             break;
         case rebuild_result::rr_full_rebuild:
             log_debug("redoing search");
+            this->lss_index_generation += 1;
             this->tss_view->redo_search();
             break;
         case rebuild_result::rr_partial_rebuild:
             log_debug("redoing search from: %d", (int) search_start);
+            this->lss_index_generation += 1;
             this->tss_view->search_new_data(search_start);
             break;
         case rebuild_result::rr_appended_lines:
@@ -1103,6 +1105,8 @@ logfile_sub_source::get_line_accel_direction(vis_line_t vl)
 void
 logfile_sub_source::text_filters_changed()
 {
+    this->lss_index_generation += 1;
+
     if (this->lss_line_meta_changed) {
         this->invalidate_sql_filter();
         this->lss_line_meta_changed = false;
@@ -1932,6 +1936,8 @@ logfile_sub_source::meta_grepper::grep_begin(grep_proc<vis_line_t>& gp,
                                              vis_line_t start,
                                              vis_line_t stop)
 {
+    this->lmg_source.quiesce();
+
     this->lmg_source.tss_view->grep_begin(gp, start, stop);
 }
 
@@ -2325,5 +2331,19 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 ? breadcrumb::crumb::expected_input_t::index
                 : breadcrumb::crumb::expected_input_t::index_or_exact;
         }
+    }
+}
+
+void
+logfile_sub_source::quiesce()
+{
+    for (auto& ld : this->lss_files) {
+        auto* lf = ld->get_file_ptr();
+
+        if (lf == nullptr) {
+            continue;
+        }
+
+        lf->quiesce();
     }
 }

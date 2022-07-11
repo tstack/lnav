@@ -37,6 +37,7 @@
 #include <sqlite3.h>
 
 #include "logfile_sub_source.hh"
+#include "robin_hood/robin_hood.h"
 
 class textview_curses;
 
@@ -71,6 +72,16 @@ struct log_cursor {
         bool matches(const std::string& sf) const;
     };
 
+    struct column_constraint {
+        column_constraint(int32_t col, string_constraint cons)
+            : cc_column(col), cc_constraint(std::move(cons))
+        {
+        }
+
+        int32_t cc_column;
+        string_constraint cc_constraint;
+    };
+
     vis_line_t lc_curr_line;
     int lc_sub_index;
     vis_line_t lc_end_line;
@@ -84,6 +95,9 @@ struct log_cursor {
     logfile* lc_last_unique_path_match{nullptr};
     logfile* lc_last_unique_path_mismatch{nullptr};
 
+    std::vector<column_constraint> lc_indexed_columns;
+    std::vector<vis_line_t> lc_indexed_lines;
+
     enum class constraint_t {
         none,
         unique,
@@ -93,7 +107,11 @@ struct log_cursor {
 
     void set_eof() { this->lc_curr_line = this->lc_end_line = 0_vl; }
 
-    bool is_eof() const { return this->lc_curr_line >= this->lc_end_line; }
+    bool is_eof() const
+    {
+        return this->lc_indexed_lines.empty()
+            && this->lc_curr_line >= this->lc_end_line;
+    }
 };
 
 const std::string LOG_BODY = "log_body";
@@ -162,6 +180,15 @@ public:
                          shared_buffer_ref& line,
                          std::vector<logline_value>& values);
 
+    struct column_index {
+        robin_hood::unordered_map<std::string, std::vector<vis_line_t>>
+            ci_value_to_lines;
+        int32_t ci_index_generation{0};
+        vis_line_t ci_max_line{0};
+    };
+
+    std::map<int32_t, column_index> vi_column_indexes;
+
     bool vi_supports_indexes{true};
     int vi_column_count{0};
     string_attrs_t vi_attrs;
@@ -184,7 +211,7 @@ protected:
     const log_format& lfvi_format;
 };
 
-typedef int (*sql_progress_callback_t)(const log_cursor& lc);
+using sql_progress_callback_t = int (*)(const log_cursor&);
 typedef void (*sql_progress_finished_callback_t)();
 
 struct _log_vtab_data {
@@ -223,8 +250,8 @@ public:
 
 class log_vtab_manager {
 public:
-    typedef std::map<intern_string_t,
-                     std::shared_ptr<log_vtab_impl>>::const_iterator iterator;
+    using iterator = std::map<intern_string_t,
+                              std::shared_ptr<log_vtab_impl>>::const_iterator;
 
     log_vtab_manager(sqlite3* db, textview_curses& tc, logfile_sub_source& lss);
     ~log_vtab_manager();
