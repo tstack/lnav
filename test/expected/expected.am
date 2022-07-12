@@ -232,6 +232,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.out \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.err \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.out \
+    $(srcdir)/%reldir%/test_format_loader.sh_3f1d6f35e8a9ae4fd3e91ffaa82a037b5a847ab7.err \
+    $(srcdir)/%reldir%/test_format_loader.sh_3f1d6f35e8a9ae4fd3e91ffaa82a037b5a847ab7.out \
     $(srcdir)/%reldir%/test_format_loader.sh_a47f2b090a5d8a226783835c7ff7d1c8821f11ed.err \
     $(srcdir)/%reldir%/test_format_loader.sh_a47f2b090a5d8a226783835c7ff7d1c8821f11ed.out \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \
@@ -324,6 +326,58 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_pretty_print.sh_a6d9042e5e95f2a49194bd80c1eed154813ddf41.out \
     $(srcdir)/%reldir%/test_pretty_print.sh_cd361eeca7e91bfab942b75d6c3422c7a456a111.err \
     $(srcdir)/%reldir%/test_pretty_print.sh_cd361eeca7e91bfab942b75d6c3422c7a456a111.out \
+    $(srcdir)/%reldir%/test_regex101.sh_0fa3663a45aca6a328cb728872af7ed7ee896f1c.err \
+    $(srcdir)/%reldir%/test_regex101.sh_0fa3663a45aca6a328cb728872af7ed7ee896f1c.out \
+    $(srcdir)/%reldir%/test_regex101.sh_182ae9244db314a953af2bee969726e381bc5a32.err \
+    $(srcdir)/%reldir%/test_regex101.sh_182ae9244db314a953af2bee969726e381bc5a32.out \
+    $(srcdir)/%reldir%/test_regex101.sh_2158f1f011ba8e1b152396c072790c076fdb8ce8.err \
+    $(srcdir)/%reldir%/test_regex101.sh_2158f1f011ba8e1b152396c072790c076fdb8ce8.out \
+    $(srcdir)/%reldir%/test_regex101.sh_281af24141680330791db7f7c5fa70833ce08a6b.err \
+    $(srcdir)/%reldir%/test_regex101.sh_281af24141680330791db7f7c5fa70833ce08a6b.out \
+    $(srcdir)/%reldir%/test_regex101.sh_35703b13990785632cca82123fb3883797959c0b.err \
+    $(srcdir)/%reldir%/test_regex101.sh_35703b13990785632cca82123fb3883797959c0b.out \
+    $(srcdir)/%reldir%/test_regex101.sh_366730cac50b4a09b7de4b84641791470b1cb9a3.err \
+    $(srcdir)/%reldir%/test_regex101.sh_366730cac50b4a09b7de4b84641791470b1cb9a3.out \
+    $(srcdir)/%reldir%/test_regex101.sh_3d18474a3e472fff6e23e0c41337ec9188fee591.err \
+    $(srcdir)/%reldir%/test_regex101.sh_3d18474a3e472fff6e23e0c41337ec9188fee591.out \
+    $(srcdir)/%reldir%/test_regex101.sh_442cc58676590a3604d5c2183f5fe0a75c98351a.err \
+    $(srcdir)/%reldir%/test_regex101.sh_442cc58676590a3604d5c2183f5fe0a75c98351a.out \
+    $(srcdir)/%reldir%/test_regex101.sh_566fd88d216a44bc1c6e23f2d6f2d0caf99d42f9.err \
+    $(srcdir)/%reldir%/test_regex101.sh_566fd88d216a44bc1c6e23f2d6f2d0caf99d42f9.out \
+    $(srcdir)/%reldir%/test_regex101.sh_5f2f7ecb6ab9cbec4b41385b91bd038906b8a7b2.err \
+    $(srcdir)/%reldir%/test_regex101.sh_5f2f7ecb6ab9cbec4b41385b91bd038906b8a7b2.out \
+    $(srcdir)/%reldir%/test_regex101.sh_629bde30483e0a6461076e9058f3a5eb81ae0425.err \
+    $(srcdir)/%reldir%/test_regex101.sh_629bde30483e0a6461076e9058f3a5eb81ae0425.out \
+    $(srcdir)/%reldir%/test_regex101.sh_630db454054cf92ec9bd0f4e3e83300047f583ff.err \
+    $(srcdir)/%reldir%/test_regex101.sh_630db454054cf92ec9bd0f4e3e83300047f583ff.out \
+    $(srcdir)/%reldir%/test_regex101.sh_771af6f3d29b8350542d5c6e98bdbf4c223cd531.err \
+    $(srcdir)/%reldir%/test_regex101.sh_771af6f3d29b8350542d5c6e98bdbf4c223cd531.out \
+    $(srcdir)/%reldir%/test_regex101.sh_7991a5b617867cf37c9f7baa85ffa425f7d455a2.err \
+    $(srcdir)/%reldir%/test_regex101.sh_7991a5b617867cf37c9f7baa85ffa425f7d455a2.out \
+    $(srcdir)/%reldir%/test_regex101.sh_79ee3f5fe71ccec97b2619d8c1f74ca97ffd2243.err \
+    $(srcdir)/%reldir%/test_regex101.sh_79ee3f5fe71ccec97b2619d8c1f74ca97ffd2243.out \
+    $(srcdir)/%reldir%/test_regex101.sh_7de76c174c58d67bf93e8f01d6d55ebb6a023f10.err \
+    $(srcdir)/%reldir%/test_regex101.sh_7de76c174c58d67bf93e8f01d6d55ebb6a023f10.out \
+    $(srcdir)/%reldir%/test_regex101.sh_8a43e6657d4f60e68d31eb8302542ca28e80d077.err \
+    $(srcdir)/%reldir%/test_regex101.sh_8a43e6657d4f60e68d31eb8302542ca28e80d077.out \
+    $(srcdir)/%reldir%/test_regex101.sh_8e93a3b6b941847c71409a297779fbb0a6666a51.err \
+    $(srcdir)/%reldir%/test_regex101.sh_8e93a3b6b941847c71409a297779fbb0a6666a51.out \
+    $(srcdir)/%reldir%/test_regex101.sh_95c56a9d146ec9a7c2196559d316f928b2ae6ae9.err \
+    $(srcdir)/%reldir%/test_regex101.sh_95c56a9d146ec9a7c2196559d316f928b2ae6ae9.out \
+    $(srcdir)/%reldir%/test_regex101.sh_9d101ee29c45cdb8c0f117ad736c9a5dd5da5839.err \
+    $(srcdir)/%reldir%/test_regex101.sh_9d101ee29c45cdb8c0f117ad736c9a5dd5da5839.out \
+    $(srcdir)/%reldir%/test_regex101.sh_c43e07df9b3068696fdc8759c7561135db981b38.err \
+    $(srcdir)/%reldir%/test_regex101.sh_c43e07df9b3068696fdc8759c7561135db981b38.out \
+    $(srcdir)/%reldir%/test_regex101.sh_cbd859487e4ea011cd6e0f0f114d70158bfd8b43.err \
+    $(srcdir)/%reldir%/test_regex101.sh_cbd859487e4ea011cd6e0f0f114d70158bfd8b43.out \
+    $(srcdir)/%reldir%/test_regex101.sh_cf6c0a9f0f04e24ce1fae7a0a434830b14447f83.err \
+    $(srcdir)/%reldir%/test_regex101.sh_cf6c0a9f0f04e24ce1fae7a0a434830b14447f83.out \
+    $(srcdir)/%reldir%/test_regex101.sh_d84597760285c3964b258726341e018f6cd49954.err \
+    $(srcdir)/%reldir%/test_regex101.sh_d84597760285c3964b258726341e018f6cd49954.out \
+    $(srcdir)/%reldir%/test_regex101.sh_f23e393dbf23d0d8e276e9b7610c7b74d79980f8.err \
+    $(srcdir)/%reldir%/test_regex101.sh_f23e393dbf23d0d8e276e9b7610c7b74d79980f8.out \
+    $(srcdir)/%reldir%/test_regex101.sh_fc41b6ee90cbf038620151f16d164b361acf82dd.err \
+    $(srcdir)/%reldir%/test_regex101.sh_fc41b6ee90cbf038620151f16d164b361acf82dd.out \
     $(srcdir)/%reldir%/test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.err \
     $(srcdir)/%reldir%/test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.out \
     $(srcdir)/%reldir%/test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.err \
@@ -614,6 +668,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_59a1497c13a5e09bc8f95ef02552b2835ebea6e5.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_59a1497c13a5e09bc8f95ef02552b2835ebea6e5.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_69fd19d56a8cd1fc9c7eb9351270eabb491f8233.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_69fd19d56a8cd1fc9c7eb9351270eabb491f8233.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_6f707b6e856dbaab6f95e7e89b98dc3652021f85.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_6f707b6e856dbaab6f95e7e89b98dc3652021f85.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_b615b6737b1e0d383c8ce4a1db56332f11dbc158.err \

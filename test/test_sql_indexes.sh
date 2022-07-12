@@ -21,7 +21,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT *,log_format FROM all_logs WHERE log_format = 'access_log'" \
     ${test_dir}/logfile_access_log.* \
-    ${test_dir}/logfile_syslog.*
+    ${test_dir}/logfile_procstate.0
 
 run_cap_test ${lnav_test} -n \
     -c ";EXPLAIN QUERY PLAN SELECT * FROM all_logs WHERE log_level < 'error'" \
