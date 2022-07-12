@@ -238,6 +238,11 @@ rl_change(readline_curses* rc)
         "mark-expr",
     };
 
+    static const std::set<std::string> COMMANDS_FOR_FIELDS = {
+        "hide-fields",
+        "show-fields",
+    };
+
     textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
@@ -281,8 +286,12 @@ rl_change(readline_curses* rc)
                             top_ctx.c_prefix = ":";
                             top_ctx.c_show = true;
                             top_ctx.c_show_discovered = false;
+                        } else if (COMMANDS_FOR_FIELDS.count(args[0]) > 0) {
+                            top_ctx.c_prefix = "";
+                            top_ctx.c_show = true;
+                            top_ctx.c_show_discovered = false;
                         } else {
-                            top_ctx.c_prefix = ":";
+                            top_ctx.c_prefix = "";
                             top_ctx.c_show = false;
                         }
                     }

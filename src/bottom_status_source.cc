@@ -29,6 +29,7 @@
 
 #include "bottom_status_source.hh"
 
+#include "base/snippet_highlighters.hh"
 #include "config.h"
 
 bottom_status_source::bottom_status_source()
@@ -92,10 +93,13 @@ bottom_status_source::update_search_term(textview_curses& tc)
     auto& sf = this->bss_fields[BSF_SEARCH_TERM];
     auto search_term = tc.get_current_search();
 
-    if (search_term.empty()) {
-        sf.clear();
-    } else {
-        sf.set_value("\"%s\"", search_term.c_str());
+    sf.clear();
+    if (!search_term.empty()) {
+        auto search_term_al = attr_line_t(search_term);
+
+        lnav::snippets::regex_highlighter(
+            search_term_al, -1, line_range{0, (int) search_term_al.length()});
+        sf.get_value().append_quoted(search_term_al);
     }
 
     this->bss_paused = tc.is_paused();
@@ -225,11 +229,12 @@ bottom_status_source::statusview_value_for_field(int field)
 {
     if (!this->bss_error.empty()) {
         return this->bss_error;
-    } else if (!this->bss_prompt.empty()) {
-        return this->bss_prompt;
-    } else if (!this->bss_line_error.empty()) {
-        return this->bss_line_error;
-    } else {
-        return this->get_field((field_t) field);
     }
+    if (!this->bss_prompt.empty()) {
+        return this->bss_prompt;
+    }
+    if (!this->bss_line_error.empty()) {
+        return this->bss_line_error;
+    }
+    return this->get_field((field_t) field);
 }

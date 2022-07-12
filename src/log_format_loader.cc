@@ -736,6 +736,11 @@ static struct json_path_container search_table_def_handlers = {
         .with_description("Glob pattern used to constrain hits to messages "
                           "that match the given pattern.")
         .for_field(&external_log_format::search_table_def::std_glob),
+    json_path_handler("level")
+        .with_synopsis("<log-level>")
+        .with_description("Constrain hits to log messages with this level")
+        .with_enum_values(LEVEL_ENUM)
+        .for_field(&external_log_format::search_table_def::std_level),
 };
 
 static struct json_path_container search_table_handlers = {

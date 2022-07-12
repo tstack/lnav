@@ -30,6 +30,7 @@
 #include "snippet_highlighters.hh"
 
 #include "attr_line.builder.hh"
+#include "pcrepp/pcrepp.hh"
 #include "view_curses.hh"
 
 namespace lnav {
@@ -195,13 +196,16 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                         switch (line[lpc + 1]) {
                             case ':':
                             case '!':
-                            case '>':
-                            case '<':
                             case '#':
                                 lr.lr_end += 1;
                                 break;
                         }
                         alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_OK));
+                        if (line[lpc + 1] == '<') {
+                            alb.overlay_attr(
+                                line_range(lpc + 1, lpc + 2),
+                                VC_ROLE.value(role_t::VCR_RE_SPECIAL));
+                        }
                     } else {
                         alb.overlay_attr(lr,
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));
@@ -210,6 +214,22 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                             alb.overlay_attr_for_char(
                                 lpc - 1, VC_ROLE.value(role_t::VCR_RE_REPEAT));
                         }
+                    }
+                    break;
+                }
+                case '>': {
+                    static const pcrepp CAP_RE(R"(\(\?\<\w+$)");
+
+                    auto sf = string_fragment{
+                        line.c_str(), sub.lr_start, (int) lpc};
+                    auto capture_start = sf.find_left_boundary(
+                        lpc - sub.lr_start - 1, string_fragment::tag1{'('});
+                    pcre_context_static<30> pc;
+                    pcre_input pi(capture_start);
+
+                    if (CAP_RE.match(pc, pi)) {
+                        alb.overlay_attr(line_range(lpc, lpc + 1),
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     }
                     break;
                 }

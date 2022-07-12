@@ -354,6 +354,7 @@ public:
             pcrepp_with_options<PCRE_CASELESS | PCRE_MULTILINE | PCRE_DOTALL>>
             std_pattern;
         std::string std_glob;
+        log_level_t std_level{LEVEL_UNKNOWN};
     };
 
     std::map<intern_string_t, search_table_def> elf_search_tables;

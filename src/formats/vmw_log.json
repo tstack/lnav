@@ -105,7 +105,8 @@
                 "pattern": "\\[VpxLRO\\] -- FINISH (?<lro_id>\\S+)"
             },
             "vpx_lro_error": {
-                "pattern": "\\[VpxLRO\\] -- ERROR (?<lro_id>\\S+) -- (?:(?<SessionId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\\((?<SessionSubId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\))?)? -- (?<entity>\\S*) -- (?<operation>\\S*):\\s*(?<error>.*)"
+                "pattern": "\\[VpxLRO\\] -- ERROR (?<lro_id>\\S+) -- (?:(?<SessionId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\\((?<SessionSubId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\))?)? -- (?<entity>\\S*) -- (?<operation>\\S*):\\s*(?<error>.*)",
+                "level": "error"
             }
         },
         "sample": [

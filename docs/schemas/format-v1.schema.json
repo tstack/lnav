@@ -446,6 +446,26 @@
                                     "title": "/<format_name>/search-table/<table_name>/glob",
                                     "description": "Glob pattern used to constrain hits to messages that match the given pattern.",
                                     "type": "string"
+                                },
+                                "level": {
+                                    "title": "/<format_name>/search-table/<table_name>/level",
+                                    "description": "Constrain hits to log messages with this level",
+                                    "type": "string",
+                                    "enum": [
+                                        "trace",
+                                        "debug5",
+                                        "debug4",
+                                        "debug3",
+                                        "debug2",
+                                        "debug",
+                                        "info",
+                                        "stats",
+                                        "notice",
+                                        "warning",
+                                        "error",
+                                        "critical",
+                                        "fatal"
+                                    ]
                                 }
                             },
                             "additionalProperties": false

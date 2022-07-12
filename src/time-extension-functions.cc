@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "base/date_time_scanner.hh"
+#include "base/humanize.time.hh"
 #include "base/lrucache.hpp"
 #include "config.h"
 #include "relative_time.hh"
@@ -168,6 +169,18 @@ sql_timediff(const char* time1, const char* time2)
     return (double) retval.tv_sec + (double) retval.tv_usec / 1000000.0;
 }
 
+static std::string
+sql_humanize_duration(double value)
+{
+    auto secs = std::trunc(value);
+    auto usecs = (value - secs) * 1000000.0;
+    timeval tv;
+
+    tv.tv_sec = secs;
+    tv.tv_usec = usecs;
+    return humanize::time::duration::from_tv(tv).to_string();
+}
+
 int
 time_extension_functions(struct FuncDef** basic_funcs,
                          struct FuncDefAgg** agg_funcs)
@@ -219,6 +232,24 @@ time_extension_functions(struct FuncDef** basic_funcs,
                     "To get the difference between relative timestamps",
                     "SELECT timediff('today', 'yesterday')",
                 })),
+
+        sqlite_func_adapter<decltype(&sql_humanize_duration),
+                            sql_humanize_duration>::
+            builder(
+                help_text("humanize_duration",
+                          "Format the given seconds value as an abbreviated "
+                          "duration string")
+                    .sql_function()
+                    .with_parameter({"secs", "The duration in seconds"})
+                    .with_tags({"datetime", "string"})
+                    .with_example({
+                        "To format a duration",
+                        "SELECT humanize_duration(15 * 60)",
+                    })
+                    .with_example({
+                        "To format a sub-second value",
+                        "SELECT humanize_duration(1.5)",
+                    })),
 
         {nullptr},
     };

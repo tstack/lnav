@@ -242,12 +242,24 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
     auto* lf = lss.find_file_ptr(cl);
     auto lf_iter = lf->begin() + cl;
 
+    if (!lf_iter->is_message()) {
+        return false;
+    }
+
     if (!lc.lc_format_name.empty()
         && lc.lc_format_name != lf->get_format_name()) {
         return false;
     }
 
-    if (!lf_iter->is_message()) {
+    if (!lc.lc_pattern_name.empty()
+        && lc.lc_pattern_name != lf->get_format_ptr()->get_pattern_name(cl))
+    {
+        return false;
+    }
+
+    if (lc.lc_level_constraint
+        && !lc.lc_level_constraint->matches(lf_iter->get_msg_level()))
+    {
         return false;
     }
 
@@ -1199,7 +1211,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     log_debug("vt_filter(%s, %d)", vt->vi->get_name().get(), idxNum);
 #endif
     p_cur->log_cursor.lc_format_name.clear();
+    p_cur->log_cursor.lc_pattern_name.clear();
     p_cur->log_cursor.lc_opid = nonstd::nullopt;
+    p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
     p_cur->log_cursor.lc_indexed_columns.clear();
     p_cur->log_cursor.lc_last_log_path_match = nullptr;
@@ -1224,6 +1238,21 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
                 p_cur->log_cursor.update(
                     op, vl, log_cursor::constraint_t::unique);
+                break;
+            }
+            case VT_COL_LEVEL: {
+                if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
+                    continue;
+                }
+
+                auto sf = from_sqlite<string_fragment>()(argc, argv, lpc);
+                auto level = string2level(sf.data(), sf.length());
+
+                p_cur->log_cursor.lc_level_constraint
+                    = log_cursor::level_constraint{
+                        op,
+                        level,
+                    };
                 break;
             }
 
@@ -1282,14 +1311,63 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1);
 
                     switch (footer_column) {
+                        case log_footer_columns::time_msecs: {
+                            auto msecs = sqlite3_value_int64(argv[lpc]);
+                            struct timeval tv;
+
+                            tv.tv_sec = msecs / 1000;
+                            tv.tv_usec = (msecs - tv.tv_sec * 1000) * 1000;
+                            switch (op) {
+                                case SQLITE_INDEX_CONSTRAINT_EQ:
+                                case SQLITE_INDEX_CONSTRAINT_IS:
+                                    if (!log_time_range) {
+                                        log_time_range = time_range{};
+                                    }
+                                    log_time_range->add(tv);
+                                    break;
+                                case SQLITE_INDEX_CONSTRAINT_GT:
+                                case SQLITE_INDEX_CONSTRAINT_GE:
+                                    if (!log_time_range) {
+                                        log_time_range = time_range{};
+                                    }
+                                    log_time_range->tr_begin = tv;
+                                    break;
+                                case SQLITE_INDEX_CONSTRAINT_LT:
+                                case SQLITE_INDEX_CONSTRAINT_LE:
+                                    if (!log_time_range) {
+                                        log_time_range = time_range{};
+                                    }
+                                    log_time_range->tr_end = tv;
+                                    break;
+                            }
+                            break;
+                        }
+                        case log_footer_columns::format: {
+                            const auto* format_name_str
+                                = (const char*) sqlite3_value_text(argv[lpc]);
+
+                            if (format_name_str != nullptr) {
+                                p_cur->log_cursor.lc_format_name
+                                    = intern_string::lookup(format_name_str);
+                            }
+                            break;
+                        }
+                        case log_footer_columns::format_regex: {
+                            const auto* pattern_name_str
+                                = (const char*) sqlite3_value_text(argv[lpc]);
+
+                            if (pattern_name_str != nullptr) {
+                                p_cur->log_cursor.lc_pattern_name
+                                    = intern_string::lookup(pattern_name_str);
+                            }
+                            break;
+                        }
                         case log_footer_columns::opid: {
                             if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
                                 continue;
                             }
-                            const auto* opid_str
-                                = (const char*) sqlite3_value_text(argv[lpc]);
-                            auto opid_len = sqlite3_value_bytes(argv[lpc]);
-                            auto opid = string_fragment{opid_str, 0, opid_len};
+                            auto opid = from_sqlite<string_fragment>()(
+                                argc, argv, lpc);
                             if (!log_time_range) {
                                 log_time_range = time_range{};
                             }
@@ -1310,7 +1388,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
                             opid_val = log_cursor::opid_hash{
                                 static_cast<unsigned int>(
-                                    hash_str(opid_str, opid_len))};
+                                    hash_str(opid.data(), opid.length()))};
                             break;
                         }
                         case log_footer_columns::path: {
@@ -1318,12 +1396,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 continue;
                             }
 
-                            const auto* filename
-                                = (const char*) sqlite3_value_text(argv[lpc]);
-                            auto fn_len = sqlite3_value_bytes(argv[lpc]);
+                            const auto filename
+                                = from_sqlite<std::string>()(argc, argv, lpc);
                             const auto fn_constraint
-                                = log_cursor::string_constraint{
-                                    op, std::string(filename, fn_len)};
+                                = log_cursor::string_constraint{op, filename};
                             auto found = false;
 
                             if (!log_time_range) {
@@ -1353,12 +1429,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 continue;
                             }
 
-                            const auto* filename
-                                = (const char*) sqlite3_value_text(argv[lpc]);
-                            auto fn_len = sqlite3_value_bytes(argv[lpc]);
+                            const auto filename
+                                = from_sqlite<std::string>()(argc, argv, lpc);
                             const auto fn_constraint
-                                = log_cursor::string_constraint{
-                                    op, std::string(filename, fn_len)};
+                                = log_cursor::string_constraint{op, filename};
                             auto found = false;
 
                             if (!log_time_range) {
@@ -1384,6 +1458,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             }
                             break;
                         }
+                        case log_footer_columns::text:
+                        case log_footer_columns::body:
+                        case log_footer_columns::raw_text:
+                            break;
                     }
                 } else {
                     const auto* value
@@ -1571,12 +1649,52 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                     FMT_STRING("log_time {} ?"), sql_constraint_op_name(op)));
                 break;
             }
+            case VT_COL_LEVEL: {
+                if (log_cursor::level_constraint::op_is_supported(op)) {
+                    argvInUse += 1;
+                    indexes.push_back(constraint);
+                    p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                    index_desc.emplace_back(
+                        fmt::format(FMT_STRING("log_level {} ?"),
+                                    sql_constraint_op_name(op)));
+                }
+                break;
+            }
             default: {
                 if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
                     auto footer_column = static_cast<log_footer_columns>(
                         col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1);
 
                     switch (footer_column) {
+                        case log_footer_columns::time_msecs: {
+                            argvInUse += 1;
+                            indexes.push_back(p_info->aConstraint[lpc]);
+                            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                            index_desc.emplace_back(
+                                fmt::format(FMT_STRING("log_time_msecs {} ?"),
+                                            sql_constraint_op_name(op)));
+                            break;
+                        }
+                        case log_footer_columns::format: {
+                            if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
+                                argvInUse += 1;
+                                indexes.push_back(constraint);
+                                p_info->aConstraintUsage[lpc].argvIndex
+                                    = argvInUse;
+                                index_desc.emplace_back("log_format = ?");
+                            }
+                            break;
+                        }
+                        case log_footer_columns::format_regex: {
+                            if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
+                                argvInUse += 1;
+                                indexes.push_back(constraint);
+                                p_info->aConstraintUsage[lpc].argvIndex
+                                    = argvInUse;
+                                index_desc.emplace_back("log_format_regex = ?");
+                            }
+                            break;
+                        }
                         case log_footer_columns::opid: {
                             if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
                                 argvInUse += 1;
@@ -1605,6 +1723,10 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                                             sql_constraint_op_name(op)));
                             break;
                         }
+                        case log_footer_columns::text:
+                        case log_footer_columns::body:
+                        case log_footer_columns::raw_text:
+                            break;
                     }
                 } else if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
                     argvInUse += 1;

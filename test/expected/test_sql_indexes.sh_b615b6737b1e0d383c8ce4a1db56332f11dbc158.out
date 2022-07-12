@@ -1,0 +1,2 @@
+[1m$id [0m[1m$parent [0m[1m$notused [0m[1m                 replace($detail, 'SCAN TABLE', 'SCAN')                  [0m
+[1m2  [0m[1m [0m[1m0      [0m[1m [0m[1m0       [0m[1m [0m[1mSCAN all_logs VIRTUAL TABLE INDEX 1:SEARCH all_logs USING log_format = ? [0m

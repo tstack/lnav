@@ -206,5 +206,11 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
         lc.lc_log_path.emplace_back(SQLITE_INDEX_CONSTRAINT_GLOB,
                                     this->lst_log_path_glob);
     }
+    if (this->lst_log_level) {
+        lc.lc_level_constraint = log_cursor::level_constraint{
+            SQLITE_INDEX_CONSTRAINT_EQ,
+            this->lst_log_level.value(),
+        };
+    }
     this->lst_match_index = -1;
 }

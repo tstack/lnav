@@ -72,6 +72,56 @@ struct log_cursor {
         bool matches(const std::string& sf) const;
     };
 
+    template<typename T>
+    struct integral_constraint {
+        unsigned char ic_op;
+        T ic_value;
+
+        static bool op_is_supported(unsigned char op)
+        {
+            switch (op) {
+                case SQLITE_INDEX_CONSTRAINT_EQ:
+                case SQLITE_INDEX_CONSTRAINT_IS:
+                case SQLITE_INDEX_CONSTRAINT_NE:
+                case SQLITE_INDEX_CONSTRAINT_ISNOT:
+                case SQLITE_INDEX_CONSTRAINT_GT:
+                case SQLITE_INDEX_CONSTRAINT_LE:
+                case SQLITE_INDEX_CONSTRAINT_LT:
+                case SQLITE_INDEX_CONSTRAINT_GE:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        integral_constraint(unsigned char op, T value)
+            : ic_op(op), ic_value(value)
+        {
+        }
+
+        bool matches(const T& value) const
+        {
+            switch (this->ic_op) {
+                case SQLITE_INDEX_CONSTRAINT_EQ:
+                case SQLITE_INDEX_CONSTRAINT_IS:
+                    return value == this->ic_value;
+                case SQLITE_INDEX_CONSTRAINT_NE:
+                case SQLITE_INDEX_CONSTRAINT_ISNOT:
+                    return value != this->ic_value;
+                case SQLITE_INDEX_CONSTRAINT_GT:
+                    return value > this->ic_value;
+                case SQLITE_INDEX_CONSTRAINT_LE:
+                    return value <= this->ic_value;
+                case SQLITE_INDEX_CONSTRAINT_LT:
+                    return value < this->ic_value;
+                case SQLITE_INDEX_CONSTRAINT_GE:
+                    return value >= this->ic_value;
+                default:
+                    return false;
+            }
+        }
+    };
+
     struct column_constraint {
         column_constraint(int32_t col, string_constraint cons)
             : cc_column(col), cc_constraint(std::move(cons))
@@ -86,7 +136,11 @@ struct log_cursor {
     int lc_sub_index;
     vis_line_t lc_end_line;
 
+    using level_constraint = integral_constraint<log_level_t>;
+
+    nonstd::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
+    intern_string_t lc_pattern_name;
     nonstd::optional<opid_hash> lc_opid;
     std::vector<string_constraint> lc_log_path;
     logfile* lc_last_log_path_match{nullptr};

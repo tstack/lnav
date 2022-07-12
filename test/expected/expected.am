@@ -232,8 +232,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.out \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.err \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.out \
-    $(srcdir)/%reldir%/test_format_loader.sh_3f1d6f35e8a9ae4fd3e91ffaa82a037b5a847ab7.err \
-    $(srcdir)/%reldir%/test_format_loader.sh_3f1d6f35e8a9ae4fd3e91ffaa82a037b5a847ab7.out \
     $(srcdir)/%reldir%/test_format_loader.sh_a47f2b090a5d8a226783835c7ff7d1c8821f11ed.err \
     $(srcdir)/%reldir%/test_format_loader.sh_a47f2b090a5d8a226783835c7ff7d1c8821f11ed.out \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \
@@ -608,10 +606,24 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_e24cf3f35643f945392e7d7a4ca82fea98b4519e.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_1614ebb5e2e83bab11023354dea8a0885ddf64b4.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_1614ebb5e2e83bab11023354dea8a0885ddf64b4.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_59a1497c13a5e09bc8f95ef02552b2835ebea6e5.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_59a1497c13a5e09bc8f95ef02552b2835ebea6e5.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_6f707b6e856dbaab6f95e7e89b98dc3652021f85.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_6f707b6e856dbaab6f95e7e89b98dc3652021f85.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_b615b6737b1e0d383c8ce4a1db56332f11dbc158.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_b615b6737b1e0d383c8ce4a1db56332f11dbc158.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_b85adec8abbf7d3882f5f9c509a5d3a5043a8c5e.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_b85adec8abbf7d3882f5f9c509a5d3a5043a8c5e.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_dab07d8de7728752ae938a174468d75e85f3ae7e.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_dab07d8de7728752ae938a174468d75e85f3ae7e.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_017d24148f3e28f719429b709f4aa5478f458443.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_017d24148f3e28f719429b709f4aa5478f458443.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_191436b38db80b1dd9e7e0814c31c5fa7239dc51.err \

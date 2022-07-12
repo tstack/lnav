@@ -2319,6 +2319,9 @@ external_log_format::register_vtabs(
             *elf_search_table.second.std_pattern, elf_search_table.first);
         lst->lst_format = this;
         lst->lst_log_path_glob = elf_search_table.second.std_glob;
+        if (elf_search_table.second.std_level != LEVEL_UNKNOWN) {
+            lst->lst_log_level = elf_search_table.second.std_level;
+        }
         auto errmsg = vtab_manager->register_vtab(lst);
         if (!errmsg.empty()) {
 #if 0

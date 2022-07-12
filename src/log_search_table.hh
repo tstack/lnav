@@ -70,6 +70,7 @@ public:
     log_format* lst_format{nullptr};
     mutable size_t lst_format_column_count{0};
     std::string lst_log_path_glob;
+    nonstd::optional<log_level_t> lst_log_level;
     shared_buffer_ref lst_current_line;
     pcre_input lst_input{""};
     pcre_context_static<128> lst_match_context;
