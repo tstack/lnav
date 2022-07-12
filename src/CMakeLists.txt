@@ -236,6 +236,15 @@ add_library(
 )
 target_include_directories(cppfmt PUBLIC fmtlib)
 
+add_library(
+        base64 STATIC
+        third-party/base64/lib/lib.c
+        third-party/base64/lib/arch/generic/codec.c
+        third-party/base64/lib/tables/tables.c
+)
+target_include_directories(base64 PRIVATE third-party/base64/lib)
+target_include_directories(base64 PUBLIC third-party/base64/include)
+
 add_library(lnavfileio STATIC
         grep_proc.hh
         line_buffer.hh
@@ -400,6 +409,7 @@ add_library(
         lnav.management_cli.hh
         lnav_config.hh
         lnav_config_fwd.hh
+        lnav_util.hh
         log.watch.hh
         log_actions.hh
         log_data_helper.hh
@@ -513,7 +523,7 @@ add_library(
 set(lnav_SRCS lnav.cc)
 
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
-        third-party)
+        third-party third-party/base64/include)
 
 target_link_libraries(
         diag
@@ -527,6 +537,7 @@ target_link_libraries(
         logfmt
         yajlpp
         cppfmt
+        base64
         ${lnav_LIBS})
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 

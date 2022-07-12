@@ -31,8 +31,6 @@
  * Dumping ground for useful functions with no other home.
  */
 
-#include <algorithm>
-
 #include "lnav_util.hh"
 
 #include <stdio.h>
@@ -114,16 +112,6 @@ err_to_ok(const lnav::console::user_message msg)
     return Ok(msg.to_attr_line().get_string());
 }
 
-short
-pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
-{
-    return pollfds | lnav::itertools::find_if([fd](const auto& entry) {
-               return entry.fd == fd;
-           })
-        | lnav::itertools::deref() | lnav::itertools::map(&pollfd::revents)
-        | lnav::itertools::unwrap_or((short) 0);
-}
-
 void
 write_line_to(FILE* outfile, const attr_line_t& al)
 {
@@ -137,15 +125,6 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     } else {
         lnav::console::println(outfile, al.subline(lr.lr_start, lr.length()));
     }
-}
-
-bool
-pollfd_ready(const std::vector<struct pollfd>& pollfds, int fd, short events)
-{
-    return std::any_of(
-        pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {
-            return entry.fd == fd && entry.revents & events;
-        });
 }
 
 namespace lnav {

@@ -77,4 +77,10 @@ public:
     size_t count(pollable::category cat);
 };
 
+short pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd);
+
+bool pollfd_ready(const std::vector<struct pollfd>& pollfds,
+                  int fd,
+                  short events = POLLIN | POLLHUP);
+
 #endif

@@ -51,7 +51,7 @@
                     }
                 },
                 "tmux": {
-                    "test": "test -n \"$TMUX\"",
+                    "test": "test -n \"$TMUX\" -a -z \"$SSH_CLIENT\"",
                     "general": {
                         "write": "tmux load-buffer -",
                         "read": "tmux save-buffer -"

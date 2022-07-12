@@ -31,6 +31,7 @@
 
 #include "pollable.hh"
 
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 
 pollable::pollable(std::shared_ptr<pollable_supervisor> supervisor,
@@ -102,4 +103,23 @@ pollable_supervisor::count(pollable::category cat)
     }
 
     return retval;
+}
+
+short
+pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
+{
+    return pollfds | lnav::itertools::find_if([fd](const auto& entry) {
+               return entry.fd == fd;
+           })
+        | lnav::itertools::deref() | lnav::itertools::map(&pollfd::revents)
+        | lnav::itertools::unwrap_or((short) 0);
+}
+
+bool
+pollfd_ready(const std::vector<struct pollfd>& pollfds, int fd, short events)
+{
+    return std::any_of(
+        pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {
+            return entry.fd == fd && entry.revents & events;
+        });
 }

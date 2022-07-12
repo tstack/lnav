@@ -107,6 +107,12 @@ public:
         return &this->am_ptr;
     }
 
+    template<typename F>
+    F get_free_func() const
+    {
+        return (F) this->am_free_func;
+    }
+
     void reset(T* ptr = nullptr)
     {
         if (this->am_ptr != ptr) {

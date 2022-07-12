@@ -51,6 +51,10 @@ lnav v0.10.2:
      * Initial indexing of large files should be faster.  Decompression
        and searching for line-endings are now pipelined, so they happen
        in a thread that is separate from the regular expression matcher.
+     * Writing to the clipboard now falls back to OSC 52 escape sequence
+       if none of the clipboard commands could be detected.  Your
+       terminal software will need to support the sequence and you may
+       need to explicitly enable it in the terminal.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that

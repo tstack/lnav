@@ -137,13 +137,7 @@ is_glob(const std::string& fn)
     return (fn.find('*') != std::string::npos
             || fn.find('?') != std::string::npos
             || fn.find('[') != std::string::npos);
-};
-
-short pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd);
-
-bool pollfd_ready(const std::vector<struct pollfd>& pollfds,
-                  int fd,
-                  short events = POLLIN | POLLHUP);
+}
 
 inline void
 rusagesub(const struct rusage& left,

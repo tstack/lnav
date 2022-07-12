@@ -1029,14 +1029,15 @@ com_save_to(exec_context& ec,
             lnav_data.ld_stdout_used = true;
         }
     } else if (split_args[0] == "/dev/clipboard") {
-        toclose = outfile = sysclip::open(sysclip::type_t::GENERAL);
-        closer = pclose;
-        if (!outfile) {
+        auto open_res = sysclip::open(sysclip::type_t::GENERAL);
+        if (open_res.isErr()) {
             alerter::singleton().chime();
-            return ec.make_error(
-                "Unable to copy to clipboard.  "
-                "Make sure xclip or pbcopy is installed.");
+            return ec.make_error("Unable to copy to clipboard: {}",
+                                 open_res.unwrapErr());
         }
+        auto holder = open_res.unwrap();
+        toclose = outfile = holder.release();
+        closer = holder.get_free_func<int(*)(FILE*)>();
     } else if ((outfile = fopen(split_args[0].c_str(), mode)) == nullptr) {
         return ec.make_error("unable to open file -- {}", split_args[0]);
     } else {
@@ -1586,14 +1587,14 @@ com_redirect_to(exec_context& ec,
         ec.clear_output();
     } else if (split_args[0] == "/dev/clipboard") {
         auto out = sysclip::open(sysclip::type_t::GENERAL);
-        if (!out) {
+        if (out.isErr()) {
             alerter::singleton().chime();
             return ec.make_error(
-                "Unable to copy to clipboard.  "
-                "Make sure xclip or pbcopy is installed.");
+                "Unable to copy to clipboard: {}", out.unwrapErr());
         }
 
-        ec.set_output(split_args[0], out, pclose);
+        auto holder = out.unwrap();
+        ec.set_output(split_args[0], holder.release(), holder.get_free_func<int(*)(FILE*)>());
     } else {
         FILE* file = fopen(split_args[0].c_str(), "w");
         if (file == nullptr) {

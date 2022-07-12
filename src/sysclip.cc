@@ -32,19 +32,23 @@
 #include "sysclip.hh"
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "libbase64.h"
 #include "sysclip.cfg.hh"
+
+#define ANSI_OSC "\x1b]"
 
 namespace sysclip {
 
 static nonstd::optional<clipboard>
 get_commands()
 {
-    auto& cfg = injector::get<const config&>();
+    const auto& cfg = injector::get<const config&>();
 
     for (const auto& pair : cfg.c_clipboard_impls) {
         const auto full_cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"),
@@ -62,26 +66,76 @@ get_commands()
     return nonstd::nullopt;
 }
 
+static int
+osc52_close(FILE* file)
+{
+    static const char ANSI_OSC_COPY_TO_CLIP[] = ANSI_OSC "52;c;";
+
+    log_debug("writing %d bytes of clipboard data using OSC 52", ftell(file));
+    write(STDOUT_FILENO, ANSI_OSC_COPY_TO_CLIP, strlen(ANSI_OSC_COPY_TO_CLIP));
+
+    base64_state b64state{};
+    base64_stream_encode_init(&b64state, 0);
+
+    fseek(file, 0, SEEK_SET);
+
+    auto done = false;
+    while (!done) {
+        char in_buffer[1024];
+        char out_buffer[2048];
+        size_t outlen = 0;
+
+        auto rc = fread(in_buffer, 1, sizeof(in_buffer), file);
+        if (rc <= 0) {
+            base64_stream_encode_final(&b64state, out_buffer, &outlen);
+            write(STDOUT_FILENO, out_buffer, outlen);
+            break;
+        }
+
+        base64_stream_encode(&b64state, in_buffer, rc, out_buffer, &outlen);
+        write(STDOUT_FILENO, out_buffer, outlen);
+    }
+
+    write(STDOUT_FILENO, "\a", 1);
+
+    fclose(file);
+
+    return 0;
+}
+
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
  * directly with X so we don't need to have xclip installed and it'll work if
  * we're ssh'd into a box.
  */
-FILE*
+Result<auto_mem<FILE>, std::string>
 open(type_t type, op_t op)
 {
     const char* mode = op == op_t::WRITE ? "w" : "r";
     static const auto clip_opt = sysclip::get_commands();
 
-    if (!clip_opt) {
-        log_error("unable to detect clipboard implementation");
-        return nullptr;
+    std::string cmd;
+
+    if (clip_opt) {
+        cmd = clip_opt.value().select(type).select(op);
+        if (cmd.empty()) {
+            log_info("configured clipboard does not support type/op");
+        }
+    } else {
+        log_info("unable to detect clipboard");
     }
 
-    auto cmd = clip_opt.value().select(type).select(op);
-
     if (cmd.empty()) {
-        log_error("clipboard does not support type/op");
-        return nullptr;
+        log_info("  ... falling back to OSC 52");
+        auto_mem<FILE> retval(osc52_close);
+
+        retval = tmpfile();
+        if (retval.in() == nullptr) {
+            return Err(
+                fmt::format(FMT_STRING("unable to open temporary file: {}"),
+                            strerror(errno)));
+        }
+
+        return Ok(std::move(retval));
     }
 
     switch (op) {
@@ -93,7 +147,17 @@ open(type_t type, op_t op)
             break;
     }
 
-    return popen(cmd.c_str(), mode);
+    auto_mem<FILE> retval(pclose);
+
+    log_debug("trying detected clipboard command: %s", cmd.c_str());
+    retval = popen(cmd.c_str(), mode);
+    if (retval.in() == nullptr) {
+        return Err(fmt::format(FMT_STRING("failed to open clipboard: {} -- {}"),
+                               cmd,
+                               strerror(errno)));
+    }
+
+    return Ok(std::move(retval));
 }
 
 }  // namespace sysclip

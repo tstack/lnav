@@ -33,6 +33,10 @@
 #define sysclip_hh
 
 #include <cstdio>
+#include <string>
+
+#include "base/auto_mem.hh"
+#include "base/result.h"
 
 namespace sysclip {
 
@@ -46,7 +50,7 @@ enum class op_t {
     READ,
 };
 
-FILE* open(type_t type, op_t op = op_t::WRITE);
+Result<auto_mem<FILE>, std::string> open(type_t type, op_t op = op_t::WRITE);
 
 }  // namespace sysclip
 

@@ -3,7 +3,7 @@ include $(top_srcdir)/aminclude_static.am
 
 CXXFLAGS =
 
-SUBDIRS = tools fmtlib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
+SUBDIRS = tools fmtlib third-party/base64/lib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
 
 bin_PROGRAMS = lnav
 
@@ -131,6 +131,7 @@ AM_CPPFLAGS = \
 	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-I$(srcdir)/fmtlib \
 	-I$(srcdir)/third-party \
+	-I$(srcdir)/third-party/base64/include \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
@@ -151,6 +152,7 @@ LDADD = \
 	tailer/libtailerpp.a \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
+	third-party/base64/lib/libbase64.a \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \

@@ -43,7 +43,6 @@
 #include "service_tags.hh"
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
-#include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
 #include "view_helpers.examples.hh"
 #include "vtab_module.hh"
@@ -635,17 +634,11 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::CAPTURE:
             rl_search_internal(rc, old_mode, true);
             if (!rc->get_value().empty()) {
-                auto_mem<FILE> pfile(pclose);
-                vis_bookmarks& bm = tc->get_bookmarks();
+                auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
                 auto vl = is_alt ? bv.prev(tc->get_top())
                                  : bv.next(tc->get_top());
 
-                pfile = sysclip::open(sysclip::type_t::FIND);
-                if (pfile.in() != nullptr) {
-                    fmt::print(
-                        pfile, FMT_STRING("{}"), rc->get_value().get_string());
-                }
                 if (vl) {
                     tc->set_top(vl.value());
                 } else {
