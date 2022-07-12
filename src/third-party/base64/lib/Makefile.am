@@ -9,6 +9,7 @@ noinst_HEADERS = \
     arch/generic/enc_head.c \
     arch/generic/dec_head.c \
     tables/tables.h \
+    tables/table_dec_32bit.h \
     tables/table_enc_12bit.h \
     codecs.h \
     config.h \
