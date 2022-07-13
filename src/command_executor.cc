@@ -187,6 +187,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         alt_msg = "";
         return ec.make_error("No statement given");
     }
+    std::map<std::string, std::string> bound_values;
 #ifdef HAVE_SQLITE3_STMT_READONLY
     if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in())) {
         return ec.make_error(
@@ -233,17 +234,20 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     sqlite3_bind_text(stmt.in(),
                                       lpc + 1,
                                       local_var->second.c_str(),
-                                      -1,
+                                      local_var->second.length(),
                                       SQLITE_TRANSIENT);
+                    bound_values[name] = local_var->second;
                 } else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
                     sqlite3_bind_text(stmt.in(),
                                       lpc + 1,
                                       global_var->second.c_str(),
-                                      -1,
+                                      global_var->second.length(),
                                       SQLITE_TRANSIENT);
+                    bound_values[name] = global_var->second;
                 } else if ((env_value = getenv(&name[1])) != nullptr) {
                     sqlite3_bind_text(
                         stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
+                    bound_values[name] = env_value;
                 }
             } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
                 for (auto& lv : *ec.ec_line_values) {
@@ -254,17 +258,21 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                         case value_kind_t::VALUE_BOOLEAN:
                             sqlite3_bind_int64(
                                 stmt.in(), lpc + 1, lv.lv_value.i);
+                            bound_values[name] = fmt::to_string(lv.lv_value.i);
                             break;
                         case value_kind_t::VALUE_FLOAT:
                             sqlite3_bind_double(
                                 stmt.in(), lpc + 1, lv.lv_value.d);
+                            bound_values[name] = fmt::to_string(lv.lv_value.d);
                             break;
                         case value_kind_t::VALUE_INTEGER:
                             sqlite3_bind_int64(
                                 stmt.in(), lpc + 1, lv.lv_value.i);
+                            bound_values[name] = fmt::to_string(lv.lv_value.i);
                             break;
                         case value_kind_t::VALUE_NULL:
                             sqlite3_bind_null(stmt.in(), lpc + 1);
+                            bound_values[name] = db_label_source::NULL_STR;
                             break;
                         default:
                             sqlite3_bind_text(stmt.in(),
@@ -272,12 +280,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                                               lv.text_value(),
                                               lv.text_length(),
                                               SQLITE_TRANSIENT);
+                            bound_values[name] = lv.to_string();
                             break;
                     }
                 }
             } else {
                 sqlite3_bind_null(stmt.in(), lpc + 1);
                 log_warning("Could not bind variable: %s", name);
+                bound_values[name] = db_label_source::NULL_STR;
             }
         }
 
@@ -317,7 +327,26 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                             "internal error: {}",
                             from_res.unwrapErr()[0].um_message.get_string());
                     }
-                    return ec.make_error("{}", errmsg);
+
+                    attr_line_t bound_note;
+                    for (const auto& bval : bound_values) {
+                        auto scrubbed_val = scrub_ws(bval.second.c_str());
+
+                        truncate_to(scrubbed_val, 40);
+                        bound_note.append("  ")
+                            .append(lnav::roles::variable(bval.first))
+                            .append(" = ")
+                            .append_quoted(scrubbed_val)
+                            .append("\n");
+                    }
+
+                    auto um = lnav::console::user_message::error(
+                                  "SQL statement failed")
+                                  .with_reason(errmsg)
+                                  .with_snippets(ec.ec_source)
+                                  .with_note(bound_note);
+
+                    return Err(um);
                 }
             }
         }
@@ -824,35 +853,33 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 
             return std::string();
         });
-    } else {
-        auto tmp_fd
-            = lnav::filesystem::open_temp_file(
-                  ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
-                  .map([](auto pair) {
-                      ghc::filesystem::remove(pair.first);
-
-                      return std::move(pair.second);
-                  })
-                  .expect("Cannot create temporary file for callback");
-        auto pp = std::make_shared<piper_proc>(
-            std::move(fd), false, std::move(tmp_fd));
-        static int exec_count = 0;
-
-        lnav_data.ld_pipers.push_back(pp);
-        auto desc = fmt::format(
-            FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
-        lnav_data.ld_active_files.fc_file_names[desc]
-            .with_fd(pp->get_fd())
-            .with_include_in_session(false)
-            .with_detect_format(false);
-        lnav_data.ld_files_to_front.emplace_back(desc, 0);
-        if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_1(X, "to close the file"));
-        }
-
-        return lnav::futures::make_ready_future(std::string());
     }
+    auto tmp_fd
+        = lnav::filesystem::open_temp_file(
+              ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
+              .map([](auto pair) {
+                  ghc::filesystem::remove(pair.first);
+
+                  return std::move(pair.second);
+              })
+              .expect("Cannot create temporary file for callback");
+    auto pp
+        = std::make_shared<piper_proc>(std::move(fd), false, std::move(tmp_fd));
+    static int exec_count = 0;
+
+    lnav_data.ld_pipers.push_back(pp);
+    auto desc
+        = fmt::format(FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
+    lnav_data.ld_active_files.fc_file_names[desc]
+        .with_fd(pp->get_fd())
+        .with_include_in_session(false)
+        .with_detect_format(false);
+    lnav_data.ld_files_to_front.emplace_back(desc, 0);
+    if (lnav_data.ld_rl_view != nullptr) {
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(X, "to close the file"));
+    }
+
+    return lnav::futures::make_ready_future(std::string());
 }
 
 void

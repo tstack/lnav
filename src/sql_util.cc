@@ -982,7 +982,6 @@ annotate_sql_statement(attr_line_t& al)
         pcrepp re;
         string_attr_type<void>* type;
     } PATTERNS[] = {
-        {pcrepp{R"(^(\.\w+))"}, &SQL_COMMAND_ATTR},
         {pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR},
         {pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR},
         {pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR},
@@ -999,12 +998,20 @@ annotate_sql_statement(attr_line_t& al)
         {pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR},
     };
 
+    static const pcrepp cmd_pattern{R"(^(\.\w+))"};
     static const pcrepp ws_pattern(R"(\A\s+)");
 
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string());
     auto& line = al.get_string();
     auto& sa = al.get_attrs();
+
+    if (cmd_pattern.match(pc, pi, PCRE_ANCHORED)) {
+        auto* cap = pc.all();
+        sa.emplace_back(line_range(cap->c_begin, cap->c_end),
+                        SQL_COMMAND_ATTR.value());
+        return;
+    }
 
     while (pi.pi_next_offset < line.length()) {
         if (ws_pattern.match(pc, pi, PCRE_ANCHORED)) {

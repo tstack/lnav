@@ -46,3 +46,5 @@ run_cap_test ./drive_sql_anno "SELECT * FROM (SELECT foo, bar FROM baz)"
 
 run_cap_test ./drive_sql_anno \
    "SELECT * from vmw_log, regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[abc]+)')"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM foo.bar"

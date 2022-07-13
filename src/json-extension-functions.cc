@@ -604,7 +604,6 @@ sql_json_group_object_step(sqlite3_context* context,
     }
 
     for (int lpc = 0; (lpc + 1) < argc; lpc += 2) {
-        log_debug("arg type %d", sqlite3_value_type(argv[lpc]));
         if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
             continue;
         }

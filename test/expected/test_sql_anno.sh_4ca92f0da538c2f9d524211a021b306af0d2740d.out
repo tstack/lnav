@@ -1,0 +1,7 @@
+                 SELECT * FROM foo.bar
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---
+     sql_garbage                  -
+       sql_ident                   ---

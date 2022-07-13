@@ -92,6 +92,8 @@ endswith(const std::string& str, const char (&suffix)[N])
 
 void truncate_to(std::string& str, size_t max_char_len);
 
+std::string scrub_ws(const char* in);
+
 inline std::string
 trim(const std::string& str)
 {

@@ -261,6 +261,37 @@ is_blank(const std::string& str)
         str.begin(), str.end(), [](const auto ch) { return isspace(ch); });
 }
 
+std::string
+scrub_ws(const char* in)
+{
+    static const std::string TAB_SYMBOL = "\u21e5";
+    static const std::string LF_SYMBOL = "\u240a";
+    static const std::string CR_SYMBOL = "\u240d";
+
+    std::string retval;
+
+    for (size_t lpc = 0; in[lpc]; lpc++) {
+        auto ch = in[lpc];
+
+        switch (ch) {
+            case '\t':
+                retval.append(TAB_SYMBOL);
+                break;
+            case '\n':
+                retval.append(LF_SYMBOL);
+                break;
+            case '\r':
+                retval.append(CR_SYMBOL);
+                break;
+            default:
+                retval.append(1, ch);
+                break;
+        }
+    }
+
+    return retval;
+}
+
 template size_t strtonum<long long>(long long& num_out,
                                     const char* string,
                                     size_t len);

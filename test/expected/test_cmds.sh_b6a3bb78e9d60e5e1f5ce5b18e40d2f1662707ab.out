@@ -545,7 +545,7 @@ For example, if you wanted to save the results from the earlier
 example of a top ten query into the "/tmp/topten.db" file, you can do:
 
  ▌[37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'/tmp/topten.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
- ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[1m[36m[40m.foo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
+ ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m.[0m[37m[40mfoo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
  ▌[37m[40m   [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m          [0m
  ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m;                                                         [0m
 

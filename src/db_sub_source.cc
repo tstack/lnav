@@ -48,9 +48,6 @@ db_label_source::text_value_for_line(textview_curses& tc,
                                      std::string& label_out,
                                      text_sub_source::line_flags_t flags)
 {
-    static const std::string TAB_SYMBOL = "\u21e5";
-    static const std::string LF_SYMBOL = "\u240a";
-    static const std::string CR_SYMBOL = "\u240d";
 
     /*
      * start_value is the result rowid, each bucket type is a column value
@@ -64,25 +61,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
         auto actual_col_size
             = std::min(MAX_COLUMN_WIDTH, this->dls_headers[lpc].hm_column_size);
-        auto raw_cell_str = std::string(this->dls_rows[row][lpc]);
-        std::string cell_str;
-
-        for (const auto ch : raw_cell_str) {
-            switch (ch) {
-                case '\t':
-                    cell_str.append(TAB_SYMBOL);
-                    break;
-                case '\n':
-                    cell_str.append(LF_SYMBOL);
-                    break;
-                case '\r':
-                    cell_str.append(CR_SYMBOL);
-                    break;
-                default:
-                    cell_str.append(1, ch);
-                    break;
-            }
-        }
+        auto cell_str = scrub_ws(this->dls_rows[row][lpc]);
 
         truncate_to(cell_str, MAX_COLUMN_WIDTH);
 

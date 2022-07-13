@@ -1,4 +1,5 @@
-[1m[31m✘ error[0m: expecting the new name for stdin as the first argument
+[1m[31m✘ error[0m: SQL statement failed
+ [1m[31mreason[0m: expecting the new name for stdin as the first argument
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m|rename-stdin                           [0m
 [36m --> [0m[1m../test/.lnav/formats/default/rename-stdin.lnav[0m:6

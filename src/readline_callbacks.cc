@@ -384,7 +384,7 @@ rl_change(readline_curses* rc)
                 lnav_data.ld_bottom_source.set_prompt(
                     "Enter a script to execute: " ABORT_MSG);
             } else {
-                struct script_metadata& meta = iter->second[0];
+                auto& meta = iter->second[0];
                 char help_text[1024];
 
                 snprintf(help_text,
@@ -728,15 +728,20 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     exec_context::output_guard og(
                         ec, "tmp", std::make_pair(tmpout.release(), fclose));
 
-                    auto result = execute_file(ec, path_and_args.get_string())
-                                      .map(ok_prefix)
-                                      .orElse(err_to_ok)
-                                      .unwrap();
-                    auto lf_index = result.find('\n');
-                    if (lf_index != std::string::npos) {
-                        result = result.substr(0, lf_index);
+                    auto exec_res
+                        = execute_file(ec, path_and_args.get_string());
+                    if (exec_res.isOk()) {
+                        rc->set_value(exec_res.unwrap());
+                    } else {
+                        auto um = exec_res.unwrapErr();
+
+                        lnav_data.ld_user_message_source.replace_with(
+                            um.to_attr_line().rtrim());
+                        lnav_data.ld_user_message_view.reload_data();
+                        lnav_data.ld_user_message_expiration
+                            = std::chrono::steady_clock::now() + 20s;
+                        rc->set_value("");
                     }
-                    rc->set_value(result);
                 }
 
                 struct stat st;
