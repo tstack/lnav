@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘ error[0m: call to [1m[4mraise_error[0m[4m([0m[4mmsg[0m[4m)[0m failed
  [1m[31mreason[0m: expecting the new name for stdin as the first argument
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m|rename-stdin                           [0m

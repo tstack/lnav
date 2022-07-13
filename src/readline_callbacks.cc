@@ -177,11 +177,17 @@ rl_sql_help(readline_curses* rc)
         etc.get_dimensions(ex_height, ex_width);
 
         for (const auto& ht : avail_help) {
-            format_help_text_for_term(
-                *ht, std::min(70UL, doc_width), doc_al, help_count > 1);
+            format_help_text_for_term(*ht,
+                                      std::min(70UL, doc_width),
+                                      doc_al,
+                                      help_count > 1
+                                          ? help_text_content::synopsis
+                                          : help_text_content::full);
             if (help_count == 1) {
                 format_example_text_for_term(
                     *ht, eval_example, std::min(70UL, ex_width), ex_al);
+            } else {
+                doc_al.append("\n");
             }
         }
 
@@ -604,6 +610,9 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             rc->set_alt_value("");
             ec.ec_source.back().s_content
                 = fmt::format(FMT_STRING(":{}"), rc->get_value().get_string());
+            readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
+            ec.ec_source.back().s_content.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             auto exec_res = execute_command(ec, rc->get_value().get_string());
             if (exec_res.isOk()) {
                 rc->set_value(exec_res.unwrap());
@@ -679,7 +688,11 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
 
         case ln_mode_t::SQL: {
-            ec.ec_source.back().s_content = rc->get_value();
+            ec.ec_source.back().s_content
+                = fmt::format(FMT_STRING(";{}"), rc->get_value().get_string());
+            readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
+            ec.ec_source.back().s_content.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             auto result
                 = execute_sql(ec, rc->get_value().get_string(), alt_msg);
             db_label_source& dls = lnav_data.ld_db_row_source;

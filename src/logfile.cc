@@ -732,6 +732,7 @@ logfile::read_full_message(logfile::const_iterator ll,
 {
     require(ll->get_sub_offset() == 0);
 
+    msg_out.disown();
     try {
         auto read_result
             = this->lf_line_buffer.read_range(this->get_file_range(ll));

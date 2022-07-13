@@ -628,8 +628,7 @@ com_mark_expr(exec_context& ec,
             auto set_res = lss.set_preview_sql_filter(stmt.release());
 
             if (set_res.isErr()) {
-                return ec.make_error("mark expression failed with: {}",
-                                     set_res.unwrapErr());
+                return Err(set_res.unwrapErr());
             }
             lnav_data.ld_preview_status_source.get_description().set_value(
                 "Matches are highlighted in the text view");
@@ -637,8 +636,7 @@ com_mark_expr(exec_context& ec,
             auto set_res = lss.set_sql_marker(expr, stmt.release());
 
             if (set_res.isErr()) {
-                return ec.make_error("mark expression failed with: {}",
-                                     set_res.unwrapErr());
+                return Err(set_res.unwrapErr());
             }
         }
     }
@@ -1992,8 +1990,7 @@ com_filter_expr(exec_context& ec,
                 stmt.release());
 
             if (set_res.isErr()) {
-                return ec.make_error("filter expression failed with: {}",
-                                     set_res.unwrapErr());
+                return Err(set_res.unwrapErr());
             }
             lnav_data.ld_preview_status_source.get_description().set_value(
                 "Matches are highlighted in the text view");
@@ -2003,8 +2000,7 @@ com_filter_expr(exec_context& ec,
                 = lnav_data.ld_log_source.set_sql_filter(expr, stmt.release());
 
             if (set_res.isErr()) {
-                return ec.make_error("filter expression failed with: {}",
-                                     set_res.unwrapErr());
+                return Err(set_res.unwrapErr());
             }
         }
         lnav_data.ld_log_source.text_filters_changed();

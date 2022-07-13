@@ -706,6 +706,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         }
         // log_debug("got preload");
         this->lb_loader_future = {};
+        this->lb_share_manager.invalidate_refs();
         this->lb_file_offset = this->lb_loader_file_offset.value();
         this->lb_loader_file_offset = nonstd::nullopt;
         this->lb_buffer.swap(this->lb_alt_buffer.value());

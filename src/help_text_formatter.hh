@@ -38,10 +38,16 @@
 using help_example_to_attr_line_fun_t
     = std::function<attr_line_t(const help_text&, const help_example&)>;
 
+enum class help_text_content {
+    synopsis,
+    synopsis_and_summary,
+    full,
+};
+
 void format_help_text_for_term(const help_text& ht,
                                size_t width,
                                attr_line_t& out,
-                               bool synopsis_only = false);
+                               help_text_content htc = help_text_content::full);
 
 void format_example_text_for_term(const help_text& ht,
                                   help_example_to_attr_line_fun_t eval,

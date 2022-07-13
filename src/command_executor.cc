@@ -49,6 +49,7 @@
 #include "service_tags.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
+#include "vtab_module.hh"
 #include "yajlpp/json_ptr.hh"
 
 exec_context INIT_EXEC_CONTEXT;
@@ -125,7 +126,15 @@ execute_command(exec_context& ec, const std::string& cmdline)
 
         ec.ec_current_help = &iter->second->c_help;
         auto retval = iter->second->c_func(ec, cmdline, args);
+        if (retval.isErr()) {
+            auto um = retval.unwrapErr();
+
+            ec.add_error_context(um);
+            ec.ec_current_help = nullptr;
+            return Err(um);
+        }
         ec.ec_current_help = nullptr;
+
         return retval;
     }
 
@@ -310,39 +319,25 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     break;
 
                 default: {
-                    const char* errmsg;
+                    attr_line_t bound_note;
+
+                    if (!bound_values.empty()) {
+                        bound_note.append(
+                            "the bound parameters are set as follows:\n");
+                        for (const auto& bval : bound_values) {
+                            auto scrubbed_val = scrub_ws(bval.second.c_str());
+
+                            truncate_to(scrubbed_val, 40);
+                            bound_note.append("  ")
+                                .append(lnav::roles::variable(bval.first))
+                                .append(" = ")
+                                .append_quoted(scrubbed_val)
+                                .append("\n");
+                        }
+                    }
 
                     log_error("sqlite3_step error code: %d", retcode);
-                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                    if (startswith(errmsg, "lnav-error:")) {
-                        auto from_res
-                            = lnav::from_json<lnav::console::user_message>(
-                                &errmsg[11]);
-
-                        if (from_res.isOk()) {
-                            return Err(from_res.unwrap());
-                        }
-
-                        return ec.make_error(
-                            "internal error: {}",
-                            from_res.unwrapErr()[0].um_message.get_string());
-                    }
-
-                    attr_line_t bound_note;
-                    for (const auto& bval : bound_values) {
-                        auto scrubbed_val = scrub_ws(bval.second.c_str());
-
-                        truncate_to(scrubbed_val, 40);
-                        bound_note.append("  ")
-                            .append(lnav::roles::variable(bval.first))
-                            .append(" = ")
-                            .append_quoted(scrubbed_val)
-                            .append("\n");
-                    }
-
-                    auto um = lnav::console::user_message::error(
-                                  "SQL statement failed")
-                                  .with_reason(errmsg)
+                    auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
                                   .with_snippets(ec.ec_source)
                                   .with_note(bound_note);
 
@@ -956,12 +951,17 @@ exec_context::execute(const std::string& cmdline)
 void
 exec_context::add_error_context(lnav::console::user_message& um)
 {
-    um.with_snippets(this->ec_source);
+    if (um.um_snippets.empty()) {
+        um.with_snippets(this->ec_source);
+    }
 
-    if (this->ec_current_help != nullptr) {
+    if (this->ec_current_help != nullptr && um.um_help.empty()) {
         attr_line_t help;
 
-        format_help_text_for_term(*this->ec_current_help, 70, help, true);
+        format_help_text_for_term(*this->ec_current_help,
+                                  70,
+                                  help,
+                                  help_text_content::synopsis_and_summary);
         um.with_help(help);
     }
 }

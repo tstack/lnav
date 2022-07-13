@@ -41,6 +41,7 @@
 
 #include <limits.h>
 
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "big_array.hh"
@@ -496,13 +497,14 @@ public:
         return retval;
     }
 
-    Result<void, std::string> set_sql_filter(std::string stmt_str,
-                                             sqlite3_stmt* stmt);
+    Result<void, lnav::console::user_message> set_sql_filter(
+        std::string stmt_str, sqlite3_stmt* stmt);
 
-    Result<void, std::string> set_sql_marker(std::string stmt_str,
-                                             sqlite3_stmt* stmt);
+    Result<void, lnav::console::user_message> set_sql_marker(
+        std::string stmt_str, sqlite3_stmt* stmt);
 
-    Result<void, std::string> set_preview_sql_filter(sqlite3_stmt* stmt);
+    Result<void, lnav::console::user_message> set_preview_sql_filter(
+        sqlite3_stmt* stmt);
 
     std::string get_sql_filter_text()
     {
@@ -794,9 +796,8 @@ public:
 
     void text_crumbs_for_line(int line, std::vector<breadcrumb::crumb>& crumbs);
 
-    Result<bool, std::string> eval_sql_filter(sqlite3_stmt* stmt,
-                                              iterator ld,
-                                              logfile::const_iterator ll);
+    Result<bool, lnav::console::user_message> eval_sql_filter(
+        sqlite3_stmt* stmt, iterator ld, logfile::const_iterator ll);
 
     void invalidate_sql_filter();
 

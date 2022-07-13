@@ -82,7 +82,7 @@ void
 format_help_text_for_term(const help_text& ht,
                           size_t width,
                           attr_line_t& out,
-                          bool synopsis_only)
+                          help_text_content htc)
 {
     static const size_t body_indent = 2;
 
@@ -120,14 +120,16 @@ format_help_text_for_term(const help_text& ht,
                 line_range{(int) line_start, (int) out.get_string().length()},
                 VC_ROLE.value(role_t::VCR_H3),
             });
-            alb.append("\n")
-                .append(
-                    lnav::roles::table_border(repeat("\u2550", tws.tws_width)))
-                .append("\n")
-                .indent(body_indent)
-                .append(attr_line_t::from_ansi_str(ht.ht_summary),
-                        &tws.with_indent(body_indent))
-                .append("\n");
+            if (htc != help_text_content::synopsis) {
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent)
+                    .append(attr_line_t::from_ansi_str(ht.ht_summary),
+                            &tws.with_indent(body_indent))
+                    .append("\n");
+            }
             break;
         }
         case help_context_t::HC_SQL_FUNCTION:
@@ -174,22 +176,24 @@ format_help_text_for_term(const help_text& ht,
                 line_range{(int) line_start, (int) out.get_string().length()},
                 VC_ROLE.value(role_t::VCR_H3),
             });
-            if (break_all) {
-                alb.append("\n")
-                    .append(lnav::roles::table_border(
-                        repeat("\u2550", tws.tws_width)))
-                    .append("\n")
-                    .indent(body_indent + strlen(ht.ht_name) + 1);
-            } else {
-                alb.append("\n")
-                    .append(lnav::roles::table_border(
-                        repeat("\u2550", tws.tws_width)))
-                    .append("\n")
-                    .indent(body_indent);
+            if (htc != help_text_content::synopsis) {
+                if (break_all) {
+                    alb.append("\n")
+                        .append(lnav::roles::table_border(
+                            repeat("\u2550", tws.tws_width)))
+                        .append("\n")
+                        .indent(body_indent + strlen(ht.ht_name) + 1);
+                } else {
+                    alb.append("\n")
+                        .append(lnav::roles::table_border(
+                            repeat("\u2550", tws.tws_width)))
+                        .append("\n")
+                        .indent(body_indent);
+                }
+                out.append(attr_line_t::from_ansi_str(ht.ht_summary),
+                           &tws.with_indent(body_indent))
+                    .append("\n");
             }
-            out.append(attr_line_t::from_ansi_str(ht.ht_summary),
-                       &tws.with_indent(body_indent))
-                .append("\n");
             break;
         }
         case help_context_t::HC_SQL_COMMAND: {
@@ -219,14 +223,16 @@ format_help_text_for_term(const help_text& ht,
                 line_range{(int) line_start, (int) out.get_string().length()},
                 VC_ROLE.value(role_t::VCR_H3),
             });
-            alb.append("\n")
-                .append(
-                    lnav::roles::table_border(repeat("\u2550", tws.tws_width)))
-                .append("\n")
-                .indent(body_indent)
-                .append(attr_line_t::from_ansi_str(ht.ht_summary),
-                        &tws.with_indent(body_indent + 2))
-                .append("\n");
+            if (htc != help_text_content::synopsis) {
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent)
+                    .append(attr_line_t::from_ansi_str(ht.ht_summary),
+                            &tws.with_indent(body_indent + 2))
+                    .append("\n");
+            }
             break;
         }
         case help_context_t::HC_SQL_INFIX:
@@ -332,9 +338,7 @@ format_help_text_for_term(const help_text& ht,
                 line_range{(int) line_start, (int) out.get_string().length()},
                 VC_ROLE.value(role_t::VCR_H3),
             });
-            if (synopsis_only) {
-                out.append("\n");
-            } else {
+            if (htc != help_text_content::synopsis) {
                 alb.append("\n")
                     .append(lnav::roles::table_border(
                         repeat("\u2550", tws.tws_width)))
@@ -349,7 +353,7 @@ format_help_text_for_term(const help_text& ht,
             break;
     }
 
-    if (!synopsis_only && !ht.ht_parameters.empty()) {
+    if (htc == help_text_content::full && !ht.ht_parameters.empty()) {
         size_t max_param_name_width = 0;
 
         for (const auto& param : ht.ht_parameters) {
@@ -375,7 +379,7 @@ format_help_text_for_term(const help_text& ht,
                 .append("\n");
         }
     }
-    if (!synopsis_only && !ht.ht_results.empty()) {
+    if (htc == help_text_content::full && !ht.ht_results.empty()) {
         size_t max_result_name_width = 0;
 
         for (const auto& result : ht.ht_results) {
@@ -400,7 +404,7 @@ format_help_text_for_term(const help_text& ht,
                 .append("\n");
         }
     }
-    if (!synopsis_only && !ht.ht_tags.empty()) {
+    if (htc == help_text_content::full && !ht.ht_tags.empty()) {
         auto related_help = get_related(ht);
         auto related_refs = std::vector<std::string>();
 

@@ -49,6 +49,7 @@
 #include "readline_highlighters.hh"
 #include "relative_time.hh"
 #include "sql_util.hh"
+#include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
 const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
@@ -574,8 +575,10 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                         this->lss_token_line);
             if (eval_res.isErr()) {
                 color = COLOR_YELLOW;
-                value_out.emplace_back(line_range{0, -1},
-                                       SA_ERROR.value(eval_res.unwrapErr()));
+                value_out.emplace_back(
+                    line_range{0, -1},
+                    SA_ERROR.value(
+                        eval_res.unwrapErr().to_attr_line().get_string()));
             } else {
                 auto matched = eval_res.unwrap();
 
@@ -601,7 +604,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 auto msg = fmt::format(
                     FMT_STRING(
                         "filter expression evaluation failed with -- {}"),
-                    eval_res.unwrapErr());
+                    eval_res.unwrapErr().to_attr_line().get_string());
                 auto color = COLOR_YELLOW;
                 value_out.emplace_back(line_range{0, -1}, SA_ERROR.value(msg));
                 value_out.emplace_back(line_range{0, 1},
@@ -1251,7 +1254,7 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
     return true;
 }
 
-Result<void, std::string>
+Result<void, lnav::console::user_message>
 logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 {
     for (auto& filt : this->tss_filters) {
@@ -1294,7 +1297,7 @@ logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
     return Ok();
 }
 
-Result<void, std::string>
+Result<void, lnav::console::user_message>
 logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
 {
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
@@ -1351,7 +1354,7 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
     return Ok();
 }
 
-Result<void, std::string>
+Result<void, lnav::console::user_message>
 logfile_sub_source::set_preview_sql_filter(sqlite3_stmt* stmt)
 {
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
@@ -1371,7 +1374,7 @@ logfile_sub_source::set_preview_sql_filter(sqlite3_stmt* stmt)
     return Ok();
 }
 
-Result<bool, std::string>
+Result<bool, lnav::console::user_message>
 logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
                                     iterator ld,
                                     logfile::const_iterator ll)
@@ -1592,7 +1595,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
         case SQLITE_ROW:
             return Ok(true);
         default:
-            return Err(std::string(sqlite3_errmsg(sqlite3_db_handle(stmt))));
+            return Err(sqlite3_error_to_user_message(sqlite3_db_handle(stmt)));
     }
 
     return Ok(true);

@@ -479,7 +479,11 @@ filter_sub_source::rl_change(readline_curses* rc)
 
                 if (set_res.isErr()) {
                     lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                        "error: %s", set_res.unwrapErr().c_str());
+                        "error: %s",
+                        set_res.unwrapErr()
+                            .to_attr_line()
+                            .get_string()
+                            .c_str());
                 } else {
                     top_view->set_needs_update();
                     lnav_data.ld_filter_help_status_source.fss_error.clear();

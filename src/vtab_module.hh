@@ -38,12 +38,18 @@
 
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
+#include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
 #include "sqlite-extension-func.hh"
+
+extern const char* LNAV_SQLITE_ERROR_PREFIX;
+
+lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
 
 struct from_sqlite_conversion_error : std::exception {
     from_sqlite_conversion_error(const char* type, int argi)
@@ -217,6 +223,8 @@ struct from_sqlite<vtab_types::nullable<T>> {
         return {from_sqlite<T*>()(argc, val, argi)};
     }
 };
+
+void to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um);
 
 inline void
 to_sqlite(sqlite3_context* ctx, const char* str)
@@ -408,7 +416,16 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
                      e.e_argi);
             sqlite3_result_error(context, buffer, -1);
         } catch (const std::exception& e) {
-            sqlite3_result_error(context, e.what(), -1);
+            const auto* fd = (const FuncDef*) sqlite3_user_data(context);
+            attr_line_t error_al;
+            error_al.append("call to ");
+            format_help_text_for_term(
+                fd->fd_help, 40, error_al, help_text_content::synopsis);
+            error_al.append(" failed");
+            auto um = lnav::console::user_message::error(error_al).with_reason(
+                e.what());
+
+            to_sqlite(context, um);
         } catch (...) {
             sqlite3_result_error(
                 context, "Function threw an unexpected exception", -1);

@@ -1839,10 +1839,7 @@ vt_update(sqlite3_vtab* tab,
                                          .append(" column of table ")
                                          .append_quoted(lnav::roles::symbol(
                                              vt->vi->get_name().to_string())))
-                                     .with_reason(errors[0].to_attr_line({}))
-                                     .with_snippet(lnav::console::snippet::from(
-                                         log_vtab_data.lvd_location,
-                                         log_vtab_data.lvd_content));
+                                     .with_reason(errors[0].to_attr_line({}));
                 auto json_error = lnav::to_json(top_error);
                 tab->zErrMsg
                     = sqlite3_mprintf("lnav-error:%s", json_error.c_str());

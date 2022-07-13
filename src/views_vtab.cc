@@ -39,6 +39,7 @@
 #include "base/opt_util.hh"
 #include "config.h"
 #include "lnav.hh"
+#include "lnav_util.hh"
 #include "sql_util.hh"
 #include "view_curses.hh"
 #include "vtab_module_json.hh"
@@ -690,8 +691,11 @@ CREATE TABLE lnav_view_filters (
                 auto set_res = lnav_data.ld_log_source.set_sql_filter(
                     clause, stmt.release());
                 if (set_res.isErr()) {
-                    throw sqlite_func_error("filter expression failed with: {}",
-                                            set_res.unwrapErr());
+                    tab->zErrMsg = sqlite3_mprintf(
+                        "%s%s",
+                        LNAV_SQLITE_ERROR_PREFIX,
+                        lnav::to_json(set_res.unwrapErr()).c_str());
+                    return SQLITE_ERROR;
                 }
                 tf = lnav_data.ld_log_source.get_sql_filter().value();
                 break;
@@ -787,8 +791,11 @@ CREATE TABLE lnav_view_filters (
             auto set_res = lnav_data.ld_log_source.set_sql_filter(
                 clause, stmt.release());
             if (set_res.isErr()) {
-                throw sqlite_func_error("filter expression failed with: {}",
-                                        set_res.unwrapErr());
+                tab->zErrMsg = sqlite3_mprintf(
+                    "%s%s",
+                    LNAV_SQLITE_ERROR_PREFIX,
+                    lnav::to_json(set_res.unwrapErr()).c_str());
+                return SQLITE_ERROR;
             }
             *iter = lnav_data.ld_log_source.get_sql_filter().value();
         } else {

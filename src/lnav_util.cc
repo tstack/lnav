@@ -256,6 +256,8 @@ read_string_attr_type(yajlpp_parse_context* ypc,
 
     if (type == "role") {
         sa->sa_type = &VC_ROLE;
+    } else if (type == "preformatted") {
+        sa->sa_type = &SA_PREFORMATTED;
     } else {
         ensure(false);
     }
