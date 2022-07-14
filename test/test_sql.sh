@@ -5,6 +5,9 @@ export YES_COLOR=1
 lnav_test="${top_builddir}/src/lnav-test"
 unset XDG_CONFIG_HOME
 
+run_cap_test ${lnav_test} -nN \
+    -c ";SELECT 1 = ?"
+
 run_cap_test ${lnav_test} -n \
     -c ";.read nonexistent-file" \
     ${test_dir}/logfile_empty.0

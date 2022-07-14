@@ -98,6 +98,10 @@
                 "pattern": "/SessionStats/SessionPool/Session/Id='(?<SessionId>[^']+)'/Username='(?<Username>[^']+)'/ClientIP='(?<ClientIP>[^']+)'(?<ProfileKey>[^ ]+) (?<ProfileValue>[^\\n]+)",
                 "glob": "*/vpxd-profile*"
             },
+            "vpxd_session_pool_stats": {
+                "pattern": "/SessionStats/SessionPool/Id='(?<SessionId>[^']+)'/Username='(?<Username>[^']+)'(?<ProfileKey>[^ ]+) (?<ProfileValue>[^\\n]+)",
+                "glob": "*/vpxd-profile*"
+            },
             "vpx_lro_begin": {
                 "pattern": "\\[VpxLRO\\] -- BEGIN (?<lro_id>\\S+) -- (?<entity>\\S*) -- (?<operation>\\S*) -- (?:(?<SessionId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\\((?<SessionSubId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\))?)?"
             },

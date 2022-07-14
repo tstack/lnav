@@ -177,15 +177,27 @@ Log level
 ^^^^^^^^^
 
 To hide messages below a certain log level, you can use the
-:ref:`:set-min-log-level<set_min_log_level>`.
+:ref:`:set-min-log-level<set_min_log_level>` command.
 
 .. _search_tables:
 
 Search Tables
 -------------
 
-TBD
+Search tables allow you to access arbitrary data in log messages through
+SQLite virtual tables.  If there is some data in a log message that you can
+match with a regular expression, you can create a search-table that matches
+that data and any capture groups will be plumbed through as columns in the
+search table.
 
+Creating a search table can be done interactively using the
+:ref:`:create-search-table<create_search_table>` command or by adding it to
+a :ref:`log format definition<log_formats>`.  The main difference between
+the two is that tables defined as part of a format will only search messages
+from log files with that format and the tables will include log message
+columns defined in that format.  Whereas a table created with the command
+will search messages from all different formats and no format-specific
+columns will be included in the table.
 
 .. _taking_notes:
 

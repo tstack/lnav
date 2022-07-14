@@ -209,6 +209,22 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         for (int lpc = 0; lpc < param_count; lpc++) {
             std::map<std::string, std::string>::iterator ov_iter;
             const auto* name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
+            if (name == nullptr) {
+                auto um
+                    = lnav::console::user_message::error(
+                          "invalid SQL statement")
+                          .with_reason(
+                              "using a question-mark (?) for bound variables "
+                              "is not supported, only named bound parameters "
+                              "are supported")
+                          .with_help(
+                              "named parameters start with a dollar-sign "
+                              "($) or colon (:) followed by the variable name");
+                ec.add_error_context(um);
+
+                return Err(um);
+            }
+
             ov_iter = ec.ec_override.find(name);
             if (ov_iter != ec.ec_override.end()) {
                 sqlite3_bind_text(stmt.in(),
