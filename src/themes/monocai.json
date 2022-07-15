@@ -204,6 +204,10 @@
                         "background-color": "#66d9ee",
                         "bold": true
                     },
+                    "info": {
+                        "color": "#aaa",
+                        "background-color": "#353535"
+                    },
                     "title-hotkey": {
                         "color": "$black",
                         "background-color": "#5394ec",

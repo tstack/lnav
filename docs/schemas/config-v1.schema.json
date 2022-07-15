@@ -560,6 +560,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/subtitle",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "info": {
+                                            "description": "Styling for informational messages in status bars",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/info",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "hotkey": {
                                             "description": "Styling for hotkey highlights of status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/hotkey",

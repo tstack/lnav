@@ -1,7 +1,12 @@
 lnav v0.10.2:
      Features:
-     * Redesigned the top status bar to make it display breadcrumbs that
-       are interactive.  Pressing ENTER will activate the breadcrumb bar
+     * Redesigned the top status area to allow for user-specified
+       messages and added a second line that displays an interactive
+       breadcrumb bar.  The top status line now shows the clock and
+       the remaining area displays whatever messages are inserted
+       into the lnav_user_notifications table.  The information that
+       was originally on top is now in a second line and organized
+       as breadcrumbs.  Pressing ENTER will activate the breadcrumb bar
        and the left/right cursor keys can be used to select a particular
        crumb while the up/down keys can select a value to switch to.
        While a crumb is selected, you can also type in some text to do

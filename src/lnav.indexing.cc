@@ -81,6 +81,7 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
     if (isendwin()) {
         return;
     }
+    lnav_data.ld_top_source.update_time();
     for (auto& sc : lnav_data.ld_status) {
         sc.do_update();
     }

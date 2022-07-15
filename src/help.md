@@ -15,12 +15,12 @@ efficiently zero in on problems.
 
 ## Opening Paths/URLs
 
-The main arguments to lnav are the files, directories, glob patterns,
-or URLs to be viewed. If no arguments are given, the default syslog
-file for your system will be opened. These arguments will be polled
-periodically so that any new data or files will be automatically
-loaded. If a previously loaded file is removed or replaced, it will
-be closed and the replacement opened.
+The main arguments to lnav are the local/remote files, directories,
+glob patterns, or URLs to be viewed. If no arguments are given, the
+default syslog file for your system will be opened. These arguments
+will be polled periodically so that any new data or files will be
+automatically loaded. If a previously loaded file is removed or
+replaced, it will be closed and the replacement opened.
 
 Note: When opening SFTP URLs, if the password is not provided for the
 host, the SSH agent can be used to do authentication.
@@ -118,31 +118,58 @@ display has a proportionally sized 'scroll bar' that indicates your
 current position in the files. The scroll bar will also show areas of
 the file where warnings or errors are detected by coloring the bar
 yellow or red, respectively. Tick marks will also be added to the
-left and right hand side of the bar, for search hits and bookmarks.
+left and right-hand side of the bar, for search hits and bookmarks.
 
-A bar on the left side is color coded and broken up to indicate which
-messages are from the same file. Pressing the left-arrow or `h` will
-reveal the source file names for each message and pressing again will
-show the full paths.
+The bar on the left side indicates the file the log message is from. A
+break in the bar means that the next log message comes from a different
+file. The color of the bar is derived from the file name. Pressing the
+left-arrow or `h` will reveal the source file names for each message and
+pressing again will show the full paths.
 
-Above and below the main body are status lines that display:
+Above and below the main body are status lines that display a variety
+of information. The top line displays:
 
-* the current time;
-* the name of the file the top line was pulled from;
-* the log format for the top line;
-* the current view;
-* the line number for the top line in the display;
-* the current search hit, the total number of hits, and the search term;
+* The current time, configurable by the `/ui/clock-format` property.
+* The highest priority message from the `lnav_user_notifications` table.
+  You can insert rows into this table to display your own status messages.
+  The default message displayed on startup explains how to focus on the
+  next status line at the top, which is an interactive breadcrumb bar.
+
+The second status line at the top display breadcrumbs for the top line
+in the main view. Pressing `ENTER` will focus input on the breadcrumb
+bar, the cursor keys can be used to select a breadcrumb. The common
+breadcrumbs are:
+
+* The name of the current view.
+* In the log view, the timestamp of the top log message.
+* In the log view, the format of the log file the top log message is from.
+* The name of the file the top line was pulled from.
+* If the top line is within a larger chunk of structured data, the path to
+  the value in the top line will be shown.
+
+Notes:
+
+1. Pressing `CTRL-A`/`CTRL-E` will select the first/last breadcrumb.
+1. Typing text while a breadcrumb is selected will perform a fuzzy
+   search on the possibilities.
+
+The bottom status bar displays:
+
+* The line number for the top line in the display.
+* The current search hit, the total number of hits, and the search term.
 
 If the view supports filtering, there will be a status line showing the
 following:
 
-* the number of enabled filters and the total number of filters;
-* the number of lines not displayed because of filtering.
+* The number of enabled filters and the total number of filters.
+* The number of lines not displayed because of filtering.
 
 To edit the filters, you can press TAB to change the focus from the main
 view to the filter editor. The editor allows you to create, enable/disable,
 and delete filters easily.
+
+Along with filters, a "Files" panel will also be available for viewing
+and controlling the files that lnav is currently monitoring.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
@@ -169,6 +196,7 @@ that you can always use `q` to pop the top view off of the stack.
 | **q**  | Leave the current view or quit the program when in the log file view.                                                                                                                                                             |
 | Q      | Similar to `q`, except it will try to sync the top time between the current and former views. For example, when leaving the spectrogram view with `Q`, the top time in that view will be matched to the top time in the log view. |
 | TAB    | Toggle focusing on the filter editor or the main view.                                                                                                                                                                            |
+| ENTER  | Focus on the breadcrumb bar.                                                                                                                                                                                                      |
 | a/A    | Restore the view that was previously popped with `q`/`Q`. The `A` hotkey will try to match the top times between the two views.                                                                                                   |
 | X      | Close the current text file or log file.                                                                                                                                                                                          |
 

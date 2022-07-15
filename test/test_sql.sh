@@ -888,7 +888,7 @@ CREATE TABLE lnav_events (
    ts TEXT NOT NULL DEFAULT(strftime('%Y-%m-%dT%H:%M:%f', 'now')),
    content TEXT
 );
-CREATE TABLE http_status_codes (
+CREATE TABLE http_status_codes
 EOF
 
 

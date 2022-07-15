@@ -1,7 +1,7 @@
 {
     "$schema": "https://lnav.org/schemas/config-v1.schema.json",
     "ui" : {
-        "clock-format": "%a %b %d %H:%M:%S %Z",
+        "clock-format": "%Y-%m-%dT%H:%M:%S %Z",
         "dim-text": false,
         "default-colors": true,
         "keymap": "default",

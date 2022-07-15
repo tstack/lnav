@@ -83,6 +83,8 @@ sql_progress(const struct log_cursor& lc)
 
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
         lnav_data.ld_bottom_source.update_loading(off, total);
+        lnav_data.ld_top_source.update_time();
+        lnav_data.ld_status[LNS_TOP].do_update();
         lnav_data.ld_status[LNS_BOTTOM].do_update();
         refresh();
     }
@@ -98,6 +100,8 @@ sql_progress_finished()
     }
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_top_source.update_time();
+    lnav_data.ld_status[LNS_TOP].do_update();
     lnav_data.ld_status[LNS_BOTTOM].do_update();
     lnav_data.ld_views[LNV_DB].redo_search();
 }

@@ -1,8 +1,9 @@
-CREATE TABLE IF NOT EXISTS http_status_codes (
-    status integer PRIMARY KEY,
-    message text,
+CREATE TABLE IF NOT EXISTS http_status_codes
+(
+    status  INTEGER PRIMARY KEY,
+    message TEXT,
 
-    FOREIGN KEY(status) REFERENCES access_log(sc_status)
+    FOREIGN KEY (status) REFERENCES access_log (sc_status)
 );
 
 INSERT INTO http_status_codes VALUES (100, 'Continue');
@@ -65,33 +66,56 @@ INSERT INTO http_status_codes VALUES (508, 'Loop Detected');
 INSERT INTO http_status_codes VALUES (510, 'Not Extended');
 INSERT INTO http_status_codes VALUES (511, 'Network Authentication Required');
 
-CREATE TABLE lnav_example_log (
-  log_line        INTEGER PRIMARY KEY,
-  log_part        TEXT collate naturalnocase,
-  log_time        datetime,
-  log_actual_time datetime hidden,
-  log_idle_msecs  int,
-  log_level       TEXT collate loglevel,
-  log_mark        boolean,
-  log_comment     TEXT,
-  log_tags        TEXT,
-  log_filters     TEXT,
+CREATE TABLE lnav_example_log
+(
+    log_line        INTEGER PRIMARY KEY,
+    log_part        TEXT collate naturalnocase,
+    log_time        datetime,
+    log_actual_time datetime hidden,
+    log_idle_msecs  int,
+    log_level       TEXT collate loglevel,
+    log_mark        boolean,
+    log_comment     TEXT,
+    log_tags        TEXT,
+    log_filters     TEXT,
 
-  ex_procname     TEXT collate 'BINARY',
-  ex_duration     INTEGER,
+    ex_procname     TEXT collate 'BINARY',
+    ex_duration     INTEGER,
 
-  log_time_msecs  int hidden,
-  log_path        TEXT hidden collate naturalnocase,
-  log_text        TEXT hidden,
-  log_body        TEXT hidden
+    log_time_msecs  int hidden,
+    log_path        TEXT hidden collate naturalnocase,
+    log_text        TEXT hidden,
+    log_body        TEXT hidden
 );
 
 CREATE VIEW lnav_top_view AS
-    SELECT * FROM lnav_views WHERE name = (
-        SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
+SELECT *
+FROM lnav_views
+WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
-INSERT INTO lnav_example_log VALUES
-    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, null, null, null, 'hw', 2, 1486094706000, '/tmp/log', '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
-    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, null, null, null, 'gw', 4, 1486094706000, '/tmp/log', '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
-    (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, null, null, null, 'gw', 1, 1486095906000, '/tmp/log', '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
-    (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, null, null, null, 'gw', 10, 1486097706000, '/tmp/log', '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');
+INSERT INTO lnav_example_log
+VALUES (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
+        'info', 0, null, null, null, 'hw', 2, 1486094706000, '/tmp/log',
+        '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
+       (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100,
+        'error', 0, null, null, null, 'gw', 4, 1486094706000, '/tmp/log',
+        '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
+       (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000,
+        'warn', 0, null, null, null, 'gw', 1, 1486095906000, '/tmp/log',
+        '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
+       (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000,
+        'debug', 0, null, null, null, 'gw', 10, 1486097706000, '/tmp/log',
+        '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');
+
+CREATE TABLE lnav_user_notifications
+(
+    id         TEXT     NOT NULL DEFAULT 'org.lnav.unknown',
+    priority   INTEGER  NOT NULL DEFAULT 0,
+    created    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expiration DATETIME          DEFAULT NULL,
+    message    TEXT
+);
+
+INSERT INTO lnav_user_notifications (id, priority, expiration, message)
+VALUES ('org.lnav.breadcrumb.help.focus', -1, datetime('now', '+1 minute'),
+        'Press ENTER to focus on the breadcrumb bar');

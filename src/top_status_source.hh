@@ -39,12 +39,7 @@ class top_status_source : public status_data_source {
 public:
     typedef enum {
         TSF_TIME,
-        TSF_PARTITION_NAME,
-        TSF_VIEW_NAME,
-        TSF_STITCH_VIEW_FORMAT,
-        TSF_FORMAT,
-        TSF_STITCH_FORMAT_FILENAME,
-        TSF_FILENAME,
+        TSF_USER_MSG,
 
         TSF__MAX
     } field_t;
@@ -62,9 +57,7 @@ public:
 
     void update_time();
 
-    void update_filename(listview_curses* lc);
-
-    void update_view_name(listview_curses* lc);
+    void update_user_msg();
 
 private:
     status_field tss_fields[TSF__MAX];

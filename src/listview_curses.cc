@@ -583,8 +583,18 @@ void
 listview_curses::set_selection(vis_line_t sel)
 {
     if (this->lv_selectable) {
+        if (this->lv_selection == sel) {
+            return;
+        }
+        if (sel == -1_vl) {
+            this->lv_selection = sel;
+            this->lv_source->listview_selection_changed(*this);
+            this->set_needs_update();
+            return;
+        }
+
         auto inner_height = this->get_inner_height();
-        if (this->lv_selection != sel && sel >= 0_vl && sel < inner_height) {
+        if (sel >= 0_vl && sel < inner_height) {
             auto found = false;
             vis_line_t step;
 

@@ -879,6 +879,12 @@ view_colors::init_roles(const lnav_theme& lt,
                          lt.lt_style_status_subtitle,
                          lt.lt_style_status,
                          reporter);
+    this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_STATUS_INFO)]
+        = this->to_attrs(color_pair_base,
+                         lt,
+                         lt.lt_style_status_info,
+                         lt.lt_style_status,
+                         reporter);
 
     this->vc_role_colors[lnav::enums::to_underlying(role_t::VCR_STATUS_HOTKEY)]
         = this->to_attrs(color_pair_base,

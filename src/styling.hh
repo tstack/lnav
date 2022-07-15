@@ -183,6 +183,7 @@ struct lnav_theme {
     style_config lt_style_status_title_hotkey;
     style_config lt_style_status_disabled_title;
     style_config lt_style_status_subtitle;
+    style_config lt_style_status_info;
     style_config lt_style_status_hotkey;
     style_config lt_style_quoted_code;
     style_config lt_style_code_border;

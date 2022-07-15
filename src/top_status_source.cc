@@ -29,40 +29,28 @@
 
 #include "top_status_source.hh"
 
+#include <sqlite3.h>
+
+#include "base/injector.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "lnav_config.hh"
 #include "logfile_sub_source.hh"
+#include "sql_util.hh"
 
 top_status_source::top_status_source()
 {
     this->tss_fields[TSF_TIME].set_width(28);
-    this->tss_fields[TSF_PARTITION_NAME].set_width(34);
-    this->tss_fields[TSF_PARTITION_NAME].set_left_pad(1);
-    this->tss_fields[TSF_VIEW_NAME].set_width(8);
-    this->tss_fields[TSF_VIEW_NAME].set_role(role_t::VCR_STATUS_TITLE);
-    this->tss_fields[TSF_VIEW_NAME].right_justify(true);
-    this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
-    this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(
-        role_t::VCR_STATUS_STITCH_SUB_TO_TITLE,
-        role_t::VCR_STATUS_STITCH_TITLE_TO_SUB);
-    this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
-    this->tss_fields[TSF_FORMAT].set_width(20);
-    this->tss_fields[TSF_FORMAT].set_role(role_t::VCR_STATUS_SUBTITLE);
-    this->tss_fields[TSF_FORMAT].right_justify(true);
-    this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
-    this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(
-        role_t::VCR_STATUS_STITCH_NORMAL_TO_SUB,
-        role_t::VCR_STATUS_STITCH_SUB_TO_NORMAL);
-    this->tss_fields[TSF_STITCH_FORMAT_FILENAME].right_justify(true);
-    this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
-    this->tss_fields[TSF_FILENAME].set_share(1);
-    this->tss_fields[TSF_FILENAME].right_justify(true);
+    this->tss_fields[TSF_TIME].set_role(role_t::VCR_STATUS_INFO);
+    this->tss_fields[TSF_USER_MSG].set_share(1);
+    this->tss_fields[TSF_USER_MSG].right_justify(true);
+    this->tss_fields[TSF_USER_MSG].set_role(role_t::VCR_STATUS_INFO);
 }
 
 void
 top_status_source::update_time(const timeval& current_time)
 {
-    status_field& sf = this->tss_fields[TSF_TIME];
+    auto& sf = this->tss_fields[TSF_TIME];
     char buffer[32];
 
     buffer[0] = ' ';
@@ -82,64 +70,76 @@ top_status_source::update_time()
     this->update_time(tv);
 }
 
+struct user_msg_stmt {
+    user_msg_stmt()
+    {
+        static const char* MSG_QUERY = R"(
+SELECT message FROM lnav_user_notifications
+  WHERE expiration IS NULL OR expiration > datetime('now')
+  ORDER BY priority DESC
+  LIMIT 1
+)";
+
+        auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                                      sqlite_db_tag>();
+
+        auto retcode = sqlite3_prepare_v2(
+            lnav_db, MSG_QUERY, -1, this->ums_stmt.out(), nullptr);
+
+        ensure(retcode == SQLITE_OK);
+    }
+
+    auto_mem<sqlite3_stmt> ums_stmt{sqlite3_finalize};
+};
+
 void
-top_status_source::update_filename(listview_curses* lc)
+top_status_source::update_user_msg()
 {
-    auto& sf_partition = this->tss_fields[TSF_PARTITION_NAME];
-    auto& sf_format = this->tss_fields[TSF_FORMAT];
-    auto& sf_filename = this->tss_fields[TSF_FILENAME];
+    static user_msg_stmt um_stmt;
+    static auto& lnav_db
+        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                        sqlite_db_tag>();
 
-    if (lc->get_inner_height() > 0) {
-        std::vector<attr_line_t> rows(1);
+    auto& al = this->tss_fields[TSF_USER_MSG].get_value();
+    al.clear();
 
-        lc->get_data_source()->listview_value_for_rows(
-            *lc, lc->get_top(), rows);
-        auto& sa = rows[0].get_attrs();
-        auto file_attr_opt = get_string_attr(sa, logline::L_FILE);
-        if (file_attr_opt) {
-            auto lf = file_attr_opt.value().get();
+    auto* stmt = um_stmt.ums_stmt.in();
+    sqlite3_reset(stmt);
 
-            if (lf->get_format()) {
-                sf_format.set_value("% 13s",
-                                    lf->get_format()->get_name().get());
-            } else if (!lf->get_filename().empty()) {
-                sf_format.set_value("% 13s", "plain text");
-            } else {
-                sf_format.clear();
+    auto count = sqlite3_bind_parameter_count(stmt);
+    for (int lpc = 0; lpc < count; lpc++) {
+        const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+
+        if (name[0] == '$') {
+            const char* env_value;
+
+            if ((env_value = getenv(&name[1])) != nullptr) {
+                sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
             }
-
-            if (sf_filename.get_width() > (ssize_t) lf->get_filename().length())
-            {
-                sf_filename.set_value(lf->get_filename());
-            } else {
-                sf_filename.set_value(lf->get_unique_path());
-            }
-        } else {
-            sf_format.clear();
-            sf_filename.clear();
-        }
-
-        auto part_attr_opt = get_string_attr(sa, logline::L_PARTITION);
-        if (part_attr_opt) {
-            auto bm = part_attr_opt.value().get();
-
-            sf_partition.set_value(bm->bm_name.c_str());
-        } else {
-            sf_partition.clear();
-        }
-    } else {
-        sf_format.clear();
-        if (lc->get_data_source() != nullptr) {
-            sf_filename.set_value(
-                lc->get_data_source()->listview_source_name(*lc));
+            continue;
         }
     }
-}
 
-void
-top_status_source::update_view_name(listview_curses* lc)
-{
-    status_field& sf_view_name = this->tss_fields[TSF_VIEW_NAME];
+    auto step_res = sqlite3_step(stmt);
 
-    sf_view_name.set_value("%s ", lc->get_title().c_str());
+    switch (step_res) {
+        case SQLITE_OK:
+        case SQLITE_DONE:
+            break;
+        case SQLITE_ROW: {
+            int ncols = sqlite3_column_count(stmt);
+            for (int lpc = 0; lpc < ncols; lpc++) {
+                const auto* text = (const char*) sqlite3_column_text(stmt, lpc);
+
+                al.with_ansi_string(text);
+                al.append(" ");
+            }
+            break;
+        }
+        default: {
+            log_error("failed to execute user-message expression: %s",
+                      sqlite3_errmsg(lnav_db));
+            break;
+        }
+    }
 }

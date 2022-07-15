@@ -1,1 +1,1 @@
-/ui/clock-format = "%a %b %d %H:%M:%S %Z"
+/ui/clock-format = "%Y-%m-%dT%H:%M:%S %Z"

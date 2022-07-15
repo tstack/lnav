@@ -1170,7 +1170,7 @@ looper()
 
         vsb.push_back(sb);
 
-        breadcrumb_view.set_y(0);
+        breadcrumb_view.set_y(1);
         breadcrumb_view.set_window(lnav_data.ld_window);
         breadcrumb_view.set_line_source(lnav_crumb_source);
         auto event_handler = [](auto&& tc) {
@@ -1182,7 +1182,7 @@ looper()
         };
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
-            lnav_data.ld_views[lpc].set_y(1);
+            lnav_data.ld_views[lpc].set_y(2);
             lnav_data.ld_views[lpc].set_height(
                 vis_line_t(-(rlc->get_height() + 1)));
             lnav_data.ld_views[lpc].set_scroll_action(sb);
@@ -1232,6 +1232,8 @@ looper()
         lnav_data.ld_spectro_source->ss_exec_context
             = &lnav_data.ld_exec_context;
 
+        lnav_data.ld_status[LNS_TOP].set_top(0);
+        lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
         for (auto& sc : lnav_data.ld_status) {
             sc.set_window(lnav_data.ld_window);
@@ -1338,6 +1340,7 @@ looper()
 
             gettimeofday(&current_time, nullptr);
 
+            lnav_data.ld_top_source.update_time(current_time);
             lnav_data.ld_preview_view.set_needs_update();
 
             layout_views();
@@ -1444,6 +1447,7 @@ looper()
             lnav_data.ld_spectro_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
+                lnav_data.ld_top_source.update_user_msg();
                 for (auto& sc : lnav_data.ld_status) {
                     sc.do_update();
                 }
@@ -1594,13 +1598,13 @@ looper()
                     next_rebuild_time = next_rescan_time;
                 }
 
-                ps->check_poll_set(pollfds);
-                lnav_data.ld_view_stack.top() |
-                    [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
-
                 auto old_mode = lnav_data.ld_mode;
                 auto old_file_names_size
                     = lnav_data.ld_active_files.fc_file_names.size();
+
+                ps->check_poll_set(pollfds);
+                lnav_data.ld_view_stack.top() |
+                    [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
 
                 if (lnav_data.ld_mode != old_mode) {
                     switch (lnav_data.ld_mode) {

@@ -70,6 +70,7 @@
 #include "sql_util.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
+#include "top_status_source.hh"
 #include "view_helpers.hh"
 
 class spectrogram_source;
@@ -92,6 +93,7 @@ extern const std::vector<std::string> lnav_zoom_strings;
 
 /** The status bars. */
 typedef enum {
+    LNS_TOP,
     LNS_BOTTOM,
     LNS_FILTER,
     LNS_FILTER_HELP,
@@ -195,6 +197,7 @@ struct lnav_data_t {
     ln_mode_t ld_last_config_mode{ln_mode_t::FILTER};
 
     statusview_curses ld_status[LNS__MAX];
+    top_status_source ld_top_source;
     bottom_status_source ld_bottom_source;
     filter_status_source ld_filter_status_source;
     filter_help_status_source ld_filter_help_status_source;
