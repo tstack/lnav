@@ -93,7 +93,7 @@ Options
    Do not print the log messages after executing all of the commands.
 
 
-Management Mode (v0.10.2+)
+Management Mode (v0.11.0+)
 --------------------------
 
 The management CLI mode provides functionality for query **lnav**'s log

@@ -1,4 +1,4 @@
-lnav v0.10.2:
+lnav v0.11.0:
      Features:
      * Redesigned the top status area to allow for user-specified
        messages and added a second line that displays an interactive

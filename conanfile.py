@@ -4,7 +4,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps
 
 class LnavConan(ConanFile):
     name = "lnav"
-    version = "0.10.2"
+    version = "0.11.0"
     homepage = "https://lnav.org"
     url = "https://github.com/tstack/lnav.git"
     license = "BSD-2-Clause"

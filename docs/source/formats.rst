@@ -55,7 +55,7 @@ own formats or if you need to modify existing ones.  Format directories can
 also contain '.sql' and '.lnav' script files that can be used automate log file
 analysis.
 
-Creating a Format Using Regex101.com (v0.10.2+)
+Creating a Format Using Regex101.com (v0.11.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For plain-text log files, the easiest way to create a log format definition is

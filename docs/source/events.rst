@@ -1,6 +1,6 @@
 .. _Events:
 
-Events (v0.10.2+)
+Events (v0.11.0+)
 =================
 
 The events mechanism allows **lnav** to be automated based on events that

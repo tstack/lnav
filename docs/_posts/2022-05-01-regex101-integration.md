@@ -4,7 +4,7 @@ title: Integration with regex101.com
 excerpt: Create/edit format files using regex101.com
 ---
 
-*(This change will be in the upcoming v0.10.2 release)*
+*(This change will be in the upcoming v0.11.0 release)*
 
 Creating and updating format files for **lnav** can be a bit tedious and
 error-prone. To help streamline the process, an integration with regex101.com
