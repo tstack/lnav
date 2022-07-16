@@ -4,7 +4,7 @@ include $(top_srcdir)/aminclude_static.am
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
-BUILT_SOURCES = tailerbin.h tailerbin.cc
+BUILT_SOURCES = tailerbin.cc
 
 AM_CPPFLAGS = \
 	-Wall \
