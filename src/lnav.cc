@@ -1329,7 +1329,19 @@ looper()
         auto next_status_update_time = next_rebuild_time;
         auto next_rescan_time = next_rebuild_time;
 
-        auto echo_views_stmt = prepare_stmt(lnav_data.ld_db, R"(
+        auto echo_views_stmt = prepare_stmt(lnav_data.ld_db,
+#if SQLITE_VERSION_NUMBER < 3033000
+                                            R"(
+UPDATE lnav_views_echo
+  SET top = (SELECT top FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+      left = (SELECT left FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+      height = (SELECT height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+      inner_height = (SELECT inner_height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+      top_time = (SELECT top_time FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+      search = (SELECT search FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name)
+)"
+#else
+                                            R"(
 UPDATE lnav_views_echo
   SET top = orig.top,
       left = orig.left,
@@ -1339,7 +1351,9 @@ UPDATE lnav_views_echo
       search = orig.search
   FROM (SELECT * FROM lnav_views) AS orig
   WHERE orig.name = lnav_views_echo.name
-)")
+)"
+#endif
+                                            )
                                    .unwrap();
 
         while (lnav_data.ld_looping) {
