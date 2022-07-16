@@ -484,6 +484,17 @@ CLEANFILES = \
 
 DISTCLEANFILES = \
     $(LNAV_BUILT_FILES) \
+    ansi-palette-json.h \
+    builtin-scripts.h \
+    builtin-sh-scripts.h \
+    default-config.h \
+    default-formats.h \
+    emojis-json.h \
+    help-md.h \
+    init-sql.h \
+    time_fmts.h \
+    xml-entities-json.h \
+    xterm-palette-json.h \
 	$(RE2C_FILES)
 
 distclean-local:
