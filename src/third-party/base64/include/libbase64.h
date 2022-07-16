@@ -4,21 +4,9 @@
 #include <stddef.h>	/* size_t */
 
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define BASE64_SYMBOL_IMPORT __declspec(dllimport)
-#define BASE64_SYMBOL_EXPORT __declspec(dllexport)
-#define BASE64_SYMBOL_PRIVATE
-
-#elif __GNUC__ >= 4
-#define BASE64_SYMBOL_IMPORT   __attribute__ ((visibility ("default")))
-#define BASE64_SYMBOL_EXPORT   __attribute__ ((visibility ("default")))
-#define BASE64_SYMBOL_PRIVATE  __attribute__ ((visibility ("hidden")))
-
-#else
 #define BASE64_SYMBOL_IMPORT
 #define BASE64_SYMBOL_EXPORT
 #define BASE64_SYMBOL_PRIVATE
-#endif
 
 #if defined(BASE64_STATIC_DEFINE)
 #define BASE64_EXPORT

@@ -243,7 +243,7 @@ CREATE TABLE lnav_views (
                         sql_strftime(timestamp,
                                      sizeof(timestamp),
                                      top_time_opt.value(),
-                                     'T');
+                                     ' ');
                         sqlite3_result_text(
                             ctx, timestamp, -1, SQLITE_TRANSIENT);
                     } else {
@@ -304,7 +304,7 @@ CREATE TABLE lnav_views (
                             sql_strftime(timestamp,
                                          sizeof(timestamp),
                                          top_time_opt.value(),
-                                         'T');
+                                         ' ');
                             tlm.tlm_time = timestamp;
                         }
                     }

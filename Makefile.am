@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I .
 
-SUBDIRS = src test
+SUBDIRS = tools src test
 
 noinst_SCRIPTS = TESTS_ENVIRONMENT
 

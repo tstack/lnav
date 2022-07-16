@@ -136,16 +136,17 @@ main(int argc, char** argv)
     }
 
     const char* out_base_name = argv[0];
-    char hname[PATH_MAX], cname[PATH_MAX];
+    char hname[PATH_MAX], hname_tmp[PATH_MAX], cname[PATH_MAX];
 
     argc -= 1;
     argv += 1;
 
     snprintf(hname, sizeof(hname), "%s.h", out_base_name);
+    snprintf(hname_tmp, sizeof(hname_tmp), "%s.tmp", hname);
 
-    FILE* hfile = fopen(hname, "wb");
+    FILE* hfile = fopen(hname_tmp, "w+b");
     if (hfile == NULL) {
-        fprintf(stderr, "cannot open %s for writing\n", hname);
+        fprintf(stderr, "cannot open %s for writing\n", hname_tmp);
         exit(1);
     }
 
@@ -174,7 +175,44 @@ main(int argc, char** argv)
         trailer[0] = '\0';
     }
     fprintf(hfile, HEADER_FMT, sym, sym, sym, trailer);
+    fflush(hfile);
+    rewind(hfile);
+
+    int same = 1;
+    {
+        FILE* orig_hfile = fopen(hname, "rb");
+        if (orig_hfile == NULL) {
+            same = 0;
+        } else {
+            while (1) {
+                char orig_line[1024], new_line[1024];
+
+                char* orig_res
+                    = fgets(orig_line, sizeof(orig_line), orig_hfile);
+                char* new_res = fgets(new_line, sizeof(new_line), hfile);
+
+                if (orig_res == NULL && new_res == NULL) {
+                    break;
+                }
+
+                if (orig_res == NULL || new_res == NULL) {
+                    same = 0;
+                    break;
+                }
+
+                if (strcmp(orig_line, new_line) != 0) {
+                    same = 0;
+                    break;
+                }
+            }
+        }
+    }
     fclose(hfile);
+    if (!same) {
+        rename(hname_tmp, hname);
+    } else {
+        remove(hname_tmp);
+    }
 
     fprintf(cfile, "#include \"bin2c.hh\"\n");
     fprintf(cfile, "\n");

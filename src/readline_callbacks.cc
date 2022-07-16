@@ -520,7 +520,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
 void
 rl_search(readline_curses* rc)
 {
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     rl_search_internal(rc, lnav_data.ld_mode);
     tc->set_follow_search_for(0, {});
@@ -878,6 +878,8 @@ rl_focus(readline_curses* rc)
                    .get_overlay_source();
 
     fos->fos_contexts.emplace("", false, true);
+
+    get_textview_for_mode(lnav_data.ld_mode)->save_current_search();
 }
 
 void

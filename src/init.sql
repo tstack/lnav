@@ -109,13 +109,30 @@ VALUES (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
 
 CREATE TABLE lnav_user_notifications
 (
-    id         TEXT     NOT NULL DEFAULT 'org.lnav.unknown',
+    -- A unique identifier for the notification.
+    id         TEXT     NOT NULL DEFAULT 'org.lnav.user' PRIMARY KEY,
+    -- The priority of this message relative to others, the highest priority
+    -- message will be shown in the top-right corner.
     priority   INTEGER  NOT NULL DEFAULT 0,
+    -- The time when this notification was created.
     created    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- The time when this notification is no longer applicable.
     expiration DATETIME          DEFAULT NULL,
-    message    TEXT
+    -- A JSON array with the names of the views where this notification is
+    -- applicable.  Use NULL to show it in all views.
+    views      JSON,
+    -- The message to display, can be null to clear the message.
+    message    TEXT,
+
+    CHECK (views IS NULL OR json_type(views) = 'array')
 );
 
 INSERT INTO lnav_user_notifications (id, priority, expiration, message)
-VALUES ('org.lnav.breadcrumb.help.focus', -1, datetime('now', '+1 minute'),
+VALUES ('org.lnav.breadcrumb.focus', -1, datetime('now', '+1 minute'),
         'Press ENTER to focus on the breadcrumb bar');
+
+CREATE TABLE lnav_views_echo AS
+SELECT name, top, "left", height, inner_height, top_time, search
+FROM lnav_views;
+
+CREATE UNIQUE INDEX lnav_views_echo_index ON lnav_views_echo (name);

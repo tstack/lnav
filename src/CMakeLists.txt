@@ -22,7 +22,7 @@ add_subdirectory(formats/logfmt)
 add_subdirectory(yajl)
 add_subdirectory(yajlpp)
 
-add_executable(bin2c bin2c.hh tools/bin2c.c)
+add_executable(bin2c bin2c.hh ../tools/bin2c.c)
 target_link_libraries(bin2c ZLIB::ZLIB)
 
 add_executable(ptimec ptimec.hh ptimec.c)

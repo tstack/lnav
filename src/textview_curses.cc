@@ -570,7 +570,6 @@ textview_curses::execute_search(const std::string& regex_orig)
         const char* errptr;
         int eoff;
 
-        this->tc_previous_search = this->tc_current_search;
         this->match_reset();
 
         this->tc_search_child.reset();

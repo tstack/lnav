@@ -127,19 +127,18 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
             return true;
         }
 
-        lc.lc_curr_line += 1_vl;
-        lc.lc_sub_index = 0;
+        this->lst_match_index = -1;
+        return false;
     }
 
     this->lst_match_index = -1;
 
-    while (!lc.is_eof() && !this->is_valid(lc, lss)) {
-        lc.lc_curr_line += 1_vl;
-        lc.lc_sub_index = 0;
-    }
-
     if (lc.is_eof()) {
         return true;
+    }
+
+    if (!this->is_valid(lc, lss)) {
+        return false;
     }
 
     auto cl = lss.at(lc.lc_curr_line);
@@ -177,7 +176,9 @@ log_search_table::extract(logfile* lf,
                           shared_buffer_ref& line,
                           std::vector<logline_value>& values)
 {
-    values = this->lst_line_values_cache;
+    if (this->lst_format != nullptr) {
+        values = this->lst_line_values_cache;
+    }
     values.emplace_back(this->lst_column_metas[this->lst_format_column_count],
                         this->lst_match_index);
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {

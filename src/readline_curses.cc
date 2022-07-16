@@ -67,6 +67,7 @@
 #include "spookyhash/SpookyV2.h"
 
 static int got_line = 0;
+static int got_abort = 0;
 static bool alt_done = 0;
 static sig_atomic_t got_timeout = 0;
 static sig_atomic_t got_winch = 0;
@@ -499,6 +500,8 @@ rubout_char_or_abort(int count, int key)
 {
     if (rl_line_buffer[0] == '\0') {
         rl_done = true;
+        got_abort = 1;
+        got_line = 0;
         return 0;
     } else {
         return rl_rubout(count, '\b');
@@ -885,6 +888,7 @@ readline_curses::start()
                                    = this->rc_contexts.find(context))
                                    != this->rc_contexts.end())
                     {
+                        got_abort = 0;
                         current_context->second->load();
                         rl_callback_handler_install(&msg[prompt_start],
                                                     line_ready_tramp);
@@ -1027,7 +1031,7 @@ readline_curses::line_ready(const char* line)
     const char* cmd_ch = alt_done ? "D" : "d";
 
     alt_done = false;
-    if (line == nullptr) {
+    if (got_abort || line == nullptr) {
         snprintf(msg, sizeof(msg), "a");
 
         if (sendstring(this->rc_command_pipe[RCF_SLAVE], msg, strlen(msg))

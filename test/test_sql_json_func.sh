@@ -24,6 +24,10 @@ run_cap_test env TEST_COMMENT='contains1' ./drive_sql <<EOF
 select json_contains('"hi"', 'hi')
 EOF
 
+run_cap_test env TEST_COMMENT='contains1.5' ./drive_sql <<EOF
+select json_contains('"hi"', 'hi there')
+EOF
+
 run_cap_test env TEST_COMMENT='contains2' ./drive_sql <<EOF
 select json_contains('["hi", "bye"]', 'hola') as res
 EOF

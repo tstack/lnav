@@ -2214,8 +2214,8 @@ com_create_search_table(exec_context& ec,
         }
 
         auto re = re_res.unwrap();
-        auto lst = std::make_shared<log_search_table>(
-            re, intern_string::lookup(args[1]));
+        auto tab_name = intern_string::lookup(args[1]);
+        auto lst = std::make_shared<log_search_table>(re, tab_name);
         if (ec.ec_dry_run) {
             textview_curses* tc = &lnav_data.ld_views[LNV_LOG];
             auto& hm = tc->get_highlights();
@@ -2236,6 +2236,11 @@ com_create_search_table(exec_context& ec,
                 text_format_t::TF_SQL);
 
             return Ok(std::string());
+        }
+
+        auto tab_iter = custom_search_tables.find(args[1]);
+        if (tab_iter != custom_search_tables.end()) {
+            lnav_data.ld_vtab_manager->unregister_vtab(tab_name);
         }
 
         std::string errmsg;
@@ -2268,7 +2273,8 @@ com_delete_search_table(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("search-table");
     } else if (args.size() == 2) {
-        if (custom_search_tables.find(args[1]) == custom_search_tables.end()) {
+        auto tab_iter = custom_search_tables.find(args[1]);
+        if (tab_iter == custom_search_tables.end()) {
             return ec.make_error("unknown search table -- {}", args[1]);
         }
 
@@ -2276,7 +2282,8 @@ com_delete_search_table(exec_context& ec,
             return Ok(std::string());
         }
 
-        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(
+        custom_search_tables.erase(tab_iter);
+        auto rc = lnav_data.ld_vtab_manager->unregister_vtab(
             intern_string::lookup(args[1]));
 
         if (rc.empty()) {

@@ -92,7 +92,6 @@ TEXT2C_OBJS = \
 	../src/builtin-scripts.$(OBJEXT) \
 	../src/builtin-sh-scripts.$(OBJEXT) \
 	../src/default-formats.$(OBJEXT) \
-	../src/help-txt.$(OBJEXT) \
 	../src/time_fmts.$(OBJEXT)
 
 LDADD = \

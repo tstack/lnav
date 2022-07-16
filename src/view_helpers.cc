@@ -35,7 +35,6 @@
 #include "document.sections.hh"
 #include "environ_vtab.hh"
 #include "help-md.h"
-#include "help-txt.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"

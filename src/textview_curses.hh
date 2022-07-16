@@ -676,15 +676,14 @@ public:
         }
     }
 
-    std::string get_current_search() const
+    std::string get_current_search() const { return this->tc_current_search; }
+
+    void save_current_search()
     {
-        return this->tc_current_search;
+        this->tc_previous_search = this->tc_current_search;
     }
 
-    void revert_search()
-    {
-        this->execute_search(this->tc_previous_search);
-    }
+    void revert_search() { this->execute_search(this->tc_previous_search); }
 
     void invoke_scroll()
     {

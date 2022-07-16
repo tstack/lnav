@@ -96,7 +96,6 @@
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
 #include "grep_proc.hh"
-#include "help-txt.h"
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
@@ -124,6 +123,7 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
+#include "sqlitepp.client.hh"
 #include "tailer/tailer.looper.hh"
 #include "term_extra.hh"
 #include "termios_guard.hh"
@@ -1329,6 +1329,19 @@ looper()
         auto next_status_update_time = next_rebuild_time;
         auto next_rescan_time = next_rebuild_time;
 
+        auto echo_views_stmt = prepare_stmt(lnav_data.ld_db, R"(
+UPDATE lnav_views_echo
+  SET top = orig.top,
+      left = orig.left,
+      height = orig.height,
+      inner_height = orig.inner_height,
+      top_time = orig.top_time,
+      search = orig.search
+  FROM (SELECT * FROM lnav_views) AS orig
+  WHERE orig.name = lnav_views_echo.name
+)")
+                                   .unwrap();
+
         while (lnav_data.ld_looping) {
             auto loop_deadline
                 = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
@@ -1447,6 +1460,7 @@ looper()
             lnav_data.ld_spectro_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
+                echo_views_stmt.execute();
                 lnav_data.ld_top_source.update_user_msg();
                 for (auto& sc : lnav_data.ld_status) {
                     sc.do_update();

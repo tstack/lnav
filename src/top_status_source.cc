@@ -37,6 +37,7 @@
 #include "lnav_config.hh"
 #include "logfile_sub_source.hh"
 #include "sql_util.hh"
+#include "sqlitepp.client.hh"
 
 top_status_source::top_status_source()
 {
@@ -70,76 +71,48 @@ top_status_source::update_time()
     this->update_time(tv);
 }
 
-struct user_msg_stmt {
-    user_msg_stmt()
-    {
-        static const char* MSG_QUERY = R"(
+static const char* MSG_QUERY = R"(
 SELECT message FROM lnav_user_notifications
-  WHERE expiration IS NULL OR expiration > datetime('now')
+  WHERE message IS NOT NULL AND
+        (expiration IS NULL OR expiration > datetime('now')) AND
+        (views IS NULL OR
+         json_contains(views, (SELECT name FROM lnav_top_view)))
   ORDER BY priority DESC
   LIMIT 1
 )";
 
-        auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                                      sqlite_db_tag>();
-
-        auto retcode = sqlite3_prepare_v2(
-            lnav_db, MSG_QUERY, -1, this->ums_stmt.out(), nullptr);
-
-        ensure(retcode == SQLITE_OK);
+struct user_msg_stmt {
+    user_msg_stmt()
+        : ums_stmt(
+            prepare_stmt(injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                                       sqlite_db_tag>()
+                             .in(),
+                         MSG_QUERY)
+                .unwrap())
+    {
     }
 
-    auto_mem<sqlite3_stmt> ums_stmt{sqlite3_finalize};
+    prepared_stmt ums_stmt;
 };
 
 void
 top_status_source::update_user_msg()
 {
     static user_msg_stmt um_stmt;
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
 
     auto& al = this->tss_fields[TSF_USER_MSG].get_value();
     al.clear();
 
-    auto* stmt = um_stmt.ums_stmt.in();
-    sqlite3_reset(stmt);
-
-    auto count = sqlite3_bind_parameter_count(stmt);
-    for (int lpc = 0; lpc < count; lpc++) {
-        const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
-
-        if (name[0] == '$') {
-            const char* env_value;
-
-            if ((env_value = getenv(&name[1])) != nullptr) {
-                sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
-            }
-            continue;
-        }
-    }
-
-    auto step_res = sqlite3_step(stmt);
-
-    switch (step_res) {
-        case SQLITE_OK:
-        case SQLITE_DONE:
-            break;
-        case SQLITE_ROW: {
-            int ncols = sqlite3_column_count(stmt);
-            for (int lpc = 0; lpc < ncols; lpc++) {
-                const auto* text = (const char*) sqlite3_column_text(stmt, lpc);
-
-                al.with_ansi_string(text);
-                al.append(" ");
-            }
-            break;
-        }
-        default: {
+    um_stmt.ums_stmt.reset();
+    auto fetch_res = um_stmt.ums_stmt.fetch_row<std::string>();
+    fetch_res.match(
+        [&al](const std::string& value) {
+            al.with_ansi_string(value);
+            al.append(" ");
+        },
+        [](const prepared_stmt::end_of_rows&) {},
+        [](const prepared_stmt::fetch_error& fe) {
             log_error("failed to execute user-message expression: %s",
-                      sqlite3_errmsg(lnav_db));
-            break;
-        }
-    }
+                      fe.fe_msg.c_str());
+        });
 }

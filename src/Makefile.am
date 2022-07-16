@@ -3,7 +3,7 @@ include $(top_srcdir)/aminclude_static.am
 
 CXXFLAGS =
 
-SUBDIRS = tools fmtlib third-party/base64/lib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
+SUBDIRS = fmtlib third-party/base64/lib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
 
 bin_PROGRAMS = lnav
 
@@ -23,10 +23,12 @@ RE2C_V = $(RE2C_V_@AM_V@)
 RE2C_V_ = $(RE2C_V_@AM_DEFAULT_V@)
 RE2C_V_0 = @echo "  RE2C   " $@;
 
+BIN2C_PATH = ../tools/bin2c$(BUILD_EXEEXT)
+
 include formats/formats.am
 
-default-formats.h default-formats.cc: tools/bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
+default-formats.cc: $(BIN2C_PATH) $(FORMAT_FILES)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_format_json default-formats $(FORMAT_FILES)
 
 include keymaps/keymaps.am
 include themes/themes.am
@@ -37,34 +39,34 @@ CONFIG_FILES = \
     $(THEME_FILES) \
     $()
 
-default-config.h default-config.cc: tools/bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
+default-config.cc: $(BIN2C_PATH) $(CONFIG_FILES)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_config_json default-config $(CONFIG_FILES)
 
 include scripts/scripts.am
 
-builtin-scripts.h builtin-scripts.cc: tools/bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
+builtin-scripts.cc: $(BIN2C_PATH) $(BUILTIN_LNAVSCRIPTS)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
-builtin-sh-scripts.h builtin-sh-scripts.cc: tools/bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
+builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
 
-%-sh.cc: $(srcdir)/%.sh tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-sh $<
+%-sh.cc: $(srcdir)/%.sh $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-sh $<
 
-%-txt.cc %-txt.h: $(srcdir)/%.txt tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-txt $<
+%-txt.cc: $(srcdir)/%.txt $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-txt $<
 
-%-md.cc %-md.h: $(srcdir)/%.md tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-md $<
+%-md.cc: $(srcdir)/%.md $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-md $<
 
-%-sql.cc %-sql.h: $(srcdir)/%.sql tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-sql $<
+%-sql.cc: $(srcdir)/%.sql $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-sql $<
 
-%-lnav.cc %-lnav.h: $(srcdir)/%.lnav tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-lnav $<
+%-lnav.cc: $(srcdir)/%.lnav $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-lnav $<
 
-%-json.cc %-json.h: $(srcdir)/%.json tools/bin2c$(BUILD_EXEEXT)
-	$(BIN2C_V)tools/bin2c$(BUILD_EXEEXT) $(*)-json $<
+%-json.cc: $(srcdir)/%.json $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-json $<
 
 include time_formats.am
 
@@ -77,43 +79,20 @@ if HAVE_RE2C
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
-lnav_config.$(OBJEXT): default-config.h
-
-log_format_loader.$(OBJEXT): \
-	builtin-scripts.h \
-	builtin-sh-scripts.h \
-	default-formats.h
-
-styling.$(OBJEXT): ansi-palette-json.h xterm-palette-json.h
-
-view_helpers.$(OBJEXT): help-txt.h help-md.h
-
-md4cpp.$(OBJEXT): xml-entities-json.h emojis-json.h
-
 LNAV_BUILT_FILES = \
-    ansi-palette-json.h \
     ansi-palette-json.cc \
-    builtin-scripts.h \
     builtin-scripts.cc \
-    builtin-sh-scripts.h \
     builtin-sh-scripts.cc \
-    default-config.h \
     default-config.cc \
-    default-formats.h \
     default-formats.cc \
-    emojis-json.h \
     emojis-json.cc \
-    help-txt.h \
-    help-txt.cc \
-    help-md.h \
     help-md.cc \
-    init-sql.h \
     init-sql.cc \
     time_fmts.cc \
-    xml-entities-json.h \
     xml-entities-json.cc \
-    xterm-palette-json.h \
     xterm-palette-json.cc
+
+BUILT_SOURCES = $(LNAV_BUILT_FILES)
 
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
@@ -287,6 +266,7 @@ noinst_HEADERS = \
 	spectro_impls.hh \
 	spectro_source.hh \
 	sqlitepp.hh \
+	sqlitepp.client.hh \
 	sql_help.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
@@ -474,8 +454,6 @@ libdiag_a_SOURCES = \
 PLUGIN_SRCS = \
 	file_vtab.cc
 
-lnav.$(OBJEXT): help-txt.h init-sql.h
-
 lnav_SOURCES = \
     lnav.cc \
     lnav.events.cc \
@@ -516,11 +494,13 @@ uncrusty:
 		$(HEADERS))
 
 if !DISABLE_DOCUMENTATION
-all-local: lnav
+all-local: $(LNAV_BUILT_FILES) lnav
 	if test -w $(srcdir)/internals; then \
 		env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile; \
 		mv $(srcdir)/internals/*.schema.json $(top_srcdir)/docs/schemas; \
 	fi
+else
+all-local: $(LNAV_BUILT_FILES)
 endif
 
 install-exec-hook:

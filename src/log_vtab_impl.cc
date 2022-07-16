@@ -2023,7 +2023,7 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
     std::string retval;
 
     if (this->vm_impls.find(name) == this->vm_impls.end()) {
-        retval = fmt::format(FMT_STRING("unknown log line table -- {}"), name);
+        retval = fmt::format(FMT_STRING("unknown table -- {}"), name);
     } else {
         auto_mem<char, sqlite3_free> sql;
         __attribute((unused)) int rc;
