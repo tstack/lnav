@@ -92,7 +92,7 @@ run_cap_test ./drive_sql "$GROUP_SELECT_2"
 
 if test x"$HAVE_SQLITE3_VALUE_SUBTYPE" != x""; then
     GROUP_SELECT_3=$(cat <<EOF
-SELECT id, json_group_object(key, value) as stack FROM (
+SELECT id, json_group_object(key, json(value)) as stack FROM (
               SELECT 1 as id, 1 as key, 10 as value
     UNION ALL SELECT 1 as id, 2 as key, json_array(1, 2, 3) as value
     UNION ALL SELECT 1 as id, 3 as key, 30.5 as value)
