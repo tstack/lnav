@@ -72,7 +72,7 @@ parts:
       - libpcre3
       - libgpm2
       - libarchive13
-      - libicu66
+      - libicu70
       - libxml2
       - locales-all
       - ssh
