@@ -5,7 +5,7 @@ description: |
   The Log File Navigator, **lnav** for short, is an advanced log file viewer
   for the small-scale.
 
-base: core20
+base: core22
 grade: stable
 confinement: strict
 
