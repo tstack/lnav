@@ -21,7 +21,7 @@
             "warning": "^Wa$",
             "error": "^Er$",
             "critical": "^Cr$",
-            "fatal": "^Al|Em$"
+            "fatal": "^(?:Al|Em)$"
         },
         "opid-field": "log_syslog_tag",
         "time-field": "new_time",

@@ -2624,8 +2624,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else if (access(file_path.c_str(), R_OK) == -1) {
             lnav::console::print(stderr,
                                  lnav::console::user_message::error(
-                                     attr_line_t("cannot read file: ")
-                                         .append(lnav::roles::file(file_path)))
+                    attr_line_t("file exists, but is not readable: ")
+                        .append(lnav::roles::file(file_path)))
                                      .with_errno_reason());
             retval = EXIT_FAILURE;
         } else if (S_ISFIFO(st.st_mode)) {

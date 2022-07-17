@@ -228,7 +228,7 @@ sed -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename` | head -3 \
 
 mv test_logfile.unreadable.out `test_err_filename`
 check_error_output "able to read an unreadable log file?" <<EOF
-✘ error: cannot read file: unreadable.log
+✘ error: file exists, but is not readable: unreadable.log
  reason: Permission denied
 EOF
 

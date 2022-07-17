@@ -6,13 +6,16 @@
         "url": "http://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Memory checker|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>[^\\]]+))?(?: user=(?<user>[^ \\]]+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Memory checker|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>[\\w@ \\-\\.:]+(?!sid|user|reason|update)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]]+))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
             },
             "6.0+-nosrc": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
             },
             "section": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
+            },
+            "esx-section": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]: (?:Logs rotated. \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?(?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?:\\w+).*)"
             },
             "5.0+": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[^ \\]]+))?\\](?<body>.*)(?:\\n.*)?$"
@@ -41,11 +44,13 @@
         },
         "level-field": "level",
         "level": {
-            "info": "^(?i)info$",
-            "debug": "^(?i)debug$",
-            "error": "^(?i)(alert|crit|emerg|error|fatal|panic)$",
-            "warning": "^(?i)(warning|warn)$",
-            "trace": "^(?i)verbose$"
+            "info": "^(?i)(?:info|In)$",
+            "debug": "^(?i)(?:debug|Db)$",
+            "error": "^(?i)(error|Er)$",
+            "warning": "^(?i)(warning|warn|Wa)$",
+            "trace": "^(?i)verbose$",
+            "critical": "^(?i)(?:crit|Cr)$",
+            "fatal": "^(?i)(?:alert|fatal|panic|Al|Em)$"
         },
         "opid-field": "opid",
         "value": {
@@ -81,8 +86,16 @@
                 "kind": "string",
                 "identifier": true
             },
+            "sid": {
+                "kind": "string",
+                "identifier": true
+            },
             "user": {
                 "kind": "string",
+                "identifier": true
+            },
+            "vpxa_update": {
+                "kind": "integer",
                 "identifier": true
             },
             "reason": {
@@ -194,6 +207,16 @@
             },
             {
                 "line": "2022-06-02T08:33:42.692Z info rhttpproxy[40998] [Originator@6876 sub=WorkQueue.rhttpproxy.packetsniffer[0000562e3c06fee0].queue] Created: WorkQueue.rhttpproxy.packetsniffer[0000562e3c06fee0].queue, type = serial, priority = 16, itemWeight = 1"
+            },
+            {
+                "line": "2022-06-02T02:56:51.118Z Db(167) Hostd[1001392583]: [Originator@6876 sub=AdapterServer] Vdt span started, activation is <<527066d1-5c96-4854-ebdb-fec666747e0e, <TCP '127.0.0.1 : 8307'>, <TCP '127.0.0.1 : 28140'>>, ha-root-pool, vim.ManagedEntity.GetName>, method name is GetName",
+                "level": "debug"
+            },
+            {
+                "line": "2022-06-02T02:56:51.640Z In(14) vmsyslogd[1001390391]: Logs rotated. 2022-06-02T02:54:42.721Z - time the service was last started 2022-06-02T02:54:42.708Z, Section for VMware ESX, pid=1001391976, version=8.0.0, build=19833347, option=BETA"
+            },
+            {
+                "line": "2022-06-02T02:15:22.987Z In(166) Hostd[1001392061]: info -[1001392061] [Originator@6876 sub=Default] Supported VMs 640\n"
             }
         ]
     }

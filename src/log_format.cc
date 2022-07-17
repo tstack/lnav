@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -2037,6 +2038,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             if (elf_sample.s_level != LEVEL_UNKNOWN
                 && elf_sample.s_level != level) {
+                attr_line_t note_al;
+
+                note_al.append("matched regex = ")
+                    .append(lnav::roles::symbol(pat.p_name.to_string()))
+                    .append("\n")
+                    .append("captured level = ")
+                    .append_quoted(
+                        pi.get_string_fragment(level_cap).to_string());
                 errors.emplace_back(
                     lnav::console::user_message::error(
                         attr_line_t("invalid sample log message: ")
@@ -2048,7 +2057,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                                  "level of ")
                                          .append_quoted(lnav::roles::symbol(
                                              level_names[elf_sample.s_level])))
-                        .with_snippet(elf_sample.s_line.to_snippet()));
+                        .with_snippet(elf_sample.s_line.to_snippet())
+                        .with_note(note_al));
             }
 
             {
@@ -2126,11 +2136,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     continue;
                 }
 
+                attr_line_t regex_al = pat_iter->p_pcre->get_pattern();
+                lnav::snippets::regex_highlighter(
+                    regex_al, -1, line_range{0, (int) regex_al.length()});
+
                 regex_note
                     .append(lnav::roles::symbol(fmt::format(
                         FMT_STRING("{:{}}"), pat_iter->p_name, max_name_width)))
                     .append(" = ")
-                    .append_quoted(pat_iter->p_pcre->get_pattern())
+                    .append_quoted(regex_al)
                     .append("\n");
             }
 
