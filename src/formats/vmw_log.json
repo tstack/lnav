@@ -6,7 +6,7 @@
         "url": "http://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Memory checker|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>[\\w@ \\-\\.:]+(?!sid|user|reason|update)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]]+))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>\\w+@\\d+)(?:\\s+sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Proxy Req \\d+(?: Tunnel)?|Hostsvc.ResourcePool [\\w+\\-\\.]+|Memory checker|Handle checker|HttpNfcLease-session\\[[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|Statssvc.StatsCollector.StatsRegistry\\(\\w+\\).Query\\(\\w+\\)|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+(?!sid|user|reason|update)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
             },
             "6.0+-nosrc": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
@@ -30,7 +30,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}(T| )\\d{2}:\\d{2}:\\d{2}(?:.|,)\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<prc>[^\\[]+)\\[(?<tid>\\w+)\\]:\\s+(?<body>.*)\\]$"
             },
             "pylog": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[-+]\\d{2}:\\d{2})) (?<prc>[^:]+):\\s+(?<tid>\\w+):\\s+(?<comp>[^:]+):(?<line>\\d+)?\\s+(?<level>\\w+):?\\s+(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[-+]\\d{2}:\\d{2})) (?<prc>[^:]+):\\s+(?<tid>\\d+):\\s+(?<comp>[^:]+):(?<line>\\d+)?\\s+(?<level>\\w+):?\\s+(?<body>.*)(?:\\n.*)?$"
             },
             "vum-log4cpp": {
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{3}) '(?<category>[^']*)' (?<tid>\\d+) (?<level>[a-zA-Z]+)\\]\\s+(?>\\[(?<file>\\S+), (?<line>\\d+)\\])? (?<body>.*$)"
@@ -216,7 +216,10 @@
                 "line": "2022-06-02T02:56:51.640Z In(14) vmsyslogd[1001390391]: Logs rotated. 2022-06-02T02:54:42.721Z - time the service was last started 2022-06-02T02:54:42.708Z, Section for VMware ESX, pid=1001391976, version=8.0.0, build=19833347, option=BETA"
             },
             {
-                "line": "2022-06-02T02:15:22.987Z In(166) Hostd[1001392061]: info -[1001392061] [Originator@6876 sub=Default] Supported VMs 640\n"
+                "line": "2022-06-02T02:15:22.987Z In(166) Hostd[1001392061]: info -[1001392061] [Originator@6876 sub=Default] Supported VMs 640"
+            },
+            {
+                "line": "2022-06-02T03:20:05.107Z Db(167) Hostd[1001392035]: [Originator@6876 sub=AdapterServer opID=531c52d7-9d8a sid=52806149 user=vpxuser:<no user>] New request: target='vim.HostSystem:ha-host', method='retrieveInternalCapability', session='52806149-fe15-f6ff-7685-353ae5d93dcc'"
             }
         ]
     }

@@ -6,7 +6,7 @@
         "url": "",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)\\)((?:(?<level>WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)(?: opID=(?<opid>[^\\)]+))?\\)((?:(?<level>WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
             }
         },
         "level-field": "level",
@@ -15,6 +15,7 @@
             "warning": "WARNING"
         },
         "max-unrecognized-lines": 15000,
+        "opid-field": "opid",
         "value": {
             "cpu": {
                 "kind": "integer",
@@ -29,6 +30,10 @@
             "subsystem": {
                 "kind": "string",
                 "identifier": true
+            },
+            "opid": {
+                "kind": "string",
+                "identifier": true
             }
         },
         "sample": [
@@ -37,6 +42,9 @@
             },
             {
                 "line": "2015-04-01T22:22:35.038Z cpu22:44012977)ALERT: This is what an alert looks like."
+            },
+            {
+                "line": "2022-06-02T02:16:57.414Z cpu31:1001392590 opID=827cfaf)<unk>: UWVMKSyscall: ForkExec:2408: hostd-worker: Found params <group=hostd-tmp,mem=10>"
             }
         ]
     }
