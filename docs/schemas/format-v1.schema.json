@@ -268,7 +268,10 @@
                                 "rewriter": {
                                     "title": "/<format_name>/value/<value_name>/rewriter",
                                     "description": "A command that will rewrite this field when pretty-printing",
-                                    "type": "string"
+                                    "type": "string",
+                                    "examples": [
+                                        ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '"
+                                    ]
                                 },
                                 "description": {
                                     "title": "/<format_name>/value/<value_name>/description",

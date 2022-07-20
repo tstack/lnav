@@ -335,7 +335,7 @@ run_cap_test ${lnav_test} -n \
 export LNAVSECURE=1
 run_cap_test env TEST_COMMENT="secure mode write test" ${lnav_test} -n \
     -c ";select * from access_log" \
-    -c ':write-json-to -' \
+    -c ':write-json-to /tmp/bad' \
     ${test_dir}/logfile_access_log.0
 
 unset LNAVSECURE

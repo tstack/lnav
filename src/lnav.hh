@@ -47,6 +47,7 @@
 #include "base/future_util.hh"
 #include "base/isc.hh"
 #include "bottom_status_source.hh"
+#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "db_sub_source.hh"
@@ -75,19 +76,6 @@
 
 class spectrogram_source;
 class spectro_status_source;
-
-enum {
-    LNB_HEADLESS,
-    LNB_MANAGEMENT,
-    LNB_SECURE_MODE,
-};
-
-/** Flags set on the lnav command-line. */
-typedef enum {
-    LNF_HEADLESS = (1L << LNB_HEADLESS),
-    LNF_MANAGEMENT = (1L << LNB_MANAGEMENT),
-    LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
-} lnav_flags_t;
 
 extern const std::vector<std::string> lnav_zoom_strings;
 

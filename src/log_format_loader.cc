@@ -594,7 +594,9 @@ static struct json_path_container value_def_handlers = {
         .with_synopsis("<command>")
         .with_description(
             "A command that will rewrite this field when pretty-printing")
-        .for_field(&external_log_format::value_def::vd_rewriter),
+        .for_field(&external_log_format::value_def::vd_rewriter)
+        .with_example(";SELECT :sc_status || ' (' || (SELECT message FROM "
+                      "http_status_codes WHERE status = :sc_status) || ') '"),
 
     yajlpp::property_handler("description")
         .with_synopsis("<string>")

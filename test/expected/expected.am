@@ -116,6 +116,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_876116da8ab46c0c8a212ce230d1b8a13970f78f.out \
     $(srcdir)/%reldir%/test_cmds.sh_8765cbf326648e9014f8cf5f761895010fff443a.err \
     $(srcdir)/%reldir%/test_cmds.sh_8765cbf326648e9014f8cf5f761895010fff443a.out \
+    $(srcdir)/%reldir%/test_cmds.sh_89afa826d1b33be6926df48443faa1d1c5f285a7.err \
+    $(srcdir)/%reldir%/test_cmds.sh_89afa826d1b33be6926df48443faa1d1c5f285a7.out \
     $(srcdir)/%reldir%/test_cmds.sh_8d5b43c693e78804a8fb06989392fa8cccb46b7b.err \
     $(srcdir)/%reldir%/test_cmds.sh_8d5b43c693e78804a8fb06989392fa8cccb46b7b.out \
     $(srcdir)/%reldir%/test_cmds.sh_9445861db011dfa2d21a44788047de345ee291e8.err \

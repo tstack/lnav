@@ -48,6 +48,7 @@ sql_cmd_dump(exec_context& ec,
     static auto& lnav_db
         = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
                         sqlite_db_tag>();
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
     std::string retval;
 
@@ -59,6 +60,10 @@ sql_cmd_dump(exec_context& ec,
 
     if (args.size() < 2) {
         return ec.make_error("expecting a file name to write to");
+    }
+
+    if (lnav_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
     auto_mem<FILE> file(fclose);
@@ -88,12 +93,17 @@ sql_cmd_read(exec_context& ec,
     static auto& lnav_db
         = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
                         sqlite_db_tag>();
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
     std::string retval;
 
     if (args.empty()) {
         args.emplace_back("filename");
         return Ok(retval);
+    }
+
+    if (lnav_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
     std::vector<std::string> split_args;

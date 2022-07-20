@@ -80,6 +80,12 @@ force_linking(sqlite_db_tag anno)
 
 template<>
 void
+force_linking(lnav_flags_tag anno)
+{
+}
+
+template<>
+void
 force_linking(services::curl_streamer_t anno)
 {
 }

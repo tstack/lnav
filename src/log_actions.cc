@@ -30,12 +30,20 @@
 #include "log_actions.hh"
 
 #include "base/fs_util.hh"
+#include "base/injector.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "piper_proc.hh"
 
 std::string
 action_delegate::execute_action(const std::string& action_name)
 {
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+
+    if (lnav_flags & LNF_SECURE_MODE) {
+        return "unavailable in secure mode";
+    }
+
     auto& ldh = this->ad_log_helper;
     auto value_index = this->ad_press_value;
     logline_value& lv = ldh.ldh_line_values[value_index];

@@ -941,10 +941,6 @@ com_save_to(exec_context& ec,
         return Ok(std::string());
     }
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return ec.make_error("{} -- unavailable in secure mode", args[0]);
-    }
-
     fn = trim(remaining_args(cmdline, args));
 
     std::vector<std::string> split_args;
@@ -1035,7 +1031,9 @@ com_save_to(exec_context& ec,
         }
         auto holder = open_res.unwrap();
         toclose = outfile = holder.release();
-        closer = holder.get_free_func<int(*)(FILE*)>();
+        closer = holder.get_free_func<int (*)(FILE*)>();
+    } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else if ((outfile = fopen(split_args[0].c_str(), mode)) == nullptr) {
         return ec.make_error("unable to open file -- {}", split_args[0]);
     } else {
@@ -1593,6 +1591,8 @@ com_redirect_to(exec_context& ec,
 
         auto holder = out.unwrap();
         ec.set_output(split_args[0], holder.release(), holder.get_free_func<int(*)(FILE*)>());
+    } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else {
         FILE* file = fopen(split_args[0].c_str(), "w");
         if (file == nullptr) {

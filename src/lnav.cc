@@ -230,6 +230,10 @@ static auto bound_sqlite_db
     = injector::bind<auto_mem<sqlite3, sqlite_close_wrapper>,
                      sqlite_db_tag>::to_instance(&lnav_data.ld_db);
 
+static auto bound_lnav_flags
+    = injector::bind<unsigned long, lnav_flags_tag>::to_instance(
+        &lnav_data.ld_flags);
+
 static auto bound_last_rel_time
     = injector::bind<relative_time, last_relative_time_tag>::to_singleton();
 
@@ -260,6 +264,12 @@ force_linking(last_relative_time_tag anno)
 template<>
 void
 force_linking(sqlite_db_tag anno)
+{
+}
+
+template<>
+void
+force_linking(lnav_flags_tag anno)
 {
 }
 

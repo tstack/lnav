@@ -38,6 +38,7 @@
 #include "base/auto_mem.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -358,6 +359,12 @@ register_fstat_vtab(sqlite3* db)
 
     FSTAT_MODULE.vm_module.xBestIndex = rcBestIndex;
     FSTAT_MODULE.vm_module.xFilter = rcFilter;
+
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+
+    if (lnav_flags & LNF_SECURE_MODE) {
+        return SQLITE_OK;
+    }
 
     rc = FSTAT_MODULE.create(db, "fstat");
 
