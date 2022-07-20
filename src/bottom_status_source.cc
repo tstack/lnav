@@ -186,6 +186,7 @@ bottom_status_source::update_loading(file_off_t off, file_size_t total)
     auto& sf = this->bss_fields[BSF_LOADING];
 
     require(off >= 0);
+    require(off <= total);
 
     if (total == 0 || (size_t) off == total) {
         sf.set_cylon(false);

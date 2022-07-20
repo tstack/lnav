@@ -9,3 +9,13 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT *,log_body FROM vpx_lro_begin' \
     ${test_dir}/logfile_vpxd.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";select * from vpx_lro_begin where log_line > 3 and lro_id = 'lro-846064'" \
+    -c ";select * from vpx_lro_begin where lro_id = 'lro-846064'" \
+    ${test_dir}/logfile_vpxd.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";select * from procstate_procs where cmd_name = '[kthreadd]'" \
+    -c ";select * from procstate_procs where cmd_name = '[kthreadd]'" \
+    ${test_dir}/logfile_procstate.0

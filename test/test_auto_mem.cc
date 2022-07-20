@@ -98,5 +98,18 @@ main(int argc, char* argv[])
         assert(last_lf_index == (last_lf_rchr - msg));
     }
 
+    {
+        auto bitmap = auto_buffer::alloc_bitmap(15);
+
+        assert(bitmap.capacity() == 2);
+        bitmap.resize_bitmap(15);
+        assert(bitmap.size() == 2);
+
+        memset(bitmap.in(), 0, bitmap.size());
+        for (size_t lpc = 0; lpc < 15; lpc++) {
+            assert(!bitmap.is_bit_set(lpc));
+        }
+    }
+
     return retval;
 }

@@ -42,7 +42,7 @@ TEST_CASE("lnav::gzip::uncompress")
 
         CHECK(u_res.isErr());
         CHECK(u_res.unwrapErr()
-              == "unable to uncompress: empty -- buffer error");
+              == "unable to uncompress: empty -- stream error");
     }
 
     {

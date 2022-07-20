@@ -888,6 +888,8 @@ int
 guess_type_from_pcre(const std::string& pattern, std::string& collator)
 {
     try {
+        static const std::vector<int> number_matches = {1, 2};
+
         pcrepp re(pattern);
         std::vector<int> matches;
         int retval = SQLITE3_TEXT;
@@ -910,6 +912,9 @@ guess_type_from_pcre(const std::string& pattern, std::string& collator)
         if (matches.size() == 1) {
             retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
             collator = TYPE_TEST_VALUE[matches.front()].collator;
+        } else if (matches == number_matches) {
+            retval = SQLITE_FLOAT;
+            collator = "";
         }
 
         return retval;

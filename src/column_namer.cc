@@ -95,7 +95,11 @@ column_namer::add_column(const string_fragment& in_name)
 
     while (this->existing_name(retval)) {
         if (num == 0) {
-            this->cn_name_counters[base_name] = num;
+            auto* mem = this->cn_alloc.allocate(retval.length() + 1);
+            memcpy(mem, retval.data(), retval.length());
+            mem[retval.length()] = '\0';
+            auto counter_name = string_fragment{mem, 0, retval.length()};
+            this->cn_name_counters[counter_name] = num;
         }
 
         log_debug(

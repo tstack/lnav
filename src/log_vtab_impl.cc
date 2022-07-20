@@ -424,6 +424,61 @@ vt_eof(sqlite3_vtab_cursor* cur)
     return vc->log_cursor.is_eof();
 }
 
+static void
+populate_indexed_columns(vtab_cursor* vc, vtab* vt)
+{
+    if (vc->log_cursor.is_eof() || vc->log_cursor.lc_indexed_columns.empty()) {
+        return;
+    }
+
+    logfile* lf = nullptr;
+
+    for (const auto& ic : vc->log_cursor.lc_indexed_columns) {
+        auto& ci = vt->vi->vi_column_indexes[ic.cc_column];
+
+        if (vc->log_cursor.lc_curr_line < ci.ci_max_line) {
+            continue;
+        }
+
+        if (lf == nullptr) {
+            content_line_t cl(vt->lss->at(vc->log_cursor.lc_curr_line));
+            uint64_t line_number;
+            auto ld = vt->lss->find_data(cl, line_number);
+            lf = (*ld)->get_file_ptr();
+            auto ll = lf->begin() + line_number;
+
+            lf->read_full_message(ll, vc->log_msg);
+            vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);
+        }
+
+        int sub_col = ic.cc_column - VT_COL_MAX;
+        auto lv_iter = find_if(vc->line_values.begin(),
+                               vc->line_values.end(),
+                               logline_value_cmp(nullptr, sub_col));
+        if (lv_iter == vc->line_values.end()
+            || lv_iter->lv_meta.lvm_kind == value_kind_t::VALUE_NULL)
+        {
+            continue;
+        }
+
+        auto value = lv_iter->to_string();
+
+#ifdef DEBUG_INDEXING
+        log_debug("updated index for column %d %s -> %d",
+                  ic.cc_column,
+                  value.c_str(),
+                  (int) vc->log_cursor.lc_curr_line);
+#endif
+
+        if (ci.ci_value_to_lines[value].empty()
+            || ci.ci_value_to_lines[value].back()
+                != vc->log_cursor.lc_curr_line)
+        {
+            ci.ci_value_to_lines[value].push_back(vc->log_cursor.lc_curr_line);
+        }
+    }
+}
+
 static int
 vt_next(sqlite3_vtab_cursor* cur)
 {
@@ -432,7 +487,12 @@ vt_next(sqlite3_vtab_cursor* cur)
     auto done = false;
 
     vc->line_values.clear();
-    vc->log_cursor.lc_curr_line += 1_vl;
+    if (!vc->log_cursor.lc_indexed_lines.empty()) {
+        vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
+        vc->log_cursor.lc_indexed_lines.pop_back();
+    } else {
+        vc->log_cursor.lc_curr_line += 1_vl;
+    }
     vc->log_cursor.lc_sub_index = 0;
     do {
         log_cursor_latest = vc->log_cursor;
@@ -441,12 +501,6 @@ vt_next(sqlite3_vtab_cursor* cur)
                 && log_vtab_data.lvd_progress(log_cursor_latest)))
         {
             break;
-        }
-
-        if (!vc->log_cursor.lc_indexed_lines.empty()) {
-            vc->log_cursor.lc_curr_line
-                = vc->log_cursor.lc_indexed_lines.back();
-            vc->log_cursor.lc_indexed_lines.pop_back();
         }
 
         while (vc->log_cursor.lc_curr_line != -1_vl && !vc->log_cursor.is_eof()
@@ -459,8 +513,16 @@ vt_next(sqlite3_vtab_cursor* cur)
             done = true;
         } else {
             done = vt->vi->next(vc->log_cursor, *vt->lss);
-            if (!done) {
-                vc->log_cursor.lc_curr_line += 1_vl;
+            if (done) {
+                populate_indexed_columns(vc, vt);
+            } else {
+                if (!vc->log_cursor.lc_indexed_lines.empty()) {
+                    vc->log_cursor.lc_curr_line
+                        = vc->log_cursor.lc_indexed_lines.back();
+                    vc->log_cursor.lc_indexed_lines.pop_back();
+                } else {
+                    vc->log_cursor.lc_curr_line += 1_vl;
+                }
                 vc->log_cursor.lc_sub_index = 0;
             }
         }
@@ -486,15 +548,25 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
             break;
         }
 
-        if (!vc->log_cursor.lc_indexed_lines.empty()) {
-            vc->log_cursor.lc_curr_line
-                = vc->log_cursor.lc_indexed_lines.back();
-            vc->log_cursor.lc_indexed_lines.pop_back();
-        }
-
         done = vt->vi->next(vc->log_cursor, *vt->lss);
-        if (!done) {
-            vc->log_cursor.lc_curr_line += 1_vl;
+        if (done) {
+            populate_indexed_columns(vc, vt);
+        } else if (vc->log_cursor.is_eof()) {
+            done = true;
+        } else {
+            require(vc->log_cursor.lc_curr_line < vt->lss->text_line_count());
+
+            if (!vc->log_cursor.lc_indexed_lines.empty()) {
+                vc->log_cursor.lc_curr_line
+                    = vc->log_cursor.lc_indexed_lines.back();
+                vc->log_cursor.lc_indexed_lines.pop_back();
+#ifdef DEBUG_INDEXING
+                log_debug("going to next line from index %d",
+                          (int) vc->log_cursor.lc_curr_line);
+#endif
+            } else {
+                vc->log_cursor.lc_curr_line += 1_vl;
+            }
             vc->log_cursor.lc_sub_index = 0;
             for (auto& col_constraint : vc->log_cursor.lc_indexed_columns) {
                 vt->vi->vi_column_indexes[col_constraint.cc_column].ci_max_line
@@ -946,31 +1018,6 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             case value_kind_t::VALUE_TEXT:
                             case value_kind_t::VALUE_XML:
                             case value_kind_t::VALUE_TIMESTAMP: {
-                                auto& ci = vt->vi->vi_column_indexes[col];
-                                auto find_res
-                                    = vc->log_cursor.lc_indexed_columns
-                                    | lnav::itertools::find_if(
-                                          [col](const auto& elem) {
-                                              return elem.cc_column == col;
-                                          });
-                                if (find_res
-                                    && vc->log_cursor.lc_curr_line
-                                        >= ci.ci_max_line) {
-                                    std::string value{lv_iter->text_value(),
-                                                      lv_iter->text_length()};
-#ifdef DEBUG_INDEXING
-                                    log_debug(
-                                        "updated index for column %d %s -> %d",
-                                        col,
-                                        value.c_str(),
-                                        (int) vc->log_cursor.lc_curr_line);
-#endif
-
-                                    ci.ci_value_to_lines[value].push_back(
-                                        vc->log_cursor.lc_curr_line);
-                                    ci.ci_max_line
-                                        = vc->log_cursor.lc_curr_line + 1_vl;
-                                }
                                 sqlite3_result_text(ctx,
                                                     lv_iter->text_value(),
                                                     lv_iter->text_length(),
@@ -1520,6 +1567,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         continue;
                     }
 
+                    if (vl < p_cur->log_cursor.lc_curr_line) {
+                        continue;
+                    }
+
 #ifdef DEBUG_INDEXING
                     log_debug("adding indexed line %d", (int) vl);
 #endif
@@ -1536,6 +1587,18 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         std::sort(p_cur->log_cursor.lc_indexed_lines.begin(),
                   p_cur->log_cursor.lc_indexed_lines.end(),
                   std::greater<>());
+
+        if (max_indexed_line
+            && max_indexed_line.value() < vt->lss->text_line_count()) {
+            log_debug("max indexed out of sync, clearing other indexes");
+            p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
+            p_cur->log_cursor.lc_curr_line = 0_vl;
+            opid_val = nonstd::nullopt;
+            log_time_range = nonstd::nullopt;
+            p_cur->log_cursor.lc_indexed_lines.clear();
+            log_path_constraints.clear();
+            log_unique_path_constraints.clear();
+        }
 
 #ifdef DEBUG_INDEXING
         log_debug("indexed lines:");
@@ -1582,12 +1645,12 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_log_path = std::move(log_path_constraints);
     p_cur->log_cursor.lc_unique_path = std::move(log_unique_path_constraints);
 
-    vt->vi->filter(p_cur->log_cursor, *vt->lss);
-
     if (p_cur->log_cursor.lc_indexed_lines.empty()) {
         p_cur->log_cursor.lc_indexed_lines.push_back(
             p_cur->log_cursor.lc_curr_line);
     }
+    vt->vi->filter(p_cur->log_cursor, *vt->lss);
+
     auto rc = vt->base.pModule->xNext(p_vtc);
 
 #ifdef DEBUG_INDEXING

@@ -266,7 +266,7 @@ protected:
 };
 
 using sql_progress_callback_t = int (*)(const log_cursor&);
-typedef void (*sql_progress_finished_callback_t)();
+using sql_progress_finished_callback_t = void (*)();
 
 struct _log_vtab_data {
     sql_progress_callback_t lvd_progress;

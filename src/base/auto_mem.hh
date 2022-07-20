@@ -158,7 +158,13 @@ class auto_buffer {
 public:
     static auto_buffer alloc(size_t capacity)
     {
-        return auto_buffer{(char*) malloc(capacity), capacity};
+        return auto_buffer{capacity == 0 ? nullptr : (char*) malloc(capacity),
+                           capacity};
+    }
+
+    static auto_buffer alloc_bitmap(size_t capacity_in_bits)
+    {
+        return alloc((capacity_in_bits + 7) / 8);
     }
 
     static auto_buffer from(const char* mem, size_t size)
@@ -193,9 +199,10 @@ public:
 
     auto_buffer& operator=(auto_buffer&& other) noexcept
     {
-        this->ab_buffer = other.ab_buffer;
-        this->ab_size = other.ab_size;
-        this->ab_capacity = other.ab_capacity;
+        free(this->ab_buffer);
+        this->ab_buffer = std::exchange(other.ab_buffer, nullptr);
+        this->ab_size = std::exchange(other.ab_size, 0);
+        this->ab_capacity = std::exchange(other.ab_capacity, 0);
         return *this;
     }
 
@@ -215,6 +222,30 @@ public:
     char* begin() { return this->ab_buffer; }
 
     const char* begin() const { return this->ab_buffer; }
+
+    bool is_bit_set(size_t bit_offset) const
+    {
+        size_t byte_offset = bit_offset / 8;
+        auto bitmask = 1UL << (bit_offset % 8);
+
+        return this->ab_buffer[byte_offset] & bitmask;
+    }
+
+    void set_bit(size_t bit_offset)
+    {
+        size_t byte_offset = bit_offset / 8;
+        auto bitmask = 1UL << (bit_offset % 8);
+
+        this->ab_buffer[byte_offset] |= bitmask;
+    }
+
+    void clear_bit(size_t bit_offset)
+    {
+        size_t byte_offset = bit_offset / 8;
+        auto bitmask = 1UL << (bit_offset % 8);
+
+        this->ab_buffer[byte_offset] &= ~bitmask;
+    }
 
     std::reverse_iterator<char*> rbegin()
     {
@@ -252,6 +283,8 @@ public:
 
     size_t size() const { return this->ab_size; }
 
+    size_t bitmap_size() const { return this->ab_size * 8; }
+
     bool empty() const { return this->ab_size == 0; }
 
     bool full() const { return this->ab_size == this->ab_capacity; }
@@ -267,6 +300,16 @@ public:
         assert(new_size <= this->ab_capacity);
 
         this->ab_size = new_size;
+        return *this;
+    }
+
+    auto_buffer& resize_bitmap(size_t new_size_in_bits, int fill = 0)
+    {
+        auto new_size = (new_size_in_bits + 7) / 8;
+        assert(new_size <= this->ab_capacity);
+
+        auto old_size = std::exchange(this->ab_size, new_size);
+        memset(this->at(old_size), 0, this->ab_size - old_size);
         return *this;
     }
 
@@ -288,6 +331,11 @@ public:
 
         this->ab_buffer = new_buffer;
         this->ab_capacity = new_capacity;
+    }
+
+    void expand_bitmap_to(size_t new_capacity_in_bits)
+    {
+        this->expand_to((new_capacity_in_bits + 7) / 8);
     }
 
     void expand_by(size_t amount)

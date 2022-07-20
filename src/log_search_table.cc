@@ -127,6 +127,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
             return true;
         }
 
+        // log_debug("done matching message");
         this->lst_match_index = -1;
         return false;
     }
@@ -150,6 +151,12 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
+    if (this->lst_mismatch_bitmap.is_bit_set(lc.lc_curr_line)) {
+        // log_debug("%d: mismatch, aborting", (int) lc.lc_curr_line);
+        return false;
+    }
+
+    // log_debug("%d: doing message", (int) lc.lc_curr_line);
     lf->read_full_message(lf_iter, this->lst_current_line);
     lf->get_format()->annotate(cl,
                                this->lst_current_line,
@@ -162,6 +169,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     if (!this->lst_regex.match(
             this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
     {
+        this->lst_mismatch_bitmap.set_bit(lc.lc_curr_line);
         return false;
     }
 
@@ -214,4 +222,29 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
         };
     }
     this->lst_match_index = -1;
+
+    if (lss.lss_index_generation != this->lst_index_generation) {
+        log_debug("%s:index generation changed from %d to %d, resetting...",
+                  this->vi_name.c_str(),
+                  this->lst_index_generation,
+                  lss.lss_index_generation);
+        this->lst_mismatch_bitmap
+            = auto_buffer::alloc_bitmap(lss.text_line_count());
+        this->lst_index_generation = lss.lss_index_generation;
+    }
+
+    if (this->lst_mismatch_bitmap.bitmap_size() < lss.text_line_count()) {
+        this->lst_mismatch_bitmap.expand_bitmap_to(lss.text_line_count());
+        this->lst_mismatch_bitmap.resize_bitmap(lss.text_line_count());
+#if 1
+        log_debug("%s:bitmap resize %d:%d",
+                  this->vi_name.c_str(),
+                  this->lst_mismatch_bitmap.size(),
+                  this->lst_mismatch_bitmap.capacity());
+#endif
+    }
+    if (!lc.lc_indexed_lines.empty()) {
+        lc.lc_curr_line = lc.lc_indexed_lines.back();
+        lc.lc_indexed_lines.pop_back();
+    }
 }

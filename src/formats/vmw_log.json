@@ -6,10 +6,10 @@
         "url": "http://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>\\w+@\\d+)(?:\\s+sub=(?<sub>Http2(?:Client)?Session #\\d+|HTTP session map|HTTP server|Proxy Req \\d+(?: Tunnel)?|Hostsvc.ResourcePool [\\w+\\-\\.]+|Memory checker|Handle checker|HttpNfcLease-session\\[[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|Statssvc.StatsCollector.StatsRegistry\\(\\w+\\).Query\\(\\w+\\)|Vimsvc\\.Ticket((?: |\\-)[0-9a-fA-F]{2})+|Req@(?:[\\w\\.\\-@/:]+)(?: M?[\\d\\.]+(?:U[\\d\\.]+)?)?|(?:SSL )?(?:[\\w\\.\\-@/:]+(?:\\[[0-9a-fA-F]+\\])?(?:\\([0-9a-fA-F]+\\))?(?:\\{\\d+\\})?)+)?)?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+(?!sid|user|reason|update)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>\\w+@\\d+)(?:\\s+sub=(?<sub>.*?(?!\\w+=)))?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: req=(?<req>[^ \\]]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+?(?!\\w+=)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)$"
             },
             "6.0+-nosrc": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)(?:\\n.*)?$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)$"
             },
             "section": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
@@ -83,6 +83,10 @@
                 "identifier": true
             },
             "opid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "req": {
                 "kind": "string",
                 "identifier": true
             },

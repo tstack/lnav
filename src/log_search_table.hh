@@ -78,6 +78,8 @@ public:
     int64_t lst_match_index{-1};
     mutable std::vector<vtab_column> lst_cols;
     std::vector<logline_value> lst_line_values_cache;
+    auto_buffer lst_mismatch_bitmap{auto_buffer::alloc_bitmap(0)};
+    int32_t lst_index_generation{0};
 };
 
 #endif
