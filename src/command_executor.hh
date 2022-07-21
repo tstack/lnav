@@ -219,8 +219,8 @@ struct exec_context {
 
     std::map<std::string, std::string> ec_override;
     std::vector<logline_value>* ec_line_values;
-    std::stack<std::map<std::string, std::string>> ec_local_vars;
-    std::map<std::string, std::string> ec_global_vars;
+    std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;
+    std::map<std::string, scoped_value_t> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
     std::vector<lnav::console::snippet> ec_source;
     help_text* ec_current_help{nullptr};

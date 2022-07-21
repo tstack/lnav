@@ -36,35 +36,60 @@
 #include <string>
 #include <vector>
 
+#include "fmt/format.h"
+#include "mapbox/variant.hpp"
+
+struct null_value_t {};
+using scoped_value_t
+    = mapbox::util::variant<std::string, int64_t, double, null_value_t>;
+
+namespace fmt {
+template<>
+struct formatter<scoped_value_t> : formatter<std::string> {
+    template<typename FormatContext>
+    auto format(const scoped_value_t& sv, FormatContext& ctx) const
+    {
+        auto retval
+            = sv.match([](std::string str) { return str; },
+                       [](null_value_t) { return std::string("<NULL>"); },
+                       [](int64_t value) { return fmt::to_string(value); },
+                       [](double value) { return fmt::to_string(value); });
+
+        return fmt::formatter<std::string>::format(retval, ctx);
+    }
+};
+}  // namespace fmt
+
 class scoped_resolver {
 public:
     scoped_resolver(
-        std::initializer_list<std::map<std::string, std::string>*> l)
+        std::initializer_list<std::map<std::string, scoped_value_t>*> l)
     {
         this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
-    };
+    }
 
-    typedef std::map<std::string, std::string>::const_iterator const_iterator;
+    using const_iterator
+        = std::map<std::string, scoped_value_t>::const_iterator;
 
     const_iterator find(const std::string& str) const
     {
         const_iterator retval;
 
-        for (auto scope : this->sr_stack) {
+        for (const auto* scope : this->sr_stack) {
             if ((retval = scope->find(str)) != scope->end()) {
                 return retval;
             }
         }
 
         return this->end();
-    };
+    }
 
     const_iterator end() const
     {
         return this->sr_stack.back()->end();
     }
 
-    std::vector<const std::map<std::string, std::string>*> sr_stack;
+    std::vector<const std::map<std::string, scoped_value_t>*> sr_stack;
 };
 
 #endif

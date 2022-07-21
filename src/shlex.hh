@@ -100,12 +100,11 @@ public:
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
                     std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
                                          cap.length() - 1 - extra * 2);
-                    std::map<std::string, std::string>::const_iterator
-                        local_var;
+                    auto local_var = vars.find(var_name);
                     const char* var_value = getenv(var_name.c_str());
 
-                    if ((local_var = vars.find(var_name)) != vars.end()) {
-                        result.append(local_var->second);
+                    if (local_var != vars.end()) {
+                        result.append(fmt::to_string(local_var->second));
                     } else if (var_value != nullptr) {
                         result.append(var_value);
                     }
@@ -167,12 +166,11 @@ public:
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
                     std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
                                          cap.length() - 1 - extra * 2);
-                    std::map<std::string, std::string>::const_iterator
-                        local_var;
+                    auto local_var = vars.find(var_name);
                     const char* var_value = getenv(var_name.c_str());
 
-                    if ((local_var = vars.find(var_name)) != vars.end()) {
-                        result.back().append(local_var->second);
+                    if (local_var != vars.end()) {
+                        result.back().append(fmt::to_string(local_var->second));
                     } else if (var_value != nullptr) {
                         result.back().append(var_value);
                     }

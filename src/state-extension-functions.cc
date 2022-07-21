@@ -81,7 +81,7 @@ sql_lnav_top_file()
         return nonstd::nullopt;
     }
 
-    auto top_view = top_view_opt.value();
+    auto* top_view = top_view_opt.value();
     return top_view->map_top_row([](const auto& al) {
         return get_string_attr(al.get_attrs(), logline::L_FILE) |
             [](const auto wrapper) {
@@ -102,6 +102,24 @@ static int64_t
 sql_error(const char* str)
 {
     throw sqlite_func_error("{}", str);
+}
+
+static nonstd::optional<std::string>
+sql_echoln(nonstd::optional<std::string> arg)
+{
+    if (arg) {
+        auto& ec = lnav_data.ld_exec_context;
+        auto outfile = ec.get_output();
+
+        if (outfile) {
+            fmt::print(outfile.value(), FMT_STRING("{}\n"), arg.value());
+            if (outfile.value() == stdout) {
+                lnav_data.ld_stdout_used = true;
+            }
+        }
+    }
+
+    return arg;
 }
 
 int
@@ -138,6 +156,16 @@ state_extension_functions(struct FuncDef** basic_funcs,
                       "Raises an error with the given message when executed")
                 .sql_function()
                 .with_parameter({"msg", "The error message"}))
+            .with_flags(SQLITE_UTF8),
+
+        sqlite_func_adapter<decltype(&sql_echoln), sql_echoln>::builder(
+            help_text("echoln",
+                      "Echo the argument to the current output file and return "
+                      "it")
+                .sql_function()
+                .with_parameter(
+                    {"value", "The value to write to the current output file"})
+                .with_tags({"io"}))
             .with_flags(SQLITE_UTF8),
 
         {nullptr},

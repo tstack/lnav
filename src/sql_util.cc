@@ -676,6 +676,55 @@ sql_safe_ident(const string_fragment& ident)
     return retval;
 }
 
+attr_line_t
+annotate_sql_with_error(sqlite3* db, const char* sql, const char* tail)
+{
+    const auto* errmsg = sqlite3_errmsg(db);
+    attr_line_t retval;
+    int erroff = -1;
+
+#if defined(HAVE_SQLITE3_ERROR_OFFSET)
+    erroff = sqlite3_error_offset(db);
+#endif
+    if (tail != nullptr) {
+        const auto* tail_lf = strchr(tail, '\n');
+        if (tail_lf == nullptr) {
+            tail = tail + strlen(tail);
+        } else {
+            tail = tail_lf;
+        }
+        retval.append(string_fragment{sql, 0, (int) (tail - sql)});
+    } else {
+        retval.append(sql);
+    }
+    if (erroff >= retval.length()) {
+        erroff -= 1;
+    }
+    if (erroff != -1 && !endswith(retval.get_string(), "\n")) {
+        retval.append("\n");
+    }
+    retval.with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+    readline_sqlite_highlighter(retval, retval.length());
+
+    if (erroff != -1) {
+        auto line_with_error
+            = string_fragment(retval.get_string())
+                  .find_boundaries_around(erroff, string_fragment::tag1{'\n'});
+        auto erroff_in_line = erroff - line_with_error.sf_begin;
+
+        attr_line_t pointer;
+
+        pointer.append(erroff_in_line, ' ')
+            .append("^ "_snippet_border)
+            .append(lnav::roles::error(errmsg))
+            .append("\n");
+
+        retval.insert(line_with_error.sf_end + 1, pointer).rtrim();
+    }
+
+    return retval;
+}
+
 void
 sql_compile_script(sqlite3* db,
                    const char* src_name,
@@ -703,51 +752,8 @@ sql_compile_script(sqlite3* db,
         retcode = sqlite3_prepare_v2(db, script, -1, stmt.out(), &tail);
         log_debug("retcode %d  %p %p", retcode, script, tail);
         if (retcode != SQLITE_OK) {
-            const char* errmsg = sqlite3_errmsg(db);
-            int erroff = -1;
-            attr_line_t sql_content;
-
-#if defined(HAVE_SQLITE3_ERROR_OFFSET)
-            erroff = sqlite3_error_offset(db);
-#endif
-            if (tail != nullptr) {
-                const auto* tail_lf = strchr(tail, '\n');
-                if (tail_lf == nullptr) {
-                    tail = tail + strlen(tail);
-                } else {
-                    tail = tail_lf;
-                }
-                sql_content.append(
-                    string_fragment{script, 0, (int) (tail - script)});
-            } else {
-                sql_content.append(script);
-            }
-            if (erroff >= sql_content.length()) {
-                erroff -= 1;
-            }
-            if (erroff != -1 && !endswith(sql_content.get_string(), "\n")) {
-                sql_content.append("\n");
-            }
-            sql_content.with_attr_for_all(
-                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            readline_sqlite_highlighter(sql_content, sql_content.length());
-
-            if (erroff != -1) {
-                auto line_with_error
-                    = string_fragment(sql_content.get_string())
-                          .find_boundaries_around(erroff,
-                                                  string_fragment::tag1{'\n'});
-                auto erroff_in_line = erroff - line_with_error.sf_begin;
-
-                attr_line_t pointer;
-
-                pointer.append(erroff_in_line, ' ')
-                    .append("^ "_snippet_border)
-                    .append(lnav::roles::error(errmsg))
-                    .append("\n");
-
-                sql_content.insert(line_with_error.sf_end + 1, pointer).rtrim();
-            }
+            const auto* errmsg = sqlite3_errmsg(db);
+            auto sql_content = annotate_sql_with_error(db, script, tail);
 
             errors.emplace_back(
                 lnav::console::user_message::error(
@@ -921,6 +927,27 @@ guess_type_from_pcre(const std::string& pattern, std::string& collator)
     } catch (pcrepp::error& e) {
         return SQLITE3_TEXT;
     }
+}
+
+const char*
+sqlite3_type_to_string(int type)
+{
+    switch (type) {
+        case SQLITE_FLOAT:
+            return "FLOAT";
+        case SQLITE_INTEGER:
+            return "INTEGER";
+        case SQLITE_TEXT:
+            return "TEXT";
+        case SQLITE_NULL:
+            return "NULL";
+        case SQLITE_BLOB:
+            return "BLOB";
+    }
+
+    ensure("Invalid sqlite type");
+
+    return nullptr;
 }
 
 /* XXX figure out how to do this with the template */

@@ -64,6 +64,9 @@ lnav v0.11.0:
        current session state to a file as a list of commands/SQL
        statements.  This script file can be executed to restore the
        majority of the current state.
+     * Added the "echoln()" SQL function that behaves similarly to the
+       ":echo" command, writing its first argument to the current
+       output.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that
@@ -92,11 +95,16 @@ lnav v0.11.0:
        (view_name, type, language, pattern) as a UNIQUE index and
        will raise a conflict error on an INSERT.  Use "REPLACE INTO"
        instead of "INSERT INTO" to ignore conflict error.
+     * The types of SQL values stored as local variables in scripts
+       is now preserved when used as bound variables at a later point
+       in the script.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression
        no longer causes a crash.
      * Fix a crash related to long lines that are word wrapped.
+     * Multiple SQL statements in a SQL block of a script are now
+       executed instead of just the first one.
 
 lnav v0.10.1:
      Features:

@@ -52,6 +52,7 @@ CREATE TABLE lnav_file (
     inode integer,        -- The inode for the file on the device.
     filepath text,        -- The path to the file.
     mimetype text,        -- The MIME type for the file.
+    content_id text,      -- The hash of some unique content in the file.
     format text,          -- The log file format for the file.
     lines integer,        -- The number of lines in the file.
     time_offset integer,  -- The millisecond offset for timestamps.
@@ -95,19 +96,24 @@ CREATE TABLE lnav_file (
                 to_sqlite(ctx, fmt::to_string(lf->get_text_format()));
                 break;
             case 4:
-                to_sqlite(ctx, format_name);
+                to_sqlite(
+                    ctx,
+                    fmt::format(FMT_STRING("v1:{}"), lf->get_content_id()));
                 break;
             case 5:
+                to_sqlite(ctx, format_name);
+                break;
+            case 6:
                 to_sqlite(ctx, (int64_t) lf->size());
                 break;
-            case 6: {
+            case 7: {
                 auto tv = lf->get_time_offset();
                 int64_t ms = (tv.tv_sec * 1000LL) + tv.tv_usec / 1000LL;
 
                 to_sqlite(ctx, ms);
                 break;
             }
-            case 7: {
+            case 8: {
                 auto& cfg = injector::get<const file_vtab::config&>();
                 auto lf_stat = lf->get_stat();
 
@@ -179,6 +185,7 @@ CREATE TABLE lnav_file (
                    int64_t inode,
                    std::string path,
                    const char* text_format,
+                   const char* content_id,
                    const char* format,
                    int64_t lines,
                    int64_t time_offset,

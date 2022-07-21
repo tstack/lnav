@@ -118,6 +118,12 @@ void sql_execute_script(sqlite3* db,
 
 int guess_type_from_pcre(const std::string& pattern, std::string& collator);
 
+const char* sqlite3_type_to_string(int type);
+
+attr_line_t annotate_sql_with_error(sqlite3* db,
+                                    const char* sql,
+                                    const char* tail);
+
 int sqlite_authorizer(void* pUserData,
                       int action_code,
                       const char* detail1,

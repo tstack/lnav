@@ -1042,6 +1042,22 @@ dirname(*path*)
 ----
 
 
+.. _echoln:
+
+echoln(*value*)
+^^^^^^^^^^^^^^^
+
+  Echo the argument to the current output file and return it
+
+  **Parameters**
+    * **value\*** --- The value to write to the current output file
+
+  **See Also**
+    :ref:`append_to`, :ref:`echo`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+
+----
+
+
 .. _endswith:
 
 endswith(*str*, *suffix*)

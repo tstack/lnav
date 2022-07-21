@@ -178,7 +178,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
 }
 
 void
-add_ansi_vars(std::map<std::string, std::string>& vars)
+add_ansi_vars(std::map<std::string, scoped_value_t>& vars)
 {
     vars["ansi_csi"] = ANSI_CSI;
     vars["ansi_norm"] = ANSI_NORM;

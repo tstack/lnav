@@ -229,7 +229,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         std::string rewritten_line;
 
         ec.with_perms(exec_context::perm_t::READ_ONLY);
-        ec.ec_local_vars.push(std::map<std::string, std::string>());
+        ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
         ec.ec_top_line = vis_line_t(row);
         add_ansi_vars(ec.ec_global_vars);
         add_global_vars(ec);

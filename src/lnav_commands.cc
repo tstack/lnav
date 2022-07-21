@@ -5629,6 +5629,11 @@ readline_context::command_t STD_COMMANDS[] = {
              "been called, to output file specified in the redirect.  "
              "Variable substitution is performed on the message.  Use a "
              "backslash to escape any special characters, like '$'")
+         .with_parameter(
+             help_text(
+                 "-n",
+                 "Do not print a line-feed at the end of the output")
+                 .optional())
          .with_parameter(help_text("msg", "The message to display"))
          .with_tags({"io", "scripting"})
          .with_example({"To output 'Hello, World!'", "Hello, World!"})},

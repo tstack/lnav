@@ -157,6 +157,29 @@ struct prepared_stmt {
         };
     }
 
+    template<typename T, typename F>
+    Result<void, fetch_error> for_each_row(F func)
+    {
+        nonstd::optional<fetch_error> err;
+        auto done = false;
+
+        while (!done) {
+            done = this->template fetch_row<T>().match(
+                func,
+                [](end_of_rows) { return true; },
+                [&err](const fetch_error& fe) {
+                    err = fe;
+                    return true;
+                });
+        }
+
+        if (err) {
+            return Err(err.value());
+        }
+
+        return Ok();
+    }
+
     auto_mem<sqlite3_stmt> ps_stmt;
 };
 

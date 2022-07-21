@@ -61,6 +61,39 @@ SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
     ORDER BY total DESC
 )";
 
+struct bind_visitor {
+    bind_visitor(sqlite3_stmt* stmt, int index) : bv_stmt(stmt), bv_index(index)
+    {
+    }
+
+    void operator()(const std::string& str) const
+    {
+        sqlite3_bind_text(this->bv_stmt,
+                          this->bv_index,
+                          str.c_str(),
+                          str.size(),
+                          SQLITE_TRANSIENT);
+    }
+
+    void operator()(null_value_t) const
+    {
+        sqlite3_bind_null(this->bv_stmt, this->bv_index);
+    }
+
+    void operator()(int64_t value) const
+    {
+        sqlite3_bind_int64(this->bv_stmt, this->bv_index, value);
+    }
+
+    void operator()(double value) const
+    {
+        sqlite3_bind_double(this->bv_stmt, this->bv_index, value);
+    }
+
+    sqlite3_stmt* bv_stmt;
+    int bv_index;
+};
+
 int
 sql_progress(const struct log_cursor& lc)
 {
@@ -145,6 +178,112 @@ execute_command(exec_context& ec, const std::string& cmdline)
     return ec.make_error("no command to execute");
 }
 
+static Result<std::map<std::string, scoped_value_t>,
+              lnav::console::user_message>
+bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
+{
+    std::map<std::string, scoped_value_t> retval;
+    auto param_count = sqlite3_bind_parameter_count(stmt);
+    for (int lpc = 0; lpc < param_count; lpc++) {
+        std::map<std::string, std::string>::iterator ov_iter;
+        const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+        if (name == nullptr) {
+            auto um
+                = lnav::console::user_message::error("invalid SQL statement")
+                      .with_reason(
+                          "using a question-mark (?) for bound variables "
+                          "is not supported, only named bound parameters "
+                          "are supported")
+                      .with_help(
+                          "named parameters start with a dollar-sign "
+                          "($) or colon (:) followed by the variable name");
+            ec.add_error_context(um);
+
+            return Err(um);
+        }
+
+        ov_iter = ec.ec_override.find(name);
+        if (ov_iter != ec.ec_override.end()) {
+            sqlite3_bind_text(stmt,
+                              lpc,
+                              ov_iter->second.c_str(),
+                              ov_iter->second.length(),
+                              SQLITE_TRANSIENT);
+        } else if (name[0] == '$') {
+            const auto& lvars = ec.ec_local_vars.top();
+            const auto& gvars = ec.ec_global_vars;
+            std::map<std::string, scoped_value_t>::const_iterator local_var,
+                global_var;
+            const char* env_value;
+
+            if (lnav_data.ld_window) {
+                char buf[32];
+                int lines, cols;
+
+                getmaxyx(lnav_data.ld_window, lines, cols);
+                if (strcmp(name, "$LINES") == 0) {
+                    snprintf(buf, sizeof(buf), "%d", lines);
+                    sqlite3_bind_text(stmt, lpc + 1, buf, -1, SQLITE_TRANSIENT);
+                } else if (strcmp(name, "$COLS") == 0) {
+                    snprintf(buf, sizeof(buf), "%d", cols);
+                    sqlite3_bind_text(stmt, lpc + 1, buf, -1, SQLITE_TRANSIENT);
+                }
+            }
+
+            if ((local_var = lvars.find(&name[1])) != lvars.end()) {
+                mapbox::util::apply_visitor(bind_visitor(stmt, lpc + 1),
+                                            local_var->second);
+                retval[name] = local_var->second;
+            } else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
+                mapbox::util::apply_visitor(bind_visitor(stmt, lpc + 1),
+                                            global_var->second);
+                retval[name] = global_var->second;
+            } else if ((env_value = getenv(&name[1])) != nullptr) {
+                sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
+                retval[name] = env_value;
+            }
+        } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
+            for (auto& lv : *ec.ec_line_values) {
+                if (lv.lv_meta.lvm_name != &name[1]) {
+                    continue;
+                }
+                switch (lv.lv_meta.lvm_kind) {
+                    case value_kind_t::VALUE_BOOLEAN:
+                        sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
+                        retval[name] = fmt::to_string(lv.lv_value.i);
+                        break;
+                    case value_kind_t::VALUE_FLOAT:
+                        sqlite3_bind_double(stmt, lpc + 1, lv.lv_value.d);
+                        retval[name] = fmt::to_string(lv.lv_value.d);
+                        break;
+                    case value_kind_t::VALUE_INTEGER:
+                        sqlite3_bind_int64(stmt, lpc + 1, lv.lv_value.i);
+                        retval[name] = fmt::to_string(lv.lv_value.i);
+                        break;
+                    case value_kind_t::VALUE_NULL:
+                        sqlite3_bind_null(stmt, lpc + 1);
+                        retval[name] = db_label_source::NULL_STR;
+                        break;
+                    default:
+                        sqlite3_bind_text(stmt,
+                                          lpc + 1,
+                                          lv.text_value(),
+                                          lv.text_length(),
+                                          SQLITE_TRANSIENT);
+                        retval[name] = lv.to_string();
+                        break;
+                }
+            }
+        } else {
+            sqlite3_bind_null(stmt, lpc + 1);
+            log_warning("Could not bind variable: %s", name);
+            retval[name] = db_label_source::NULL_STR;
+        }
+    }
+
+    return Ok(retval);
+}
+
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
@@ -153,7 +292,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     struct timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
     std::string retval;
-    int retcode;
+    int retcode = SQLITE_OK;
 
     log_info("Executing SQL: %s", sql.c_str());
 
@@ -163,8 +302,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         std::vector<std::string> args;
         split_ws(stmt_str, args);
 
-        auto sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                         sql_cmd_map_tag>();
+        auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
+                                          sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
@@ -188,138 +327,58 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                                       source.s_location,
                                       source.s_content);
     gettimeofday(&start_tv, nullptr);
-    retcode = sqlite3_prepare_v2(
-        lnav_data.ld_db.in(), stmt_str.c_str(), -1, stmt.out(), nullptr);
-    if (retcode != SQLITE_OK) {
-        const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        alt_msg = "";
-        return ec.make_error("{}", errmsg);
-    }
-    if (stmt == nullptr) {
-        alt_msg = "";
-        return ec.make_error("No statement given");
-    }
-    std::map<std::string, std::string> bound_values;
-#ifdef HAVE_SQLITE3_STMT_READONLY
-    if (ec.is_read_only() && !sqlite3_stmt_readonly(stmt.in())) {
-        return ec.make_error(
-            "modifying statements are not allowed in this context: {}", sql);
-    }
-#endif
-    {
-        bool done = false;
-        auto param_count = sqlite3_bind_parameter_count(stmt.in());
-        for (int lpc = 0; lpc < param_count; lpc++) {
-            std::map<std::string, std::string>::iterator ov_iter;
-            const auto* name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
-            if (name == nullptr) {
-                auto um
-                    = lnav::console::user_message::error(
-                          "invalid SQL statement")
-                          .with_reason(
-                              "using a question-mark (?) for bound variables "
-                              "is not supported, only named bound parameters "
-                              "are supported")
-                          .with_help(
-                              "named parameters start with a dollar-sign "
-                              "($) or colon (:) followed by the variable name");
-                ec.add_error_context(um);
-
-                return Err(um);
-            }
-
-            ov_iter = ec.ec_override.find(name);
-            if (ov_iter != ec.ec_override.end()) {
-                sqlite3_bind_text(stmt.in(),
-                                  lpc,
-                                  ov_iter->second.c_str(),
-                                  ov_iter->second.length(),
-                                  SQLITE_TRANSIENT);
-            } else if (name[0] == '$') {
-                const auto& lvars = ec.ec_local_vars.top();
-                const auto& gvars = ec.ec_global_vars;
-                std::map<std::string, std::string>::const_iterator local_var,
-                    global_var;
-                const char* env_value;
-
-                if (lnav_data.ld_window) {
-                    char buf[32];
-                    int lines, cols;
-
-                    getmaxyx(lnav_data.ld_window, lines, cols);
-                    if (strcmp(name, "$LINES") == 0) {
-                        snprintf(buf, sizeof(buf), "%d", lines);
-                        sqlite3_bind_text(
-                            stmt.in(), lpc + 1, buf, -1, SQLITE_TRANSIENT);
-                    } else if (strcmp(name, "$COLS") == 0) {
-                        snprintf(buf, sizeof(buf), "%d", cols);
-                        sqlite3_bind_text(
-                            stmt.in(), lpc + 1, buf, -1, SQLITE_TRANSIENT);
-                    }
-                }
-
-                if ((local_var = lvars.find(&name[1])) != lvars.end()) {
-                    sqlite3_bind_text(stmt.in(),
-                                      lpc + 1,
-                                      local_var->second.c_str(),
-                                      local_var->second.length(),
-                                      SQLITE_TRANSIENT);
-                    bound_values[name] = local_var->second;
-                } else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
-                    sqlite3_bind_text(stmt.in(),
-                                      lpc + 1,
-                                      global_var->second.c_str(),
-                                      global_var->second.length(),
-                                      SQLITE_TRANSIENT);
-                    bound_values[name] = global_var->second;
-                } else if ((env_value = getenv(&name[1])) != nullptr) {
-                    sqlite3_bind_text(
-                        stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
-                    bound_values[name] = env_value;
-                }
-            } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
-                for (auto& lv : *ec.ec_line_values) {
-                    if (lv.lv_meta.lvm_name != &name[1]) {
-                        continue;
-                    }
-                    switch (lv.lv_meta.lvm_kind) {
-                        case value_kind_t::VALUE_BOOLEAN:
-                            sqlite3_bind_int64(
-                                stmt.in(), lpc + 1, lv.lv_value.i);
-                            bound_values[name] = fmt::to_string(lv.lv_value.i);
-                            break;
-                        case value_kind_t::VALUE_FLOAT:
-                            sqlite3_bind_double(
-                                stmt.in(), lpc + 1, lv.lv_value.d);
-                            bound_values[name] = fmt::to_string(lv.lv_value.d);
-                            break;
-                        case value_kind_t::VALUE_INTEGER:
-                            sqlite3_bind_int64(
-                                stmt.in(), lpc + 1, lv.lv_value.i);
-                            bound_values[name] = fmt::to_string(lv.lv_value.i);
-                            break;
-                        case value_kind_t::VALUE_NULL:
-                            sqlite3_bind_null(stmt.in(), lpc + 1);
-                            bound_values[name] = db_label_source::NULL_STR;
-                            break;
-                        default:
-                            sqlite3_bind_text(stmt.in(),
-                                              lpc + 1,
-                                              lv.text_value(),
-                                              lv.text_length(),
-                                              SQLITE_TRANSIENT);
-                            bound_values[name] = lv.to_string();
-                            break;
-                    }
-                }
-            } else {
-                sqlite3_bind_null(stmt.in(), lpc + 1);
-                log_warning("Could not bind variable: %s", name);
-                bound_values[name] = db_label_source::NULL_STR;
-            }
+    const auto* curr_stmt = stmt_str.c_str();
+    auto last_is_readonly = false;
+    while (curr_stmt != nullptr) {
+        const char* tail = nullptr;
+        while (isspace(*curr_stmt)) {
+            curr_stmt += 1;
         }
+        retcode = sqlite3_prepare_v2(
+            lnav_data.ld_db.in(), curr_stmt, -1, stmt.out(), &tail);
+        if (retcode != SQLITE_OK) {
+            const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
+            alt_msg = "";
+
+            auto um = lnav::console::user_message::error(
+                          "failed to compile SQL statement")
+                          .with_reason(errmsg)
+                          .with_snippets(ec.ec_source);
+
+            auto annotated_sql = annotate_sql_with_error(
+                lnav_data.ld_db.in(), curr_stmt, tail);
+            auto loc = um.um_snippets.back().s_location;
+            if (curr_stmt == stmt_str.c_str()) {
+                um.um_snippets.pop_back();
+            } else {
+                auto tail_iter = stmt_str.begin();
+
+                std::advance(tail_iter, (curr_stmt - stmt_str.c_str()));
+                loc.sl_line_number
+                    += std::count(stmt_str.begin(), tail_iter, '\n');
+            }
+
+            um.with_snippet(lnav::console::snippet::from(loc, annotated_sql));
+
+            return Err(um);
+        }
+        if (stmt == nullptr) {
+            retcode = SQLITE_DONE;
+            break;
+        }
+#ifdef HAVE_SQLITE3_STMT_READONLY
+        last_is_readonly = sqlite3_stmt_readonly(stmt.in());
+        if (ec.is_read_only() && !last_is_readonly) {
+            return ec.make_error(
+                "modifying statements are not allowed in this context: {}",
+                sql);
+        }
+#endif
+        bool done = false;
+
+        auto bound_values = TRY(bind_sql_parameters(ec, stmt.in()));
         if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
         }
@@ -345,11 +404,18 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                         bound_note.append(
                             "the bound parameters are set as follows:\n");
                         for (const auto& bval : bound_values) {
-                            auto scrubbed_val = scrub_ws(bval.second.c_str());
-
+                            auto val_as_str = fmt::to_string(bval.second);
+                            auto sql_type = bval.second.match(
+                                [](const std::string&) { return SQLITE_TEXT; },
+                                [](int64_t) { return SQLITE_INTEGER; },
+                                [](null_value_t) { return SQLITE_NULL; },
+                                [](double) { return SQLITE_FLOAT; });
+                            auto scrubbed_val = scrub_ws(val_as_str.c_str());
                             truncate_to(scrubbed_val, 40);
                             bound_note.append("  ")
                                 .append(lnav::roles::variable(bval.first))
+                                .append(":")
+                                .append(sqlite3_type_to_string(sql_type))
                                 .append(" = ")
                                 .append_quoted(scrubbed_val)
                                 .append("\n");
@@ -366,29 +432,11 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             }
         }
 
-        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty()
-            && !ec.ec_dry_run) {
-            auto& vars = ec.ec_local_vars.top();
+        curr_stmt = tail;
+    }
 
-            for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                const auto& column_name = dls.dls_headers[lpc].hm_name;
-
-                if (sql_ident_needs_quote(column_name.c_str())) {
-                    continue;
-                }
-
-                const auto* value = dls.dls_rows[0][lpc];
-                if (value == nullptr) {
-                    continue;
-                }
-
-                vars[column_name] = value;
-            }
-        }
-
-        if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->clear_value();
-        }
+    if (lnav_data.ld_rl_view != nullptr) {
+        lnav_data.ld_rl_view->clear_value();
     }
 
     gettimeofday(&end_tv, nullptr);
@@ -451,7 +499,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             }
         }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-        else if (sqlite3_stmt_readonly(stmt.in()))
+        else if (last_is_readonly)
         {
             retval = "info: No rows matched";
             alt_msg = "";
@@ -802,6 +850,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
+    auto set_vars = false;
 
     row_number = dls.dls_rows.size();
     dls.dls_rows.resize(row_number + 1);
@@ -822,10 +871,11 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                 chart.with_attrs_for_ident(colname, attrs);
             }
         }
+        set_vars = true;
     }
     for (lpc = 0; lpc < ncols; lpc++) {
         const char* value = (const char*) sqlite3_column_text(stmt, lpc);
-        db_label_source::header_meta& hm = dls.dls_headers[lpc];
+        auto& hm = dls.dls_headers[lpc];
 
         dls.push_column(value);
         if ((hm.hm_column_type == SQLITE_TEXT
@@ -838,6 +888,28 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                 case SQLITE_TEXT:
                     hm.hm_column_type = SQLITE_TEXT;
                     hm.hm_sub_type = sqlite3_value_subtype(raw_value);
+                    break;
+            }
+        }
+        if (set_vars && !ec.ec_local_vars.empty() && !ec.ec_dry_run) {
+            if (sql_ident_needs_quote(hm.hm_name.c_str())) {
+                continue;
+            }
+            auto& vars = ec.ec_local_vars.top();
+
+            switch (hm.hm_column_type) {
+                case SQLITE_INTEGER:
+                    vars[hm.hm_name]
+                        = (int64_t) sqlite3_column_int64(stmt, lpc);
+                    break;
+                case SQLITE_FLOAT:
+                    vars[hm.hm_name] = sqlite3_column_double(stmt, lpc);
+                    break;
+                case SQLITE_NULL:
+                    vars[hm.hm_name] = null_value_t{};
+                    break;
+                default:
+                    vars[hm.hm_name] = std::string(value);
                     break;
             }
         }
@@ -950,7 +1022,7 @@ exec_context::exec_context(std::vector<logline_value>* line_values,
 {
     static const auto COMMAND_SRC = intern_string::lookup("command");
 
-    this->ec_local_vars.push(std::map<std::string, std::string>());
+    this->ec_local_vars.push(std::map<std::string, scoped_value_t>());
     this->ec_path_stack.emplace_back(".");
     this->ec_source.emplace_back(
         lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));

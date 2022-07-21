@@ -316,10 +316,7 @@ to_sqlite(sqlite3_context* ctx, const nonstd::optional<T>& val)
 }
 
 struct ToSqliteVisitor {
-    ToSqliteVisitor(sqlite3_context* vctx)
-        : tsv_context(vctx){
-
-        };
+    ToSqliteVisitor(sqlite3_context* vctx) : tsv_context(vctx) {}
 
     template<typename T>
     void operator()(T&& t) const

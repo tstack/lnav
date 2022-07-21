@@ -9,10 +9,16 @@
 # The following SQL statements will restore the bookmarks,
 # comments, and tags that were added in the session.
 
-;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'b05c1bdfe75cde41e151c89087e31951'
+;SELECT total_changes() AS before_mark_changes
+;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'v1:b05c1bdfe75cde41e151c89087e31951'
 
-# The following commands will restore the
-# state of the LOG view.
+;SELECT 1 - (total_changes() - $before_mark_changes) AS failed_mark_changes
+;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',
+                      $ansi_red, $ansi_norm, $failed_mark_changes))
+    WHERE $failed_mark_changes != 0
+
+
+# The following commands will restore the state of the LOG view.
 
 :switch-to-view log
 :goto 1

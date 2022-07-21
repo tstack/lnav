@@ -150,6 +150,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ";SELECT 1 AS inum, NULL AS nul, 2.0 AS fnum, 'abc' AS str" \
+    -c ";SELECT \$inum, \$nul, \$fnum, \$str, raise_error('oops!')" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
     -c ";SELECT raise_error('oops!')" \
     ${test_dir}/logfile_access_log.0
 

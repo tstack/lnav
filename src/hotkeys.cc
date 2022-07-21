@@ -150,7 +150,7 @@ handle_keyseq(const char* keyseq)
     auto& var_stack = ec.ec_local_vars;
 
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
-    var_stack.push(std::map<std::string, std::string>());
+    var_stack.push(std::map<std::string, scoped_value_t>());
     auto& vars = var_stack.top();
     vars["keyseq"] = keyseq;
     const auto& kc = iter->second;

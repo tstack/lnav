@@ -91,25 +91,6 @@ enum class log_footer_columns : uint32_t {
     line_hash,
 };
 
-static const char*
-type_to_string(int type)
-{
-    switch (type) {
-        case SQLITE_FLOAT:
-            return "FLOAT";
-
-        case SQLITE_INTEGER:
-            return "INTEGER";
-
-        case SQLITE_TEXT:
-            return "TEXT";
-    }
-
-    ensure("Invalid sqlite type");
-
-    return nullptr;
-}
-
 std::string
 log_vtab_impl::get_table_statement()
 {
@@ -140,7 +121,7 @@ log_vtab_impl::get_table_statement()
             "  %-*s %-7s %s COLLATE %-15Q,%s\n",
             max_name_len,
             colname.in(),
-            type_to_string(iter->vc_type),
+            sqlite3_type_to_string(iter->vc_type),
             iter->vc_hidden ? "hidden" : "",
             iter->vc_collator.empty() ? "BINARY" : iter->vc_collator.c_str(),
             comment.c_str());
@@ -930,7 +911,10 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             hasher line_hasher;
 
                             auto outbuf
-                                = auto_buffer::alloc(hasher::STRING_SIZE);
+                                = auto_buffer::alloc(3 + hasher::STRING_SIZE);
+                            outbuf.push_back('v');
+                            outbuf.push_back('1');
+                            outbuf.push_back(':');
                             line_hasher.update(sbr.get_data(), sbr.length())
                                 .update(cl)
                                 .to_string(outbuf);

@@ -86,6 +86,26 @@ struct from_sqlite<log_filter_session_state> {
     }
 };
 
+struct log_file_session_state {
+    std::string lfss_content_id;
+    std::string lfss_format;
+    int64_t lfss_time_offset;
+};
+
+template<>
+struct from_sqlite<log_file_session_state> {
+    inline log_file_session_state operator()(int argc,
+                                             sqlite3_value** argv,
+                                             int argi)
+    {
+        return {
+            from_sqlite<std::string>()(argc, argv, argi + 0),
+            from_sqlite<std::string>()(argc, argv, argi + 1),
+            from_sqlite<int64_t>()(argc, argv, argi + 2),
+        };
+    }
+};
+
 namespace lnav {
 namespace session {
 
@@ -106,6 +126,11 @@ SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_line_has
 SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 )";
 
+    static const char* FILE_QUERY = R"(
+SELECT content_id, format, time_offset FROM lnav_file
+  WHERE format IS NOT NULL AND time_offset != 0
+)";
+
     static const char* HEADER = R"(
 # This file is an export of an lnav session.  You can type
 # '|/path/to/this/file' in lnav to execute this file and
@@ -114,11 +139,19 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 # The files loaded into the session were:
 )";
 
-    static const char* MARK_HEADER = R"(
+    static constexpr const char MARK_HEADER[] = R"(
 
 # The following SQL statements will restore the bookmarks,
 # comments, and tags that were added in the session.
 
+;SELECT total_changes() AS before_mark_changes
+)";
+
+    static constexpr const char MARK_FOOTER[] = R"(
+;SELECT {} - (total_changes() - $before_mark_changes) AS failed_mark_changes
+;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',
+                      $ansi_red, $ansi_norm, $failed_mark_changes))
+    WHERE $failed_mark_changes != 0
 )";
 
     static const char* FILTER_HEADER = R"(
@@ -128,13 +161,32 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 
 )";
 
-    console::user_message errmsg;
+    static const char* FILE_HEADER = R"(
 
-    auto prep_res = prepare_stmt(lnav_db.in(), BOOKMARK_QUERY);
-    if (prep_res.isErr()) {
+# The following SQL statements will restore the state of the
+# files in the session.
+
+;SELECT total_changes() AS before_file_changes
+)";
+
+    static constexpr const char FILE_FOOTER[] = R"(
+;SELECT {} - (total_changes() - $before_file_changes) AS failed_file_changes
+;SELECT echoln(printf('%sERROR%s: failed to restore the state of %d files',
+                      $ansi_red, $ansi_norm, $failed_file_changes))
+   WHERE $failed_file_changes != 0
+)";
+
+    static constexpr const char VIEW_HEADER[] = R"(
+
+# The following commands will restore the state of the {} view.
+
+)";
+
+    auto prep_mark_res = prepare_stmt(lnav_db.in(), BOOKMARK_QUERY);
+    if (prep_mark_res.isErr()) {
         return Err(
             console::user_message::error("unable to export log bookmarks")
-                .with_reason(prep_res.unwrapErr()));
+                .with_reason(prep_mark_res.unwrapErr()));
     }
 
     fmt::print(file, FMT_STRING("{}"), HEADER);
@@ -142,16 +194,14 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
         fmt::print(file, FMT_STRING("#   {}"), lf->get_filename());
     }
 
-    auto added_mark_header = false;
-    auto bookmark_stmt = prep_res.unwrap();
-    auto done = false;
-    while (!done) {
-        done = bookmark_stmt.fetch_row<log_message_session_state>().match(
-            [file, &added_mark_header](const log_message_session_state& lmss) {
-                if (!added_mark_header) {
-                    fmt::print(file, FMT_STRING("{}"), MARK_HEADER);
-                    added_mark_header = true;
+    auto mark_count = 0;
+    auto each_mark_res
+        = prep_mark_res.unwrap().for_each_row<log_message_session_state>(
+            [file, &mark_count](const log_message_session_state& lmss) {
+                if (mark_count == 0) {
+                    fmt::print(file, FMT_STRING(MARK_HEADER));
                 }
+                mark_count += 1;
                 fmt::print(file,
                            FMT_STRING(";UPDATE all_logs "
                                       "SET log_mark = {}, "
@@ -167,19 +217,16 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
                            sqlitepp::quote(lmss.lmss_format),
                            sqlitepp::quote(lmss.lmss_hash));
                 return false;
-            },
-            [](prepared_stmt::end_of_rows) { return true; },
-            [&errmsg](const prepared_stmt::fetch_error& fe) {
-                errmsg
-                    = console::user_message::error(
-                          "failed to fetch bookmark metadata for log message")
-                          .with_reason(fe.fe_msg);
-                return true;
             });
+
+    if (each_mark_res.isErr()) {
+        return Err(console::user_message::error(
+                       "failed to fetch bookmark metadata for log message")
+                       .with_reason(each_mark_res.unwrapErr().fe_msg));
     }
 
-    if (!errmsg.um_message.empty()) {
-        return Err(errmsg);
+    if (mark_count > 0) {
+        fmt::print(file, FMT_STRING(MARK_FOOTER), mark_count);
     }
 
     auto prep_filter_res = prepare_stmt(lnav_db.in(), FILTER_QUERY);
@@ -189,10 +236,8 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
     }
 
     auto added_filter_header = false;
-    auto filter_stmt = prep_filter_res.unwrap();
-    done = false;
-    while (!done) {
-        done = filter_stmt.fetch_row<log_filter_session_state>().match(
+    auto each_filter_res
+        = prep_filter_res.unwrap().for_each_row<log_filter_session_state>(
             [file, &added_filter_header](const log_filter_session_state& lfss) {
                 if (!added_filter_header) {
                     fmt::print(file, FMT_STRING("{}"), FILTER_HEADER);
@@ -209,18 +254,45 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
                     sqlitepp::quote(lfss.lfss_language),
                     sqlitepp::quote(lfss.lfss_pattern));
                 return false;
-            },
-            [](prepared_stmt::end_of_rows) { return true; },
-            [&errmsg](const prepared_stmt::fetch_error& fe) {
-                errmsg = console::user_message::error(
-                             "failed to fetch filter state for views")
-                             .with_reason(fe.fe_msg);
-                return true;
             });
+
+    if (each_filter_res.isErr()) {
+        return Err(console::user_message::error(
+                       "failed to fetch filter state for views")
+                       .with_reason(each_filter_res.unwrapErr().fe_msg));
     }
 
-    if (!errmsg.um_message.empty()) {
-        return Err(errmsg);
+    auto prep_file_res = prepare_stmt(lnav_db.in(), FILE_QUERY);
+    if (prep_file_res.isErr()) {
+        return Err(console::user_message::error("unable to export file state")
+                       .with_reason(prep_file_res.unwrapErr()));
+    }
+
+    auto file_count = 0;
+    auto file_stmt = prep_file_res.unwrap();
+    auto each_file_res = file_stmt.for_each_row<log_file_session_state>(
+        [file, &file_count](const log_file_session_state& lfss) {
+            if (file_count == 0) {
+                fmt::print(file, FMT_STRING("{}"), FILE_HEADER);
+            }
+            file_count += 1;
+            fmt::print(file,
+                       FMT_STRING(";UPDATE lnav_file "
+                                  "SET time_offset = {} "
+                                  "WHERE content_id = {} AND format = {}\n"),
+                       lfss.lfss_time_offset,
+                       sqlitepp::quote(lfss.lfss_content_id),
+                       sqlitepp::quote(lfss.lfss_format));
+            return false;
+        });
+
+    if (each_file_res.isErr()) {
+        return Err(console::user_message::error("failed to fetch file state")
+                       .with_reason(each_file_res.unwrapErr().fe_msg));
+    }
+
+    if (file_count > 0) {
+        fmt::print(file, FMT_STRING(FILE_FOOTER), file_count);
     }
 
     for (auto view_index : {LNV_LOG, LNV_TEXT}) {
@@ -229,10 +301,7 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
             continue;
         }
 
-        fmt::print(file,
-                   FMT_STRING("\n# The following commands will restore the"
-                              "\n# state of the {} view.\n\n"),
-                   lnav_view_titles[view_index]);
+        fmt::print(file, FMT_STRING(VIEW_HEADER), lnav_view_titles[view_index]);
         fmt::print(file,
                    FMT_STRING(":switch-to-view {}\n"),
                    lnav_view_strings[view_index]);
@@ -244,7 +313,7 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 
             if (min_level != LEVEL_UNKNOWN) {
                 fmt::print(file,
-                           FMT_STRING(":set-min-log-level {}"),
+                           FMT_STRING(":set-min-log-level {}\n"),
                            level_names[min_level]);
             }
 
@@ -252,11 +321,11 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
             char tsbuf[128];
             if (lss->get_min_log_time(min_time)) {
                 sql_strftime(tsbuf, sizeof(tsbuf), min_time, 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-before {}"), tsbuf);
+                fmt::print(file, FMT_STRING(":hide-lines-before {}\n"), tsbuf);
             }
             if (lss->get_max_log_time(max_time)) {
                 sql_strftime(tsbuf, sizeof(tsbuf), max_time, 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-after {}"), tsbuf);
+                fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
             }
         }
 
