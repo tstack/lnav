@@ -665,13 +665,17 @@ CREATE TABLE lnav_view_filters (
                             case SQLITE_FAIL:
                             case SQLITE_ABORT:
                                 tab->zErrMsg = sqlite3_mprintf(
-                                    "filter already exists -- %s",
+                                    "filter already exists -- :%s",
                                     new_cmd.c_str());
                                 return conflict_mode;
                             case SQLITE_IGNORE:
                                 return SQLITE_OK;
                             case SQLITE_REPLACE:
-                                filter->set_enabled(pf->is_enabled());
+                                if (filter->is_enabled() != pf->is_enabled()) {
+                                    filter->set_enabled(pf->is_enabled());
+                                    tss->text_filters_changed();
+                                    tc.set_needs_update();
+                                }
                                 return SQLITE_OK;
                             default:
                                 break;
@@ -692,7 +696,7 @@ CREATE TABLE lnav_view_filters (
                         case SQLITE_FAIL:
                         case SQLITE_ABORT:
                             tab->zErrMsg = sqlite3_mprintf(
-                                "A SQL filter already exists");
+                                "A SQL expression filter already exists");
                             return conflict_mode;
                         case SQLITE_IGNORE:
                             return SQLITE_OK;
@@ -776,10 +780,11 @@ CREATE TABLE lnav_view_filters (
                    filter_lang_t lang,
                    sqlite3_value* pattern_val)
     {
+        auto* mod_vt = (vtab_module<lnav_view_filters>::vtab*) tab;
         auto view_index = lnav_view_t(rowid >> 32);
         auto filter_index = rowid & 0xffffffffLL;
-        textview_curses& tc = lnav_data.ld_views[view_index];
-        text_sub_source* tss = tc.get_sub_source();
+        auto& tc = lnav_data.ld_views[view_index];
+        auto* tss = tc.get_sub_source();
         auto& fs = tss->get_filters();
         auto iter = fs.begin();
         for (; iter != fs.end(); ++iter) {
@@ -788,7 +793,7 @@ CREATE TABLE lnav_view_filters (
             }
         }
 
-        std::shared_ptr<text_filter> tf = *iter;
+        auto tf = *iter;
 
         if (new_view_index != view_index) {
             tab->zErrMsg
@@ -842,7 +847,31 @@ CREATE TABLE lnav_view_filters (
                     1, &pattern_val, 0);
             auto pf = std::make_shared<pcre_filter>(
                 type, pattern.first, tf->get_index(), pattern.second.release());
-
+            auto conflict_mode = sqlite3_vtab_on_conflict(mod_vt->v_db);
+            auto new_cmd = pf->to_command();
+            for (auto& filter : fs) {
+                if (filter->to_command() == new_cmd) {
+                    switch (conflict_mode) {
+                        case SQLITE_FAIL:
+                        case SQLITE_ABORT:
+                            tab->zErrMsg = sqlite3_mprintf(
+                                "filter already exists -- :%s",
+                                new_cmd.c_str());
+                            return conflict_mode;
+                        case SQLITE_IGNORE:
+                            return SQLITE_OK;
+                        case SQLITE_REPLACE:
+                            if (filter->is_enabled() != pf->is_enabled()) {
+                                filter->set_enabled(pf->is_enabled());
+                                tss->text_filters_changed();
+                                tc.set_needs_update();
+                            }
+                            return SQLITE_OK;
+                        default:
+                            break;
+                    }
+                }
+            }
             *iter = pf;
         }
         if (!enabled) {
@@ -964,7 +993,7 @@ CREATE TABLE lnav_view_files (
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be inserted into the lnav_view_files table");
         return SQLITE_ERROR;
-    };
+    }
 
     int update_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid,

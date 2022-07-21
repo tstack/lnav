@@ -202,6 +202,7 @@ dist_noinst_SCRIPTS = \
 	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
+	test_sql_views_vtab.sh \
 	test_sql_xml_func.sh \
 	test_tui.sh \
 	test_view_colors.sh \
@@ -398,6 +399,7 @@ TESTS = \
 	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
+	test_sql_views_vtab.sh \
 	test_sql_xml_func.sh \
 	test_tui.sh \
 	test_data_parser.sh \

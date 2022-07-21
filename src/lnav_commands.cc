@@ -1200,6 +1200,9 @@ com_save_to(exec_context& ec,
 
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
+        if (lnav_data.ld_flags & LNF_HEADLESS && tc->get_inner_height() > 0_vl) {
+            bottom = tc->get_inner_height() - 1_vl;
+        }
         auto y = 0_vl;
         std::vector<attr_line_t> rows(bottom - top + 1);
         attr_line_t ov_al;

@@ -727,7 +727,7 @@ execute_init_commands(
         return;
     }
 
-    db_label_source& dls = lnav_data.ld_db_row_source;
+    auto& dls = lnav_data.ld_db_row_source;
     int option_index = 1;
 
     log_info("Executing initial commands");
