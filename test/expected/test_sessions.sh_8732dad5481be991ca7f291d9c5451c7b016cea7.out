@@ -1,0 +1,3 @@
+;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'b05c1bdfe75cde41e151c89087e31951'
+:switch-to-view log
+:goto 1

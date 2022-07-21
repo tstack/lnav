@@ -258,6 +258,7 @@ noinst_HEADERS = \
 	safe/mutableref.h \
 	safe/safe.h \
 	service_tags.hh \
+	session.export.hh \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
@@ -418,6 +419,7 @@ libdiag_a_SOURCES = \
 	regex101.import.cc \
 	regexp_vtab.cc \
 	relative_time.cc \
+	session.export.cc \
 	session_data.cc \
 	shared_buffer.cc \
 	shlex.cc \

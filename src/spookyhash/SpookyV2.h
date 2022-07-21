@@ -98,7 +98,6 @@ public:
         const void *message,  // message fragment
         size_t length);       // length of message fragment in bytes
 
-
     //
     // Final: compute the hash for the current SpookyHash state
     //
@@ -107,9 +106,8 @@ public:
     // The result is the same as if SpookyHash() had been called with
     // all the pieces concatenated into one message.
     //
-    void Final(
-        uint64 *hash1,    // out only: first 64 bits of hash value.
-        uint64 *hash2);   // out only: second 64 bits of hash value.
+    void Final(uint64* hash1,  // out only: first 64 bits of hash value.
+               uint64* hash2) const;  // out only: second 64 bits of hash value.
 
     //
     // left rotate a 64-bit value by k bytes

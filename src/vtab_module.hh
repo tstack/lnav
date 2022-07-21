@@ -324,7 +324,7 @@ struct ToSqliteVisitor {
     template<typename T>
     void operator()(T&& t) const
     {
-        to_sqlite(this->tsv_context, t);
+        to_sqlite(this->tsv_context, std::forward<T>(t));
     }
 
     sqlite3_context* tsv_context;
@@ -612,11 +612,12 @@ struct vtab_module_base {
 template<typename T>
 struct vtab_module : public vtab_module_base {
     struct vtab {
-        explicit vtab(T& impl) : v_impl(impl) {}
+        explicit vtab(sqlite3* db, T& impl) : v_db(db), v_impl(impl) {}
 
         explicit operator sqlite3_vtab*() { return &this->base; }
 
         sqlite3_vtab v_base{};
+        sqlite3* v_db;
         T& v_impl;
     };
 
@@ -628,7 +629,7 @@ struct vtab_module : public vtab_module_base {
                           char** pzErr)
     {
         auto* mod = static_cast<vtab_module<T>*>(pAux);
-        auto vt = new vtab(mod->vm_impl);
+        auto vt = new vtab(db, mod->vm_impl);
 
         *pp_vt = (sqlite3_vtab*) &vt->v_base;
 
@@ -802,7 +803,9 @@ struct vtab_module : public vtab_module_base {
     }
 
     template<typename U>
-    void addUpdate(...){};
+    void addUpdate(...)
+    {
+    }
 
     template<typename... Args>
     vtab_module(Args&... args) noexcept : vm_impl(args...)

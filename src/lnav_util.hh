@@ -35,6 +35,7 @@
 #define lnav_util_hh
 
 #include <future>
+#include <iterator>
 #include <numeric>
 #include <string>
 #include <type_traits>
@@ -47,6 +48,7 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
@@ -67,10 +69,10 @@
 
 class hasher {
 public:
-    hasher()
-    {
-        this->h_context.Init(0, 0);
-    }
+    using array_t = byte_array<2, uint64_t>;
+    static constexpr size_t STRING_SIZE = array_t::STRING_SIZE;
+
+    hasher() { this->h_context.Init(0, 0); }
 
     hasher& update(const std::string& str)
     {
@@ -102,9 +104,17 @@ public:
         return *this;
     }
 
+    void to_string(auto_buffer& buf)
+    {
+        array_t bits;
+
+        this->h_context.Final(bits.out(0), bits.out(1));
+        bits.to_string(std::back_inserter(buf));
+    }
+
     std::string to_string()
     {
-        byte_array<2, uint64> bits;
+        array_t bits;
 
         this->h_context.Final(bits.out(0), bits.out(1));
         return bits.to_string();

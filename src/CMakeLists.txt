@@ -334,6 +334,7 @@ add_library(
         regex101.client.cc
         regex101.import.cc
         relative_time.cc
+        session.export.cc
         session_data.cc
         sequence_matcher.cc
         shlex.cc
@@ -448,6 +449,7 @@ add_library(
         safe/defaulttypes.h
         safe/mutableref.h
         safe/safe.h
+        session.export.hh
         sequence_sink.hh
         shlex.hh
         shlex.resolver.hh

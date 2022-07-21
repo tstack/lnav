@@ -340,6 +340,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sessions.sh_68a89b56c5e7f7db620084cca1eb547cbb19a2c9.out \
     $(srcdir)/%reldir%/test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.err \
     $(srcdir)/%reldir%/test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.out \
+    $(srcdir)/%reldir%/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.err \
+    $(srcdir)/%reldir%/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out \
     $(srcdir)/%reldir%/test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.err \
     $(srcdir)/%reldir%/test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.out \
     $(srcdir)/%reldir%/test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.err \

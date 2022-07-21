@@ -300,19 +300,18 @@ void SpookyHash::Update(const void *message, size_t length)
     m_state[11] = h11;
 }
 
-
 // report the hash for the concatenation of all message fragments so far
-void SpookyHash::Final(uint64 *hash1, uint64 *hash2)
+void
+SpookyHash::Final(uint64* hash1, uint64* hash2) const
 {
     // init the variables
-    if (m_length < sc_bufSize)
-    {
+    if (m_length < sc_bufSize) {
         *hash1 = m_state[0];
         *hash2 = m_state[1];
-        Short( m_data, m_length, hash1, hash2);
+        Short(m_data, m_length, hash1, hash2);
         return;
     }
-    
+
     const uint64 *data = (const uint64 *)m_data;
     uint8 remainder = m_remainder;
     

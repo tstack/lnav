@@ -60,6 +60,10 @@ lnav v0.11.0:
        if none of the clipboard commands could be detected.  Your
        terminal software will need to support the sequence and you may
        need to explicitly enable it in the terminal.
+     * Added the ":export-session-to <path>" command that writes the
+       current session state to a file as a list of commands/SQL
+       statements.  This script file can be executed to restore the
+       majority of the current state.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that
@@ -84,6 +88,10 @@ lnav v0.11.0:
        match log messages that are in that log format instead of all
        log messages.  As a benefit, the search table now includes
        the columns that are defined as part of the format.
+     * The lnav_view_filters table will treats the tuple of
+       (view_name, type, language, pattern) as a UNIQUE index and
+       will raise a conflict error on an INSERT.  Use "REPLACE INTO"
+       instead of "INSERT INTO" to ignore conflict error.
 
      Fixes:
      * Toggling enabled/disabled filters when there is a SQL expression

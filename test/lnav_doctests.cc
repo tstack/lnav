@@ -81,6 +81,10 @@ TEST_CASE("byte_array")
     ba1.clear();
     CHECK(ba1.to_string() == "0000000000000000");
     CHECK(ba2.to_string() == "6162636431323334");
+
+    auto outbuf = auto_buffer::alloc(my_array_t::STRING_SIZE);
+    ba2.to_string(std::back_inserter(outbuf));
+    CHECK(std::string(outbuf.in(), outbuf.size()) == "6162636431323334");
 }
 
 TEST_CASE("ptime_fmt")

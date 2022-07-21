@@ -52,6 +52,17 @@ using free_func_t = void (*)(void*);
 template<class T, free_func_t default_free = free>
 class auto_mem {
 public:
+    static void noop_free(void*) {}
+
+    static auto_mem<T> leak(T* ptr)
+    {
+        auto_mem<T> retval(noop_free);
+
+        retval = ptr;
+
+        return retval;
+    }
+
     explicit auto_mem(T* ptr = nullptr)
         : am_ptr(ptr), am_free_func(default_free)
     {
@@ -156,6 +167,8 @@ private:
 
 class auto_buffer {
 public:
+    using value_type = char;
+
     static auto_buffer alloc(size_t capacity)
     {
         return auto_buffer{capacity == 0 ? nullptr : (char*) malloc(capacity),
@@ -222,6 +235,14 @@ public:
     char* begin() { return this->ab_buffer; }
 
     const char* begin() const { return this->ab_buffer; }
+
+    void push_back(char ch)
+    {
+        this->ab_buffer[this->ab_size] = ch;
+        this->ab_size += 1;
+    }
+
+    void pop_back() { this->ab_size -= 1; }
 
     bool is_bit_set(size_t bit_offset) const
     {

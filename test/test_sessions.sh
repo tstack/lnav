@@ -26,6 +26,12 @@ run_cap_test ${lnav_test} -nq \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -nq \
+    -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
+    -c ":goto 1" \
+    -c ":export-session-to -" \
+    ${test_dir}/logfile_access_log.0
+
 # log mark was not saved in session
 run_cap_test ${lnav_test} -n \
     -c ":load-session" \

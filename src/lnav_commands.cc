@@ -58,6 +58,7 @@
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
 #include "lnav.indexing.hh"
+#include "session.export.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -3730,6 +3731,71 @@ com_save_session(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_export_session_to(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        args.emplace_back("filename");
+    } else if (!ec.ec_dry_run) {
+        auto_mem<FILE> outfile(fclose);
+        auto fn = trim(remaining_args(cmdline, args));
+        auto to_term = false;
+
+        if (fn == "-" || fn == "/dev/stdout") {
+            auto ec_out = ec.get_output();
+
+            if (!ec_out) {
+                outfile = auto_mem<FILE>::leak(stdout);
+                nodelay(lnav_data.ld_window, 0);
+                endwin();
+                struct termios curr_termios;
+                tcgetattr(1, &curr_termios);
+                curr_termios.c_oflag |= ONLCR | OPOST;
+                tcsetattr(1, TCSANOW, &curr_termios);
+                setvbuf(stdout, nullptr, _IONBF, 0);
+                to_term = true;
+                fprintf(outfile,
+                        "\n---------------- Press any key to exit lo-fi display "
+                        "----------------\n\n");
+            } else {
+                outfile = auto_mem<FILE>::leak(ec_out.value());
+            }
+            if (outfile.in() == stdout) {
+                lnav_data.ld_stdout_used = true;
+            }
+        } else if (fn == "/dev/clipboard") {
+            auto open_res = sysclip::open(sysclip::type_t::GENERAL);
+            if (open_res.isErr()) {
+                alerter::singleton().chime();
+                return ec.make_error("Unable to copy to clipboard: {}",
+                                     open_res.unwrapErr());
+            }
+            outfile = open_res.unwrap();
+        } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+            return ec.make_error("{} -- unavailable in secure mode", args[0]);
+        } else if ((outfile = fopen(fn.c_str(), "w")) == nullptr) {
+            return ec.make_error("unable to open file -- {}", fn);
+        }
+
+        auto export_res = lnav::session::export_to(outfile.in());
+        if (export_res.isErr()) {
+            return Err(export_res.unwrapErr());
+        }
+
+        fflush(outfile.in());
+        if (to_term) {
+            cbreak();
+            getch();
+            refresh();
+            nodelay(lnav_data.ld_window, 1);
+        }
+    }
+
+    return Ok(std::string());
+}
+
+static Result<std::string, lnav::console::user_message>
 com_set_min_log_level(exec_context& ec,
                       std::string cmdline,
                       std::vector<std::string>& args)
@@ -5521,6 +5587,13 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":save-session")
          .with_summary("Save the current state as a session")},
+    {"export-session-to",
+     com_export_session_to,
+
+     help_text(":export-session-to")
+         .with_summary("Export the current lnav state to an lnav script file")
+         .with_parameter(help_text("path", "The path to the file to write"))
+         .with_tags({"io", "scripting"})},
     {"set-min-log-level",
      com_set_min_log_level,
 

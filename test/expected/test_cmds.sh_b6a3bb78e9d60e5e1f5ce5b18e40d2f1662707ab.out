@@ -709,9 +709,9 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mmsg[0m   The message to display
 [4mSee Also[0m
-  [1m:echo[0m, [1m:eval[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To display 'Press t to switch to the text view' on the bottom right:
    [37m[40m:[0m[1m[36m[40malt-msg[0m[37m[40m Press t to switch to the text view       [0m
@@ -724,9 +724,9 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mpath[0m   The path to the file to append to
 [4mSee Also[0m
-  [1m:echo[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To append marked lines to the file /tmp/interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
@@ -938,12 +938,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mmsg[0m   The message to display
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
    [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
@@ -978,14 +978,27 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mcommand[0m   The command or query to perform substitution on.
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:echo[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:alt-msg[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To substitute the table name from a variable:
    [37m[40m:[0m[1m[36m[40meval[0m[37m[40m ;SELECT * FROM [0m[1m[37m[40m${[0m[37m[40mtable[0m[1m[37m[40m}[0m[37m[40m                     [0m
    
 
+
+[4m:[0m[1m[4mexport-session-to[0m[4m [0m[4mpath[0m
+══════════════════════════════════════════════════════════════════════
+  Export the current lnav state to an lnav script file
+[4mParameter[0m
+  [4mpath[0m   The path to the file to write
+[4mSee Also[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1235,9 +1248,9 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m:append-to[0m, [1m:echo[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the top line to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
@@ -1250,9 +1263,9 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m:append-to[0m, [1m:echo[0m, [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:redirect-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
@@ -1325,11 +1338,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write.  If not specified, the
          current redirect will be cleared
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file /tmp/script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
@@ -1553,12 +1567,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as text to /tmp/table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
@@ -1572,13 +1587,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as CSV to /tmp/table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m /tmp/table.csv                      [0m
@@ -1592,13 +1607,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as JSON to /tmp/table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m /tmp/table.json                    [0m
@@ -1612,12 +1627,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as JSON Lines to /tmp/table.json:
    [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m /tmp/table.json               [0m
@@ -1635,13 +1651,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write the marked lines in the log view to /tmp/table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m /tmp/table.txt                      [0m
@@ -1656,12 +1672,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write only the displayed text to /tmp/table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m /tmp/table.txt                   [0m
@@ -1675,12 +1692,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write SQL results as text to /tmp/table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
@@ -1693,12 +1711,12 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
-  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To write marked lines to the file /tmp/interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m /tmp/interesting-lines.txt              [0m
@@ -1713,13 +1731,13 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m
+  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m
 [4mExample[0m
 #1 To write the top view to /tmp/table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m /tmp/table.txt                     [0m

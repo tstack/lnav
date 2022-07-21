@@ -25,36 +25,19 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file sqlitepp.hh
  */
 
-#ifndef lnav_sqlitepp_hh
-#define lnav_sqlitepp_hh
+#ifndef lnav_session_export_hh
+#define lnav_session_export_hh
 
-#include <string>
+#include "base/lnav.console.hh"
 
-#include "base/auto_mem.hh"
+namespace lnav {
+namespace session {
 
-/* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void* mem);
+Result<void, lnav::console::user_message> export_to(FILE* file);
 
-namespace sqlitepp {
-
-inline auto_mem<char>
-quote(const nonstd::optional<std::string>& str)
-{
-    auto_mem<char> retval(sqlite3_free);
-
-    if (str) {
-        retval = sqlite3_mprintf("%Q", str.value().c_str());
-    } else {
-        retval = sqlite3_mprintf("NULL");
-    }
-
-    return retval;
 }
-
-}  // namespace sqlitepp
+}  // namespace lnav
 
 #endif

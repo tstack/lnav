@@ -74,7 +74,8 @@ static const char* LOG_FOOTER_COLUMNS = R"(
   log_unique_path  TEXT HIDDEN COLLATE naturalnocase, -- The unique portion of the path this message is from
   log_text         TEXT HIDDEN,                       -- The full text of the log message
   log_body         TEXT HIDDEN,                       -- The body of the log message
-  log_raw_text     TEXT HIDDEN                        -- The raw text from the log file
+  log_raw_text     TEXT HIDDEN,                       -- The raw text from the log file
+  log_line_hash    TEXT HIDDEN                        -- A hash of the first line of the log message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -87,6 +88,7 @@ enum class log_footer_columns : uint32_t {
     text,
     body,
     raw_text,
+    line_hash,
 };
 
 static const char*
@@ -914,6 +916,29 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
                         break;
                     }
+                    case log_footer_columns::line_hash: {
+                        auto read_res = lf->read_line(ll);
+
+                        if (read_res.isErr()) {
+                            auto msg = fmt::format(
+                                FMT_STRING("unable to read line -- {}"),
+                                read_res.unwrapErr());
+                            sqlite3_result_error(
+                                ctx, msg.c_str(), msg.length());
+                        } else {
+                            auto sbr = read_res.unwrap();
+                            hasher line_hasher;
+
+                            auto outbuf
+                                = auto_buffer::alloc(hasher::STRING_SIZE);
+                            line_hasher.update(sbr.get_data(), sbr.length())
+                                .update(cl)
+                                .to_string(outbuf);
+                            auto tab = text_auto_buffer{std::move(outbuf)};
+                            to_sqlite(ctx, tab);
+                        }
+                        break;
+                    }
                 }
             } else {
                 if (vc->line_values.empty()) {
@@ -1508,6 +1533,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
+                        case log_footer_columns::line_hash:
                             break;
                     }
                 } else {
@@ -1789,6 +1815,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
+                        case log_footer_columns::line_hash:
                             break;
                     }
                 } else if (op == SQLITE_INDEX_CONSTRAINT_EQ) {

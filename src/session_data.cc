@@ -396,30 +396,29 @@ load_time_bookmarks()
     }
 
     {
-        if (sqlite3_prepare_v2(db.in(),
-                               "SELECT netloc FROM recent_netlocs",
-                               -1,
-                               stmt.out(),
-                               nullptr)
-            != SQLITE_OK)
-        {
+        auto netloc_prep_res
+            = prepare_stmt(db.in(), "SELECT netloc FROM recent_netlocs");
+        if (netloc_prep_res.isErr()) {
+            log_error("unable to get netlocs: %s",
+                      netloc_prep_res.unwrapErr().c_str());
             return;
         }
 
+        auto netloc_stmt = netloc_prep_res.unwrap();
         bool done = false;
 
         while (!done) {
-            switch (sqlite3_step(stmt.in())) {
-                case SQLITE_ROW: {
-                    const auto* netloc = sqlite3_column_text(stmt.in(), 0);
-
-                    session_data.sd_recent_netlocs.insert((const char*) netloc);
-                    break;
-                }
-                default:
-                    done = true;
-                    break;
-            }
+            done = netloc_stmt.fetch_row<std::string>().match(
+                [](const std::string& netloc) {
+                    session_data.sd_recent_netlocs.insert(netloc);
+                    return false;
+                },
+                [](const prepared_stmt::fetch_error& fe) {
+                    log_error("failed to fetch netloc row: %s",
+                              fe.fe_msg.c_str());
+                    return true;
+                },
+                [](prepared_stmt::end_of_rows) { return true; });
         }
     }
 
@@ -855,16 +854,18 @@ read_commands(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-static struct json_path_container view_def_handlers
-    = {json_path_handler("top_line", read_top_line),
-       json_path_handler("search", read_current_search),
-       json_path_handler("word_wrap", read_word_wrap),
-       json_path_handler("filtering", read_filtering),
-       json_path_handler("commands#", read_commands)};
+static struct json_path_container view_def_handlers = {
+    json_path_handler("top_line", read_top_line),
+    json_path_handler("search", read_current_search),
+    json_path_handler("word_wrap", read_word_wrap),
+    json_path_handler("filtering", read_filtering),
+    json_path_handler("commands#", read_commands),
+};
 
-static struct json_path_container view_handlers
-    = {yajlpp::pattern_property_handler("([^/]+)").with_children(
-        view_def_handlers)};
+static struct json_path_container view_handlers = {
+    yajlpp::pattern_property_handler("([^/]+)").with_children(
+        view_def_handlers),
+};
 
 static struct json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
@@ -1313,10 +1314,9 @@ save_time_bookmarks()
     }
 
     for (auto& ls : lss) {
-        logfile::iterator line_iter;
-
-        if (ls->get_file() == nullptr)
+        if (ls->get_file() == nullptr) {
             continue;
+        }
 
         auto lf = ls->get_file();
 
@@ -1324,7 +1324,7 @@ save_time_bookmarks()
             continue;
         }
 
-        line_iter = lf->begin() + lf->get_time_offset_line();
+        auto line_iter = lf->begin() + lf->get_time_offset_line();
         struct timeval offset = lf->get_time_offset();
 
         auto read_result = lf->read_line(line_iter);

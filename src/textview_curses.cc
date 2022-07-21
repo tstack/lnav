@@ -982,6 +982,12 @@ filter_stack::get_enabled_mask(uint32_t& filter_in_mask,
 }
 
 void
+filter_stack::add_filter(const std::shared_ptr<text_filter>& filter)
+{
+    this->fs_filters.push_back(filter);
+}
+
+void
 vis_location_history::loc_history_append(vis_line_t top)
 {
     auto iter = this->vlh_history.begin();

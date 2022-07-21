@@ -635,9 +635,10 @@ CREATE TABLE lnav_view_filters (
                    nonstd::optional<filter_lang_t> lang,
                    sqlite3_value* pattern_str)
     {
-        textview_curses& tc = lnav_data.ld_views[view_index];
-        text_sub_source* tss = tc.get_sub_source();
-        filter_stack& fs = tss->get_filters();
+        auto* mod_vt = (vtab_module<lnav_view_filters>::vtab*) tab;
+        auto& tc = lnav_data.ld_views[view_index];
+        auto* tss = tc.get_sub_source();
+        auto& fs = tss->get_filters();
         auto filter_index
             = lang.value_or(filter_lang_t::REGEX) == filter_lang_t::REGEX
             ? fs.next_index()
@@ -645,6 +646,7 @@ CREATE TABLE lnav_view_filters (
         if (!filter_index) {
             throw sqlite_func_error("Too many filters");
         }
+        auto conflict_mode = sqlite3_vtab_on_conflict(mod_vt->v_db);
         std::shared_ptr<text_filter> tf;
         switch (lang.value_or(filter_lang_t::REGEX)) {
             case filter_lang_t::REGEX: {
@@ -656,6 +658,26 @@ CREATE TABLE lnav_view_filters (
                     pattern.first,
                     *filter_index,
                     pattern.second.release());
+                auto new_cmd = pf->to_command();
+                for (auto& filter : fs) {
+                    if (filter->to_command() == new_cmd) {
+                        switch (conflict_mode) {
+                            case SQLITE_FAIL:
+                            case SQLITE_ABORT:
+                                tab->zErrMsg = sqlite3_mprintf(
+                                    "filter already exists -- %s",
+                                    new_cmd.c_str());
+                                return conflict_mode;
+                            case SQLITE_IGNORE:
+                                return SQLITE_OK;
+                            case SQLITE_REPLACE:
+                                filter->set_enabled(pf->is_enabled());
+                                return SQLITE_OK;
+                            default:
+                                break;
+                        }
+                    }
+                }
                 fs.add_filter(pf);
                 tf = pf;
                 break;
@@ -664,6 +686,19 @@ CREATE TABLE lnav_view_filters (
                 if (view_index != LNV_LOG) {
                     throw sqlite_func_error(
                         "SQL filters are only supported in the log view");
+                }
+                if (lnav_data.ld_log_source.get_sql_filter_text() != "") {
+                    switch (conflict_mode) {
+                        case SQLITE_FAIL:
+                        case SQLITE_ABORT:
+                            tab->zErrMsg = sqlite3_mprintf(
+                                "A SQL filter already exists");
+                            return conflict_mode;
+                        case SQLITE_IGNORE:
+                            return SQLITE_OK;
+                        default:
+                            break;
+                    }
                 }
                 auto clause = from_sqlite<std::string>()(1, &pattern_str, 0);
                 auto expr

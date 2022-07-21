@@ -98,7 +98,9 @@ public:
     } type_t;
 
     text_filter(type_t type, filter_lang_t lang, std::string id, size_t index)
-        : lf_type(type), lf_lang(lang), lf_id(std::move(id)), lf_index(index){};
+        : lf_type(type), lf_lang(lang), lf_id(std::move(id)), lf_index(index)
+    {
+    }
     virtual ~text_filter() = default;
 
     type_t get_type() const { return this->lf_type; }
@@ -183,10 +185,7 @@ public:
 
     nonstd::optional<size_t> next_index();
 
-    void add_filter(const std::shared_ptr<text_filter>& filter)
-    {
-        this->fs_filters.push_back(filter);
-    }
+    void add_filter(const std::shared_ptr<text_filter>& filter);
 
     void clear_filters()
     {
