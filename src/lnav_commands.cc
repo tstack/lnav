@@ -3738,6 +3738,8 @@ com_export_session_to(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
 {
+    std::string retval;
+
     if (args.empty()) {
         args.emplace_back("filename");
     } else if (!ec.ec_dry_run) {
@@ -3782,9 +3784,6 @@ com_export_session_to(exec_context& ec,
         }
 
         auto export_res = lnav::session::export_to(outfile.in());
-        if (export_res.isErr()) {
-            return Err(export_res.unwrapErr());
-        }
 
         fflush(outfile.in());
         if (to_term) {
@@ -3793,9 +3792,14 @@ com_export_session_to(exec_context& ec,
             refresh();
             nodelay(lnav_data.ld_window, 1);
         }
+        if (export_res.isErr()) {
+            return Err(export_res.unwrapErr());
+        }
+
+        retval = fmt::format(FMT_STRING("info: wrote session commands to -- {}"), fn);
     }
 
-    return Ok(std::string());
+    return Ok(retval);
 }
 
 static Result<std::string, lnav::console::user_message>

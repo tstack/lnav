@@ -1,3 +1,18 @@
+
+# This file is an export of an lnav session.  You can type
+# '|/path/to/this/file' in lnav to execute this file and
+# restore the state of the session.
+#
+# The files loaded into the session were:
+#   {test_dir}/logfile_access_log.0
+
+# The following SQL statements will restore the bookmarks,
+# comments, and tags that were added in the session.
+
 ;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'b05c1bdfe75cde41e151c89087e31951'
+
+# The following commands will restore the
+# state of the LOG view.
+
 :switch-to-view log
 :goto 1

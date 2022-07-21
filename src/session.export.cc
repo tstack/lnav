@@ -106,6 +106,28 @@ SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_line_has
 SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 )";
 
+    static const char* HEADER = R"(
+# This file is an export of an lnav session.  You can type
+# '|/path/to/this/file' in lnav to execute this file and
+# restore the state of the session.
+#
+# The files loaded into the session were:
+)";
+
+    static const char* MARK_HEADER = R"(
+
+# The following SQL statements will restore the bookmarks,
+# comments, and tags that were added in the session.
+
+)";
+
+    static const char* FILTER_HEADER = R"(
+
+# The following SQL statements will restore the filters that
+# were added in the session.
+
+)";
+
     console::user_message errmsg;
 
     auto prep_res = prepare_stmt(lnav_db.in(), BOOKMARK_QUERY);
@@ -115,11 +137,21 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
                 .with_reason(prep_res.unwrapErr()));
     }
 
+    fmt::print(file, FMT_STRING("{}"), HEADER);
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        fmt::print(file, FMT_STRING("#   {}"), lf->get_filename());
+    }
+
+    auto added_mark_header = false;
     auto bookmark_stmt = prep_res.unwrap();
     auto done = false;
     while (!done) {
         done = bookmark_stmt.fetch_row<log_message_session_state>().match(
-            [file](const log_message_session_state& lmss) {
+            [file, &added_mark_header](const log_message_session_state& lmss) {
+                if (!added_mark_header) {
+                    fmt::print(file, FMT_STRING("{}"), MARK_HEADER);
+                    added_mark_header = true;
+                }
                 fmt::print(file,
                            FMT_STRING(";UPDATE all_logs "
                                       "SET log_mark = {}, "
@@ -156,11 +188,16 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
                        .with_reason(prep_filter_res.unwrapErr()));
     }
 
+    auto added_filter_header = false;
     auto filter_stmt = prep_filter_res.unwrap();
     done = false;
     while (!done) {
         done = filter_stmt.fetch_row<log_filter_session_state>().match(
-            [file](const log_filter_session_state& lfss) {
+            [file, &added_filter_header](const log_filter_session_state& lfss) {
+                if (!added_filter_header) {
+                    fmt::print(file, FMT_STRING("{}"), FILTER_HEADER);
+                    added_filter_header = true;
+                }
                 fmt::print(
                     file,
                     FMT_STRING(";REPLACE INTO lnav_view_filters "
@@ -192,6 +229,10 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
             continue;
         }
 
+        fmt::print(file,
+                   FMT_STRING("\n# The following commands will restore the"
+                              "\n# state of the {} view.\n\n"),
+                   lnav_view_titles[view_index]);
         fmt::print(file,
                    FMT_STRING(":switch-to-view {}\n"),
                    lnav_view_strings[view_index]);
