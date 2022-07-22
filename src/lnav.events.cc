@@ -29,6 +29,8 @@
 
 #include "lnav.events.hh"
 
+#include "sqlitepp.client.hh"
+
 namespace lnav {
 namespace events {
 
@@ -140,22 +142,17 @@ details::publish(sqlite3* db, const std::string& content)
 INSERT INTO lnav_events (content) VALUES (?)
 )";
 
-    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    auto prep_res = prepare_stmt(db, INSERT_SQL, content);
+    if (prep_res.isErr()) {
+        log_error("unable to prepare event statement: %s",
+                  prep_res.unwrapErr().c_str());
+        return;
+    }
 
-    if (sqlite3_prepare_v2(db, INSERT_SQL, -1, stmt.out(), nullptr)
-        != SQLITE_OK) {
-        log_error("unable to prepare statement: %s", sqlite3_errmsg(db));
+    auto exec_res = prep_res.unwrap().execute();
+    if (exec_res.isErr()) {
+        log_error("failed to execute insert: %s", exec_res.unwrapErr().c_str());
         return;
-    }
-    if (sqlite3_bind_text(
-            stmt.in(), 1, content.c_str(), content.size(), SQLITE_TRANSIENT)
-        != SQLITE_OK)
-    {
-        log_error("unable to bind parameter: %s", sqlite3_errmsg(db));
-        return;
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        log_error("failed to execute insert: %s", sqlite3_errmsg(db));
     }
 }
 

@@ -702,8 +702,10 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 auto msg = result.unwrap();
 
                 if (!msg.empty()) {
-                    prompt = lnav::console::user_message::info(
-                                 attr_line_t("SQL Result: ").append(msg))
+                    prompt = lnav::console::user_message::ok(
+                                 attr_line_t("SQL Result: ")
+                                     .append(attr_line_t::from_ansi_str(
+                                         msg.c_str())))
                                  .to_attr_line();
                     if (dls.dls_rows.size() > 1) {
                         ensure_view(&lnav_data.ld_views[LNV_DB]);
