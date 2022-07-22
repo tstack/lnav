@@ -292,8 +292,18 @@ struct vtab {
 };
 
 struct vtab_cursor {
+    void cache_msg(logfile* lf, logfile::const_iterator ll)
+    {
+        if (this->log_msg_line == this->log_cursor.lc_curr_line) {
+            return;
+        }
+        lf->read_full_message(ll, this->log_msg);
+        this->log_msg_line = this->log_cursor.lc_curr_line;
+    }
+
     sqlite3_vtab_cursor base;
     struct log_cursor log_cursor;
+    vis_line_t log_msg_line{-1_vl};
     shared_buffer_ref log_msg;
     std::vector<logline_value> line_values;
 };
@@ -430,7 +440,7 @@ populate_indexed_columns(vtab_cursor* vc, vtab* vt)
             lf = (*ld)->get_file_ptr();
             auto ll = lf->begin() + line_number;
 
-            lf->read_full_message(ll, vc->log_msg);
+            vc->cache_msg(lf, ll);
             vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);
         }
 
@@ -561,6 +571,12 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
         }
     } while (!done);
 
+#ifdef DEBUG_INDEXING
+    log_debug("vt_next_no_rowid() -> %d:%d",
+              vc->log_cursor.lc_curr_line,
+              vc->log_cursor.lc_end_line);
+#endif
+
     return SQLITE_OK;
 }
 
@@ -637,7 +653,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
             if (ll->is_time_skewed()) {
                 if (vc->line_values.empty()) {
-                    lf->read_full_message(ll, vc->log_msg);
+                    vc->cache_msg(lf, ll);
                     vt->vi->extract(
                         lf, line_number, vc->log_msg, vc->line_values);
                 }
@@ -790,7 +806,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                 switch (footer_column) {
                     case log_footer_columns::opid: {
                         if (vc->line_values.empty()) {
-                            lf->read_full_message(ll, vc->log_msg);
+                            vc->cache_msg(lf, ll);
                             vt->vi->extract(
                                 lf, line_number, vc->log_msg, vc->line_values);
                         }
@@ -857,7 +873,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                     case log_footer_columns::body: {
                         if (vc->line_values.empty()) {
-                            lf->read_full_message(ll, vc->log_msg);
+                            vc->cache_msg(lf, ll);
                             vt->vi->extract(
                                 lf, line_number, vc->log_msg, vc->line_values);
                         }
@@ -926,7 +942,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                 }
             } else {
                 if (vc->line_values.empty()) {
-                    lf->read_full_message(ll, vc->log_msg);
+                    vc->cache_msg(lf, ll);
                     vt->vi->extract(
                         lf, line_number, vc->log_msg, vc->line_values);
                 }

@@ -1,0 +1,11 @@
+view_name filter_id enabled type language pattern 
+log               1       1 out  regex    blah    
+  name    search 
+log       foobar 
+text             
+help             
+histogram        
+db               
+schema           
+pretty           
+spectro          

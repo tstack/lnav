@@ -2602,13 +2602,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         if (file_path == "-") {
             load_stdin = true;
-        } else if (startswith(file_path, "pt:")) {
-#ifdef HAVE_LIBCURL
-            lnav_data.ld_pt_search = file_path;
-#else
-            fprintf(stderr, "error: lnav is not compiled with libcurl\n");
-            retval = EXIT_FAILURE;
-#endif
         }
 #ifdef HAVE_LIBCURL
         else if (is_url(file_path))
@@ -2821,7 +2814,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     if (retval == EXIT_SUCCESS
         && lnav_data.ld_active_files.fc_file_names.empty()
-        && lnav_data.ld_commands.empty() && lnav_data.ld_pt_search.empty()
+        && lnav_data.ld_commands.empty()
         && !(lnav_data.ld_show_help_view || mode_flags.mf_no_default))
     {
         lnav::console::print(

@@ -44,7 +44,6 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
-#include "papertrail_proc.hh"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
@@ -282,6 +281,18 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
     }
 
     return Ok(retval);
+}
+
+static void
+execute_search(const std::string& search_cmd)
+{
+    lnav_data.ld_view_stack.top() | [&search_cmd](auto tc) {
+        auto search_term
+            = string_fragment(search_cmd)
+                  .find_right_boundary(0, string_fragment::tag1{'\n'})
+                  .to_string();
+        tc->execute_search(search_term);
+    };
 }
 
 Result<std::string, lnav::console::user_message>
@@ -703,8 +714,7 @@ execute_from_file(exec_context& ec,
             retval = TRY(execute_command(ec, cmdline.substr(1)));
             break;
         case '/':
-            lnav_data.ld_view_stack.top() |
-                [cmdline](auto tc) { tc->execute_search(cmdline.substr(1)); };
+            execute_search(cmdline.substr(1));
             break;
         case ';':
             setup_logline_table(ec);
@@ -746,8 +756,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
             retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
-            lnav_data.ld_view_stack.top() |
-                [cmdline](auto tc) { tc->execute_search(cmdline.substr(1)); };
+            execute_search(cmdline);
             break;
         case ';':
             setup_logline_table(ec);
@@ -795,8 +804,7 @@ execute_init_commands(
                                       alt_msg);
                     break;
                 case '/':
-                    lnav_data.ld_view_stack.top() |
-                        [cmd](auto tc) { tc->execute_search(cmd.substr(1)); };
+                    execute_search(cmd.substr(1));
                     break;
                 case ';':
                     setup_logline_table(ec);
@@ -813,20 +821,6 @@ execute_init_commands(
         }
     }
     lnav_data.ld_commands.clear();
-
-    if (!lnav_data.ld_pt_search.empty()) {
-#ifdef HAVE_LIBCURL
-        auto pt = std::make_shared<papertrail_proc>(
-            lnav_data.ld_pt_search.substr(3),
-            lnav_data.ld_pt_min_time,
-            lnav_data.ld_pt_max_time);
-        lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search].with_fd(
-            pt->copy_fd());
-        isc::to<curl_looper&, services::curl_streamer_t>().send(
-            [pt](auto& clooper) { clooper.add_request(pt); });
-#endif
-    }
-
     if (dls.dls_rows.size() > 1) {
         ensure_view(&lnav_data.ld_views[LNV_DB]);
     }

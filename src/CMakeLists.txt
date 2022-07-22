@@ -321,7 +321,6 @@ add_library(
         data_scanner.cc
         data_scanner_re.cc
         data_parser.cc
-        papertrail_proc.cc
         pcap_manager.cc
         plain_text_source.cc
         pretty_printer.cc
@@ -429,7 +428,6 @@ add_library(
         md2attr_line.hh
         md4cpp.hh
         optional.hpp
-        papertrail_proc.hh
         pcap_manager.hh
         plain_text_source.hh
         pretty_printer.hh

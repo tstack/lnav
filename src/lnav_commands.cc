@@ -65,7 +65,6 @@
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_search_table.hh"
-#include "papertrail_proc.hh"
 #include "readline_callbacks.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
@@ -167,47 +166,6 @@ combined_user_marks(vis_bookmarks& vb)
     for (const auto row : bv_expr) {
         retval.insert_once(row);
     }
-    return retval;
-}
-
-static std::string
-refresh_pt_search()
-{
-    std::string retval;
-
-    if (!lnav_data.ld_cmd_init_done) {
-        return "";
-    }
-
-#ifdef HAVE_LIBCURL
-    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        if (startswith(lf->get_filename(), "pt:")) {
-            lf->close();
-        }
-    }
-
-    isc::to<curl_looper&, services::curl_streamer_t>().send(
-        [](auto& clooper) { clooper.close_request("papertrailapp.com"); });
-
-    if (lnav_data.ld_pt_search.empty()) {
-        return "info: no papertrail query is active";
-    }
-    auto pt
-        = std::make_shared<papertrail_proc>(lnav_data.ld_pt_search.substr(3),
-                                            lnav_data.ld_pt_min_time,
-                                            lnav_data.ld_pt_max_time);
-    lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search].with_fd(
-        pt->copy_fd());
-    isc::to<curl_looper&, services::curl_streamer_t>().send(
-        [pt](auto& clooper) { clooper.add_request(pt); });
-
-    ensure_view(&lnav_data.ld_views[LNV_LOG]);
-
-    retval = "info: opened papertrail query";
-#else
-    retval = "error: lnav not compiled with libcurl";
-#endif
-
     return retval;
 }
 
@@ -2412,15 +2370,6 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     for (auto fn : split_args) {
         int top = 0;
 
-        if (startswith(fn, "pt:")) {
-            if (!ec.ec_dry_run) {
-                lnav_data.ld_pt_search = fn;
-
-                refresh_pt_search();
-            }
-            continue;
-        }
-
         if (access(fn.c_str(), R_OK) != 0
             && (colon_index = fn.rfind(':')) != std::string::npos)
         {
@@ -3249,80 +3198,6 @@ com_clear_partition(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
-com_pt_time(exec_context& ec,
-            std::string cmdline,
-            std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("move-time");
-        retval = "";
-    } else if (args.size() == 1) {
-        char ftime[64];
-
-        if (args[0] == "pt-min-time") {
-            if (lnav_data.ld_pt_min_time == 0) {
-                retval
-                    = "info: minimum time is not set, pass a time value to "
-                      "this command to set it";
-            } else {
-                ctime_r(&lnav_data.ld_pt_min_time, ftime);
-                retval
-                    = "info: papertrail minimum time is " + std::string(ftime);
-            }
-        }
-        if (args[0] == "pt-max-time") {
-            if (lnav_data.ld_pt_max_time == 0) {
-                retval
-                    = "info: maximum time is not set, pass a time value to "
-                      "this command to set it";
-            } else {
-                ctime_r(&lnav_data.ld_pt_max_time, ftime);
-                retval
-                    = "info: papertrail maximum time is " + std::string(ftime);
-            }
-        }
-    } else if (args.size() >= 2) {
-        std::string all_args = remaining_args(cmdline, args);
-        struct timeval new_time = {0, 0};
-        date_time_scanner dts;
-        struct exttm tm;
-        time_t now;
-        struct tm base_tm;
-        auto parse_res = relative_time::from_str(all_args);
-
-        time(&now);
-        localtime_r(&now, &base_tm);
-        dts.dts_keep_base_tz = true;
-        dts.set_base_time(now, base_tm);
-        if (parse_res.isOk()) {
-            tm.et_tm = *gmtime(&now);
-            tm = parse_res.unwrap().adjust(tm);
-            new_time.tv_sec = timegm(&tm.et_tm);
-        } else {
-            dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, new_time);
-        }
-        if (ec.ec_dry_run) {
-            retval = "";
-        } else if (new_time.tv_sec != 0) {
-            if (args[0] == "pt-min-time") {
-                lnav_data.ld_pt_min_time = new_time.tv_sec;
-                retval = refresh_pt_search();
-            }
-            if (args[0] == "pt-max-time") {
-                lnav_data.ld_pt_max_time = new_time.tv_sec;
-                retval = refresh_pt_search();
-            }
-        }
-    } else {
-        return ec.make_error("expecting a time value");
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
 com_summarize(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -3814,10 +3689,8 @@ com_set_min_log_level(exec_context& ec,
     } else if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 2) {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        log_level_t new_level;
-
-        new_level = string2level(args[1].c_str(), args[1].size(), false);
+        auto& lss = lnav_data.ld_log_source;
+        auto new_level = string2level(args[1].c_str(), args[1].size(), false);
         lss.set_min_log_level(new_level);
 
         retval = ("info: minimum log level is now -- "
@@ -5518,18 +5391,6 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":clear-partition")
          .with_summary("Clear the partition the top line is a part of")
          .with_opposites({"partition-name"})},
-    {
-        "pt-min-time",
-        com_pt_time,
-
-        help_text(":pt-min-time"),
-    },
-    {
-        "pt-max-time",
-        com_pt_time,
-
-        help_text(":pt-max-time"),
-    },
     {"session",
      com_session,
 

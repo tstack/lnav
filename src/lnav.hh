@@ -172,9 +172,6 @@ struct lnav_data_t {
     file_collection ld_active_files;
     std::list<child_poller> ld_child_pollers;
     std::list<std::pair<std::string, int>> ld_files_to_front;
-    std::string ld_pt_search;
-    time_t ld_pt_min_time;
-    time_t ld_pt_max_time;
     bool ld_stdout_used;
     sig_atomic_t ld_looping;
     sig_atomic_t ld_winched;

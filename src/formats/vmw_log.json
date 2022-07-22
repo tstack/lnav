@@ -3,7 +3,7 @@
     "vmw_log": {
         "title": "VMware Logs",
         "description": "One of the log formats used in VMware's ESXi and vCenter software.",
-        "url": "http://kb.vmware.com/kb/2004201",
+        "url": "https://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
                 "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>\\w+@\\d+)(?:\\s+sub=(?<sub>.*?(?!\\w+=)))?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: req=(?<req>[^ \\]]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+?(?!\\w+=)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s*(?<body>.*)$"

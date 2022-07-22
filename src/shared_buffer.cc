@@ -61,7 +61,7 @@ shared_buffer_ref::share(shared_buffer& sb, char* data, size_t len)
     this->sb_data = data;
     this->sb_length = len;
 
-    ensure(this->sb_length < (5 * 1024 * 1024));
+    ensure(this->sb_length < (10 * 1024 * 1024));
 }
 
 bool

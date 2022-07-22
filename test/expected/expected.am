@@ -396,8 +396,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.out \
     $(srcdir)/%reldir%/test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.err \
     $(srcdir)/%reldir%/test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.out \
+    $(srcdir)/%reldir%/test_sessions.sh_9978aaa475513f9981840e612f853a7707ffcf90.err \
+    $(srcdir)/%reldir%/test_sessions.sh_9978aaa475513f9981840e612f853a7707ffcf90.out \
     $(srcdir)/%reldir%/test_sessions.sh_a92822d121a836140a401fd71535dc4a7a8d5b48.err \
     $(srcdir)/%reldir%/test_sessions.sh_a92822d121a836140a401fd71535dc4a7a8d5b48.out \
+    $(srcdir)/%reldir%/test_sessions.sh_b3d71a87fcb4e3487f71ccad8c6ce681db220572.err \
+    $(srcdir)/%reldir%/test_sessions.sh_b3d71a87fcb4e3487f71ccad8c6ce681db220572.out \
     $(srcdir)/%reldir%/test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.err \
     $(srcdir)/%reldir%/test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.out \
     $(srcdir)/%reldir%/test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.err \

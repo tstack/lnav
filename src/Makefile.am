@@ -235,7 +235,6 @@ noinst_HEADERS = \
 	md2attr_line.hh \
 	md4cpp.hh \
 	optional.hpp \
-	papertrail_proc.hh \
 	pcap_manager.hh \
 	piper_proc.hh \
 	plain_text_source.hh \
@@ -405,7 +404,6 @@ libdiag_a_SOURCES = \
 	md4cpp.cc \
 	network-extension-functions.cc \
 	data_parser.cc \
-	papertrail_proc.cc \
 	pcap_manager.cc \
 	plain_text_source.cc \
 	pollable.cc \

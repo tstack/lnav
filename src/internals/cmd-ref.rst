@@ -995,28 +995,6 @@
 ----
 
 
-.. _pt_max_time:
-
-:pt-max-time
-^^^^^^^^^^^^
-
-  (null)
-
-
-----
-
-
-.. _pt_min_time:
-
-:pt-min-time
-^^^^^^^^^^^^
-
-  (null)
-
-
-----
-
-
 .. _quit:
 
 :quit

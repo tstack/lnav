@@ -32,6 +32,25 @@ run_cap_test ${lnav_test} -nq \
     -c ":export-session-to -" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -nq \
+    -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
+    -c ":set-min-log-level debug" \
+    -c ":hide-lines-before 2005" \
+    -c ":hide-lines-after 2030" \
+    -c ":filter-out blah" \
+    -c "/foobar" \
+    -c ":goto 1" \
+    -c ":export-session-to exported-session.0.lnav" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c "|exported-session.0.lnav" \
+    -c ";SELECT * FROM lnav_view_filters" \
+    -c ":write-screen-to -" \
+    -c ";SELECT name,search FROM lnav_views" \
+    -c ":write-screen-to -" \
+    ${test_dir}/logfile_access_log.0
+
 # log mark was not saved in session
 run_cap_test ${lnav_test} -n \
     -c ":load-session" \

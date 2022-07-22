@@ -732,6 +732,11 @@ logfile::read_full_message(logfile::const_iterator ll,
 {
     require(ll->get_sub_offset() == 0);
 
+#if 0
+    log_debug(
+        "%s: reading msg at %d", this->lf_filename.c_str(), ll->get_offset());
+#endif
+
     msg_out.disown();
     try {
         auto read_result

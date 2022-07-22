@@ -123,6 +123,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
         if (this->lst_regex.match(
                 this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
         {
+            // log_debug("matched within line");
             this->lst_match_index += 1;
             return true;
         }

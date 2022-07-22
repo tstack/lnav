@@ -59,6 +59,7 @@
 
 static const ssize_t INITIAL_REQUEST_SIZE = 16 * 1024;
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
+static const ssize_t INITIAL_COMPRESSED_BUFFER_SIZE = 5 * 1024 * 1024;
 static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
 class io_looper : public isc::service<io_looper> {};
@@ -376,6 +377,7 @@ line_buffer::set_fd(auto_fd& fd)
                     }
                     this->lb_compressed_offset
                         = lseek(this->lb_fd, 0, SEEK_CUR);
+                    this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
                 }
 #ifdef HAVE_BZLIB_H
                 else if (gz_id[0] == 'B' && gz_id[1] == 'Z')
@@ -390,7 +392,7 @@ line_buffer::set_fd(auto_fd& fd)
                      * Loading data from a bzip2 file is pretty slow, so we try
                      * to keep as much in memory as possible.
                      */
-                    this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+                    this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
 
                     this->lb_compressed_offset = 0;
                 }
@@ -512,7 +514,7 @@ line_buffer::load_next_buffer()
         {
             rc = 0;
         } else {
-            // log_debug("decomp start");
+            // log_debug("async decomp start");
             rc = gi->read(this->lb_alt_buffer.value().end(),
                           start + this->lb_alt_buffer.value().size(),
                           this->lb_alt_buffer.value().available());
@@ -524,7 +526,12 @@ line_buffer::load_next_buffer()
                 this->lb_file_size
                     = (start + this->lb_alt_buffer.value().size() + rc);
             }
-            // log_debug("decomp end");
+#if 0
+            log_debug("async decomp end  %d+%d:%d",
+                      this->lb_alt_buffer->size(),
+                      rc,
+                      this->lb_alt_buffer->capacity());
+#endif
         }
     }
 #ifdef HAVE_BZLIB_H
@@ -779,7 +786,12 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
                 }
             }
-            // log_debug("old decomp end");
+#if 0
+            log_debug("old decomp end -- %d+%d:%d",
+                      this->lb_buffer.size(),
+                      rc,
+                      this->lb_buffer.capacity());
+#endif
         }
 #ifdef HAVE_BZLIB_H
         else if (this->lb_bz_file)
