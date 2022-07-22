@@ -52,6 +52,8 @@
 #include "termios_guard.hh"
 #include "xterm_mouse.hh"
 
+using namespace lnav::roles::literals;
+
 class logline_helper {
 public:
     logline_helper(logfile_sub_source& lss) : lh_sub_source(lss) {}
@@ -254,10 +256,11 @@ handle_paging_key(int ch)
             if (xterm_mouse::is_available()) {
                 auto& mouse_i = injector::get<xterm_mouse&>();
                 mouse_i.set_enabled(!mouse_i.is_enabled());
-                lnav_data.ld_rl_view->set_value(
-                    ok_prefix("info: mouse mode -- ")
-                    + (mouse_i.is_enabled() ? ANSI_BOLD("enabled")
-                                            : ANSI_BOLD("disabled")));
+                auto um = lnav::console::user_message::ok(
+                    attr_line_t("mouse mode -- ")
+                        .append(mouse_i.is_enabled() ? "enabled"_symbol
+                                                     : "disabled"_symbol));
+                lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
             } else {
                 lnav_data.ld_rl_view->set_value(
                     "error: mouse support is not available, make sure your "
@@ -276,7 +279,9 @@ handle_paging_key(int ch)
             tc->get_bookmarks()[&textview_curses::BM_USER].clear();
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_value(ok_prefix("Cleared bookmarks"));
+            lnav_data.ld_rl_view->set_attr_value(
+                lnav::console::user_message::ok("Cleared bookmarks")
+                    .to_attr_line());
             break;
 
         case '>': {
@@ -590,8 +595,10 @@ handle_paging_key(int ch)
                     start_helper.lh_string_attrs, &logline::L_OPID);
                 if (!opid_range.is_valid()) {
                     alerter::singleton().chime();
-                    lnav_data.ld_rl_view->set_value(
-                        err_prefix("Log message does not contain an opid"));
+                    lnav_data.ld_rl_view->set_attr_value(
+                        lnav::console::user_message::error(
+                            "Log message does not contain an opid")
+                            .to_attr_line());
                 } else {
                     unsigned int opid_hash = start_line.get_opid();
                     logline_helper next_helper(*lss);
@@ -644,8 +651,12 @@ handle_paging_key(int ch)
                         const auto opid_str
                             = start_helper.to_string(opid_range);
 
-                        lnav_data.ld_rl_view->set_value(err_prefix(
-                            "No more messages found with opid: " + opid_str));
+                        lnav_data.ld_rl_view->set_attr_value(
+                            lnav::console::user_message::error(
+                                attr_line_t(
+                                    "No more messages found with opid: ")
+                                    .append(lnav::roles::symbol(opid_str)))
+                                .to_attr_line());
                         alerter::singleton().chime();
                     }
                 }
@@ -671,8 +682,9 @@ handle_paging_key(int ch)
         case 't':
             if (lnav_data.ld_text_source.current_file() == nullptr) {
                 alerter::singleton().chime();
-                lnav_data.ld_rl_view->set_value(
-                    err_prefix("No text files loaded"));
+                lnav_data.ld_rl_view->set_attr_value(
+                    lnav::console::user_message::error("No text files loaded")
+                        .to_attr_line());
             } else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
                 lnav_data.ld_rl_view->set_alt_value(
                     HELP_MSG_2(f, F, "to switch to the next/previous file"));

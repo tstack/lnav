@@ -86,32 +86,6 @@ is_dev_null(int fd)
     return is_dev_null(fd_stat);
 }
 
-std::string
-ok_prefix(std::string msg)
-{
-    if (msg.empty()) {
-        return msg;
-    }
-
-    return std::string(ANSI_COLOR(COLOR_GREEN) "\u2714" ANSI_NORM " ") + msg;
-}
-
-std::string
-err_prefix(const std::string msg)
-{
-    if (msg.empty()) {
-        return msg;
-    }
-
-    return std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg;
-}
-
-Result<std::string, lnav::console::user_message>
-err_to_ok(const lnav::console::user_message msg)
-{
-    return Ok(msg.to_attr_line().get_string());
-}
-
 void
 write_line_to(FILE* outfile, const attr_line_t& al)
 {

@@ -1566,6 +1566,11 @@ save_session_with_id(const std::string& session_id)
 void
 save_session()
 {
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        log_info("secure mode is enabled, not saving session");
+        return;
+    }
+
     log_debug("BEGIN save_session");
     save_time_bookmarks();
 

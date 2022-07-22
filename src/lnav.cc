@@ -1743,8 +1743,14 @@ UPDATE lnav_views_echo
                     if (!cmd_results.empty()) {
                         auto last_cmd_result = cmd_results.back();
 
-                        lnav_data.ld_rl_view->set_value(
-                            last_cmd_result.first.orElse(err_to_ok).unwrap());
+                        if (last_cmd_result.first.isOk()) {
+                            lnav_data.ld_rl_view->set_value(
+                                last_cmd_result.first.unwrap());
+                        } else {
+                            lnav_data.ld_rl_view->set_attr_value(
+                                last_cmd_result.first.unwrapErr()
+                                    .to_attr_line());
+                        }
                         lnav_data.ld_rl_view->set_alt_value(
                             last_cmd_result.second);
                     }

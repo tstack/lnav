@@ -4260,12 +4260,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             case ';':
                 return execute_sql(ec, expanded_cmd.substr(1), alt_msg);
             case '|':
-                retval = "info: executed file -- " + expanded_cmd.substr(1)
-                    + " -- "
-                    + execute_file(ec, expanded_cmd.substr(1))
-                          .orElse(err_to_ok)
-                          .unwrap();
-                break;
+                return execute_file(ec, expanded_cmd.substr(1));
             default:
                 return ec.make_error(
                     "expecting argument to start with ':', ';', "
@@ -4304,7 +4299,7 @@ com_config(exec_context& ec,
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
-        const json_path_handler_base* jph = ypc.ypc_current_handler;
+        const auto* jph = ypc.ypc_current_handler;
 
         if (jph == nullptr && !ypc.ypc_handler_stack.empty()) {
             jph = ypc.ypc_handler_stack.back();
@@ -4322,7 +4317,7 @@ com_config(exec_context& ec,
                 jph->gen(ygc, gen);
             }
 
-            std::string old_value = gen.to_string_fragment().to_string();
+            auto old_value = gen.to_string_fragment().to_string();
 
             if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
                 lnav_config = rollback_lnav_config;
@@ -4351,8 +4346,11 @@ com_config(exec_context& ec,
                     retval = fmt::format(
                         FMT_STRING("{} = {}"), option, trim(old_value));
                 }
+            } else if (lnav_data.ld_flags & LNF_SECURE_MODE &&
+                       !startswith(option, "/ui/")) {
+                return ec.make_error(":config {} -- unavailable in secure mode", option);
             } else {
-                std::string value = remaining_args(cmdline, args, 2);
+                auto value = remaining_args(cmdline, args, 2);
                 bool changed = false;
 
                 if (ec.ec_dry_run) {

@@ -695,14 +695,16 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             auto result
                 = execute_sql(ec, rc->get_value().get_string(), alt_msg);
-            db_label_source& dls = lnav_data.ld_db_row_source;
-            std::string prompt;
+            auto& dls = lnav_data.ld_db_row_source;
+            attr_line_t prompt;
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
 
                 if (!msg.empty()) {
-                    prompt = ok_prefix("SQL Result: " + msg);
+                    prompt = lnav::console::user_message::info(
+                                 attr_line_t("SQL Result: ").append(msg))
+                                 .to_attr_line();
                     if (dls.dls_rows.size() > 1) {
                         ensure_view(&lnav_data.ld_views[LNV_DB]);
                     }
@@ -717,7 +719,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             }
             ec.ec_source.back().s_content.clear();
 
-            rc->set_value(prompt);
+            rc->set_attr_value(prompt);
             rc->set_alt_value(alt_msg);
             break;
         }

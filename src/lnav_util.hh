@@ -213,11 +213,6 @@ finally(A act)  // deduce action type
     return final_action<A>{act};
 }
 
-std::string ok_prefix(std::string msg);
-std::string err_prefix(std::string msg);
-Result<std::string, lnav::console::user_message> err_to_ok(
-    lnav::console::user_message msg);
-
 void write_line_to(FILE* outfile, const attr_line_t& al);
 
 namespace lnav {

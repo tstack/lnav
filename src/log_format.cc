@@ -1214,8 +1214,14 @@ external_log_format::rewrite(exec_context& ec,
 
         auto _sg = ec.enter_source(
             vd_iter->second->vd_rewrite_src_name, 1, vd.vd_rewriter);
-        auto field_value
-            = execute_any(ec, vd.vd_rewriter).orElse(err_to_ok).unwrap();
+        std::string field_value;
+
+        auto exec_res = execute_any(ec, vd.vd_rewriter);
+        if (exec_res.isOk()) {
+            field_value = exec_res.unwrap();
+        } else {
+            field_value = exec_res.unwrapErr().to_attr_line().get_string();
+        }
         struct line_range adj_origin
             = iter->origin_in_full_msg(value_out.c_str(), value_out.length());
 
