@@ -618,6 +618,10 @@ logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(
     nonstd::optional<ui_clock::time_point> deadline)
 {
+    if (this->tss_view == nullptr) {
+        return rebuild_result::rr_no_change;
+    }
+
     iterator iter;
     size_t total_lines = 0;
     bool full_sort = false;

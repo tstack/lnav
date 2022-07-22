@@ -2005,6 +2005,50 @@ main(int argc, char* argv[])
     register_fstat_vtab(lnav_data.ld_db.in());
     lnav::events::register_events_tab(lnav_data.ld_db.in());
 
+    auto _vtab_cleanup = finally([] {
+        static const char* VIRT_TABLES = R"(
+SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
+)";
+
+        for (auto& lf : lnav_data.ld_active_files.fc_files) {
+            lf->close();
+        }
+        rebuild_indexes(ui_clock::now());
+
+        lnav_data.ld_vtab_manager = nullptr;
+
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        std::vector<std::string> tables_to_drop;
+        bool done = false;
+
+        sqlite3_prepare_v2(
+            lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
+        do {
+            auto ret = sqlite3_step(stmt.in());
+
+            switch (ret) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+                case SQLITE_ROW:
+                    tables_to_drop.emplace_back(
+                        fmt::format(FMT_STRING("DROP TABLE {}"),
+                                    reinterpret_cast<const char*>(
+                                        sqlite3_column_text(stmt.in(), 0))));
+                    break;
+            }
+        } while (!done);
+
+        for (auto& drop_stmt : tables_to_drop) {
+            sqlite3_exec(lnav_data.ld_db.in(),
+                         drop_stmt.c_str(),
+                         nullptr,
+                         nullptr,
+                         nullptr);
+        }
+    });
+
 #ifdef HAVE_LIBCURL
     curl_global_init(CURL_GLOBAL_DEFAULT);
 #endif
@@ -2485,49 +2529,6 @@ main(int argc, char* argv[])
     load_format_extra(
         lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
-    auto _vtab_cleanup = finally([] {
-        static const char* VIRT_TABLES = R"(
-SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
-)";
-
-        for (auto& lf : lnav_data.ld_active_files.fc_files) {
-            lf->close();
-        }
-        rebuild_indexes(ui_clock::now());
-
-        lnav_data.ld_vtab_manager = nullptr;
-
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-        std::vector<std::string> tables_to_drop;
-        bool done = false;
-
-        sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
-        do {
-            auto ret = sqlite3_step(stmt.in());
-
-            switch (ret) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-                case SQLITE_ROW:
-                    tables_to_drop.emplace_back(
-                        fmt::format(FMT_STRING("DROP TABLE {}"),
-                                    reinterpret_cast<const char*>(
-                                        sqlite3_column_text(stmt.in(), 0))));
-                    break;
-            }
-        } while (!done);
-
-        for (auto& drop_stmt : tables_to_drop) {
-            sqlite3_exec(lnav_data.ld_db.in(),
-                         drop_stmt.c_str(),
-                         nullptr,
-                         nullptr,
-                         nullptr);
-        }
-    });
 
     if (!loader_errors.empty()) {
         print_user_msgs(loader_errors);

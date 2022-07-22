@@ -439,7 +439,7 @@ textfile_sub_source::rescan_files(
     file_iterator iter;
     bool retval = false;
 
-    if (this->tss_view->is_paused()) {
+    if (this->tss_view == nullptr || this->tss_view->is_paused()) {
         return retval;
     }
 
