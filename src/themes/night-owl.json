@@ -139,6 +139,11 @@
                     }
                 },
                 "status-styles": {
+                    "disabled-title": {
+                        "color": "#5394ec",
+                        "background-color": "#353535",
+                        "bold": true
+                    },
                     "title": {
                         "color": "#f8f0f0",
                         "background-color": "#2d5a80",
@@ -147,6 +152,10 @@
                     "subtitle": {
                         "color": "#f8f8f0",
                         "background-color": "#005f5f"
+                    },
+                    "info": {
+                        "color": "#aaa",
+                        "background-color": "#0F1F2B"
                     },
                     "text": {
                         "color": "#f8f8f0",

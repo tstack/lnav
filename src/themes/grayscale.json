@@ -134,6 +134,10 @@
                         "color": "$green",
                         "background-color": "#353535"
                     },
+                    "info": {
+                        "color": "#555",
+                        "background-color": "#2f2f2f"
+                    },
                     "inactive": {
                         "color": "#555",
                         "background-color": "#2f2f2f"

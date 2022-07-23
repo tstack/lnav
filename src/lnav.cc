@@ -1243,6 +1243,7 @@ looper()
             = &lnav_data.ld_exec_context;
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
+        lnav_data.ld_status[LNS_TOP].set_enabled(false);
         lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
         for (auto& sc : lnav_data.ld_status) {

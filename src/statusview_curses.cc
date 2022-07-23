@@ -117,13 +117,11 @@ statusview_curses::do_update()
     if (this->sc_source != nullptr) {
         field_count = this->sc_source->statusview_fields();
         for (field = 0; field < field_count; field++) {
-            status_field& sf
-                = this->sc_source->statusview_value_for_field(field);
+            auto& sf = this->sc_source->statusview_value_for_field(field);
             struct line_range lr(0, sf.get_width());
-            attr_line_t val;
             int x;
 
-            val = sf.get_value();
+            auto val = sf.get_value();
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
                     if (sa.sa_type == &VC_STYLE) {
@@ -174,7 +172,7 @@ statusview_curses::do_update()
             if (!this->sc_enabled) {
                 if (default_role == role_t::VCR_ALERT_STATUS) {
                     default_role = role_t::VCR_INACTIVE_ALERT_STATUS;
-                } else {
+                } else if (default_role != role_t::VCR_STATUS_INFO) {
                     default_role = role_t::VCR_INACTIVE_STATUS;
                 }
             }

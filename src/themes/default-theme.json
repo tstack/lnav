@@ -166,6 +166,10 @@
                         "color": "Green",
                         "background-color": "Silver"
                     },
+                    "info": {
+                        "color": "Silver",
+                        "background-color": "Grey37"
+                    },
                     "inactive": {
                         "color": "Silver",
                         "background-color": "Grey37"

@@ -206,7 +206,7 @@
                     },
                     "info": {
                         "color": "#aaa",
-                        "background-color": "#353535"
+                        "background-color": "#2f2f2f"
                     },
                     "title-hotkey": {
                         "color": "$black",

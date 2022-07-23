@@ -171,6 +171,10 @@
                         "color": "$green",
                         "background-color": "$base03"
                     },
+                    "info": {
+                        "color": "$base1",
+                        "background-color": "$base03"
+                    },
                     "inactive": {
                         "color": "$base1",
                         "background-color": "$base03"

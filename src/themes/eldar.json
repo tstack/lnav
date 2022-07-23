@@ -157,6 +157,10 @@
                         "color": "$green",
                         "background-color": "#999"
                     },
+                    "info": {
+                        "color": "$black",
+                        "background-color": "Grey"
+                    },
                     "inactive": {
                         "color": "$black",
                         "background-color": "Grey"
