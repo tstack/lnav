@@ -435,6 +435,7 @@ DISTCLEANFILES = \
 	*.errbak \
 	*.tmpbak \
 	*.xz \
+	exported-session.0.lnav \
 	hw.txt \
 	hw2.txt \
 	reload_test.0 \
