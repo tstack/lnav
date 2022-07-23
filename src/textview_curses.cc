@@ -837,19 +837,20 @@ text_time_translator::scroll_invoked(textview_curses* tc)
 void
 text_time_translator::data_reloaded(textview_curses* tc)
 {
-    if (tc->get_inner_height() > 0) {
-        this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
-            if (top_time != this->ttt_top_time) {
-                if (this->ttt_top_time.tv_sec != 0) {
-                    this->row_for_time(this->ttt_top_time) |
-                        [tc](auto new_top) { tc->set_top(new_top); };
-                }
-                this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
-                    this->ttt_top_time = new_top_time;
-                };
-            }
-        };
+    if (tc->get_inner_height() == 0) {
+        return;
     }
+    this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
+        if (top_time != this->ttt_top_time) {
+            if (this->ttt_top_time.tv_sec != 0) {
+                this->row_for_time(this->ttt_top_time) |
+                    [tc](auto new_top) { tc->set_top(new_top); };
+            }
+            this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
+                this->ttt_top_time = new_top_time;
+            };
+        }
+    };
 }
 
 template class bookmark_vector<vis_line_t>;
