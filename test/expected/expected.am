@@ -922,8 +922,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_b036c73528a446cba46625767517cdac868aba72.out \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.err \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.out \
+    $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.err \
+    $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
     $(srcdir)/%reldir%/test_text_file.sh_801414c6bb6d3f9225973eafa3c6dfa49cd2081d.err \
     $(srcdir)/%reldir%/test_text_file.sh_801414c6bb6d3f9225973eafa3c6dfa49cd2081d.out \
+    $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.err \
+    $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.out \
     $(srcdir)/%reldir%/test_text_file.sh_c21295f131c221861568bda5014b76ef99bdd11f.err \
     $(srcdir)/%reldir%/test_text_file.sh_c21295f131c221861568bda5014b76ef99bdd11f.out \
     $()

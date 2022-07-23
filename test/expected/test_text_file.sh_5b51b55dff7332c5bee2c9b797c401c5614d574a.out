@@ -1,0 +1,159 @@
+Build[1][2] Docs[3][4] Coverage Status[5][6] lnav[7][8]
+
+ ▌[1] - https://github.com/tstack/lnav/workflows/ci-build/badge.svg               
+ ▌[2] - https://github.com/tstack/lnav/actions?[4mquery[0m=workflow%3Aci-build          
+ ▌[3] - https://readthedocs.org/projects/lnav/badge/?[4mversion[0m=latest&[4mstyle[0m=plastic 
+ ▌[4] - https://docs.lnav.org                                                     
+ ▌[5] - https://coveralls.io/repos/github/tstack/lnav/badge.svg?[4mbranch[0m=master     
+ ▌[6] - https://coveralls.io/github/tstack/lnav?[4mbranch[0m=master                     
+ ▌[7] - https://snapcraft.io//lnav/badge.svg                                      
+ ▌[8] - https://snapcraft.io/lnav                                                 
+
+This is the source repository for [1mlnav[0m, visit https://lnav.org[1] for
+a high level overview.
+
+ ▌[1] - https://lnav.org 
+
+[1m[35mLNAV – The Logfile Navigator[0m
+
+The Log File Navigator, [1mlnav[0m for short, is an advanced log file viewer
+for the small-scale.  It is a terminal application that can understand
+your log files and make it easy for you to find problems with little
+to no setup.
+
+[1mScreenshot[0m
+
+The following screenshot shows a syslog file. Log lines are displayed
+with highlights. Errors are red and warnings are yellow.
+
+Screenshot[1][2]
+
+ ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
+ ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
+
+[1mFeatures[0m
+
+ [33m•[0m Log messages from different files are collated together
+   into a single view
+ [33m•[0m Automatic detection of log format
+ [33m•[0m Automatic decompression of GZip and BZip2 files
+ [33m•[0m Filter log messages based on regular expressions
+ [33m•[0m Use SQL to analyze your logs
+ [33m•[0m And more...
+
+[1mInstallation[0m
+
+Download a statically-linked binary for Linux/MacOS from the release
+page[1]
+
+ ▌[1] - https://github.com/tstack/lnav/releases/latest#release-artifacts 
+
+[1mUsage[0m
+
+The only file installed is the executable, [37m[40m lnav [0m.  You can execute it
+with no arguments to view the default set of files:
+
+ ▌[37m[40m$ lnav                                  [0m
+
+You can view all the syslog messages by running:
+
+ ▌[37m[40m$ lnav /var/log/messages*               [0m
+
+[4mUsage with [0m[4m[37m[40m systemd-journald [0m
+
+On systems running [37m[40m systemd-journald [0m, you can use [37m[40m lnav [0m as the
+pager:
+
+ ▌[37m[40m$ journalctl | lnav                     [0m
+
+or in follow mode:
+
+ ▌[37m[40m$ journalctl -f | lnav                  [0m
+
+Since [37m[40m journalctl [0m's default output format omits the year, if you are
+viewing logs which span multiple years you will need to change the
+output format to include the year, otherwise [37m[40m lnav [0m gets confused:
+
+ ▌[37m[40m$ journalctl -o short-iso | lnav        [0m
+
+It is also possible to use [37m[40m journalctl [0m's json output format and [37m[40m lnav[0m
+will make use of additional fields such as PRIORITY and _SYSTEMD_UNIT:
+
+ ▌[37m[40m$ journalctl -o json | lnav             [0m
+
+In case some MESSAGE fields contain special characters such as ANSI
+color codes which are considered as unprintable by journalctl,
+specifying [37m[40m journalctl [0m's [37m[40m -a [0m option might be preferable in order to
+output those messages still in a non binary representation:
+
+ ▌[37m[40m$ journalctl -a -o json | lnav          [0m
+
+If using systemd v236 or newer, the output fields can be limited to
+the ones actually recognized by [37m[40m lnav [0m for increased efficiency:
+
+ ▌[37m[40m$ journalctl -o json [0m[4m[37m[40m--output-fields[0m[37m[40m=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav    [0m
+
+If your system has been running for a long time, for increased
+efficiency you may want to limit the number of log lines fed into [37m[40m lnav[0m
+, e.g. via [37m[40m journalctl [0m's [37m[40m -n [0m or [37m[40m [0m[4m[37m[40m--since[0m[37m[40m=... [0m options.
+
+In case of a persistent journal, you may want to limit the number of
+log lines fed into [37m[40m lnav [0m via [37m[40m journalctl [0m's [37m[40m -b [0m option.
+
+[1mLinks[0m
+
+ [33m•[0m Main Site[1]
+ [33m•[0m [1mDocumentation[0m[2] on Read the Docs
+ [33m•[0m Internal Architecture[3]
+
+ ▌[1] - https://lnav.org                                 
+ ▌[2] - https://docs.lnav.org                            
+ ▌[3] - file://{top_srcdir}/ARCHITECTURE.md 
+
+[1mContributing[0m
+
+ [33m•[0m Become a Sponsor on GitHub[1]
+
+ ▌[1] - https://github.com/sponsors/tstack 
+
+[4mBuilding From Source[0m
+
+[4mPrerequisites[0m
+
+The following software packages are required to build lnav:
+
+ [33m•[0m gcc/clang  - A C++14-compatible compiler.
+ [33m•[0m libpcre    - The Perl Compatible Regular Expression
+   (PCRE) library.
+ [33m•[0m sqlite     - The SQLite database engine.  Version 3.9.0
+   or higher is required.
+ [33m•[0m ncurses    - The ncurses text UI library.
+ [33m•[0m readline   - The readline line editing library.
+ [33m•[0m zlib       - The zlib compression library.
+ [33m•[0m bz2        - The bzip2 compression library.
+ [33m•[0m libcurl    - The cURL library for downloading files
+   from URLs.  Version 7.23.0 or higher is required.
+ [33m•[0m libarchive - The libarchive library for opening archive
+   files, like zip/tgz.
+ [33m•[0m wireshark  - The [35m'tshark'[0m program is used to interpret
+   pcap files.
+
+[4mBuild[0m
+
+Lnav follows the usual GNU style for configuring and installing
+software:
+
+Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
+
+ ▌[37m[40m$ ./configure                           [0m
+ ▌[37m[40m$ make                                  [0m
+ ▌[37m[40m$ sudo make install                     [0m
+
+[1mSee Also[0m
+
+Angle-grinder[1] is a tool to slice and dice log files on the
+command-line. If you're familiar with the SumoLogic query language,
+you might find this tool more comfortable to work with.
+
+ ▌[1] - https://github.com/rcoh/angle-grinder 
+

@@ -40,7 +40,7 @@
 void
 status_field::set_value(std::string value)
 {
-    string_attrs_t& sa = this->sf_value.get_attrs();
+    auto& sa = this->sf_value.get_attrs();
 
     sa.clear();
 
@@ -55,29 +55,31 @@ status_field::set_value(std::string value)
 void
 status_field::do_cylon()
 {
-    string_attrs_t& sa = this->sf_value.get_attrs();
+    auto& sa = this->sf_value.get_attrs();
 
     remove_string_attr(sa, &VC_STYLE);
 
-    struct line_range lr(this->sf_cylon_pos, this->sf_width);
-    view_colors& vc = view_colors::singleton();
+    auto cycle_pos = (this->sf_cylon_pos % (4 + this->sf_width * 2)) - 2;
+    auto start = cycle_pos < this->sf_width
+        ? cycle_pos
+        : (this->sf_width - (cycle_pos - this->sf_width));
+    auto stop = std::min(start + 3, this->sf_width);
+    struct line_range lr(std::max(start, 0L), stop);
+    log_debug("cylon %d:%d  %d", lr.lr_start, lr.lr_end, this->sf_width);
+    auto& vc = view_colors::singleton();
 
-    sa.emplace_back(
-        lr,
-        VC_STYLE.value(
-            vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS) | A_REVERSE));
+    sa.emplace_back(lr,
+                    VC_STYLE.value(vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS)
+                                   | A_REVERSE));
 
     this->sf_cylon_pos += 1;
-    if (this->sf_cylon_pos > this->sf_width) {
-        this->sf_cylon_pos = 0;
-    }
 }
 
 void
 status_field::set_stitch_value(role_t left,
                                role_t right)
 {
-    string_attrs_t& sa = this->sf_value.get_attrs();
+    auto& sa = this->sf_value.get_attrs();
     struct line_range lr(0, 1);
 
     this->sf_value.get_string() = "::";
@@ -92,7 +94,7 @@ void
 statusview_curses::do_update()
 {
     int top, attrs, field, field_count, left = 0, right;
-    view_colors& vc = view_colors::singleton();
+    auto& vc = view_colors::singleton();
     unsigned long width, height;
 
     if (!this->vc_visible) {
@@ -218,7 +220,7 @@ statusview_curses::window_change()
     std::stable_sort(begin(resizable), end(resizable), [](auto l, auto r) {
         return r->get_share() < l->get_share();
     });
-    for (auto sf : resizable) {
+    for (auto* sf : resizable) {
         double divisor = total_shares / sf->get_share();
         int available = remaining / divisor;
         int actual_width;

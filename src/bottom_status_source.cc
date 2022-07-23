@@ -43,7 +43,6 @@ bottom_status_source::bottom_status_source()
     this->bss_fields[BSF_SEARCH_TERM].set_min_width(10);
     this->bss_fields[BSF_SEARCH_TERM].set_share(1);
     this->bss_fields[BSF_LOADING].set_width(13);
-    this->bss_fields[BSF_LOADING].set_cylon(true);
     this->bss_fields[BSF_LOADING].right_justify(true);
     this->bss_fields[BSF_HELP].set_width(14);
     this->bss_fields[BSF_HELP].set_value("?:View Help");
@@ -198,18 +197,18 @@ bottom_status_source::update_loading(file_off_t off, file_size_t total)
         }
     } else if ((size_t) off == total) {
         static const std::vector<std::string> DOTS = {
-            "",
-            ".",
-            "..",
+            "   ",
+            ".  ",
+            ".. ",
             "...",
-            "..",
-            ".",
+            ".. ",
+            ".  ",
         };
 
         this->bss_load_percent += 1;
         sf.set_cylon(true);
         sf.set_role(role_t::VCR_ACTIVE_STATUS2);
-        sf.set_value(" Working%s ",
+        sf.set_value(" Working%s  ",
                      DOTS[this->bss_load_percent % DOTS.size()].c_str());
     } else {
         int pct = (int) (((double) off / (double) total) * 100.0);
