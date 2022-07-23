@@ -1041,7 +1041,11 @@ looper()
 
         lnav_data.ld_log_source.lss_sorting_observer
             = [](auto& lss, auto off, auto size) {
-                  lnav_data.ld_bottom_source.update_loading(off, size);
+                  if (off == size) {
+                      lnav_data.ld_bottom_source.update_loading(0, 0);
+                  } else {
+                      lnav_data.ld_bottom_source.update_loading(off, size);
+                  }
                   do_observer_update(nullptr);
               };
 
@@ -2907,6 +2911,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
                 text_tc->set_top(0_vl);
                 text_tc->set_height(vis_line_t(text_tc->get_inner_height()));
+                setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
                 if (lnav_data.ld_log_source.text_line_count() == 0
                     && lnav_data.ld_text_source.text_line_count() > 0)
                 {

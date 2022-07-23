@@ -1,12 +1,12 @@
 {
-  "foo bar": null,
-  "array": [
+  [35m"foo bar"[0m: null,
+  [35m"array"[0m: [
     1,
     2,
     3
   ],
-  "obj": {
-    "one": 1,
-    "two": true
+  [35m"obj"[0m: {
+    [35m"one"[0m: 1,
+    [35m"two"[0m: true
   }
 }

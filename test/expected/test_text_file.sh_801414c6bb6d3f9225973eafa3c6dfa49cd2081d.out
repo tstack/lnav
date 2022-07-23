@@ -1,0 +1,111 @@
+/**
+ * Copyright (c) [1m2018[0m, Timothy Stack
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, [1m[36mthis[0m
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * [1m[36mthis[0m list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * * Neither the name of Timothy Stack nor the names of its contributors
+ * may be used to endorse or promote products derived from [1m[36mthis[0m software
+ * without specific prior written permission.
+ *
+ * [1mTHIS[0m [1mSOFTWARE[0m [1mIS[0m [1mPROVIDED[0m [1mBY[0m [1mTHE[0m [1mREGENTS[0m [1mAND[0m [1mCONTRIBUTORS[0m [35m''[0m[1mAS[0m [1mIS[0m'' [1mAND[0m [1mANY[0m
+ * [1mEXPRESS[0m [1mOR[0m [1mIMPLIED[0m [1mWARRANTIES[0m, [1mINCLUDING[0m, [1mBUT[0m [1mNOT[0m [1mLIMITED[0m [1mTO[0m, [1mTHE[0m [1mIMPLIED[0m
+ * [1mWARRANTIES[0m [1mOF[0m [1mMERCHANTABILITY[0m [1mAND[0m [1mFITNESS[0m [1mFOR[0m A [1mPARTICULAR[0m [1mPURPOSE[0m [1mARE[0m
+ * [1mDISCLAIMED[0m. [1mIN[0m [1mNO[0m [1mEVENT[0m [1mSHALL[0m [1mTHE[0m [1mREGENTS[0m [1mOR[0m [1mCONTRIBUTORS[0m [1mBE[0m [1mLIABLE[0m [1mFOR[0m [1mANY[0m
+ * [1mDIRECT[0m, [1mINDIRECT[0m, [1mINCIDENTAL[0m, [1mSPECIAL[0m, [1mEXEMPLARY[0m, [1mOR[0m [1mCONSEQUENTIAL[0m [1mDAMAGES[0m
+ * ([1mINCLUDING[0m, [1mBUT[0m [1mNOT[0m [1mLIMITED[0m [1mTO[0m, [1mPROCUREMENT[0m [1mOF[0m [1mSUBSTITUTE[0m [1mGOODS[0m [1mOR[0m [1mSERVICES[0m;
+ * [1mLOSS[0m [1mOF[0m [1mUSE[0m, [1mDATA[0m, [1mOR[0m [1mPROFITS[0m; [1mOR[0m [1mBUSINESS[0m [1mINTERRUPTION[0m) [1mHOWEVER[0m [1mCAUSED[0m [1mAND[0m
+ * [1mON[0m [1mANY[0m [1mTHEORY[0m [1mOF[0m [1mLIABILITY[0m, [1mWHETHER[0m [1mIN[0m [1mCONTRACT[0m, [1mSTRICT[0m [1mLIABILITY[0m, [1mOR[0m [1mTORT[0m
+ * ([1mINCLUDING[0m [1mNEGLIGENCE[0m [1mOR[0m [1mOTHERWISE[0m) [1mARISING[0m [1mIN[0m [1mANY[0m [1mWAY[0m [1mOUT[0m [1mOF[0m [1mTHE[0m [1mUSE[0m [1mOF[0m [1mTHIS[0m
+ * [1mSOFTWARE[0m, [1mEVEN[0m [1mIF[0m [1mADVISED[0m [1mOF[0m [1mTHE[0m [1mPOSSIBILITY[0m [1mOF[0m [1mSUCH[0m [1mDAMAGE[0m.
+ */
+
+[32m#include [0m[32m"log_level.hh"[0m
+
+[32m#include <[0m[32mctype.h[0m[32m>[0m
+
+[32m#include [0m[32m"config.h"[0m
+
+[1m[36mconst[0m [1m[36mchar[0m* level_names[[1mLEVEL__MAX[0m + [1m1[0m] = {
+    [35m"unknown"[0m,
+    [35m"trace"[0m,
+    [35m"debug5"[0m,
+    [35m"debug4"[0m,
+    [35m"debug3"[0m,
+    [35m"debug2"[0m,
+    [35m"debug"[0m,
+    [35m"info"[0m,
+    [35m"stats"[0m,
+    [35m"notice"[0m,
+    [35m"warning"[0m,
+    [35m"error"[0m,
+    [35m"critical"[0m,
+    [35m"fatal"[0m,
+    [35m"invalid"[0m,
+
+    nullptr,
+};
+
+log_level_t
+abbrev2level([1m[36mconst[0m [1m[36mchar[0m* levelstr, ssize_t len)
+{
+    [1m[36mif[0m ([4mlen[0m == [1m0[0m || levelstr[[1m0[0m] == [35m'\[0m[1m[35m0[0m[35m'[0m) {
+        [1m[36mreturn[0m [1mLEVEL_UNKNOWN[0m;
+    }
+
+    [1m[36mswitch[0m (toupper(levelstr[[1m0[0m])) {
+        [1m[36mcase[0m [35m'T'[0m:
+            [1m[36mreturn[0m [1mLEVEL_TRACE[0m;
+        [1m[36mcase[0m [35m'D'[0m:
+        [1m[36mcase[0m [35m'V'[0m:
+            [1m[36mif[0m (len > [1m1[0m) {
+                [1m[36mswitch[0m (levelstr[len - [1m1[0m]) {
+                    [1m[36mcase[0m [35m'[0m[1m[35m2[0m[35m'[0m:
+                        [1m[36mreturn[0m [1mLEVEL_DEBUG2[0m;
+                    [1m[36mcase[0m [35m'[0m[1m[35m3[0m[35m'[0m:
+                        [1m[36mreturn[0m [1mLEVEL_DEBUG3[0m;
+                    [1m[36mcase[0m [35m'[0m[1m[35m4[0m[35m'[0m:
+                        [1m[36mreturn[0m [1mLEVEL_DEBUG4[0m;
+                    [1m[36mcase[0m [35m'[0m[1m[35m5[0m[35m'[0m:
+                        [1m[36mreturn[0m [1mLEVEL_DEBUG5[0m;
+                }
+            }
+            [1m[36mreturn[0m [1mLEVEL_DEBUG[0m;
+        [1m[36mcase[0m [35m'I'[0m:
+            [1m[36mif[0m ([4mlen[0m == [1m7[0m && toupper(levelstr[[1m1[0m]) == [35m'N'[0m
+                && toupper(levelstr[[1m2[0m]) == [35m'V'[0m && toupper(levelstr[[1m3[0m]) == [35m'A'[0m
+                && toupper(levelstr[[1m4[0m]) == [35m'L'[0m && toupper(levelstr[[1m5[0m]) == [35m'I'[0m
+                && toupper(levelstr[[1m6[0m]) == [35m'D'[0m)
+            {
+                [1m[36mreturn[0m [1mLEVEL_INVALID[0m;
+            }
+            [1m[36mreturn[0m [1mLEVEL_INFO[0m;
+        [1m[36mcase[0m [35m'S'[0m:
+            [1m[36mreturn[0m [1mLEVEL_STATS[0m;
+        [1m[36mcase[0m [35m'N'[0m:
+            [1m[36mreturn[0m [1mLEVEL_NOTICE[0m;
+        [1m[36mcase[0m [35m'W'[0m:
+            [1m[36mreturn[0m [1mLEVEL_WARNING[0m;
+        [1m[36mcase[0m [35m'E'[0m:
+            [1m[36mreturn[0m [1mLEVEL_ERROR[0m;
+        [1m[36mcase[0m [35m'C'[0m:
+            [1m[36mreturn[0m [1mLEVEL_CRITICAL[0m;
+        [1m[36mcase[0m [35m'F'[0m:
+            [1m[36mreturn[0m [1mLEVEL_FATAL[0m;
+        [1m[36mdefault[0m:
+            [1m[36mreturn[0m [1mLEVEL_UNKNOWN[0m;
+    }
+}
+
+[1m[36mint[0m
+levelcmp([1m[36mconst[0m [1m[36mchar[0m* l1, ssize_t l1_len, [1m[36mconst[0m [1m[36mchar[0m* l2, ssize_t l2_len)
+{
+    [1m[36mreturn[0m abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
+}

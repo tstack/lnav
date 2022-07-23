@@ -61,7 +61,11 @@ public:
         if ((((size_t) off == total) && (this->lo_last_offset != off))
             || ui_periodic_timer::singleton().time_to_update(index_counter))
         {
-            lnav_data.ld_bottom_source.update_loading(off, total);
+            if (off == total) {
+                lnav_data.ld_bottom_source.update_loading(0, 0);
+            } else {
+                lnav_data.ld_bottom_source.update_loading(off, total);
+            }
             do_observer_update(lf);
             this->lo_last_offset = off;
         }

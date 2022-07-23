@@ -33,23 +33,25 @@
 
 #include "config.h"
 
-const char* level_names[LEVEL__MAX + 1] = {"unknown",
-                                           "trace",
-                                           "debug5",
-                                           "debug4",
-                                           "debug3",
-                                           "debug2",
-                                           "debug",
-                                           "info",
-                                           "stats",
-                                           "notice",
-                                           "warning",
-                                           "error",
-                                           "critical",
-                                           "fatal",
-                                           "invalid",
+const char* level_names[LEVEL__MAX + 1] = {
+    "unknown",
+    "trace",
+    "debug5",
+    "debug4",
+    "debug3",
+    "debug2",
+    "debug",
+    "info",
+    "stats",
+    "notice",
+    "warning",
+    "error",
+    "critical",
+    "fatal",
+    "invalid",
 
-                                           nullptr};
+    nullptr,
+};
 
 log_level_t
 abbrev2level(const char* levelstr, ssize_t len)
