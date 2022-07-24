@@ -46,10 +46,6 @@ status_field::set_value(std::string value)
 
     scrub_ansi_string(value, sa);
     this->sf_value.with_string(value);
-
-    if (this->sf_cylon) {
-        this->do_cylon();
-    }
 }
 
 void
@@ -62,10 +58,9 @@ status_field::do_cylon()
     auto cycle_pos = (this->sf_cylon_pos % (4 + this->sf_width * 2)) - 2;
     auto start = cycle_pos < this->sf_width
         ? cycle_pos
-        : (this->sf_width - (cycle_pos - this->sf_width));
+        : (this->sf_width - (cycle_pos - this->sf_width) - 1);
     auto stop = std::min(start + 3, this->sf_width);
     struct line_range lr(std::max(start, 0L), stop);
-    log_debug("cylon %d:%d  %d", lr.lr_start, lr.lr_end, this->sf_width);
     auto& vc = view_colors::singleton();
 
     sa.emplace_back(lr,
@@ -123,6 +118,9 @@ statusview_curses::do_update()
             struct line_range lr(0, sf.get_width());
             int x;
 
+            if (sf.is_cylon()) {
+                sf.do_cylon();
+            }
             auto val = sf.get_value();
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
@@ -139,8 +137,6 @@ statusview_curses::do_update()
                         }
                     }
                 }
-            } else if (sf.is_cylon()) {
-                sf.do_cylon();
             }
             if (sf.get_left_pad() > 0) {
                 val.insert(0, sf.get_left_pad(), ' ');

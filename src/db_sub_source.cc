@@ -158,28 +158,40 @@ db_label_source::push_header(const std::string& colstr,
 }
 
 void
-db_label_source::push_column(const char* colstr)
+db_label_source::push_column(const scoped_value_t& sv)
 {
-    view_colors& vc = view_colors::singleton();
+    auto& vc = view_colors::singleton();
     int index = this->dls_rows.back().size();
+    auto& hm = this->dls_headers[index];
     double num_value = 0.0;
-    size_t value_len;
 
-    if (colstr == nullptr) {
-        colstr = NULL_STR;
-    } else {
-        colstr = strdup(colstr);
-        if (colstr == nullptr) {
-            throw "out of memory";
-        }
-    }
-    value_len = strlen(colstr);
+    auto col_sf = sv.match(
+        [](const std::string& str) { return string_fragment{str}; },
+        [this](const string_fragment& sf) {
+            return sf.to_owned(*this->dls_allocator);
+        },
+        [this](int64_t i) {
+            fmt::memory_buffer buf;
+
+            fmt::format_to(std::back_inserter(buf), FMT_STRING("{}"), i);
+            return string_fragment{buf.data(), 0, (int) buf.size()}.to_owned(
+                *this->dls_allocator);
+        },
+        [this](double d) {
+            fmt::memory_buffer buf;
+
+            fmt::format_to(std::back_inserter(buf), FMT_STRING("{}"), d);
+            return string_fragment{buf.data(), 0, (int) buf.size()}.to_owned(
+                *this->dls_allocator);
+        },
+        [](null_value_t) { return string_fragment{NULL_STR}; });
 
     if (index == this->dls_time_column_index) {
         date_time_scanner dts;
         struct timeval tv;
 
-        if (!dts.convert_to_timeval(colstr, -1, nullptr, tv)) {
+        if (!dts.convert_to_timeval(
+                col_sf.data(), col_sf.length(), nullptr, tv)) {
             tv.tv_sec = -1;
             tv.tv_usec = -1;
         }
@@ -193,23 +205,27 @@ db_label_source::push_column(const char* colstr)
         }
     }
 
-    this->dls_rows.back().push_back(colstr);
-    this->dls_headers[index].hm_column_size
+    this->dls_rows.back().push_back(col_sf.data());
+    hm.hm_column_size
         = std::max(this->dls_headers[index].hm_column_size,
-                   utf8_string_length(colstr, value_len).unwrapOr(value_len));
+                   (size_t) utf8_string_length(col_sf.data(), col_sf.length())
+                       .unwrapOr(col_sf.length()));
 
-    if (colstr != nullptr && this->dls_headers[index].hm_graphable) {
-        if (sscanf(colstr, "%lf", &num_value) != 1) {
-            num_value = 0.0;
+    if ((sv.is<int64_t>() || sv.is<double>())
+        && this->dls_headers[index].hm_graphable)
+    {
+        if (sv.is<int64_t>()) {
+            this->dls_chart.add_value(hm.hm_name, sv.get<int64_t>());
+        } else {
+            this->dls_chart.add_value(hm.hm_name, sv.get<double>());
         }
-        this->dls_chart.add_value(this->dls_headers[index].hm_name, num_value);
-    } else if (value_len > 2
-               && ((colstr[0] == '{' && colstr[value_len - 1] == '}')
-                   || (colstr[0] == '[' && colstr[value_len - 1] == ']')))
+    } else if (col_sf.length() > 2
+               && ((col_sf.startswith("{") && col_sf.endswith("}"))
+                   || (col_sf.startswith("[") && col_sf.startswith("]"))))
     {
         json_ptr_walk jpw;
 
-        if (jpw.parse(colstr, value_len) == yajl_status_ok
+        if (jpw.parse(col_sf.data(), col_sf.length()) == yajl_status_ok
             && jpw.complete_parse() == yajl_status_ok)
         {
             for (auto& jpw_value : jpw.jpw_values) {
@@ -231,16 +247,10 @@ db_label_source::clear()
 {
     this->dls_chart.clear();
     this->dls_headers.clear();
-    for (size_t row = 0; row < this->dls_rows.size(); row++) {
-        for (size_t col = 0; col < this->dls_rows[row].size(); col++) {
-            if (this->dls_rows[row][col] != NULL_STR) {
-                free((void*) this->dls_rows[row][col]);
-            }
-        }
-    }
     this->dls_rows.clear();
     this->dls_time_column.clear();
     this->dls_cell_width.clear();
+    this->dls_allocator = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
 }
 
 nonstd::optional<size_t>

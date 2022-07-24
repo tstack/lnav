@@ -74,6 +74,15 @@ struct bind_visitor {
                           SQLITE_TRANSIENT);
     }
 
+    void operator()(const string_fragment& str) const
+    {
+        sqlite3_bind_text(this->bv_stmt,
+                          this->bv_index,
+                          str.data(),
+                          str.length(),
+                          SQLITE_TRANSIENT);
+    }
+
     void operator()(null_value_t) const
     {
         sqlite3_bind_null(this->bv_stmt, this->bv_index);
@@ -418,6 +427,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                             auto val_as_str = fmt::to_string(bval.second);
                             auto sql_type = bval.second.match(
                                 [](const std::string&) { return SQLITE_TEXT; },
+                                [](const string_fragment&) {
+                                    return SQLITE_TEXT;
+                                },
                                 [](int64_t) { return SQLITE_INTEGER; },
                                 [](null_value_t) { return SQLITE_NULL; },
                                 [](double) { return SQLITE_FLOAT; });
@@ -868,17 +880,35 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         set_vars = true;
     }
     for (lpc = 0; lpc < ncols; lpc++) {
-        const char* value = (const char*) sqlite3_column_text(stmt, lpc);
+        auto* raw_value = sqlite3_column_value(stmt, lpc);
+        auto value_type = sqlite3_value_type(raw_value);
+        scoped_value_t value;
         auto& hm = dls.dls_headers[lpc];
 
+        switch (value_type) {
+            case SQLITE_INTEGER:
+                value = (int64_t) sqlite3_value_int64(raw_value);
+                break;
+            case SQLITE_FLOAT:
+                value = sqlite3_value_double(raw_value);
+                break;
+            case SQLITE_NULL:
+                value = null_value_t{};
+                break;
+            default:
+                value = string_fragment{
+                    sqlite3_value_text(raw_value),
+                    0,
+                    sqlite3_value_bytes(raw_value),
+                };
+                break;
+        }
         dls.push_column(value);
         if ((hm.hm_column_type == SQLITE_TEXT
              || hm.hm_column_type == SQLITE_NULL)
             && hm.hm_sub_type == 0)
         {
-            sqlite3_value* raw_value = sqlite3_column_value(stmt, lpc);
-
-            switch (sqlite3_value_type(raw_value)) {
+            switch (value_type) {
                 case SQLITE_TEXT:
                     hm.hm_column_type = SQLITE_TEXT;
                     hm.hm_sub_type = sqlite3_value_subtype(raw_value);
@@ -891,21 +921,10 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             }
             auto& vars = ec.ec_local_vars.top();
 
-            switch (hm.hm_column_type) {
-                case SQLITE_INTEGER:
-                    vars[hm.hm_name]
-                        = (int64_t) sqlite3_column_int64(stmt, lpc);
-                    break;
-                case SQLITE_FLOAT:
-                    vars[hm.hm_name] = sqlite3_column_double(stmt, lpc);
-                    break;
-                case SQLITE_NULL:
-                    vars[hm.hm_name] = null_value_t{};
-                    break;
-                default:
-                    vars[hm.hm_name] = std::string(value);
-                    break;
+            if (value.is<string_fragment>()) {
+                value = value.get<string_fragment>().to_string();
             }
+            vars[hm.hm_name] = value;
         }
     }
 

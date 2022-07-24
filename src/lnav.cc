@@ -1409,9 +1409,13 @@ UPDATE lnav_views_echo
                         ago = humanize::time::point::from_tv(
                                   {(time_t) session_data.sd_save_time, 0})
                                   .as_time_ago();
-                        lnav_data.ld_rl_view->set_value(
-                            ("restored session from " ANSI_BOLD_START) + ago
-                            + (ANSI_NORM "; press Ctrl-R to reset session"));
+                        auto um = lnav::console::user_message::ok(
+                            attr_line_t("restored session from ")
+                                .append(lnav::roles::number(ago))
+                                .append("; press ")
+                                .append("CTRL-R"_symbol)
+                                .append(" to reset session"));
+                        lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
                     }
 
                     lnav_data.ld_session_loaded = true;

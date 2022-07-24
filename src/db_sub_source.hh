@@ -36,7 +36,9 @@
 
 #include <sqlite3.h>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "hist_source.hh"
+#include "shlex.resolver.hh"
 #include "textview_curses.hh"
 
 class db_label_source
@@ -77,7 +79,7 @@ public:
 
     void push_header(const std::string& colstr, int type, bool graphable);
 
-    void push_column(const char* colstr);
+    void push_column(const scoped_value_t& sv);
 
     void clear();
 
@@ -118,6 +120,8 @@ public:
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
     nonstd::optional<size_t> dls_time_column_invalidated_at;
+    std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
+        std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
 
     static const char* NULL_STR;
 };

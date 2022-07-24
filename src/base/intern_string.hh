@@ -373,6 +373,25 @@ struct string_fragment {
         };
     }
 
+    template<typename A>
+    const char* to_c_str(A allocator) const
+    {
+        auto* retval = allocator.allocate(this->length() + 1);
+        memcpy(retval, this->data(), this->length());
+        retval[this->length()] = '\0';
+        return retval;
+    }
+
+    template<typename A>
+    string_fragment to_owned(A allocator) const
+    {
+        return string_fragment{
+            this->template to_c_str(allocator),
+            0,
+            this->length(),
+        };
+    }
+
     const char* sf_string;
     int sf_begin;
     int sf_end;

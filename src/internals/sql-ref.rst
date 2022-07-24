@@ -448,7 +448,7 @@ acos(*num*)
     .. code-block::  custsqlite
 
       ;SELECT acos(0.2)
-      1.36943840600457
+      1.3694384060045657
 
   **See Also**
     :ref:`abs`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -472,7 +472,7 @@ acosh(*num*)
     .. code-block::  custsqlite
 
       ;SELECT acosh(1.2)
-      0.622362503714779
+      0.6223625037147786
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -496,7 +496,7 @@ asin(*num*)
     .. code-block::  custsqlite
 
       ;SELECT asin(0.2)
-      0.201357920790331
+      0.2013579207903308
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -520,7 +520,7 @@ asinh(*num*)
     .. code-block::  custsqlite
 
       ;SELECT asinh(0.2)
-      0.198690110349241
+      0.19869011034924142
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -544,7 +544,7 @@ atan(*num*)
     .. code-block::  custsqlite
 
       ;SELECT atan(0.2)
-      0.197395559849881
+      0.19739555984988078
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -569,7 +569,7 @@ atan2(*y*, *x*)
     .. code-block::  custsqlite
 
       ;SELECT degrees(atan2(5, 5))
-      45.0
+      45
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -593,7 +593,7 @@ atanh(*num*)
     .. code-block::  custsqlite
 
       ;SELECT atanh(0.2)
-      0.202732554054082
+      0.2027325540540822
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -618,7 +618,7 @@ atn2(*y*, *x*)
     .. code-block::  custsqlite
 
       ;SELECT degrees(atn2(5, 5))
-      45.0
+      45
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -650,8 +650,8 @@ avg(*X*)
 
       ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname
       ex_procname avg(ex_duration) 
-      gw                       5.0 
-      hw                       2.0 
+      gw                         5 
+      hw                         2 
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -969,7 +969,7 @@ degrees(*radians*)
     .. code-block::  custsqlite
 
       ;SELECT degrees(pi())
-      180.0
+      180
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -1763,21 +1763,21 @@ julianday(*timestring*, *modifier*)
     .. code-block::  custsqlite
 
       ;SELECT julianday('2017-01-02T03:04:05')
-      2457755.62783565
+      2457755.627835648
 
     To get the julian day from the timestamp '2017-01-02T03:04:05' plus one minute:
 
     .. code-block::  custsqlite
 
       ;SELECT julianday('2017-01-02T03:04:05', '+1 minute')
-      2457755.62853009
+      2457755.6285300925
 
     To get the julian day from the timestamp 1491341842:
 
     .. code-block::  custsqlite
 
       ;SELECT julianday(1491341842, 'unixepoch')
-      2457848.40094907
+      2457848.400949074
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`
@@ -2016,7 +2016,7 @@ log(*x*)
     .. code-block::  custsqlite
 
       ;SELECT log(8)
-      2.07944154167984
+      2.0794415416798357
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -2040,7 +2040,7 @@ log10(*x*)
     .. code-block::  custsqlite
 
       ;SELECT log10(100)
-      2.0
+      2
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -2397,7 +2397,7 @@ pi()
     .. code-block::  custsqlite
 
       ;SELECT pi()
-      3.14159265358979
+      3.141592653589793
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -2422,7 +2422,7 @@ power(*base*, *exp*)
     .. code-block::  custsqlite
 
       ;SELECT power(2, 3)
-      8.0
+      8
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -2538,7 +2538,7 @@ radians(*degrees*)
     .. code-block::  custsqlite
 
       ;SELECT radians(180)
-      3.14159265358979
+      3.141592653589793
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -2906,7 +2906,7 @@ round(*num*, *\[digits\]*)
     .. code-block::  custsqlite
 
       ;SELECT round(123.456)
-      123.0
+      123
 
     To round the number 123.456 to a precision of 1:
 
@@ -3406,14 +3406,14 @@ timediff(*time1*, *time2*)
     .. code-block::  custsqlite
 
       ;SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')
-      6.0
+      6
 
     To get the difference between relative timestamps:
 
     .. code-block::  custsqlite
 
       ;SELECT timediff('today', 'yesterday')
-      86400.0
+      86400
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timeslice`
@@ -3482,7 +3482,7 @@ total(*X*)
     .. code-block::  custsqlite
 
       ;SELECT total(ex_duration) FROM lnav_example_log
-      17.0
+      17
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`

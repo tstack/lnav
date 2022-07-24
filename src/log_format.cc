@@ -864,13 +864,9 @@ external_log_format::scan(logfile& lf,
                 auto opid_iter = sbc.sbc_opids.find(opid_sf);
 
                 if (opid_iter == sbc.sbc_opids.end()) {
-                    auto* opid_mem
-                        = sbc.sbc_allocator.allocate(opid_sf.length() + 1);
-                    memcpy(opid_mem, opid_sf.data(), opid_sf.length());
-                    opid_mem[opid_sf.length()] = '\0';
+                    auto opid_copy = opid_sf.to_owned(sbc.sbc_allocator);
                     auto otr = opid_time_range{log_tv, log_tv};
-                    sbc.sbc_opids.emplace(
-                        string_fragment{opid_mem, 0, opid_sf.length()}, otr);
+                    sbc.sbc_opids.emplace(opid_copy, otr);
                 } else {
                     opid_iter->second.otr_end = log_tv;
                 }
