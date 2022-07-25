@@ -1,0 +1,63 @@
+[
+    {
+        "top_meta": {
+            "file": "{top_srcdir}/README.md",
+            "breadcrumbs": [
+                {
+                    "display_value": "README.md",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "README.md"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "LNAV – The Logfile Navigator",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "LNAV – The Logfile Navigator"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "Contributing",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "Contributing"
+                        },
+                        {
+                            "display_value": "Features"
+                        },
+                        {
+                            "display_value": "Installation"
+                        },
+                        {
+                            "display_value": "Links"
+                        },
+                        {
+                            "display_value": "Screenshot"
+                        },
+                        {
+                            "display_value": "See Also"
+                        },
+                        {
+                            "display_value": "Usage"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "⋯",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "Building From Source"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]
