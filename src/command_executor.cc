@@ -514,11 +514,13 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                          diff_tv.tv_sec,
                          std::max((long) diff_tv.tv_usec / 1000, 1L));
                 retval = row_count_buf;
-                alt_msg = HELP_MSG_2(
-                    y,
-                    Y,
-                    "to move forward/backward through query results "
-                    "in the log view");
+                if (dls.has_log_time_column()) {
+                    alt_msg = HELP_MSG_1(Q,
+                                         "to switch back to the previous view "
+                                         "at the matching 'log_time' value");
+                } else {
+                    alt_msg = "";
+                }
             }
         }
 #ifdef HAVE_SQLITE3_STMT_READONLY
