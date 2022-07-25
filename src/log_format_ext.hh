@@ -149,9 +149,8 @@ public:
     bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const;
 
     void annotate(uint64_t line_number,
-                  shared_buffer_ref& line,
                   string_attrs_t& sa,
-                  std::vector<logline_value>& values,
+                  logline_value_vector& values,
                   bool annotate_module = true) const;
 
     void rewrite(exec_context& ec,
@@ -397,12 +396,12 @@ public:
     bool jlf_hide_extra{false};
     std::vector<json_format_element> jlf_line_format;
     int jlf_line_format_init_count{0};
-    std::vector<logline_value> jlf_line_values;
+    shared_buffer jlf_share_manager;
+    logline_value_vector jlf_line_values;
 
     off_t jlf_cached_offset{-1};
     bool jlf_cached_full{false};
     std::vector<off_t> jlf_line_offsets;
-    shared_buffer jlf_share_manager;
     std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;

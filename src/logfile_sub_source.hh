@@ -180,7 +180,7 @@ public:
             return this->li_string_attrs;
         }
 
-        const std::vector<logline_value>& get_values() const
+        const logline_value_vector& get_values() const
         {
             this->load_msg();
             return this->li_line_values;
@@ -198,9 +198,8 @@ public:
         vis_line_t li_line;
         logfile* li_file{nullptr};
         logfile::const_iterator li_logline;
-        mutable shared_buffer_ref li_msg_buffer;
         mutable string_attrs_t li_string_attrs;
-        mutable std::vector<logline_value> li_line_values;
+        mutable logline_value_vector li_line_values;
     };
 
     class iterator {
@@ -978,7 +977,7 @@ private:
     lnav::document::metadata lss_token_meta;
     int lss_token_meta_line{-1};
     int lss_token_meta_size{0};
-    std::vector<logline_value> lss_token_values;
+    logline_value_vector lss_token_values;
     int lss_token_shift_start{0};
     int lss_token_shift_size{0};
     shared_buffer lss_share_manager;

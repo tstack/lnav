@@ -126,6 +126,11 @@ public:
         return string_fragment{this->sb_data, 0, (int) this->length()};
     }
 
+    using narrow_result = std::pair<char*, size_t>;
+    narrow_result narrow(size_t new_data, size_t new_length);
+
+    void widen(narrow_result old_data_length);
+
     void share(shared_buffer& sb, char* data, size_t len);
 
     bool subset(shared_buffer_ref& other, off_t offset, size_t len);

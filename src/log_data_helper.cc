@@ -37,7 +37,7 @@ void
 log_data_helper::clear()
 {
     this->ldh_file = nullptr;
-    this->ldh_msg.disown();
+    this->ldh_line_values.lvv_sbr.disown();
     this->ldh_parser.reset();
     this->ldh_scanner.reset();
     this->ldh_namer.reset();
@@ -76,17 +76,16 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
 
         this->ldh_line_attrs.clear();
         this->ldh_line_values.clear();
-        this->ldh_file->read_full_message(ll, this->ldh_msg);
-        format->annotate(
-            this->ldh_line_index, this->ldh_msg, sa, this->ldh_line_values);
+        this->ldh_file->read_full_message(ll, this->ldh_line_values.lvv_sbr);
+        format->annotate(this->ldh_line_index, sa, this->ldh_line_values);
 
         body = find_string_attr_range(sa, &SA_BODY);
         if (body.lr_start == -1) {
-            body.lr_start = this->ldh_msg.length();
-            body.lr_end = this->ldh_msg.length();
+            body.lr_start = this->ldh_line_values.lvv_sbr.length();
+            body.lr_end = this->ldh_line_values.lvv_sbr.length();
         }
         this->ldh_scanner = std::make_unique<data_scanner>(
-            this->ldh_msg, body.lr_start, body.lr_end);
+            this->ldh_line_values.lvv_sbr, body.lr_start, body.lr_end);
         this->ldh_parser
             = std::make_unique<data_parser>(this->ldh_scanner.get());
         this->ldh_msg_format.clear();
@@ -97,18 +96,18 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
 
-        for (const auto& lv : this->ldh_line_values) {
+        for (const auto& lv : this->ldh_line_values.lvv_values) {
             this->ldh_namer->cn_builtin_names.emplace_back(
                 lv.lv_meta.lvm_name.get());
         }
 
-        for (auto& ldh_line_value : this->ldh_line_values) {
+        for (auto& ldh_line_value : this->ldh_line_values.lvv_values) {
             switch (ldh_line_value.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_JSON: {
                     json_ptr_walk jpw;
 
-                    if (jpw.parse(ldh_line_value.lv_sbr.get_data(),
-                                  ldh_line_value.lv_sbr.length())
+                    if (jpw.parse(ldh_line_value.text_value(),
+                                  ldh_line_value.text_length())
                             == yajl_status_ok
                         && jpw.complete_parse() == yajl_status_ok)
                     {
@@ -122,8 +121,8 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                     pugi::xml_document doc;
 
                     auto parse_res
-                        = doc.load_buffer(ldh_line_value.lv_sbr.get_data(),
-                                          ldh_line_value.lv_sbr.length());
+                        = doc.load_buffer(ldh_line_value.text_value(),
+                                          ldh_line_value.text_length());
 
                     if (parse_res) {
                         pugi::xpath_query query("//*");
@@ -179,11 +178,12 @@ log_data_helper::get_line_bounds(size_t& line_index_out,
 
         line_index_out = line_end_index_out;
         line_end = (const char*) memchr(
-            this->ldh_msg.get_data() + line_index_out + 1,
+            this->ldh_line_values.lvv_sbr.get_data() + line_index_out + 1,
             '\n',
-            this->ldh_msg.length() - line_index_out - 1);
+            this->ldh_line_values.lvv_sbr.length() - line_index_out - 1);
         if (line_end != nullptr) {
-            line_end_index_out = line_end - this->ldh_msg.get_data();
+            line_end_index_out
+                = line_end - this->ldh_line_values.lvv_sbr.get_data();
         } else {
             line_end_index_out = std::string::npos;
         }
@@ -191,7 +191,7 @@ log_data_helper::get_line_bounds(size_t& line_index_out,
     } while (retval <= this->ldh_y_offset);
 
     if (line_end_index_out == std::string::npos) {
-        line_end_index_out = this->ldh_msg.length();
+        line_end_index_out = this->ldh_line_values.lvv_sbr.length();
     }
 
     return retval;

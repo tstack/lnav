@@ -231,8 +231,7 @@ public:
 
     virtual void extract(logfile* lf,
                          uint64_t line_number,
-                         shared_buffer_ref& line,
-                         std::vector<logline_value>& values);
+                         logline_value_vector& values);
 
     struct column_index {
         robin_hood::unordered_map<std::string, std::vector<vis_line_t>>

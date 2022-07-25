@@ -207,7 +207,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         format->scrub(value_out);
     }
 
-    shared_buffer_ref sbr;
+    auto& sbr = this->lss_token_values.lvv_sbr;
 
     sbr.share(this->lss_share_manager,
               (char*) this->lss_token_value.c_str(),
@@ -217,8 +217,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             line_range{0, (int) this->lss_token_value.length()},
             SA_BODY.value());
     } else {
-        format->annotate(
-            line, sbr, this->lss_token_attrs, this->lss_token_values);
+        format->annotate(line, this->lss_token_attrs, this->lss_token_values);
     }
     if (this->lss_token_line->get_sub_offset() != 0) {
         this->lss_token_attrs.clear();
@@ -369,7 +368,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         attrs |= A_UNDERLINE;
     }
 
-    const std::vector<logline_value>& line_values = this->lss_token_values;
+    const auto& line_values = this->lss_token_values;
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
@@ -393,7 +392,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
-    for (const auto& line_value : line_values) {
+    for (const auto& line_value : line_values.lvv_values) {
         if ((!(this->lss_token_flags & RF_FULL)
              && line_value.lv_sub_offset
                  != this->lss_token_line->get_sub_offset())
@@ -1385,13 +1384,14 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
 
     auto* lf = (*ld)->get_file_ptr();
     char timestamp_buffer[64];
-    shared_buffer_ref sbr, raw_sbr;
+    shared_buffer_ref raw_sbr;
+    logline_value_vector values;
+    auto& sbr = values.lvv_sbr;
     lf->read_full_message(ll, sbr);
     auto format = lf->get_format();
     string_attrs_t sa;
-    std::vector<logline_value> values;
     auto line_number = std::distance(lf->cbegin(), ll);
-    format->annotate(line_number, sbr, sa, values);
+    format->annotate(line_number, sa, values);
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -1554,7 +1554,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
-        for (const auto& lv : values) {
+        for (const auto& lv : values.lvv_values) {
             if (lv.lv_meta.lvm_name != &name[1]) {
                 continue;
             }
@@ -2003,7 +2003,6 @@ logline_window::logmsg_info::next_msg()
 {
     this->li_file = nullptr;
     this->li_logline = logfile::iterator{};
-    this->li_msg_buffer.disown();
     this->li_string_attrs.clear();
     this->li_line_values.clear();
     ++this->li_line;
@@ -2033,9 +2032,9 @@ logline_window::logmsg_info::load_msg() const
     }
 
     auto format = this->li_file->get_format();
-    this->li_file->read_full_message(this->li_logline, this->li_msg_buffer);
+    this->li_file->read_full_message(this->li_logline,
+                                     this->li_line_values.lvv_sbr);
     format->annotate(std::distance(this->li_file->cbegin(), this->li_logline),
-                     this->li_msg_buffer,
                      this->li_string_attrs,
                      this->li_line_values,
                      false);
@@ -2046,7 +2045,8 @@ logline_window::logmsg_info::to_string(const struct line_range& lr) const
 {
     this->load_msg();
 
-    return this->li_msg_buffer.to_string_fragment(lr.lr_start, lr.length())
+    return this->li_line_values.lvv_sbr
+        .to_string_fragment(lr.lr_start, lr.length())
         .to_string();
 }
 
@@ -2173,12 +2173,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                uniq_path.template get<std::string>()));
         });
 
-    shared_buffer_ref sbr;
     string_attrs_t sa;
-    std::vector<logline_value> values;
+    logline_value_vector values;
+    auto& sbr = values.lvv_sbr;
 
     lf->read_full_message(msg_start_iter, sbr);
-    format->annotate(file_line_number, sbr, sa, values);
+    format->annotate(file_line_number, sa, values);
 
     auto opid_opt = get_string_attr(sa, logline::L_OPID);
     if (opid_opt && !opid_opt.value().saw_string_attr->sa_range.empty()) {

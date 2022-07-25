@@ -63,21 +63,19 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
-                 shared_buffer_ref& line,
-                 std::vector<logline_value>& values) override;
+                 logline_value_vector& values) override;
 
     pcrepp lst_regex;
     log_format* lst_format{nullptr};
     mutable size_t lst_format_column_count{0};
     std::string lst_log_path_glob;
     nonstd::optional<log_level_t> lst_log_level;
-    shared_buffer_ref lst_current_line;
     pcre_input lst_input{""};
     pcre_context_static<128> lst_match_context;
     mutable std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_match_index{-1};
     mutable std::vector<vtab_column> lst_cols;
-    std::vector<logline_value> lst_line_values_cache;
+    logline_value_vector lst_line_values_cache;
     auto_buffer lst_mismatch_bitmap{auto_buffer::alloc_bitmap(0)};
     int32_t lst_index_generation{0};
 };

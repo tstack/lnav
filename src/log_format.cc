@@ -122,7 +122,9 @@ logline_value::logline_value(logline_value_meta lvm,
         case value_kind_t::VALUE_QUOTED:
         case value_kind_t::VALUE_W3C_QUOTED:
         case value_kind_t::VALUE_TIMESTAMP:
-            this->lv_sbr.subset(sbr, origin.lr_start, origin.length());
+            require(origin.lr_end != -1);
+            this->lv_frag = string_fragment{
+                sbr.get_data(), origin.lr_start, origin.lr_end};
             break;
 
         case value_kind_t::VALUE_NULL:
@@ -179,33 +181,36 @@ logline_value::to_string() const
         case value_kind_t::VALUE_STRUCT:
         case value_kind_t::VALUE_TEXT:
         case value_kind_t::VALUE_TIMESTAMP:
-            if (this->lv_sbr.empty()) {
+            if (this->lv_str) {
+                return this->lv_str.value();
+            }
+            if (this->lv_frag.empty()) {
                 return this->lv_intern_string.to_string();
             }
-            return {this->lv_sbr.get_data(), this->lv_sbr.length()};
+            return this->lv_frag.to_string();
 
         case value_kind_t::VALUE_QUOTED:
         case value_kind_t::VALUE_W3C_QUOTED:
-            if (this->lv_sbr.length() == 0) {
+            if (this->lv_frag.empty()) {
                 return "";
             } else {
-                switch (this->lv_sbr.get_data()[0]) {
+                switch (this->lv_frag.data()[0]) {
                     case '\'':
                     case '"': {
                         auto unquote_func = this->lv_meta.lvm_kind
                                 == value_kind_t::VALUE_W3C_QUOTED
                             ? unquote_w3c
                             : unquote;
-                        char unquoted_str[this->lv_sbr.length()];
+                        char unquoted_str[this->lv_frag.length()];
                         size_t unquoted_len;
 
                         unquoted_len = unquote_func(unquoted_str,
-                                                    this->lv_sbr.get_data(),
-                                                    this->lv_sbr.length());
+                                                    this->lv_frag.data(),
+                                                    this->lv_frag.length());
                         return {unquoted_str, unquoted_len};
                     }
                     default:
-                        return {this->lv_sbr.get_data(), this->lv_sbr.length()};
+                        return this->lv_frag.to_string();
                 }
             }
             break;
@@ -547,15 +552,14 @@ json_array_end(void* ctx)
     if (ypc->ypc_path_index_stack.size() == 1) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
-        shared_buffer_ref sbr;
-
-        sbr.subset(jlu->jlu_shared_buffer,
-                   jlu->jlu_sub_start,
-                   sub_end - jlu->jlu_sub_start);
-        jlu->jlu_format->jlf_line_values.emplace_back(
+        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_JSON),
-            sbr);
+            string_fragment{
+                jlu->jlu_shared_buffer.get_data(),
+                (int) jlu->jlu_sub_start,
+                (int) sub_end,
+            });
     }
 
     return 1;
@@ -583,7 +587,7 @@ rewrite_json_null(yajlpp_parse_context* ypc)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.emplace_back(
+    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(field_name, value_kind_t::VALUE_NULL));
 
     return 1;
@@ -598,7 +602,7 @@ rewrite_json_bool(yajlpp_parse_context* ypc, int val)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.emplace_back(
+    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(field_name,
                                         value_kind_t::VALUE_BOOLEAN),
         (bool) val);
@@ -614,7 +618,7 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.emplace_back(
+    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(field_name,
                                         value_kind_t::VALUE_INTEGER),
         (int64_t) val);
@@ -630,7 +634,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.emplace_back(
+    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(field_name, value_kind_t::VALUE_FLOAT),
         val);
 
@@ -899,8 +903,7 @@ external_log_format::scan(logfile& lf,
                     pcre_input mod_pi(
                         pi.get_substr_start(body_cap), 0, body_cap->length());
                     int mod_pat_index = mod_elf->last_pattern_index();
-                    pattern& mod_pat
-                        = *mod_elf->elf_pattern_order[mod_pat_index];
+                    auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
 
                     if (mod_pat.p_pcre->match(
                             mod_pc, mod_pi, PCRE_NO_UTF8_CHECK)) {
@@ -923,18 +926,15 @@ external_log_format::scan(logfile& lf,
                 const struct scaling_factor* scaling = nullptr;
 
                 if (ivd.ivd_unit_field_index >= 0) {
-                    pcre_context::iterator unit_cap
-                        = pc[ivd.ivd_unit_field_index];
+                    auto unit_cap = pc[ivd.ivd_unit_field_index];
 
                     if (unit_cap != nullptr && unit_cap->is_valid()) {
                         intern_string_t unit_val = intern_string::lookup(
                             pi.get_substr_start(unit_cap), unit_cap->length());
-                        std::map<const intern_string_t,
-                                 scaling_factor>::const_iterator unit_iter;
 
-                        unit_iter = vd.vd_unit_scaling.find(unit_val);
+                        auto unit_iter = vd.vd_unit_scaling.find(unit_val);
                         if (unit_iter != vd.vd_unit_scaling.end()) {
-                            const struct scaling_factor& sf = unit_iter->second;
+                            const auto& sf = unit_iter->second;
 
                             scaling = &sf;
                         }
@@ -1035,11 +1035,11 @@ external_log_format::module_scan(const pcre_input& pi,
 
 void
 external_log_format::annotate(uint64_t line_number,
-                              shared_buffer_ref& line,
                               string_attrs_t& sa,
-                              std::vector<logline_value>& values,
+                              logline_value_vector& values,
                               bool annotate_module) const
 {
+    auto& line = values.lvv_sbr;
     pcre_context_static<128> pc;
     pcre_input pi(line.get_data(), 0, line.length());
     struct line_range lr;
@@ -1055,10 +1055,10 @@ external_log_format::annotate(uint64_t line_number,
         return;
     }
 
-    values.reserve(this->elf_value_defs.size());
+    values.lvv_values.reserve(this->elf_value_defs.size());
 
     int pat_index = this->pattern_index_for_line(line_number);
-    pattern& pat = *this->elf_pattern_order[pat_index];
+    auto& pat = *this->elf_pattern_order[pat_index];
 
     sa.reserve(pat.p_pcre->get_capture_count());
     if (!pat.p_pcre->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
@@ -1105,11 +1105,11 @@ external_log_format::annotate(uint64_t line_number,
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def& ivd = pat.p_value_by_index[lpc];
         const struct scaling_factor* scaling = nullptr;
-        pcre_context::capture_t* cap = pc[ivd.ivd_index];
-        const value_def& vd = *ivd.ivd_value_def;
+        auto* cap = pc[ivd.ivd_index];
+        const auto& vd = *ivd.ivd_value_def;
 
         if (ivd.ivd_unit_field_index >= 0) {
-            pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
+            auto* unit_cap = pc[ivd.ivd_unit_field_index];
 
             if (unit_cap != nullptr && unit_cap->c_begin != -1) {
                 intern_string_t unit_val = intern_string::lookup(
@@ -1124,14 +1124,14 @@ external_log_format::annotate(uint64_t line_number,
         }
 
         if (cap->is_valid()) {
-            values.emplace_back(
+            values.lvv_values.emplace_back(
                 vd.vd_meta, line, line_range{cap->c_begin, cap->c_end});
-            values.back().apply_scaling(scaling);
+            values.lvv_values.back().apply_scaling(scaling);
         } else {
-            values.emplace_back(vd.vd_meta);
+            values.lvv_values.emplace_back(vd.vd_meta);
         }
         if (pat.p_module_format) {
-            values.back().lv_meta.lvm_from_module = true;
+            values.lvv_values.back().lv_meta.lvm_from_module = true;
         }
     }
 
@@ -1146,22 +1146,23 @@ external_log_format::annotate(uint64_t line_number,
         if (mod_iter != MODULE_FORMATS.end()
             && mod_iter->second.mf_mod_format != nullptr)
         {
-            module_format& mf = mod_iter->second;
-            shared_buffer_ref body_ref;
+            auto& mf = mod_iter->second;
 
             body_cap->ltrim(line.get_data());
-            body_ref.subset(line, body_cap->c_begin, body_cap->length());
-
-            auto pre_mod_values_size = values.size();
+            auto narrow_res
+                = line.narrow(body_cap->c_begin, body_cap->length());
+            auto pre_mod_values_size = values.lvv_values.size();
             auto pre_mod_sa_size = sa.size();
-            mf.mf_mod_format->annotate(
-                line_number, body_ref, sa, values, false);
-            for (size_t lpc = pre_mod_values_size; lpc < values.size(); lpc++) {
-                values[lpc].lv_origin.shift(0, body_cap->c_begin);
+            mf.mf_mod_format->annotate(line_number, sa, values, false);
+            for (size_t lpc = pre_mod_values_size;
+                 lpc < values.lvv_values.size();
+                 lpc++) {
+                values.lvv_values[lpc].lv_origin.shift(0, body_cap->c_begin);
             }
             for (size_t lpc = pre_mod_sa_size; lpc < sa.size(); lpc++) {
                 sa[lpc].sa_range.shift(0, body_cap->c_begin);
             }
+            line.widen(narrow_res);
             did_mod_annotate_body = true;
         }
     }
@@ -1188,7 +1189,9 @@ external_log_format::rewrite(exec_context& ec,
 
     value_out.assign(line.get_data(), line.length());
 
-    for (auto iter = values.begin(); iter != values.end(); ++iter) {
+    for (auto iter = values.lvv_values.begin(); iter != values.lvv_values.end();
+         ++iter)
+    {
         if (!iter->lv_origin.is_valid()) {
             log_debug("not rewriting value with invalid origin -- %s",
                       iter->lv_meta.lvm_name.get());
@@ -1225,8 +1228,10 @@ external_log_format::rewrite(exec_context& ec,
 
         int32_t shift_amount = field_value.length() - adj_origin.length();
         value_out.insert(adj_origin.lr_start, field_value);
-        for (shift_iter = values.begin(); shift_iter != values.end();
-             ++shift_iter) {
+        for (shift_iter = values.lvv_values.begin();
+             shift_iter != values.lvv_values.end();
+             ++shift_iter)
+        {
             shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
         }
         shift_string_attrs(sa, adj_origin.lr_start, shift_amount);
@@ -1309,48 +1314,49 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             sql_strftime(
                 time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval(), 'T');
         }
-        tmp_shared_buffer tsb(time_buf);
-        jlu->jlu_format->jlf_line_values.emplace_back(
+        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
-            tsb.tsb_ref);
+            std::string{time_buf});
     } else if (jlu->jlu_shared_buffer.contains((const char*) str)) {
-        shared_buffer_ref sbr;
-
-        sbr.subset(jlu->jlu_shared_buffer,
-                   (off_t) ((const char*) str - jlu->jlu_line_value),
-                   len);
+        auto str_offset = (int) ((const char*) str - jlu->jlu_line_value);
         if (field_name == jlu->jlu_format->elf_body_field) {
-            jlu->jlu_format->jlf_line_values.emplace_back(
+            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
                 jlu->jlu_format->get_value_meta(body_name,
                                                 value_kind_t::VALUE_TEXT),
-                sbr);
+                string_fragment{
+                    jlu->jlu_shared_buffer.get_data(),
+                    str_offset,
+                    str_offset + (int) len,
+                });
         }
         if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
             return 1;
         }
 
-        jlu->jlu_format->jlf_line_values.emplace_back(
+        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
-            sbr);
+            string_fragment{
+                jlu->jlu_shared_buffer.get_data(),
+                str_offset,
+                str_offset + (int) len,
+            });
     } else {
-        tmp_shared_buffer tsb((const char*) str, len);
-
         if (field_name == jlu->jlu_format->elf_body_field) {
-            jlu->jlu_format->jlf_line_values.emplace_back(
+            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
                 jlu->jlu_format->get_value_meta(body_name,
                                                 value_kind_t::VALUE_TEXT),
-                tsb.tsb_ref);
+                std::string{(const char*) str, len});
         }
         if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
             return 1;
         }
 
-        jlu->jlu_format->jlf_line_values.emplace_back(
+        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
-            tsb.tsb_ref);
+            std::string{(const char*) str, len});
     }
 
     return 1;
@@ -1419,13 +1425,13 @@ external_log_format::get_subline(const logline& ll,
                 SA_INVALID.value("JSON line failed to parse"));
         } else {
             std::vector<logline_value>::iterator lv_iter;
-            bool used_values[this->jlf_line_values.size()];
+            bool used_values[this->jlf_line_values.lvv_values.size()];
             struct line_range lr;
 
             memset(used_values, 0, sizeof(used_values));
 
-            for (lv_iter = this->jlf_line_values.begin();
-                 lv_iter != this->jlf_line_values.end();
+            for (lv_iter = this->jlf_line_values.lvv_values.begin();
+                 lv_iter != this->jlf_line_values.lvv_values.end();
                  ++lv_iter)
             {
                 lv_iter->lv_meta.lvm_format = this;
@@ -1447,10 +1453,10 @@ external_log_format::get_subline(const logline& ll,
                         break;
                     case json_log_field::VARIABLE:
                         lv_iter = find_if(
-                            this->jlf_line_values.begin(),
-                            this->jlf_line_values.end(),
+                            this->jlf_line_values.lvv_values.begin(),
+                            this->jlf_line_values.lvv_values.end(),
                             logline_value_cmp(&jfe.jfe_value.pp_value));
-                        if (lv_iter != this->jlf_line_values.end()) {
+                        if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                             auto str = lv_iter->to_string();
                             size_t nl_pos = str.find('\n');
 
@@ -1520,8 +1526,9 @@ external_log_format::get_subline(const logline& ll,
                                     lr, logline::L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
-                            used_values[distance(this->jlf_line_values.begin(),
-                                                 lv_iter)]
+                            used_values[distance(
+                                this->jlf_line_values.lvv_values.begin(),
+                                lv_iter)]
                                 = true;
                         } else if (jfe.jfe_value.pp_value == ts_field) {
                             struct line_range lr;
@@ -1547,12 +1554,14 @@ external_log_format::get_subline(const logline& ll,
                                 lr, logline::L_TIMESTAMP.value());
 
                             lv_iter = find_if(
-                                this->jlf_line_values.begin(),
-                                this->jlf_line_values.end(),
+                                this->jlf_line_values.lvv_values.begin(),
+                                this->jlf_line_values.lvv_values.end(),
                                 logline_value_cmp(&this->lf_timestamp_field));
-                            if (lv_iter != this->jlf_line_values.end()) {
+                            if (lv_iter
+                                != this->jlf_line_values.lvv_values.end()) {
                                 used_values[distance(
-                                    this->jlf_line_values.begin(), lv_iter)]
+                                    this->jlf_line_values.lvv_values.begin(),
+                                    lv_iter)]
                                     = true;
                             }
                         } else if (jfe.jfe_value.pp_value == level_field
@@ -1612,10 +1621,11 @@ external_log_format::get_subline(const logline& ll,
             }
             this->json_append_to_cache("\n", 1);
 
-            for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
+            for (size_t lpc = 0; lpc < this->jlf_line_values.lvv_values.size();
+                 lpc++) {
                 static const intern_string_t body_name
                     = intern_string::lookup("body", -1);
-                logline_value& lv = this->jlf_line_values[lpc];
+                auto& lv = this->jlf_line_values.lvv_values[lpc];
 
                 if (lv.lv_meta.lvm_hidden || used_values[lpc]
                     || body_name == lv.lv_meta.lvm_name)
@@ -1688,6 +1698,7 @@ external_log_format::get_subline(const logline& ll,
                   this->jlf_cached_line.data() + this_off,
                   next_off - this_off);
     }
+    this->jlf_line_values.lvv_sbr = sbr;
 }
 
 void
@@ -2437,22 +2448,19 @@ public:
 
             return lf->read_line(lf_iter)
                 .map([this, format, cl](auto line) {
-                    std::vector<logline_value> values;
-                    shared_buffer_ref body_ref;
+                    logline_value_vector values;
                     struct line_range mod_name_range;
                     intern_string_t mod_name;
 
                     this->vi_attrs.clear();
-                    format->annotate(cl, line, this->vi_attrs, values, false);
+                    values.lvv_sbr = line;
+                    format->annotate(cl, this->vi_attrs, values, false);
                     this->elt_container_body
                         = find_string_attr_range(this->vi_attrs, &SA_BODY);
                     if (!this->elt_container_body.is_valid()) {
                         return false;
                     }
                     this->elt_container_body.ltrim(line.get_data());
-                    body_ref.subset(line,
-                                    this->elt_container_body.lr_start,
-                                    this->elt_container_body.length());
                     mod_name_range = find_string_attr_range(this->vi_attrs,
                                                             &logline::L_MODULE);
                     if (!mod_name_range.is_valid()) {
@@ -2478,9 +2486,9 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
-                 shared_buffer_ref& line,
-                 std::vector<logline_value>& values) override
+                 logline_value_vector& values) override
     {
+        auto& line = values.lvv_sbr;
         auto format = lf->get_format();
 
         if (this->elt_module_format.mf_mod_format != nullptr) {
@@ -2490,12 +2498,16 @@ public:
                             this->elt_container_body.lr_start,
                             this->elt_container_body.length());
             this->vi_attrs.clear();
-            values.clear();
+            auto narrow_res
+                = values.lvv_sbr.narrow(this->elt_container_body.lr_start,
+                                        this->elt_container_body.length());
+            values.lvv_values.clear();
             this->elt_module_format.mf_mod_format->annotate(
-                line_number, body_ref, this->vi_attrs, values, false);
+                line_number, this->vi_attrs, values, false);
+            values.lvv_sbr.widen(narrow_res);
         } else {
             this->vi_attrs.clear();
-            format->annotate(line_number, line, this->vi_attrs, values, false);
+            format->annotate(line_number, this->vi_attrs, values, false);
         }
     }
 

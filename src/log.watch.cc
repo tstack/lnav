@@ -119,13 +119,13 @@ eval_with(logfile& lf, logfile::iterator ll)
                         sqlite_db_tag>();
 
     char timestamp_buffer[64] = "";
-    shared_buffer_ref sbr, raw_sbr;
-    lf.read_full_message(ll, sbr);
+    shared_buffer_ref raw_sbr;
+    logline_value_vector values;
+    lf.read_full_message(ll, values.lvv_sbr);
     auto format = lf.get_format();
     string_attrs_t sa;
-    std::vector<logline_value> values;
     auto line_number = std::distance(lf.begin(), ll);
-    format->annotate(line_number, sbr, sa, values);
+    format->annotate(line_number, sa, values);
 
     for (auto& watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {
@@ -204,8 +204,11 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             if (strcmp(name, ":log_text") == 0) {
-                sqlite3_bind_text(
-                    stmt, lpc + 1, sbr.get_data(), sbr.length(), SQLITE_STATIC);
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  values.lvv_sbr.get_data(),
+                                  values.lvv_sbr.length(),
+                                  SQLITE_STATIC);
                 continue;
             }
             if (strcmp(name, ":log_body") == 0) {
@@ -216,7 +219,7 @@ eval_with(logfile& lf, logfile::iterator ll)
 
                     sqlite3_bind_text(stmt,
                                       lpc + 1,
-                                      sbr.get_data_at(sar.lr_start),
+                                      values.lvv_sbr.get_data_at(sar.lr_start),
                                       sar.length(),
                                       SQLITE_STATIC);
                 } else {
@@ -232,7 +235,7 @@ eval_with(logfile& lf, logfile::iterator ll)
 
                     sqlite3_bind_text(stmt,
                                       lpc + 1,
-                                      sbr.get_data_at(sar.lr_start),
+                                      values.lvv_sbr.get_data_at(sar.lr_start),
                                       sar.length(),
                                       SQLITE_STATIC);
                 } else {
@@ -254,7 +257,7 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             auto found = false;
-            for (const auto& lv : values) {
+            for (const auto& lv : values.lvv_values) {
                 if (lv.lv_meta.lvm_name != &name[1]) {
                     continue;
                 }
@@ -322,7 +325,7 @@ eval_with(logfile& lf, logfile::iterator ll)
             lf.get_format_name().to_string(),
             timestamp_buffer,
         };
-        for (const auto& lv : values) {
+        for (const auto& lv : values.lvv_values) {
             switch (lv.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_NULL:
                     lmd.md_values[lv.lv_meta.lvm_name.to_string()]

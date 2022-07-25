@@ -251,7 +251,7 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                 retval[name] = env_value;
             }
         } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
-            for (auto& lv : *ec.ec_line_values) {
+            for (auto& lv : ec.ec_line_values->lvv_values) {
                 if (lv.lv_meta.lvm_name != &name[1]) {
                     continue;
                 }
@@ -1026,7 +1026,7 @@ exec_context::clear_output()
     this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
 }
 
-exec_context::exec_context(std::vector<logline_value>* line_values,
+exec_context::exec_context(logline_value_vector* line_values,
                            sql_callback_t sql_callback,
                            pipe_callback_t pipe_callback)
     : ec_line_values(line_values),

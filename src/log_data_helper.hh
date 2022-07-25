@@ -64,9 +64,10 @@ public:
 
     int get_value_line(const logline_value& lv) const
     {
-        return std::count(this->ldh_msg.get_data(),
-                          this->ldh_msg.get_data() + lv.lv_origin.lr_start,
-                          '\n');
+        return std::count(
+            this->ldh_line_values.lvv_sbr.get_data(),
+            this->ldh_line_values.lvv_sbr.get_data() + lv.lv_origin.lr_start,
+            '\n');
     }
 
     std::string format_json_getter(const intern_string_t field, int index);
@@ -76,13 +77,12 @@ public:
     std::shared_ptr<logfile> ldh_file;
     int ldh_y_offset{0};
     logfile::iterator ldh_line;
-    shared_buffer_ref ldh_msg;
     content_line_t ldh_line_index;
     std::unique_ptr<data_scanner> ldh_scanner;
     std::unique_ptr<data_parser> ldh_parser;
     std::unique_ptr<column_namer> ldh_namer;
     string_attrs_t ldh_line_attrs;
-    std::vector<logline_value> ldh_line_values;
+    logline_value_vector ldh_line_values;
     std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;
     std::map<std::pair<const intern_string_t, std::string>, std::string>
         ldh_xml_pairs;

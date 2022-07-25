@@ -186,11 +186,11 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         }
 
         const auto& values = msg_info.get_values();
-        auto lv_iter = find_if(values.begin(),
-                               values.end(),
+        auto lv_iter = find_if(values.lvv_values.begin(),
+                               values.lvv_values.end(),
                                logline_value_cmp(&this->lsvs_colname));
 
-        if (lv_iter != values.end()) {
+        if (lv_iter != values.lvv_values.end()) {
             switch (lv_iter->lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_FLOAT:
                     row_out.add_value(sr, lv_iter->lv_value.d, ll.is_marked());
@@ -223,11 +223,11 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
             }
 
             const auto& values = msg_info.get_values();
-            auto lv_iter = find_if(values.begin(),
-                                   values.end(),
+            auto lv_iter = find_if(values.lvv_values.begin(),
+                                   values.lvv_values.end(),
                                    logline_value_cmp(&this->lsvs_colname));
 
-            if (lv_iter != values.end()) {
+            if (lv_iter != values.lvv_values.end()) {
                 switch (lv_iter->lv_meta.lvm_kind) {
                     case value_kind_t::VALUE_FLOAT:
                         if (range_min <= lv_iter->lv_value.d
@@ -266,7 +266,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
     vis_line_t end_line
         = lss.find_from_time(end_time).value_or(lss.text_line_count());
-    std::vector<logline_value> values;
+    logline_value_vector values;
     string_attrs_t sa;
 
     for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
@@ -274,22 +274,21 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
         std::shared_ptr<logfile> lf = lss.find(cl);
         auto ll = lf->begin() + cl;
         auto format = lf->get_format();
-        shared_buffer_ref sbr;
 
         if (!ll->is_message()) {
             continue;
         }
 
-        lf->read_full_message(ll, sbr);
-        sa.clear();
         values.clear();
-        format->annotate(cl, sbr, sa, values, false);
+        lf->read_full_message(ll, values.lvv_sbr);
+        sa.clear();
+        format->annotate(cl, sa, values, false);
 
-        auto lv_iter = find_if(values.begin(),
-                               values.end(),
+        auto lv_iter = find_if(values.lvv_values.begin(),
+                               values.lvv_values.end(),
                                logline_value_cmp(&this->lsvs_colname));
 
-        if (lv_iter != values.end()) {
+        if (lv_iter != values.lvv_values.end()) {
             switch (lv_iter->lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_FLOAT:
                     if (range_min <= lv_iter->lv_value.d

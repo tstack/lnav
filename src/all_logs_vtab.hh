@@ -48,17 +48,13 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
-                 shared_buffer_ref& line,
-                 std::vector<logline_value>& values) override;
+                 logline_value_vector& values) override;
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
 private:
     logline_value_meta alv_msg_meta;
     logline_value_meta alv_schema_meta;
-    shared_buffer alv_schema_manager;
-    fmt::basic_memory_buffer<char, data_parser::schema_id_t::STRING_SIZE>
-        alv_schema_buffer;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH

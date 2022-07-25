@@ -249,13 +249,12 @@ add_filter_expr_possibilities(readline_curses* rlc,
         }
 
         auto format = lf->get_format();
-        shared_buffer_ref sbr;
         string_attrs_t sa;
-        std::vector<logline_value> values;
+        logline_value_vector values;
 
-        lf->read_full_message(ll, sbr);
-        format->annotate(cl, sbr, sa, values);
-        for (auto& lv : values) {
+        lf->read_full_message(ll, values.lvv_sbr);
+        format->annotate(cl, sa, values);
+        for (auto& lv : values.lvv_values) {
             if (!lv.lv_meta.lvm_struct_name.empty()) {
                 continue;
             }

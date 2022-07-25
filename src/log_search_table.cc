@@ -116,7 +116,7 @@ bool
 log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
     this->vi_attrs.clear();
-    this->lst_line_values_cache.clear();
+    this->lst_line_values_cache.lvv_values.clear();
 
     if (this->lst_match_index >= 0) {
         this->lst_input.pi_offset = this->lst_input.pi_next_offset;
@@ -158,14 +158,12 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     }
 
     // log_debug("%d: doing message", (int) lc.lc_curr_line);
-    lf->read_full_message(lf_iter, this->lst_current_line);
-    lf->get_format()->annotate(cl,
-                               this->lst_current_line,
-                               this->vi_attrs,
-                               this->lst_line_values_cache,
-                               false);
-    this->lst_input.reset(
-        this->lst_current_line.get_data(), 0, this->lst_current_line.length());
+    lf->read_full_message(lf_iter, this->lst_line_values_cache.lvv_sbr);
+    lf->get_format()->annotate(
+        cl, this->vi_attrs, this->lst_line_values_cache, false);
+    this->lst_input.reset(this->lst_line_values_cache.lvv_sbr.get_data(),
+                          0,
+                          this->lst_line_values_cache.lvv_sbr.length());
 
     if (!this->lst_regex.match(
             this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
@@ -182,20 +180,27 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 void
 log_search_table::extract(logfile* lf,
                           uint64_t line_number,
-                          shared_buffer_ref& line,
-                          std::vector<logline_value>& values)
+                          logline_value_vector& values)
 {
+    auto& line = values.lvv_sbr;
     if (this->lst_format != nullptr) {
         values = this->lst_line_values_cache;
     }
-    values.emplace_back(this->lst_column_metas[this->lst_format_column_count],
-                        this->lst_match_index);
+    values.lvv_values.emplace_back(
+        this->lst_column_metas[this->lst_format_column_count],
+        this->lst_match_index);
     for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
         const auto* cap = this->lst_match_context[lpc];
-        values.emplace_back(
-            this->lst_column_metas[this->lst_format_column_count + 1 + lpc],
-            line,
-            line_range{cap->c_begin, cap->c_end});
+        if (cap->is_valid()) {
+            values.lvv_values.emplace_back(
+                this->lst_column_metas[this->lst_format_column_count + 1 + lpc],
+                line,
+                line_range{cap->c_begin, cap->c_end});
+        } else {
+            values.lvv_values.emplace_back(
+                this->lst_column_metas[this->lst_format_column_count + 1
+                                       + lpc]);
+        }
     }
 }
 

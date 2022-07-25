@@ -49,6 +49,7 @@
 struct exec_context;
 class attr_line_t;
 class logline_value;
+struct logline_value_vector;
 
 using sql_callback_t = int (*)(exec_context&, sqlite3_stmt*);
 int sql_callback(exec_context& ec, sqlite3_stmt* stmt);
@@ -67,7 +68,7 @@ struct exec_context {
 
     using output_t = std::pair<FILE*, int (*)(FILE*)>;
 
-    exec_context(std::vector<logline_value>* line_values = nullptr,
+    exec_context(logline_value_vector* line_values = nullptr,
                  sql_callback_t sql_callback = ::sql_callback,
                  pipe_callback_t pipe_callback = nullptr);
 
@@ -218,7 +219,7 @@ struct exec_context {
     perm_t ec_perms{perm_t::READ_WRITE};
 
     std::map<std::string, std::string> ec_override;
-    std::vector<logline_value>* ec_line_values;
+    logline_value_vector* ec_line_values;
     std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;
     std::map<std::string, scoped_value_t> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;

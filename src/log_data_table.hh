@@ -64,14 +64,12 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
-                 shared_buffer_ref& line,
-                 std::vector<logline_value>& values) override;
+                 logline_value_vector& values) override;
 
 private:
     logfile_sub_source& ldt_log_source;
     const content_line_t ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
-    shared_buffer_ref ldt_current_line;
     data_parser::element_list_t ldt_pairs;
     std::shared_ptr<log_vtab_impl> ldt_format_impl;
     std::vector<vtab_column> ldt_cols;

@@ -144,7 +144,8 @@ main(int argc, char* argv[])
                 auto sub_line = line.substr(13);
                 struct line_range body(0, sub_line.length());
                 shared_buffer share_manager;
-                shared_buffer_ref sbr;
+                logline_value_vector ll_values;
+                auto& sbr = ll_values.lvv_sbr;
 
                 sbr.share(
                     share_manager, (char*) sub_line.c_str(), sub_line.size());
@@ -178,11 +179,10 @@ main(int argc, char* argv[])
                     }
                 }
 
-                std::vector<logline_value> ll_values;
                 string_attrs_t sa;
 
                 if (format.get() != nullptr) {
-                    format->annotate(0, sbr, sa, ll_values);
+                    format->annotate(0, sa, ll_values);
                     body = find_string_attr_range(sa, &SA_BODY);
                 }
 

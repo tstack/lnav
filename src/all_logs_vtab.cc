@@ -62,15 +62,16 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 void
 all_logs_vtab::extract(logfile* lf,
                        uint64_t line_number,
-                       shared_buffer_ref& line,
-                       std::vector<logline_value>& values)
+                       logline_value_vector& values)
 {
-    auto format = lf->get_format();
+    auto& line = values.lvv_sbr;
+    auto format = lf->get_format_ptr();
 
-    std::vector<logline_value> sub_values;
+    logline_value_vector sub_values;
 
     this->vi_attrs.clear();
-    format->annotate(line_number, line, this->vi_attrs, sub_values, false);
+    sub_values.lvv_sbr = line;
+    format->annotate(line_number, this->vi_attrs, sub_values, false);
 
     auto body = find_string_attr_range(this->vi_attrs, &SA_BODY);
     if (body.lr_start == -1) {
@@ -85,18 +86,9 @@ all_logs_vtab::extract(logfile* lf,
     dp.dp_msg_format = &str;
     dp.parse();
 
-    tmp_shared_buffer tsb(str.c_str());
-
-    values.emplace_back(this->alv_msg_meta, tsb.tsb_ref);
-
-    this->alv_schema_manager.invalidate_refs();
-    this->alv_schema_buffer.clear();
-    dp.dp_schema_id.to_string(std::back_inserter(this->alv_schema_buffer));
-    shared_buffer_ref schema_ref;
-    schema_ref.share(this->alv_schema_manager,
-                     this->alv_schema_buffer.data(),
-                     data_parser::schema_id_t::STRING_SIZE - 1);
-    values.emplace_back(this->alv_schema_meta, schema_ref);
+    values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
+    values.lvv_values.emplace_back(this->alv_schema_meta,
+                                   dp.dp_schema_id.to_string());
 }
 
 bool

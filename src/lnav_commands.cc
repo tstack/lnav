@@ -1413,7 +1413,7 @@ com_pipe_to(exec_context& ec,
                     tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
                 setenv("log_time", tmp_str, 1);
                 setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
-                for (auto& ldh_line_value : ldh.ldh_line_values) {
+                for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
                     setenv(ldh_line_value.lv_meta.lvm_name.get(),
                            ldh_line_value.to_string().c_str(),
                            1);
@@ -4460,7 +4460,7 @@ command_prompt(std::vector<std::string>& args)
                     ln_mode_t::COMMAND, "numeric-colname", dls_header.hm_name);
             }
         } else {
-            for (auto& ldh_line_value : ldh.ldh_line_values) {
+            for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
                 auto& meta = ldh_line_value.lv_meta;
 
                 if (!meta.lvm_format) {

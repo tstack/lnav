@@ -55,22 +55,21 @@ log_data_table::get_columns_int()
     std::shared_ptr<logfile> lf = this->ldt_log_source.find(cl_copy);
     struct line_range body;
     string_attrs_t sa;
-    std::vector<logline_value> line_values;
+    logline_value_vector line_values;
     auto format = lf->get_format();
-    shared_buffer_ref line;
 
     if (this->ldt_format_impl != nullptr) {
         this->ldt_format_impl->get_columns(cols);
     }
-    lf->read_full_message(lf->begin() + cl_copy, line);
-    format->annotate(cl_copy, line, sa, line_values, false);
+    lf->read_full_message(lf->begin() + cl_copy, line_values.lvv_sbr);
+    format->annotate(cl_copy, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         this->ldt_schema_id.clear();
         return;
     }
 
-    data_scanner ds(line, body.lr_start, body.lr_end);
+    data_scanner ds(line_values.lvv_sbr, body.lr_start, body.lr_end);
     data_parser dp(&ds);
     column_namer cn{column_namer::language::SQL};
 
@@ -131,17 +130,16 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 
     string_attrs_t sa;
     struct line_range body;
-    std::vector<logline_value> line_values;
+    logline_value_vector line_values;
 
-    lf->read_full_message(lf_iter, this->ldt_current_line);
-    lf->get_format()->annotate(
-        cl, this->ldt_current_line, sa, line_values, false);
+    lf->read_full_message(lf_iter, line_values.lvv_sbr);
+    lf->get_format()->annotate(cl, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         return false;
     }
 
-    data_scanner ds(this->ldt_current_line, body.lr_start, body.lr_end);
+    data_scanner ds(line_values.lvv_sbr, body.lr_start, body.lr_end);
     data_parser dp(&ds);
     dp.parse();
 
@@ -162,12 +160,12 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 void
 log_data_table::extract(logfile* lf,
                         uint64_t line_number,
-                        shared_buffer_ref& line,
-                        std::vector<logline_value>& values)
+                        logline_value_vector& values)
 {
+    auto& line = values.lvv_sbr;
     auto meta_iter = this->ldt_value_metas.begin();
 
-    this->ldt_format_impl->extract(lf, line_number, line, values);
+    this->ldt_format_impl->extract(lf, line_number, values);
     for (const auto& ldt_pair : this->ldt_pairs) {
         const auto& pvalue = ldt_pair.get_pair_value();
 
@@ -183,15 +181,16 @@ log_data_table::extract(logfile* lf,
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }
-                values.emplace_back(*meta_iter, d);
+                values.lvv_values.emplace_back(*meta_iter, d);
                 break;
             }
 
             default: {
-                values.emplace_back(*meta_iter,
-                                    line,
-                                    line_range{pvalue.e_capture.c_begin,
-                                               pvalue.e_capture.c_end});
+                values.lvv_values.emplace_back(
+                    *meta_iter,
+                    line,
+                    line_range{pvalue.e_capture.c_begin,
+                               pvalue.e_capture.c_end});
                 break;
             }
         }

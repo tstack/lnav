@@ -46,7 +46,7 @@ action_delegate::execute_action(const std::string& action_name)
 
     auto& ldh = this->ad_log_helper;
     auto value_index = this->ad_press_value;
-    logline_value& lv = ldh.ldh_line_values[value_index];
+    logline_value& lv = ldh.ldh_line_values.lvv_values[value_index];
     auto lf = ldh.ldh_file;
     const auto format = lf->get_format();
     pid_t child_pid;
@@ -187,10 +187,12 @@ action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
                 x_offset = this->ad_line_index + mouse_left;
                 if (lr.contains(x_offset)) {
                     for (size_t lpc = 0;
-                         lpc < this->ad_log_helper.ldh_line_values.size();
-                         lpc++) {
-                        logline_value& lv
-                            = this->ad_log_helper.ldh_line_values[lpc];
+                         lpc < this->ad_log_helper.ldh_line_values.lvv_values
+                                   .size();
+                         lpc++)
+                    {
+                        auto& lv = this->ad_log_helper.ldh_line_values
+                                       .lvv_values[lpc];
 
                         if (lv.lv_origin.contains(x_offset)) {
                             this->ad_press_value = lpc;
@@ -211,8 +213,8 @@ action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
         case mouse_button_state_t::BUTTON_STATE_RELEASED:
             if (this->ad_press_value != -1 && this->ad_press_line == mouse_line)
             {
-                logline_value& lv
-                    = this->ad_log_helper.ldh_line_values[this->ad_press_value];
+                auto& lv = this->ad_log_helper.ldh_line_values
+                               .lvv_values[this->ad_press_value];
                 int x_offset = this->ad_line_index + mouse_left;
 
                 if (lv.lv_origin.contains(x_offset)) {

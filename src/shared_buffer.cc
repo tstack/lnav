@@ -162,3 +162,18 @@ shared_buffer_ref::copy_ref(const shared_buffer_ref& other)
         this->sb_length = other.sb_length;
     }
 }
+
+shared_buffer_ref::narrow_result
+shared_buffer_ref::narrow(size_t new_data, size_t new_length)
+{
+    return std::make_pair(
+        std::exchange(this->sb_data, this->sb_data + new_data),
+        std::exchange(this->sb_length, new_length));
+}
+
+void
+shared_buffer_ref::widen(narrow_result old_data_length)
+{
+    this->sb_data = old_data_length.first;
+    this->sb_length = old_data_length.second;
+}

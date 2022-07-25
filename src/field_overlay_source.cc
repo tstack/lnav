@@ -147,7 +147,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
     if (ll->is_time_skewed() && time_range.lr_end != -1) {
         const char* time_src
-            = this->fos_log_helper.ldh_msg.get_data() + time_range.lr_start;
+            = this->fos_log_helper.ldh_line_values.lvv_sbr.get_data()
+            + time_range.lr_start;
         struct timeval actual_tv;
         date_time_scanner dts;
         struct exttm tm;
@@ -215,7 +216,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     this->fos_known_key_size = LOG_BODY.length();
     this->fos_unknown_key_size = 0;
 
-    for (auto& ldh_line_value : this->fos_log_helper.ldh_line_values) {
+    for (auto& ldh_line_value : this->fos_log_helper.ldh_line_values.lvv_values)
+    {
         auto& meta = ldh_line_value.lv_meta;
         int this_key_size = meta.lvm_name.size();
 
@@ -260,13 +262,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         this->fos_lines.emplace_back(pattern_al);
     }
 
-    if (this->fos_log_helper.ldh_line_values.empty()) {
+    if (this->fos_log_helper.ldh_line_values.lvv_values.empty()) {
         this->fos_lines.emplace_back(" No known message fields");
     }
 
     const log_format* last_format = nullptr;
 
-    for (auto& lv : this->fos_log_helper.ldh_line_values) {
+    for (auto& lv : this->fos_log_helper.ldh_line_values.lvv_values) {
         if (!lv.lv_meta.lvm_format) {
             continue;
         }

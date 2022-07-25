@@ -198,11 +198,11 @@ class generic_log_format : public log_format {
     }
 
     void annotate(uint64_t line_number,
-                  shared_buffer_ref& line,
                   string_attrs_t& sa,
-                  std::vector<logline_value>& values,
+                  logline_value_vector& values,
                   bool annotate_module) const override
     {
+        auto& line = values.lvv_sbr;
         int pat_index = this->pattern_index_for_line(line_number);
         pcre_format& fmt = get_pcre_log_formats()[pat_index];
         struct line_range lr;
@@ -674,14 +674,14 @@ public:
     }
 
     void annotate(uint64_t line_number,
-                  shared_buffer_ref& sbr,
                   string_attrs_t& sa,
-                  std::vector<logline_value>& values,
+                  logline_value_vector& values,
                   bool annotate_module) const override
     {
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
+        auto& sbr = values.lvv_sbr;
         separated_string ss(sbr.get_data(), sbr.length());
 
         ss.with_separator(this->blf_separator.get());
@@ -709,9 +709,9 @@ public:
             }
 
             if (lr.is_valid()) {
-                values.emplace_back(fd.fd_meta, sbr, lr);
+                values.lvv_values.emplace_back(fd.fd_meta, sbr, lr);
             } else {
-                values.emplace_back(fd.fd_meta);
+                values.lvv_values.emplace_back(fd.fd_meta);
             }
         }
     }
@@ -1295,11 +1295,11 @@ public:
     }
 
     void annotate(uint64_t line_number,
-                  shared_buffer_ref& sbr,
                   string_attrs_t& sa,
-                  std::vector<logline_value>& values,
+                  logline_value_vector& values,
                   bool annotate_module) const override
     {
+        auto& sbr = values.lvv_sbr;
         ws_separated_string ss(sbr.get_data(), sbr.length());
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
@@ -1320,9 +1320,9 @@ public:
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
             if (lr.is_valid()) {
-                values.emplace_back(fd.fd_meta, sbr, lr);
+                values.lvv_values.emplace_back(fd.fd_meta, sbr, lr);
                 if (sf.startswith("\"")) {
-                    auto& meta = values.back().lv_meta;
+                    auto& meta = values.lvv_values.back().lv_meta;
 
                     if (meta.lvm_kind == value_kind_t::VALUE_TEXT) {
                         meta.lvm_kind = value_kind_t::VALUE_W3C_QUOTED;
@@ -1331,7 +1331,7 @@ public:
                     }
                 }
             } else {
-                values.emplace_back(fd.fd_meta);
+                values.lvv_values.emplace_back(fd.fd_meta);
             }
         }
     }
@@ -1722,13 +1722,13 @@ public:
     }
 
     void annotate(uint64_t line_number,
-                  shared_buffer_ref& sbr,
                   string_attrs_t& sa,
-                  std::vector<logline_value>& values,
+                  logline_value_vector& values,
                   bool annotate_module) const override
     {
         static const auto FIELDS_NAME = intern_string::lookup("fields");
 
+        auto& sbr = values.lvv_sbr;
         auto p = logfmt::parser(
             string_fragment{sbr.get_data(), 0, (int) sbr.length()});
         bool done = false;
@@ -1738,7 +1738,7 @@ public:
 
             done = parse_result.match(
                 [](const logfmt::parser::end_of_input&) { return true; },
-                [this, &sa, &values, &sbr](const logfmt::parser::kvpair& kvp) {
+                [this, &sa, &values](const logfmt::parser::kvpair& kvp) {
                     auto value_frag = kvp.second.match(
                         [this, &kvp, &values](
                             const logfmt::parser::bool_value& bv) {
@@ -1749,7 +1749,7 @@ public:
                                                           0,
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
-                            values.emplace_back(lvm, bv.bv_value);
+                            values.lvv_values.emplace_back(lvm, bv.bv_value);
 
                             return bv.bv_str_value;
                         },
@@ -1762,7 +1762,7 @@ public:
                                                           0,
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
-                            values.emplace_back(lvm, iv.iv_value);
+                            values.lvv_values.emplace_back(lvm, iv.iv_value);
 
                             return iv.iv_str_value;
                         },
@@ -1775,7 +1775,7 @@ public:
                                                           0,
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
-                            values.emplace_back(lvm, fv.fv_value);
+                            values.lvv_values.emplace_back(lvm, fv.fv_value);
 
                             return fv.fv_str_value;
                         },
@@ -1805,11 +1805,7 @@ public:
                                                  0,
                                                  (log_format*) this}
                                   .with_struct_name(FIELDS_NAME);
-                        shared_buffer_ref value_sbr;
-
-                        value_sbr.subset(
-                            sbr, value_frag.sf_begin, value_frag.length());
-                        values.emplace_back(lvm, value_sbr);
+                        values.lvv_values.emplace_back(lvm, value_frag);
                     }
 
                     return false;

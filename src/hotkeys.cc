@@ -87,26 +87,22 @@ public:
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
         auto ll = lf->begin() + cl;
         auto format = lf->get_format();
-        lf->read_full_message(ll, this->lh_msg_buffer);
-        format->annotate(cl,
-                         this->lh_msg_buffer,
-                         this->lh_string_attrs,
-                         this->lh_line_values,
-                         false);
+        lf->read_full_message(ll, this->lh_line_values.lvv_sbr);
+        format->annotate(
+            cl, this->lh_string_attrs, this->lh_line_values, false);
     }
 
     std::string to_string(const struct line_range& lr) const
     {
-        const char* start = this->lh_msg_buffer.get_data();
+        const char* start = this->lh_line_values.lvv_sbr.get_data();
 
-        return std::string(&start[lr.lr_start], lr.length());
+        return {&start[lr.lr_start], (size_t) lr.length()};
     }
 
     logfile_sub_source& lh_sub_source;
     vis_line_t lh_current_line;
-    shared_buffer_ref lh_msg_buffer;
     string_attrs_t lh_string_attrs;
-    std::vector<logline_value> lh_line_values;
+    logline_value_vector lh_line_values;
 };
 
 static int
@@ -147,7 +143,7 @@ handle_keyseq(const char* keyseq)
         return false;
     }
 
-    std::vector<logline_value> values;
+    logline_value_vector values;
     exec_context ec(&values, key_sql_callback, pipe_callback);
     auto& var_stack = ec.ec_local_vars;
 
@@ -629,10 +625,10 @@ handle_paging_key(int ch)
                             = find_string_attr_range(
                                 next_helper.lh_string_attrs, &logline::L_OPID);
                         const char* start_opid
-                            = start_helper.lh_msg_buffer.get_data_at(
+                            = start_helper.lh_line_values.lvv_sbr.get_data_at(
                                 opid_range.lr_start);
                         const char* next_opid
-                            = next_helper.lh_msg_buffer.get_data_at(
+                            = next_helper.lh_line_values.lvv_sbr.get_data_at(
                                 opid_next_range.lr_start);
                         if (opid_range.length() != opid_next_range.length()
                             || memcmp(

@@ -146,29 +146,40 @@ public:
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_NULL;
     }
+
     logline_value(logline_value_meta lvm, bool b)
         : lv_meta(std::move(lvm)), lv_value((int64_t) (b ? 1 : 0))
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_BOOLEAN;
     }
+
     logline_value(logline_value_meta lvm, int64_t i)
         : lv_meta(std::move(lvm)), lv_value(i)
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_INTEGER;
     }
+
     logline_value(logline_value_meta lvm, double i)
         : lv_meta(std::move(lvm)), lv_value(i)
     {
         this->lv_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
     }
-    logline_value(logline_value_meta lvm, shared_buffer_ref& sbr)
-        : lv_meta(std::move(lvm)), lv_sbr(sbr)
+
+    logline_value(logline_value_meta lvm, string_fragment frag)
+        : lv_meta(std::move(lvm)), lv_frag(frag)
     {
     }
+
     logline_value(logline_value_meta lvm, const intern_string_t val)
         : lv_meta(std::move(lvm)), lv_intern_string(val)
     {
     }
+
+    logline_value(logline_value_meta lvm, std::string val)
+        : lv_meta(std::move(lvm)), lv_str(std::move(val))
+    {
+    }
+
     logline_value(logline_value_meta lvm,
                   shared_buffer_ref& sbr,
                   struct line_range origin);
@@ -193,21 +204,27 @@ public:
 
     const char* text_value() const
     {
-        if (this->lv_sbr.empty()) {
+        if (this->lv_str) {
+            return this->lv_str->c_str();
+        }
+        if (this->lv_frag.empty()) {
             if (this->lv_intern_string.empty()) {
                 return "";
             }
             return this->lv_intern_string.get();
         }
-        return this->lv_sbr.get_data();
+        return this->lv_frag.data();
     }
 
     size_t text_length() const
     {
-        if (this->lv_sbr.empty()) {
+        if (this->lv_str) {
+            return this->lv_str->size();
+        }
+        if (this->lv_frag.empty()) {
             return this->lv_intern_string.size();
         }
-        return this->lv_sbr.length();
+        return this->lv_frag.length();
     }
 
     struct line_range origin_in_full_msg(const char* msg, ssize_t len) const;
@@ -217,14 +234,26 @@ public:
         int64_t i;
         double d;
 
-        value_u() : i(0){};
-        value_u(int64_t i) : i(i){};
-        value_u(double d) : d(d){};
+        value_u() : i(0) {}
+        value_u(int64_t i) : i(i) {}
+        value_u(double d) : d(d) {}
     } lv_value;
-    shared_buffer_ref lv_sbr;
+    nonstd::optional<std::string> lv_str;
+    string_fragment lv_frag;
     int lv_sub_offset{0};
     intern_string_t lv_intern_string;
     struct line_range lv_origin;
+};
+
+struct logline_value_vector {
+    void clear()
+    {
+        this->lvv_values.clear();
+        this->lvv_sbr.disown();
+    }
+
+    shared_buffer_ref lvv_sbr;
+    std::vector<logline_value> lvv_values;
 };
 
 struct logline_value_stats {
@@ -360,12 +389,11 @@ public:
      *
      * @param line The log line to edit.
      */
-    virtual void scrub(std::string& line){};
+    virtual void scrub(std::string& line) {}
 
     virtual void annotate(uint64_t line_number,
-                          shared_buffer_ref& sbr,
                           string_attrs_t& sa,
-                          std::vector<logline_value>& values,
+                          logline_value_vector& values,
                           bool annotate_module = true) const
     {
     }
