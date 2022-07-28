@@ -82,7 +82,7 @@ find_matching_bracket(
             } else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -99,7 +99,7 @@ find_matching_bracket(
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -124,7 +124,8 @@ find_matching_bracket(
                 depth -= 1;
             } else {
                 auto lr = line_range(is_lit ? lpc - 1 : lpc, lpc + 1);
-                alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+                alb.overlay_attr(
+                    lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
             }
         }
@@ -134,7 +135,7 @@ find_matching_bracket(
         auto lr
             = line_range(is_lit ? first_left.value() - 1 : first_left.value(),
                          first_left.value() + 1);
-        alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+        alb.overlay_attr(lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
         alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
     }
 }
@@ -189,7 +190,7 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
     if (COLOR_PREFIXES.match(pc, pi)) {
         pi.reset(&line[sub.lr_start], 0, sub.length());
         if (COLOR_RE.match(pc, pi)) {
-            pcre_context::capture_t* cap = pc[0];
+            auto* cap = pc[0];
             auto hash_color = pi.get_substr(cap);
 
             styling::color_unit::from_str(hash_color)
@@ -278,8 +279,8 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
             if (lr.length() > 1 && al.al_string[lr.lr_end - 1] == '\'') {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
             } else {
-                alb.overlay_attr_for_char(lr.lr_start,
-                                          VC_STYLE.value(A_REVERSE));
+                alb.overlay_attr_for_char(
+                    lr.lr_start, VC_STYLE.value(text_attrs{A_REVERSE}));
                 alb.overlay_attr_for_char(lr.lr_start,
                                           VC_ROLE.value(role_t::VCR_ERROR));
             }
@@ -317,7 +318,7 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
             case shlex_token_t::ST_ERROR:
                 alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
                                             sub.lr_start + cap.c_end),
-                                 VC_STYLE.value(A_REVERSE));
+                                 VC_STYLE.value(text_attrs{A_REVERSE}));
                 alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
                                             sub.lr_start + cap.c_end),
                                  VC_ROLE.value(role_t::VCR_ERROR));

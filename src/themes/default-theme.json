@@ -185,7 +185,6 @@
                     },
                     "hotkey": {
                         "color": "Purple",
-                        "background-color": "Silver",
                         "underline": true,
                         "bold": true
                     }

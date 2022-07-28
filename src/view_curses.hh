@@ -187,6 +187,11 @@ public:
     /** @return A reference to the singleton. */
     static view_colors& singleton();
 
+    view_colors(const view_colors&) = delete;
+    view_colors(view_colors&&) = delete;
+    view_colors& operator=(const view_colors&) = delete;
+    view_colors& operator=(view_colors&&) = delete;
+
     /**
      * Performs curses-specific initialization.  The other methods can be
      * called before this method, but the returned attributes cannot be used
@@ -201,21 +206,21 @@ public:
      * @param role The role to retrieve character attributes for.
      * @return The attributes to use for the given role.
      */
-    attr_t attrs_for_role(role_t role, bool selected = false) const
+    text_attrs attrs_for_role(role_t role, bool selected = false) const
     {
         if (role == role_t::VCR_NONE) {
-            return 0;
+            return {};
         }
 
         require(role > role_t::VCR_NONE);
         require(role < role_t::VCR__MAX);
 
         return selected
-            ? this->vc_role_colors[lnav::enums::to_underlying(role)].second
-            : this->vc_role_colors[lnav::enums::to_underlying(role)].first;
+            ? this->vc_role_attrs[lnav::enums::to_underlying(role)].second
+            : this->vc_role_attrs[lnav::enums::to_underlying(role)].first;
     }
 
-    attr_t reverse_attrs_for_role(role_t role) const
+    text_attrs reverse_attrs_for_role(role_t role) const
     {
         require(role > role_t::VCR_NONE);
         require(role < role_t::VCR__MAX);
@@ -223,26 +228,29 @@ public:
         return this->vc_role_reverse_colors[lnav::enums::to_underlying(role)];
     }
 
-    int color_for_ident(const char* str, size_t len) const;
+    nonstd::optional<short> color_for_ident(const char* str, size_t len) const;
 
-    int color_for_ident(const string_fragment& sf) const
+    nonstd::optional<short> color_for_ident(const string_fragment& sf) const
     {
         return this->color_for_ident(sf.data(), sf.length());
     }
 
-    attr_t attrs_for_ident(const char* str, size_t len);
+    text_attrs attrs_for_ident(const char* str, size_t len) const;
 
-    attr_t attrs_for_ident(intern_string_t str)
+    text_attrs attrs_for_ident(intern_string_t str) const
     {
         return this->attrs_for_ident(str.get(), str.size());
     }
 
-    attr_t attrs_for_ident(const std::string& str)
+    text_attrs attrs_for_ident(const std::string& str) const
     {
         return this->attrs_for_ident(str.c_str(), str.length());
     }
 
     int ensure_color_pair(short fg, short bg);
+
+    int ensure_color_pair(nonstd::optional<short> fg,
+                          nonstd::optional<short> bg);
 
     int ensure_color_pair(const styling::color_unit& fg,
                           const styling::color_unit& bg);
@@ -250,29 +258,15 @@ public:
     static constexpr short MATCH_COLOR_DEFAULT = -1;
     static constexpr short MATCH_COLOR_SEMANTIC = -10;
 
-    short match_color(const styling::color_unit& color) const;
+    nonstd::optional<short> match_color(const styling::color_unit& color) const;
 
-    static inline int ansi_color_pair_index(int fg, int bg)
-    {
-        return VC_ANSI_START + ((fg * 8) + bg);
-    }
-
-    static inline attr_t ansi_color_pair(int fg, int bg)
-    {
-        return COLOR_PAIR(ansi_color_pair_index(fg, bg));
-    }
-
-    static const int VC_ANSI_START = 0;
-    static const int VC_ANSI_END = VC_ANSI_START + (8 * 8);
-
-    std::pair<attr_t, attr_t> to_attrs(
-        int& pair_base,
+    std::pair<text_attrs, text_attrs> to_attrs(
         const lnav_theme& lt,
         const style_config& sc,
         const style_config& fallback_sc,
         lnav_config_listener::error_reporter& reporter);
 
-    std::pair<attr_t, attr_t> vc_level_attrs[LEVEL__MAX];
+    std::pair<text_attrs, text_attrs> vc_level_attrs[LEVEL__MAX];
 
     short ansi_to_theme_color(short ansi_fg) const
     {
@@ -291,17 +285,16 @@ private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 
-    view_colors(const view_colors&) = delete;
-
     struct dyn_pair {
         int dp_color_pair;
     };
 
     /** Map of role IDs to attribute values. */
-    std::pair<attr_t, attr_t>
-        vc_role_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
+    std::pair<text_attrs, text_attrs>
+        vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
     /** Map of role IDs to reverse-video attribute values. */
-    attr_t vc_role_reverse_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
+    text_attrs
+        vc_role_reverse_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
     short vc_ansi_to_theme[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
     int vc_color_pair_end{0};
@@ -331,12 +324,11 @@ struct mouse_event {
                 int y = -1)
         : me_button(button), me_state(state), me_x(x), me_y(y)
     {
-        memset(&this->me_time, 0, sizeof(this->me_time));
     }
 
     mouse_button_t me_button;
     mouse_button_state_t me_state;
-    struct timeval me_time;
+    struct timeval me_time {};
     int me_x;
     int me_y;
 };

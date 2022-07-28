@@ -34,6 +34,8 @@
 #include "config.h"
 #include "md2attr_line.hh"
 
+using namespace lnav::roles::literals;
+
 size_t
 textfile_sub_source::text_line_count()
 {
@@ -514,20 +516,24 @@ textfile_sub_source::rescan_files(
 
                     mdal.with_source_path(lf->get_actual_path());
                     auto parse_res = md4cpp::parse(content_sf, mdal);
+
+                    auto& rf = this->tss_rendered_files[lf->get_filename()];
+                    rf.rf_mtime = st.st_mtime;
+                    rf.rf_file_size = st.st_size;
+                    rf.rf_text_source = std::make_unique<plain_text_source>();
+                    rf.rf_text_source->register_view(this->tss_view);
                     if (parse_res.isOk()) {
-                        auto& rf = this->tss_rendered_files[lf->get_filename()];
-                        rf.rf_mtime = st.st_mtime;
-                        rf.rf_file_size = st.st_size;
-                        rf.rf_text_source
-                            = std::make_unique<plain_text_source>();
-                        rf.rf_text_source->register_view(this->tss_view);
                         rf.rf_text_source->replace_with(parse_res.unwrap());
-                        log_info("successfully rendered markdown file: %s",
-                                 lf->get_filename().c_str());
                     } else {
-                        log_error("unable to parse markdown file: %s -- %s",
-                                  lf->get_filename().c_str(),
-                                  parse_res.unwrapErr().c_str());
+                        auto view_content
+                            = lnav::console::user_message::error(
+                                  "unable to parse markdown file")
+                                  .with_reason(parse_res.unwrapErr())
+                                  .to_attr_line();
+                        view_content.append("\n").append(
+                            attr_line_t::from_ansi_str(content.c_str()));
+
+                        rf.rf_text_source->replace_with(view_content);
                     }
                 } else {
                     log_error("unable to read markdown file: %s -- %s",

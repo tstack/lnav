@@ -70,8 +70,8 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         std::string colname;
         int sqlite_type = SQLITE3_TEXT;
 
-        colname = cn.add_column(
-                        string_fragment{this->lst_regex.name_for_capture(lpc)})
+        colname = cn.add_column(string_fragment::from_c_str(
+                                    this->lst_regex.name_for_capture(lpc)))
                       .to_string();
         if (this->lst_regex.captures().size()
             == (size_t) this->lst_regex.get_capture_count())

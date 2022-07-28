@@ -197,7 +197,7 @@ textview_curses::reload_config(error_reporter& reporter)
             const auto& sc = hl_pair.second.hc_style;
             std::string fg1, bg1, fg_color, bg_color, errmsg;
             bool invalid = false;
-            int attrs = 0;
+            text_attrs attrs;
 
             fg1 = sc.sc_color;
             bg1 = sc.sc_background_color;
@@ -229,15 +229,15 @@ textview_curses::reload_config(error_reporter& reporter)
             }
 
             if (sc.sc_bold) {
-                attrs |= A_BOLD;
+                attrs.ta_attrs |= A_BOLD;
             }
             if (sc.sc_underline) {
-                attrs |= A_UNDERLINE;
+                attrs.ta_attrs |= A_UNDERLINE;
             }
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
                 = highlighter(code)
                       .with_pattern(hl_pair.second.hc_regex)
-                      .with_attrs(attrs != 0 ? attrs : -1)
+                      .with_attrs(attrs)
                       .with_color(fg, bg);
         }
     }
@@ -555,7 +555,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_STYLE.value(A_REVERSE));
+                        VC_STYLE.value(text_attrs{A_REVERSE}));
     }
 }
 
@@ -656,8 +656,7 @@ textview_curses::horiz_shift(vis_line_t start,
                              int off_start,
                              std::pair<int, int>& range_out)
 {
-    highlighter& hl
-        = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
+    auto& hl = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
     int prev_hit = -1, next_hit = INT_MAX;
 
     for (; start < end; ++start) {

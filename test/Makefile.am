@@ -460,6 +460,7 @@ DISTCLEANFILES = \
 	test_pretty_in.* \
 	tmp \
 	unreadable.log \
+	UTF-8-test.md \
 	empty \
 	scripts-empty
 

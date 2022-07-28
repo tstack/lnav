@@ -21,26 +21,23 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file logfmt.parser.cc
  */
 
-#include "config.h"
-
-#include "base/string_util.hh"
 #include "logfmt.parser.hh"
 
-logfmt::parser::parser(string_fragment sf)
-    : p_next_input(sf)
-{
+#include "base/string_util.hh"
+#include "config.h"
 
-}
+logfmt::parser::parser(string_fragment sf) : p_next_input(sf) {}
 
-static bool is_not_eq(char ch)
+static bool
+is_not_eq(char ch)
 {
     return ch != '=';
 }
@@ -68,11 +65,13 @@ struct bare_value_predicate {
     float_state_t bvp_float_state{float_state_t::INIT};
     size_t bvp_index{0};
 
-    bool is_integer() const {
+    bool is_integer() const
+    {
         return this->bvp_int_state == int_state_t::DIGITS;
     }
 
-    bool is_float() const {
+    bool is_float() const
+    {
         switch (this->bvp_float_state) {
             case float_state_t::DIGITS:
             case float_state_t::FRACTION_DIGIT:
@@ -83,7 +82,8 @@ struct bare_value_predicate {
         }
     }
 
-    bool operator()(char ch) {
+    bool operator()(char ch)
+    {
         if (ch == ' ') {
             return false;
         }
@@ -169,7 +169,8 @@ struct bare_value_predicate {
     }
 };
 
-logfmt::parser::step_result logfmt::parser::step()
+logfmt::parser::step_result
+logfmt::parser::step()
 {
     const static auto IS_DQ = string_fragment::tag1{'"'};
 
@@ -209,48 +210,52 @@ logfmt::parser::step_result logfmt::parser::step()
         }
 
         this->p_next_input = after_quote.value();
-        return std::make_pair(key_frag, quoted_value{string_fragment{
-            quoted_pair->first.sf_string,
-            quoted_pair->first.sf_begin - 1,
-            quoted_pair->first.sf_end + 1
-        }});
-    } else {
-        bare_value_predicate bvp;
-        auto value_pair = value_start.split_while(bvp);
+        return std::make_pair(
+            key_frag,
+            quoted_value{string_fragment{quoted_pair->first.sf_string,
+                                         quoted_pair->first.sf_begin - 1,
+                                         quoted_pair->first.sf_end + 1}});
+    }
 
-        if (value_pair) {
-            static const auto TRUE_FRAG = string_fragment{"true"};
-            static const auto FALSE_FRAG = string_fragment{"false"};
+    bare_value_predicate bvp;
+    auto value_pair = value_start.split_while(bvp);
 
-            this->p_next_input = value_pair->second;
-            if (bvp.is_integer()) {
-                int_value retval;
+    if (value_pair) {
+        static const auto TRUE_FRAG = string_fragment::from_const("true");
+        static const auto FALSE_FRAG = string_fragment::from_const("false");
 
-                strtonum(retval.iv_value,
-                         value_pair->first.data(),
-                         value_pair->first.length());
-                retval.iv_str_value = value_pair->first;
+        this->p_next_input = value_pair->second;
+        if (bvp.is_integer()) {
+            int_value retval;
 
-                return std::make_pair(key_frag, retval);
-            } else if (bvp.is_float()) {
-                char float_copy[value_pair->first.length() + 1];
-                float_value retval;
+            strtonum(retval.iv_value,
+                     value_pair->first.data(),
+                     value_pair->first.length());
+            retval.iv_str_value = value_pair->first;
 
-                strncpy(float_copy, value_pair->first.data(), value_pair->first.length());
-                float_copy[value_pair->first.length()] = '\0';
-                retval.fv_value = strtod(float_copy, nullptr);
-                retval.fv_str_value = value_pair->first;
+            return std::make_pair(key_frag, retval);
+        } else if (bvp.is_float()) {
+            char float_copy[value_pair->first.length() + 1];
+            float_value retval;
 
-                return std::make_pair(key_frag, retval);
-            } else if (value_pair->first.iequal(TRUE_FRAG)) {
-                return std::make_pair(key_frag, bool_value{true, value_pair->first});
-            } else if (value_pair->first.iequal(FALSE_FRAG)) {
-                return std::make_pair(key_frag, bool_value{false, value_pair->first});
-            }
-            return std::make_pair(key_frag, unquoted_value{value_pair->first});
-        } else {
-            this->p_next_input = value_start;
-            return std::make_pair(key_frag, unquoted_value{string_fragment{""}});
+            strncpy(float_copy,
+                    value_pair->first.data(),
+                    value_pair->first.length());
+            float_copy[value_pair->first.length()] = '\0';
+            retval.fv_value = strtod(float_copy, nullptr);
+            retval.fv_str_value = value_pair->first;
+
+            return std::make_pair(key_frag, retval);
+        } else if (value_pair->first.iequal(TRUE_FRAG)) {
+            return std::make_pair(key_frag,
+                                  bool_value{true, value_pair->first});
+        } else if (value_pair->first.iequal(FALSE_FRAG)) {
+            return std::make_pair(key_frag,
+                                  bool_value{false, value_pair->first});
         }
+        return std::make_pair(key_frag, unquoted_value{value_pair->first});
+    } else {
+        this->p_next_input = value_start;
+        return std::make_pair(key_frag, unquoted_value{string_fragment{}});
     }
 }

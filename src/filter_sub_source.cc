@@ -298,9 +298,9 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
                                        std::string& value_out,
                                        text_sub_source::line_flags_t flags)
 {
-    textview_curses* top_view = *lnav_data.ld_view_stack.top();
-    text_sub_source* tss = top_view->get_sub_source();
-    filter_stack& fs = tss->get_filters();
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto* tss = top_view->get_sub_source();
+    auto& fs = tss->get_filters();
     auto tf = *(fs.begin() + line);
 
     value_out = "    ";
@@ -357,18 +357,20 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
         value_out.emplace_back(lr, VC_FOREGROUND.value(COLOR_GREEN));
     }
 
-    role_t fg_role = tf->get_type() == text_filter::INCLUDE ? role_t::VCR_OK
-                                                            : role_t::VCR_ERROR;
-    value_out.emplace_back(line_range{4, 7}, VC_ROLE.value(fg_role));
-    value_out.emplace_back(line_range{4, 7}, VC_STYLE.value(A_BOLD));
-
-    value_out.emplace_back(line_range{8, 17}, VC_STYLE.value(A_BOLD));
-    value_out.emplace_back(line_range{23, 24}, VC_GRAPHIC.value(ACS_VLINE));
-
     if (selected) {
         value_out.emplace_back(line_range{0, -1},
                                VC_ROLE.value(role_t::VCR_FOCUSED));
     }
+
+    role_t fg_role = tf->get_type() == text_filter::INCLUDE ? role_t::VCR_OK
+                                                            : role_t::VCR_ERROR;
+    value_out.emplace_back(line_range{4, 7}, VC_ROLE.value(fg_role));
+    value_out.emplace_back(line_range{4, 7},
+                           VC_STYLE.value(text_attrs{A_BOLD}));
+
+    value_out.emplace_back(line_range{8, 17},
+                           VC_STYLE.value(text_attrs{A_BOLD}));
+    value_out.emplace_back(line_range{23, 24}, VC_GRAPHIC.value(ACS_VLINE));
 
     attr_line_t content{tf->get_id()};
     auto& content_attrs = content.get_attrs();
@@ -436,15 +438,11 @@ filter_sub_source::rl_change(readline_curses* rc)
             } else {
                 auto& hm = top_view->get_highlights();
                 highlighter hl(code.release());
-                int color;
-
-                if (tf->get_type() == text_filter::EXCLUDE) {
-                    color = COLOR_RED;
-                } else {
-                    color = COLOR_GREEN;
-                }
-                hl.with_attrs(view_colors::ansi_color_pair(COLOR_BLACK, color)
-                              | A_BLINK);
+                auto role = tf->get_type() == text_filter::EXCLUDE
+                    ? role_t::VCR_DIFF_DELETE
+                    : role_t::VCR_DIFF_ADD;
+                hl.with_role(role);
+                hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
 
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 top_view->set_needs_update();
@@ -616,7 +614,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
 
         for (const auto& match : matches) {
             if (match == current_match) {
-                al.append(match, VC_STYLE.value(A_REVERSE));
+                al.append(match, VC_STYLE.value(text_attrs{A_REVERSE}));
                 selected_line = line;
             } else {
                 al.append(match);

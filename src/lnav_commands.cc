@@ -127,7 +127,7 @@ remaining_args_frag(const std::string& cmdline,
 
     require(index_in_cmdline != std::string::npos);
 
-    return string_fragment{cmdline.c_str(), static_cast<int>(index_in_cmdline)};
+    return string_fragment::from_str_range(cmdline, index_in_cmdline, cmdline.size());
 }
 
 static nonstd::optional<std::string>
@@ -1606,10 +1606,10 @@ com_highlight(exec_context& ec,
             return Err(um);
         } else {
             highlighter hl(code.release());
-            attr_t hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
+            auto hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
 
             if (ec.ec_dry_run) {
-                hl_attrs |= A_BLINK;
+                hl_attrs.ta_attrs |= A_BLINK;
             }
 
             hl.with_attrs(hl_attrs);
@@ -1752,22 +1752,17 @@ com_filter(exec_context& ec,
             } else {
                 auto& hm = tc->get_highlights();
                 highlighter hl(code.release());
-                int color;
-
-                if (args[0] == "filter-out") {
-                    color = COLOR_RED;
-                } else {
-                    color = COLOR_GREEN;
-                }
-                hl.with_attrs(view_colors::ansi_color_pair(COLOR_BLACK, color)
-                              | A_BLINK);
+                auto role = (args[0] == "filter-out") ?
+                    role_t::VCR_DIFF_DELETE :
+                role_t::VCR_DIFF_ADD;
+                hl.with_attrs(text_attrs{A_BLINK});
 
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();
 
                 lnav_data.ld_preview_status_source.get_description().set_value(
                     "Matches are highlighted in %s in the text view",
-                    color == COLOR_RED ? "red" : "green");
+                    role == role_t::VCR_DIFF_DELETE ? "red" : "green");
 
                 retval = "";
             }
@@ -2179,12 +2174,12 @@ com_create_search_table(exec_context& ec,
         auto tab_name = intern_string::lookup(args[1]);
         auto lst = std::make_shared<log_search_table>(re, tab_name);
         if (ec.ec_dry_run) {
-            textview_curses* tc = &lnav_data.ld_views[LNV_LOG];
+            auto* tc = &lnav_data.ld_views[LNV_LOG];
             auto& hm = tc->get_highlights();
             highlighter hl(re.p_code);
 
-            hl.with_attrs(view_colors::ansi_color_pair(COLOR_BLACK, COLOR_CYAN)
-                          | A_BLINK);
+            hl.with_role(role_t::VCR_INFO);
+            hl.with_attrs(text_attrs{A_BLINK});
 
             hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
             tc->reload_data();
@@ -2210,7 +2205,7 @@ com_create_search_table(exec_context& ec,
         errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
         if (errmsg.empty()) {
             custom_search_tables.insert(args[1]);
-            if (lnav_data.ld_rl_view != NULL) {
+            if (lnav_data.ld_rl_view != nullptr) {
                 lnav_data.ld_rl_view->add_possibility(
                     ln_mode_t::COMMAND, "search-table", args[1]);
             }
@@ -2556,8 +2551,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     }
                     if (gl->gl_pathc > 10) {
                         al.append(" ... ")
-                            .append(std::to_string(gl->gl_pathc - 10),
-                                    VC_STYLE.value(A_BOLD))
+                            .append(lnav::roles::number(std::to_string(gl->gl_pathc - 10)))
                             .append(" files not shown ...");
                     }
                     lnav_data.ld_preview_status_source.get_description()

@@ -123,8 +123,8 @@ logline_value::logline_value(logline_value_meta lvm,
         case value_kind_t::VALUE_W3C_QUOTED:
         case value_kind_t::VALUE_TIMESTAMP:
             require(origin.lr_end != -1);
-            this->lv_frag = string_fragment{
-                sbr.get_data(), origin.lr_start, origin.lr_end};
+            this->lv_frag = string_fragment::from_byte_range(
+                sbr.get_data(), origin.lr_start, origin.lr_end);
             break;
 
         case value_kind_t::VALUE_NULL:
@@ -555,11 +555,9 @@ json_array_end(void* ctx)
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_JSON),
-            string_fragment{
-                jlu->jlu_shared_buffer.get_data(),
-                (int) jlu->jlu_sub_start,
-                (int) sub_end,
-            });
+            string_fragment::from_byte_range(jlu->jlu_shared_buffer.get_data(),
+                                             jlu->jlu_sub_start,
+                                             sub_end));
     }
 
     return 1;
@@ -1324,11 +1322,10 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
                 jlu->jlu_format->get_value_meta(body_name,
                                                 value_kind_t::VALUE_TEXT),
-                string_fragment{
+                string_fragment::from_byte_range(
                     jlu->jlu_shared_buffer.get_data(),
                     str_offset,
-                    str_offset + (int) len,
-                });
+                    str_offset + len));
         }
         if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
             return 1;
@@ -1337,11 +1334,9 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
-            string_fragment{
-                jlu->jlu_shared_buffer.get_data(),
-                str_offset,
-                str_offset + (int) len,
-            });
+            string_fragment::from_byte_range(jlu->jlu_shared_buffer.get_data(),
+                                             str_offset,
+                                             str_offset + len));
     } else {
         if (field_name == jlu->jlu_format->elf_body_field) {
             jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
@@ -2265,7 +2260,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         const char* errptr;
         auto fg = styling::color_unit::make_empty();
         auto bg = styling::color_unit::make_empty();
-        int eoff, attrs = 0;
+        text_attrs attrs;
+        int eoff;
 
         if (!hd.hd_color.pp_value.empty()) {
             fg = styling::color_unit::from_str(hd.hd_color.pp_value)
@@ -2305,14 +2301,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (hd.hd_underline) {
-            attrs |= A_UNDERLINE;
+            attrs.ta_attrs |= A_UNDERLINE;
         }
         if (hd.hd_blink) {
-            attrs |= A_BLINK;
+            attrs.ta_attrs |= A_BLINK;
         }
 
         if (hd.hd_pattern != nullptr) {
-            pcre* code = pcre_compile(hd.hd_pattern->get_pattern().c_str(),
+            auto* code = pcre_compile(hd.hd_pattern->get_pattern().c_str(),
                                       PCRE_CASELESS | PCRE_UTF8,
                                       &errptr,
                                       &eoff,

@@ -30,6 +30,8 @@ lnav v0.11.0:
        that range.  You can then press TAB to focus on the detail view
        and scroll around.
      * Add initial support for pcap(3) files using tshark(1).
+     * SQL statement execution can now be canceled by pressing CTRL+]
+       (same as canceling out of a prompt).
      * To make it possible to automate some operations, there is now an
        "lnav_events" table that is updated when internal events occur
        within lnav (e.g. opening a file, format is detected).  You
@@ -105,6 +107,8 @@ lnav v0.11.0:
      * Fix a crash related to long lines that are word wrapped.
      * Multiple SQL statements in a SQL block of a script are now
        executed instead of just the first one.
+     * In cases where there were many different colors on screen, some
+       text would be colored incorrectly.
 
 lnav v0.10.1:
      Features:

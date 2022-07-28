@@ -14,3 +14,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${top_srcdir}/src/log_level.cc
+
+cp ${test_dir}/UTF-8-test.txt UTF-8-test.md
+run_cap_test ${lnav_test} -n \
+    UTF-8-test.md

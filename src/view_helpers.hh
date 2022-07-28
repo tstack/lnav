@@ -71,6 +71,7 @@ enum class ln_mode_t : int {
     SQL,
     EXEC,
     USER,
+    BUSY,
 };
 
 extern const char* lnav_view_strings[LNV__MAX + 1];

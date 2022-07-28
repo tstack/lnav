@@ -269,6 +269,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/ok",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "info": {
+                                            "description": "Styling for informational messages",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/info",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "warning": {
                                             "description": "Styling for warning messages",
                                             "title": "/ui/theme-defs/<theme_name>/styles/warning",

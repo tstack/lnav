@@ -123,7 +123,7 @@ public:
 
     string_fragment to_string_fragment() const
     {
-        return string_fragment{this->sb_data, 0, (int) this->length()};
+        return string_fragment::from_bytes(this->sb_data, this->length());
     }
 
     using narrow_result = std::pair<char*, size_t>;

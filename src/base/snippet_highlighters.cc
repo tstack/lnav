@@ -68,7 +68,7 @@ find_matching_bracket(
             } else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -85,7 +85,7 @@ find_matching_bracket(
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -110,7 +110,8 @@ find_matching_bracket(
                 depth -= 1;
             } else {
                 auto lr = line_range(is_lit ? lpc - 1 : lpc, lpc + 1);
-                alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+                alb.overlay_attr(
+                    lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
             }
         }
@@ -120,7 +121,7 @@ find_matching_bracket(
         auto lr
             = line_range(is_lit ? first_left.value() - 1 : first_left.value(),
                          first_left.value() + 1);
-        alb.overlay_attr(lr, VC_STYLE.value(A_BOLD | A_REVERSE));
+        alb.overlay_attr(lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
         alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
     }
 }
@@ -189,7 +190,8 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
 
                     if (lpc == sub.lr_start || (lpc - sub.lr_start) == 0) {
                         alb.overlay_attr_for_char(
-                            lpc, VC_STYLE.value(A_BOLD | A_REVERSE));
+                            lpc,
+                            VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                         alb.overlay_attr_for_char(
                             lpc, VC_ROLE.value(role_t::VCR_ERROR));
                     } else if (line[lpc - 1] == '(') {
@@ -220,10 +222,11 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                 case '>': {
                     static const pcrepp CAP_RE(R"(\(\?\<\w+$)");
 
-                    auto sf = string_fragment{
-                        line.c_str(), sub.lr_start, (int) lpc};
-                    auto capture_start = sf.find_left_boundary(
-                        lpc - sub.lr_start - 1, string_fragment::tag1{'('});
+                    auto capture_start
+                        = string_fragment::from_str_range(
+                              line, sub.lr_start, lpc)
+                              .find_left_boundary(lpc - sub.lr_start - 1,
+                                                  string_fragment::tag1{'('});
                     pcre_context_static<30> pc;
                     pcre_input pi(capture_start);
 
@@ -280,8 +283,9 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                                      VC_ROLE.value(role_t::VCR_SYMBOL));
                     break;
                 case ' ':
-                    alb.overlay_attr(line_range(lpc - 1, lpc + 1),
-                                     VC_STYLE.value(A_BOLD | A_REVERSE));
+                    alb.overlay_attr(
+                        line_range(lpc - 1, lpc + 1),
+                        VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                     alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                      VC_ROLE.value(role_t::VCR_ERROR));
                     break;
@@ -296,8 +300,9 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                         alb.overlay_attr(line_range(lpc - 1, lpc + 3),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     } else {
-                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
-                                         VC_STYLE.value(A_BOLD | A_REVERSE));
+                        alb.overlay_attr(
+                            line_range(lpc - 1, lpc + 1),
+                            VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
                         alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                          VC_ROLE.value(role_t::VCR_ERROR));
                     }

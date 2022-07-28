@@ -351,7 +351,7 @@ struct separated_string {
 
         string_fragment operator*()
         {
-            const separated_string& ss = this->i_parent;
+            const auto& ss = this->i_parent;
             int end;
 
             if (this->i_next_pos < (ss.ss_str + ss.ss_len)) {
@@ -359,7 +359,8 @@ struct separated_string {
             } else {
                 end = this->i_next_pos - ss.ss_str;
             }
-            return string_fragment(ss.ss_str, this->i_pos - ss.ss_str, end);
+            return string_fragment::from_byte_range(
+                ss.ss_str, this->i_pos - ss.ss_str, end);
         }
 
         bool operator==(const iterator& other) const
@@ -1643,8 +1644,7 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
-        auto p = logfmt::parser(
-            string_fragment{sbr.get_data(), 0, (int) sbr.length()});
+        auto p = logfmt::parser(sbr.to_string_fragment());
         scan_result_t retval = scan_result_t::SCAN_NO_MATCH;
         bool done = false;
         logfmt_pair_handler lph(this->lf_date_time);
@@ -1729,8 +1729,7 @@ public:
         static const auto FIELDS_NAME = intern_string::lookup("fields");
 
         auto& sbr = values.lvv_sbr;
-        auto p = logfmt::parser(
-            string_fragment{sbr.get_data(), 0, (int) sbr.length()});
+        auto p = logfmt::parser(sbr.to_string_fragment());
         bool done = false;
 
         while (!done) {

@@ -31,9 +31,12 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-ssize_t is_utf8(unsigned char* str,
+#include "optional.hpp"
+
+ssize_t is_utf8(const unsigned char* str,
                 size_t len,
                 const char** message,
-                int* faulty_bytes);
+                int* faulty_bytes,
+                nonstd::optional<unsigned char> terminator = nonstd::nullopt);
 
 #endif /* _IS_UTF8_H */

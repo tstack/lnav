@@ -309,8 +309,8 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     }
     line.append(buf);
 
-    value_out.with_attr(
-        string_attr(line_range(0, -1), VC_STYLE.value(A_UNDERLINE)));
+    value_out.with_attr(string_attr(line_range(0, -1),
+                                    VC_STYLE.value(text_attrs{A_UNDERLINE})));
 
     return true;
 }

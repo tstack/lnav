@@ -159,11 +159,9 @@ template<>
 struct from_sqlite<string_fragment> {
     inline string_fragment operator()(int argc, sqlite3_value** val, int argi)
     {
-        return string_fragment{
-            (const unsigned char*) sqlite3_value_blob(val[argi]),
-            0,
-            sqlite3_value_bytes(val[argi]),
-        };
+        return string_fragment::from_bytes(
+            (const char*) sqlite3_value_blob(val[argi]),
+            sqlite3_value_bytes(val[argi]));
     }
 };
 
@@ -237,14 +235,14 @@ to_sqlite(sqlite3_context* ctx, const char* str)
 }
 
 inline void
-to_sqlite(sqlite3_context* ctx, text_auto_buffer& buf)
+to_sqlite(sqlite3_context* ctx, text_auto_buffer buf)
 {
     auto pair = buf.inner.release();
     sqlite3_result_text(ctx, pair.first, pair.second, free);
 }
 
 inline void
-to_sqlite(sqlite3_context* ctx, blob_auto_buffer& buf)
+to_sqlite(sqlite3_context* ctx, blob_auto_buffer buf)
 {
     auto pair = buf.inner.release();
     sqlite3_result_blob(ctx, pair.first, pair.second, free);
@@ -306,10 +304,10 @@ to_sqlite(sqlite3_context* ctx, nonstd::optional<T>& val)
 
 template<typename T>
 inline void
-to_sqlite(sqlite3_context* ctx, const nonstd::optional<T>& val)
+to_sqlite(sqlite3_context* ctx, nonstd::optional<T> val)
 {
     if (val.has_value()) {
-        to_sqlite(ctx, val.value());
+        to_sqlite(ctx, std::move(val.value()));
     } else {
         sqlite3_result_null(ctx);
     }
@@ -321,7 +319,7 @@ struct ToSqliteVisitor {
     template<typename T>
     void operator()(T&& t) const
     {
-        to_sqlite(this->tsv_context, std::forward<T>(t));
+        to_sqlite(this->tsv_context, std::move(t));
     }
 
     sqlite3_context* tsv_context;
@@ -329,7 +327,7 @@ struct ToSqliteVisitor {
 
 template<typename... Types>
 void
-to_sqlite(sqlite3_context* ctx, mapbox::util::variant<Types...>& val)
+to_sqlite(sqlite3_context* ctx, mapbox::util::variant<Types...>&& val)
 {
     ToSqliteVisitor visitor(ctx);
 
@@ -402,7 +400,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
         try {
             Return retval = f(from_sqlite<Args>()(argc, argv, Idx)...);
 
-            to_sqlite(context, retval);
+            to_sqlite(context, std::move(retval));
         } catch (from_sqlite_conversion_error& e) {
             char buffer[64];
 

@@ -34,6 +34,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
@@ -50,6 +51,8 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/json_ptr.hh"
+
+using namespace lnav::roles::literals;
 
 exec_context INIT_EXEC_CONTEXT;
 
@@ -123,10 +126,36 @@ sql_progress(const struct log_cursor& lc)
     }
 
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
+        struct timeval current_time = {0, 0};
+        int ch;
+
+        while ((ch = getch()) != ERR) {
+            if (current_time.tv_sec == 0) {
+                gettimeofday(&current_time, nullptr);
+            }
+            lnav_data.ld_user_message_source.clear();
+
+            alerter::singleton().new_input(ch);
+
+            lnav_data.ld_input_dispatcher.new_input(current_time, ch);
+
+            lnav_data.ld_view_stack.top() | [ch](auto tc) {
+                lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
+            };
+
+            if (!lnav_data.ld_looping) {
+                // No reason to keep processing input after the
+                // user has quit.  The view stack will also be
+                // empty, which will cause issues.
+                break;
+            }
+        }
+
         lnav_data.ld_bottom_source.update_loading(off, total);
         lnav_data.ld_top_source.update_time();
         lnav_data.ld_status[LNS_TOP].do_update();
         lnav_data.ld_status[LNS_BOTTOM].do_update();
+        lnav_data.ld_rl_view->do_update();
         refresh();
     }
 
@@ -316,6 +345,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     log_info("Executing SQL: %s", sql.c_str());
 
+    auto old_mode = lnav_data.ld_mode;
+    lnav_data.ld_mode = ln_mode_t::BUSY;
+    auto mode_fin = finally([old_mode]() { lnav_data.ld_mode = old_mode; });
     lnav_data.ld_bottom_source.grep_error("");
 
     if (startswith(stmt_str, ".")) {
@@ -400,7 +432,15 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         auto bound_values = TRY(bind_sql_parameters(ec, stmt.in()));
         if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
+            if (lnav_data.ld_rl_view) {
+                lnav_data.ld_rl_view->set_attr_value(
+                    lnav::console::user_message::info(
+                        attr_line_t("executing SQL statement, press ")
+                            .append("CTRL+]"_hotkey)
+                            .append(" to cancel"))
+                        .to_attr_line());
+                lnav_data.ld_rl_view->do_update();
+            }
         }
 
         ec.ec_sql_callback(ec, stmt.in());
@@ -473,6 +513,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
 
+        lnav_data.ld_active_files.fc_files
+            | lnav::itertools::for_each(&logfile::dump_stats);
         if (!ec.ec_accumulator->empty()) {
             retval = ec.ec_accumulator->get_string();
         } else if (!dls.dls_rows.empty()) {
@@ -853,8 +895,8 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         return 0;
     }
 
-    stacked_bar_chart<std::string>& chart = dls.dls_chart;
-    view_colors& vc = view_colors::singleton();
+    auto& chart = dls.dls_chart;
+    auto& vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
@@ -875,7 +917,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
-                int attrs = vc.attrs_for_ident(colname);
+                auto attrs = vc.attrs_for_ident(colname);
                 chart.with_attrs_for_ident(colname, attrs);
             }
         }
@@ -898,11 +940,9 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                 value = null_value_t{};
                 break;
             default:
-                value = string_fragment{
+                value = string_fragment::from_bytes(
                     sqlite3_value_text(raw_value),
-                    0,
-                    sqlite3_value_bytes(raw_value),
-                };
+                    sqlite3_value_bytes(raw_value));
                 break;
         }
         dls.push_column(value);

@@ -115,7 +115,6 @@
                     },
                     "hotkey": {
                         "color": "#fff",
-                        "background-color": "#353535",
                         "underline": true
                     },
                     "text": {

@@ -183,7 +183,6 @@
                     },
                     "hotkey": {
                         "color": "#2d5a80",
-                        "background-color": "#162d40",
                         "bold": true,
                         "underline": true
                     },

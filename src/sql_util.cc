@@ -693,7 +693,7 @@ annotate_sql_with_error(sqlite3* db, const char* sql, const char* tail)
         } else {
             tail = tail_lf;
         }
-        retval.append(string_fragment{sql, 0, (int) (tail - sql)});
+        retval.append(string_fragment::from_bytes(sql, tail - sql));
     } else {
         retval.append(sql);
     }

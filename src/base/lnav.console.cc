@@ -110,7 +110,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
                 retval.append(lnav::roles::ok("\u2714 "));
                 break;
             case level::info:
-                retval.append(lnav::roles::status("\u24d8 info")).append(": ");
+                retval.append("\u24d8 info"_info).append(": ");
                 break;
             case level::warning:
                 retval.append(lnav::roles::warning("\u26a0 warning"))
@@ -293,14 +293,30 @@ println(FILE* file, const attr_line_t& al)
                         fg_style = fmt::fg(color_opt.value());
                     }
                 } else if (attr.sa_type == &VC_STYLE) {
-                    auto saw = string_attr_wrapper<int64_t>(&attr);
+                    auto saw = string_attr_wrapper<text_attrs>(&attr);
                     auto style = saw.get();
 
-                    if (style & A_REVERSE) {
+                    if (style.ta_attrs & A_REVERSE) {
                         line_style |= fmt::emphasis::reverse;
                     }
-                    if (style & A_BOLD) {
+                    if (style.ta_attrs & A_BOLD) {
                         line_style |= fmt::emphasis::bold;
+                    }
+                    if (style.ta_fg_color) {
+                        auto color_opt = curses_color_to_terminal_color(
+                            style.ta_fg_color.value());
+
+                        if (color_opt) {
+                            fg_style = fmt::fg(color_opt.value());
+                        }
+                    }
+                    if (style.ta_bg_color) {
+                        auto color_opt = curses_color_to_terminal_color(
+                            style.ta_bg_color.value());
+
+                        if (color_opt) {
+                            line_style |= fmt::bg(color_opt.value());
+                        }
                     }
                 } else if (attr.sa_type == &SA_LEVEL) {
                     auto level = static_cast<log_level_t>(
@@ -341,6 +357,7 @@ println(FILE* file, const attr_line_t& al)
                             line_style |= fmt::emphasis::bold
                                 | fmt::fg(fmt::terminal_color::green);
                             break;
+                        case role_t::VCR_INFO:
                         case role_t::VCR_STATUS:
                             line_style |= fmt::emphasis::bold
                                 | fmt::fg(fmt::terminal_color::magenta);

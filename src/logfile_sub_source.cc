@@ -353,7 +353,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     logline* next_line = nullptr;
     struct line_range lr;
     int time_offset_end = 0;
-    int attrs = 0;
+    text_attrs attrs;
 
     value_out = this->lss_token_attrs;
 
@@ -365,7 +365,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         && (day_num(next_line->get_time())
             > day_num(this->lss_token_line->get_time())))
     {
-        attrs |= A_UNDERLINE;
+        attrs.ta_attrs |= A_UNDERLINE;
     }
 
     const auto& line_values = this->lss_token_values;
@@ -458,7 +458,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                               vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
-                value_out.emplace_back(lr, VC_STYLE.value(A_REVERSE));
+                value_out.emplace_back(lr,
+                                       VC_STYLE.value(text_attrs{A_REVERSE}));
             }
         }
     }
@@ -586,7 +587,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 } else {
                     color = COLOR_RED;
                     value_out.emplace_back(line_range{0, 1},
-                                           VC_STYLE.value(A_BLINK));
+                                           VC_STYLE.value(text_attrs{A_BLINK}));
                 }
             }
             value_out.emplace_back(line_range{0, 1},

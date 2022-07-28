@@ -515,6 +515,10 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for success messages")
         .for_child(&lnav_theme::lt_style_ok)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("info")
+        .with_description("Styling for informational messages")
+        .for_child(&lnav_theme::lt_style_info)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("warning")
         .with_description("Styling for warning messages")
         .for_child(&lnav_theme::lt_style_warning)

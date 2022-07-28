@@ -37,7 +37,7 @@
 #include "config.h"
 #include "yajlpp/json_ptr.hh"
 
-const char* db_label_source::NULL_STR = "<NULL>";
+const char db_label_source::NULL_STR[] = "<NULL>";
 
 constexpr size_t MAX_COLUMN_WIDTH = 120;
 constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
@@ -93,7 +93,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
         if (row % 2 == 0) {
-            sa.emplace_back(lr2, VC_STYLE.value(A_BOLD));
+            sa.emplace_back(lr2, VC_STYLE.value(text_attrs{A_BOLD}));
         }
         lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
@@ -166,7 +166,7 @@ db_label_source::push_column(const scoped_value_t& sv)
     double num_value = 0.0;
 
     auto col_sf = sv.match(
-        [](const std::string& str) { return string_fragment{str}; },
+        [](const std::string& str) { return string_fragment::from_str(str); },
         [this](const string_fragment& sf) {
             return sf.to_owned(*this->dls_allocator);
         },
@@ -174,17 +174,17 @@ db_label_source::push_column(const scoped_value_t& sv)
             fmt::memory_buffer buf;
 
             fmt::format_to(std::back_inserter(buf), FMT_STRING("{}"), i);
-            return string_fragment{buf.data(), 0, (int) buf.size()}.to_owned(
+            return string_fragment::from_memory_buffer(buf).to_owned(
                 *this->dls_allocator);
         },
         [this](double d) {
             fmt::memory_buffer buf;
 
             fmt::format_to(std::back_inserter(buf), FMT_STRING("{}"), d);
-            return string_fragment{buf.data(), 0, (int) buf.size()}.to_owned(
+            return string_fragment::from_memory_buffer(buf).to_owned(
                 *this->dls_allocator);
         },
-        [](null_value_t) { return string_fragment{NULL_STR}; });
+        [](null_value_t) { return string_fragment::from_const(NULL_STR); });
 
     if (index == this->dls_time_column_index) {
         date_time_scanner dts;
@@ -332,7 +332,7 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                 sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
                 lr.lr_start = 3 + jpw_value.wt_ptr.size() + 3;
                 lr.lr_end = -1;
-                sa.emplace_back(lr, VC_STYLE.value(A_BOLD));
+                sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
 
                 double num_value = 0.0;
 
@@ -340,7 +340,7 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                     && sscanf(jpw_value.wt_value.c_str(), "%lf", &num_value)
                         == 1)
                 {
-                    int attrs = vc.attrs_for_ident(jpw_value.wt_ptr);
+                    auto attrs = vc.attrs_for_ident(jpw_value.wt_ptr);
 
                     chart.add_value(jpw_value.wt_ptr, num_value);
                     chart.with_attrs_for_ident(jpw_value.wt_ptr, attrs);
@@ -423,17 +423,19 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
             struct line_range header_range(line_len_before, line.length());
 
-            int attrs
-                = vc.attrs_for_ident(dls->dls_headers[lpc].hm_name) | A_REVERSE;
-            if (!this->dos_labels->dls_headers[lpc].hm_graphable) {
-                attrs = A_UNDERLINE;
+            text_attrs attrs;
+            if (this->dos_labels->dls_headers[lpc].hm_graphable) {
+                attrs = vc.attrs_for_ident(dls->dls_headers[lpc].hm_name)
+                    | text_attrs{A_REVERSE};
+            } else {
+                attrs.ta_attrs = A_UNDERLINE;
             }
-            sa.emplace_back(header_range, VC_STYLE.value(attrs));
+            sa.emplace_back(header_range, VC_STYLE.value(text_attrs{attrs}));
         }
 
         struct line_range lr(0);
 
-        sa.emplace_back(lr, VC_STYLE.value(A_BOLD | A_UNDERLINE));
+        sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD | A_UNDERLINE}));
         return true;
     } else if (this->dos_active && y >= 2
                && ((size_t) y) < (this->dos_lines.size() + 2))

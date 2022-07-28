@@ -52,7 +52,7 @@ public:
 
     string_fragment add_column(const string_fragment& in_name);
 
-    static const char* BUILTIN_COL;
+    static const char BUILTIN_COL[];
 
     ArenaAlloc::Alloc<char> cn_alloc;
     language cn_language;

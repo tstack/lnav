@@ -50,7 +50,7 @@ void
 scrub_ansi_string(std::string& str, string_attrs_t& sa)
 {
     pcre_context_static<60> context;
-    pcrepp& regex = ansi_regex();
+    auto& regex = ansi_regex();
     pcre_input pi(str);
 
     replace(str.begin(), str.end(), '\0', ' ');
@@ -58,9 +58,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
         pcre_context::capture_t* caps = context.all();
         struct line_range lr;
         bool has_attrs = false;
-        attr_t attrs = 0;
-        auto bg = nonstd::optional<int>();
-        auto fg = nonstd::optional<int>();
+        text_attrs attrs;
         auto role = nonstd::optional<role_t>();
         size_t lpc;
 
@@ -74,29 +72,29 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
                     if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
                         if (90 <= ansi_code && ansi_code <= 97) {
                             ansi_code -= 60;
-                            attrs |= A_STANDOUT;
+                            attrs.ta_attrs |= A_STANDOUT;
                         }
                         if (30 <= ansi_code && ansi_code <= 37) {
-                            fg = ansi_code - 30;
+                            attrs.ta_fg_color = ansi_code - 30;
                         }
                         if (40 <= ansi_code && ansi_code <= 47) {
-                            bg = ansi_code - 40;
+                            attrs.ta_bg_color = ansi_code - 40;
                         }
                         switch (ansi_code) {
                             case 1:
-                                attrs |= A_BOLD;
+                                attrs.ta_attrs |= A_BOLD;
                                 break;
 
                             case 2:
-                                attrs |= A_DIM;
+                                attrs.ta_attrs |= A_DIM;
                                 break;
 
                             case 4:
-                                attrs |= A_UNDERLINE;
+                                attrs.ta_attrs |= A_UNDERLINE;
                                 break;
 
                             case 7:
-                                attrs |= A_REVERSE;
+                                attrs.ta_attrs |= A_REVERSE;
                                 break;
                         }
                     }
@@ -160,17 +158,11 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             }
             lr.lr_start = caps[0].c_begin;
             lr.lr_end = -1;
-            if (attrs) {
+            if (attrs.ta_attrs || attrs.ta_fg_color || attrs.ta_bg_color) {
                 sa.emplace_back(lr, VC_STYLE.value(attrs));
             }
             role |
                 [&lr, &sa](role_t r) { sa.emplace_back(lr, VC_ROLE.value(r)); };
-            fg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, VC_FOREGROUND.value(color));
-            };
-            bg | [&lr, &sa](int color) {
-                sa.emplace_back(lr, VC_BACKGROUND.value(color));
-            };
         }
 
         pi.reset(str);

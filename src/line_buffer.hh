@@ -32,6 +32,7 @@
 #ifndef line_buffer_hh
 #define line_buffer_hh
 
+#include <array>
 #include <exception>
 #include <future>
 #include <vector>
@@ -243,6 +244,31 @@ public:
 
     void quiesce();
 
+    struct stats {
+        bool empty() const
+        {
+            return this->s_decompressions == 0 && this->s_preads == 0
+                && this->s_requested_preloads == 0
+                && this->s_used_preloads == 0;
+        }
+
+        uint32_t s_decompressions{0};
+        uint32_t s_preads{0};
+        uint32_t s_requested_preloads{0};
+        uint32_t s_used_preloads{0};
+        std::array<uint32_t, 10> s_hist{};
+    };
+
+    struct stats consume_stats()
+    {
+        return std::exchange(this->lb_stats, {});
+    }
+
+    size_t get_buffer_size() const
+    {
+        return this->lb_buffer.size();
+    }
+
 private:
     /**
      * @param off The file offset to check for in the buffer.
@@ -340,6 +366,7 @@ private:
 
     std::vector<uint32_t> lb_line_starts;
     std::vector<bool> lb_line_is_utf;
+    stats lb_stats;
 };
 
 #endif

@@ -334,7 +334,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         }
         if (line == fc.fc_other_files.size() - 1) {
             value_out.emplace_back(line_range{0, -1},
-                                   VC_STYLE.value(A_UNDERLINE));
+                                   VC_STYLE.value(text_attrs{A_UNDERLINE}));
         }
         return;
     }
@@ -366,7 +366,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         (int) filename_width + 3 + 4,
         (int) filename_width + 3 + 10,
     };
-    value_out.emplace_back(lr, VC_STYLE.value(A_BOLD));
+    value_out.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
 
     lr.lr_start = this->fss_last_line_len;
     lr.lr_end = -1;

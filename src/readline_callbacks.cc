@@ -508,6 +508,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::EXEC:
         case ln_mode_t::USER:
         case ln_mode_t::SPECTRO_DETAILS:
+        case ln_mode_t::BUSY:
             return;
     }
 
@@ -603,6 +604,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
         case ln_mode_t::SPECTRO_DETAILS:
+        case ln_mode_t::BUSY:
             require(0);
             break;
 
@@ -830,7 +832,7 @@ rl_display_matches(readline_curses* rc)
                 add_nl = false;
             }
             if (match == current_match) {
-                al.append(match, VC_STYLE.value(A_REVERSE));
+                al.append(match, VC_STYLE.value(text_attrs{A_REVERSE}));
             } else {
                 al.append(match);
             }

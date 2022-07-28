@@ -40,7 +40,7 @@
 #include "view_curses.hh"
 
 struct highlighter {
-    highlighter() : h_code(nullptr), h_code_extra(nullptr){};
+    highlighter() : h_code(nullptr), h_code_extra(nullptr) {}
 
     explicit highlighter(pcre* code) : h_code(code)
     {
@@ -77,7 +77,7 @@ struct highlighter {
         return *this;
     }
 
-    highlighter& with_attrs(int attrs)
+    highlighter& with_attrs(text_attrs attrs)
     {
         this->h_attrs = attrs;
 
@@ -113,12 +113,7 @@ struct highlighter {
         return *this;
     }
 
-    int get_attrs() const
-    {
-        ensure(this->h_attrs != -1);
-
-        return this->h_attrs;
-    }
+    text_attrs get_attrs() const { return this->h_attrs; }
 
     void annotate(attr_line_t& al, int start) const;
 
@@ -128,7 +123,7 @@ struct highlighter {
     styling::color_unit h_bg{styling::color_unit::make_empty()};
     pcre* h_code;
     pcre_extra* h_code_extra;
-    int h_attrs{-1};
+    text_attrs h_attrs;
     std::set<text_format_t> h_text_formats;
     intern_string_t h_format_name;
     bool h_nestable{true};

@@ -268,6 +268,7 @@ using sql_progress_callback_t = int (*)(const log_cursor&);
 using sql_progress_finished_callback_t = void (*)();
 
 struct _log_vtab_data {
+    bool lvd_looping{true};
     sql_progress_callback_t lvd_progress;
     sql_progress_finished_callback_t lvd_finished;
     source_location lvd_location;
@@ -283,6 +284,7 @@ public:
                        source_location loc,
                        const attr_line_t& content)
     {
+        log_vtab_data.lvd_looping = true;
         log_vtab_data.lvd_progress = cb;
         log_vtab_data.lvd_finished = fcb;
         log_vtab_data.lvd_location = loc;
@@ -294,6 +296,7 @@ public:
         if (log_vtab_data.lvd_finished) {
             log_vtab_data.lvd_finished();
         }
+        log_vtab_data.lvd_looping = true;
         log_vtab_data.lvd_progress = nullptr;
         log_vtab_data.lvd_finished = nullptr;
         log_vtab_data.lvd_location = source_location{};

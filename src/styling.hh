@@ -168,6 +168,7 @@ struct lnav_theme {
     style_config lt_style_text;
     style_config lt_style_alt_text;
     style_config lt_style_ok;
+    style_config lt_style_info;
     style_config lt_style_error;
     style_config lt_style_warning;
     style_config lt_style_popup;

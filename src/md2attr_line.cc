@@ -187,11 +187,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
         this->ml_code_depth -= 1;
 
-        auto lang_sf = string_fragment{
-            code_detail->lang.text,
-            0,
-            (int) code_detail->lang.size,
-        };
+        auto lang_sf = string_fragment::from_bytes(code_detail->lang.text,
+                                                   code_detail->lang.size);
         if (lang_sf == "lnav") {
             readline_lnav_highlighter(block_text, block_text.length());
         }
@@ -398,7 +395,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
 #if defined(A_ITALIC)
         last_block.with_attr({
             lr,
-            VC_STYLE.value(A_ITALIC),
+            VC_STYLE.value(text_attrs{(int32_t) A_ITALIC}),
         });
 #endif
     } else if (sp.is<span_strong>()) {
@@ -408,7 +405,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         };
         last_block.with_attr({
             lr,
-            VC_STYLE.value(A_BOLD),
+            VC_STYLE.value(text_attrs{A_BOLD}),
         });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
         auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
@@ -464,12 +461,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             pcre_context_static<30> pc;
 
             while (REPL_RE.match(pc, pi)) {
-                auto prev = string_fragment{
-                    sf.sf_string,
-                    (int) pi.pi_offset,
-                    pc.all()->c_begin,
-                };
-
+                auto prev = pi.get_up_to(pc.all());
                 last_block.append(prev);
 
                 auto matched = pi.get_string_fragment(pc.all());
@@ -489,11 +481,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                 }
             }
 
-            this->ml_blocks.back().append(string_fragment{
-                sf.sf_string,
-                (int) pi.pi_offset,
-                sf.sf_end,
-            });
+            this->ml_blocks.back().append(sf.substr(pi.pi_offset));
             break;
         }
     }
@@ -514,9 +502,9 @@ md2attr_line::append_url_footnote(std::string href_str)
             (int) this->ml_span_starts.back(),
             (int) last_block.length(),
         },
-        VC_STYLE.value(A_UNDERLINE),
+        VC_STYLE.value(text_attrs{A_UNDERLINE}),
     });
-    if (this->ml_source_path && href_str.find(":") == std::string::npos) {
+    if (this->ml_source_path && href_str.find(':') == std::string::npos) {
         auto link_path = ghc::filesystem::absolute(
             this->ml_source_path.value().parent_path() / href_str);
 

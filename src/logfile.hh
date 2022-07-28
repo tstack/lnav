@@ -373,6 +373,8 @@ public:
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
+    void dump_stats();
+
 protected:
     /**
      * Process a line from the file.

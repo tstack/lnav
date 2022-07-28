@@ -37,6 +37,7 @@
 #include "logfile_sub_source.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -752,11 +753,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                 }
 
-                string_fragment sf = gen.to_string_fragment();
-
-                sqlite3_result_text(
-                    ctx, sf.data(), sf.length(), SQLITE_TRANSIENT);
-                sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+                to_sqlite(ctx, json_string(gen));
             }
             break;
         }
@@ -930,8 +927,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             line_hasher.update(sbr.get_data(), sbr.length())
                                 .update(cl)
                                 .to_string(outbuf);
-                            auto tab = text_auto_buffer{std::move(outbuf)};
-                            to_sqlite(ctx, tab);
+                            to_sqlite(ctx, text_auto_buffer{std::move(outbuf)});
                         }
                         break;
                     }
@@ -2045,6 +2041,9 @@ progress_callback(void* ptr)
 
     if (log_vtab_data.lvd_progress != nullptr) {
         retval = log_vtab_data.lvd_progress(log_cursor_latest);
+    }
+    if (!log_vtab_data.lvd_looping) {
+        retval = 1;
     }
 
     return retval;

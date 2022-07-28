@@ -926,6 +926,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.err \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.out \
+    $(srcdir)/%reldir%/test_text_file.sh_ac872aadda29b9a824361a2c711d62ec1c75d40f.err \
+    $(srcdir)/%reldir%/test_text_file.sh_ac872aadda29b9a824361a2c711d62ec1c75d40f.out \
     $(srcdir)/%reldir%/test_text_file.sh_c2a346ca1da2da4346f1d310212e166767993ce9.err \
     $(srcdir)/%reldir%/test_text_file.sh_c2a346ca1da2da4346f1d310212e166767993ce9.out \
     $()

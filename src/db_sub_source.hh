@@ -123,7 +123,7 @@ public:
     std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
         std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
 
-    static const char* NULL_STR;
+    static const char NULL_STR[];
 };
 
 class db_overlay_source : public list_overlay_source {

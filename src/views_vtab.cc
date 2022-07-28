@@ -327,8 +327,7 @@ CREATE TABLE lnav_views (
                             crumb.c_search_placeholder,
                             std::move(poss));
                     }
-                    auto ret = top_line_meta_handlers.to_json_string(tlm);
-                    to_sqlite(ctx, ret);
+                    to_sqlite(ctx, top_line_meta_handlers.to_json_string(tlm));
                 } else {
                     sqlite3_result_null(ctx);
                 }

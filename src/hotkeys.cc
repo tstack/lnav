@@ -122,12 +122,27 @@ key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         if (sql_ident_needs_quote(column_name)) {
             continue;
         }
-        if (sqlite3_column_type(stmt, lpc) == SQLITE_NULL) {
-            continue;
-        }
 
-        vars[column_name]
-            = std::string((const char*) sqlite3_column_text(stmt, lpc));
+        auto* raw_value = sqlite3_column_value(stmt, lpc);
+        auto value_type = sqlite3_column_type(stmt, lpc);
+        scoped_value_t value;
+        switch (value_type) {
+            case SQLITE_INTEGER:
+                value = (int64_t) sqlite3_value_int64(raw_value);
+                break;
+            case SQLITE_FLOAT:
+                value = sqlite3_value_double(raw_value);
+                break;
+            case SQLITE_NULL:
+                value = null_value_t{};
+                break;
+            default:
+                value = string_fragment::from_bytes(
+                    sqlite3_value_text(raw_value),
+                    sqlite3_value_bytes(raw_value));
+                break;
+        }
+        vars[column_name] = value;
     }
 
     return 0;

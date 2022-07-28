@@ -101,7 +101,7 @@ consume(const string_fragment text)
     pcre_input pi(text);
     pcre_context_static<30> pc;
 
-    if (WORD_RE.match(pc, pi)) {
+    if (WORD_RE.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
         auto split_res = text.split_n(pc.all()->length()).value();
 
         return word{split_res.first, split_res.second};
@@ -113,7 +113,7 @@ consume(const string_fragment text)
         return space{split_res.first, split_res.second};
     }
 
-    if (SPACE_RE.match(pc, pi)) {
+    if (SPACE_RE.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
         auto split_res = text.split_n(pc.all()->length()).value();
 
         return space{split_res.first, split_res.second};
@@ -195,8 +195,8 @@ attr_line_t::insert(size_t index,
 
     const ssize_t usable_width = tws->tws_width - tws->tws_indent;
 
-    auto text_to_wrap
-        = string_fragment{this->al_string.data(), (int) starting_line_index};
+    auto text_to_wrap = string_fragment::from_str_range(
+        this->al_string, starting_line_index, this->al_string.length());
     string_fragment last_word;
     ssize_t line_ch_count = 0;
     auto needs_indent = false;
@@ -225,7 +225,8 @@ attr_line_t::insert(size_t index,
 
         text_to_wrap = chunk.match(
             [&](text_stream::word word) {
-                auto ch_count = word.w_word.utf8_length().unwrap();
+                auto ch_count
+                    = word.w_word.utf8_length().unwrapOr(word.w_word.length());
 
                 if ((line_ch_count + ch_count) > usable_width
                     && find_string_attr_containing(this->al_attrs,
@@ -272,7 +273,8 @@ attr_line_t::insert(size_t index,
                 }
 
                 if (line_ch_count > 0) {
-                    auto ch_count = space.s_value.utf8_length().unwrap();
+                    auto ch_count = space.s_value.utf8_length().unwrapOr(
+                        space.s_value.length());
 
                     if ((line_ch_count + ch_count) > usable_width
                         && find_string_attr_containing(this->al_attrs,

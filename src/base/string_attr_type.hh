@@ -49,6 +49,7 @@ enum class role_t : int32_t {
     VCR_IDENTIFIER,
     VCR_SEARCH, /*< A search hit. */
     VCR_OK,
+    VCR_INFO,
     VCR_ERROR, /*< An error message. */
     VCR_WARNING, /*< A warning message. */
     VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
@@ -127,8 +128,29 @@ enum class role_t : int32_t {
     VCR__MAX
 };
 
+struct text_attrs {
+    bool empty() const
+    {
+        return this->ta_attrs == 0 && !this->ta_fg_color && !this->ta_bg_color;
+    }
+
+    text_attrs operator|(const text_attrs& other) const
+    {
+        return text_attrs{
+            this->ta_attrs | other.ta_attrs,
+            this->ta_fg_color ? this->ta_fg_color : other.ta_fg_color,
+            this->ta_bg_color ? this->ta_bg_color : other.ta_bg_color,
+        };
+    }
+
+    int32_t ta_attrs{0};
+    nonstd::optional<short> ta_fg_color;
+    nonstd::optional<short> ta_bg_color;
+};
+
 using string_attr_value = mapbox::util::variant<int64_t,
                                                 role_t,
+                                                text_attrs,
                                                 const intern_string_t,
                                                 std::string,
                                                 std::shared_ptr<logfile>,
@@ -183,7 +205,7 @@ extern string_attr_type<int64_t> SA_LEVEL;
 
 extern string_attr_type<role_t> VC_ROLE;
 extern string_attr_type<role_t> VC_ROLE_FG;
-extern string_attr_type<int64_t> VC_STYLE;
+extern string_attr_type<text_attrs> VC_STYLE;
 extern string_attr_type<int64_t> VC_GRAPHIC;
 extern string_attr_type<int64_t> VC_FOREGROUND;
 extern string_attr_type<int64_t> VC_BACKGROUND;
@@ -455,6 +477,13 @@ h6(S str)
 
 namespace literals {
 
+inline std::pair<std::string, string_attr_pair> operator"" _info(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_INFO));
+}
+
 inline std::pair<std::string, string_attr_pair> operator"" _symbol(
     const char* str, std::size_t len)
 {
@@ -481,6 +510,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _comment(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_COMMENT));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _hotkey(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_STATUS_HOTKEY));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h1(const char* str,

@@ -75,7 +75,7 @@ struct contains_userdata {
 static int
 contains_string(void* ctx, const unsigned char* str, size_t len)
 {
-    auto sf = string_fragment{(const char*) str, 0, (int) len};
+    auto sf = string_fragment::from_bytes(str, len);
     auto& cu = *((contains_userdata*) ctx);
 
     if (cu.cu_depth <= 1 && cu.cu_match_value.get<string_fragment>() == sf) {
@@ -156,11 +156,8 @@ json_contains(vtab_types::nullable<const char> nullable_json_in,
     switch (sqlite3_value_type(value)) {
         case SQLITE3_TEXT:
             cb.yajl_string = contains_string;
-            cu.cu_match_value = string_fragment{
-                (const char*) sqlite3_value_text(value),
-                0,
-                sqlite3_value_bytes(value),
-            };
+            cu.cu_match_value = string_fragment::from_bytes(
+                sqlite3_value_text(value), sqlite3_value_bytes(value));
             break;
         case SQLITE_INTEGER:
             cb.yajl_integer = contains_integer;

@@ -63,9 +63,9 @@ status_field::do_cylon()
     struct line_range lr(std::max(start, 0L), stop);
     auto& vc = view_colors::singleton();
 
-    sa.emplace_back(lr,
-                    VC_STYLE.value(vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS)
-                                   | A_REVERSE));
+    auto attrs = vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS);
+    attrs.ta_attrs |= A_REVERSE;
+    sa.emplace_back(lr, VC_STYLE.value(attrs));
 
     this->sf_cylon_pos += 1;
 }
@@ -88,7 +88,7 @@ status_field::set_stitch_value(role_t left,
 void
 statusview_curses::do_update()
 {
-    int top, attrs, field, field_count, left = 0, right;
+    int top, field, field_count, left = 0, right;
     auto& vc = view_colors::singleton();
     unsigned long width, height;
 
@@ -101,15 +101,14 @@ statusview_curses::do_update()
 
     top = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
-    attrs = vc.attrs_for_role(this->sc_enabled
-                                  ? role_t::VCR_STATUS
-                                  : role_t::VCR_INACTIVE_STATUS);
+    auto attrs = vc.attrs_for_role(
+        this->sc_enabled ? role_t::VCR_STATUS : role_t::VCR_INACTIVE_STATUS);
 
-    wattron(this->sc_window, attrs);
+    auto pair = vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color);
+    wattr_set(this->sc_window, attrs.ta_attrs, pair, nullptr);
     wmove(this->sc_window, top, 0);
     wclrtoeol(this->sc_window);
     whline(this->sc_window, ' ', width);
-    wattroff(this->sc_window, attrs);
 
     if (this->sc_source != nullptr) {
         field_count = this->sc_source->statusview_fields();
@@ -125,8 +124,11 @@ statusview_curses::do_update()
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
                     if (sa.sa_type == &VC_STYLE) {
-                        sa.sa_value = sa.sa_value.get<int64_t>()
-                            & ~(A_REVERSE | A_COLOR);
+                        auto sa_attrs = sa.sa_value.get<text_attrs>();
+                        sa_attrs.ta_attrs &= ~(A_REVERSE | A_COLOR);
+                        sa_attrs.ta_fg_color = nonstd::nullopt;
+                        sa_attrs.ta_bg_color = nonstd::nullopt;
+                        sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()
                             == role_t::VCR_ALERT_STATUS) {

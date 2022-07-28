@@ -1385,7 +1385,11 @@ readline_curses::do_update()
         view_colors& vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
-        wattron(this->vc_window, vc.attrs_for_role(role_t::VCR_TEXT));
+        auto attrs = vc.attrs_for_role(role_t::VCR_TEXT);
+        wattr_set(this->vc_window,
+                  attrs.ta_attrs,
+                  vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
+                  nullptr);
         whline(this->vc_window, ' ', this->vc_width);
 
         if (time(nullptr) > this->rc_value_expiration) {

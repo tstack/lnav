@@ -135,27 +135,25 @@ highlighter::annotate(attr_line_t& al, int start) const
                            sa, &VC_STYLE, lr)
                         == sa.end()))
             {
-                int attrs = 0;
-
-                if (this->h_attrs != -1) {
-                    attrs = this->h_attrs;
-                }
                 if (!this->h_fg.empty()) {
-                    sa.emplace_back(lr,
-                                    VC_FOREGROUND.value(
-                                        vc.match_color(this->h_fg)));
+                    sa.emplace_back(
+                        lr,
+                        VC_FOREGROUND.value(
+                            vc.match_color(this->h_fg)
+                                .value_or(view_colors::MATCH_COLOR_DEFAULT)));
                 }
                 if (!this->h_bg.empty()) {
-                    sa.emplace_back(lr,
-                                    VC_BACKGROUND.value(
-                                        vc.match_color(this->h_bg)));
+                    sa.emplace_back(
+                        lr,
+                        VC_BACKGROUND.value(
+                            vc.match_color(this->h_bg)
+                                .value_or(view_colors::MATCH_COLOR_DEFAULT)));
                 }
                 if (this->h_role != role_t::VCR_NONE) {
-                    sa.emplace_back(lr,
-                                    VC_ROLE.value(this->h_role));
+                    sa.emplace_back(lr, VC_ROLE.value(this->h_role));
                 }
-                if (attrs) {
-                    sa.emplace_back(lr, VC_STYLE.value(attrs));
+                if (!this->h_attrs.empty()) {
+                    sa.emplace_back(lr, VC_STYLE.value(this->h_attrs));
                 }
 
                 off = matches[1];

@@ -88,15 +88,9 @@ class lock_hack {
 public:
     class guard {
     public:
-        guard() : g_lock(lock_hack::singleton())
-        {
-            this->g_lock.lock();
-        };
+        guard() : g_lock(lock_hack::singleton()) { this->g_lock.lock(); }
 
-        ~guard()
-        {
-            this->g_lock.unlock();
-        };
+        ~guard() { this->g_lock.unlock(); }
 
     private:
         lock_hack& g_lock;
@@ -107,17 +101,11 @@ public:
         static lock_hack retval;
 
         return retval;
-    };
+    }
 
-    void lock()
-    {
-        lockf(this->lh_fd, F_LOCK, 0);
-    };
+    void lock() { lockf(this->lh_fd, F_LOCK, 0); }
 
-    void unlock()
-    {
-        lockf(this->lh_fd, F_ULOCK, 0);
-    };
+    void unlock() { lockf(this->lh_fd, F_ULOCK, 0); }
 
 private:
     lock_hack()
@@ -128,7 +116,7 @@ private:
         this->lh_fd = open(lockname, O_CREAT | O_RDWR, 0600);
         log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
         unlink(lockname);
-    };
+    }
 
     auto_fd lh_fd;
 };
@@ -649,8 +637,11 @@ line_buffer::load_next_buffer()
 
             auto before = line_start - this->lb_alt_buffer->begin();
             auto remaining = this->lb_alt_buffer.value().size() - before;
-            auto utf8_end = is_utf8(
-                (unsigned char*) line_start, remaining, &msg, &faulty_bytes);
+            auto utf8_end = is_utf8((unsigned char*) line_start,
+                                    remaining,
+                                    &msg,
+                                    &faulty_bytes,
+                                    '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(line_start, '\n', remaining);
                 utf8_end = lf - line_start;
@@ -722,6 +713,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_alt_line_starts.clear();
         this->lb_line_is_utf = std::move(this->lb_alt_line_is_utf);
         this->lb_alt_line_is_utf.clear();
+        this->lb_stats.s_used_preloads += 1;
     }
     if (this->in_range(start) && this->in_range(start + max_length - 1)) {
         /* Cache already has the data, nothing to do. */
@@ -755,6 +747,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 #endif
                 auto prom = std::make_shared<std::promise<bool>>();
                 this->lb_loader_future = prom->get_future();
+                this->lb_stats.s_requested_preloads += 1;
                 isc::to<io_looper&, io_looper_tag>().send(
                     [this, prom](auto& ioloop) mutable {
                         prom->set_value(this->load_next_buffer());
@@ -777,6 +770,12 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
             {
                 rc = 0;
             } else {
+                this->lb_stats.s_decompressions += 1;
+                if (this->lb_last_line_offset > 0) {
+                    this->lb_stats.s_hist[(this->lb_file_offset * 10)
+                                          / this->lb_last_line_offset]
+                        += 1;
+                }
                 rc = gi->read(this->lb_buffer.end(),
                               this->lb_file_offset + this->lb_buffer.size(),
                               this->lb_buffer.available());
@@ -852,6 +851,17 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 #endif
         else if (this->lb_seekable)
         {
+            this->lb_stats.s_preads += 1;
+            if (this->lb_last_line_offset > 0) {
+                this->lb_stats.s_hist[(this->lb_file_offset * 10)
+                                      / this->lb_last_line_offset]
+                    += 1;
+            }
+#if 0
+            log_debug("%d: pread %lld",
+                      this->lb_fd.get(),
+                      this->lb_file_offset + this->lb_buffer.size());
+#endif
             rc = pread(this->lb_fd,
                        this->lb_buffer.end(),
                        this->lb_buffer.available(),
@@ -943,6 +953,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 #endif
                 auto prom = std::make_shared<std::promise<bool>>();
                 this->lb_loader_future = prom->get_future();
+                this->lb_stats.s_requested_preloads += 1;
                 isc::to<io_looper&, io_looper_tag>().send(
                     [this, prom](auto& ioloop) mutable {
                         prom->set_value(this->load_next_buffer());
@@ -1018,7 +1029,8 @@ line_buffer::load_next_line(file_range prev_line)
             utf8_end = is_utf8((unsigned char*) line_start,
                                retval.li_file_range.fr_size,
                                &msg,
-                               &faulty_bytes);
+                               &faulty_bytes,
+                               '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(
                     line_start, '\n', retval.li_file_range.fr_size);

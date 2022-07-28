@@ -38,7 +38,7 @@
 #include "config.h"
 #include "sql_util.hh"
 
-const char* column_namer::BUILTIN_COL = "col";
+const char column_namer::BUILTIN_COL[] = "col";
 
 column_namer::column_namer(language lang) : cn_language(lang) {}
 
@@ -79,7 +79,7 @@ column_namer::add_column(const string_fragment& in_name)
     int num = 0;
 
     if (in_name.empty()) {
-        base_name = string_fragment{BUILTIN_COL};
+        base_name = string_fragment::from_const(BUILTIN_COL);
     } else {
         base_name = in_name;
     }
@@ -90,7 +90,7 @@ column_namer::add_column(const string_fragment& in_name)
         num = ++counter_iter->second;
         fmt::format_to(
             std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
-        retval = string_fragment{buf.data(), 0, (int) buf.size()};
+        retval = string_fragment::from_memory_buffer(buf);
     }
 
     while (this->existing_name(retval)) {
@@ -103,7 +103,7 @@ column_namer::add_column(const string_fragment& in_name)
             "column name already exists: %.*s", retval.length(), retval.data());
         fmt::format_to(
             std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
-        retval = string_fragment{buf.data(), 0, (int) buf.size()};
+        retval = string_fragment::from_memory_buffer(buf);
         num += 1;
     }
 

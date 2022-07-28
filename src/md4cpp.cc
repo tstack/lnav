@@ -29,6 +29,7 @@
 
 #include "md4cpp.hh"
 
+#include "base/is_utf8.hh"
 #include "base/lnav_log.hh"
 #include "emojis-json.h"
 #include "xml-entities-json.h"
@@ -263,6 +264,20 @@ namespace details {
 Result<void, std::string>
 parse(const string_fragment& sf, event_handler& eh)
 {
+    const char* utf8_errmsg = nullptr;
+    int utf8_faulty_bytes = 0;
+
+    auto utf8_erroff = is_utf8((unsigned char*) sf.data(),
+                               sf.length(),
+                               &utf8_errmsg,
+                               &utf8_faulty_bytes);
+    if (utf8_errmsg != nullptr) {
+        return Err(
+            fmt::format(FMT_STRING("file has invalid UTF-8 at offset {}: {}"),
+                        utf8_erroff,
+                        utf8_errmsg));
+    }
+
     MD_PARSER parser = {0};
     auto pu = parse_userdata{eh};
 

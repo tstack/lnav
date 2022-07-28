@@ -1294,8 +1294,8 @@ yajlpp_parse_context::get_snippet() const
             if (line_end) {
                 text_len_remaining = (line_end - line_start);
             }
-            content.append(string_fragment{
-                (const char*) line_start, 0, (int) text_len_remaining});
+            content.append(
+                string_fragment::from_bytes(line_start, text_len_remaining));
         }
     }
 

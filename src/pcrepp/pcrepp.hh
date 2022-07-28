@@ -237,11 +237,14 @@ public:
 
     string_fragment get_string_fragment(pcre_context::const_iterator iter) const
     {
-        return string_fragment{
-            this->pi_string,
-            iter->c_begin,
-            iter->c_end,
-        };
+        return string_fragment::from_byte_range(
+            this->pi_string, iter->c_begin, iter->c_end);
+    }
+
+    string_fragment get_up_to(pcre_context::const_iterator iter) const
+    {
+        return string_fragment::from_byte_range(
+            this->pi_string, this->pi_offset, iter->c_begin);
     }
 
     nonstd::optional<std::string> get_substr_opt(

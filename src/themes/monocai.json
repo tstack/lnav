@@ -31,6 +31,10 @@
                         "color": "$green",
                         "bold": true
                     },
+                    "info": {
+                        "color": "$magenta",
+                        "bold": true
+                    },
                     "error": {
                         "color": "$red",
                         "bold": true
@@ -215,7 +219,6 @@
                     },
                     "hotkey": {
                         "color": "#fff",
-                        "background-color": "#353535",
                         "underline": true
                     },
                     "text": {

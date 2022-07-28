@@ -82,6 +82,7 @@
 #include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
 #include "base/isc.hh"
+#include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
@@ -906,6 +907,14 @@ handle_key(int ch)
                     handle_rl_key(ch);
                     break;
 
+                case ln_mode_t::BUSY:
+                    switch (ch) {
+                        case KEY_CTRL_RBRACKET:
+                            log_vtab_data.lvd_looping = false;
+                            break;
+                    }
+                    break;
+
                 default:
                     require(0);
                     break;
@@ -1133,10 +1142,8 @@ looper()
 
             for (const auto& format : log_format::get_root_formats()) {
                 for (auto& hl : format->lf_highlighters) {
-                    if (hl.h_fg.empty()) {
-                        hl.with_attrs(hl.h_attrs
-                                      | vc.attrs_for_ident(hl.h_pattern));
-                    }
+                    hl.with_attrs(hl.h_attrs
+                                  | vc.attrs_for_ident(hl.h_pattern));
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[{
                         highlight_source_t::CONFIGURATION,
@@ -1174,7 +1181,7 @@ looper()
                               &lnav_data.ld_bottom_source));
         sb.push_back(bind_mem(&bottom_status_source::update_marks,
                               &lnav_data.ld_bottom_source));
-        sb.push_back(
+        vsb.push_back(
             bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
         vsb.push_back([](listview_curses* lv) {
             auto* tc = dynamic_cast<textview_curses*>(lv);
@@ -1413,7 +1420,7 @@ UPDATE lnav_views_echo
                             attr_line_t("restored session from ")
                                 .append(lnav::roles::number(ago))
                                 .append("; press ")
-                                .append("CTRL-R"_symbol)
+                                .append("CTRL-R"_hotkey)
                                 .append(" to reset session"));
                         lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
                     }
@@ -1621,6 +1628,7 @@ UPDATE lnav_views_echo
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
                         case ln_mode_t::SPECTRO_DETAILS:
+                        case ln_mode_t::BUSY:
                             if (old_gen
                                 == lnav_data.ld_active_files
                                        .fc_files_generation) {
@@ -1772,7 +1780,8 @@ UPDATE lnav_views_echo
                 }
 
                 if (session_stage == 1
-                    && (lnav_data.ld_log_source.text_line_count() > 0
+                    && (lnav_data.ld_active_files.fc_file_names.empty()
+                        || lnav_data.ld_log_source.text_line_count() > 0
                         || lnav_data.ld_text_source.text_line_count() > 0
                         || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
@@ -1791,6 +1800,9 @@ UPDATE lnav_views_echo
                         {
                             log_debug("switching to paging!");
                             lnav_data.ld_mode = ln_mode_t::PAGING;
+                            lnav_data.ld_active_files.fc_files
+                                | lnav::itertools::for_each(
+                                    &logfile::dump_stats);
                         } else {
                             lnav_data.ld_files_view.set_selection(0_vl);
                         }
@@ -2071,9 +2083,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     static const std::string DEFAULT_DEBUG_LOG = "/dev/null";
 
     lnav_data.ld_debug_log_name = DEFAULT_DEBUG_LOG;
-    lnav_data.ld_config_paths.emplace_back("/etc/lnav");
-    lnav_data.ld_config_paths.emplace_back(SYSCONFDIR "/lnav");
-    lnav_data.ld_config_paths.emplace_back(lnav::paths::dotlnav());
 
     std::vector<std::string> file_args;
     std::vector<lnav::console::user_message> arg_errors;
@@ -2227,6 +2236,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 .with_reason(e.what()));
         return e.get_exit_code();
     }
+
+    lnav_data.ld_config_paths.insert(lnav_data.ld_config_paths.begin(),
+                                     lnav::paths::dotlnav());
+    lnav_data.ld_config_paths.insert(lnav_data.ld_config_paths.begin(),
+                                     SYSCONFDIR "/lnav");
+    lnav_data.ld_config_paths.insert(lnav_data.ld_config_paths.begin(),
+                                     "/etc/lnav");
 
     if (lnav_data.ld_debug_log_name != DEFAULT_DEBUG_LOG) {
         lnav_log_level = lnav_log_level_t::TRACE;

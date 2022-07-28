@@ -90,7 +90,7 @@ breadcrumb_curses::do_update()
                            - crumb.c_display_value.length()),
                     (int) crumbs_line.length(),
                 },
-                VC_STYLE.template value(A_REVERSE));
+                VC_STYLE.template value(text_attrs{A_REVERSE}));
         }
         crumb_index += 1;
         crumbs_line.append("\u276d"_breadcrumb);
@@ -385,7 +385,7 @@ breadcrumb_curses::search_overlay_source::list_value_for_overlay(
             | lnav::itertools::unwrap_or(
                              breadcrumb::crumb::expected_input_t::exact);
 
-        value_out.with_attr_for_all(VC_STYLE.value(A_UNDERLINE));
+        value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
 
         if (!parent->bc_current_search.empty()) {
             value_out = parent->bc_current_search;

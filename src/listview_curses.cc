@@ -197,7 +197,7 @@ listview_curses::do_update()
         struct line_range lr;
         unsigned long width, wrap_width;
         int y = this->lv_y, bottom;
-        attr_t role_attrs = vc.attrs_for_role(this->vc_default_role);
+        auto role_attrs = vc.attrs_for_role(this->vc_default_role);
 
         this->get_dimensions(height, width);
 
@@ -254,9 +254,12 @@ listview_curses::do_update()
                          && lr.lr_start < (int) al.length());
                 ++row;
             } else {
-                wattron(this->lv_window, role_attrs);
+                wattr_set(this->lv_window,
+                          role_attrs.ta_attrs,
+                          vc.ensure_color_pair(role_attrs.ta_fg_color,
+                                               role_attrs.ta_bg_color),
+                          nullptr);
                 mvwhline(this->lv_window, y, this->lv_x, ' ', width);
-                wattroff(this->lv_window, role_attrs);
                 ++y;
             }
         }
@@ -283,7 +286,7 @@ listview_curses::do_update()
                 int range_start = 0, range_end;
                 role_t role = this->vc_default_role;
                 role_t bar_role = role_t::VCR_SCROLLBAR;
-                int attrs;
+                text_attrs attrs;
                 chtype ch = ACS_VLINE;
 
                 if (row_count > 0) {
@@ -299,9 +302,12 @@ listview_curses::do_update()
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
-                wattron(this->lv_window, attrs);
+                wattr_set(
+                    this->lv_window,
+                    attrs.ta_attrs,
+                    vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
+                    nullptr);
                 mvwaddch(this->lv_window, gutter_y, this->lv_x + width - 1, ch);
-                wattroff(this->lv_window, attrs);
             }
             wmove(this->lv_window, this->lv_y + height - 1, this->lv_x);
         }

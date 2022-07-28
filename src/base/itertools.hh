@@ -591,6 +591,18 @@ operator|(nonstd::optional<T> in,
 template<typename T,
          typename F,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
+void
+operator|(std::vector<std::shared_ptr<T>>& in,
+          const lnav::itertools::details::for_eacher<F>& eacher)
+{
+    for (auto& elem : in) {
+        lnav::func::invoke(eacher.fe_func, *elem);
+    }
+}
+
+template<typename T,
+         typename F,
+         std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(nonstd::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)

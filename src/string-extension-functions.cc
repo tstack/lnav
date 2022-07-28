@@ -59,10 +59,11 @@ find_re(string_fragment re)
 
         c.re2 = std::make_shared<pcrepp>(re.to_string());
         auto pair = cache.insert(
-            std::make_pair(string_fragment{c.re2->get_pattern()}, c));
+            std::make_pair(string_fragment::from_str(c.re2->get_pattern()), c));
 
         for (int lpc = 0; lpc < c.re2->get_capture_count(); lpc++) {
-            c.cn->add_column(string_fragment{c.re2->name_for_capture(lpc)});
+            c.cn->add_column(
+                string_fragment::from_c_str(c.re2->name_for_capture(lpc)));
         }
 
         iter = pair.first;

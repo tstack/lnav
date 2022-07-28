@@ -962,3 +962,31 @@ logfile::line_for_offset(file_off_t off) const
 
     return nonstd::make_optional(iter);
 }
+
+void
+logfile::dump_stats()
+{
+    const auto buf_stats = this->lf_line_buffer.consume_stats();
+
+    if (buf_stats.empty()) {
+        return;
+    }
+    log_info("line buffer stats for file: %s", this->lf_filename.c_str());
+    log_info("  file_size=%lld", this->lf_line_buffer.get_file_size());
+    log_info("  buffer_size=%ld", this->lf_line_buffer.get_buffer_size());
+    log_info("  read_hist=[%4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu]",
+             buf_stats.s_hist[0],
+             buf_stats.s_hist[1],
+             buf_stats.s_hist[2],
+             buf_stats.s_hist[3],
+             buf_stats.s_hist[4],
+             buf_stats.s_hist[5],
+             buf_stats.s_hist[6],
+             buf_stats.s_hist[7],
+             buf_stats.s_hist[8],
+             buf_stats.s_hist[9]);
+    log_info("  decompressions=%lu", buf_stats.s_decompressions);
+    log_info("  preads=%lu", buf_stats.s_preads);
+    log_info("  requested_preloads=%lu", buf_stats.s_requested_preloads);
+    log_info("  used_preloads=%lu", buf_stats.s_used_preloads);
+}

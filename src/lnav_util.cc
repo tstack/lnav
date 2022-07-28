@@ -144,6 +144,7 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     },
                     [&](const intern_string_t& str) { elem_map.gen(str); },
                     [&](const std::string& str) { elem_map.gen(str); },
+                    [&](const text_attrs& ta) { elem_map.gen(""); },
                     [&](const std::shared_ptr<logfile>& lf) {
                         elem_map.gen("");
                     },

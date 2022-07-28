@@ -40,11 +40,11 @@ public:
 
     void do_update() override
     {
-        view_colors& vc = view_colors::singleton();
+        auto& vc = view_colors::singleton();
         int lpc;
 
         for (lpc = 0; lpc < 16; lpc++) {
-            int attrs;
+            text_attrs attrs;
             char label[64];
             attr_line_t al;
             line_range lr;
@@ -64,9 +64,9 @@ public:
 
         al = "before <123> after";
         al.with_attr({line_range{8, 11},
-                      VC_STYLE.value((int64_t) view_colors::ansi_color_pair(
-                          COLOR_CYAN, COLOR_BLACK))});
-        al.with_attr({line_range{8, 11}, VC_STYLE.value(A_REVERSE)});
+                      VC_STYLE.value(text_attrs{0, COLOR_CYAN, COLOR_BLACK})});
+        al.with_attr(
+            {line_range{8, 11}, VC_STYLE.value(text_attrs{A_REVERSE})});
         test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
     };
 

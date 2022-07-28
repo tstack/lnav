@@ -47,15 +47,71 @@
 struct string_fragment {
     using iterator = const char*;
 
+    static string_fragment from_c_str(const char* str)
+    {
+        return string_fragment{str, 0, (int) strlen(str)};
+    }
+
+    template<typename T, std::size_t N>
+    static string_fragment from_const(const T (&str)[N])
+    {
+        return string_fragment{str, 0, (int) N - 1};
+    }
+
+    static string_fragment from_str(const std::string& str)
+    {
+        return string_fragment{str.c_str(), 0, (int) str.size()};
+    }
+
+    static string_fragment from_substr(const std::string& str,
+                                       size_t offset,
+                                       size_t length)
+    {
+        return string_fragment{
+            str.c_str(), (int) offset, (int) (offset + length)};
+    }
+
+    static string_fragment from_str_range(const std::string& str,
+                                          size_t begin,
+                                          size_t end)
+    {
+        return string_fragment{str.c_str(), (int) begin, (int) end};
+    }
+
+    static string_fragment from_bytes(const char* bytes, size_t len)
+    {
+        return string_fragment{bytes, 0, (int) len};
+    }
+
+    static string_fragment from_bytes(const unsigned char* bytes, size_t len)
+    {
+        return string_fragment{(const char*) bytes, 0, (int) len};
+    }
+
+    static string_fragment from_memory_buffer(const fmt::memory_buffer& buf)
+    {
+        return string_fragment{buf.data(), 0, (int) buf.size()};
+    }
+
+    static string_fragment from_byte_range(const char* bytes,
+                                           size_t begin,
+                                           size_t end)
+    {
+        return string_fragment{bytes, (int) begin, (int) end};
+    }
+
     explicit string_fragment(const char* str = "", int begin = 0, int end = -1)
-        : sf_string(str), sf_begin(begin),
-          sf_end(end == -1 ? strlen(str) : end){};
+        : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end)
+    {
+    }
 
     explicit string_fragment(const unsigned char* str,
                              int begin = 0,
                              int end = -1)
         : sf_string((const char*) str), sf_begin(begin),
-          sf_end(end == -1 ? strlen((const char*) str) : end){};
+          sf_end(end == -1 ? strlen((const char*) str) : end)
+    {
+    }
 
     string_fragment(const std::string& str)
         : sf_string(str.c_str()), sf_begin(0), sf_end(str.length())

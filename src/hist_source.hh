@@ -80,9 +80,9 @@ public:
         return *this;
     }
 
-    stacked_bar_chart& with_attrs_for_ident(const T& ident, int attrs)
+    stacked_bar_chart& with_attrs_for_ident(const T& ident, text_attrs attrs)
     {
-        struct chart_ident& ci = this->find_ident(ident);
+        auto& ci = this->find_ident(ident);
         ci.ci_attrs = attrs;
         return *this;
     }
@@ -221,8 +221,10 @@ public:
         }
         lr.lr_end = left = lr.lr_start + amount;
 
-        if (ci.ci_attrs != 0 && !lr.empty()) {
-            value_out.emplace_back(lr, VC_STYLE.value(ci.ci_attrs | A_REVERSE));
+        if (!ci.ci_attrs.empty() && !lr.empty()) {
+            auto rev_attrs = ci.ci_attrs;
+            rev_attrs.ta_attrs |= A_REVERSE;
+            value_out.emplace_back(lr, VC_STYLE.value(rev_attrs));
         }
     }
 
@@ -283,7 +285,7 @@ protected:
         explicit chart_ident(const T& ident) : ci_ident(ident) {}
 
         T ci_ident;
-        int ci_attrs{0};
+        text_attrs ci_attrs;
         bucket_stats_t ci_stats;
     };
 

@@ -60,14 +60,18 @@
   error.
 */
 ssize_t
-is_utf8(unsigned char* str, size_t len, const char** message, int* faulty_bytes)
+is_utf8(const unsigned char* str,
+        size_t len,
+        const char** message,
+        int* faulty_bytes,
+        nonstd::optional<unsigned char> terminator)
 {
     size_t i = 0;
 
     *message = nullptr;
     *faulty_bytes = 0;
     while (i < len) {
-        if (str[i] == '\n') {
+        if (terminator && str[i] == terminator.value()) {
             *message = nullptr;
             return i;
         }

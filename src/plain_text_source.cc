@@ -143,7 +143,8 @@ plain_text_source::text_attrs_for_line(textview_curses& tc,
     if (this->tds_reverse_selection && tc.is_selectable()
         && tc.get_selection() == line)
     {
-        value_out.emplace_back(line_range{0, -1}, VC_STYLE.value(A_REVERSE));
+        value_out.emplace_back(line_range{0, -1},
+                               VC_STYLE.value(text_attrs{A_REVERSE}));
     }
 }
 

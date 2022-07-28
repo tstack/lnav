@@ -40,7 +40,7 @@ struct flattened_json_string : json_string {
 };
 
 inline void
-to_sqlite(sqlite3_context* ctx, flattened_json_string& val)
+to_sqlite(sqlite3_context* ctx, flattened_json_string val)
 {
     sqlite3_result_text(
         ctx, (const char*) val.js_content.release(), val.js_len, free);
@@ -48,7 +48,7 @@ to_sqlite(sqlite3_context* ctx, flattened_json_string& val)
 }
 
 inline void
-to_sqlite(sqlite3_context* ctx, json_string& val)
+to_sqlite(sqlite3_context* ctx, json_string val)
 {
     sqlite3_result_text(
         ctx, (const char*) val.js_content.release(), val.js_len, free);
