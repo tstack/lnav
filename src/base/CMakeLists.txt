@@ -61,9 +61,9 @@ add_library(
         ../third-party/xxHash/xxhash.c
 )
 
-target_include_directories(base PUBLIC . .. ../fmtlib ../third-party
+target_include_directories(base PUBLIC . .. ../third-party
         ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(base cppfmt pcre::libpcre ncurses::libcurses pthread)
+target_link_libraries(base cppfmt cppscnlib pcre::libpcre ncurses::libcurses pthread)
 
 add_executable(
         test_base

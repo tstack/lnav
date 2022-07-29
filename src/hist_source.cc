@@ -134,14 +134,11 @@ hist_source2::init()
     view_colors& vc = view_colors::singleton();
 
     this->hs_chart
-        .with_attrs_for_ident(HT_NORMAL,
-                              vc.attrs_for_role(role_t::VCR_TEXT))
+        .with_attrs_for_ident(HT_NORMAL, vc.attrs_for_role(role_t::VCR_TEXT))
         .with_attrs_for_ident(HT_WARNING,
                               vc.attrs_for_role(role_t::VCR_WARNING))
-        .with_attrs_for_ident(HT_ERROR,
-                              vc.attrs_for_role(role_t::VCR_ERROR))
-        .with_attrs_for_ident(HT_MARK,
-                              vc.attrs_for_role(role_t::VCR_KEYWORD));
+        .with_attrs_for_ident(HT_ERROR, vc.attrs_for_role(role_t::VCR_ERROR))
+        .with_attrs_for_ident(HT_MARK, vc.attrs_for_role(role_t::VCR_COMMENT));
 }
 
 void

@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	$(LIBARCHIVE_CFLAGS) \
 	$(PCRE_CFLAGS) \
     -I$(top_srcdir)/src/ \
-    -I$(top_srcdir)/src/fmtlib
+    -I$(top_srcdir)/src/fmtlib \
+	-I$(top_srcdir)/src/third-party/scnlib/include
 
 AM_LDFLAGS = \
     $(LIBARCHIVE_LDFLAGS) \
@@ -52,6 +53,7 @@ LDADD = \
     libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
+    $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
     $(top_builddir)/src/yajl/libyajl.a
 

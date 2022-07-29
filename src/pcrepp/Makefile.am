@@ -6,7 +6,8 @@ AM_CPPFLAGS = \
 	$(PCRE_CFLAGS) \
 	-Wall \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/fmtlib
+	-I$(top_srcdir)/src/fmtlib \
+	-I$(top_srcdir)/src/third-party/scnlib/include
 
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)

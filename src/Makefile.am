@@ -3,7 +3,18 @@ include $(top_srcdir)/aminclude_static.am
 
 CXXFLAGS =
 
-SUBDIRS = fmtlib third-party/base64/lib pcrepp base tailer pugixml yajl yajlpp formats/logfmt .
+SUBDIRS = \
+    fmtlib \
+    third-party/base64/lib \
+    third-party/scnlib/src \
+    pcrepp \
+    base \
+    tailer \
+    pugixml \
+    yajl \
+    yajlpp \
+    formats/logfmt \
+    .
 
 bin_PROGRAMS = lnav
 
@@ -111,6 +122,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/fmtlib \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
+	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
@@ -125,6 +137,7 @@ LDADD = \
 	base/libbase.a \
 	formats/logfmt/liblogfmt.a \
 	fmtlib/libcppfmt.a \
+	third-party/scnlib/src/libscnlib.a \
 	pcrepp/libpcrepp.a \
 	pugixml/libpugixml.a \
 	tailer/libtailerservice.a \

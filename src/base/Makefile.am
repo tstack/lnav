@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/third-party \
     -I$(top_srcdir)/src/fmtlib \
+	-I$(top_srcdir)/src/third-party/scnlib/include \
     $(LIBARCHIVE_CFLAGS) \
     $(READLINE_CFLAGS) \
     $(SQLITE3_CFLAGS) \
@@ -101,6 +102,7 @@ test_base_SOURCES = \
 test_base_LDADD = \
     libbase.a \
     ../fmtlib/libcppfmt.a \
+    ../third-party/scnlib/src/libscnlib.a \
     ../pcrepp/libpcrepp.a
 
 TESTS = \

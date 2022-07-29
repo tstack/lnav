@@ -267,7 +267,8 @@ readline_context::completion_generator(const char* text_in, int state)
                         poss_slash_count -= 1;
                     }
                     if (std::count(text_str.begin(), text_str.end(), '/')
-                        == poss_slash_count) {
+                        == poss_slash_count)
+                    {
                         matches.emplace_back(poss);
                     } else {
                         long_matches.emplace_back(poss);
@@ -289,7 +290,8 @@ readline_context::completion_generator(const char* text_in, int state)
 
                     if (fts::fuzzy_match(
                             text_str.c_str(), poss_str.c_str(), score)
-                        && score > 0) {
+                        && score > 0)
+                    {
                         if (score <= 0) {
                             continue;
                         }
@@ -300,7 +302,8 @@ readline_context::completion_generator(const char* text_in, int state)
                             poss_slash_count -= 1;
                         }
                         if (std::count(text_str.begin(), text_str.end(), '/')
-                            == poss_slash_count) {
+                            == poss_slash_count)
+                        {
                             fuzzy_matches.emplace_back(score, poss);
                         } else {
                             fuzzy_long_matches.emplace_back(score, poss);
@@ -463,7 +466,8 @@ readline_context::attempted_completion(const char* text, int start, int end)
                                 "recent-netlocs");
 
                         if (recent_netlocs_iter
-                            != loaded_context->rc_possibilities.end()) {
+                            != loaded_context->rc_possibilities.end())
+                        {
                             file_name_set.insert(
                                 recent_netlocs_iter->second.begin(),
                                 recent_netlocs_iter->second.end());
@@ -844,7 +848,8 @@ readline_curses::start()
                     last_h1 = h1;
                     last_h2 = h2;
                     if (sendcmd(this->rc_command_pipe[RCF_SLAVE], 'w', "", 0)
-                        != 0) {
+                        != 0)
+                    {
                         perror("line: write failed");
                         _exit(1);
                     }
@@ -877,7 +882,8 @@ readline_curses::start()
                                     'c',
                                     rl_line_buffer,
                                     rl_end)
-                            != 0) {
+                            != 0)
+                        {
                             perror("line: write failed");
                             _exit(1);
                         }
@@ -897,13 +903,15 @@ readline_curses::start()
                                     'l',
                                     rl_line_buffer,
                                     rl_end)
-                            != 0) {
+                            != 0)
+                        {
                             perror("line: write failed");
                             _exit(1);
                         }
                         if (sendcmd(
                                 this->rc_command_pipe[RCF_SLAVE], 'w', "", 0)
-                            != 0) {
+                            != 0)
+                        {
                             perror("line: write failed");
                             _exit(1);
                         }
@@ -920,7 +928,8 @@ readline_curses::start()
                         if (sendstring(this->rc_command_pipe[RCF_SLAVE],
                                        reply,
                                        strlen(reply))
-                            == -1) {
+                            == -1)
+                        {
                             perror("abort: write failed");
                             _exit(1);
                         }
@@ -941,13 +950,15 @@ readline_curses::start()
                                       &context,
                                       type,
                                       &prompt_start)
-                               == 2) {
+                               == 2)
+                    {
                         require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->add_possibility(
                             std::string(type), std::string(&msg[prompt_start]));
                         if (rl_last_func == rl_complete
-                            || rl_last_func == rl_menu_complete) {
+                            || rl_last_func == rl_menu_complete)
+                        {
                             rl_last_func = NULL;
                         }
                     } else if (sscanf(msg,
@@ -955,7 +966,8 @@ readline_curses::start()
                                       &context,
                                       type,
                                       &prompt_start)
-                               == 2) {
+                               == 2)
+                    {
                         require(this->rc_contexts[context] != nullptr);
 
                         this->rc_contexts[context]->rem_possibility(
@@ -1035,7 +1047,8 @@ readline_curses::line_ready(const char* line)
         snprintf(msg, sizeof(msg), "a");
 
         if (sendstring(this->rc_command_pipe[RCF_SLAVE], msg, strlen(msg))
-            == -1) {
+            == -1)
+        {
             perror("abort: write failed");
             _exit(1);
         }
@@ -1270,7 +1283,8 @@ readline_curses::abort()
     this->vc_x = 0;
     snprintf(buffer, sizeof(buffer), "a");
     if (sendstring(this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer))
-        == -1) {
+        == -1)
+    {
         perror("abort: write failed");
     }
 }
@@ -1374,7 +1388,7 @@ readline_curses::clear_possibilities(int context, std::string type)
 void
 readline_curses::do_update()
 {
-    if (!this->vc_visible) {
+    if (!this->vc_visible || this->vc_window == nullptr) {
         return;
     }
 

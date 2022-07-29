@@ -17,6 +17,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party \
+	-I$(top_srcdir)/src/third-party/scnlib/include \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
@@ -105,6 +106,7 @@ LDADD = \
     $(top_builddir)/src/libdatascanner.a \
     $(top_builddir)/src/formats/logfmt/liblogfmt.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
+    $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
     $(top_builddir)/src/yajl/libyajl.a \
     $(top_builddir)/src/yajlpp/libyajlpp.a \

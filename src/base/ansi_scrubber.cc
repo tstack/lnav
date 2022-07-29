@@ -36,6 +36,7 @@
 #include "base/opt_util.hh"
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
+#include "scn/scn.h"
 #include "view_curses.hh"
 
 static pcrepp&
@@ -55,7 +56,7 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
 
     replace(str.begin(), str.end(), '\0', ' ');
     while (regex.match(context, pi)) {
-        pcre_context::capture_t* caps = context.all();
+        auto* caps = context.all();
         struct line_range lr;
         bool has_attrs = false;
         text_attrs attrs;
@@ -67,9 +68,11 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
                 for (lpc = caps[1].c_begin;
                      lpc != std::string::npos && lpc < (size_t) caps[1].c_end;)
                 {
-                    int ansi_code = 0;
+                    auto ansi_code_res = scn::scan_value<int>(
+                        scn::string_view{&str[lpc], &str[caps[1].c_end]});
 
-                    if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
+                    if (ansi_code_res) {
+                        auto ansi_code = ansi_code_res.value();
                         if (90 <= ansi_code && ansi_code <= 97) {
                             ansi_code -= 60;
                             attrs.ta_attrs |= A_STANDOUT;
@@ -107,12 +110,13 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
                 break;
 
             case 'C': {
-                unsigned int spaces = 0;
+                auto spaces_res = scn::scan_value<unsigned int>(
+                    pi.to_string_view(&caps[1]));
 
-                if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1
-                    && spaces > 0) {
-                    str.insert(
-                        (std::string::size_type) caps[0].c_end, spaces, ' ');
+                if (spaces_res && spaces_res.value() > 0) {
+                    str.insert((std::string::size_type) caps[0].c_end,
+                               spaces_res.value(),
+                               ' ');
                 }
                 break;
             }
@@ -120,8 +124,9 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             case 'H': {
                 unsigned int row = 0, spaces = 0;
 
-                if (sscanf(&(str[caps[1].c_begin]), "%u;%u", &row, &spaces) == 2
-                    && spaces > 1) {
+                if (scn::scan(pi.to_string_view(&caps[1]), "{};{}", row, spaces)
+                    && spaces > 1)
+                {
                     int ispaces = spaces - 1;
                     if (ispaces > caps[0].c_begin) {
                         str.insert((unsigned long) caps[0].c_end,
@@ -133,12 +138,14 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             }
 
             case 'O': {
-                int role_int;
+                auto role_res
+                    = scn::scan_value<int>(pi.to_string_view(&caps[1]));
 
-                if (sscanf(&(str[caps[1].c_begin]), "%d", &role_int) == 1) {
-                    role_t role_tmp = (role_t) role_int;
+                if (role_res) {
+                    role_t role_tmp = (role_t) role_res.value();
                     if (role_tmp > role_t::VCR_NONE
-                        && role_tmp < role_t::VCR__MAX) {
+                        && role_tmp < role_t::VCR__MAX)
+                    {
                         role = role_tmp;
                         has_attrs = true;
                     }

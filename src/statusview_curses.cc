@@ -71,8 +71,7 @@ status_field::do_cylon()
 }
 
 void
-status_field::set_stitch_value(role_t left,
-                               role_t right)
+status_field::set_stitch_value(role_t left, role_t right)
 {
     auto& sa = this->sf_value.get_attrs();
     struct line_range lr(0, 1);
@@ -92,7 +91,7 @@ statusview_curses::do_update()
     auto& vc = view_colors::singleton();
     unsigned long width, height;
 
-    if (!this->vc_visible) {
+    if (!this->vc_visible || this->sc_window == nullptr) {
         return;
     }
 
@@ -131,7 +130,8 @@ statusview_curses::do_update()
                         sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()
-                            == role_t::VCR_ALERT_STATUS) {
+                            == role_t::VCR_ALERT_STATUS)
+                        {
                             sa.sa_value.get<role_t>()
                                 = role_t::VCR_INACTIVE_ALERT_STATUS;
                         } else {

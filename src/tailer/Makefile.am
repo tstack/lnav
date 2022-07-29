@@ -42,7 +42,8 @@ libtailerpp_a_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib \
-    -I$(srcdir)/../third-party
+    -I$(srcdir)/../third-party \
+	-I$(top_srcdir)/src/third-party/scnlib/include
 
 libtailerpp_a_SOURCES = \
     tailerpp.cc
@@ -54,7 +55,8 @@ libtailerservice_a_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib \
-    -I$(srcdir)/../third-party
+    -I$(srcdir)/../third-party \
+	-I$(top_srcdir)/src/third-party/scnlib/include
 
 libtailerservice_a_LIBADD = \
     libtailercommon.a \

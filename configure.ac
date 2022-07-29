@@ -325,6 +325,7 @@ AC_CONFIG_FILES([src/tailer/Makefile])
 AC_CONFIG_FILES([src/yajl/Makefile])
 AC_CONFIG_FILES([src/yajlpp/Makefile])
 AC_CONFIG_FILES([src/third-party/base64/lib/Makefile])
+AC_CONFIG_FILES([src/third-party/scnlib/src/Makefile])
 AC_CONFIG_FILES([test/Makefile])
 
 AC_OUTPUT

@@ -35,6 +35,7 @@
 
 #include "config.h"
 #include "ptimec.hh"
+#include "scn/scn.h"
 
 size_t
 date_time_scanner::ftime(char* dst,
@@ -103,14 +104,11 @@ date_time_scanner::scan(const char* time_dest,
         *tm_out = this->dts_base_tm;
         tm_out->et_flags = 0;
         if (time_len > 1 && time_dest[0] == '+' && isdigit(time_dest[1])) {
-            char time_cp[time_len + 1];
-            int gmt_int, off;
-
             retval = nullptr;
-            memcpy(time_cp, time_dest, time_len);
-            time_cp[time_len] = '\0';
-            if (sscanf(time_cp, "+%d%n", &gmt_int, &off) == 1) {
-                time_t gmt = gmt_int;
+            auto epoch_scan_res = scn::scan_value<int64_t>(
+                scn::string_view{time_dest, time_len});
+            if (epoch_scan_res) {
+                time_t gmt = epoch_scan_res.value();
 
                 if (convert_local && this->dts_local_time) {
                     localtime_r(&gmt, &tm_out->et_tm);
@@ -126,8 +124,9 @@ date_time_scanner::scan(const char* time_dest,
                     | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
 
                 this->dts_fmt_lock = curr_time_fmt;
-                this->dts_fmt_len = off;
-                retval = time_dest + off;
+                this->dts_fmt_len = std::distance(epoch_scan_res.begin(),
+                                                  epoch_scan_res.end());
+                retval = time_dest + this->dts_fmt_len;
                 found = true;
                 break;
             }

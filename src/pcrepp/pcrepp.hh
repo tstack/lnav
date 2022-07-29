@@ -62,6 +62,7 @@
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
+#include "scn/util/string_view.h"
 
 class pcrepp;
 
@@ -255,6 +256,14 @@ public:
         }
 
         return nonstd::nullopt;
+    }
+
+    scn::string_view to_string_view(pcre_context::const_iterator iter) const
+    {
+        return scn::string_view{
+            &this->pi_string[iter->c_begin],
+            &this->pi_string[iter->c_end],
+        };
     }
 
     void get_substr(pcre_context::const_iterator iter, char* dst) const

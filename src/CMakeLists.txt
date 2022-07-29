@@ -237,6 +237,69 @@ add_library(
 target_include_directories(cppfmt PUBLIC fmtlib)
 
 add_library(
+        cppscnlib STATIC
+        third-party/scnlib/src/reader_float.cpp
+        third-party/scnlib/src/reader_int.cpp
+        third-party/scnlib/src/locale.cpp
+        third-party/scnlib/src/file.cpp
+        third-party/scnlib/src/vscan.cpp
+
+        third-party/scnlib/include/scn/reader/reader.h
+        third-party/scnlib/include/scn/reader/float.h
+        third-party/scnlib/include/scn/reader/types.h
+        third-party/scnlib/include/scn/reader/int.h
+        third-party/scnlib/include/scn/reader/common.h
+        third-party/scnlib/include/scn/reader/string.h
+        third-party/scnlib/include/scn/ranges/custom_impl.h
+        third-party/scnlib/include/scn/ranges/std_impl.h
+        third-party/scnlib/include/scn/ranges/ranges.h
+        third-party/scnlib/include/scn/ranges/util.h
+        third-party/scnlib/include/scn/fwd.h
+        third-party/scnlib/include/scn/util/algorithm.h
+        third-party/scnlib/include/scn/util/small_vector.h
+        third-party/scnlib/include/scn/util/optional.h
+        third-party/scnlib/include/scn/util/expected.h
+        third-party/scnlib/include/scn/util/array.h
+        third-party/scnlib/include/scn/util/unique_ptr.h
+        third-party/scnlib/include/scn/util/math.h
+        third-party/scnlib/include/scn/util/memory.h
+        third-party/scnlib/include/scn/util/span.h
+        third-party/scnlib/include/scn/util/meta.h
+        third-party/scnlib/include/scn/util/string_view.h
+        third-party/scnlib/include/scn/unicode/unicode.h
+        third-party/scnlib/include/scn/unicode/common.h
+        third-party/scnlib/include/scn/unicode/utf16.h
+        third-party/scnlib/include/scn/unicode/utf8.h
+        third-party/scnlib/include/scn/all.h
+        third-party/scnlib/include/scn/tuple_return/tuple_return.h
+        third-party/scnlib/include/scn/tuple_return/util.h
+        third-party/scnlib/include/scn/scan/ignore.h
+        third-party/scnlib/include/scn/scan/getline.h
+        third-party/scnlib/include/scn/scan/list.h
+        third-party/scnlib/include/scn/scan/common.h
+        third-party/scnlib/include/scn/scan/istream.h
+        third-party/scnlib/include/scn/scan/vscan.h
+        third-party/scnlib/include/scn/scan/scan.h
+        third-party/scnlib/include/scn/tuple_return.h
+        third-party/scnlib/include/scn/detail/error.h
+        third-party/scnlib/include/scn/detail/fwd.h
+        third-party/scnlib/include/scn/detail/range.h
+        third-party/scnlib/include/scn/detail/locale.h
+        third-party/scnlib/include/scn/detail/config.h
+        third-party/scnlib/include/scn/detail/file.h
+        third-party/scnlib/include/scn/detail/context.h
+        third-party/scnlib/include/scn/detail/result.h
+        third-party/scnlib/include/scn/detail/visitor.h
+        third-party/scnlib/include/scn/detail/args.h
+        third-party/scnlib/include/scn/detail/parse_context.h
+        third-party/scnlib/include/scn/detail/vectored.h
+        third-party/scnlib/include/scn/scn.h
+        third-party/scnlib/include/scn/istream.h
+)
+target_include_directories(cppscnlib PRIVATE third-party/scnlib/src/deps/fast_float/single_include)
+target_include_directories(cppscnlib PUBLIC third-party/scnlib/include)
+
+add_library(
         base64 STATIC
         third-party/base64/lib/lib.c
         third-party/base64/lib/arch/generic/codec.c
