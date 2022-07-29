@@ -106,12 +106,12 @@ LDADD = \
     $(top_builddir)/src/libdatascanner.a \
     $(top_builddir)/src/formats/logfmt/liblogfmt.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
-    $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
     $(top_builddir)/src/yajl/libyajl.a \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
+    $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(READLINE_LIBS) \
     $(CURSES_LIB) \
     $(LIBARCHIVE_LIBS) \

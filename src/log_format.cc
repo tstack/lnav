@@ -43,6 +43,7 @@
 #include "log_search_table.hh"
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
+#include "scn/scn.h"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -137,12 +138,12 @@ logline_value::logline_value(logline_value_meta lvm,
             break;
 
         case value_kind_t::VALUE_FLOAT: {
-            ssize_t len = origin.length();
-            char scan_value[len + 1];
-
-            memcpy(scan_value, sbr.get_data_at(origin.lr_start), len);
-            scan_value[len] = '\0';
-            this->lv_value.d = strtod(scan_value, nullptr);
+            auto scan_res = scn::scan_value<double>(sbr.to_string_view(origin));
+            if (scan_res) {
+                this->lv_value.d = scan_res.value();
+            } else {
+                this->lv_value.d = 0;
+            }
             break;
         }
 
@@ -904,7 +905,8 @@ external_log_format::scan(logfile& lf,
                     auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
 
                     if (mod_pat.p_pcre->match(
-                            mod_pc, mod_pi, PCRE_NO_UTF8_CHECK)) {
+                            mod_pc, mod_pi, PCRE_NO_UTF8_CHECK))
+                    {
                         auto* mod_level_cap
                             = mod_pc[mod_pat.p_level_field_index];
 
@@ -1154,7 +1156,8 @@ external_log_format::annotate(uint64_t line_number,
             mf.mf_mod_format->annotate(line_number, sa, values, false);
             for (size_t lpc = pre_mod_values_size;
                  lpc < values.lvv_values.size();
-                 lpc++) {
+                 lpc++)
+            {
                 values.lvv_values[lpc].lv_origin.shift(0, body_cap->c_begin);
             }
             for (size_t lpc = pre_mod_sa_size; lpc < sa.size(); lpc++) {
@@ -1260,7 +1263,8 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         pcre_input pi(field_name);
 
         if (jlu->jlu_format->elf_level_pointer.match(
-                pc, pi, PCRE_NO_UTF8_CHECK)) {
+                pc, pi, PCRE_NO_UTF8_CHECK))
+        {
             pcre_input pi_level((const char*) str, 0, len);
             pcre_context::capture_t level_cap = {0, (int) len};
 
@@ -1508,15 +1512,18 @@ external_log_format::get_subline(const logline& ll,
                             }
 
                             if (lv_iter->lv_meta.lvm_name
-                                == this->lf_timestamp_field) {
+                                == this->lf_timestamp_field)
+                            {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, logline::L_TIMESTAMP.value());
                             } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_body_field) {
+                                       == this->elf_body_field)
+                            {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_opid_field) {
+                                       == this->elf_opid_field)
+                            {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, logline::L_OPID.value());
                             }
@@ -1553,7 +1560,8 @@ external_log_format::get_subline(const logline& ll,
                                 this->jlf_line_values.lvv_values.end(),
                                 logline_value_cmp(&this->lf_timestamp_field));
                             if (lv_iter
-                                != this->jlf_line_values.lvv_values.end()) {
+                                != this->jlf_line_values.lvv_values.end())
+                            {
                                 used_values[distance(
                                     this->jlf_line_values.lvv_values.begin(),
                                     lv_iter)]
@@ -1598,7 +1606,8 @@ external_log_format::get_subline(const logline& ll,
                                 transform_t::CAPITALIZE:
                                 for (size_t cindex = begin_size;
                                      cindex < begin_size + 1;
-                                     cindex++) {
+                                     cindex++)
+                                {
                                     this->jlf_cached_line[cindex] = toupper(
                                         this->jlf_cached_line[cindex]);
                                 }
@@ -1617,7 +1626,8 @@ external_log_format::get_subline(const logline& ll,
             this->json_append_to_cache("\n", 1);
 
             for (size_t lpc = 0; lpc < this->jlf_line_values.lvv_values.size();
-                 lpc++) {
+                 lpc++)
+            {
                 static const intern_string_t body_name
                     = intern_string::lookup("body", -1);
                 auto& lv = this->jlf_line_values.lvv_values[lpc];
@@ -1824,7 +1834,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         this->elf_level_field.get());
         }
         if (!this->elf_module_id_field.empty()
-            && pat.p_module_field_index == -1) {
+            && pat.p_module_field_index == -1)
+        {
             log_warning("%s:module field '%s' not found in pattern",
                         pat.p_config_path.c_str(),
                         this->elf_module_id_field.get());
@@ -1892,7 +1903,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
              ++act_iter)
         {
             if (this->lf_action_defs.find(*act_iter)
-                == this->lf_action_defs.end()) {
+                == this->lf_action_defs.end())
+            {
 #if 0
                 errors.push_back("error:" + this->elf_name.to_string() + ":"
                                  + vd->vd_meta.lvm_name.get()
@@ -1905,7 +1917,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
-        && this->elf_samples.empty()) {
+        && this->elf_samples.empty())
+    {
         errors.emplace_back(
             lnav::console::user_message::error(
                 attr_line_t()
@@ -1944,7 +1957,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             }
 
             if (pat.p_pcre->name_index(this->lf_timestamp_field.to_string())
-                < 0) {
+                < 0)
+            {
                 attr_line_t notes;
                 bool first_note = true;
 
@@ -1991,13 +2005,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 pat.p_timestamp_end = ts_cap->c_end;
             }
             if (ts_len == -1
-                || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr) {
+                || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr)
+            {
                 attr_line_t notes;
 
                 if (custom_formats == nullptr) {
                     notes.append("the following built-in formats were tried:");
                     for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != nullptr;
-                         lpc++) {
+                         lpc++)
+                    {
                         off_t off = 0;
 
                         PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
@@ -2045,7 +2061,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             log_level_t level = this->convert_level(pi, level_cap, nullptr);
 
             if (elf_sample.s_level != LEVEL_UNKNOWN
-                && elf_sample.s_level != level) {
+                && elf_sample.s_level != level)
+            {
                 attr_line_t note_al;
 
                 note_al.append("matched regex = ")
@@ -2117,7 +2134,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 notes.append("   ").append(src_line);
                 for (auto& part_pair : partial_indexes) {
                     if (part_pair.first >= 0
-                        && part_pair.first < line_frag.length()) {
+                        && part_pair.first < line_frag.length())
+                    {
                         notes.append("   ")
                             .append(part_pair.first, ' ')
                             .append("^ "_snippet_border)

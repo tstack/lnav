@@ -39,9 +39,11 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "base/attr_line.hh"
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
+#include "scn/util/string_view.h"
 
 class shared_buffer;
 
@@ -124,6 +126,14 @@ public:
     string_fragment to_string_fragment() const
     {
         return string_fragment::from_bytes(this->sb_data, this->length());
+    }
+
+    scn::string_view to_string_view(const line_range& lr) const
+    {
+        return scn::string_view{
+            this->get_data_at(lr.lr_start),
+            this->get_data_at(lr.lr_end),
+        };
     }
 
     using narrow_result = std::pair<char*, size_t>;
