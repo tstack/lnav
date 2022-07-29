@@ -20,6 +20,7 @@ AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
+	$(PCRE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage

@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
     -Wall \
 	$(LIBARCHIVE_CFLAGS) \
+	$(PCRE_CFLAGS) \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/fmtlib
 

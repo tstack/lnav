@@ -23,7 +23,7 @@ class LnavConan(ConanFile):
         "pcre/8.45",
         "readline/8.1.2",
         "sqlite3/3.38.0",
-        "zlib/1.2.11",
+        "zlib/1.2.12",
     )
     generators = ("virtualrunenv",)
     default_options = {
@@ -45,6 +45,8 @@ class LnavConan(ConanFile):
     def build(self):
         cmake = CMake(self)
         cmake.configure()
+        if self.settings.os == "Macos" and self.settings.arch == "armv8":
+            cmake.definitions["CMAKE_SYSTEM_PROCESSOR"] = "arm64"
         cmake.build()
 
     def package(self):

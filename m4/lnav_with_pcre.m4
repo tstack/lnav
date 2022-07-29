@@ -38,18 +38,19 @@ if test ".$with_pcre" = ".no" ; then
   m4_ifval($2,$2)
 else
   AC_MSG_RESULT([(testing)])
-  AC_CHECK_LIB(pcre, pcre_study)
   AS_VAR_SET(saved_LIBS, $LIBS)
-  AC_CHECK_HEADERS(pcre.h pcre/pcre.h)
-  if test "$ac_cv_lib_pcre_pcre_study" = "yes" ; then
+  if test ".$with_pcre" = "." && test "$ac_cv_lib_pcre_pcre_study" = "yes" ; then
      PCRE_LIBS="-lpcre"
      AC_MSG_CHECKING([lib pcre])
+     AC_CHECK_LIB(pcre, pcre_study)
+     AC_CHECK_HEADERS(pcre.h pcre/pcre.h)
      AC_MSG_RESULT([$PCRE_LIBS])
      m4_ifval($1,$1)
   else
      OLDLDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$with_pcre/lib"
      OLDCPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$with_pcre/include"
      AC_CHECK_LIB(pcre, pcre_compile)
+     AC_CHECK_HEADERS(pcre.h pcre/pcre.h)
      CPPFLAGS="$OLDCPPFLAGS"
      LDFLAGS="$OLDLDFLAGS"
      if test "$ac_cv_lib_pcre_pcre_compile" = "yes" ; then

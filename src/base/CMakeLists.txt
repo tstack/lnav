@@ -58,9 +58,7 @@ add_library(
         time_util.hh
 
         ../third-party/xxHash/xxhash.h
-        ../third-party/xxHash/xxh_x86dispatch.h
         ../third-party/xxHash/xxhash.c
-        ../third-party/xxHash/xxh_x86dispatch.c
 )
 
 target_include_directories(base PUBLIC . .. ../fmtlib ../third-party
