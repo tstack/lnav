@@ -41,10 +41,6 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 
-#if defined(HAVE_LIBCURL)
-#    include <curl/curl.h>
-#endif
-
 static std::string
 sql_gethostbyname(const char* name_in)
 {
@@ -135,42 +131,6 @@ sql_gethostbyaddr(const char* addr_str)
     return buffer;
 }
 
-#if defined(HAVE_LIBCURL)
-
-static CURL*
-get_curl_easy()
-{
-    static struct curl_wrapper {
-        curl_wrapper() { this->cw_value = curl_easy_init(); }
-
-        auto_mem<CURL> cw_value{curl_easy_cleanup};
-    } retval;
-
-    return retval.cw_value.in();
-}
-
-static auto_mem<char>
-sql_uri_encode(string_fragment str)
-{
-    auto_mem<char> retval(curl_free);
-
-    retval = curl_easy_escape(get_curl_easy(), str.data(), str.length());
-
-    return retval;
-}
-
-static auto_mem<char>
-sql_uri_decode(string_fragment str)
-{
-    auto_mem<char> retval(curl_free);
-
-    retval = curl_easy_unescape(
-        get_curl_easy(), str.data(), str.length(), nullptr);
-
-    return retval;
-}
-#endif
-
 int
 network_extension_functions(struct FuncDef** basic_funcs,
                             struct FuncDefAgg** agg_funcs)
@@ -199,28 +159,6 @@ network_extension_functions(struct FuncDef** basic_funcs,
                         "To get the hostname for the IP '127.0.0.1'",
                         "SELECT gethostbyaddr('127.0.0.1')",
                     })),
-
-#if defined(HAVE_LIBCURL)
-        sqlite_func_adapter<decltype(&sql_uri_encode), sql_uri_encode>::builder(
-            help_text("uri_encode", "URI-encode the given string")
-                .sql_function()
-                .with_parameter({"str", "The string to URI-encode"})
-                .with_tags({"uri"})
-                .with_example({
-                    "To encode 'Hello, World!'",
-                    "SELECT uri_encode('Hello, World!')",
-                })),
-
-        sqlite_func_adapter<decltype(&sql_uri_decode), sql_uri_decode>::builder(
-            help_text("uri_decode", "Decode the given URI-encoded string")
-                .sql_function()
-                .with_parameter({"str", "The string to decode"})
-                .with_tags({"uri"})
-                .with_example({
-                    "To decode '%63%75%72%6c'",
-                    "SELECT uri_decode('%63%75%72%6c')",
-                })),
-#endif
 
         {nullptr},
     };

@@ -45,6 +45,7 @@
 #include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
+#include "shlex.resolver.hh"
 #include "sqlite-extension-func.hh"
 
 extern const char* LNAV_SQLITE_ERROR_PREFIX;
@@ -223,6 +224,12 @@ struct from_sqlite<vtab_types::nullable<T>> {
 };
 
 void to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um);
+
+inline void
+to_sqlite(sqlite3_context* ctx, null_value_t)
+{
+    sqlite3_result_null(ctx);
+}
 
 inline void
 to_sqlite(sqlite3_context* ctx, const char* str)
@@ -409,7 +416,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
             to_sqlite(context, std::move(retval));
         } catch (from_sqlite_conversion_error& e) {
-            char buffer[64];
+            char buffer[256];
 
             snprintf(buffer,
                      sizeof(buffer),

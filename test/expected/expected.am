@@ -786,10 +786,14 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_str_func.sh_7f751009d0db15fc97f9113c5c84db05ff1de9c3.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_80c1fb9affbfac609ebf1cc5556aafb1ecd223c1.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_80c1fb9affbfac609ebf1cc5556aafb1ecd223c1.out \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_836e3f721a0f945ad27e7aa241121ba739aab618.err \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_836e3f721a0f945ad27e7aa241121ba739aab618.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_838e9bc7873b2b238157ba0358e0dfd6a01d837d.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_838e9bc7873b2b238157ba0358e0dfd6a01d837d.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_84e77dedec887c5e2433dbc5b130000cd88963bd.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_84e77dedec887c5e2433dbc5b130000cd88963bd.out \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_887afe94962d958aca2e03f7873d58ca93e190b5.err \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_887afe94962d958aca2e03f7873d58ca93e190b5.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_8cef54f0617960320b5d3615068eb27333dcf6a3.err \
@@ -812,6 +816,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_str_func.sh_bfe8b09e23389af0ef14359b66d68228d0285185.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_c9e2f41431bef879364dc37a472ab01f64d89f89.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_c9e2f41431bef879364dc37a472ab01f64d89f89.out \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_cc53348c585ee71a7456157ad6b125689813bafe.err \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_cc53348c585ee71a7456157ad6b125689813bafe.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_ce9db1dbc2e5fee87247135d17787ff3af014d77.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_ce9db1dbc2e5fee87247135d17787ff3af014d77.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_d3367527118052081a541a660b091f6f495b1c0d.err \

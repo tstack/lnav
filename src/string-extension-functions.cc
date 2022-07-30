@@ -31,6 +31,7 @@
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
 #include "safe/safe.h"
+#include "scn/scn.h"
 #include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
 #include "vtab_module.hh"
@@ -38,6 +39,10 @@
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
+
+#if defined(HAVE_LIBCURL)
+#    include <curl/curl.h>
+#endif
 
 using namespace mapbox;
 
@@ -446,46 +451,167 @@ sql_gzip(sqlite3_value* val)
     return nonstd::nullopt;
 }
 
-static nonstd::optional<text_auto_buffer>
-sql_base64_encode(sqlite3_value* value)
+enum class encode_algo {
+    base64,
+    hex,
+    uri,
+};
+
+template<>
+struct from_sqlite<encode_algo> {
+    inline encode_algo operator()(int argc, sqlite3_value** val, int argi)
+    {
+        const char* algo_name = (const char*) sqlite3_value_text(val[argi]);
+
+        if (strcasecmp(algo_name, "base64") == 0) {
+            return encode_algo::base64;
+        }
+        if (strcasecmp(algo_name, "hex") == 0) {
+            return encode_algo::hex;
+        }
+        if (strcasecmp(algo_name, "uri") == 0) {
+            return encode_algo::uri;
+        }
+
+        throw from_sqlite_conversion_error("value of 'base64', 'hex', or 'uri'",
+                                           argi);
+    }
+};
+
+#if defined(HAVE_LIBCURL)
+static CURL*
+get_curl_easy()
+{
+    static struct curl_wrapper {
+        curl_wrapper() { this->cw_value = curl_easy_init(); }
+
+        auto_mem<CURL> cw_value{curl_easy_cleanup};
+    } retval;
+
+    return retval.cw_value.in();
+}
+#endif
+
+static mapbox::util::variant<text_auto_buffer, auto_mem<char>, null_value_t>
+sql_encode(sqlite3_value* value, encode_algo algo)
 {
     switch (sqlite3_value_type(value)) {
         case SQLITE_NULL: {
-            return nonstd::nullopt;
+            return null_value_t{};
         }
         case SQLITE_BLOB: {
             const auto* blob
                 = static_cast<const char*>(sqlite3_value_blob(value));
             auto blob_len = sqlite3_value_bytes(value);
-            auto buf = auto_buffer::alloc((blob_len * 5) / 3);
-            size_t outlen = buf.capacity();
 
-            base64_encode(blob, blob_len, buf.in(), &outlen, 0);
-            buf.resize(outlen);
-            return text_auto_buffer{std::move(buf)};
+            switch (algo) {
+                case encode_algo::base64: {
+                    auto buf = auto_buffer::alloc((blob_len * 5) / 3);
+                    auto outlen = buf.capacity();
+
+                    base64_encode(blob, blob_len, buf.in(), &outlen, 0);
+                    buf.resize(outlen);
+                    return text_auto_buffer{std::move(buf)};
+                }
+                case encode_algo::hex: {
+                    auto buf = auto_buffer::alloc(blob_len * 2 + 1);
+
+                    for (size_t lpc = 0; lpc < blob_len; lpc++) {
+                        fmt::format_to(std::back_inserter(buf),
+                                       FMT_STRING("{:x}"),
+                                       blob[lpc]);
+                    }
+
+                    return text_auto_buffer{std::move(buf)};
+                }
+#if defined(HAVE_LIBCURL)
+                case encode_algo::uri: {
+                    auto_mem<char> retval(curl_free);
+
+                    retval = curl_easy_escape(get_curl_easy(), blob, blob_len);
+                    return retval;
+                }
+#endif
+            }
         }
         default: {
             const auto* text = (const char*) sqlite3_value_text(value);
             auto text_len = sqlite3_value_bytes(value);
-            auto buf = auto_buffer::alloc((text_len * 5) / 3);
-            size_t outlen = buf.capacity();
 
-            base64_encode(text, text_len, buf.in(), &outlen, 0);
-            buf.resize(outlen);
-            return text_auto_buffer{std::move(buf)};
+            switch (algo) {
+                case encode_algo::base64: {
+                    auto buf = auto_buffer::alloc((text_len * 5) / 3);
+                    size_t outlen = buf.capacity();
+
+                    base64_encode(text, text_len, buf.in(), &outlen, 0);
+                    buf.resize(outlen);
+                    return text_auto_buffer{std::move(buf)};
+                }
+                case encode_algo::hex: {
+                    auto buf = auto_buffer::alloc(text_len * 2 + 1);
+
+                    for (size_t lpc = 0; lpc < text_len; lpc++) {
+                        fmt::format_to(std::back_inserter(buf),
+                                       FMT_STRING("{:x}"),
+                                       text[lpc]);
+                    }
+
+                    return text_auto_buffer{std::move(buf)};
+                }
+#if defined(HAVE_LIBCURL)
+                case encode_algo::uri: {
+                    auto_mem<char> retval(curl_free);
+
+                    retval = curl_easy_escape(get_curl_easy(), text, text_len);
+                    return retval;
+                }
+#endif
+            }
         }
     }
 }
 
-static blob_auto_buffer
-sql_base64_decode(string_fragment str)
+static mapbox::util::variant<blob_auto_buffer, auto_mem<char>>
+sql_decode(string_fragment str, encode_algo algo)
 {
-    auto buf = auto_buffer::alloc(str.length());
-    auto outlen = buf.capacity();
-    base64_decode(str.data(), str.length(), buf.in(), &outlen, 0);
-    buf.resize(outlen);
+    switch (algo) {
+        case encode_algo::base64: {
+            auto buf = auto_buffer::alloc(str.length());
+            auto outlen = buf.capacity();
+            base64_decode(str.data(), str.length(), buf.in(), &outlen, 0);
+            buf.resize(outlen);
 
-    return blob_auto_buffer{std::move(buf)};
+            return blob_auto_buffer{std::move(buf)};
+        }
+        case encode_algo::hex: {
+            auto buf = auto_buffer::alloc(str.length() / 2);
+            auto sv = str.to_string_view();
+
+            while (!sv.empty()) {
+                int32_t value;
+                auto scan_res = scn::scan(sv, "{:2x}", value);
+                if (!scan_res) {
+                    throw sqlite_func_error(
+                        "invalid hex input at: {}",
+                        std::distance(str.begin(), sv.begin()));
+                }
+                buf.push_back((char) (value & 0xff));
+                sv = scan_res.range_as_string_view();
+            }
+
+            return blob_auto_buffer{std::move(buf)};
+        }
+#if defined(HAVE_LIBCURL)
+        case encode_algo::uri: {
+            auto_mem<char> retval(curl_free);
+
+            retval = curl_easy_unescape(
+                get_curl_easy(), str.data(), str.length(), nullptr);
+
+            return retval;
+        }
+#endif
+    }
 }
 
 std::string
@@ -712,23 +838,39 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     help_text("value", "The value to compress").one_or_more())
                 .with_tags({"string"})),
 
-        sqlite_func_adapter<decltype(&sql_base64_encode), sql_base64_encode>::
-            builder(
-                help_text("base64_encode", "Base-64 encode the given value")
-                    .sql_function()
-                    .with_parameter(help_text("value", "The value to encode"))
-                    .with_tags({"string"})
-                    .with_example({
-                        "To encode 'Hello, World!'",
-                        "SELECT base64_encode('Hello, World!')",
-                    })),
+        sqlite_func_adapter<decltype(&sql_encode), sql_encode>::builder(
+            help_text("encode", "Encode the value using the given algorithm")
+                .sql_function()
+                .with_parameter(help_text("value", "The value to encode"))
+                .with_parameter(help_text("algorithm",
+                                          "One of the following encoding "
+                                          "algorithms: base64, hex, uri"))
+                .with_tags({"string"})
+                .with_example({
+                    "To base64-encode 'Hello, World!'",
+                    "SELECT encode('Hello, World!', 'base64')",
+                })
+                .with_example({
+                    "To hex-encode 'Hello, World!'",
+                    "SELECT encode('Hello, World!', 'hex')",
+                })
+                .with_example({
+                    "To URI-encode 'Hello, World!'",
+                    "SELECT encode('Hello, World!', 'uri')",
+                })),
 
-        sqlite_func_adapter<decltype(&sql_base64_decode), sql_base64_decode>::
-            builder(
-                help_text("base64_encode", "Base-64 decode the given value")
-                    .sql_function()
-                    .with_parameter(help_text("value", "The value to decode"))
-                    .with_tags({"string"})),
+        sqlite_func_adapter<decltype(&sql_decode), sql_decode>::builder(
+            help_text("decode", "Decode the value using the given algorithm")
+                .sql_function()
+                .with_parameter(help_text("value", "The value to decode"))
+                .with_parameter(help_text("algorithm",
+                                          "One of the following encoding "
+                                          "algorithms: base64, hex, uri"))
+                .with_tags({"string"})
+                .with_example({
+                    "To decode the URI-encoded string '%63%75%72%6c'",
+                    "SELECT decode('%63%75%72%6c', 'uri')",
+                })),
 
         {nullptr},
     };

@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- Expecting an value of 'base64', 'hex', or 'uri' for argument number 1
