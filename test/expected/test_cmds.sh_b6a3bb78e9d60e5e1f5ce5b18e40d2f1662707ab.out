@@ -4027,6 +4027,32 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 
+[1m[4muri_decode[0m[4m([0m[4mstr[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Decode the given URI-encoded string
+[4mParameter[0m
+  [4mstr[0m   The string to decode
+[4mSee Also[0m
+  [1muri_encode()[0m
+[4mExample[0m
+#1 To decode '%63%75%72%6c':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40muri_decode[0m[37m[40m([0m[35m[40m'%63%75%72%6c'[0m[37m[40m)                 [0m
+   
+
+
+[1m[4muri_encode[0m[4m([0m[4mstr[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  URI-encode the given string
+[4mParameter[0m
+  [4mstr[0m   The string to URI-encode
+[4mSee Also[0m
+  [1muri_decode()[0m
+[4mExample[0m
+#1 To encode 'Hello, World!':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40muri_encode[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m)                [0m
+   
+
+
 [1m[4mxpath[0m[4m([0m[4mxpath[0m[4m, [0m[4mxmldoc[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that executes an xpath expression over an

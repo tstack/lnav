@@ -288,6 +288,13 @@ to_sqlite(sqlite3_context* ctx, double val)
     sqlite3_result_double(ctx, val);
 }
 
+inline void
+to_sqlite(sqlite3_context* ctx, auto_mem<char> str)
+{
+    auto free_func = str.get_free_func<void(*)(void*)>();
+    sqlite3_result_text(ctx, str.release(), -1, free_func);
+}
+
 #define JSON_SUBTYPE    74 /* Ascii for "J" */
 #define FLATTEN_SUBTYPE 0x5f
 

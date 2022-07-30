@@ -3624,6 +3624,54 @@ upper(*str*)
 ----
 
 
+.. _uri_decode:
+
+uri_decode(*str*)
+^^^^^^^^^^^^^^^^^
+
+  Decode the given URI-encoded string
+
+  **Parameters**
+    * **str\*** --- The string to decode
+
+  **Examples**
+    To decode '%63%75%72%6c':
+
+    .. code-block::  custsqlite
+
+      ;SELECT uri_decode('%63%75%72%6c')
+      curl
+
+  **See Also**
+    :ref:`uri_encode`
+
+----
+
+
+.. _uri_encode:
+
+uri_encode(*str*)
+^^^^^^^^^^^^^^^^^
+
+  URI-encode the given string
+
+  **Parameters**
+    * **str\*** --- The string to URI-encode
+
+  **Examples**
+    To encode 'Hello, World!':
+
+    .. code-block::  custsqlite
+
+      ;SELECT uri_encode('Hello, World!')
+      Hello%2C%20World%21
+
+  **See Also**
+    :ref:`uri_decode`
+
+----
+
+
 .. _xpath:
 
 xpath(*xpath*, *xmldoc*)
