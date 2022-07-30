@@ -446,10 +446,13 @@ sql_gzip(sqlite3_value* val)
     return nonstd::nullopt;
 }
 
-static text_auto_buffer
+static nonstd::optional<text_auto_buffer>
 sql_base64_encode(sqlite3_value* value)
 {
     switch (sqlite3_value_type(value)) {
+        case SQLITE_NULL: {
+            return nonstd::nullopt;
+        }
         case SQLITE_BLOB: {
             const auto* blob
                 = static_cast<const char*>(sqlite3_value_blob(value));
