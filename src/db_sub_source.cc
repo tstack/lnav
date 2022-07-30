@@ -35,6 +35,7 @@
 #include "base/itertools.hh"
 #include "base/time_util.hh"
 #include "config.h"
+#include "scn/scn.h"
 #include "yajlpp/json_ptr.hh"
 
 const char db_label_source::NULL_STR[] = "<NULL>";
@@ -48,7 +49,6 @@ db_label_source::text_value_for_line(textview_curses& tc,
                                      std::string& label_out,
                                      text_sub_source::line_flags_t flags)
 {
-
     /*
      * start_value is the result rowid, each bucket type is a column value
      * label_out should be the raw text output.
@@ -103,35 +103,41 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
 
     int left = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
-        const char* row_value = this->dls_rows[row][lpc];
-        size_t row_len = strlen(row_value);
+        auto row_view = scn::string_view{this->dls_rows[row][lpc]};
+        const auto& hm = this->dls_headers[lpc];
 
-        if (this->dls_headers[lpc].hm_graphable) {
-            double num_value;
+        if (hm.hm_graphable) {
+            auto num_scan_res = scn::scan_value<double>(row_view);
 
-            if (sscanf(row_value, "%lf", &num_value) == 1) {
+            if (num_scan_res) {
                 this->dls_chart.chart_attrs_for_value(
-                    tc, left, this->dls_headers[lpc].hm_name, num_value, sa);
+                    tc, left, hm.hm_name, num_scan_res.value(), sa);
             }
         }
-        if (row_len > 2 && row_len < MAX_JSON_WIDTH
-            && ((row_value[0] == '{' && row_value[row_len - 1] == '}')
-                || (row_value[0] == '[' && row_value[row_len - 1] == ']')))
+        if (row_view.length() > 2 && row_view.length() < MAX_JSON_WIDTH
+            && ((row_view.front() == '{' && row_view.back() == '}')
+                || (row_view.front() == '[' && row_view.back() == ']')))
         {
             json_ptr_walk jpw;
 
-            if (jpw.parse(row_value, row_len) == yajl_status_ok
+            if (jpw.parse(row_view.data(), row_view.length()) == yajl_status_ok
                 && jpw.complete_parse() == yajl_status_ok)
             {
                 for (const auto& jpw_value : jpw.jpw_values) {
-                    double num_value;
+                    if (jpw_value.wt_type != yajl_t_number) {
+                        continue;
+                    }
 
-                    if (jpw_value.wt_type == yajl_t_number
-                        && sscanf(jpw_value.wt_value.c_str(), "%lf", &num_value)
-                            == 1)
-                    {
+                    auto num_scan_res
+                        = scn::scan_value<double>(jpw_value.wt_value);
+
+                    if (num_scan_res) {
                         this->dls_chart.chart_attrs_for_value(
-                            tc, left, jpw_value.wt_ptr, num_value, sa);
+                            tc,
+                            left,
+                            jpw_value.wt_ptr,
+                            num_scan_res.value(),
+                            sa);
                     }
                 }
             }
@@ -163,7 +169,6 @@ db_label_source::push_column(const scoped_value_t& sv)
     auto& vc = view_colors::singleton();
     int index = this->dls_rows.back().size();
     auto& hm = this->dls_headers[index];
-    double num_value = 0.0;
 
     auto col_sf = sv.match(
         [](const std::string& str) { return string_fragment::from_str(str); },
@@ -191,7 +196,8 @@ db_label_source::push_column(const scoped_value_t& sv)
         struct timeval tv;
 
         if (!dts.convert_to_timeval(
-                col_sf.data(), col_sf.length(), nullptr, tv)) {
+                col_sf.data(), col_sf.length(), nullptr, tv))
+        {
             tv.tv_sec = -1;
             tv.tv_usec = -1;
         }
@@ -221,19 +227,22 @@ db_label_source::push_column(const scoped_value_t& sv)
         }
     } else if (col_sf.length() > 2
                && ((col_sf.startswith("{") && col_sf.endswith("}"))
-                   || (col_sf.startswith("[") && col_sf.startswith("]"))))
+                   || (col_sf.startswith("[") && col_sf.endswith("]"))))
     {
         json_ptr_walk jpw;
 
         if (jpw.parse(col_sf.data(), col_sf.length()) == yajl_status_ok
             && jpw.complete_parse() == yajl_status_ok)
         {
-            for (auto& jpw_value : jpw.jpw_values) {
-                if (jpw_value.wt_type == yajl_t_number
-                    && sscanf(jpw_value.wt_value.c_str(), "%lf", &num_value)
-                        == 1)
-                {
-                    this->dls_chart.add_value(jpw_value.wt_ptr, num_value);
+            for (const auto& jpw_value : jpw.jpw_values) {
+                if (jpw_value.wt_type != yajl_t_number) {
+                    continue;
+                }
+
+                auto num_scan_res = scn::scan_value<double>(jpw_value.wt_value);
+                if (num_scan_res) {
+                    this->dls_chart.add_value(jpw_value.wt_ptr,
+                                              num_scan_res.value());
                     this->dls_chart.with_attrs_for_ident(
                         jpw_value.wt_ptr, vc.attrs_for_ident(jpw_value.wt_ptr));
                 }
@@ -334,16 +343,16 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                 lr.lr_end = -1;
                 sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
 
-                double num_value = 0.0;
+                if (jpw_value.wt_type == yajl_t_number) {
+                    auto num_scan_res
+                        = scn::scan_value<double>(jpw_value.wt_value);
 
-                if (jpw_value.wt_type == yajl_t_number
-                    && sscanf(jpw_value.wt_value.c_str(), "%lf", &num_value)
-                        == 1)
-                {
-                    auto attrs = vc.attrs_for_ident(jpw_value.wt_ptr);
+                    if (num_scan_res) {
+                        auto attrs = vc.attrs_for_ident(jpw_value.wt_ptr);
 
-                    chart.add_value(jpw_value.wt_ptr, num_value);
-                    chart.with_attrs_for_ident(jpw_value.wt_ptr, attrs);
+                        chart.add_value(jpw_value.wt_ptr, num_scan_res.value());
+                        chart.with_attrs_for_ident(jpw_value.wt_ptr, attrs);
+                    }
                 }
 
                 retval += 1;
@@ -354,16 +363,18 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                  iter != jpw.jpw_values.end();
                  ++iter, curr_line++)
             {
-                double num_value = 0.0;
+                if (iter->wt_type != yajl_t_number) {
+                    continue;
+                }
 
-                if (iter->wt_type == yajl_t_number
-                    && sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1)
-                {
-                    string_attrs_t& sa = this->dos_lines[curr_line].get_attrs();
+                auto num_scan_res = scn::scan_value<double>(iter->wt_value);
+
+                if (num_scan_res) {
+                    auto& sa = this->dos_lines[curr_line].get_attrs();
                     int left = 3;
 
                     chart.chart_attrs_for_value(
-                        lv, left, iter->wt_ptr, num_value, sa);
+                        lv, left, iter->wt_ptr, num_scan_res.value(), sa);
                 }
             }
         }

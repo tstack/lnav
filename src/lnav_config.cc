@@ -142,7 +142,8 @@ ensure_dotlnav()
 
         if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             for (int lpc = 0; lpc < ((int) gl->gl_pathc - MAX_CRASH_LOG_COUNT);
-                 lpc++) {
+                 lpc++)
+            {
                 log_perror(remove(gl->gl_pathv[lpc]));
             }
         }
@@ -164,7 +165,8 @@ ensure_dotlnav()
                 }
 
                 if (std::chrono::system_clock::from_time_t(st.st_mtime)
-                    > old_time) {
+                    > old_time)
+                {
                     continue;
                 }
 
@@ -225,47 +227,97 @@ install_from_git(const std::string& repo)
         return false;
     }
 
-    if (ghc::filesystem::is_directory(local_staging_path)) {
-        auto config_path = local_staging_path / "*.json";
-        static_root_mem<glob_t, globfree> gl;
-        bool found_config_file = false, found_format_file = false;
+    if (!ghc::filesystem::is_directory(local_staging_path)) {
+        auto um
+            = lnav::console::user_message::error(
+                  attr_line_t("failed to install git repo: ")
+                      .append(lnav::roles::file(repo)))
+                  .with_reason(
+                      attr_line_t("git failed to create the local directory")
+                          .append(
+                              lnav::roles::file(local_staging_path.string())));
+        lnav::console::print(stderr, um);
+        return false;
+    }
 
-        if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
-            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                auto json_file_path = gl->gl_pathv[lpc];
-                auto file_type_result = detect_config_file_type(json_file_path);
+    auto config_path = local_staging_path / "*.{json,lnav,sql}";
+    static_root_mem<glob_t, globfree> gl;
+    int found_config_file = 0;
+    int found_format_file = 0;
+    int found_sql_file = 0;
+    int found_lnav_file = 0;
 
-                if (file_type_result.isErr()) {
-                    fprintf(stderr,
-                            "error: %s\n",
-                            file_type_result.unwrapErr().c_str());
-                    return false;
-                }
-                if (file_type_result.unwrap() == config_file_type::CONFIG) {
-                    found_config_file = true;
-                } else {
-                    found_format_file = true;
-                }
+    if (glob(config_path.c_str(), GLOB_BRACE, nullptr, gl.inout()) == 0) {
+        for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+            auto file_path = ghc::filesystem::path{gl->gl_pathv[lpc]};
+
+            if (file_path.extension() == ".lnav") {
+                found_lnav_file += 1;
+                continue;
+            }
+            if (file_path.extension() == ".sql") {
+                found_sql_file += 1;
+                continue;
+            }
+
+            auto file_type_result = detect_config_file_type(file_path);
+
+            if (file_type_result.isErr()) {
+                fprintf(stderr,
+                        "error: %s\n",
+                        file_type_result.unwrapErr().c_str());
+                return false;
+            }
+            if (file_type_result.unwrap() == config_file_type::CONFIG) {
+                found_config_file += 1;
+            } else {
+                found_format_file += 1;
             }
         }
-
-        if (found_config_file) {
-            rename(local_staging_path.c_str(), local_configs_path.c_str());
-            fprintf(stderr,
-                    "info: installed configuration repo -- %s\n",
-                    local_configs_path.c_str());
-        } else if (found_format_file) {
-            rename(local_staging_path.c_str(), local_formats_path.c_str());
-            fprintf(stderr,
-                    "info: installed format repo -- %s\n",
-                    local_formats_path.c_str());
-        } else {
-            fprintf(stderr,
-                    "error: cannot find a valid lnav configuration or format "
-                    "file\n");
-            return false;
-        }
     }
+
+    if (found_config_file == 0 && found_format_file == 0 && found_sql_file == 0
+        && found_lnav_file == 0)
+    {
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("invalid lnav repo: ")
+                          .append(lnav::roles::file(repo)))
+                      .with_reason("no .json, .sql, or .lnav files were found");
+        lnav::console::print(stderr, um);
+        return false;
+    }
+
+    auto dest_path = local_formats_path;
+    attr_line_t notes;
+    if (found_format_file > 0) {
+        notes.append("found ")
+            .append(lnav::roles::number(fmt::to_string(found_format_file)))
+            .append(" format file(s)\n");
+    }
+    if (found_config_file > 0) {
+        if (found_format_file == 0) {
+            dest_path = local_configs_path;
+        }
+        notes.append("found ")
+            .append(lnav::roles::number(fmt::to_string(found_config_file)))
+            .append(" configuration file(s)\n");
+    }
+    if (found_sql_file > 0) {
+        notes.append("found ")
+            .append(lnav::roles::number(fmt::to_string(found_sql_file)))
+            .append(" SQL file(s)\n");
+    }
+    if (found_lnav_file > 0) {
+        notes.append("found ")
+            .append(lnav::roles::number(fmt::to_string(found_lnav_file)))
+            .append(" lnav-script file(s)\n");
+    }
+    rename(local_staging_path.c_str(), dest_path.c_str());
+    auto um = lnav::console::user_message::ok(
+                  attr_line_t("installed lnav repo at: ")
+                      .append(lnav::roles::file(local_configs_path.string())))
+                  .with_note(notes);
+    lnav::console::print(stdout, um);
 
     return true;
 }

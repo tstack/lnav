@@ -30,6 +30,7 @@
 #include "log_data_table.hh"
 
 #include "config.h"
+#include "scn/scn.h"
 
 log_data_table::log_data_table(logfile_sub_source& lss,
                                log_vtab_manager& lvm,
@@ -168,29 +169,23 @@ log_data_table::extract(logfile* lf,
     this->ldt_format_impl->extract(lf, line_number, values);
     for (const auto& ldt_pair : this->ldt_pairs) {
         const auto& pvalue = ldt_pair.get_pair_value();
+        auto lr = line_range{
+            pvalue.e_capture.c_begin,
+            pvalue.e_capture.c_end,
+        };
 
         switch (pvalue.value_token()) {
             case DT_NUMBER: {
-                char scan_value[line.length() + 1];
-                double d = 0.0;
+                auto num_view = line.to_string_view(lr);
+                auto num_scan_res = scn::scan_value<double>(num_view);
+                auto num = num_scan_res ? num_scan_res.value() : 0.0;
 
-                memcpy(scan_value,
-                       line.get_data() + pvalue.e_capture.c_begin,
-                       pvalue.e_capture.length());
-                scan_value[pvalue.e_capture.length()] = '\0';
-                if (sscanf(scan_value, "%lf", &d) != 1) {
-                    d = 0.0;
-                }
-                values.lvv_values.emplace_back(*meta_iter, d);
+                values.lvv_values.emplace_back(*meta_iter, num);
                 break;
             }
 
             default: {
-                values.lvv_values.emplace_back(
-                    *meta_iter,
-                    line,
-                    line_range{pvalue.e_capture.c_begin,
-                               pvalue.e_capture.c_end});
+                values.lvv_values.emplace_back(*meta_iter, line, lr);
                 break;
             }
         }

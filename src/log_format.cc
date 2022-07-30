@@ -131,11 +131,16 @@ logline_value::logline_value(logline_value_meta lvm,
         case value_kind_t::VALUE_NULL:
             break;
 
-        case value_kind_t::VALUE_INTEGER:
-            strtonum(this->lv_value.i,
-                     sbr.get_data_at(origin.lr_start),
-                     origin.length());
+        case value_kind_t::VALUE_INTEGER: {
+            auto scan_res
+                = scn::scan_value<int64_t>(sbr.to_string_view(origin));
+            if (scan_res) {
+                this->lv_value.i = scan_res.value();
+            } else {
+                this->lv_value.i = 0;
+            }
             break;
+        }
 
         case value_kind_t::VALUE_FLOAT: {
             auto scan_res = scn::scan_value<double>(sbr.to_string_view(origin));
@@ -941,11 +946,10 @@ external_log_format::scan(logfile& lf,
                     }
                 }
 
-                const char* num_cap_start = pi.get_substr_start(num_cap);
-                const char* num_cap_end = num_cap_start + num_cap->length();
-                double dvalue = strtod(num_cap_start, (char**) &num_cap_end);
-
-                if (num_cap_end == num_cap_start + num_cap->length()) {
+                auto scan_res
+                    = scn::scan_value<double>(pi.to_string_view(num_cap));
+                if (scan_res) {
+                    auto dvalue = scan_res.value();
                     if (scaling != nullptr) {
                         scaling->scale(dvalue);
                     }

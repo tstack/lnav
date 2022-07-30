@@ -74,6 +74,7 @@
 #include "session_data.hh"
 #include "shlex.hh"
 #include "spectro_impls.hh"
+#include "scn/scn.h"
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
@@ -666,7 +667,8 @@ com_goto_mark(exec_context& ec,
                                   attr_line_t("available types: ")
                                       .join(bookmark_type_t::get_all_types()
                                                 | lnav::itertools::map(
-                                                    &bookmark_type_t::get_name),
+                                                    &bookmark_type_t::get_name)
+                                                | lnav::itertools::sorted(),
                                             ", "));
                     return Err(um);
                 }
@@ -4241,15 +4243,12 @@ com_config(exec_context& ec,
                     changed = true;
                 } else if (ypc.ypc_current_handler->jph_callbacks.yajl_integer)
                 {
-                    long long val = 0;
-
-                    auto consumed
-                        = strtonum(val, value.c_str(), value.length());
-                    if (consumed != value.length()) {
+                    auto scan_res = scn::scan_value<int64_t>(value);
+                    if (!scan_res || !scan_res.empty()) {
                         return ec.make_error("expecting an integer, found: {}",
                                              value);
                     }
-                    ypc.ypc_callbacks.yajl_integer(&ypc, val);
+                    ypc.ypc_callbacks.yajl_integer(&ypc, scan_res.value());
                     changed = true;
                 } else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean)
                 {

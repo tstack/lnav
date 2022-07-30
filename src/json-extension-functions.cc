@@ -34,6 +34,7 @@
 
 #include "config.h"
 #include "mapbox/variant.hpp"
+#include "scn/scn.h"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"
 #include "vtab_module.hh"
@@ -112,7 +113,8 @@ json_contains(vtab_types::nullable<const char> nullable_json_in,
               sqlite3_value* value)
 {
     if (nullable_json_in.n_value == nullptr
-        || nullable_json_in.n_value[0] == '\0') {
+        || nullable_json_in.n_value[0] == '\0')
+    {
         return false;
     }
 
@@ -232,12 +234,16 @@ gen_handle_number(void* ctx, const char* numval, size_t numlen)
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
 
     if (sjo->jo_ptr.jp_state == json_ptr::match_state_t::DONE) {
-        if (strtonum(sjo->sjo_int, numval, numlen) == numlen) {
+        auto num_sv = scn::string_view{numval, numlen};
+        auto scan_int_res = scn::scan_value<int64_t>(num_sv);
+
+        if (scan_int_res && scan_int_res.empty()) {
+            sjo->sjo_int = scan_int_res.value();
             sjo->sjo_type = SQLITE_INTEGER;
         } else {
-            auto numstr = std::string(numval, numlen);
+            auto scan_float_res = scn::scan_value<double>(num_sv);
 
-            sjo->sjo_float = std::stod(numstr);
+            sjo->sjo_float = scan_float_res.value();
             sjo->sjo_type = SQLITE_FLOAT;
         }
     } else {
@@ -298,7 +304,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
         }
         case yajl_status_client_canceled:
             if (jo.jo_ptr.jp_state
-                == json_ptr::match_state_t::ERR_INVALID_ESCAPE) {
+                == json_ptr::match_state_t::ERR_INVALID_ESCAPE)
+            {
                 sqlite3_result_error(
                     context, jo.jo_ptr.error_msg().c_str(), -1);
             } else {
@@ -321,7 +328,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
         }
         case yajl_status_client_canceled:
             if (jo.jo_ptr.jp_state
-                == json_ptr::match_state_t::ERR_INVALID_ESCAPE) {
+                == json_ptr::match_state_t::ERR_INVALID_ESCAPE)
+            {
                 sqlite3_result_error(
                     context, jo.jo_ptr.error_msg().c_str(), -1);
             } else {

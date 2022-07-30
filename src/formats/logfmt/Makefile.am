@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/third-party \
     -I$(top_srcdir)/src/fmtlib \
+	-I$(top_srcdir)/src/third-party/scnlib/include \
     $(LIBARCHIVE_CFLAGS) \
     $(READLINE_CFLAGS) \
     $(SQLITE3_CFLAGS) \
@@ -32,7 +33,8 @@ logfmt_parser_test_SOURCES = \
 
 logfmt_parser_test_LDADD = \
     liblogfmt.a \
-    $(top_builddir)/src/base/libbase.a
+    $(top_builddir)/src/base/libbase.a \
+    $(top_builddir)/src/third-party/scnlib/src/libscnlib.a
 
 TESTS = \
     logfmt.parser.test

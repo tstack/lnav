@@ -31,8 +31,9 @@
 
 #include "logfmt.parser.hh"
 
-#include "base/string_util.hh"
+#include "base/intern_string.hh"
 #include "config.h"
+#include "scn/scn.h"
 
 logfmt::parser::parser(string_fragment sf) : p_next_input(sf) {}
 
@@ -228,34 +229,38 @@ logfmt::parser::step()
         if (bvp.is_integer()) {
             int_value retval;
 
-            strtonum(retval.iv_value,
-                     value_pair->first.data(),
-                     value_pair->first.length());
+            auto int_scan_res
+                = scn::scan_value<int64_t>(value_pair->first.to_string_view());
+            if (int_scan_res) {
+                retval.iv_value = int_scan_res.value();
+            }
             retval.iv_str_value = value_pair->first;
 
             return std::make_pair(key_frag, retval);
-        } else if (bvp.is_float()) {
-            char float_copy[value_pair->first.length() + 1];
+        }
+        if (bvp.is_float()) {
             float_value retval;
 
-            strncpy(float_copy,
-                    value_pair->first.data(),
-                    value_pair->first.length());
-            float_copy[value_pair->first.length()] = '\0';
-            retval.fv_value = strtod(float_copy, nullptr);
+            auto float_scan_res
+                = scn::scan_value<double>(value_pair->first.to_string_view());
+            if (float_scan_res) {
+                retval.fv_value = float_scan_res.value();
+            }
             retval.fv_str_value = value_pair->first;
 
             return std::make_pair(key_frag, retval);
-        } else if (value_pair->first.iequal(TRUE_FRAG)) {
+        }
+        if (value_pair->first.iequal(TRUE_FRAG)) {
             return std::make_pair(key_frag,
                                   bool_value{true, value_pair->first});
-        } else if (value_pair->first.iequal(FALSE_FRAG)) {
+        }
+        if (value_pair->first.iequal(FALSE_FRAG)) {
             return std::make_pair(key_frag,
                                   bool_value{false, value_pair->first});
         }
         return std::make_pair(key_frag, unquoted_value{value_pair->first});
-    } else {
-        this->p_next_input = value_start;
-        return std::make_pair(key_frag, unquoted_value{string_fragment{}});
     }
+
+    this->p_next_input = value_start;
+    return std::make_pair(key_frag, unquoted_value{string_fragment{}});
 }

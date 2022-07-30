@@ -41,6 +41,7 @@
 
 #include "fmt/format.h"
 #include "optional.hpp"
+#include "scn/util/string_view.h"
 #include "strnatcmp.h"
 #include "ww898/cp_utf8.hpp"
 
@@ -128,6 +129,8 @@ struct string_fragment {
 
     char front() const { return this->sf_string[this->sf_begin]; }
 
+    char back() const { return this->sf_string[this->sf_end - 1]; }
+
     iterator begin() const { return &this->sf_string[this->sf_begin]; }
 
     iterator end() const { return &this->sf_string[this->sf_end]; }
@@ -178,10 +181,7 @@ struct string_fragment {
             && strncmp(this->data(), str, this->length()) == 0;
     }
 
-    bool operator!=(const char* str) const
-    {
-        return !(*this == str);
-    }
+    bool operator!=(const char* str) const { return !(*this == str); }
 
     bool startswith(const char* prefix) const
     {
@@ -448,6 +448,11 @@ struct string_fragment {
         };
     }
 
+    scn::string_view to_string_view() const
+    {
+        return scn::string_view{this->begin(), this->end()};
+    }
+
     const char* sf_string;
     int sf_begin;
     int sf_end;
@@ -480,20 +485,11 @@ public:
 
     static const intern_string* lookup(const std::string& str) noexcept;
 
-    const char* get() const
-    {
-        return this->is_str.c_str();
-    };
+    const char* get() const { return this->is_str.c_str(); };
 
-    size_t size() const
-    {
-        return this->is_str.size();
-    }
+    size_t size() const { return this->is_str.size(); }
 
-    std::string to_string() const
-    {
-        return this->is_str;
-    }
+    std::string to_string() const { return this->is_str; }
 
     string_fragment to_string_fragment() const
     {

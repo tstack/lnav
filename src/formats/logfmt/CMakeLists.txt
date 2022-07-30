@@ -12,7 +12,12 @@ target_include_directories(
         .
         ${CMAKE_BINARY_DIR}/src
         ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/fmtlib
+)
+target_link_libraries(
+        logfmt
+        PRIVATE
+        cppfmt
+        cppscnlib
 )
 
 add_executable(
@@ -25,7 +30,6 @@ target_include_directories(
         .
         ${CMAKE_BINARY_DIR}/src
         ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/fmtlib
         ../../third-party/doctest-root)
 target_link_libraries(
         logfmt.parser.test

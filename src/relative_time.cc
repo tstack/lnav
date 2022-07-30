@@ -34,6 +34,7 @@
 #include "base/time_util.hh"
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
+#include "scn/scn.h"
 
 using namespace std::chrono_literals;
 
@@ -371,12 +372,16 @@ relative_time::from_str(const char* str, size_t len)
                         return Err(pe_out);
                     }
 
-                    const auto numstr = pi.get_substr(pc[0]);
+                    auto num_scan_res
+                        = scn::scan_value<int64_t>(pi.to_string_view(pc[0]));
 
-                    if (sscanf(numstr.c_str(), "%" PRId64, &number) != 1) {
-                        pe_out.pe_msg = "Invalid number: " + numstr;
+                    if (!num_scan_res) {
+                        pe_out.pe_msg
+                            = fmt::format(FMT_STRING("Invalid number: {}"),
+                                          pi.get_substr(pc[0]));
                         return Err(pe_out);
                     }
+                    number = num_scan_res.value();
                     number_set = true;
                     break;
                 }
@@ -469,7 +474,8 @@ relative_time::from_str(const char* str, size_t len)
                                 = -retval.rt_field[field].value;
                         }
                         if (last_field_type != RTF__MAX
-                            && field < last_field_type) {
+                            && field < last_field_type)
+                        {
                             retval.rt_field[field] = 0;
                         }
                     }
@@ -531,7 +537,8 @@ relative_time::from_str(const char* str, size_t len)
                                     return Err(pe_out);
                                 }
                                 for (int wday = RTT_SUNDAY; wday < token;
-                                     wday++) {
+                                     wday++)
+                                {
                                     retval.rt_included_days.insert(
                                         (token_t) wday);
                                 }
@@ -544,7 +551,8 @@ relative_time::from_str(const char* str, size_t len)
                                     return Err(pe_out);
                                 }
                                 for (int wday = RTT_SATURDAY; wday > token;
-                                     wday--) {
+                                     wday--)
+                                {
                                     retval.rt_included_days.insert(
                                         (token_t) wday);
                                 }
@@ -568,7 +576,8 @@ relative_time::from_str(const char* str, size_t len)
             }
 
             if (token != RTT_NEXT && token != RTT_PREVIOUS
-                && token != RTT_WHITE) {
+                && token != RTT_WHITE)
+            {
                 next_set = false;
             }
 
@@ -767,11 +776,13 @@ relative_time::adjust(const exttm& tm) const
     }
     if (this->rt_field[RTF_SECONDS].is_set && this->is_absolute(RTF_SECONDS)) {
         if (this->rt_next
-            && this->rt_field[RTF_SECONDS].value <= tm.et_tm.tm_sec) {
+            && this->rt_field[RTF_SECONDS].value <= tm.et_tm.tm_sec)
+        {
             retval.et_tm.tm_min += 1;
         }
         if (this->rt_previous
-            && this->rt_field[RTF_SECONDS].value >= tm.et_tm.tm_sec) {
+            && this->rt_field[RTF_SECONDS].value >= tm.et_tm.tm_sec)
+        {
             retval.et_tm.tm_min -= 1;
         }
         retval.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
@@ -780,7 +791,8 @@ relative_time::adjust(const exttm& tm) const
     }
     if (this->rt_field[RTF_MINUTES].is_set && this->is_absolute(RTF_MINUTES)) {
         if (this->rt_next
-            && this->rt_field[RTF_MINUTES].value <= tm.et_tm.tm_min) {
+            && this->rt_field[RTF_MINUTES].value <= tm.et_tm.tm_min)
+        {
             retval.et_tm.tm_hour += 1;
         }
         if (this->rt_previous
@@ -795,11 +807,13 @@ relative_time::adjust(const exttm& tm) const
     }
     if (this->rt_field[RTF_HOURS].is_set && this->is_absolute(RTF_HOURS)) {
         if (this->rt_next
-            && this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour) {
+            && this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour)
+        {
             retval.et_tm.tm_mday += 1;
         }
         if (this->rt_previous
-            && this->rt_field[RTF_HOURS].value >= tm.et_tm.tm_hour) {
+            && this->rt_field[RTF_HOURS].value >= tm.et_tm.tm_hour)
+        {
             retval.et_tm.tm_mday -= 1;
         }
         retval.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
@@ -812,7 +826,8 @@ relative_time::adjust(const exttm& tm) const
             retval.et_tm.tm_mon += 1;
         }
         if (this->rt_previous
-            && this->rt_field[RTF_DAYS].value >= tm.et_tm.tm_mday) {
+            && this->rt_field[RTF_DAYS].value >= tm.et_tm.tm_mday)
+        {
             retval.et_tm.tm_mon -= 1;
         }
         retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
@@ -821,11 +836,13 @@ relative_time::adjust(const exttm& tm) const
     }
     if (this->rt_field[RTF_MONTHS].is_set && this->is_absolute(RTF_MONTHS)) {
         if (this->rt_next
-            && this->rt_field[RTF_MONTHS].value <= tm.et_tm.tm_mon) {
+            && this->rt_field[RTF_MONTHS].value <= tm.et_tm.tm_mon)
+        {
             retval.et_tm.tm_year += 1;
         }
         if (this->rt_previous
-            && this->rt_field[RTF_MONTHS].value >= tm.et_tm.tm_mon) {
+            && this->rt_field[RTF_MONTHS].value >= tm.et_tm.tm_mon)
+        {
             retval.et_tm.tm_year -= 1;
         }
         retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
