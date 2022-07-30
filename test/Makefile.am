@@ -111,6 +111,7 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
+    $(top_builddir)/src/third-party/base64/lib/libbase64.a \
     $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(READLINE_LIBS) \
     $(CURSES_LIB) \

@@ -26,6 +26,7 @@
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
 #include "formats/logfmt/logfmt.parser.hh"
+#include "libbase64.h"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
@@ -429,7 +430,7 @@ sql_gzip(sqlite3_value* val)
         }
         case SQLITE_INTEGER:
         case SQLITE_FLOAT: {
-            auto buffer = sqlite3_value_text(val);
+            const auto* buffer = sqlite3_value_text(val);
             auto res
                 = lnav::gzip::compress(buffer, strlen((const char*) buffer));
 
@@ -443,6 +444,45 @@ sql_gzip(sqlite3_value* val)
     }
 
     return nonstd::nullopt;
+}
+
+static text_auto_buffer
+sql_base64_encode(sqlite3_value* value)
+{
+    switch (sqlite3_value_type(value)) {
+        case SQLITE_BLOB: {
+            const auto* blob
+                = static_cast<const char*>(sqlite3_value_blob(value));
+            auto blob_len = sqlite3_value_bytes(value);
+            auto buf = auto_buffer::alloc((blob_len * 5) / 3);
+            size_t outlen = buf.capacity();
+
+            base64_encode(blob, blob_len, buf.in(), &outlen, 0);
+            buf.resize(outlen);
+            return text_auto_buffer{std::move(buf)};
+        }
+        default: {
+            const auto* text = (const char*) sqlite3_value_text(value);
+            auto text_len = sqlite3_value_bytes(value);
+            auto buf = auto_buffer::alloc((text_len * 5) / 3);
+            size_t outlen = buf.capacity();
+
+            base64_encode(text, text_len, buf.in(), &outlen, 0);
+            buf.resize(outlen);
+            return text_auto_buffer{std::move(buf)};
+        }
+    }
+}
+
+static blob_auto_buffer
+sql_base64_decode(string_fragment str)
+{
+    auto buf = auto_buffer::alloc(str.length());
+    auto outlen = buf.capacity();
+    base64_decode(str.data(), str.length(), buf.in(), &outlen, 0);
+    buf.resize(outlen);
+
+    return blob_auto_buffer{std::move(buf)};
 }
 
 std::string
@@ -668,6 +708,24 @@ string_extension_functions(struct FuncDef** basic_funcs,
                 .with_parameter(
                     help_text("value", "The value to compress").one_or_more())
                 .with_tags({"string"})),
+
+        sqlite_func_adapter<decltype(&sql_base64_encode), sql_base64_encode>::
+            builder(
+                help_text("base64_encode", "Base-64 encode the given value")
+                    .sql_function()
+                    .with_parameter(help_text("value", "The value to encode"))
+                    .with_tags({"string"})
+                    .with_example({
+                        "To encode 'Hello, World!'",
+                        "SELECT base64_encode('Hello, World!')",
+                    })),
+
+        sqlite_func_adapter<decltype(&sql_base64_decode), sql_base64_decode>::
+            builder(
+                help_text("base64_encode", "Base-64 decode the given value")
+                    .sql_function()
+                    .with_parameter(help_text("value", "The value to decode"))
+                    .with_tags({"string"})),
 
         {nullptr},
     };
