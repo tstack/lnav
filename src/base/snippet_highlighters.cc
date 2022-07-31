@@ -180,7 +180,8 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                         lpc, VC_ROLE.value(role_t::VCR_RE_SPECIAL));
 
                     if ((line[lpc] == '*' || line[lpc] == '+')
-                        && check_re_prev(line, lpc)) {
+                        && check_re_prev(line, lpc))
+                    {
                         alb.overlay_attr_for_char(
                             lpc - 1, VC_ROLE.value(role_t::VCR_RE_REPEAT));
                     }
@@ -231,6 +232,11 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                     pcre_input pi(capture_start);
 
                     if (CAP_RE.match(pc, pi)) {
+                        alb.overlay_attr(
+                            line_range(
+                                capture_start.sf_begin + pc.all()->c_begin + 3,
+                                capture_start.sf_begin + pc.all()->c_end),
+                            VC_ROLE.value(role_t::VCR_IDENTIFIER));
                         alb.overlay_attr(line_range(lpc, lpc + 1),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     }

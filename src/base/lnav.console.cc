@@ -273,7 +273,8 @@ println(FILE* file, const attr_line_t& al)
 
         for (const auto& attr : al.get_attrs()) {
             if (!attr.sa_range.contains(start)
-                && !attr.sa_range.contains(point - 1)) {
+                && !attr.sa_range.contains(point - 1))
+            {
                 continue;
             }
 
@@ -339,6 +340,12 @@ println(FILE* file, const attr_line_t& al)
                     auto role = saw.get();
 
                     switch (role) {
+                        case role_t::VCR_TEXT:
+                        case role_t::VCR_IDENTIFIER:
+                            break;
+                        case role_t::VCR_SEARCH:
+                            line_style |= fmt::emphasis::reverse;
+                            break;
                         case role_t::VCR_ERROR:
                             line_style |= fmt::fg(fmt::terminal_color::red)
                                 | fmt::emphasis::bold;
@@ -410,6 +417,7 @@ println(FILE* file, const attr_line_t& al)
                             line_style |= fmt::bg(fmt::terminal_color::red);
                             break;
                         default:
+                            // log_debug("missing role handler %d", (int) role);
                             break;
                     }
                 }

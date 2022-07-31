@@ -398,6 +398,9 @@ public:
     static Result<pcrepp, compile_error> from_str(std::string pattern,
                                                   int options = 0);
 
+    static Result<std::shared_ptr<pcrepp>, compile_error> shared_from_str(
+        std::string pattern, int options = 0);
+
     pcrepp(pcre* code) : p_code(code), p_code_extra(pcre_free_study)
     {
         pcre_refcount(this->p_code, 1);
@@ -492,15 +495,9 @@ public:
         return *this;
     }
 
-    const std::string& get_pattern() const
-    {
-        return this->p_pattern;
-    }
+    const std::string& get_pattern() const { return this->p_pattern; }
 
-    bool empty() const
-    {
-        return this->p_pattern.empty();
-    }
+    bool empty() const { return this->p_pattern.empty(); }
 
     void clear()
     {
@@ -577,6 +574,13 @@ public:
     std::string replace(const char* str, const char* repl) const;
 
     size_t match_partial(pcre_input& pi) const;
+
+    pcre* release() {
+        auto retval = std::exchange(this->p_code, nullptr);
+        this->clear();
+
+        return retval;
+    }
 
 // #undef PCRE_STUDY_JIT_COMPILE
 #ifdef PCRE_STUDY_JIT_COMPILE

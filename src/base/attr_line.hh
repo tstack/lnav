@@ -109,18 +109,20 @@ struct line_range {
     {
         if (this->lr_start < rhs.lr_start) {
             return true;
-        } else if (this->lr_start > rhs.lr_start) {
+        }
+        if (this->lr_start > rhs.lr_start) {
             return false;
         }
 
+        // this->lr_start == rhs.lr_start
         if (this->lr_end == rhs.lr_end) {
             return false;
         }
 
         if (this->lr_end < rhs.lr_end) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     bool operator==(const struct line_range& rhs) const
@@ -382,13 +384,9 @@ class attr_line_t {
 public:
     attr_line_t() = default;
 
-    attr_line_t(std::string str) : al_string(std::move(str))
-    {
-    }
+    attr_line_t(std::string str) : al_string(std::move(str)) {}
 
-    attr_line_t(const char* str) : al_string(str)
-    {
-    }
+    attr_line_t(const char* str) : al_string(str) {}
 
     static inline attr_line_t from_ansi_str(const char* str)
     {
@@ -398,26 +396,14 @@ public:
     }
 
     /** @return The string itself. */
-    std::string& get_string()
-    {
-        return this->al_string;
-    }
+    std::string& get_string() { return this->al_string; }
 
-    const std::string& get_string() const
-    {
-        return this->al_string;
-    }
+    const std::string& get_string() const { return this->al_string; }
 
     /** @return The attributes for the string. */
-    string_attrs_t& get_attrs()
-    {
-        return this->al_attrs;
-    }
+    string_attrs_t& get_attrs() { return this->al_attrs; }
 
-    const string_attrs_t& get_attrs() const
-    {
-        return this->al_attrs;
-    }
+    const string_attrs_t& get_attrs() const { return this->al_attrs; }
 
     attr_line_t& with_string(const std::string& str)
     {
@@ -706,15 +692,9 @@ public:
         return find_string_attr(this->al_attrs, near);
     }
 
-    bool empty() const
-    {
-        return this->length() == 0;
-    }
+    bool empty() const { return this->length() == 0; }
 
-    bool blank() const
-    {
-        return is_blank(this->al_string);
-    }
+    bool blank() const { return is_blank(this->al_string); }
 
     /** Clear the string and the attributes for the string. */
     attr_line_t& clear()

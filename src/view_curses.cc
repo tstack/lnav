@@ -176,7 +176,8 @@ view_curses::mvwattrline(WINDOW* window,
                         exp_offset += offset;
                         utf_adjustments.emplace_back(lpc, offset);
                         for (; offset && (lpc + 1) < line.size();
-                             lpc++, offset++) {
+                             lpc++, offset++)
+                        {
                             expanded_line.push_back(line[lpc + 1]);
                         }
                     }
@@ -207,7 +208,7 @@ view_curses::mvwattrline(WINDOW* window,
 
     stable_sort(sa.begin(), sa.end());
     for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
-        struct line_range attr_range = iter->sa_range;
+        auto attr_range = iter->sa_range;
 
         require(attr_range.lr_start >= 0);
         require(attr_range.lr_end >= -1);
@@ -285,7 +286,7 @@ view_curses::mvwattrline(WINDOW* window,
             continue;
         }
 
-        if (attr_range.lr_end > attr_range.lr_start) {
+        if (attr_range.lr_start < attr_range.lr_end) {
             int awidth = attr_range.length();
             nonstd::optional<char> graphic;
 
@@ -349,7 +350,8 @@ view_curses::mvwattrline(WINDOW* window,
                         row_ch[lpc].attr |= A_ALTCHARSET;
                     }
                     if (row_ch[lpc].attr & A_REVERSE
-                        && attrs.ta_attrs & A_REVERSE) {
+                        && attrs.ta_attrs & A_REVERSE)
+                    {
                         clear_rev = true;
                     }
                     row_ch[lpc].attr |= attrs.ta_attrs;
@@ -950,8 +952,8 @@ view_colors::init_roles(const lnav_theme& lt,
         auto level_iter = lt.lt_level_styles.find(level);
 
         if (level_iter == lt.lt_level_styles.end()) {
-            this->vc_level_attrs[level] = this->to_attrs(
-                lt, lt.lt_style_text, lt.lt_style_text, reporter);
+            this->vc_level_attrs[level]
+                = std::make_pair(text_attrs{}, text_attrs{});
         } else {
             this->vc_level_attrs[level] = this->to_attrs(
                 lt, level_iter->second, lt.lt_style_text, reporter);

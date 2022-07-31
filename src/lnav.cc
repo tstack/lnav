@@ -430,29 +430,28 @@ static bool
 append_default_files()
 {
     bool retval = true;
-        auto cwd = ghc::filesystem::current_path();
+    auto cwd = ghc::filesystem::current_path();
 
-        for (const auto& path : DEFAULT_FILES) {
-            if (access(path.c_str(), R_OK) == 0) {
-                auto_mem<char> abspath;
+    for (const auto& path : DEFAULT_FILES) {
+        if (access(path.c_str(), R_OK) == 0) {
+            auto_mem<char> abspath;
 
-                auto full_path = cwd / path;
-                if ((abspath = realpath(full_path.c_str(), nullptr)) == nullptr)
-                {
-                    perror("Unable to resolve path");
-                } else {
-                    lnav_data.ld_active_files.fc_file_names[abspath.in()];
-                }
-            } else if (lnav::filesystem::stat_file(path).isOk()) {
-                lnav::console::print(
-                    stderr,
-                    lnav::console::user_message::error(
-                        attr_line_t("default syslog file is not readable -- ")
-                            .append(lnav::roles::file(cwd))
-                            .append(lnav::roles::file(path))));
-                retval = false;
+            auto full_path = cwd / path;
+            if ((abspath = realpath(full_path.c_str(), nullptr)) == nullptr) {
+                perror("Unable to resolve path");
+            } else {
+                lnav_data.ld_active_files.fc_file_names[abspath.in()];
             }
+        } else if (lnav::filesystem::stat_file(path).isOk()) {
+            lnav::console::print(
+                stderr,
+                lnav::console::user_message::error(
+                    attr_line_t("default syslog file is not readable -- ")
+                        .append(lnav::roles::file(cwd))
+                        .append(lnav::roles::file(path))));
+            retval = false;
         }
+    }
 
     return retval;
 }
@@ -973,7 +972,8 @@ gather_pipers()
          iter != lnav_data.ld_child_pollers.end();)
     {
         if (iter->poll(lnav_data.ld_active_files)
-            == child_poll_result_t::FINISHED) {
+            == child_poll_result_t::FINISHED)
+        {
             iter = lnav_data.ld_child_pollers.erase(iter);
         } else {
             ++iter;
@@ -1631,7 +1631,8 @@ UPDATE lnav_views_echo
                         case ln_mode_t::BUSY:
                             if (old_gen
                                 == lnav_data.ld_active_files
-                                       .fc_files_generation) {
+                                       .fc_files_generation)
+                            {
                                 next_rescan_time = next_status_update_time + 1s;
                             } else {
                                 next_rescan_time = next_status_update_time;
@@ -1674,7 +1675,8 @@ UPDATE lnav_views_echo
                     }
                 }
                 if (old_file_names_size
-                    != lnav_data.ld_active_files.fc_file_names.size()) {
+                    != lnav_data.ld_active_files.fc_file_names.size())
+                {
                     next_rescan_time = ui_clock::now();
                     next_rebuild_time = next_rescan_time;
                     next_status_update_time = next_rescan_time;
@@ -1786,7 +1788,8 @@ UPDATE lnav_views_echo
                         || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
                     for (size_t view_index = 0; view_index < LNV__MAX;
-                         view_index++) {
+                         view_index++)
+                    {
                         const auto& vs
                             = session_data.sd_view_states[view_index];
 
@@ -2657,11 +2660,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 retval = EXIT_FAILURE;
             }
         } else if (access(file_path.c_str(), R_OK) == -1) {
-            lnav::console::print(stderr,
-                                 lnav::console::user_message::error(
+            lnav::console::print(
+                stderr,
+                lnav::console::user_message::error(
                     attr_line_t("file exists, but is not readable: ")
                         .append(lnav::roles::file(file_path)))
-                                     .with_errno_reason());
+                    .with_errno_reason());
             retval = EXIT_FAILURE;
         } else if (S_ISFIFO(st.st_mode)) {
             auto_fd fifo_fd;
@@ -2731,7 +2735,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 continue;
             }
             for (auto line_iter = lf->begin(); line_iter != lf->end();
-                 ++line_iter) {
+                 ++line_iter)
+            {
                 if (line_iter->get_msg_level() != log_level_t::LEVEL_INVALID) {
                     continue;
                 }
@@ -2905,7 +2910,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 rescan_files(true);
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair :
-                         lnav_data.ld_active_files.fc_name_to_errors) {
+                         lnav_data.ld_active_files.fc_name_to_errors)
+                    {
                         lnav::console::print(
                             stderr,
                             lnav::console::user_message::error(
@@ -2926,6 +2932,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes_repeatedly();
+                wait_for_children();
 
                 log_tc->set_top(0_vl);
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
@@ -2947,9 +2954,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     .send_and_wait(
                         [](auto& clooper) { clooper.process_all(); });
                 rebuild_indexes_repeatedly();
+                wait_for_children();
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair :
-                         lnav_data.ld_active_files.fc_name_to_errors) {
+                         lnav_data.ld_active_files.fc_name_to_errors)
+                    {
                         fprintf(stderr,
                                 "error: unable to open file: %s -- %s\n",
                                 pair.first.c_str(),
@@ -3000,7 +3009,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                     vis_line_t vl;
                     for (vl = tc->get_top(); vl < tc->get_inner_height();
-                         ++vl, ++y) {
+                         ++vl, ++y)
+                    {
                         attr_line_t al;
 
                         while (los != nullptr
@@ -3063,7 +3073,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                          ghc::filesystem::perms::owner_read);
             auto stdin_size = ghc::filesystem::file_size(stdin_tmp_path);
             if (verbosity == verbosity_t::quiet
-                || stdin_size > MAX_STDIN_CAPTURE_SIZE) {
+                || stdin_size > MAX_STDIN_CAPTURE_SIZE)
+            {
                 log_info("not saving large stdin capture -- %s",
                          stdin_tmp_path.c_str());
                 ghc::filesystem::remove(stdin_tmp_path);

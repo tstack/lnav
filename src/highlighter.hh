@@ -33,6 +33,7 @@
 #define highlighter_hh
 
 #include <set>
+#include <utility>
 
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
@@ -40,35 +41,18 @@
 #include "view_curses.hh"
 
 struct highlighter {
-    highlighter() : h_code(nullptr), h_code_extra(nullptr) {}
+    highlighter() = default;
 
-    explicit highlighter(pcre* code) : h_code(code)
+    explicit highlighter(std::shared_ptr<pcrepp> regex)
+        : h_regex(std::move(regex))
     {
-        pcre_refcount(this->h_code, 1);
-        this->study();
     }
 
-    highlighter(const highlighter& other);
+    highlighter(const highlighter& other) = default;
 
     highlighter& operator=(const highlighter& other);
 
-    virtual ~highlighter()
-    {
-        if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
-            free(this->h_code);
-            this->h_code = nullptr;
-        }
-        free(this->h_code_extra);
-    }
-
-    void study();
-
-    highlighter& with_pattern(const std::string& pattern)
-    {
-        this->h_pattern = pattern;
-
-        return *this;
-    }
+    virtual ~highlighter() = default;
 
     highlighter& with_role(role_t role)
     {
@@ -117,12 +101,13 @@ struct highlighter {
 
     void annotate(attr_line_t& al, int start) const;
 
+    void annotate_capture(attr_line_t& al, const line_range& lr) const;
+
     std::string h_pattern;
     role_t h_role{role_t::VCR_NONE};
     styling::color_unit h_fg{styling::color_unit::make_empty()};
     styling::color_unit h_bg{styling::color_unit::make_empty()};
-    pcre* h_code;
-    pcre_extra* h_code_extra;
+    std::shared_ptr<pcrepp> h_regex;
     text_attrs h_attrs;
     std::set<text_format_t> h_text_formats;
     intern_string_t h_format_name;

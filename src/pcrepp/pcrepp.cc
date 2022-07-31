@@ -65,7 +65,8 @@ pcrepp::quote(const char* unquoted)
 
     for (int lpc = 0; unquoted[lpc]; lpc++) {
         if (isalnum(unquoted[lpc]) || unquoted[lpc] == '_'
-            || unquoted[lpc] & 0x80) {
+            || unquoted[lpc] & 0x80)
+        {
             retval.push_back(unquoted[lpc]);
         } else {
             retval.push_back('\\');
@@ -81,7 +82,7 @@ pcrepp::from_str(std::string pattern, int options)
 {
     const char* errptr;
     int eoff;
-    auto code = pcre_compile(
+    auto* code = pcre_compile(
         pattern.c_str(), options | PCRE_UTF8, &errptr, &eoff, nullptr);
 
     if (!code) {
@@ -89,6 +90,21 @@ pcrepp::from_str(std::string pattern, int options)
     }
 
     return Ok(pcrepp(std::move(pattern), code));
+}
+
+Result<std::shared_ptr<pcrepp>, pcrepp::compile_error>
+pcrepp::shared_from_str(std::string pattern, int options)
+{
+    const char* errptr;
+    int eoff;
+    auto* code = pcre_compile(
+        pattern.c_str(), options | PCRE_UTF8, &errptr, &eoff, nullptr);
+
+    if (!code) {
+        return Err(compile_error{errptr, eoff});
+    }
+
+    return Ok(std::make_shared<pcrepp>(std::move(pattern), code));
 }
 
 void
@@ -147,7 +163,8 @@ pcrepp::find_captures(const char* pattern)
                                 is_cap = true;
                             }
                             if (second == '<'
-                                && (isalpha(third) || third == '_')) {
+                                && (isalpha(third) || third == '_'))
+                            {
                                 is_cap = true;
                             }
                             if (second == 'P' && third == '<') {

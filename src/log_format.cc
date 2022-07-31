@@ -2279,11 +2279,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
     for (auto& hd_pair : this->elf_highlighter_patterns) {
         external_log_format::highlighter_def& hd = hd_pair.second;
-        const char* errptr;
         auto fg = styling::color_unit::make_empty();
         auto bg = styling::color_unit::make_empty();
         text_attrs attrs;
-        int eoff;
 
         if (!hd.hd_color.pp_value.empty()) {
             fg = styling::color_unit::from_str(hd.hd_color.pp_value)
@@ -2330,18 +2328,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (hd.hd_pattern != nullptr) {
-            auto* code = pcre_compile(hd.hd_pattern->get_pattern().c_str(),
-                                      PCRE_CASELESS | PCRE_UTF8,
-                                      &errptr,
-                                      &eoff,
-                                      nullptr);
+            auto regex = pcrepp::shared_from_str(hd.hd_pattern->get_pattern(),
+                                                 PCRE_CASELESS | PCRE_UTF8);
 
-            if (code == nullptr) {
+            if (regex.isErr()) {
                 log_error("unable to recompile highlighter pattern");
             } else {
-                this->lf_highlighters.emplace_back(code);
+                this->lf_highlighters.emplace_back(regex.unwrap());
                 this->lf_highlighters.back()
-                    .with_pattern(hd.hd_pattern->get_pattern())
                     .with_format_name(this->elf_name)
                     .with_color(fg, bg)
                     .with_attrs(attrs);

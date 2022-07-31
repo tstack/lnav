@@ -1,6 +1,6 @@
                  SELECT foo(bar())
      sql_keyword ------
-       sql_ident        ---
         sql_func        ---------
-       sql_ident            ---
+       sql_ident        ---
         sql_func            ----
+       sql_ident            ---

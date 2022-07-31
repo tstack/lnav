@@ -175,22 +175,15 @@ textview_curses::reload_config(error_reporter& reporter)
                 continue;
             }
 
-            const char* errptr;
-            pcre* code;
-            int eoff;
+            auto regex = pcrepp::shared_from_str(hl_pair.second.hc_regex);
 
-            if ((code = pcre_compile(hl_pair.second.hc_regex.c_str(),
-                                     PCRE_CASELESS | PCRE_UTF8,
-                                     &errptr,
-                                     &eoff,
-                                     nullptr))
-                == nullptr)
-            {
+            if (regex.isErr()) {
+                auto ce = regex.unwrapErr();
                 reporter(&hl_pair.second.hc_regex,
                          lnav::console::user_message::error(fmt::format(
                              FMT_STRING("invalid highlight regex: {} at {}"),
-                             errptr,
-                             eoff)));
+                             ce.ce_msg,
+                             ce.ce_offset)));
                 continue;
             }
 
@@ -235,8 +228,7 @@ textview_curses::reload_config(error_reporter& reporter)
                 attrs.ta_attrs |= A_UNDERLINE;
             }
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
-                = highlighter(code)
-                      .with_pattern(hl_pair.second.hc_regex)
+                = highlighter(regex.unwrap())
                       .with_attrs(attrs)
                       .with_color(fg, bg);
         }
@@ -295,7 +287,8 @@ void
 textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 {
     if (this->tc_follow_deadline.tv_sec
-        && this->tc_follow_top == this->get_top()) {
+        && this->tc_follow_top == this->get_top())
+    {
         struct timeval now;
 
         gettimeofday(&now, nullptr);
@@ -391,7 +384,8 @@ textview_curses::handle_mouse(mouse_event& me)
                 mouse_line = this->get_top();
             }
             if (me.me_y >= height
-                && this->get_top() < this->get_top_for_last_row()) {
+                && this->get_top() < this->get_top_for_last_row())
+            {
                 this->shift_top(1_vl);
                 me.me_y = height;
                 mouse_line = this->get_bottom();
@@ -563,13 +557,11 @@ void
 textview_curses::execute_search(const std::string& regex_orig)
 {
     std::string regex = regex_orig;
-    pcre* code = nullptr;
+    std::shared_ptr<pcrepp> code;
 
     if ((this->tc_search_child == nullptr)
-        || (regex != this->tc_current_search)) {
-        const char* errptr;
-        int eoff;
-
+        || (regex != this->tc_current_search))
+    {
         this->match_reset();
 
         this->tc_search_child.reset();
@@ -578,26 +570,28 @@ textview_curses::execute_search(const std::string& regex_orig)
         log_debug("start search for: '%s'", regex.c_str());
 
         if (regex.empty()) {
-        } else if ((code = pcre_compile(regex.c_str(),
-                                        PCRE_CASELESS | PCRE_UTF8,
-                                        &errptr,
-                                        &eoff,
-                                        nullptr))
-                   == nullptr)
-        {
-            auto errmsg = std::string(errptr);
+        } else {
+            auto compile_res
+                = pcrepp::shared_from_str(regex, PCRE_CASELESS | PCRE_UTF8);
 
-            regex = pcrepp::quote(regex);
+            if (compile_res.isErr()) {
+                auto ce = compile_res.unwrapErr();
+                regex = pcrepp::quote(regex);
 
-            log_info("invalid search regex, using quoted: %s", regex.c_str());
-            if ((code = pcre_compile(regex.c_str(),
-                                     PCRE_CASELESS | PCRE_UTF8,
-                                     &errptr,
-                                     &eoff,
-                                     nullptr))
-                == nullptr)
-            {
-                log_error("Unable to compile quoted regex: %s", regex.c_str());
+                log_info("invalid search regex (%s), using quoted: %s",
+                         ce.ce_msg,
+                         regex.c_str());
+
+                auto compile_quote_res
+                    = pcrepp::shared_from_str(regex, PCRE_CASELESS | PCRE_UTF8);
+                if (compile_quote_res.isErr()) {
+                    log_error("Unable to compile quoted regex: %s",
+                              regex.c_str());
+                } else {
+                    code = compile_quote_res.unwrap();
+                }
+            } else {
+                code = compile_res.unwrap();
             }
         }
 
@@ -606,11 +600,11 @@ textview_curses::execute_search(const std::string& regex_orig)
 
             hl.with_role(role_t::VCR_SEARCH);
 
-            highlight_map_t& hm = this->get_highlights();
+            auto& hm = this->get_highlights();
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
             auto gp = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
-                code, *this);
+                code->p_code, *this);
 
             gp->set_sink(this);
             auto top = this->get_top();
@@ -632,7 +626,7 @@ textview_curses::execute_search(const std::string& regex_orig)
                 this->tc_sub_source->get_grepper() | [this, code](auto pair) {
                     auto sgp
                         = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
-                            code, *pair.first);
+                            code->p_code, *pair.first);
 
                     sgp->set_sink(pair.second);
                     sgp->queue_request(0_vl);
@@ -661,45 +655,16 @@ textview_curses::horiz_shift(vis_line_t start,
 
     for (; start < end; ++start) {
         std::vector<attr_line_t> rows(1);
-        int off;
-
         this->listview_value_for_rows(*this, start, rows);
 
-        const std::string& str = rows[0].get_string();
-        for (off = 0; off < (int) str.size();) {
-            int rc, matches[128];
-
-            rc = pcre_exec(hl.h_code,
-                           hl.h_code_extra,
-                           str.c_str(),
-                           str.size(),
-                           off,
-                           0,
-                           matches,
-                           128);
-            if (rc > 0) {
-                struct line_range lr;
-
-                if (rc == 2) {
-                    lr.lr_start = matches[2];
-                    lr.lr_end = matches[3];
-                } else {
-                    lr.lr_start = matches[0];
-                    lr.lr_end = matches[1];
-                }
-
-                if (lr.lr_start < off_start) {
-                    prev_hit = std::max(prev_hit, lr.lr_start);
-                } else if (lr.lr_start > off_start) {
-                    next_hit = std::min(next_hit, lr.lr_start);
-                }
-                if (lr.lr_end > lr.lr_start) {
-                    off = matches[1];
-                } else {
-                    off += 1;
-                }
-            } else {
-                off = str.size();
+        const auto& str = rows[0].get_string();
+        pcre_context_static<60> pc;
+        pcre_input pi(str);
+        while (hl.h_regex->match(pc, pi)) {
+            if (pc.all()->c_begin < off_start) {
+                prev_hit = std::max(prev_hit, pc.all()->c_begin);
+            } else if (pc.all()->c_begin > off_start) {
+                next_hit = std::min(next_hit, pc.all()->c_begin);
             }
         }
     }

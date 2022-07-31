@@ -1,9 +1,9 @@
                  SELECT instr(lower(abc), '123')
      sql_keyword ------
-       sql_ident        -----
         sql_func        -----------------------
-       sql_ident              -----
+       sql_ident        -----
         sql_func              ---------
+       sql_ident              -----
        sql_ident                    ---
        sql_comma                        -
       sql_string                          -----

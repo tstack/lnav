@@ -406,7 +406,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
 
         if (!line_value.lv_meta.lvm_identifier
-            || !line_value.lv_origin.is_valid()) {
+            || !line_value.lv_origin.is_valid())
+        {
             continue;
         }
 
@@ -455,7 +456,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
             if (binary_search(std::begin(bv_search),
                               std::end(bv_search),
-                              vis_line_t(row))) {
+                              vis_line_t(row)))
+            {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
                 value_out.emplace_back(lr,
@@ -693,7 +695,8 @@ logfile_sub_source::rebuild_index(
                                   lf->get_filename().c_str(),
                                   lf->size());
                         if (!this->lss_index.empty()
-                            && lf->size() > ld.ld_lines_indexed) {
+                            && lf->size() > ld.ld_lines_indexed)
+                        {
                             logline& new_file_line = (*lf)[ld.ld_lines_indexed];
                             content_line_t cl = this->lss_index.back();
                             logline* last_indexed_line = this->find_line(cl);
@@ -716,12 +719,14 @@ logfile_sub_source::rebuild_index(
                                         : last_indexed_line
                                               ->get_time_in_millis());
                                 if (retval
-                                    <= rebuild_result::rr_partial_rebuild) {
+                                    <= rebuild_result::rr_partial_rebuild)
+                                {
                                     retval = rebuild_result::rr_partial_rebuild;
                                     if (!lowest_tv) {
                                         lowest_tv = new_file_line.get_timeval();
                                     } else if (new_file_line.get_timeval()
-                                               < lowest_tv.value()) {
+                                               < lowest_tv.value())
+                                    {
                                         lowest_tv = new_file_line.get_timeval();
                                     }
                                 }
@@ -756,7 +761,8 @@ logfile_sub_source::rebuild_index(
 
     if (force) {
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-             iter++) {
+             iter++)
+        {
             (*iter)->ld_lines_indexed = 0;
         }
 
@@ -772,7 +778,8 @@ logfile_sub_source::rebuild_index(
         log_debug("partial rebuild with lowest time: %ld",
                   lowest_tv.value().tv_sec);
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-             iter++) {
+             iter++)
+        {
             logfile_data& ld = *(*iter);
             auto* lf = ld.get_file_ptr();
 
@@ -860,7 +867,8 @@ logfile_sub_source::rebuild_index(
                 }
 
                 for (size_t line_index = 0; line_index < lf->size();
-                     line_index++) {
+                     line_index++)
+                {
                     if ((*lf)[line_index].is_ignored()) {
                         continue;
                     }
@@ -888,7 +896,8 @@ logfile_sub_source::rebuild_index(
                 file_count);
 
             for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-                 iter++) {
+                 iter++)
+            {
                 auto* ld = iter->get();
                 auto* lf = ld->get_file_ptr();
                 if (lf == nullptr) {
@@ -934,7 +943,8 @@ logfile_sub_source::rebuild_index(
         }
 
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-             iter++) {
+             iter++)
+        {
             auto* lf = (*iter)->get_file_ptr();
 
             if (lf == nullptr) {

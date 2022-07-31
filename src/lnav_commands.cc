@@ -58,7 +58,6 @@
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
 #include "lnav.indexing.hh"
-#include "session.export.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -70,11 +69,12 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "relative_time.hh"
+#include "scn/scn.h"
 #include "service_tags.hh"
+#include "session.export.hh"
 #include "session_data.hh"
 #include "shlex.hh"
 #include "spectro_impls.hh"
-#include "scn/scn.h"
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
@@ -128,7 +128,8 @@ remaining_args_frag(const std::string& cmdline,
 
     require(index_in_cmdline != std::string::npos);
 
-    return string_fragment::from_str_range(cmdline, index_in_cmdline, cmdline.size());
+    return string_fragment::from_str_range(
+        cmdline, index_in_cmdline, cmdline.size());
 }
 
 static nonstd::optional<std::string>
@@ -389,7 +390,8 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             dst_vl = vl;
 
             if (!ec.ec_dry_run && !rt.is_absolute()
-                && lnav_data.ld_rl_view != nullptr) {
+                && lnav_data.ld_rl_view != nullptr)
+            {
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                     r, R, "to move forward/backward the same amount of time"));
             }
@@ -839,7 +841,8 @@ json_write_row(yajl_gen handle, int row)
                             = (const unsigned char*) dls.dls_rows[row][col];
                         switch (yajl_parse(parse_handle.in(),
                                            json_in,
-                                           strlen((const char*) json_in))) {
+                                           strlen((const char*) json_in)))
+                        {
                             case yajl_status_error:
                             case yajl_status_client_canceled: {
                                 err = yajl_get_error(
@@ -1160,7 +1163,8 @@ com_save_to(exec_context& ec,
 
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
-        if (lnav_data.ld_flags & LNF_HEADLESS && tc->get_inner_height() > 0_vl) {
+        if (lnav_data.ld_flags & LNF_HEADLESS && tc->get_inner_height() > 0_vl)
+        {
             bottom = tc->get_inner_height() - 1_vl;
         }
         auto y = 0_vl;
@@ -1204,7 +1208,8 @@ com_save_to(exec_context& ec,
                  ++row_iter)
             {
                 if (ec.ec_dry_run
-                    && distance(dls.dls_rows.begin(), row_iter) > 10) {
+                    && distance(dls.dls_rows.begin(), row_iter) > 10)
+                {
                     break;
                 }
 
@@ -1422,7 +1427,8 @@ com_pipe_to(exec_context& ec,
                 }
                 auto iter = ldh.ldh_parser->dp_pairs.begin();
                 for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size();
-                     lpc++, ++iter) {
+                     lpc++, ++iter)
+                {
                     std::string colname = ldh.ldh_parser->get_element_string(
                         iter->e_sub_elements->front());
                     colname = ldh.ldh_namer->add_column(colname).to_string();
@@ -1464,7 +1470,8 @@ com_pipe_to(exec_context& ec,
                     lf->read_full_message(lf->message_start(lf->begin() + cl),
                                           sbr);
                     if (write(in_pipe.write_end(), sbr.get_data(), sbr.length())
-                        == -1) {
+                        == -1)
+                    {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
@@ -1472,7 +1479,8 @@ com_pipe_to(exec_context& ec,
                 } else {
                     tc->grep_value_for_line(tc->get_top(), line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size())
-                        == -1) {
+                        == -1)
+                    {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
@@ -1482,7 +1490,8 @@ com_pipe_to(exec_context& ec,
                 for (iter = bv.begin(); iter != bv.end(); iter++) {
                     tc->grep_value_for_line(*iter, line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size())
-                        == -1) {
+                        == -1)
+                    {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
@@ -1549,12 +1558,14 @@ com_redirect_to(exec_context& ec,
         auto out = sysclip::open(sysclip::type_t::GENERAL);
         if (out.isErr()) {
             alerter::singleton().chime();
-            return ec.make_error(
-                "Unable to copy to clipboard: {}", out.unwrapErr());
+            return ec.make_error("Unable to copy to clipboard: {}",
+                                 out.unwrapErr());
         }
 
         auto holder = out.unwrap();
-        ec.set_output(split_args[0], holder.release(), holder.get_free_func<int(*)(FILE*)>());
+        ec.set_output(split_args[0],
+                      holder.release(),
+                      holder.get_free_func<int (*)(FILE*)>());
     } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else {
@@ -1579,62 +1590,57 @@ com_highlight(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("filter");
     } else if (args.size() > 1) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
-        const char* errptr;
-        auto_mem<pcre> code;
-        int eoff;
-
         auto re_frag = remaining_args_frag(cmdline, args);
         args[1] = re_frag.to_string();
         if (hm.find({highlight_source_t::INTERACTIVE, args[1]}) != hm.end()) {
             return ec.make_error("highlight already exists -- {}", args[1]);
-        } else if ((code = pcre_compile(args[1].c_str(),
-                                        PCRE_CASELESS | PCRE_UTF8,
-                                        &errptr,
-                                        &eoff,
-                                        nullptr))
-                   == nullptr)
-        {
+        }
+
+        auto compile_res
+            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
             auto um = lnav::console::user_message::error(
                           "invalid regular expression")
-                          .with_reason(errptr)
+                          .with_reason(ce.ce_msg)
                           .with_snippets(ec.ec_source);
             um.um_snippets.back()
                 .s_content.append("\n")
-                .append(re_frag.sf_begin + eoff, ' ')
+                .append(re_frag.sf_begin + ce.ce_offset, ' ')
                 .append("^ "_comment)
-                .append(lnav::roles::comment(errptr));
+                .append(lnav::roles::comment(ce.ce_msg));
             return Err(um);
-        } else {
-            highlighter hl(code.release());
-            auto hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
-
-            if (ec.ec_dry_run) {
-                hl_attrs.ta_attrs |= A_BLINK;
-            }
-
-            hl.with_attrs(hl_attrs);
-
-            if (ec.ec_dry_run) {
-                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
-
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Matches are highlighted in the view");
-
-                retval = "";
-            } else {
-                hm[{highlight_source_t::INTERACTIVE, args[1]}] = hl;
-
-                if (lnav_data.ld_rl_view != nullptr) {
-                    lnav_data.ld_rl_view->add_possibility(
-                        ln_mode_t::COMMAND, "highlight", args[1]);
-                }
-
-                retval = "info: highlight pattern now active";
-            }
-            tc->reload_data();
         }
+        highlighter hl(compile_res.unwrap());
+        auto hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
+
+        if (ec.ec_dry_run) {
+            hl_attrs.ta_attrs |= A_BLINK;
+        }
+
+        hl.with_attrs(hl_attrs);
+
+        if (ec.ec_dry_run) {
+            hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
+
+            lnav_data.ld_preview_status_source.get_description().set_value(
+                "Matches are highlighted in the view");
+
+            retval = "";
+        } else {
+            hm[{highlight_source_t::INTERACTIVE, args[1]}] = hl;
+
+            if (lnav_data.ld_rl_view != nullptr) {
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::COMMAND, "highlight", args[1]);
+            }
+
+            retval = "info: highlight pattern now active";
+        }
+        tc->reload_data();
     } else {
         return ec.make_error("expecting a regular expression to highlight");
     }
@@ -1714,38 +1720,36 @@ com_filter(exec_context& ec,
         return ec.make_error("{} view does not support filtering",
                              lnav_view_strings[tc - lnav_data.ld_views]);
     } else if (args.size() > 1) {
-        text_sub_source* tss = tc->get_sub_source();
-        filter_stack& fs = tss->get_filters();
-        const char* errptr;
-        auto_mem<pcre> code;
-        int eoff;
-
+        auto* tss = tc->get_sub_source();
+        auto& fs = tss->get_filters();
         auto re_frag = remaining_args_frag(cmdline, args);
         args[1] = re_frag.to_string();
-        if (fs.get_filter(args[1]) != NULL) {
+        if (fs.get_filter(args[1]) != nullptr) {
             return com_enable_filter(ec, cmdline, args);
-        } else if (fs.full()) {
+        }
+
+        if (fs.full()) {
             return ec.make_error(
                 "filter limit reached, try combining "
                 "filters with a pipe symbol (e.g. foo|bar)");
-        } else if ((code = pcre_compile(args[1].c_str(),
-                                        PCRE_CASELESS | PCRE_UTF8,
-                                        &errptr,
-                                        &eoff,
-                                        nullptr))
-                   == NULL)
-        {
+        }
+
+        auto compile_res = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
             auto um = lnav::console::user_message::error(
                           "invalid regular expression")
-                          .with_reason(errptr)
+                          .with_reason(ce.ce_msg)
                           .with_snippets(ec.ec_source);
             um.um_snippets.back()
                 .s_content.append("\n")
-                .append(re_frag.sf_begin + eoff, ' ')
+                .append(re_frag.sf_begin + ce.ce_offset, ' ')
                 .append("^ "_comment)
-                .append(lnav::roles::comment(errptr));
+                .append(lnav::roles::comment(ce.ce_msg));
             return Err(um);
-        } else if (ec.ec_dry_run) {
+        }
+        if (ec.ec_dry_run) {
             if (args[0] == "filter-in" && !fs.empty()) {
                 lnav_data.ld_preview_status_source.get_description().set_value(
                     "Match preview for :filter-in only works if there are no "
@@ -1753,10 +1757,9 @@ com_filter(exec_context& ec,
                 retval = "";
             } else {
                 auto& hm = tc->get_highlights();
-                highlighter hl(code.release());
-                auto role = (args[0] == "filter-out") ?
-                    role_t::VCR_DIFF_DELETE :
-                role_t::VCR_DIFF_ADD;
+                highlighter hl(compile_res.unwrap());
+                auto role = (args[0] == "filter-out") ? role_t::VCR_DIFF_DELETE
+                                                      : role_t::VCR_DIFF_ADD;
                 hl.with_attrs(text_attrs{A_BLINK});
 
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
@@ -1777,7 +1780,7 @@ com_filter(exec_context& ec,
                 return ec.make_error("too many filters");
             }
             auto pf = std::make_shared<pcre_filter>(
-                lt, args[1], *filter_index, code.release());
+                lt, args[1], *filter_index, compile_res.unwrap()->release());
 
             log_debug("%s [%d] %s",
                       args[0].c_str(),
@@ -2154,7 +2157,7 @@ com_create_search_table(exec_context& ec,
         }
 
         auto re_res
-            = pcrepp::from_str(regex, log_search_table::pattern_options());
+            = pcrepp::shared_from_str(regex, log_search_table::pattern_options());
 
         if (re_res.isErr()) {
             auto re_err = re_res.unwrapErr();
@@ -2174,11 +2177,11 @@ com_create_search_table(exec_context& ec,
 
         auto re = re_res.unwrap();
         auto tab_name = intern_string::lookup(args[1]);
-        auto lst = std::make_shared<log_search_table>(re, tab_name);
+        auto lst = std::make_shared<log_search_table>(*re, tab_name);
         if (ec.ec_dry_run) {
             auto* tc = &lnav_data.ld_views[LNV_LOG];
             auto& hm = tc->get_highlights();
-            highlighter hl(re.p_code);
+            highlighter hl(re);
 
             hl.with_role(role_t::VCR_INFO);
             hl.with_attrs(text_attrs{A_BLINK});
@@ -2377,7 +2380,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         auto file_iter = lnav_data.ld_active_files.fc_files.begin();
         for (; file_iter != lnav_data.ld_active_files.fc_files.end();
-             ++file_iter) {
+             ++file_iter)
+        {
             auto lf = *file_iter;
 
             if (lf->get_filename() == fn) {
@@ -2553,7 +2557,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     }
                     if (gl->gl_pathc > 10) {
                         al.append(" ... ")
-                            .append(lnav::roles::number(std::to_string(gl->gl_pathc - 10)))
+                            .append(lnav::roles::number(
+                                std::to_string(gl->gl_pathc - 10)))
                             .append(" files not shown ...");
                     }
                     lnav_data.ld_preview_status_source.get_description()
@@ -3269,7 +3274,8 @@ com_summarize(exec_context& ec,
 
         query = "SELECT";
         for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter) {
+             ++iter)
+        {
             if (iter != other_columns.begin()) {
                 query += ",";
             }
@@ -3312,7 +3318,8 @@ com_summarize(exec_context& ec,
                 "startswith(logline.log_part, '.') = 0) ");
 
         for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter) {
+             ++iter)
+        {
             if (iter == other_columns.begin()) {
                 query += " GROUP BY ";
             } else {
@@ -3323,7 +3330,8 @@ com_summarize(exec_context& ec,
         }
 
         for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter) {
+             ++iter)
+        {
             if (iter == other_columns.begin()) {
                 query += " ORDER BY ";
             } else {
@@ -3502,7 +3510,8 @@ com_zoom_to(exec_context& ec,
 
         for (int lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc].c_str())
-                == 0) {
+                == 0)
+            {
                 auto& ss = *lnav_data.ld_spectro_source;
                 struct timeval old_time;
 
@@ -3606,8 +3615,8 @@ com_save_session(exec_context& ec,
 
 static Result<std::string, lnav::console::user_message>
 com_export_session_to(exec_context& ec,
-                 std::string cmdline,
-                 std::vector<std::string>& args)
+                      std::string cmdline,
+                      std::vector<std::string>& args)
 {
     std::string retval;
 
@@ -3631,9 +3640,10 @@ com_export_session_to(exec_context& ec,
                 tcsetattr(1, TCSANOW, &curr_termios);
                 setvbuf(stdout, nullptr, _IONBF, 0);
                 to_term = true;
-                fprintf(outfile,
-                        "\n---------------- Press any key to exit lo-fi display "
-                        "----------------\n\n");
+                fprintf(
+                    outfile,
+                    "\n---------------- Press any key to exit lo-fi display "
+                    "----------------\n\n");
             } else {
                 outfile = auto_mem<FILE>::leak(ec_out.value());
             }
@@ -3667,7 +3677,8 @@ com_export_session_to(exec_context& ec,
             return Err(export_res.unwrapErr());
         }
 
-        retval = fmt::format(FMT_STRING("info: wrote session commands to -- {}"), fn);
+        retval = fmt::format(
+            FMT_STRING("info: wrote session commands to -- {}"), fn);
     }
 
     return Ok(retval);
@@ -4215,9 +4226,11 @@ com_config(exec_context& ec,
                     retval = fmt::format(
                         FMT_STRING("{} = {}"), option, trim(old_value));
                 }
-            } else if (lnav_data.ld_flags & LNF_SECURE_MODE &&
-                       !startswith(option, "/ui/")) {
-                return ec.make_error(":config {} -- unavailable in secure mode", option);
+            } else if (lnav_data.ld_flags & LNF_SECURE_MODE
+                       && !startswith(option, "/ui/"))
+            {
+                return ec.make_error(":config {} -- unavailable in secure mode",
+                                     option);
             } else {
                 auto value = remaining_args(cmdline, args, 2);
                 bool changed = false;
@@ -5482,9 +5495,8 @@ readline_context::command_t STD_COMMANDS[] = {
              "Variable substitution is performed on the message.  Use a "
              "backslash to escape any special characters, like '$'")
          .with_parameter(
-             help_text(
-                 "-n",
-                 "Do not print a line-feed at the end of the output")
+             help_text("-n",
+                       "Do not print a line-feed at the end of the output")
                  .optional())
          .with_parameter(help_text("msg", "The message to display"))
          .with_tags({"io", "scripting"})

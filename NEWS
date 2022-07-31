@@ -69,6 +69,14 @@ lnav v0.11.0:
      * Added the "echoln()" SQL function that behaves similarly to the
        ":echo" command, writing its first argument to the current
        output.
+     * Added "encode()" and "decode()" SQL functions for transcoding
+       blobs or text values using one of the following algorithms:
+       base64, hex, or uri.
+     * In regular expressions, capture group names are now semantically
+       highlighted (e.g. in the capture, (?<name>\w+), "name" would
+       have a unique color).  Also, operations or previews that use
+       that regular expression will highlight the matched data with
+       the same color.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that

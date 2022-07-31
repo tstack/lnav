@@ -345,8 +345,7 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
         = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
 
     if (selected) {
-        value_out.emplace_back(line_range{0, 1},
-                               VC_GRAPHIC.value(ACS_RARROW));
+        value_out.emplace_back(line_range{0, 1}, VC_GRAPHIC.value(ACS_RARROW));
     }
 
     chtype enabled = tf->is_enabled() ? ACS_DIAMOND : ' ';
@@ -422,22 +421,16 @@ filter_sub_source::rl_change(readline_curses* rc)
         case filter_lang_t::NONE:
             break;
         case filter_lang_t::REGEX: {
-            auto_mem<pcre> code;
-            const char* errptr;
-            int eoff;
+            auto regex_res
+                = pcrepp::shared_from_str(new_value, PCRE_CASELESS | PCRE_UTF8);
 
-            if ((code = pcre_compile(new_value.c_str(),
-                                     PCRE_CASELESS | PCRE_UTF8,
-                                     &errptr,
-                                     &eoff,
-                                     nullptr))
-                == nullptr)
-            {
+            if (regex_res.isErr()) {
+                auto pe = regex_res.unwrapErr();
                 lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                    "error: %s", errptr);
+                    "error: %s", pe.ce_msg);
             } else {
                 auto& hm = top_view->get_highlights();
-                highlighter hl(code.release());
+                highlighter hl(regex_res.unwrap());
                 auto role = tf->get_type() == text_filter::EXCLUDE
                     ? role_t::VCR_DIFF_DELETE
                     : role_t::VCR_DIFF_ADD;

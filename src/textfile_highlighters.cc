@@ -33,24 +33,21 @@
 
 #include "config.h"
 
-static pcre*
+static std::shared_ptr<pcrepp>
 xpcre_compile(const char* pattern, int options = 0)
 {
-    const char* errptr;
-    pcre* retval;
-    int eoff;
+    auto compile_res = pcrepp::shared_from_str(pattern, options);
 
-    if ((retval
-         = pcre_compile(pattern, options | PCRE_UTF8, &errptr, &eoff, nullptr))
-        == nullptr)
-    {
+    if (compile_res.isErr()) {
+        auto ce = compile_res.unwrapErr();
+
         fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
-        fprintf(stderr, "internal error: %s\n", errptr);
+        fprintf(stderr, "internal error: %s\n", ce.ce_msg);
 
         exit(1);
     }
 
-    return retval;
+    return compile_res.unwrap();
 }
 
 void
@@ -406,8 +403,7 @@ setup_highlights(highlight_map_t& hm)
         = highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"))
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "diffp"}]
-        = highlighter(xpcre_compile("^\\+.*"))
-              .with_role(role_t::VCR_DIFF_ADD);
+        = highlighter(xpcre_compile("^\\+.*")).with_role(role_t::VCR_DIFF_ADD);
     hm[{highlight_source_t::INTERNAL, "diffm"}]
         = highlighter(xpcre_compile("^(?:--- .*|-$|-[^-].*)"))
               .with_role(role_t::VCR_DIFF_DELETE);
