@@ -437,6 +437,7 @@ libdiag_a_SOURCES = \
 	shlex.cc \
 	spectro_impls.cc \
 	spectro_source.cc \
+	sqlitepp.cc \
 	sqlite-extension-func.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \

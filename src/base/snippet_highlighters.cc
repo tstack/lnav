@@ -39,6 +39,10 @@ namespace snippets {
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
 {
+    if (index == 0) {
+        return true;
+    }
+
     if (is_lit && str[index - 1] == '\\') {
         return true;
     }

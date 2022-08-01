@@ -2166,10 +2166,12 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 max_name_width = std::max(max_name_width, pat.p_name.size());
             }
             for (const auto& line_frag : sample_lines) {
-                auto src_line = line_frag.to_string();
-                if (!endswith(src_line, "\n")) {
+                auto src_line = attr_line_t(line_frag.to_string());
+                if (!line_frag.endswith("\n")) {
                     src_line.append("\n");
                 }
+                src_line.with_attr_for_all(
+                    VC_ROLE.value(role_t::VCR_QUOTED_CODE));
                 notes.append("   ").append(src_line);
                 for (auto& part_pair : partial_indexes) {
                     if (part_pair.first >= 0

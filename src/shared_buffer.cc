@@ -42,7 +42,7 @@
 static const bool DEBUG_TRACE = false;
 
 void
-shared_buffer_ref::share(shared_buffer& sb, char* data, size_t len)
+shared_buffer_ref::share(shared_buffer& sb, const char* data, size_t len)
 {
 #ifdef HAVE_EXECINFO_H
     if (DEBUG_TRACE) {
@@ -77,7 +77,8 @@ shared_buffer_ref::subset(shared_buffer_ref& other, off_t offset, size_t len)
                 return false;
             }
 
-            memcpy(this->sb_data, &other.sb_data[offset], len);
+            memcpy(
+                const_cast<char*>(this->sb_data), &other.sb_data[offset], len);
         } else {
             this->sb_owner->add_ref(*this);
             this->sb_data = &other.sb_data[offset];
@@ -134,7 +135,7 @@ shared_buffer_ref::disown()
 {
     if (this->sb_owner == nullptr) {
         if (this->sb_data != nullptr) {
-            free(this->sb_data);
+            free(const_cast<char*>(this->sb_data));
         }
     } else {
         this->sb_owner->sb_refs.erase(find(this->sb_owner->sb_refs.begin(),
@@ -158,7 +159,8 @@ shared_buffer_ref::copy_ref(const shared_buffer_ref& other)
     } else {
         this->sb_owner = nullptr;
         this->sb_data = (char*) malloc(other.sb_length);
-        memcpy(this->sb_data, other.sb_data, other.sb_length);
+        memcpy(
+            const_cast<char*>(this->sb_data), other.sb_data, other.sb_length);
         this->sb_length = other.sb_length;
     }
 }

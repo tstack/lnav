@@ -54,50 +54,6 @@ namespace fs = ghc::filesystem;
 
 namespace archive_manager {
 
-class archive_lock {
-public:
-    class guard {
-    public:
-        explicit guard(archive_lock& arc_lock) : g_lock(arc_lock)
-        {
-            this->g_lock.lock();
-        };
-
-        ~guard()
-        {
-            this->g_lock.unlock();
-        };
-
-    private:
-        archive_lock& g_lock;
-    };
-
-    void lock() const
-    {
-        lockf(this->lh_fd, F_LOCK, 0);
-    };
-
-    void unlock() const
-    {
-        lockf(this->lh_fd, F_ULOCK, 0);
-    };
-
-    explicit archive_lock(const fs::path& archive_path)
-    {
-        auto lock_path = archive_path;
-
-        lock_path += ".lck";
-        auto open_res = lnav::filesystem::create_file(lock_path, O_RDWR, 0600);
-        if (open_res.isErr()) {
-            throw std::runtime_error(open_res.unwrapErr());
-        }
-        this->lh_fd = open_res.unwrap();
-        this->lh_fd.close_on_exec();
-    };
-
-    auto_fd lh_fd;
-};
-
 #if HAVE_ARCHIVE_H
 /**
  * Enables a subset of the supported archive formats to speed up detection,
@@ -275,8 +231,8 @@ extract(const std::string& filename, const extract_cb& cb)
                                ec.message()));
     }
 
-    auto arc_lock = archive_lock(tmp_path);
-    auto lock_guard = archive_lock::guard(arc_lock);
+    auto arc_lock = lnav::filesystem::file_lock(tmp_path);
+    auto lock_guard = lnav::filesystem::file_lock::guard(arc_lock);
     auto done_path = tmp_path;
 
     done_path += ".done";

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,41 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "vtab_module.hh"
-
-#include "config.h"
-#include "lnav_util.hh"
 #include "sqlitepp.hh"
 
-std::string vtab_module_schemas;
+namespace sqlitepp {
 
-std::map<intern_string_t, std::string> vtab_module_ddls;
+const char* ERROR_PREFIX = "lnav-error:";
 
-void
-to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um)
-{
-    auto errmsg = fmt::format(
-        FMT_STRING("{}{}"), sqlitepp::ERROR_PREFIX, lnav::to_json(um));
-
-    sqlite3_result_error(ctx, errmsg.c_str(), errmsg.size());
-}
-
-lnav::console::user_message
-sqlite3_error_to_user_message(sqlite3* db)
-{
-    const auto* errmsg = sqlite3_errmsg(db);
-    if (startswith(errmsg, sqlitepp::ERROR_PREFIX)) {
-        auto from_res = lnav::from_json<lnav::console::user_message>(
-            &errmsg[strlen(sqlitepp::ERROR_PREFIX)]);
-
-        if (from_res.isOk()) {
-            return from_res.unwrap();
-        }
-
-        return lnav::console::user_message::error("internal error")
-            .with_reason(from_res.unwrapErr()[0].um_message.get_string());
-    }
-
-    return lnav::console::user_message::error("SQL statement failed")
-        .with_reason(errmsg);
 }

@@ -394,6 +394,16 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
 
+    for (auto& ld : *p_vt->lss) {
+        auto *lf = ld->get_file_ptr();
+
+        if (lf == nullptr) {
+            continue;
+        }
+
+        lf->enable_cache();
+    }
+
     return SQLITE_OK;
 }
 

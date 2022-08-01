@@ -155,7 +155,8 @@ public:
 
                         if (parent_node != nullptr) {
                             for (const auto& sibling :
-                                 parent_node->hn_named_children) {
+                                 parent_node->hn_named_children)
+                            {
                                 retval.template emplace_back(sibling.first);
                             }
                         }
@@ -306,7 +307,8 @@ open_pretty_view()
         bool first_line = true;
 
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom();
-             ++vl) {
+             ++vl)
+        {
             content_line_t cl = lss.at(vl);
             auto lf = lss.find(cl);
             auto ll = lf->begin() + cl;
@@ -409,7 +411,8 @@ open_pretty_view()
 
             for (vis_line_t vl = text_tc->get_top();
                  vl <= text_tc->get_bottom();
-                 ++vl) {
+                 ++vl)
+            {
                 auto ll = lf->begin() + vl;
                 shared_buffer_ref sbr;
 
@@ -796,7 +799,8 @@ execute_examples()
                         dos.list_value_for_overlay(db_tc, 0, 1, 0_vl, al);
                         result.append(al);
                         for (int lpc = 0; lpc < (int) dls.text_line_count();
-                             lpc++) {
+                             lpc++)
+                        {
                             al.clear();
                             dls.text_value_for_line(
                                 db_tc, lpc, al.get_string(), false);
@@ -864,6 +868,10 @@ toggle_view(textview_curses* toggle_tc)
             rebuild_hist();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
             build_all_help_text();
+            if (lnav_data.ld_rl_view != nullptr) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_1(q, "to return to the previous view"));
+            }
         }
         lnav_data.ld_last_view = nullptr;
         lnav_data.ld_view_stack.push_back(toggle_tc);

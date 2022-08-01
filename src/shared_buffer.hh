@@ -111,7 +111,7 @@ public:
     char* get_writable_data()
     {
         if (this->take_ownership()) {
-            return this->sb_data;
+            return const_cast<char*>(this->sb_data);
         }
 
         return nullptr;
@@ -136,12 +136,12 @@ public:
         };
     }
 
-    using narrow_result = std::pair<char*, size_t>;
+    using narrow_result = std::pair<const char*, size_t>;
     narrow_result narrow(size_t new_data, size_t new_length);
 
     void widen(narrow_result old_data_length);
 
-    void share(shared_buffer& sb, char* data, size_t len);
+    void share(shared_buffer& sb, const char* data, size_t len);
 
     bool subset(shared_buffer_ref& other, off_t offset, size_t len);
 
@@ -154,7 +154,7 @@ private:
 
     auto_mem<char*> sb_backtrace;
     shared_buffer* sb_owner;
-    char* sb_data;
+    const char* sb_data;
     size_t sb_length;
 };
 

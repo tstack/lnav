@@ -88,7 +88,7 @@
  [1m[31mreason[0m: sample does not match any patterns
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:41
 [36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
-            1428634687123; foo bar
+            [37m[40m1428634687123; foo bar[0m
                          [36m^ [0m[1mbad-time[0m[36m matched up to here[0m
                               [36m^ [0m[1msemi[0m[36m matched up to here[0m
                          [36m^ [0m[1mstd[0m[36m matched up to here[0m
@@ -125,7 +125,8 @@
 [36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[37m[40mTALE[0m[37m[40m [0m[1m[37m[40minvalid[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mx[0m[37m[40m [0m[37m[40my[0m[37m[40m [0m[37m[40mz[0m[37m[40m);            [0m
 [36m | [0m[37m[40m       [0m[36m[40m^ [0m[1m[31m[40mnear "TALE": syntax error[0m[37m[40m      [0m
 [1m[31m✘ error[0m: failed to execute SQL statement
- [1m[31mreason[0m: lnav-error:{"level":"error","message":{"str":"call to regexp_match(re, str) failed","attrs":[{"start":8,"end":20,"type":"role","value":46},{"start":21,"end":23,"type":"role","value":45},{"start":25,"end":28,"type":"role","value":45},{"start":8,"end":29,"type":"role","value":59}]},"reason":{"str":"missing )","attrs":[]},"snippets":[],"help":{"str":"","attrs":[]}}
+ [1m[31mreason[0m: [1m[31m✘ error[0m: call to [1m[4mregexp_match[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m failed
+[1m[31m |      [0m  [1m[31mreason[0m: missing )
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init2.sql[0m
 [36m | [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[1m[7m[31m[40m([0m[35m[40m'abc('[0m[37m[40m, [0m[35m[40m'123'[0m[37m[40m)      [0m
 [36m | [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msqlite_master[0m[37m[40m;                     [0m

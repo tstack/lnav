@@ -194,15 +194,9 @@ CREATE TABLE lnav_views (
 
     using iterator = textview_curses*;
 
-    iterator begin()
-    {
-        return std::begin(lnav_data.ld_views);
-    }
+    iterator begin() { return std::begin(lnav_data.ld_views); }
 
-    iterator end()
-    {
-        return std::end(lnav_data.ld_views);
-    }
+    iterator end() { return std::end(lnav_data.ld_views); }
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
@@ -417,15 +411,9 @@ CREATE TABLE lnav_view_stack (
 );
 )";
 
-    iterator begin()
-    {
-        return lnav_data.ld_view_stack.begin();
-    }
+    iterator begin() { return lnav_data.ld_view_stack.begin(); }
 
-    iterator end()
-    {
-        return lnav_data.ld_view_stack.end();
-    }
+    iterator end() { return lnav_data.ld_view_stack.end(); }
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
@@ -535,10 +523,7 @@ struct lnav_view_filter_base {
         return ++retval;
     }
 
-    iterator end()
-    {
-        return {LNV__MAX, -1};
-    }
+    iterator end() { return {LNV__MAX, -1}; }
 
     sqlite_int64 get_rowid(iterator iter)
     {
@@ -731,7 +716,7 @@ CREATE TABLE lnav_view_filters (
                 if (set_res.isErr()) {
                     tab->zErrMsg = sqlite3_mprintf(
                         "%s%s",
-                        LNAV_SQLITE_ERROR_PREFIX,
+                        sqlitepp::ERROR_PREFIX,
                         lnav::to_json(set_res.unwrapErr()).c_str());
                     return SQLITE_ERROR;
                 }
@@ -832,7 +817,7 @@ CREATE TABLE lnav_view_filters (
             if (set_res.isErr()) {
                 tab->zErrMsg = sqlite3_mprintf(
                     "%s%s",
-                    LNAV_SQLITE_ERROR_PREFIX,
+                    sqlitepp::ERROR_PREFIX,
                     lnav::to_json(set_res.unwrapErr()).c_str());
                 return SQLITE_ERROR;
             }

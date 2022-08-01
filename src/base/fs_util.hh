@@ -78,6 +78,41 @@ Result<void, std::string> write_file(const ghc::filesystem::path& path,
 
 std::string build_path(const std::vector<ghc::filesystem::path>& paths);
 
+class file_lock {
+public:
+    class guard {
+    public:
+        explicit guard(file_lock& arc_lock) : g_lock(arc_lock)
+        {
+            this->g_lock.lock();
+        };
+
+        ~guard() { this->g_lock.unlock(); };
+
+    private:
+        file_lock& g_lock;
+    };
+
+    void lock() const { lockf(this->lh_fd, F_LOCK, 0); }
+
+    void unlock() const { lockf(this->lh_fd, F_ULOCK, 0); }
+
+    explicit file_lock(const ghc::filesystem::path& archive_path)
+    {
+        auto lock_path = archive_path;
+
+        lock_path += ".lck";
+        auto open_res = lnav::filesystem::create_file(
+            lock_path, O_RDWR | O_CLOEXEC, 0600);
+        if (open_res.isErr()) {
+            throw std::runtime_error(open_res.unwrapErr());
+        }
+        this->lh_fd = open_res.unwrap();
+    }
+
+    auto_fd lh_fd;
+};
+
 }  // namespace filesystem
 }  // namespace lnav
 

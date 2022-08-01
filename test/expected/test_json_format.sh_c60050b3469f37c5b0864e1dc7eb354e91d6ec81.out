@@ -38,13 +38,13 @@
 [31m	... 33 common frames omitted[0m
 
 [31m  @version: 1[0m
-[31m  logger_name: org.apache.jasper.runtime.JspFactoryImpl[0m
+[31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
 [31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
 [31m  level: ERROR[0m
 [31m  customer: foobaz[0m
 [31m2016-08-03T12:06:31.009[0m[31m - [0m[31m;Exception initializing page context;[0m[31m [0m
 [31m  @version: 1[0m
-[31m  logger_name: org.apache.jasper.runtime.JspFactoryImpl[0m
+[31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
 [31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
 [31m  level: ERROR[0m
 [31m  customer: foobaz[0m

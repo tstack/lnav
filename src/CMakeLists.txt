@@ -409,6 +409,7 @@ add_library(
         spectro_source.cc
         sql_commands.cc
         sql_util.cc
+        sqlitepp.cc
         state-extension-functions.cc
         styling.cc
         text_format.cc

@@ -577,7 +577,11 @@ public:
         return retval;
     }
 
-    void grep_quiesce() { this->tc_sub_source->quiesce(); }
+    void grep_quiesce() {
+        if (this->tc_sub_source != nullptr) {
+            this->tc_sub_source->quiesce();
+        }
+    }
 
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,

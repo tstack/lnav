@@ -598,7 +598,8 @@ tailer::looper::host_tailer::loop_body()
 
                 auto finished_child = std::move(conn).close();
                 if (finished_child.exit_status() != 0
-                    && !this->ht_error_queue.empty()) {
+                    && !this->ht_error_queue.empty())
+                {
                     report_error(this->ht_netloc, this->ht_error_queue.back());
                 }
 
@@ -632,7 +633,8 @@ tailer::looper::host_tailer::loop_body()
                     auto child_iter = conn.c_child_paths.find(pe.pe_path);
 
                     if (child_iter != conn.c_child_paths.end()
-                        && !child_iter->second.loo_tail) {
+                        && !child_iter->second.loo_tail)
+                    {
                         conn.c_child_paths.erase(child_iter);
                     }
                 }
@@ -1029,7 +1031,8 @@ tailer::looper::child_finished(std::shared_ptr<service_base> child)
     auto child_tailer = std::static_pointer_cast<host_tailer>(child);
 
     for (auto iter = this->l_remotes.begin(); iter != this->l_remotes.end();
-         ++iter) {
+         ++iter)
+    {
         if (iter->second != child_tailer) {
             continue;
         }
@@ -1101,12 +1104,13 @@ tailer::cleanup_cache()
     (void) std::async(std::launch::async, []() {
         auto now = std::chrono::system_clock::now();
         auto cache_path = remote_cache_path();
-        auto& cfg = injector::get<const config&>();
+        const auto& cfg = injector::get<const config&>();
         std::vector<ghc::filesystem::path> to_remove;
 
         log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
         for (const auto& entry :
-             ghc::filesystem::directory_iterator(cache_path)) {
+             ghc::filesystem::directory_iterator(cache_path))
+        {
             auto mtime = ghc::filesystem::last_write_time(entry.path());
             auto exp_time = mtime + cfg.c_cache_ttl;
             if (now < exp_time) {

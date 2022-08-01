@@ -34,7 +34,10 @@
 
 #include <string>
 
+#include <sqlite3.h>
+
 #include "base/auto_mem.hh"
+#include "optional.hpp"
 
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void* mem);
@@ -54,6 +57,8 @@ quote(const nonstd::optional<std::string>& str)
 
     return retval;
 }
+
+extern const char* ERROR_PREFIX;
 
 }  // namespace sqlitepp
 

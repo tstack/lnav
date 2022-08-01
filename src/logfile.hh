@@ -373,6 +373,8 @@ public:
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
+    void enable_cache() { this->lf_line_buffer.enable_cache(); }
+
     void dump_stats();
 
 protected:

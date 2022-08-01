@@ -49,13 +49,18 @@
 #endif
 
 #include "base/auto_pid.hh"
+#include "base/fs_util.hh"
 #include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "base/is_utf8.hh"
 #include "base/isc.hh"
 #include "base/math_util.hh"
+#include "base/paths.hh"
 #include "fmtlib/fmt/format.h"
 #include "line_buffer.hh"
+#include "lnav_util.hh"
+
+using namespace std::chrono_literals;
 
 static const ssize_t INITIAL_REQUEST_SIZE = 16 * 1024;
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
@@ -438,7 +443,7 @@ line_buffer::ensure_available(file_off_t start, ssize_t max_length)
         if ((this->lb_file_size != (ssize_t) -1)
             && (start + this->lb_buffer.capacity() > this->lb_file_size))
         {
-            require(start < this->lb_file_size);
+            require(start <= this->lb_file_size);
             /*
              * If the start is near the end of the file, move the offset back a
              * bit so we can get more of the file in the cache.
@@ -496,7 +501,7 @@ line_buffer::load_next_buffer()
 
     // log_debug("BEGIN preload read");
     /* ... read in the new data. */
-    if (*gi) {
+    if (!this->lb_cached_fd && *gi) {
         if (this->lb_file_size != (ssize_t) -1 && this->in_range(start)
             && this->in_range(this->lb_file_size - 1))
         {
@@ -523,7 +528,7 @@ line_buffer::load_next_buffer()
         }
     }
 #ifdef HAVE_BZLIB_H
-    else if (this->lb_bz_file)
+    else if (!this->lb_cached_fd && this->lb_bz_file)
     {
         if (this->lb_file_size != (ssize_t) -1
             && (((ssize_t) start >= this->lb_file_size)
@@ -547,7 +552,7 @@ line_buffer::load_next_buffer()
                 close(bzfd);
                 throw error(errno);
             }
-            if ((bz_file = BZ2_bzdopen(bzfd, "r")) == NULL) {
+            if ((bz_file = BZ2_bzdopen(bzfd, "r")) == nullptr) {
                 close(bzfd);
                 if (errno == 0) {
                     throw std::bad_alloc();
@@ -571,8 +576,10 @@ line_buffer::load_next_buffer()
             this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
             BZ2_bzclose(bz_file);
 
-            if (rc != -1 && (rc < (this->lb_alt_buffer.value().available())) &&
-                (start + this->lb_alt_buffer.value().size() + rc > this->lb_file_size)) {
+            if (rc != -1 && (rc < (this->lb_alt_buffer.value().available()))
+                && (start + this->lb_alt_buffer.value().size() + rc
+                    > this->lb_file_size))
+            {
                 this->lb_file_size
                     = (start + this->lb_alt_buffer.value().size() + rc);
             }
@@ -581,7 +588,8 @@ line_buffer::load_next_buffer()
 #endif
     else
     {
-        rc = pread(this->lb_fd,
+        rc = pread(this->lb_cached_fd ? this->lb_cached_fd.value().get()
+                                      : this->lb_fd.get(),
                    this->lb_alt_buffer.value().end(),
                    this->lb_alt_buffer.value().available(),
                    start + this->lb_alt_buffer.value().size());
@@ -763,7 +771,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
 
         /* ... read in the new data. */
-        if (*gi) {
+        if (!this->lb_cached_fd && *gi) {
             // log_debug("old decomp start");
             if (this->lb_file_size != (ssize_t) -1 && this->in_range(start)
                 && this->in_range(this->lb_file_size - 1))
@@ -771,7 +779,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                 rc = 0;
             } else {
                 this->lb_stats.s_decompressions += 1;
-                if (this->lb_last_line_offset > 0) {
+                if (false && this->lb_last_line_offset > 0) {
                     this->lb_stats.s_hist[(this->lb_file_offset * 10)
                                           / this->lb_last_line_offset]
                         += 1;
@@ -793,7 +801,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 #endif
         }
 #ifdef HAVE_BZLIB_H
-        else if (this->lb_bz_file)
+        else if (!this->lb_cached_fd && this->lb_bz_file)
         {
             if (this->lb_file_size != (ssize_t) -1
                 && (((ssize_t) start >= this->lb_file_size)
@@ -852,7 +860,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         else if (this->lb_seekable)
         {
             this->lb_stats.s_preads += 1;
-            if (this->lb_last_line_offset > 0) {
+            if (false && this->lb_last_line_offset > 0) {
                 this->lb_stats.s_hist[(this->lb_file_offset * 10)
                                       / this->lb_last_line_offset]
                     += 1;
@@ -862,7 +870,8 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                       this->lb_fd.get(),
                       this->lb_file_offset + this->lb_buffer.size());
 #endif
-            rc = pread(this->lb_fd,
+            rc = pread(this->lb_cached_fd ? this->lb_cached_fd.value().get()
+                                          : this->lb_fd.get(),
                        this->lb_buffer.end(),
                        this->lb_buffer.available(),
                        this->lb_file_offset + this->lb_buffer.size());
@@ -993,7 +1002,7 @@ line_buffer::load_next_line(file_range prev_line)
     }
     while (!done) {
         auto old_retval_size = retval.li_file_range.fr_size;
-        char *line_start, *lf;
+        const char *line_start, *lf;
 
         /* Find the data in the cache and */
         line_start = this->get_range(offset, retval.li_file_range.fr_size);
@@ -1059,7 +1068,8 @@ line_buffer::load_next_line(file_range prev_line)
                 && (!this->is_pipe() || request_size > DEFAULT_INCREMENT)))
         {
             if ((lf != nullptr)
-                && ((size_t) (lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
+                && ((size_t) (lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1))
+            {
                 lf = nullptr;
             }
             if (lf != nullptr) {
@@ -1134,11 +1144,12 @@ Result<shared_buffer_ref, std::string>
 line_buffer::read_range(const file_range fr)
 {
     shared_buffer_ref retval;
-    char* line_start;
+    const char* line_start;
     file_ssize_t avail;
 
     if (this->lb_last_line_offset != -1
-        && fr.fr_offset > this->lb_last_line_offset) {
+        && fr.fr_offset > this->lb_last_line_offset)
+    {
         /*
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
@@ -1231,4 +1242,127 @@ line_buffer::quiesce()
     if (this->lb_loader_future.valid()) {
         this->lb_loader_future.wait();
     }
+}
+
+static ghc::filesystem::path
+line_buffer_cache_path()
+{
+    return lnav::paths::workdir() / "buffer-cache";
+}
+
+void
+line_buffer::enable_cache()
+{
+    if (!this->lb_compressed || this->lb_cached_fd) {
+        log_info("%d: skipping cache request (compressed=%d already-cached=%d)",
+                 this->lb_fd.get(),
+                 this->lb_compressed,
+                 (bool) this->lb_cached_fd);
+        return;
+    }
+
+    struct stat st;
+
+    if (fstat(this->lb_fd, &st) == -1) {
+        log_error("failed to fstat(%d) - %d", this->lb_fd.get(), errno);
+        return;
+    }
+
+    auto cached_base_name = hasher()
+                                .update(st.st_dev)
+                                .update(st.st_ino)
+                                .update(st.st_size)
+                                .to_string();
+    auto cache_dir = line_buffer_cache_path() / cached_base_name.substr(0, 2);
+
+    ghc::filesystem::create_directories(cache_dir);
+
+    auto cached_file_name = fmt::format(FMT_STRING("{}.bin"), cached_base_name);
+    auto cached_file_path = cache_dir / cached_file_name;
+    auto cached_done_path
+        = cache_dir / fmt::format(FMT_STRING("{}.done"), cached_base_name);
+
+    log_info(
+        "%d:cache file path: %s", this->lb_fd.get(), cached_file_path.c_str());
+
+    auto fl = lnav::filesystem::file_lock(cached_file_path);
+    auto guard = lnav::filesystem::file_lock::guard(fl);
+
+    if (ghc::filesystem::exists(cached_done_path)) {
+        log_info("%d:using existing cache file");
+        auto open_res = lnav::filesystem::open_file(cached_file_path, O_RDWR);
+        if (open_res.isOk()) {
+            this->lb_cached_fd = open_res.unwrap();
+            return;
+        }
+        ghc::filesystem::remove(cached_done_path);
+    }
+
+    auto create_res = lnav::filesystem::create_file(
+        cached_file_path, O_RDWR | O_TRUNC, 0600);
+    if (create_res.isErr()) {
+        log_error("failed to create cache file: %s -- %s",
+                  cached_file_path.c_str(),
+                  create_res.unwrapErr().c_str());
+        return;
+    }
+
+    auto write_fd = create_res.unwrap();
+    auto done = false;
+
+    static const ssize_t FILL_LENGTH = 1024 * 1024;
+    auto off = file_off_t{0};
+    while (!done) {
+        log_debug("%d: caching file content at %d", this->lb_fd.get(), off);
+        if (!this->fill_range(off, FILL_LENGTH)) {
+            log_debug("%d: caching finished", this->lb_fd.get());
+            done = true;
+        } else {
+            file_ssize_t avail;
+
+            const auto* data = this->get_range(off, avail);
+            auto rc = write(write_fd, data, avail);
+            if (rc != avail) {
+                log_error("%d: short write!", this->lb_fd.get());
+                return;
+            }
+
+            off += avail;
+        }
+    }
+
+    lnav::filesystem::create_file(cached_done_path, O_WRONLY, 0600);
+
+    this->lb_cached_fd = std::move(write_fd);
+}
+
+void
+line_buffer::cleanup_cache()
+{
+    (void) std::async(std::launch::async, []() {
+        auto now = std::chrono::system_clock::now();
+        auto cache_path = line_buffer_cache_path();
+        std::vector<ghc::filesystem::path> to_remove;
+
+        for (const auto& cache_subdir :
+             ghc::filesystem::directory_iterator(cache_path))
+        {
+            for (const auto& entry :
+                 ghc::filesystem::directory_iterator(cache_subdir))
+            {
+                auto mtime = ghc::filesystem::last_write_time(entry.path());
+                auto exp_time = mtime + 1h;
+                if (now < exp_time) {
+                    continue;
+                }
+
+                to_remove.emplace_back(entry.path());
+            }
+        }
+
+        for (auto& entry : to_remove) {
+            log_debug("removing compressed file cache: %s", entry.c_str());
+            ghc::filesystem::remove_all(entry);
+        }
+    });
 }

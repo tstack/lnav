@@ -46,6 +46,7 @@
 #include "base/time_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
@@ -345,7 +346,8 @@ walk_sqlite_metadata(sqlite3* db, struct sqlite_metadata_callbacks& smc)
     }
 
     for (auto iter = smc.smc_db_list.begin(); iter != smc.smc_db_list.end();
-         ++iter) {
+         ++iter)
+    {
         struct table_list_data tld = {&smc, &iter};
         auto_mem<char, sqlite3_free> query;
 
@@ -836,18 +838,14 @@ sql_execute_script(sqlite3* db,
                 }
 
                 default: {
-                    attr_line_t sql_content(sqlite3_sql(stmt));
-                    const char* errmsg;
+                    const auto* sql_str = sqlite3_sql(stmt);
+                    auto sql_content
+                        = annotate_sql_with_error(db, sql_str, nullptr);
 
-                    errmsg = sqlite3_errmsg(db);
-                    sql_content.with_attr_for_all(
-                        VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                    readline_sqlite_highlighter(sql_content,
-                                                sql_content.length());
                     errors.emplace_back(
                         lnav::console::user_message::error(
                             "failed to execute SQL statement")
-                            .with_reason(errmsg)
+                            .with_reason(sqlite3_errmsg_to_attr_line(db))
                             .with_snippet(lnav::console::snippet::from(
                                 intern_string::lookup(src_name), sql_content)));
                     done = true;
@@ -971,6 +969,24 @@ sqlite_authorizer(void* pUserData,
     return SQLITE_OK;
 }
 
+attr_line_t
+sqlite3_errmsg_to_attr_line(sqlite3* db)
+{
+    const auto* errmsg = sqlite3_errmsg(db);
+    if (startswith(errmsg, sqlitepp::ERROR_PREFIX)) {
+        auto from_res = lnav::from_json<lnav::console::user_message>(
+            &errmsg[strlen(sqlitepp::ERROR_PREFIX)]);
+
+        if (from_res.isOk()) {
+            return from_res.unwrap().to_attr_line();
+        }
+
+        return from_res.unwrapErr()[0].um_message.get_string();
+    }
+
+    return attr_line_t(errmsg);
+}
+
 std::string
 sql_keyword_re()
 {
@@ -1064,7 +1080,8 @@ annotate_sql_statement(attr_line_t& al)
     int start = 0;
 
     while ((iter = find_string_attr(sa, &SQL_IDENTIFIER_ATTR, start))
-           != sa.end()) {
+           != sa.end())
+    {
         string_attrs_t::const_iterator piter;
         bool found_open = false;
         ssize_t lpc;
@@ -1177,7 +1194,8 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
         if (help_count > 1 && name != func_pair.first->second->ht_name) {
             while (func_pair.first != func_pair.second) {
                 if (find(kw.begin(), kw.end(), func_pair.first->second->ht_name)
-                    == kw.end()) {
+                    == kw.end())
+                {
                     ++func_pair.first;
                 } else {
                     func_pair.second = next(func_pair.first);

@@ -92,15 +92,9 @@ public:
     public:
         gz_indexed();
         gz_indexed(gz_indexed&& other) = default;
-        ~gz_indexed()
-        {
-            this->close();
-        }
+        ~gz_indexed() { this->close(); }
 
-        inline operator bool() const
-        {
-            return this->gz_fd != -1;
-        }
+        inline operator bool() const { return this->gz_fd != -1; }
 
         uLong get_source_offset() const
         {
@@ -150,38 +144,23 @@ public:
     void set_fd(auto_fd& fd);
 
     /** @return The file descriptor that data should be pulled from. */
-    int get_fd() const
-    {
-        return this->lb_fd;
-    }
+    int get_fd() const { return this->lb_fd; }
 
-    time_t get_file_time() const
-    {
-        return this->lb_file_time;
-    }
+    time_t get_file_time() const { return this->lb_file_time; }
 
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */
-    file_ssize_t get_file_size() const
-    {
-        return this->lb_file_size;
-    }
+    file_ssize_t get_file_size() const { return this->lb_file_size; }
 
-    bool is_pipe() const
-    {
-        return !this->lb_seekable;
-    }
+    bool is_pipe() const { return !this->lb_seekable; }
 
     bool is_pipe_closed() const
     {
         return !this->lb_seekable && (this->lb_file_size != -1);
     }
 
-    bool is_compressed() const
-    {
-        return this->lb_compressed;
-    }
+    bool is_compressed() const { return this->lb_compressed; }
 
     file_off_t get_read_offset(file_off_t off) const
     {
@@ -259,15 +238,13 @@ public:
         std::array<uint32_t, 10> s_hist{};
     };
 
-    struct stats consume_stats()
-    {
-        return std::exchange(this->lb_stats, {});
-    }
+    struct stats consume_stats() { return std::exchange(this->lb_stats, {}); }
 
-    size_t get_buffer_size() const
-    {
-        return this->lb_buffer.size();
-    }
+    size_t get_buffer_size() const { return this->lb_buffer.size(); }
+
+    void enable_cache();
+
+    static void cleanup_cache();
 
 private:
     /**
@@ -316,15 +293,14 @@ private:
      * @return A pointer to the start of the cached data in the internal
      * buffer.
      */
-    char* get_range(file_off_t start, file_ssize_t& avail_out)
+    const char* get_range(file_off_t start, file_ssize_t& avail_out) const
     {
         auto buffer_offset = start - this->lb_file_offset;
-        char* retval;
 
         require(buffer_offset >= 0);
         require(this->lb_buffer.size() >= buffer_offset);
 
-        retval = this->lb_buffer.at(buffer_offset);
+        const auto* retval = this->lb_buffer.at(buffer_offset);
         avail_out = this->lb_buffer.size() - buffer_offset;
 
         return retval;
@@ -367,6 +343,8 @@ private:
     std::vector<uint32_t> lb_line_starts;
     std::vector<bool> lb_line_is_utf;
     stats lb_stats;
+
+    nonstd::optional<auto_fd> lb_cached_fd;
 };
 
 #endif

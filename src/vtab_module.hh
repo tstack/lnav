@@ -48,8 +48,6 @@
 #include "shlex.resolver.hh"
 #include "sqlite-extension-func.hh"
 
-extern const char* LNAV_SQLITE_ERROR_PREFIX;
-
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
 
 struct from_sqlite_conversion_error : std::exception {

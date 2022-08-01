@@ -1167,8 +1167,11 @@ looper()
         rlc->set_display_next_action(rl_display_next);
         rlc->set_blur_action(rl_blur);
         rlc->set_completion_request_action(rl_completion_request);
-        rlc->set_alt_value(HELP_MSG_2(
-            e, E, "to move forward/backward through error messages"));
+        rlc->set_alt_value(
+            HELP_MSG_2(e,
+                       E,
+                       "to move forward/backward through " ANSI_COLOR(
+                           COLOR_RED) "error" ANSI_NORM " messages"));
 
         (void) curs_set(0);
 
@@ -1775,6 +1778,7 @@ UPDATE lnav_views_echo
                     }
 
                     if (!ran_cleanup) {
+                        line_buffer::cleanup_cache();
                         archive_manager::cleanup_cache();
                         tailer::cleanup_cache();
                         ran_cleanup = true;
@@ -2949,6 +2953,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
                 archive_manager::cleanup_cache();
                 tailer::cleanup_cache();
+                line_buffer::cleanup_cache();
                 wait_for_pipers();
                 isc::to<curl_looper&, services::curl_streamer_t>()
                     .send_and_wait(
