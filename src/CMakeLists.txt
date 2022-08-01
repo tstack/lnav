@@ -308,6 +308,11 @@ add_library(
 target_include_directories(base64 PRIVATE third-party/base64/lib)
 target_include_directories(base64 PUBLIC third-party/base64/include)
 
+add_library(
+        spookyhash STATIC
+        spookyhash/SpookyV2.cpp
+)
+
 add_library(lnavfileio STATIC
         grep_proc.hh
         line_buffer.hh
@@ -320,7 +325,7 @@ add_library(lnavfileio STATIC
         shared_buffer.cc
         )
 target_include_directories(lnavfileio PRIVATE . ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(lnavfileio cppfmt pcrepp base BZip2::BZip2 ZLIB::ZLIB)
+target_link_libraries(lnavfileio cppfmt spookyhash pcrepp base BZip2::BZip2 ZLIB::ZLIB)
 
 add_library(
         diag STATIC
@@ -430,7 +435,6 @@ add_library(
         xml_util.cc
         xpath_vtab.cc
         xterm_mouse.cc
-        spookyhash/SpookyV2.cpp
         third-party/md4c/md4c.c
         third-party/sqlite/ext/series.c
         third-party/sqlite/ext/dbdump.c
@@ -602,6 +606,7 @@ target_link_libraries(
         yajlpp
         cppfmt
         base64
+        spookyhash
         ${lnav_LIBS})
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 
