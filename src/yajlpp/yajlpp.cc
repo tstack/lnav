@@ -125,7 +125,8 @@ yajl_cleanup_tree(yajl_val val)
 
             yajl_cleanup_tree(child_val);
             if (YAJL_IS_OBJECT(child_val)
-                && YAJL_GET_OBJECT(child_val)->len == 0) {
+                && YAJL_GET_OBJECT(child_val)->len == 0)
+            {
                 free((char*) val_as_obj->keys[lpc]);
                 yajl_tree_free(val_as_obj->values[lpc]);
                 val_as_obj->len -= 1;
@@ -312,7 +313,8 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                 schema.gen("type");
                 if (this->jph_is_array) {
                     if (this->jph_regex->p_pattern.find("#?")
-                        == std::string::npos) {
+                        == std::string::npos)
+                    {
                         schema.gen("array");
                     } else {
                         yajlpp_array type_array(ygc.ygc_handle);
@@ -610,7 +612,8 @@ yajlpp_parse_context::map_start(void* ctx)
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.size() - 1);
 
     if (ypc->ypc_path.size() > 1
-        && ypc->ypc_path[ypc->ypc_path.size() - 2] == '#') {
+        && ypc->ypc_path[ypc->ypc_path.size() - 2] == '#')
+    {
         ypc->ypc_array_index.back() += 1;
     }
 
@@ -695,7 +698,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         std::string curr_path(&this->ypc_path[0], this->ypc_path.size() - 1);
 
         if (this->ypc_active_paths.find(curr_path)
-            == this->ypc_active_paths.end()) {
+            == this->ypc_active_paths.end())
+        {
             return;
         }
     }
@@ -736,14 +740,16 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                 this->ypc_handler_stack.emplace_back(&jph);
 
                 if (1 + child_start + cap->c_end
-                    != (int) this->ypc_path.size() - 1) {
+                    != (int) this->ypc_path.size() - 1)
+                {
                     this->update_callbacks(jph.jph_children,
                                            1 + child_start + cap->c_end);
                     return;
                 }
             } else {
                 if (1 + child_start + cap->c_end
-                    != (int) this->ypc_path.size() - 1) {
+                    != (int) this->ypc_path.size() - 1)
+                {
                     continue;
                 }
 
@@ -1437,17 +1443,18 @@ json_path_handler_base::report_regex_value_error(
     pcre_error_content.append("\n")
         .append(pcre_error.ce_offset, ' ')
         .append(lnav::roles::error("^ "))
-        .append(lnav::roles::error(pcre_error.ce_msg));
+        .append(lnav::roles::error(pcre_error.ce_msg))
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
     ypc->report_error(lnav::console::user_message::error(
                           attr_line_t()
                               .append_quoted(value)
                               .append(" is not a valid regular expression for "
                                       "property ")
-                              .append_quoted(
-                    lnav::roles::symbol(ypc->get_full_path().to_string())))
-            .with_reason(pcre_error.ce_msg)
-            .with_snippet(ypc->get_snippet())
-            .with_snippet(lnav::console::snippet::from(
+                              .append_quoted(lnav::roles::symbol(
+                                  ypc->get_full_path().to_string())))
+                          .with_reason(pcre_error.ce_msg)
+                          .with_snippet(ypc->get_snippet())
+                          .with_snippet(lnav::console::snippet::from(
                               ypc->get_full_path(), pcre_error_content))
                           .with_help(this->get_help_text(ypc)));
 }

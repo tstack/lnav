@@ -4,12 +4,15 @@
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"
+            },
+            "incomplete-match": {
+                "pattern": "^(?<timestamp>\\d+);"
             }
         },
-        "level" : {
-            "error" : "(foo"
+        "level": {
+            "error": "(foo"
         },
-        "timestamp-format" : [
+        "timestamp-format": [
             "%i"
         ],
         "sample": [

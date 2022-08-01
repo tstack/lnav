@@ -477,6 +477,20 @@ h6(S str)
 
 namespace literals {
 
+inline std::pair<std::string, string_attr_pair> operator"" _ok(const char* str,
+                                                               std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_OK));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _error(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_ERROR));
+}
+
 inline std::pair<std::string, string_attr_pair> operator"" _info(
     const char* str, std::size_t len)
 {

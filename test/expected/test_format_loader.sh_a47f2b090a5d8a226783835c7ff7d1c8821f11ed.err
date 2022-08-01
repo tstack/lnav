@@ -9,8 +9,8 @@
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:4
 [36m | [0m[37m[40m        "level-pointer": "abc(",        [0m
 [36m --> [0m[1m/invalid_key_log/level-pointer[0m
-[36m | [0mabc[1m[7m[32m([0m                                    
-[36m | [0m    [1m[31m^ [0m[1m[31mmissing )[0m                         
+[36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
+[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                         [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_key_log/level-pointer[0m 
          [1mDescription[0m
@@ -20,8 +20,8 @@
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:5
 [36m | [0m[37m[40m        "file-pattern": "def[ghi",      [0m
 [36m --> [0m[1m/invalid_key_log/file-pattern[0m
-[36m | [0mdef[1m[7m[32m[[0mghi                                           
-[36m | [0m       [1m[31m^ [0m[1m[31mmissing terminating ] for character class[0m
+[36m | [0m[37m[40mdef[0m[1m[7m[32m[40m[[0m[37m[40mghi                                           [0m
+[36m | [0m[37m[40m       [0m[1m[31m[40m^ [0m[1m[31m[40mmissing terminating ] for character class[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_key_log/file-pattern[0m 
          [1mDescription[0m

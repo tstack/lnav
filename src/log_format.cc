@@ -1945,7 +1945,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
              pat_iter != this->elf_pattern_order.end() && !found;
              ++pat_iter)
         {
-            pattern& pat = *(*pat_iter);
+            auto& pat = *(*pat_iter);
 
             if (!pat.p_pcre) {
                 continue;
@@ -2094,22 +2094,57 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 pcre_context_static<128> pc_full;
                 pcre_input pi_full(elf_sample.s_line.pp_value);
 
-                if (!pat.p_pcre->match(pc_full, pi_full)
-                    || static_cast<size_t>(pc_full.all()->length())
-                        != elf_sample.s_line.pp_value.length())
-                {
+                if (!pat.p_pcre->match(pc_full, pi_full)) {
+                    attr_line_t regex_al = pat.p_pcre->get_pattern();
+                    lnav::snippets::regex_highlighter(
+                        regex_al, -1, line_range{0, (int) regex_al.length()});
                     errors.emplace_back(
                         lnav::console::user_message::error(
                             attr_line_t("invalid pattern: ")
                                 .append_quoted(lnav::roles::symbol(
                                     pat.p_name.to_string())))
                             .with_reason("pattern does not match entire "
-                                         "multiline message")
+                                         "multiline sample message")
                             .with_snippet(elf_sample.s_line.to_snippet())
-                            .with_help(attr_line_t("using ")
-                                           .append_quoted(".*")
-                                           .append(" when capturing the body "
-                                                   "will match new-lines")));
+                            .with_note(attr_line_t()
+                                           .append(lnav::roles::symbol(
+                                               pat.p_name.to_string()))
+                                           .append(" = ")
+                                           .append(regex_al))
+                            .with_help(
+                                attr_line_t("use ").append_quoted(".*").append(
+                                    " to match new-lines")));
+                } else if (static_cast<size_t>(pc_full.all()->length())
+                           != elf_sample.s_line.pp_value.length())
+                {
+                    attr_line_t regex_al = pat.p_pcre->get_pattern();
+                    lnav::snippets::regex_highlighter(
+                        regex_al, -1, line_range{0, (int) regex_al.length()});
+                    auto match_length
+                        = static_cast<size_t>(pc_full.all()->length());
+                    attr_line_t sample_al = elf_sample.s_line.pp_value;
+                    sample_al.append("\n")
+                        .append(match_length, ' ')
+                        .append("^ matched up to here"_error)
+                        .with_attr_for_all(
+                            VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                    auto sample_snippet = lnav::console::snippet::from(
+                        elf_sample.s_line.pp_location, sample_al);
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t("invalid pattern: ")
+                                .append_quoted(lnav::roles::symbol(
+                                    pat.p_name.to_string())))
+                            .with_reason("pattern does not match entire "
+                                         "message")
+                            .with_snippet(sample_snippet)
+                            .with_note(attr_line_t()
+                                           .append(lnav::roles::symbol(
+                                               pat.p_name.to_string()))
+                                           .append(" = ")
+                                           .append(regex_al))
+                            .with_help("update the regular expression to fully "
+                                       "capture the sample message"));
                 }
             }
         }
