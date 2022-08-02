@@ -515,7 +515,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         lnav_data.ld_active_files.fc_files
             | lnav::itertools::for_each(&logfile::dump_stats);
-        if (!ec.ec_accumulator->empty()) {
+        if (ec.ec_sql_callback != sql_callback) {
             retval = ec.ec_accumulator->get_string();
         } else if (!dls.dls_rows.empty()) {
             if (lnav_data.ld_flags & LNF_HEADLESS) {
@@ -532,7 +532,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     retval = row[0];
                 } else {
                     for (unsigned int lpc = 0; lpc < dls.dls_headers.size();
-                         lpc++) {
+                         lpc++)
+                    {
                         if (lpc > 0) {
                             retval.append("; ");
                         }

@@ -210,21 +210,23 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                 + this->ss_cursor_column.value() * sr.sr_column_size;
             auto range_max = range_min + sr.sr_column_size;
 
-            auto desc = attr_line_t()
-                            .append(lnav::roles::number(
-                                fmt::to_string(bucket.rb_counter)))
-                            .append(lnav::roles::comment(fmt::format(
-                                FMT_STRING(" value{} in the range "),
-                                bucket.rb_counter == 1 ? "" : "s")))
-                            .append(lnav::roles::number(
-                                fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
-                            .append(lnav::roles::comment("-"))
-                            .append(lnav::roles::number(
-                                fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
-                            .append(" ");
+            auto desc
+                = attr_line_t()
+                      .append(lnav::roles::number(
+                          fmt::to_string(bucket.rb_counter)))
+                      .append(fmt::format(FMT_STRING(" value{} in the range "),
+                                          bucket.rb_counter == 1 ? "" : "s"))
+                      .append(lnav::roles::number(
+                          fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
+                      .append("-")
+                      .append(lnav::roles::number(
+                          fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
+                      .append(" ");
             auto mark_offset = this->ss_cursor_column.value();
             auto mark_is_before = true;
 
+            value_out.al_attrs.emplace_back(
+                line_range{0, -1}, VC_ROLE.value(role_t::VCR_STATUS_INFO));
             if (desc.length() + 8 > width) {
                 desc.clear();
             }

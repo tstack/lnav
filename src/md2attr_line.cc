@@ -145,7 +145,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 last_block.append("\n");
             }
             if (this->ml_list_stack.empty()
-                && !endswith(last_block.get_string(), "\n\n")) {
+                && !endswith(last_block.get_string(), "\n\n"))
+            {
                 last_block.append("\n");
             }
         }
@@ -313,7 +314,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 }
             }
             for (size_t line_index = 0; line_index < max_cell_lines;
-                 line_index++) {
+                 line_index++)
+            {
                 size_t col = 0;
                 for (const auto& cell : cells) {
                     block_text.append(" ");

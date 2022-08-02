@@ -2990,7 +2990,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
-#1 To trim the leading whitespace from the string '   abc':
+#1 To trim the leading space characters from the string '   abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[35m[40m'   abc'[0m[37m[40m)                            [0m
    
 
@@ -3614,7 +3614,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mrightstr()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
   [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
-#1 To trim the whitespace from the end of the string 'abc   ':
+#1 To trim the space characters from the end of the string 'abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[35m[40m'abc   '[0m[37m[40m)                            [0m
    
 
@@ -4005,7 +4005,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
   [1mstrfilter()[0m, [1msubstr()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
-#1 To trim whitespace from the start and end of the string '    abc   ':
+#1 To trim spaces from the start and end of the string '    abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[35m[40m'    abc   '[0m[37m[40m)                         [0m
    
 

@@ -30,3 +30,8 @@ Hello\\nWorld\\n
 EOF
 
 run_cap_test ${lnav_test} -d /tmp/lnav.err -n -c ":switch-to-view pretty" test_pretty_in.3
+
+run_cap_test ${lnav_test} -d /tmp/lnav.err -n \
+    -I ${test_dir} \
+    -c ":switch-to-view pretty" \
+    ${test_dir}/logfile_xml_msg.0

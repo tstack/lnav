@@ -2194,7 +2194,7 @@ ltrim(*str*, *\[chars\]*)
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples**
-    To trim the leading whitespace from the string '   abc':
+    To trim the leading space characters from the string '   abc':
 
     .. code-block::  custsqlite
 
@@ -3029,7 +3029,7 @@ rtrim(*str*, *\[chars\]*)
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples**
-    To trim the whitespace from the end of the string 'abc   ':
+    To trim the space characters from the end of the string 'abc   ':
 
     .. code-block::  custsqlite
 
@@ -3577,7 +3577,7 @@ trim(*str*, *\[chars\]*)
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples**
-    To trim whitespace from the start and end of the string '    abc   ':
+    To trim spaces from the start and end of the string '    abc   ':
 
     .. code-block::  custsqlite
 

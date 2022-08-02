@@ -58,7 +58,8 @@
 STRONG_INT_TYPE(uint64_t, content_line);
 
 struct sqlite3_stmt;
-extern "C" {
+extern "C"
+{
 int sqlite3_finalize(sqlite3_stmt* pStmt);
 }
 
@@ -327,10 +328,7 @@ public:
 
     log_level_t get_min_log_level() const { return this->lss_min_log_level; }
 
-    void set_force_rebuild()
-    {
-        this->lss_force_rebuild = true;
-    }
+    void set_force_rebuild() { this->lss_force_rebuild = true; }
 
     void set_min_log_level(log_level_t level)
     {
@@ -669,10 +667,7 @@ public:
             return this->get_file_ptr() != nullptr && this->ld_visible;
         }
 
-        void set_visibility(bool vis)
-        {
-            this->ld_visible = vis;
-        }
+        void set_visibility(bool vis) { this->ld_visible = vis; }
 
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
@@ -996,7 +991,7 @@ private:
     size_t lss_longest_line{0};
     meta_grepper lss_meta_grepper;
     log_location_history lss_location_history;
-    exec_context* lss_exec_context;
+    exec_context* lss_exec_context{nullptr};
 
     bool lss_in_value_for_line{false};
     bool lss_line_meta_changed{false};

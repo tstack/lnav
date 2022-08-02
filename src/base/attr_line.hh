@@ -160,7 +160,17 @@ struct string_attr {
 
     bool operator<(const struct string_attr& rhs) const
     {
-        return this->sa_range < rhs.sa_range;
+        if (this->sa_range < rhs.sa_range) {
+            return true;
+        }
+        if (this->sa_range == rhs.sa_range && this->sa_type == rhs.sa_type
+            && this->sa_type == &VC_ROLE
+            && this->sa_value.get<role_t>() < rhs.sa_value.get<role_t>())
+        {
+            return true;
+        }
+
+        return false;
     }
 
     struct line_range sa_range;

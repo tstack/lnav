@@ -343,10 +343,9 @@ attr_line_t::subline(size_t start, size_t len) const
             continue;
         }
 
-        retval.al_attrs.emplace_back(
-            lr.intersection(sa.sa_range).shift(lr.lr_start, -lr.lr_start),
-            std::make_pair(sa.sa_type, sa.sa_value));
-
+        auto ilr = lr.intersection(sa.sa_range).shift(0, -lr.lr_start);
+        retval.al_attrs.emplace_back(ilr,
+                                     std::make_pair(sa.sa_type, sa.sa_value));
         const auto& last_lr = retval.al_attrs.back().sa_range;
 
         ensure(last_lr.lr_end <= (int) retval.al_string.length());
@@ -508,7 +507,17 @@ line_range::intersection(const line_range& other) const
 line_range&
 line_range::shift(int32_t start, int32_t amount)
 {
-    if (start <= this->lr_start) {
+    if (start == this->lr_start) {
+        if (amount > 0) {
+            this->lr_start += amount;
+        }
+        if (this->lr_end != -1) {
+            this->lr_end += amount;
+            if (this->lr_end < this->lr_start) {
+                this->lr_end = this->lr_start;
+            }
+        }
+    } else if (start < this->lr_start) {
         this->lr_start = std::max(0, this->lr_start + amount);
         if (this->lr_end != -1) {
             this->lr_end = std::max(0, this->lr_end + amount);

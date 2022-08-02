@@ -1226,12 +1226,13 @@ external_log_format::rewrite(exec_context& ec,
         } else {
             field_value = exec_res.unwrapErr().to_attr_line().get_string();
         }
-        struct line_range adj_origin
+        auto adj_origin
             = iter->origin_in_full_msg(value_out.c_str(), value_out.length());
 
         value_out.erase(adj_origin.lr_start, adj_origin.length());
 
-        int32_t shift_amount = field_value.length() - adj_origin.length();
+        int32_t shift_amount
+            = ((int32_t) field_value.length()) - adj_origin.length();
         value_out.insert(adj_origin.lr_start, field_value);
         for (shift_iter = values.lvv_values.begin();
              shift_iter != values.lvv_values.end();

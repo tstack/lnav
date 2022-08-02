@@ -303,12 +303,10 @@ open_pretty_view()
     std::vector<std::unique_ptr<lnav::document::hier_node>> hier_nodes;
     std::vector<pretty_sub_source::hier_interval_t> hier_tree_vec;
     if (top_tc == log_tc) {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto& lss = lnav_data.ld_log_source;
         bool first_line = true;
 
-        for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom();
-             ++vl)
-        {
+        for (auto vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             auto lf = lss.find(cl);
             auto ll = lf->begin() + cl;

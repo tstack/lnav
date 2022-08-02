@@ -37,7 +37,8 @@
 #include "config.h"
 #include "sql_help.hh"
 
-extern "C" {
+extern "C"
+{
 struct sqlite3_api_routines;
 
 int sqlite3_series_init(sqlite3* db,
@@ -270,12 +271,15 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                           "The characters to trim.  Defaults to spaces.")
                     .optional())
             .with_tags({"string"})
-            .with_example(
-                {"To trim the leading whitespace from the string '   abc'",
-                 "SELECT ltrim('   abc')"})
-            .with_example({"To trim the characters 'a' or 'b' from the left "
-                           "side of the string 'aaaabbbc'",
-                           "SELECT ltrim('aaaabbbc', 'ab')"}),
+            .with_example({
+                "To trim the leading space characters from the string '   abc'",
+                "SELECT ltrim('   abc')",
+            })
+            .with_example({
+                "To trim the characters 'a' or 'b' from the left side of the "
+                "string 'aaaabbbc'",
+                "SELECT ltrim('aaaabbbc', 'ab')",
+            }),
 
         help_text("max",
                   "Returns the argument with the maximum value, or return NULL "
@@ -402,12 +406,16 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                           "The characters to trim.  Defaults to spaces.")
                     .optional())
             .with_tags({"string"})
-            .with_example(
-                {"To trim the whitespace from the end of the string 'abc   '",
-                 "SELECT rtrim('abc   ')"})
-            .with_example({"To trim the characters 'b' and 'c' from the string "
-                           "'abbbbcccc'",
-                           "SELECT rtrim('abbbbcccc', 'bc')"}),
+            .with_example({
+                "To trim the space characters from the end of the string 'abc  "
+                " '",
+                "SELECT rtrim('abc   ')",
+            })
+            .with_example({
+                "To trim the characters 'b' and 'c' from the string "
+                "'abbbbcccc'",
+                "SELECT rtrim('abbbbcccc', 'bc')",
+            }),
 
         help_text("sqlite_compileoption_get",
                   "Returns the N-th compile-time option used to build SQLite "
@@ -487,12 +495,15 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                           "The characters to trim.  Defaults to spaces.")
                     .optional())
             .with_tags({"string"})
-            .with_example({"To trim whitespace from the start and end of the "
-                           "string '    abc   '",
-                           "SELECT trim('    abc   ')"})
-            .with_example(
-                {"To trim the characters '-' and '+' from the string '-+abc+-'",
-                 "SELECT trim('-+abc+-', '-+')"}),
+            .with_example({
+                "To trim spaces from the start and end of the string '    abc  "
+                " '",
+                "SELECT trim('    abc   ')",
+            })
+            .with_example({
+                "To trim the characters '-' and '+' from the string '-+abc+-'",
+                "SELECT trim('-+abc+-', '-+')",
+            }),
 
         help_text(
             "typeof",

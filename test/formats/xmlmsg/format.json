@@ -5,7 +5,7 @@
         "description": "",
         "regex": {
             "std": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\]\\s+(?<level>\\w+)\\s+\\[(?<module>[^:]*):(?<line>\\d+)\\]\\s*(?<body>[^\\n]*)\\n?(?<msg_data>(?:.|\\n)*)"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\]\\s+(?<level>\\w+)\\s+\\[(?<module>[^:]*):(?<line>\\d+)\\]\\s*(?<body>[^\\n]*)\\n?(?<msg_data>.*)"
             }
         },
         "level": {
@@ -19,7 +19,8 @@
             "module": {
                 "kind": "string",
                 "identifier": true,
-                "description": "Python source module which emitted log entry"
+                "description": "Python source module which emitted log entry",
+                "rewriter": ";SELECT ''"
             },
             "line": {
                 "kind": "integer",
@@ -36,7 +37,8 @@
                 "hidden": true
             },
             "msg_data": {
-                "kind": "xml"
+                "kind": "xml",
+                "rewriter": ";SELECT node_path FROM xpath('//*', :msg_data)"
             }
         },
         "highlights": {

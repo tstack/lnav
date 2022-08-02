@@ -49,7 +49,6 @@ static void readline_shlex_highlighter_int(attr_line_t& al,
                                            int x,
                                            line_range sub);
 
-
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
 {
@@ -263,7 +262,8 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
             sub.lr_start + attr.sa_range.lr_end,
         };
         if (attr.sa_type == &SQL_COMMAND_ATTR
-            || attr.sa_type == &SQL_KEYWORD_ATTR) {
+            || attr.sa_type == &SQL_KEYWORD_ATTR)
+        {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_KEYWORD));
         } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR) {
             if (!attr.sa_range.contains(x) && attr.sa_range.lr_end != x) {
