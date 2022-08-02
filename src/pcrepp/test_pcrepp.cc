@@ -43,6 +43,21 @@ main(int argc, char* argv[])
     int retval = EXIT_SUCCESS;
 
     {
+        pcrepp ipmatcher(
+            R"((?(DEFINE)(?<byte>2[0-4]\d|25[0-5]|1\d\d|[1-9]?\d))\b(?&byte)(\.(?&byte)){3}\b)");
+        pcre_input pi("192.168.1.1");
+
+        assert(ipmatcher.match(context, pi));
+        assert(context.all()->c_begin == 0);
+    }
+
+    {
+        pcrepp ipmatcher(R"((DEFINE))");
+
+        assert(ipmatcher.get_capture_count() == 1);
+    }
+
+    {
         pcrepp nomatch("nothing-to-match");
         pcre_input pi("dummy");
 
@@ -85,7 +100,8 @@ main(int argc, char* argv[])
         int index = 0;
 
         for (iter = match3.named_begin(); iter != match3.named_end();
-             ++iter, index++) {
+             ++iter, index++)
+        {
             assert(strcmp(iter->pnc_name, expected_names[index]) == 0);
         }
 

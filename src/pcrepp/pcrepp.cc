@@ -144,6 +144,9 @@ pcrepp::find_captures(const char* pattern)
                     break;
                 case ')': {
                     if (!cap_in_progress.empty()) {
+                        static const auto DEFINE_SF
+                            = string_fragment::from_const("(?(DEFINE)");
+
                         auto& cap = cap_in_progress.back();
                         char first = '\0', second = '\0', third = '\0';
                         bool is_cap = false;
@@ -157,6 +160,14 @@ pcrepp::find_captures(const char* pattern)
                         }
                         if (cap.length() >= 4) {
                             third = pattern[cap.c_begin + 3];
+                        }
+                        if (cap.c_begin >= 2) {
+                            auto poss_define = string_fragment::from_byte_range(
+                                pattern, cap.c_begin - 2, cap.c_end);
+                            if (poss_define == DEFINE_SF) {
+                                cap_in_progress.pop_back();
+                                continue;
+                            }
                         }
                         if (first == '?') {
                             if (second == '\'') {
