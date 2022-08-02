@@ -1142,8 +1142,12 @@ looper()
 
             for (const auto& format : log_format::get_root_formats()) {
                 for (auto& hl : format->lf_highlighters) {
-                    hl.with_attrs(hl.h_attrs
-                                  | vc.attrs_for_ident(hl.h_pattern));
+                    if (hl.h_fg.empty() && hl.h_bg.empty()
+                        && hl.h_attrs.empty())
+                    {
+                        hl.with_attrs(hl.h_attrs
+                                      | vc.attrs_for_ident(hl.h_pattern));
+                    }
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[{
                         highlight_source_t::CONFIGURATION,
