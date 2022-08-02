@@ -89,7 +89,7 @@ highlighter::annotate(attr_line_t& al, int start) const
     auto& vc = view_colors::singleton();
     const auto& str = al.get_string();
     auto& sa = al.get_attrs();
-    auto sf = string_fragment::from_substr(
+    auto sf = string_fragment::from_str_range(
         str, start, std::min(size_t{8192}, str.size()));
 
     pcre_context_static<60> pc;
