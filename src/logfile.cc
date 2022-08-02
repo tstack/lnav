@@ -300,7 +300,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         this->lf_out_of_time_order_count += 1;
                         for (size_t lpc = prescan_size;
                              lpc < this->lf_index.size();
-                             lpc++) {
+                             lpc++)
+                        {
                             auto& line_to_update = this->lf_index[lpc];
 
                             line_to_update.set_time_skew(true);
@@ -519,7 +520,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             size_t old_size = this->lf_index.size();
 
             if (old_size == 0
-                && this->lf_text_format == text_format_t::TF_UNKNOWN) {
+                && this->lf_text_format == text_format_t::TF_UNKNOWN)
+            {
                 file_range fr = this->lf_line_buffer.get_available();
                 auto avail_data = this->lf_line_buffer.read_range(fr);
 
@@ -580,7 +582,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 break;
             }
             if (begin_size == 0 && !has_format
-                && li.li_file_range.fr_offset > 16 * 1024) {
+                && li.li_file_range.fr_offset > 16 * 1024)
+            {
                 break;
             }
 #if 0
@@ -593,6 +596,13 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 #endif
             if (this->lf_format && !this->back().is_continued()) {
                 lnav::log::watch::eval_with(*this, this->end() - 1);
+            }
+
+            if (li.li_partial) {
+                // The last read was at the end of the file, so break.  We'll
+                // need to cycle back around to pop off this partial line in
+                // order to continue reading correctly.
+                break;
             }
 
             limit -= 1;
@@ -620,7 +630,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         }
 
         if (record_rusage
-            && (prev_range.fr_offset - begin_index_size) > (500 * 1024)) {
+            && (prev_range.fr_offset - begin_index_size) > (500 * 1024))
+        {
             struct rusage end_rusage;
 
             getrusage(RUSAGE_SELF, &end_rusage);
@@ -654,7 +665,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                     writable_opid_map->emplace(opid_pair);
                 } else {
                     if (opid_pair.second.otr_begin
-                        < opid_iter->second.otr_begin) {
+                        < opid_iter->second.otr_begin)
+                    {
                         opid_iter->second.otr_begin
                             = opid_pair.second.otr_begin;
                     }
@@ -950,7 +962,8 @@ logfile::line_for_offset(file_off_t off) const
         this->lf_index.begin(), this->lf_index.end(), off, cmper{});
     if (iter == this->lf_index.end()) {
         if (this->lf_index.back().get_offset() <= off
-            && off < this->lf_index_size) {
+            && off < this->lf_index_size)
+        {
             return nonstd::make_optional(iter);
         }
         return nonstd::nullopt;

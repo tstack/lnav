@@ -1154,7 +1154,11 @@ line_buffer::read_range(const file_range fr)
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
          */
-        return Err(std::string("out-of-bounds"));
+        return Err(
+            fmt::format(FMT_STRING("attempt to read past the known end of the "
+                                   "file: read-offset={}; last_line_offset={}"),
+                        fr.fr_offset,
+                        this->lb_last_line_offset));
     }
 
     if (!(this->in_range(fr.fr_offset)
