@@ -88,6 +88,22 @@ alerter::singleton()
     return retval;
 }
 
+bool
+alerter::chime(std::string msg)
+{
+    if (!this->a_enabled) {
+        return true;
+    }
+
+    bool retval = this->a_do_flash;
+    if (this->a_do_flash) {
+        log_warning("chime message: %s", msg.c_str());
+        ::flash();
+    }
+    this->a_do_flash = false;
+    return retval;
+}
+
 struct utf_to_display_adjustment {
     int uda_origin;
     int uda_offset;

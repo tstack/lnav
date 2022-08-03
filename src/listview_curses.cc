@@ -298,7 +298,8 @@ listview_curses::do_update()
                 this->lv_gutter_source->listview_gutter_value_for_range(
                     *this, range_start, range_end, ch, role, bar_role);
                 if (gutter_y >= (unsigned int) y
-                    && gutter_y <= (unsigned int) lines) {
+                    && gutter_y <= (unsigned int) lines)
+                {
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
@@ -365,9 +366,6 @@ listview_curses::shift_selection(int offset)
     if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
         this->set_selection(new_selection);
         this->scroll_selection_into_view();
-    } else if (!alerter::singleton().chime()) {
-        // XXX Disabling for now...
-        // this->delegate_scroll_out();
     }
 }
 
@@ -482,7 +480,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
     }
     if (top < 0 || (top > 0 && top >= inner_height)) {
         if (suppress_flash == false) {
-            alerter::singleton().chime();
+            alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
         this->lv_top = top;

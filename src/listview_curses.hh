@@ -90,13 +90,12 @@ class list_gutter_source {
 public:
     virtual ~list_gutter_source() = default;
 
-    virtual void listview_gutter_value_for_range(
-        const listview_curses& lv,
-        int start,
-        int end,
-        chtype& ch_out,
-        role_t& role_out,
-        role_t& bar_role_out)
+    virtual void listview_gutter_value_for_range(const listview_curses& lv,
+                                                 int start,
+                                                 int end,
+                                                 chtype& ch_out,
+                                                 role_t& role_out,
+                                                 role_t& bar_role_out)
     {
         ch_out = ACS_VLINE;
     }
@@ -340,7 +339,8 @@ public:
     {
         if (offset < 0 && this->lv_top == 0) {
             if (suppress_flash == false) {
-                alerter::singleton().chime();
+                alerter::singleton().chime(
+                    "the top of the view has been reached");
             }
         } else {
             this->set_top(std::max(0_vl, this->lv_top + offset),
@@ -369,7 +369,8 @@ public:
 
             this->get_dimensions(height, width);
             if ((this->get_inner_width() - this->lv_left) <= width) {
-                alerter::singleton().chime();
+                alerter::singleton().chime(
+                    "the maximum width of the view has been reached");
                 return;
             }
         }
@@ -391,7 +392,8 @@ public:
     unsigned int shift_left(int offset)
     {
         if (this->lv_word_wrap) {
-            alerter::singleton().chime();
+            alerter::singleton().chime(
+                "cannot scroll horizontally when word wrap is enabled");
         } else if (offset < 0 && this->lv_left < (unsigned int) -offset) {
             this->set_left(0);
         } else {

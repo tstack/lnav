@@ -1,10 +1,16 @@
-
+#!lnav -Nf
 # This file is an export of an lnav session.  You can type
 # '|/path/to/this/file' in lnav to execute this file and
 # restore the state of the session.
-#
+
+;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.11.0' || ' or later')
+   WHERE lnav_version() < '0.11.0' COLLATE naturalcase
+
 # The files loaded into the session were:
-#   {test_dir}/logfile_access_log.0
+
+:open {test_dir}/logfile_access_log.0
+:rebuild
+
 
 # The following SQL statements will restore the bookmarks,
 # comments, and tags that were added in the session.

@@ -231,9 +231,9 @@ handle_paging_key(int ch)
 
         case 'a':
             if (lnav_data.ld_last_view == nullptr) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("no last view available");
             } else {
-                textview_curses* tc = lnav_data.ld_last_view;
+                auto* tc = lnav_data.ld_last_view;
 
                 lnav_data.ld_last_view = nullptr;
                 ensure_view(tc);
@@ -242,7 +242,7 @@ handle_paging_key(int ch)
 
         case 'A':
             if (lnav_data.ld_last_view == nullptr) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("no last view available");
             } else {
                 auto* tc = lnav_data.ld_last_view;
                 auto* top_tc = *lnav_data.ld_view_stack.top();
@@ -305,13 +305,13 @@ handle_paging_key(int ch)
                 lnav_data.ld_rl_view->set_alt_value(
                     HELP_MSG_1(m, "to bookmark a line"));
             } else {
-                alerter::singleton().chime();
+                alerter::singleton().chime("no more search hits to the right");
             }
         } break;
 
         case '<':
             if (tc->get_left() == 0) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("no more search hits to the left");
             } else {
                 std::pair<int, int> range;
 
@@ -357,7 +357,7 @@ handle_paging_key(int ch)
 
         case 'z':
             if ((lnav_data.ld_zoom_level - 1) < 0) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("maximum zoom-in level reached");
             } else {
                 execute_command(
                     ec,
@@ -368,7 +368,7 @@ handle_paging_key(int ch)
 
         case 'Z':
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("maximum zoom-out level reached");
             } else {
                 execute_command(
                     ec,
@@ -396,7 +396,8 @@ handle_paging_key(int ch)
                     tc->shift_top(1_vl);
                 }
                 if (lnav_data.ld_last_user_mark[tc] + 1
-                    >= tc->get_inner_height()) {
+                    >= tc->get_inner_height())
+                {
                     break;
                 }
                 lnav_data.ld_last_user_mark[tc] += 1;
@@ -431,7 +432,7 @@ handle_paging_key(int ch)
                 lnav_data.ld_last_user_mark[tc] = new_mark - 1;
             } else {
                 lnav_data.ld_last_user_mark[tc] = new_mark;
-                alerter::singleton().chime();
+                alerter::singleton().chime("no more lines to mark");
             }
             lnav_data.ld_select_start[tc] = tc->get_top();
             tc->reload_data();
@@ -442,8 +443,9 @@ handle_paging_key(int ch)
 
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc)
-                == lnav_data.ld_last_user_mark.end()) {
-                alerter::singleton().chime();
+                == lnav_data.ld_last_user_mark.end())
+            {
+                alerter::singleton().chime("no lines have been marked");
             } else {
                 int start_line = std::min((int) tc->get_top(),
                                           lnav_data.ld_last_user_mark[tc] + 1);
@@ -486,7 +488,8 @@ handle_paging_key(int ch)
                 while (next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL) {
+                               == log_accel::A_DECEL)
+                    {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -509,7 +512,8 @@ handle_paging_key(int ch)
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL) {
+                               == log_accel::A_DECEL)
+                    {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -562,7 +566,8 @@ handle_paging_key(int ch)
 
         case 'D':
             if (tc->get_top() == 0) {
-                alerter::singleton().chime();
+                alerter::singleton().chime(
+                    "the top of the log has been reached");
             } else if (lss) {
                 lss->time_for_row(tc->get_top()) |
                     [lss, ch, tc](auto first_time) {
@@ -605,7 +610,8 @@ handle_paging_key(int ch)
                 struct line_range opid_range = find_string_attr_range(
                     start_helper.lh_string_attrs, &logline::L_OPID);
                 if (!opid_range.is_valid()) {
-                    alerter::singleton().chime();
+                    alerter::singleton().chime(
+                        "Log message does not contain an opid");
                     lnav_data.ld_rl_view->set_attr_value(
                         lnav::console::user_message::error(
                             "Log message does not contain an opid")
@@ -620,7 +626,8 @@ handle_paging_key(int ch)
                     while (true) {
                         if (ch == 'o') {
                             if (++next_helper.lh_current_line
-                                >= tc->get_inner_height()) {
+                                >= tc->get_inner_height())
+                            {
                                 break;
                             }
                         } else {
@@ -668,7 +675,8 @@ handle_paging_key(int ch)
                                     "No more messages found with opid: ")
                                     .append(lnav::roles::symbol(opid_str)))
                                 .to_attr_line());
-                        alerter::singleton().chime();
+                        alerter::singleton().chime(
+                            "no more messages found with opid");
                     }
                 }
             }
@@ -692,7 +700,7 @@ handle_paging_key(int ch)
 
         case 't':
             if (lnav_data.ld_text_source.current_file() == nullptr) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("No text files loaded");
                 lnav_data.ld_rl_view->set_attr_value(
                     lnav::console::user_message::error("No text files loaded")
                         .to_attr_line());
@@ -775,7 +783,8 @@ handle_paging_key(int ch)
                     for (row = 0; row < dls.dls_rows.size(); row++) {
                         if (strcmp(dls.dls_rows[row][log_line_index.value()],
                                    linestr.data())
-                            == 0) {
+                            == 0)
+                        {
                             vis_line_t db_line(row);
 
                             db_tc->set_top(db_line);
@@ -813,7 +822,8 @@ handle_paging_key(int ch)
                         size_t col_len = strlen(col_value);
 
                         if (dts.scan(col_value, col_len, nullptr, &tm, tv)
-                            != nullptr) {
+                            != nullptr)
+                        {
                             lnav_data.ld_log_source.find_from_time(tv) |
                                 [tc](auto vl) {
                                     tc->set_top(vl);
@@ -878,7 +888,8 @@ handle_paging_key(int ch)
                     }
                 }
             } else {
-                alerter::singleton().chime();
+                alerter::singleton().chime(
+                    "no configuration panels in this view");
             }
             break;
 

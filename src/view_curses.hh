@@ -149,19 +149,7 @@ public:
 
     void enabled(bool enable) { this->a_enabled = enable; }
 
-    bool chime()
-    {
-        if (!this->a_enabled) {
-            return true;
-        }
-
-        bool retval = this->a_do_flash;
-        if (this->a_do_flash) {
-            ::flash();
-        }
-        this->a_do_flash = false;
-        return retval;
-    }
+    bool chime(std::string msg);
 
     void new_input(int ch)
     {
@@ -377,25 +365,13 @@ public:
 
     void set_default_role(role_t role) { this->vc_default_role = role; }
 
-    void set_visible(bool value)
-    {
-        this->vc_visible = value;
-    }
+    void set_visible(bool value) { this->vc_visible = value; }
 
-    bool is_visible() const
-    {
-        return this->vc_visible;
-    }
+    bool is_visible() const { return this->vc_visible; }
 
-    void set_width(long width)
-    {
-        this->vc_width = width;
-    }
+    void set_width(long width) { this->vc_width = width; }
 
-    long get_width() const
-    {
-        return this->vc_width;
-    }
+    long get_width() const { return this->vc_width; }
 
     static void awaiting_user_input();
 
@@ -469,25 +445,13 @@ public:
         return std::find(this->begin(), this->end(), view);
     }
 
-    iterator begin()
-    {
-        return this->vs_views.begin();
-    }
+    iterator begin() { return this->vs_views.begin(); }
 
-    iterator end()
-    {
-        return this->vs_views.end();
-    }
+    iterator end() { return this->vs_views.end(); }
 
-    size_t size() const
-    {
-        return this->vs_views.size();
-    }
+    size_t size() const { return this->vs_views.size(); }
 
-    bool empty() const
-    {
-        return this->vs_views.empty();
-    }
+    bool empty() const { return this->vs_views.empty(); }
 
     std::function<void(T*)> vs_change_handler;
 

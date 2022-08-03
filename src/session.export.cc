@@ -131,12 +131,16 @@ SELECT content_id, format, time_offset FROM lnav_file
   WHERE format IS NOT NULL AND time_offset != 0
 )";
 
-    static const char* HEADER = R"(
+    static constexpr const char HEADER[] = R"(#!lnav -Nf
 # This file is an export of an lnav session.  You can type
 # '|/path/to/this/file' in lnav to execute this file and
 # restore the state of the session.
-#
+
+;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || {0} || ' or later')
+   WHERE lnav_version() < {0} COLLATE naturalcase
+
 # The files loaded into the session were:
+
 )";
 
     static constexpr const char MARK_HEADER[] = R"(
@@ -189,10 +193,12 @@ SELECT content_id, format, time_offset FROM lnav_file
                 .with_reason(prep_mark_res.unwrapErr()));
     }
 
-    fmt::print(file, FMT_STRING("{}"), HEADER);
+    fmt::print(file, FMT_STRING(HEADER), sqlitepp::quote(PACKAGE_VERSION));
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        fmt::print(file, FMT_STRING("#   {}"), lf->get_filename());
+        fmt::print(file, FMT_STRING(":open {}"), lf->get_filename());
     }
+
+    fmt::print(file, FMT_STRING("\n:rebuild\n"));
 
     auto mark_count = 0;
     auto each_mark_res

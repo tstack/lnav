@@ -857,7 +857,12 @@ toggle_view(textview_curses* toggle_tc)
         lnav_data.ld_last_view = tc;
         lnav_data.ld_view_stack.pop_back();
     } else {
-        if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
+        if (toggle_tc == &lnav_data.ld_views[LNV_LOG]
+            || toggle_tc == &lnav_data.ld_views[LNV_TEXT])
+        {
+            rescan_files(true);
+            rebuild_indexes_repeatedly();
+        } else if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
             open_schema_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
@@ -982,7 +987,7 @@ moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         return true;
     }
 
-    alerter::singleton().chime();
+    alerter::singleton().chime("unable to find next bookmark");
 
     return false;
 }
@@ -1020,7 +1025,7 @@ previous_cluster(const bookmark_type_t* bt, textview_curses* tc)
             tc->set_top(new_top.value());
         }
     } else {
-        alerter::singleton().chime();
+        alerter::singleton().chime("no previous bookmark");
     }
 }
 

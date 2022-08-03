@@ -989,7 +989,7 @@ com_save_to(exec_context& ec,
     } else if (split_args[0] == "/dev/clipboard") {
         auto open_res = sysclip::open(sysclip::type_t::GENERAL);
         if (open_res.isErr()) {
-            alerter::singleton().chime();
+            alerter::singleton().chime("cannot open clipboard");
             return ec.make_error("Unable to copy to clipboard: {}",
                                  open_res.unwrapErr());
         }
@@ -1557,7 +1557,7 @@ com_redirect_to(exec_context& ec,
     } else if (split_args[0] == "/dev/clipboard") {
         auto out = sysclip::open(sysclip::type_t::GENERAL);
         if (out.isErr()) {
-            alerter::singleton().chime();
+            alerter::singleton().chime("cannot open clipboard");
             return ec.make_error("Unable to copy to clipboard: {}",
                                  out.unwrapErr());
         }
@@ -3653,15 +3653,18 @@ com_export_session_to(exec_context& ec,
         } else if (fn == "/dev/clipboard") {
             auto open_res = sysclip::open(sysclip::type_t::GENERAL);
             if (open_res.isErr()) {
-                alerter::singleton().chime();
+                alerter::singleton().chime("cannot open clipboard");
                 return ec.make_error("Unable to copy to clipboard: {}",
                                      open_res.unwrapErr());
             }
             outfile = open_res.unwrap();
         } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
             return ec.make_error("{} -- unavailable in secure mode", args[0]);
-        } else if ((outfile = fopen(fn.c_str(), "w")) == nullptr) {
-            return ec.make_error("unable to open file -- {}", fn);
+        } else {
+            if ((outfile = fopen(fn.c_str(), "we")) == nullptr) {
+                return ec.make_error("unable to open file -- {}", fn);
+            }
+            fchmod(fileno(outfile.in()), S_IRWXU);
         }
 
         auto export_res = lnav::session::export_to(outfile.in());
@@ -3959,6 +3962,7 @@ com_rebuild(exec_context& ec,
 {
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
+        rescan_files(true);
         rebuild_indexes_repeatedly();
     }
 
@@ -5466,6 +5470,11 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Export the current lnav state to an lnav script file")
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})},
+    {"rebuild",
+    com_rebuild,
+    help_text(":rebuild")
+    .with_summary("Forcefully rebuild file indexes")
+    .with_tags({"scripting"})},
     {"set-min-log-level",
      com_set_min_log_level,
 
@@ -5590,11 +5599,10 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
         cmd_map["add-test"] = &add_test;
     }
     if (getenv("lnav_test") != nullptr) {
-        static readline_context::command_t rebuild(com_rebuild),
+        static readline_context::command_t
             shexec(com_shexec), poll_now(com_poll_now),
             test_comment(com_test_comment);
 
-        cmd_map["rebuild"] = &rebuild;
         cmd_map["shexec"] = &shexec;
         cmd_map["poll-now"] = &poll_now;
         cmd_map["test-comment"] = &test_comment;

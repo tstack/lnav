@@ -66,7 +66,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             if (sel < 0 || (size_t) sel >= this->text_line_count()
                 || !this->ss_cursor_column || this->ss_value_source == nullptr)
             {
-                alerter::singleton().chime();
+                alerter::singleton().chime(
+                    "a value must be selected before it can be marked");
                 return true;
             }
 

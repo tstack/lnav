@@ -113,7 +113,7 @@ sql_progress(const struct log_cursor& lc)
     size_t total = lnav_data.ld_log_source.text_line_count();
     off_t off = lc.lc_curr_line;
 
-    if (off < 0) {
+    if (off < 0 || off >= total) {
         return 0;
     }
 

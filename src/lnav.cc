@@ -1327,7 +1327,7 @@ looper()
                                                      "command <cmd>",
                     encoded_name,
                     keyseq));
-                alerter::singleton().chime();
+                alerter::singleton().chime("unrecognized key");
             };
         }
 

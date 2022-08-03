@@ -212,7 +212,8 @@ vt52_curses::map_output(const char* output, int len)
                         = utf8_char_to_byte_index(line_string, this->vc_x);
 
                     for (int esc_index = 0; esc_index < this->vc_escape_len;
-                         esc_index++) {
+                         esc_index++)
+                    {
                         if (x_byte_index < this->vc_line.length()) {
                             line_string[x_byte_index]
                                 = this->vc_escape[esc_index];
@@ -225,7 +226,8 @@ vt52_curses::map_output(const char* output, int len)
                     this->vc_escape_len = 0;
                 }
             } else if ((cap = vt52_escape_map::singleton()[this->vc_escape])
-                       != nullptr) {
+                       != nullptr)
+            {
                 this->vc_escape_len = 0;
                 if (strcmp(cap, "ce") == 0) {
                     this->vc_line.erase_utf8_chars(this->vc_x);
