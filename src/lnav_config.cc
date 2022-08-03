@@ -240,7 +240,7 @@ install_from_git(const std::string& repo)
         return false;
     }
 
-    auto config_path = local_staging_path / "*.{json,lnav,sql}";
+    auto config_path = local_staging_path / "*";
     static_root_mem<glob_t, globfree> gl;
     int found_config_file = 0;
     int found_format_file = 0;
@@ -256,6 +256,10 @@ install_from_git(const std::string& repo)
                 continue;
             }
             if (file_path.extension() == ".sql") {
+                found_sql_file += 1;
+                continue;
+            }
+            if (file_path.extension() != ".json") {
                 found_sql_file += 1;
                 continue;
             }
