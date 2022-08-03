@@ -247,7 +247,7 @@ install_from_git(const std::string& repo)
     int found_sql_file = 0;
     int found_lnav_file = 0;
 
-    if (glob(config_path.c_str(), GLOB_BRACE, nullptr, gl.inout()) == 0) {
+    if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
             auto file_path = ghc::filesystem::path{gl->gl_pathv[lpc]};
 
