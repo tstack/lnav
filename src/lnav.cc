@@ -1773,9 +1773,8 @@ UPDATE lnav_views_echo
                             lnav_data.ld_rl_view->set_value(
                                 last_cmd_result.first.unwrap());
                         } else {
-                            lnav_data.ld_rl_view->set_attr_value(
-                                last_cmd_result.first.unwrapErr()
-                                    .to_attr_line());
+                            ec.ec_error_callback_stack.back()(
+                                last_cmd_result.first.unwrapErr());
                         }
                         lnav_data.ld_rl_view->set_alt_value(
                             last_cmd_result.second);
@@ -1823,29 +1822,7 @@ UPDATE lnav_views_echo
                 }
             }
 
-            if (lnav_data.ld_winched) {
-                struct winsize size;
-
-                lnav_data.ld_winched = false;
-
-                if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
-                    resizeterm(size.ws_row, size.ws_col);
-                }
-                rlc->do_update();
-                rlc->window_change();
-                filter_source->fss_editor->window_change();
-                for (auto& sc : lnav_data.ld_status) {
-                    sc.window_change();
-                }
-                lnav_data.ld_view_stack.set_needs_update();
-                lnav_data.ld_doc_view.set_needs_update();
-                lnav_data.ld_example_view.set_needs_update();
-                lnav_data.ld_match_view.set_needs_update();
-                lnav_data.ld_filter_view.set_needs_update();
-                lnav_data.ld_files_view.set_needs_update();
-                lnav_data.ld_spectro_details_view.set_needs_update();
-                lnav_data.ld_user_message_view.set_needs_update();
-            }
+            handle_winch();
 
             if (lnav_data.ld_child_terminated) {
                 lnav_data.ld_child_terminated = false;

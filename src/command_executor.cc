@@ -156,6 +156,10 @@ sql_progress(const struct log_cursor& lc)
         lnav_data.ld_status[LNS_TOP].do_update();
         lnav_data.ld_status[LNS_BOTTOM].do_update();
         lnav_data.ld_rl_view->do_update();
+        if (handle_winch()) {
+            layout_views();
+            lnav_data.ld_view_stack.do_update();
+        }
         refresh();
     }
 
@@ -841,45 +845,87 @@ execute_init_commands(
         return;
     }
 
+    nonstd::optional<exec_context::output_t> ec_out;
+    auto_fd fd_copy;
+
+    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+        auto_mem<FILE> tmpout(fclose);
+
+        tmpout = std::tmpfile();
+        if (!tmpout) {
+            msgs.emplace_back(Err(lnav::console::user_message::error(
+                                      "Unable to open temporary output file")
+                                      .with_errno_reason()),
+                              "");
+            return;
+        }
+        fd_copy = auto_fd::dup_of(fileno(tmpout));
+        ec_out = std::make_pair(tmpout.release(), fclose);
+    }
+
     auto& dls = lnav_data.ld_db_row_source;
     int option_index = 1;
 
-    log_info("Executing initial commands");
-    for (auto& cmd : lnav_data.ld_commands) {
-        static const auto COMMAND_OPTION_SRC
-            = intern_string::lookup("command-option");
+    {
+        log_info("Executing initial commands");
+        exec_context::output_guard og(ec, "tmp", ec_out);
 
-        std::string alt_msg;
+        for (auto& cmd : lnav_data.ld_commands) {
+            static const auto COMMAND_OPTION_SRC
+                = intern_string::lookup("command-option");
 
-        wait_for_children();
+            std::string alt_msg;
 
-        {
-            auto _sg = ec.enter_source(COMMAND_OPTION_SRC, option_index++, cmd);
-            switch (cmd.at(0)) {
-                case ':':
-                    msgs.emplace_back(execute_command(ec, cmd.substr(1)),
-                                      alt_msg);
-                    break;
-                case '/':
-                    execute_search(cmd.substr(1));
-                    break;
-                case ';':
-                    setup_logline_table(ec);
-                    msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg),
-                                      alt_msg);
-                    break;
-                case '|':
-                    msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
-                    break;
+            wait_for_children();
+
+            log_debug("init cmd: %s", cmd.c_str());
+            {
+                auto _sg
+                    = ec.enter_source(COMMAND_OPTION_SRC, option_index++, cmd);
+                switch (cmd.at(0)) {
+                    case ':':
+                        msgs.emplace_back(execute_command(ec, cmd.substr(1)),
+                                          alt_msg);
+                        break;
+                    case '/':
+                        execute_search(cmd.substr(1));
+                        break;
+                    case ';':
+                        setup_logline_table(ec);
+                        msgs.emplace_back(
+                            execute_sql(ec, cmd.substr(1), alt_msg), alt_msg);
+                        break;
+                    case '|':
+                        msgs.emplace_back(execute_file(ec, cmd.substr(1)),
+                                          alt_msg);
+                        break;
+                }
+
+                rescan_files();
+                rebuild_indexes_repeatedly();
             }
-
-            rescan_files();
-            rebuild_indexes_repeatedly();
+            if (dls.dls_rows.size() > 1) {
+                ensure_view(LNV_DB);
+            }
         }
     }
     lnav_data.ld_commands.clear();
-    if (dls.dls_rows.size() > 1) {
-        ensure_view(&lnav_data.ld_views[LNV_DB]);
+
+    struct stat st;
+
+    if (ec_out && fstat(fd_copy, &st) != -1 && st.st_size > 0) {
+        static const auto OUTPUT_NAME = std::string("Initial command output");
+
+        lnav_data.ld_active_files.fc_file_names[OUTPUT_NAME]
+            .with_fd(std::move(fd_copy))
+            .with_include_in_session(false)
+            .with_detect_format(false);
+        lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0);
+
+        if (lnav_data.ld_rl_view != nullptr) {
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_1(X, "to close the file"));
+        }
     }
 
     lnav_data.ld_cmd_init_done = true;

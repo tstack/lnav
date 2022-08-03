@@ -82,6 +82,7 @@ nonstd::optional<lnav_view_t> view_from_string(const char* name);
 bool ensure_view(textview_curses* expected_tc);
 bool ensure_view(lnav_view_t expected);
 bool toggle_view(textview_curses* toggle_tc);
+bool handle_winch();
 void layout_views();
 void update_hits(textview_curses* tc);
 

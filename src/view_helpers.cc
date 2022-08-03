@@ -34,6 +34,7 @@
 #include "config.h"
 #include "document.sections.hh"
 #include "environ_vtab.hh"
+#include "filter_sub_source.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
@@ -520,6 +521,42 @@ build_all_help_text()
 
     lnav_data.ld_help_source.replace_with(all_help_text);
     lnav_data.ld_views[LNV_HELP].redo_search();
+}
+
+bool
+handle_winch()
+{
+    static auto* filter_source = injector::get<filter_sub_source*>();
+
+    if (!lnav_data.ld_winched) {
+        return false;
+    }
+
+    struct winsize size;
+
+    lnav_data.ld_winched = false;
+
+    if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
+        resizeterm(size.ws_row, size.ws_col);
+    }
+    if (lnav_data.ld_rl_view != nullptr) {
+        lnav_data.ld_rl_view->do_update();
+        lnav_data.ld_rl_view->window_change();
+    }
+    filter_source->fss_editor->window_change();
+    for (auto& sc : lnav_data.ld_status) {
+        sc.window_change();
+    }
+    lnav_data.ld_view_stack.set_needs_update();
+    lnav_data.ld_doc_view.set_needs_update();
+    lnav_data.ld_example_view.set_needs_update();
+    lnav_data.ld_match_view.set_needs_update();
+    lnav_data.ld_filter_view.set_needs_update();
+    lnav_data.ld_files_view.set_needs_update();
+    lnav_data.ld_spectro_details_view.set_needs_update();
+    lnav_data.ld_user_message_view.set_needs_update();
+
+    return true;
 }
 
 void
