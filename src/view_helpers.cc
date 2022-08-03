@@ -325,6 +325,7 @@ open_pretty_view()
                 al.get_string(),
                 text_sub_source::RF_FULL | text_sub_source::RF_REWRITE);
             lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
+            scrub_ansi_string(al.get_string(), al.get_attrs());
             if (log_tc->get_hide_fields()) {
                 al.apply_hide();
             }
@@ -404,22 +405,19 @@ open_pretty_view()
         }
     } else if (top_tc == text_tc) {
         if (text_tc->listview_rows(*text_tc)) {
-            auto lf = lnav_data.ld_text_source.current_file();
-            std::string all_lines;
+            std::vector<attr_line_t> rows;
+            rows.resize(text_tc->get_bottom() - text_tc->get_top() + 1);
+            text_tc->listview_value_for_rows(
+                *text_tc, text_tc->get_top(), rows);
+            attr_line_t orig_al;
 
-            for (vis_line_t vl = text_tc->get_top();
-                 vl <= text_tc->get_bottom();
-                 ++vl)
-            {
-                auto ll = lf->begin() + vl;
-                shared_buffer_ref sbr;
-
-                lf->read_full_message(ll, sbr);
-                all_lines.append(sbr.get_data(), sbr.length());
+            for (const auto& row : rows) {
+                orig_al.append(row);
             }
-            data_scanner ds(all_lines);
+
+            data_scanner ds(orig_al.get_string());
             string_attrs_t sa;
-            pretty_printer pp(&ds, sa);
+            pretty_printer pp(&ds, orig_al.get_attrs());
 
             pp.append_to(full_text);
             all_intervals = pp.take_intervals();

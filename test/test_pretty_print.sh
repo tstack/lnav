@@ -35,3 +35,11 @@ run_cap_test ${lnav_test} -d /tmp/lnav.err -n \
     -I ${test_dir} \
     -c ":switch-to-view pretty" \
     ${test_dir}/logfile_xml_msg.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":switch-to-view pretty" \
+    ${test_dir}/logfile_ansi.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":switch-to-view pretty" \
+    ${test_dir}/textfile_ansi.0

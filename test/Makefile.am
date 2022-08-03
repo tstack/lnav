@@ -270,6 +270,7 @@ dist_noinst_DATA = \
 	log.clog \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
+	logfile_ansi.0 \
 	logfile_bad_access_log.0 \
 	logfile_bad_syslog.0 \
 	logfile_block.1 \

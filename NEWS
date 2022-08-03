@@ -117,6 +117,7 @@ lnav v0.11.0:
        executed instead of just the first one.
      * In cases where there were many different colors on screen, some
        text would be colored incorrectly.
+     * The pretty-print view now handles ANSI escape sequences.
 
 lnav v0.10.1:
      Features:
