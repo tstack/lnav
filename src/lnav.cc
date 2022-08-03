@@ -3069,7 +3069,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             if (e.code().value() != EPIPE) {
                 fprintf(stderr, "error: %s\n", e.what());
             }
-        } catch (line_buffer::error& e) {
+        } catch (const line_buffer::error& e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));
         }
 
@@ -3078,15 +3078,25 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         if (stdin_captured && stdin_opts.so_out.empty()
             && !(lnav_data.ld_flags & LNF_HEADLESS))
         {
-            ghc::filesystem::permissions(stdin_tmp_path,
-                                         ghc::filesystem::perms::owner_read);
-            auto stdin_size = ghc::filesystem::file_size(stdin_tmp_path);
-            if (verbosity == verbosity_t::quiet
-                || stdin_size > MAX_STDIN_CAPTURE_SIZE)
+            auto stdin_fd = stdin_reader->get_fd();
+            struct stat stdin_stat;
+            nonstd::optional<file_ssize_t> stdin_size;
+
+            // NB: the file can be deleted by the time we get here
+            fchmod(stdin_fd.get(), S_IRUSR);
+            if (fstat(stdin_fd.get(), &stdin_stat) != -1) {
+                stdin_size = stdin_stat.st_size;
+            }
+            if (!ghc::filesystem::exists(stdin_tmp_path)
+                || verbosity == verbosity_t::quiet || !stdin_size
+                || stdin_size.value() > MAX_STDIN_CAPTURE_SIZE)
             {
-                log_info("not saving large stdin capture -- %s",
-                         stdin_tmp_path.c_str());
-                ghc::filesystem::remove(stdin_tmp_path);
+                std::error_code rm_err_code;
+
+                log_info("not saving stdin capture -- %s (size=%d)",
+                         stdin_tmp_path.c_str(),
+                         stdin_size.value_or(-1));
+                ghc::filesystem::remove(stdin_tmp_path, rm_err_code);
             } else {
                 auto home = getenv_opt("HOME");
                 auto path_str = stdin_tmp_path.string();
@@ -3104,7 +3114,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     lnav::console::user_message::info(
                         attr_line_t()
                             .append(lnav::roles::number(humanize::file_size(
-                                stdin_size, humanize::alignment::none)))
+                                stdin_size.value(), humanize::alignment::none)))
                             .append(" of data from stdin was captured and "
                                     "will be saved for one day.  You can "
                                     "reopen it by running:\n")

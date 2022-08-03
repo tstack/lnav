@@ -46,6 +46,8 @@
 #include "config.h"
 #include "line_buffer.hh"
 
+using namespace std::chrono_literals;
+
 static const char* STDIN_EOF_MSG = "---- END-OF-STDIN ----";
 
 static ssize_t
@@ -109,9 +111,18 @@ piper_proc::piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd)
             log_perror(fcntl(pipefd.get(), F_SETFL, O_NONBLOCK));
             lb.set_fd(pipefd);
             do {
+                static const auto TIMEOUT
+                    = std::chrono::duration_cast<std::chrono::milliseconds>(1s)
+                          .count();
                 struct pollfd pfd = {lb.get_fd(), POLLIN, 0};
 
-                poll(&pfd, 1, -1);
+                auto poll_rc = poll(&pfd, 1, TIMEOUT);
+                if (poll_rc == 0) {
+                    // update the timestamp to keep the file alive from any
+                    // cleanup processes
+                    log_perror(futimes(this->pp_fd.get(), nullptr));
+                    continue;
+                }
                 while (true) {
                     auto load_result = lb.load_next_line(last_range);
 
