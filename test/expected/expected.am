@@ -818,6 +818,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_str_func.sh_bfb7088916412360f77683009058b0747784630a.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_bfe8b09e23389af0ef14359b66d68228d0285185.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_bfe8b09e23389af0ef14359b66d68228d0285185.out \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_c26269b10b9b9e8485aa97c2be2afb2cc3ee910d.err \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_c26269b10b9b9e8485aa97c2be2afb2cc3ee910d.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_c9e2f41431bef879364dc37a472ab01f64d89f89.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_c9e2f41431bef879364dc37a472ab01f64d89f89.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_cc53348c585ee71a7456157ad6b125689813bafe.err \

@@ -1,0 +1,2 @@
+Row 0:
+  Column gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64')): Hello, World!

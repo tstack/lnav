@@ -206,7 +206,7 @@ view_curses::mvwattrline(WINDOW* window,
         whline(window, ' ', lr_bytes.lr_end - (full_line.size() + exp_offset));
     }
 
-    stable_sort(sa.begin(), sa.end());
+    std::stable_sort(sa.begin(), sa.end());
     for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
         auto attr_range = iter->sa_range;
 
@@ -364,7 +364,6 @@ view_curses::mvwattrline(WINDOW* window,
         }
     }
 
-#if 1
     if (has_fg || has_bg) {
         if (!has_fg) {
             memset(fg_color, -1, line_width_chars * sizeof(short));
@@ -381,11 +380,11 @@ view_curses::mvwattrline(WINDOW* window,
             if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
                 continue;
             }
-#    ifdef NCURSES_EXT_COLORS
+#ifdef NCURSES_EXT_COLORS
             auto cur_pair = row_ch[lpc].ext_color;
-#    else
+#else
             auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
-#    endif
+#endif
             short cur_fg, cur_bg;
             pair_content(cur_pair, &cur_fg, &cur_bg);
             if (fg_color[lpc] == -1) {
@@ -398,15 +397,14 @@ view_curses::mvwattrline(WINDOW* window,
             int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
 
             row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
-#    ifdef NCURSES_EXT_COLORS
+#ifdef NCURSES_EXT_COLORS
             row_ch[lpc].ext_color = color_pair;
-#    else
+#else
             row_ch[lpc].attr |= COLOR_PAIR(color_pair);
-#    endif
+#endif
         }
         mvwadd_wchnstr(window, y, x, row_ch, ch_width);
     }
-#endif
 }
 
 constexpr short view_colors::MATCH_COLOR_DEFAULT;

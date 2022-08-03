@@ -105,3 +105,5 @@ run_cap_test ./drive_sql "SELECT encode('foo', 'bar')"
 run_cap_test ./drive_sql "SELECT encode('foo', null)"
 
 run_cap_test ./drive_sql "SELECT encode(null, 'base64')"
+
+run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
