@@ -1146,12 +1146,12 @@ looper()
                         && hl.h_attrs.empty())
                     {
                         hl.with_attrs(hl.h_attrs
-                                      | vc.attrs_for_ident(hl.h_pattern));
+                                      | vc.attrs_for_ident(hl.h_name));
                     }
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[{
                         highlight_source_t::CONFIGURATION,
-                        format->get_name().to_string() + "-" + hl.h_pattern}]
+                        format->get_name().to_string() + "-" + hl.h_name}]
                         = hl;
                 }
             }

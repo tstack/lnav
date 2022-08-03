@@ -91,6 +91,12 @@ struct highlighter {
         return *this;
     }
 
+    highlighter& with_name(std::string name)
+    {
+        this->h_name = std::move(name);
+        return *this;
+    }
+
     highlighter& with_nestable(bool val)
     {
         this->h_nestable = val;
@@ -103,7 +109,7 @@ struct highlighter {
 
     void annotate_capture(attr_line_t& al, const line_range& lr) const;
 
-    std::string h_pattern;
+    std::string h_name;
     role_t h_role{role_t::VCR_NONE};
     styling::color_unit h_fg{styling::color_unit::make_empty()};
     styling::color_unit h_bg{styling::color_unit::make_empty()};

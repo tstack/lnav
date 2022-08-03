@@ -38,7 +38,7 @@ highlighter::operator=(const highlighter& other)
         return *this;
     }
 
-    this->h_pattern = other.h_pattern;
+    this->h_name = other.h_name;
     this->h_fg = other.h_fg;
     this->h_bg = other.h_bg;
     this->h_role = other.h_role;
@@ -57,12 +57,26 @@ highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
     auto& vc = view_colors::singleton();
     auto& sa = al.get_attrs();
 
-    if (!(lr.lr_start < lr.lr_end
-          && (this->h_nestable
-              || find_string_attr_containing(sa, &VC_STYLE, lr) == sa.end())))
-    {
+    if (lr.lr_end <= lr.lr_start) {
         return;
     }
+    if (!this->h_nestable) {
+        for (const auto& attr : sa) {
+            if (attr.sa_range.lr_end == -1) {
+                continue;
+            }
+            if (!attr.sa_range.intersects(lr)) {
+                continue;
+            }
+            if (attr.sa_type == &VC_STYLE || attr.sa_type == &VC_ROLE
+                || attr.sa_type == &VC_FOREGROUND
+                || attr.sa_type == &VC_BACKGROUND)
+            {
+                return;
+            }
+        }
+    }
+
     if (!this->h_fg.empty()) {
         sa.emplace_back(lr,
                         VC_FOREGROUND.value(

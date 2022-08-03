@@ -2374,6 +2374,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             } else {
                 this->lf_highlighters.emplace_back(regex.unwrap());
                 this->lf_highlighters.back()
+                    .with_name(hd_pair.first.to_string())
                     .with_format_name(this->elf_name)
                     .with_color(fg, bg)
                     .with_attrs(attrs);

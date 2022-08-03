@@ -36,11 +36,11 @@
 #include "highlighter.hh"
 
 enum class highlight_source_t {
-    INTERNAL,
-    THEME,
+    INTERACTIVE,
     PREVIEW,
     CONFIGURATION,
-    INTERACTIVE,
+    THEME,
+    INTERNAL,
 };
 
 using highlight_map_t

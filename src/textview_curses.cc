@@ -230,7 +230,8 @@ textview_curses::reload_config(error_reporter& reporter)
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
                 = highlighter(regex.unwrap())
                       .with_attrs(attrs)
-                      .with_color(fg, bg);
+                      .with_color(fg, bg)
+                      .with_nestable(false);
         }
     }
 }

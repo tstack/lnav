@@ -50,6 +50,14 @@
             "reply_error": {
                 "pattern": "(?<=<result>)ERROR(?=</result>)",
                 "color": "Red1"
+            },
+            "request": {
+                "pattern": "<request[^>]*>",
+                "color": "Green"
+            },
+            "reply": {
+                "pattern": "<head[^>]*>",
+                "color": "Gold1"
             }
         },
         "sample": [

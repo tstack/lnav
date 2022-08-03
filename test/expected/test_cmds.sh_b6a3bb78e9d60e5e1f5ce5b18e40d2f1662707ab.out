@@ -88,7 +88,7 @@ list of IP addresses that dhclient has bound to in CSV format:
  ▌[37m[40m                                                                                                [0m
  ▌[32m[40m# Usage: dhcp_ip.lnav /var/log/messages                                                         [0m
  ▌[32m[40m# Only include lines that look like:                                                            [0m
- ▌[32m[40m# Apr 29 00:31:56 example-centos5 dhclient: bound to [0m[32m[40m10.1.10.103[0m[32m[40m -- renewal in 9938 seconds.    [0m
+ ▌[32m[40m# Apr 29 00:31:56 example-centos5 dhclient: bound to 10.1.10.103 -- renewal in 9938 seconds.    [0m
  ▌[37m[40m                                                                                                [0m
  ▌[37m[40m:[0m[1m[36m[40mfilter-in[0m[37m[40m dhclient: bound to                                                                   [0m
  ▌[37m[40m                                                                                                [0m
@@ -2379,7 +2379,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mgethostbyname()[0m
 [4mExample[0m
 #1 To get the hostname for the IP '127.0.0.1':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyaddr[0m[37m[40m([0m[35m[40m'[0m[35m[40m127.0.0.1[0m[35m[40m'[0m[37m[40m)                 [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgethostbyaddr[0m[37m[40m([0m[35m[40m'127.0.0.1'[0m[37m[40m)                 [0m
    
 
 
@@ -3429,7 +3429,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
 
 #3 To capture a number and word into a JSON object with the named properties 'num' and
    'str':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[35m[40m'(?<[0m[35m[40mnum[0m[35m[40m>\d+) (?<[0m[35m[40mstr[0m[35m[40m>\w+)'[0m[37m[40m, [0m[35m[40m'123 four'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[35m[40m'(?<num>\d+) (?<str>\w+)'[0m[37m[40m, [0m[35m[40m'123 four'[0m[37m[40m)[0m
    
 
 
@@ -3457,7 +3457,7 @@ lnav@googlegroups.com[1] support@lnav.org[2]
    
 
 #2 To wrap alphanumeric words with angle brackets:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[35m[40m'123 abc'[0m[37m[40m, [0m[35m[40m'(\w+)'[0m[37m[40m, [0m[35m[40m'<[0m[35m[40m\1[0m[35m[40m>'[0m[37m[40m) [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[35m[40m'123 abc'[0m[37m[40m, [0m[35m[40m'(\w+)'[0m[37m[40m, [0m[35m[40m'<\1>'[0m[37m[40m) [0m
    
 
 
@@ -4105,15 +4105,15 @@ lnav@googlegroups.com[1] support@lnav.org[2]
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m
 [4mExamples[0m
 #1 To select the XML nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def'[0m[37m[40m, [0m[35m[40m'<[0m[35m[40mabc[0m[35m[40m><[0m[35m[40mdef[0m[35m[40m a="b">Hello</[0m[35m[40mdef[0m[35m[40m><[0m[35m[40mdef[0m[35m[40m>Bye</[0m[35m[40mdef[0m[35m[40m></[0m[35m[40mabc[0m[35m[40m>'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
    
 
 #2 To select all 'a' attributes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<[0m[35m[40mabc[0m[35m[40m><[0m[35m[40mdef[0m[35m[40m a="b">Hello</[0m[35m[40mdef[0m[35m[40m><[0m[35m[40mdef[0m[35m[40m>Bye</[0m[35m[40mdef[0m[35m[40m></[0m[35m[40mabc[0m[35m[40m>'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
    
 
 #3 To select the text nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<[0m[35m[40mabc[0m[35m[40m><[0m[35m[40mdef[0m[35m[40m a="b">Hello &#x2605;</[0m[35m[40mdef[0m[35m[40m></[0m[35m[40mabc[0m[35m[40m>'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello &#x2605;</def></abc>'[0m[37m[40m)[0m
    
 
 
