@@ -947,6 +947,10 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                     // log_debug("allocating new buffer!");
                     this->lb_alt_buffer
                         = auto_buffer::alloc(this->lb_buffer.capacity());
+                } else if (this->lb_alt_buffer->capacity()
+                           < this->lb_buffer.capacity())
+                {
+                    this->lb_alt_buffer->expand_to(this->lb_buffer.capacity());
                 }
                 this->lb_alt_buffer->resize(this->lb_buffer.size()
                                             - usable_size);
