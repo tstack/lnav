@@ -3,6 +3,9 @@
 top_srcdir="@abssrcdir@"
 export top_srcdir
 
+top_srcdir_parent=`dirname ${top_srcdir}`
+export top_srcdir_parent
+
 srcdir="@abssrcdir@/test"
 export srcdir
 
@@ -100,6 +103,7 @@ run_cap_test() {
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{builddir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
+        -e "s;${top_srcdir_parent};{top_srcdir_parent};g" \
         ${test_file_base}_${test_hash}.out
     echo
     printf "%s \033[0;35m=============================================================\033[0m\n" $(date -Iseconds)

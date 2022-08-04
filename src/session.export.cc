@@ -109,6 +109,60 @@ struct from_sqlite<log_file_session_state> {
 namespace lnav {
 namespace session {
 
+static nonstd::optional<ghc::filesystem::path>
+find_container_dir(ghc::filesystem::path file_path)
+{
+    nonstd::optional<ghc::filesystem::path> dir_with_last_readme;
+
+    while (file_path.has_parent_path()) {
+        auto parent = file_path.parent_path();
+        bool has_readme_entry = false;
+
+        for (const auto& entry : ghc::filesystem::directory_iterator(parent)) {
+            if (!entry.is_regular_file()) {
+                continue;
+            }
+
+            auto entry_filename = tolower(entry.path().filename().string());
+            if (startswith(entry_filename, "readme")) {
+                has_readme_entry = true;
+                dir_with_last_readme = parent;
+            }
+        }
+        if (!has_readme_entry && dir_with_last_readme) {
+            return dir_with_last_readme;
+        }
+
+        file_path = parent;
+    }
+
+    return nonstd::nullopt;
+}
+
+static std::string
+replace_home_dir(std::string path)
+{
+    auto home_dir_opt = getenv_opt("HOME");
+
+    if (!home_dir_opt) {
+        return path;
+    }
+
+    const auto* home_dir = home_dir_opt.value();
+
+    if (startswith(path, home_dir)) {
+        auto retval = path.substr(strlen(home_dir));
+
+        if (retval.front() != '/') {
+            retval.insert(0, "/");
+        }
+        retval.insert(0, "$HOME");
+        return retval;
+    }
+
+    return path;
+}
+
 Result<void, lnav::console::user_message>
 export_to(FILE* file)
 {
@@ -141,6 +195,10 @@ SELECT content_id, format, time_offset FROM lnav_file
 
 # The files loaded into the session were:
 
+)";
+
+    static constexpr const char LOG_DIR_INSERT[] = R"(
+;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_{}', {})
 )";
 
     static constexpr const char MARK_HEADER[] = R"(
@@ -194,6 +252,9 @@ SELECT content_id, format, time_offset FROM lnav_file
     }
 
     fmt::print(file, FMT_STRING(HEADER), sqlitepp::quote(PACKAGE_VERSION));
+
+    std::map<std::string, std::vector<std::string>> file_containers;
+    std::set<std::string> raw_files;
     for (const auto& name_pair : lnav_data.ld_active_files.fc_file_names) {
         const auto& open_opts = name_pair.second;
 
@@ -203,7 +264,36 @@ SELECT content_id, format, time_offset FROM lnav_file
         {
             continue;
         }
-        fmt::print(file, FMT_STRING(":open {}"), name_pair.first);
+
+        auto file_path_str = name_pair.first;
+        auto file_path = ghc::filesystem::path(file_path_str);
+        auto container_path_opt = find_container_dir(file_path);
+        if (container_path_opt) {
+            auto container_parent = container_path_opt.value().parent_path();
+            file_containers[container_parent.string()].push_back(
+                ghc::filesystem::relative(file_path, container_parent)
+                    .string());
+        } else {
+            raw_files.insert(file_path_str);
+        }
+    }
+    for (const auto& file_path_str : raw_files) {
+        fmt::print(
+            file, FMT_STRING(":open {}"), replace_home_dir(file_path_str));
+    }
+    size_t container_index = 0;
+    for (const auto& container_pair : file_containers) {
+        fmt::print(file,
+                   FMT_STRING(LOG_DIR_INSERT),
+                   container_index,
+                   sqlitepp::quote(container_pair.first));
+        for (const auto& file_path_str : container_pair.second) {
+            fmt::print(file,
+                       FMT_STRING(":open $LOG_DIR_{}/{}"),
+                       container_index,
+                       file_path_str);
+        }
+        container_index += 1;
     }
 
     fmt::print(file, FMT_STRING("\n:rebuild\n"));
