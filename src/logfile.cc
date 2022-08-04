@@ -451,6 +451,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                     this->close();
                     return rebuild_result_t::INVALID;
                 }
+            } else {
+                this->lf_line_buffer.flush_at(0);
             }
         } else {
             off = 0;
