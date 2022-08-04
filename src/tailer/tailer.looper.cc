@@ -870,7 +870,9 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_desired_paths.find(ps.ps_path);
 
                     if (iter != conn.c_desired_paths.end()) {
-                        if (!iter->second.loo_tail) {
+                        if (iter->second.loo_tail) {
+                            conn.c_synced_desired_paths.insert(ps.ps_path);
+                        } else {
                             log_info("synced desired path: %s",
                                      iter->first.c_str());
                             conn.c_desired_paths.erase(iter);
@@ -880,7 +882,9 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_child_paths.find(ps.ps_path);
 
                     if (iter != conn.c_child_paths.end()) {
-                        if (!iter->second.loo_tail) {
+                        if (iter->second.loo_tail) {
+                            conn.c_synced_child_paths.insert(ps.ps_path);
+                        } else {
                             log_info("synced child path: %s",
                                      iter->first.c_str());
                             conn.c_child_paths.erase(iter);
@@ -893,6 +897,28 @@ tailer::looper::host_tailer::loop_body()
                     log_info("tailer(%s): all desired paths synced",
                              this->ht_netloc.c_str());
                     return state_v{synced{}};
+                } else if (!conn.c_initial_sync_done
+                           && conn.c_desired_paths.size()
+                               == conn.c_synced_desired_paths.size()
+                           && conn.c_child_paths.size()
+                               == conn.c_synced_child_paths.size())
+                {
+                    log_info("tailer(%s): all desired paths synced",
+                             this->ht_netloc.c_str());
+                    conn.c_initial_sync_done = true;
+
+                    std::set<std::string> synced_files;
+                    for (const auto& desired_pair : conn.c_desired_paths) {
+                        synced_files.emplace(fmt::format(
+                            FMT_STRING("{}{}"), ht_netloc, desired_pair.first));
+                    }
+                    isc::to<main_looper&, services::main_t>().send(
+                        [file_set = std::move(synced_files)](auto& mlooper) {
+                            file_collection fc;
+
+                            fc.fc_synced_files = file_set;
+                            update_active_files(fc);
+                        });
                 }
 
                 return std::move(this->ht_state);

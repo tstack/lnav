@@ -52,10 +52,7 @@ public:
 
     void complete_path(const network::path& path);
 
-    bool empty() const
-    {
-        return this->l_netlocs_to_paths.empty();
-    }
+    bool empty() const { return this->l_netlocs_to_paths.empty(); }
 
     std::set<std::string> active_netlocs() const
     {
@@ -91,10 +88,7 @@ private:
 
         void complete_path(const std::string& path);
 
-        bool is_synced() const
-        {
-            return this->ht_state.is<synced>();
-        }
+        bool is_synced() const { return this->ht_state.is<synced>(); }
 
     protected:
         void* run() override;
@@ -116,15 +110,16 @@ private:
             auto_fd ht_to_child;
             auto_fd ht_from_child;
             std::map<std::string, logfile_open_options_base> c_desired_paths;
+            std::set<std::string> c_synced_desired_paths;
             std::map<std::string, logfile_open_options_base> c_child_paths;
+            std::set<std::string> c_synced_child_paths;
+            bool c_initial_sync_done{false};
 
             auto_pid<process_state::finished> close() &&;
         };
 
-        struct disconnected {
-        };
-        struct synced {
-        };
+        struct disconnected {};
+        struct synced {};
 
         using state_v = mapbox::util::variant<connected, disconnected, synced>;
 

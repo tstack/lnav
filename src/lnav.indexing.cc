@@ -90,7 +90,8 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
         sc.do_update();
     }
     if (lf && lnav_data.ld_mode == ln_mode_t::FILES
-        && !lnav_data.ld_initial_build) {
+        && !lnav_data.ld_initial_build)
+    {
         auto& fc = lnav_data.ld_active_files;
         auto iter = std::find(fc.fc_files.begin(), fc.fc_files.end(), lf);
 
@@ -383,22 +384,21 @@ rescan_files(bool req)
 
         update_active_files(fc);
         mlooper.get_port().process_for(delay);
-        if (lnav_data.ld_flags & LNF_HEADLESS) {
-            for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
-                if (pair.second.ofd_format != file_format_t::REMOTE) {
-                    continue;
-                }
-
-                if (lnav_data.ld_active_files.fc_synced_files.count(pair.first)
-                    == 0) {
-                    all_synced = false;
-                }
+        for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
+            if (pair.second.ofd_format != file_format_t::REMOTE) {
+                continue;
             }
-            if (!all_synced) {
-                delay = 30ms;
+
+            if (lnav_data.ld_active_files.fc_synced_files.count(pair.first)
+                == 0)
+            {
+                all_synced = false;
             }
         }
+        if (!all_synced) {
+            delay = 30ms;
+        }
         done = fc.fc_file_names.empty() && all_synced;
-    } while (!done);
+    } while (!done && lnav_data.ld_looping);
     return true;
 }
