@@ -119,7 +119,7 @@ update_tailer_description(
             fmt::format(FMT_STRING("{}{}"), netloc, des_pair.first));
     }
     isc::to<main_looper&, services::main_t>().send(
-        [paths, remote_uname](auto& mlooper) {
+        [netloc, paths, remote_uname](auto& mlooper) {
             auto& fc = lnav_data.ld_active_files;
 
             for (const auto& path : paths) {
@@ -131,6 +131,7 @@ update_tailer_description(
 
                 iter->second.ofd_description = remote_uname;
             }
+            fc.fc_name_to_errors.erase(netloc);
         });
 }
 
