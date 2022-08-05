@@ -205,10 +205,10 @@ listview_curses::do_update()
             width = std::min((unsigned long) this->vc_width, width);
         }
 
-        wrap_width = width
-            - (this->lv_word_wrap            ? 1
-                   : this->lv_show_scrollbar ? 1
-                                             : 0);
+        wrap_width = width;
+        if (this->lv_show_scrollbar) {
+            wrap_width -= 1;
+        }
 
         size_t row_count = this->get_inner_height();
         row = this->lv_top;
@@ -231,15 +231,16 @@ listview_curses::do_update()
                 overlay_line.clear();
                 ++y;
             } else if (row < (int) row_count) {
-                attr_line_t& al = rows[row - this->lv_top];
+                auto& al = rows[row - this->lv_top];
 
+                size_t remaining = 0;
                 do {
-                    mvwattrline(this->lv_window,
-                                y,
-                                this->lv_x,
-                                al,
-                                lr,
-                                this->vc_default_role);
+                    remaining = mvwattrline(this->lv_window,
+                                            y,
+                                            this->lv_x,
+                                            al,
+                                            lr,
+                                            this->vc_default_role);
                     if (this->lv_word_wrap) {
                         mvwhline(this->lv_window,
                                  y,
@@ -250,8 +251,7 @@ listview_curses::do_update()
                     lr.lr_start += wrap_width;
                     lr.lr_end += wrap_width;
                     ++y;
-                } while (this->lv_word_wrap && y < bottom
-                         && lr.lr_start < (int) al.length());
+                } while (this->lv_word_wrap && y < bottom && remaining > 0);
                 ++row;
             } else {
                 wattr_set(this->lv_window,

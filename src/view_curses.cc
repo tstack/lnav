@@ -125,7 +125,7 @@ view_curses::awaiting_user_input()
     }
 }
 
-void
+size_t
 view_curses::mvwattrline(WINDOW* window,
                          int y,
                          int x,
@@ -148,15 +148,21 @@ view_curses::mvwattrline(WINDOW* window,
     bool has_fg = false;
     short* bg_color = (short*) alloca(line_width_chars * sizeof(short));
     bool has_bg = false;
-    line_range lr_bytes{lr_chars.lr_start, lr_chars.lr_end};
+    line_range lr_bytes;
     int char_index = 0;
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
         int exp_start_index = expanded_line.size();
         auto ch = static_cast<unsigned char>(line[lpc]);
 
+        if (char_index == lr_chars.lr_start) {
+            lr_bytes.lr_start = exp_start_index;
+        } else if (char_index == lr_chars.lr_end) {
+            lr_bytes.lr_end = exp_start_index;
+        }
+
         switch (ch) {
-            case '\t':
+            case '\t': {
                 do {
                     expanded_line.push_back(' ');
                     char_index += 1;
@@ -164,6 +170,7 @@ view_curses::mvwattrline(WINDOW* window,
                 utf_adjustments.emplace_back(
                     lpc, expanded_line.size() - exp_start_index - 1);
                 break;
+            }
 
             case '\r':
             case '\n':
@@ -183,12 +190,14 @@ view_curses::mvwattrline(WINDOW* window,
 
                     expanded_line.push_back(ch);
                     if (offset) {
+#if 0
                         if (char_index < lr_chars.lr_start) {
                             lr_bytes.lr_start += abs(offset);
                         }
                         if (char_index < lr_chars.lr_end) {
                             lr_bytes.lr_end += abs(offset);
                         }
+#endif
                         exp_offset += offset;
                         utf_adjustments.emplace_back(lpc, offset);
                         for (; offset && (lpc + 1) < line.size();
@@ -203,6 +212,10 @@ view_curses::mvwattrline(WINDOW* window,
             }
         }
     }
+    if (lr_bytes.lr_end == -1) {
+        lr_bytes.lr_end = expanded_line.size();
+    }
+    size_t retval = expanded_line.size() - lr_bytes.lr_end;
 
     full_line = expanded_line;
 
@@ -218,8 +231,8 @@ view_curses::mvwattrline(WINDOW* window,
         waddnstr(
             window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
     }
-    if (lr_bytes.lr_end > (int) full_line.size()) {
-        whline(window, ' ', lr_bytes.lr_end - (full_line.size() + exp_offset));
+    if (lr_chars.lr_end > char_index) {
+        whline(window, ' ', lr_chars.lr_end - char_index);
     }
 
     std::stable_sort(sa.begin(), sa.end());
@@ -421,6 +434,8 @@ view_curses::mvwattrline(WINDOW* window,
         }
         mvwadd_wchnstr(window, y, x, row_ch, ch_width);
     }
+
+    return retval;
 }
 
 constexpr short view_colors::MATCH_COLOR_DEFAULT;

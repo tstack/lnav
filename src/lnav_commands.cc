@@ -1168,7 +1168,9 @@ com_save_to(exec_context& ec,
             bottom = tc->get_inner_height() - 1_vl;
         }
         auto y = 0_vl;
+        auto wrapped_count = 0_vl;
         std::vector<attr_line_t> rows(bottom - top + 1);
+        auto dim = tc->get_dimensions();
         attr_line_t ov_al;
 
         auto* los = tc->get_overlay_source();
@@ -1181,6 +1183,7 @@ com_save_to(exec_context& ec,
                 write_line_to(outfile, ov_al);
                 ++y;
             }
+            wrapped_count += vis_line_t((al.length() - 1) / (dim.second - 2));
             write_line_to(outfile, al);
 
             line_count += 1;
@@ -1198,12 +1201,16 @@ com_save_to(exec_context& ec,
 
         tc->set_word_wrap(wrapped);
         tc->set_top(orig_top);
+
+        if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+            while (y + wrapped_count < dim.first + 2_vl) {
+                fmt::print(outfile, FMT_STRING("\n"));
+                ++y;
+            }
+        }
     } else if (args[0] == "write-raw-to") {
         if (tc == &lnav_data.ld_views[LNV_DB]) {
-            std::vector<std::vector<const char*>>::iterator row_iter;
-            std::vector<const char*>::iterator iter;
-
-            for (row_iter = dls.dls_rows.begin();
+            for (auto row_iter = dls.dls_rows.begin();
                  row_iter != dls.dls_rows.end();
                  ++row_iter)
             {
@@ -1213,9 +1220,8 @@ com_save_to(exec_context& ec,
                     break;
                 }
 
-                for (iter = row_iter->begin(); iter != row_iter->end(); ++iter)
-                {
-                    fputs(*iter, outfile);
+                for (auto& iter : *row_iter) {
+                    fputs(iter, outfile);
                 }
                 fprintf(outfile, "\n");
 
@@ -1734,7 +1740,8 @@ com_filter(exec_context& ec,
                 "filters with a pipe symbol (e.g. foo|bar)");
         }
 
-        auto compile_res = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+        auto compile_res
+            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
@@ -2156,8 +2163,8 @@ com_create_search_table(exec_context& ec,
             regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
 
-        auto re_res
-            = pcrepp::shared_from_str(regex, log_search_table::pattern_options());
+        auto re_res = pcrepp::shared_from_str(
+            regex, log_search_table::pattern_options());
 
         if (re_res.isErr()) {
             auto re_err = re_res.unwrapErr();
@@ -5471,10 +5478,10 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})},
     {"rebuild",
-    com_rebuild,
-    help_text(":rebuild")
-    .with_summary("Forcefully rebuild file indexes")
-    .with_tags({"scripting"})},
+     com_rebuild,
+     help_text(":rebuild")
+         .with_summary("Forcefully rebuild file indexes")
+         .with_tags({"scripting"})},
     {"set-min-log-level",
      com_set_min_log_level,
 
@@ -5599,9 +5606,8 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
         cmd_map["add-test"] = &add_test;
     }
     if (getenv("lnav_test") != nullptr) {
-        static readline_context::command_t
-            shexec(com_shexec), poll_now(com_poll_now),
-            test_comment(com_test_comment);
+        static readline_context::command_t shexec(com_shexec),
+            poll_now(com_poll_now), test_comment(com_test_comment);
 
         cmd_map["shexec"] = &shexec;
         cmd_map["poll-now"] = &poll_now;

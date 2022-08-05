@@ -1212,7 +1212,7 @@ looper()
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
             lnav_data.ld_views[lpc].set_y(2);
             lnav_data.ld_views[lpc].set_height(
-                vis_line_t(-(rlc->get_height() + 1)));
+                vis_line_t(-(rlc->get_height() + 3)));
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
             lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;

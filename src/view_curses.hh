@@ -375,12 +375,12 @@ public:
 
     static void awaiting_user_input();
 
-    static void mvwattrline(WINDOW* window,
-                            int y,
-                            int x,
-                            attr_line_t& al,
-                            const struct line_range& lr,
-                            role_t base_role = role_t::VCR_TEXT);
+    static size_t mvwattrline(WINDOW* window,
+                              int y,
+                              int x,
+                              attr_line_t& al,
+                              const struct line_range& lr,
+                              role_t base_role = role_t::VCR_TEXT);
 
 protected:
     bool vc_visible{true};
