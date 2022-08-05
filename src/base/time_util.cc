@@ -47,8 +47,11 @@ tm2sec(const struct tm* t)
 
     year = t->tm_year;
 
-    if (year < 70 || ((sizeof(time_t) <= 4) && (year >= 138))) {
+    if (year < 70) {
         return BAD_DATE;
+    }
+    if ((sizeof(time_t) <= 4) && (year >= 138)) {
+        year = 137;
     }
 
     /* shift new year to 1st March in order to make leap year calc easy */
