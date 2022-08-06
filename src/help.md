@@ -278,22 +278,13 @@ that you can always use `q` to pop the top view off of the stack.
 | **&VerticalLine;**&lt;script&gt; [arg1...] | Execute an lnav script contained in a format directory (e.g. \~/.lnav/formats/default). The script can contain lines starting with `:`, `;`, or `\|` to execute commands, SQL queries or execute other files in lnav. Any values after the script name are treated as arguments can be referenced in the script using `\$1`, `\$2`, and so on, like in a shell script.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | CTRL+], ESCAPE                                     | Abort command-line entry started with `/`, `:`, `;`, or `\|`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
-                    Note: The regular expression format used by is PCRE
-                    (Perl-Compatible Regular Expressions).  For example,
-                    if you wanted to search for ethernet device names,
-                    regardless of their ID number, you can type:
-
-                      eth\\d+
-
-                    You can find more information about Perl regular
-                    expressions at:
-
-                      http://perldoc.perl.org/perlre.html
-
-                    If the search string is not valid PCRE, a search
-                    is done for the exact string instead of doing a
-                    regex search.
-
+> **Note**: The regular expression format used by lnav is
+> [PCRE](http://perldoc.perl.org/perlre.html)
+> (Perl-Compatible Regular Expressions).
+>
+> If the search string is not valid PCRE, a search
+> is done for the exact string instead of doing a
+> regex search.
 
 ## Session
 

@@ -425,21 +425,13 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  CTRL+], ESCAPE       Abort command-line entry started with [37m[40m / [0m, [37m[40m : [0m, [37m[40m ;[0m
                       , or [37m[40m | [0m.
 
- ▌[37m[40m                Note: The regular expression format used by is PCRE     [0m
- ▌[37m[40m                (Perl-Compatible Regular Expressions).  For example,    [0m
- ▌[37m[40m                if you wanted to search for ethernet device names,      [0m
- ▌[37m[40m                regardless of their ID number, you can type:            [0m
- ▌[37m[40m                                                                        [0m
- ▌[37m[40m                  eth\d+                                                [0m
- ▌[37m[40m                                                                        [0m
- ▌[37m[40m                You can find more information about Perl regular        [0m
- ▌[37m[40m                expressions at:                                         [0m
- ▌[37m[40m                                                                        [0m
- ▌[37m[40m                  http://perldoc.perl.org/perlre.html                   [0m
- ▌[37m[40m                                                                        [0m
- ▌[37m[40m                If the search string is not valid PCRE, a search        [0m
- ▌[37m[40m                is done for the exact string instead of doing a         [0m
- ▌[37m[40m                regex search.                                           [0m
+ ▌[1mNote[0m: The regular expression format used by lnav is PCRE[1]  
+ ▌(Perl-Compatible Regular Expressions).                       
+ ▌                                                             
+ ▌ ▌[1] - http://perldoc.perl.org/perlre.html                  
+ ▌                                                             
+ ▌If the search string is not valid PCRE, a search is done for 
+ ▌the exact string instead of doing a regex search.            
 
 [1mSession[0m
 
