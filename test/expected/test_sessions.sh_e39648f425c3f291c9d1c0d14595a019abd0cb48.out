@@ -9,7 +9,7 @@
 # The files loaded into the session were:
 
 
-;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{builddir}')
+;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{test_dir}')
 :open $LOG_DIR_0/support-dump/logfile_access_log.0
 
 :rebuild

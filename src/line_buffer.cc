@@ -990,7 +990,7 @@ line_buffer::load_next_line(file_range prev_line)
     auto offset = prev_line.next_offset();
     ssize_t request_size = INITIAL_REQUEST_SIZE;
     retval.li_file_range.fr_offset = offset;
-    if (this->lb_buffer.empty()) {
+    if (this->lb_buffer.empty() || !this->in_range(offset)) {
         this->fill_range(offset, this->lb_buffer.capacity());
     } else if (offset == this->lb_file_offset + this->lb_buffer.size()) {
         if (!this->fill_range(offset, INITIAL_REQUEST_SIZE)) {

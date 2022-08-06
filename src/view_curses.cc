@@ -136,7 +136,6 @@ view_curses::mvwattrline(WINDOW* window,
     auto& sa = al.get_attrs();
     auto& line = al.get_string();
     std::vector<utf_to_display_adjustment> utf_adjustments;
-    int exp_offset = 0;
     std::string full_line;
 
     require(lr_chars.lr_end >= 0);
@@ -198,7 +197,6 @@ view_curses::mvwattrline(WINDOW* window,
                             lr_bytes.lr_end += abs(offset);
                         }
 #endif
-                        exp_offset += offset;
                         utf_adjustments.emplace_back(lpc, offset);
                         for (; offset && (lpc + 1) < line.size();
                              lpc++, offset++)

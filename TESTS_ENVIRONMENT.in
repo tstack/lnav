@@ -101,7 +101,7 @@ run_cap_test() {
 
     sed -ibak \
         -e "s;${test_dir};{test_dir};g" \
-        -e "s;${builddir};{builddir};g" \
+        -e "s;${builddir};{test_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${top_srcdir_parent};{top_srcdir_parent};g" \
         ${test_file_base}_${test_hash}.out
