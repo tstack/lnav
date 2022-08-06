@@ -9,8 +9,8 @@
 # The files loaded into the session were:
 
 
-;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{top_srcdir_parent}')
-:open $LOG_DIR_0/lnav/test/logfile_access_log.0
+;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{builddir}')
+:open $LOG_DIR_0/support-dump/logfile_access_log.0
 
 :rebuild
 

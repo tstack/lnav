@@ -483,6 +483,7 @@ distclean-local:
 	$(RM_V)rm -rf .lnav
 	$(RM_V)rm -rf regex101-home
 	$(RM_V)rm -rf events-home
+	$(RM_V)rm -rf support-dump
 	$(RM_V)rm -rf ../installer-test-home
 
 expected:

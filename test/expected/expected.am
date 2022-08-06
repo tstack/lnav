@@ -414,6 +414,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.out \
     $(srcdir)/%reldir%/test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.err \
     $(srcdir)/%reldir%/test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.out \
+    $(srcdir)/%reldir%/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.err \
+    $(srcdir)/%reldir%/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out \
     $(srcdir)/%reldir%/test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.err \
     $(srcdir)/%reldir%/test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.out \
     $(srcdir)/%reldir%/test_shlexer.sh_2781f5dd570580cbe746ad91b58a28b8371283b3.err \
