@@ -279,7 +279,7 @@ SELECT content_id, format, time_offset FROM lnav_file
     }
     for (const auto& file_path_str : raw_files) {
         fmt::print(
-            file, FMT_STRING(":open {}"), replace_home_dir(file_path_str));
+            file, FMT_STRING(":open {}\n"), replace_home_dir(file_path_str));
     }
     size_t container_index = 0;
     for (const auto& container_pair : file_containers) {
@@ -289,7 +289,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                    sqlitepp::quote(container_pair.first));
         for (const auto& file_path_str : container_pair.second) {
             fmt::print(file,
-                       FMT_STRING(":open $LOG_DIR_{}/{}"),
+                       FMT_STRING(":open $LOG_DIR_{}/{}\n"),
                        container_index,
                        file_path_str);
         }
