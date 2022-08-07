@@ -360,8 +360,8 @@ CREATE TABLE lnav_views (
                    bool do_filtering,
                    const char* top_meta)
     {
-        textview_curses& tc = lnav_data.ld_views[index];
-        text_time_translator* time_source
+        auto& tc = lnav_data.ld_views[index];
+        auto* time_source
             = dynamic_cast<text_time_translator*>(tc.get_sub_source());
 
         if (tc.get_top() != top_row) {

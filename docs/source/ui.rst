@@ -1,36 +1,32 @@
-
 .. _ui:
 
 User Interface
 ==============
 
-The main part of the display shows the log messages from all files sorted by the
-message time.  Status bars at the top and bottom of the screen can given you an
-idea of where you are in the logs.  And, the last line is used for entering
-commands.  Navigation is controlled by a series of hotkeys, see :ref:`hotkeys`
-for more information.
+The **lnav** TUI displays the content of the current "view" in the middle,
+with status bars above and below, and the interactive prompt as the last line.
 
 .. figure:: lnav-ui.png
    :align: center
-   :alt: Screenshot showing syslog messages.
+   :alt: Screenshot of lnav showing a mix of syslog and web access_log messages.
 
    Screenshot of **lnav** viewing syslog messages.
 
-On color displays, the log messages will be highlighted as follows:
-
-* Errors will be colored in red;
-* warnings will be yellow;
-* search hits are reverse video;
-* various color highlights will be applied to: IP addresses, SQL keywords,
-  XML tags, file and line numbers in Java backtraces, and quoted strings;
-* "identifiers" in the messages will be randomly assigned colors based on their
-  content (works best on "xterm-256color" terminals).
+The default view shows the log messages from the log files that have been
+loaded.  There are other views for displaying content like plaintext files
+and SQL results.  The :ref:`ui_views` section describes the characteristics of
+each view in more detail.  You can switch to the different views using the
+hotkeys described in the :ref:`hotkeys_display` section or by pressing
+:kbd:`ENTER` to activate the breadcrumb bar, moving to the first crumb, and
+then selecting the desired view.  You can switch back to the previous view by
+pressing :kbd:`q`.  You can switch forward to the new view by pressing
+:kbd:`a`.
 
 The right side of the display has a proportionally sized 'scrollbar' that
 shows:
 
-* your current position in the file;
-* the locations of errors/warnings in the log files by using a red or yellow
+* the current position in the file;
+* the locations of errors/warnings in the log files by using red or yellow
   coloring;
 * the locations of search hits by using a tick-mark pointing to the left;
 * the locations of bookmarks by using a tick-mark pointing to the right.
@@ -67,3 +63,42 @@ you activate a new view with a key press or command, the new view
 is pushed onto the stack.  Pressing the same key again will pop the
 view off of the stack and return you to the previous view.  Note
 that you can always use 'q' to pop the top view off of the stack.
+
+.. _ui_views:
+
+Views
+-----
+
+LOG
+^^^
+
+The log view displays the log messages from any loaded log files in time
+order.
+
+On color displays, the log messages will be highlighted as follows:
+
+* Errors will be colored in red;
+* warnings will be yellow;
+* search hits are reverse video;
+* various color highlights will be applied to: IP addresses, SQL keywords,
+  XML tags, file and line numbers in Java backtraces, and quoted strings;
+* "identifiers" in the messages will be randomly assigned colors based on their
+  content (works best on "xterm-256color" terminals).
+
+.. note::
+
+  If the coloring is too much for your tastes, you can change to the
+  "grayscale" theme by entering the following command:
+
+  .. code-block::  lnav
+
+    :config /ui/theme grayscale
+
+DB
+^^
+
+HELP
+^^^^
+
+HIST
+^^^^

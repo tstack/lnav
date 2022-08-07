@@ -1,4 +1,3 @@
-
 .. _hotkeys:
 
 Hotkey Reference
@@ -148,6 +147,8 @@ Bookmarks
      - Copy marked lines to the clipboard
    * - :kbd:`Shift` + :kbd:`c`
      - Clear marked lines
+
+.. _hotkeys_display:
 
 Display
 -------

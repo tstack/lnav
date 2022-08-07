@@ -194,10 +194,14 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
 
             styling::color_unit::from_str(hash_color)
                 .then([&](const auto& rgb_fg) {
+                    auto color = view_colors::singleton().match_color(rgb_fg);
                     alb.template overlay_attr(
                         line_range{sub.lr_start + cap->c_begin,
                                    sub.lr_start + cap->c_begin + 1},
-                        VC_ROLE.value(role_t::VCR_COLOR_HINT));
+                        VC_STYLE.value(text_attrs{
+                            A_BOLD,
+                            color,
+                        }));
                 });
         }
     }

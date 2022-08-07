@@ -324,7 +324,8 @@ view_curses::mvwattrline(WINDOW* window,
             } else if (iter->sa_type == &SA_LEVEL) {
                 attrs = vc.vc_level_attrs[iter->sa_value.get<int64_t>()].first;
             } else if (iter->sa_type == &VC_ROLE) {
-                attrs = vc.attrs_for_role(iter->sa_value.get<role_t>());
+                auto role = iter->sa_value.get<role_t>();
+                attrs = vc.attrs_for_role(role);
             } else if (iter->sa_type == &VC_ROLE_FG) {
                 auto role_attrs
                     = vc.attrs_for_role(iter->sa_value.get<role_t>());

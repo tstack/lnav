@@ -1,4 +1,3 @@
-
 .. role:: lnavcmd(code)
    :language: lnav
    :class: highlight
@@ -20,6 +19,7 @@ the screenshot below shows the help for the :code:`:open` command:
 
 .. figure:: open-help.png
    :align: center
+   :figwidth: 50%
 
    Screenshot of the online help for the :code:`:open` command.
 
@@ -46,7 +46,7 @@ preview behavior for the string "launchd":
 .. figure:: filter-out-preview.png
    :align: center
 
-   Screenshot showing the preview for the :code:`:filter-out launchd` command.
+   Screenshot showing the preview for the :code:`:filter-out` command.
 
 Any errors detected during preview will be shown in the status bar right above
 the command prompt.  For example, an attempt to open an unknown file will show

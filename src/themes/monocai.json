@@ -168,10 +168,10 @@
                         "color": "$yellow"
                     },
                     "diff-delete": {
-                        "color": "#8f5247"
+                        "color": "#f00"
                     },
                     "diff-add": {
-                        "color": "#294436"
+                        "color": "#0f0"
                     },
                     "diff-section": {
                         "color": "#656e76"

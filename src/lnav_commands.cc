@@ -1767,7 +1767,8 @@ com_filter(exec_context& ec,
                 highlighter hl(compile_res.unwrap());
                 auto role = (args[0] == "filter-out") ? role_t::VCR_DIFF_DELETE
                                                       : role_t::VCR_DIFF_ADD;
-                hl.with_attrs(text_attrs{A_BLINK});
+                hl.with_role(role);
+                hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
 
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();

@@ -137,9 +137,8 @@ key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                 value = null_value_t{};
                 break;
             default:
-                value = string_fragment::from_bytes(
-                    sqlite3_value_text(raw_value),
-                    sqlite3_value_bytes(raw_value));
+                value = std::string((const char*) sqlite3_value_text(raw_value),
+                                    sqlite3_value_bytes(raw_value));
                 break;
         }
         vars[column_name] = value;
