@@ -29,6 +29,7 @@
 
 #include "textfile_sub_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "config.h"
@@ -323,8 +324,8 @@ textfile_sub_source::text_crumbs_for_line(
         auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
         auto ll_next_iter = ll_iter + 1;
         auto end_offset = (ll_next_iter == lf->end())
-            ? lf->get_index_size()
-            : ll_next_iter->get_offset();
+            ? lf->get_index_size() - 1
+            : ll_next_iter->get_offset() - 1;
         const auto initial_size = crumbs.size();
 
         meta_iter->second.ms_metadata.m_sections_tree.visit_overlapping(
@@ -560,13 +561,16 @@ textfile_sub_source::rescan_files(
                     auto read_res = lf->read_file();
 
                     if (read_res.isOk()) {
-                        auto content = read_res.unwrap();
+                        auto content = attr_line_t(read_res.unwrap());
 
+                        scrub_ansi_string(content.get_string(),
+                                          &content.get_attrs());
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
                                 static_cast<file_size_t>(st.st_size),
-                                lnav::document::discover_structure(content),
+                                lnav::document::discover_structure(
+                                    content, line_range{0, -1}),
                             };
                     }
                 }

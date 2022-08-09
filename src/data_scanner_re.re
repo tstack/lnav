@@ -21,18 +21,17 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "config.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "config.h"
 #include "data_scanner.hh"
 
 bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
@@ -194,6 +193,10 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        "</"[a-zA-Z0-9_:\-]+SPACE*">" {
            RET(DT_XML_CLOSE_TAG);
+       }
+
+       "\n"[A-Z][A-Z _\-0-9]+"\n" {
+           RET(DT_H1);
        }
 
        ":" { RET(DT_COLON); }

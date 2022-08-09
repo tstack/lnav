@@ -50,6 +50,11 @@ enum data_token_t {
     DT_XML_EMPTY_TAG,
     DT_XML_OPEN_TAG,
     DT_XML_CLOSE_TAG,
+
+    DT_H1,
+    DT_H2,
+    DT_H3,
+
     /* DT_QUALIFIED_NAME, */
 
     DT_COLON,

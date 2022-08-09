@@ -1,4 +1,4 @@
-Build[1][2] Docs[3][4] Coverage Status[5][6] lnav[7][8]
+[4mBuild[1][0m[4m[2][0m [4mDocs[3][0m[4m[4][0m [4mCoverage Status[5][0m[4m[6][0m [4mlnav[7][0m[4m[8][0m
 
  ▌[1] - https://github.com/tstack/lnav/workflows/ci-build/badge.svg               
  ▌[2] - https://github.com/tstack/lnav/actions?[4mquery[0m=workflow%3Aci-build          
@@ -9,7 +9,7 @@ Build[1][2] Docs[3][4] Coverage Status[5][6] lnav[7][8]
  ▌[7] - https://snapcraft.io//lnav/badge.svg                                      
  ▌[8] - https://snapcraft.io/lnav                                                 
 
-This is the source repository for [1mlnav[0m, visit https://lnav.org[1] for
+This is the source repository for [1mlnav[0m, visit [4mhttps://lnav.org[1][0m for
 a high level overview.
 
  ▌[1] - https://lnav.org 
@@ -26,7 +26,7 @@ to no setup.
 The following screenshot shows a syslog file. Log lines are displayed
 with highlights. Errors are red and warnings are yellow.
 
-Screenshot[1][2]
+[4mScreenshot[1][0m[4m[2][0m
 
  ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
  ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
@@ -43,8 +43,8 @@ Screenshot[1][2]
 
 [1mInstallation[0m
 
-Download a statically-linked binary for Linux/MacOS from the release
-page[1]
+[4mDownload a statically-linked binary for Linux/MacOS from the release[0m
+[4mpage[1][0m
 
  ▌[1] - https://github.com/tstack/lnav/releases/latest#release-artifacts 
 
@@ -102,9 +102,9 @@ log lines fed into [37m[40m lnav [0m via [37m[40m journalctl [0m's [37m[
 
 [1mLinks[0m
 
- [33m•[0m Main Site[1]
- [33m•[0m [1mDocumentation[0m[2] on Read the Docs
- [33m•[0m Internal Architecture[3]
+ [33m•[0m [4mMain Site[1][0m
+ [33m•[0m [1m[4mDocumentation[0m[4m[2][0m on Read the Docs
+ [33m•[0m [4mInternal Architecture[3][0m
 
  ▌[1] - https://lnav.org                                 
  ▌[2] - https://docs.lnav.org                            
@@ -112,7 +112,7 @@ log lines fed into [37m[40m lnav [0m via [37m[40m journalctl [0m's [37m[
 
 [1mContributing[0m
 
- [33m•[0m Become a Sponsor on GitHub[1]
+ [33m•[0m [4mBecome a Sponsor on GitHub[1][0m
 
  ▌[1] - https://github.com/sponsors/tstack 
 
@@ -151,7 +151,7 @@ Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
 
 [1mSee Also[0m
 
-Angle-grinder[1] is a tool to slice and dice log files on the
+[4mAngle-grinder[1][0m is a tool to slice and dice log files on the
 command-line. If you're familiar with the SumoLogic query language,
 you might find this tool more comfortable to work with.
 

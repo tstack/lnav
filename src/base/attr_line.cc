@@ -51,7 +51,7 @@ attr_line_t::with_ansi_string(const char* str, ...)
 
     if (ret >= 0 && formatted_str != nullptr) {
         this->al_string = formatted_str;
-        scrub_ansi_string(this->al_string, this->al_attrs);
+        scrub_ansi_string(this->al_string, &this->al_attrs);
     }
 
     return *this;
@@ -61,7 +61,7 @@ attr_line_t&
 attr_line_t::with_ansi_string(const std::string& str)
 {
     this->al_string = str;
-    scrub_ansi_string(this->al_string, this->al_attrs);
+    scrub_ansi_string(this->al_string, &this->al_attrs);
 
     return *this;
 }

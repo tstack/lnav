@@ -301,7 +301,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         line.append(" ");
     }
     line.append(buf);
-    scrub_ansi_string(line, value_out.get_attrs());
+    scrub_ansi_string(line, &value_out.get_attrs());
 
     snprintf(buf, sizeof(buf), "Max: %'.10lg", sb.sb_max_value_out);
     buflen = strlen(buf);

@@ -45,27 +45,34 @@ using namespace std;
 int
 main(int argc, char* argv[])
 {
+    {
+        std::string boldish = "a\ba _\ba a\b_ b";
+        string_attrs_t sa;
+
+        sa.clear();
+        scrub_ansi_string(boldish, &sa);
+        assert(boldish == "a a a b");
+        for (const auto& attr : sa) {
+            printf("attr %d:%d %s\n",
+                   attr.sa_range.lr_start,
+                   attr.sa_range.lr_end,
+                   attr.sa_type->sat_name);
+            if (attr.sa_type == &SA_ORIGIN_OFFSET) {
+                printf("  value: %d\n", attr.sa_value.get<int64_t>());
+            }
+        }
+    }
+
     string_attrs_t sa;
     string str_cp;
 
     str_cp = "Hello, World!";
-    scrub_ansi_string(str_cp, sa);
+    scrub_ansi_string(str_cp, &sa);
 
     assert(str_cp == "Hello, World!");
     assert(sa.empty());
 
     str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
-    scrub_ansi_string(str_cp, sa);
+    scrub_ansi_string(str_cp, &sa);
     assert(str_cp == "Hello, World!");
-
-    assert(sa[0].sa_range.lr_start == 5);
-    assert(sa[0].sa_range.lr_end == 7);
-    assert(sa[0].sa_type == &VC_STYLE);
-    assert(sa[0].sa_value.get<text_attrs>().ta_bg_color.value() == COLOR_BLUE);
-
-    assert(sa[1].sa_range.lr_start == 7);
-    assert(sa[1].sa_range.lr_end == 12);
-    assert(sa[1].sa_type == &VC_STYLE);
-    assert(sa[1].sa_value.get<text_attrs>().ta_fg_color.value()
-           == COLOR_YELLOW);
 }

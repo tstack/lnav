@@ -155,7 +155,8 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 std::string,
                                                 std::shared_ptr<logfile>,
                                                 bookmark_metadata*,
-                                                timespec>;
+                                                timespec,
+                                                string_fragment>;
 
 class string_attr_type_base {
 public:
@@ -202,6 +203,8 @@ extern string_attr_type<void> SA_PREFORMATTED;
 extern string_attr_type<std::string> SA_INVALID;
 extern string_attr_type<std::string> SA_ERROR;
 extern string_attr_type<int64_t> SA_LEVEL;
+extern string_attr_type<string_fragment> SA_ORIGIN;
+extern string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 
 extern string_attr_type<role_t> VC_ROLE;
 extern string_attr_type<role_t> VC_ROLE_FG;

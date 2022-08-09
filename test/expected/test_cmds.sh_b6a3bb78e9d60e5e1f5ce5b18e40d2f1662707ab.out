@@ -111,7 +111,7 @@ On color displays, the lines will be highlighted as follows:
 
  [33m•[0m Errors will be colored in [31mred[0m;
  [33m•[0m warnings will be [33myellow[0m;
- [33m•[0m boundaries between days will be underlined; and
+ [33m•[0m boundaries between days will be [4munderlined[0m; and
  [33m•[0m various color highlights will be applied to: IP
    addresses, SQL keywords, XML tags, file and line numbers
    in Java backtraces, and quoted strings.
@@ -425,7 +425,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  CTRL+], ESCAPE       Abort command-line entry started with [37m[40m / [0m, [37m[40m : [0m, [37m[40m ;[0m
                       , or [37m[40m | [0m.
 
- ▌[1mNote[0m: The regular expression format used by lnav is PCRE[1]  
+ ▌[1mNote[0m: The regular expression format used by lnav is [4mPCRE[1][0m  
  ▌(Perl-Compatible Regular Expressions).                       
  ▌                                                             
  ▌ ▌[1] - http://perldoc.perl.org/perlre.html                  
@@ -664,13 +664,13 @@ commands, which is especially useful when scripting lnav.
 
 For more information, visit the lnav website at:
 
-http://lnav.org[1]
+[4mhttp://lnav.org[1][0m
 
  ▌[1] - http://lnav.org 
 
 For support questions, email:
 
-lnav@googlegroups.com[1] support@lnav.org[2]
+[4mlnav@googlegroups.com[1][0m [4msupport@lnav.org[2][0m
 
  ▌[1] - mailto:lnav@googlegroups.com 
  ▌[2] - mailto:support@lnav.org      

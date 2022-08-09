@@ -303,6 +303,9 @@ println(FILE* file, const attr_line_t& al)
                     if (style.ta_attrs & A_BOLD) {
                         line_style |= fmt::emphasis::bold;
                     }
+                    if (style.ta_attrs & A_UNDERLINE) {
+                        line_style |= fmt::emphasis::underline;
+                    }
                     if (style.ta_fg_color) {
                         auto color_opt = curses_color_to_terminal_color(
                             style.ta_fg_color.value());

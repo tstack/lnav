@@ -14,3 +14,6 @@ mkdir -p nested/sub1/sub2
 echo "2021-07-03T21:49:29 Test" > nested/sub1/sub2/test.log
 
 run_cap_test ${lnav_test} -nr nested
+
+printf "a\ba _\ba a\b_" | run_cap_test env TEST_COMMENT="overstrike bold" \
+    ${lnav_test} -n

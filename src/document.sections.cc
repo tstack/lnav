@@ -81,8 +81,21 @@ hier_node::lookup_path(const hier_node* root,
     return retval;
 }
 
-metadata
-discover_metadata(const attr_line_t& al)
+struct metadata_builder {
+    std::vector<section_interval_t> mb_intervals;
+    std::unique_ptr<hier_node> mb_root_node;
+
+    metadata to_metadata() &&
+    {
+        return {
+            std::move(this->mb_intervals),
+            std::move(this->mb_root_node),
+        };
+    }
+};
+
+static void
+discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
 {
     const auto& orig_attrs = al.get_attrs();
     auto headers = orig_attrs
@@ -115,7 +128,7 @@ discover_metadata(const attr_line_t& al)
         }
     }
 
-    std::vector<section_interval_t> intervals;
+    auto& intervals = mb.mb_intervals;
 
     struct open_interval_t {
         open_interval_t(uint32_t level, file_off_t start, section_key_t id)
@@ -185,15 +198,51 @@ discover_metadata(const attr_line_t& al)
         }
     }
 
-    return {
-        sections_tree_t{std::move(intervals)},
-        std::move(root_node),
-    };
+    for (auto& interval : intervals) {
+        auto start_off_opt
+            = get_string_attr(orig_attrs, &SA_ORIGIN_OFFSET, interval.start);
+        if (start_off_opt) {
+            interval.start += start_off_opt.value()->sa_value.get<int64_t>();
+        }
+        auto stop_off_opt
+            = get_string_attr(orig_attrs, &SA_ORIGIN_OFFSET, interval.stop - 1);
+        if (stop_off_opt) {
+            interval.stop += stop_off_opt.value()->sa_value.get<int64_t>();
+        }
+    }
+
+    hier_node::depth_first(root_node.get(), [&orig_attrs](hier_node* node) {
+        auto off_opt
+            = get_string_attr(orig_attrs, &SA_ORIGIN_OFFSET, node->hn_start);
+
+        if (off_opt) {
+            node->hn_start += off_opt.value()->sa_value.get<int64_t>();
+        }
+    });
+
+    if (!root_node->hn_children.empty()
+        || !root_node->hn_named_children.empty())
+    {
+        mb.mb_root_node = std::move(root_node);
+    }
+}
+
+metadata
+discover_metadata(const attr_line_t& al)
+{
+    metadata_builder mb;
+
+    discover_metadata_int(al, mb);
+
+    return std::move(mb).to_metadata();
 }
 
 class structure_walker {
 public:
-    explicit structure_walker(string_fragment content) : sw_scanner(content)
+    explicit structure_walker(attr_line_t& al, line_range lr)
+        : sw_line(al), sw_range(lr),
+          sw_scanner(string_fragment::from_str_range(
+              al.get_string(), lr.lr_start, lr.lr_end))
     {
         this->sw_interval_state.resize(1);
         this->sw_hier_nodes.push_back(std::make_unique<hier_node>());
@@ -201,9 +250,9 @@ public:
 
     metadata walk()
     {
+        metadata_builder mb;
         pcre_context_static<30> pc;
         data_token_t dt = DT_INVALID;
-        lnav::document::metadata retval;
         auto& pi = this->sw_scanner.get_input();
 
         while (this->sw_scanner.tokenize2(pc, dt)) {
@@ -239,6 +288,16 @@ public:
                     }
                     this->append_child_node(el.e_capture);
                     this->flush_values();
+                    break;
+                }
+                case DT_H1: {
+                    this->sw_line.get_attrs().emplace_back(
+                        line_range{
+                            this->sw_range.lr_start + el.e_capture.c_begin + 1,
+                            this->sw_range.lr_start + el.e_capture.c_end - 1,
+                        },
+                        VC_ROLE.value(role_t::VCR_H1));
+                    this->sw_line_number += 2;
                     break;
                 }
                 case DT_LCURLY:
@@ -323,10 +382,12 @@ public:
             this->sw_hier_stage->hn_parent = nullptr;
         }
 
-        retval.m_sections_root = std::move(this->sw_hier_stage);
-        retval.m_sections_tree = sections_tree_t(std::move(this->sw_intervals));
+        mb.mb_root_node = std::move(this->sw_hier_stage);
+        mb.mb_intervals = std::move(this->sw_intervals);
 
-        return retval;
+        discover_metadata_int(this->sw_line, mb);
+
+        return std::move(mb).to_metadata();
     }
 
 private:
@@ -435,6 +496,8 @@ private:
         ivstate.is_name.clear();
     }
 
+    attr_line_t& sw_line;
+    line_range sw_range;
     data_scanner sw_scanner;
     int sw_depth{0};
     size_t sw_line_number{0};
@@ -446,9 +509,9 @@ private:
 };
 
 metadata
-discover_structure(string_fragment content)
+discover_structure(attr_line_t& al, struct line_range lr)
 {
-    return structure_walker(content).walk();
+    return structure_walker(al, lr).walk();
 }
 
 std::vector<breadcrumb::possibility>

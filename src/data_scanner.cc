@@ -106,6 +106,19 @@ static struct {
     },
 
     {
+        "h1",
+        pcrepp("\\A([A-Z \\-])"),
+    },
+    {
+        "h2",
+        pcrepp("\\A([A-Z \\-])"),
+    },
+    {
+        "h3",
+        pcrepp("\\A([A-Z \\-])"),
+    },
+
+    {
         "coln",
         pcrepp("\\A(:)"),
     },

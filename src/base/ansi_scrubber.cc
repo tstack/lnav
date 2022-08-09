@@ -42,21 +42,55 @@
 static pcrepp&
 ansi_regex()
 {
-    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])");
+    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(.)\b\\3|.\b_|_\b.");
 
     return retval;
 }
 
 void
-scrub_ansi_string(std::string& str, string_attrs_t& sa)
+scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
     pcre_context_static<60> context;
     auto& regex = ansi_regex();
     pcre_input pi(str);
+    int64_t origin_offset = 0;
+    int last_origin_offset_end = 0;
 
     replace(str.begin(), str.end(), '\0', ' ');
     while (regex.match(context, pi)) {
         auto* caps = context.all();
+        const auto sf = pi.get_string_fragment(caps);
+
+        if (sf.length() == 3 && sf[1] == '\b') {
+            if (sa != nullptr) {
+                shift_string_attrs(*sa, caps->c_begin + 1, -2);
+                if (sf[0] == '_' || sf[2] == '_') {
+                    sa->emplace_back(
+                        line_range{caps->c_begin, caps->c_begin + 1},
+                        VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                } else {
+                    sa->emplace_back(
+                        line_range{caps->c_begin, caps->c_begin + 1},
+                        VC_STYLE.value(text_attrs{A_BOLD}));
+                }
+                sa->emplace_back(
+                    line_range{last_origin_offset_end, caps->c_begin + 1},
+                    SA_ORIGIN_OFFSET.value(origin_offset));
+            }
+            if (sf[0] == '_') {
+                str.erase(str.begin() + caps->c_begin,
+                          str.begin() + caps->c_end - 1);
+                last_origin_offset_end = caps->c_begin + 1;
+            } else {
+                str.erase(str.begin() + caps->c_begin + 1,
+                          str.begin() + caps->c_end);
+                last_origin_offset_end = caps->c_begin + 1;
+            }
+            origin_offset += 2;
+            pi.reset(str);
+            continue;
+        }
+
         struct line_range lr;
         bool has_attrs = false;
         text_attrs attrs;
@@ -154,25 +188,36 @@ scrub_ansi_string(std::string& str, string_attrs_t& sa)
             }
         }
         str.erase(str.begin() + caps[0].c_begin, str.begin() + caps[0].c_end);
-        shift_string_attrs(sa, caps[0].c_begin, -caps[0].length());
+        if (sa != nullptr) {
+            shift_string_attrs(*sa, caps[0].c_begin, -caps[0].length());
 
-        if (has_attrs) {
-            for (auto rit = sa.rbegin(); rit != sa.rend(); rit++) {
-                if (rit->sa_range.lr_end != -1) {
-                    break;
+            if (has_attrs) {
+                for (auto rit = sa->rbegin(); rit != sa->rend(); rit++) {
+                    if (rit->sa_range.lr_end != -1) {
+                        continue;
+                    }
+                    rit->sa_range.lr_end = caps[0].c_begin;
                 }
-                rit->sa_range.lr_end = caps[0].c_begin;
+                lr.lr_start = caps[0].c_begin;
+                lr.lr_end = -1;
+                if (attrs.ta_attrs || attrs.ta_fg_color || attrs.ta_bg_color) {
+                    sa->emplace_back(lr, VC_STYLE.value(attrs));
+                }
+                role | [&lr, &sa](role_t r) {
+                    sa->emplace_back(lr, VC_ROLE.value(r));
+                };
             }
-            lr.lr_start = caps[0].c_begin;
-            lr.lr_end = -1;
-            if (attrs.ta_attrs || attrs.ta_fg_color || attrs.ta_bg_color) {
-                sa.emplace_back(lr, VC_STYLE.value(attrs));
-            }
-            role |
-                [&lr, &sa](role_t r) { sa.emplace_back(lr, VC_ROLE.value(r)); };
+            sa->emplace_back(line_range{last_origin_offset_end, caps->c_begin},
+                             SA_ORIGIN_OFFSET.value(origin_offset));
+            origin_offset += caps->length();
         }
 
         pi.reset(str);
+    }
+
+    if (sa != nullptr && last_origin_offset_end > 0) {
+        sa->emplace_back(line_range{last_origin_offset_end, (int) str.size()},
+                         SA_ORIGIN_OFFSET.value(origin_offset));
     }
 }
 

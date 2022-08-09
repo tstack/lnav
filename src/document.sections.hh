@@ -104,7 +104,7 @@ struct metadata {
 
 metadata discover_metadata(const attr_line_t& al);
 
-metadata discover_structure(string_fragment sf);
+metadata discover_structure(attr_line_t& al, struct line_range lr);
 
 }  // namespace document
 }  // namespace lnav

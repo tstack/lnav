@@ -10,6 +10,8 @@ a more detailed explanation of each key.
 Spatial Navigation
 ------------------
 
+The majority of these hotkeys should be available in all views.
+
 .. list-table::
    :header-rows: 1
    :widths: 6 6 6 20
@@ -27,8 +29,8 @@ Spatial Navigation
      - :kbd:`PgUp`
      - Up a page
    * - :kbd:`j`
-     - :kbd:`Return`
      - :kbd:`↓`
+     -
      - Down a line
    * - :kbd:`k`
      - :kbd:`↑`
@@ -100,6 +102,9 @@ Spatial Navigation
 Chronological Navigation
 ------------------------
 
+These hotkeys are only functional on views that are time-based, like the log
+view or the histogram view.
+
 .. list-table::
    :header-rows: 1
    :widths: 5 5 20
@@ -123,6 +128,44 @@ Chronological Navigation
      - :kbd:`Shift` + :kbd:`r`
      - Forward/backward by the relative time that was last used with the goto command.
 
+Breadcrumb Navigation
+---------------------
+
+The following hotkeys are related to the breadcrumb bar that is below the top
+status bar.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20
+
+   * - Keypress
+     - Description
+   * - :kbd:`ENTER`
+     - Focus on the breadcrumb bar.  Or, if the bar is currently focused,
+       accept the selected value and drop focus.
+   * - :kbd:`Escape`
+     - Drop focus on the breadcrumb bar.
+   * - :kbd:`←`
+     - Select the crumb to the left. If the first crumb is selected, the
+       selection will wrap around to the last crumb.
+   * - :kbd:`→`
+     - Accept the current value, which might mean navigating to the value in
+       the view, then selecting the crumb to the right.
+   * - :kbd:`Ctrl` + :kbd:`a`
+     - Select the first crumb.
+   * - :kbd:`Ctrl` + :kbd:`e`
+     - Select the last crumb.
+   * - :kbd:`↓`
+     - Select the next value in the crumb dropdown.
+   * - :kbd:`↑`
+     - Select the previous value in the crumb dropdown.
+   * - :kbd:`Home`
+     - Select the first value in the crumb dropdown.
+   * - :kbd:`End`
+     - Select the last value in the crumb dropdown.
+
+While a crumb is selected, you can perform a fuzzy search on the possible
+values by typing in the value you are interested in.
 
 .. _hotkeys_bookmarks:
 

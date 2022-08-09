@@ -20,7 +20,9 @@ hotkeys described in the :ref:`hotkeys_display` section or by pressing
 :kbd:`ENTER` to activate the breadcrumb bar, moving to the first crumb, and
 then selecting the desired view.  You can switch back to the previous view by
 pressing :kbd:`q`.  You can switch forward to the new view by pressing
-:kbd:`a`.
+:kbd:`a`.  If the views are time-based (e.g. log and histogram), pressing
+:kbd:`Shift` + :kbd:`q` and :kbd:`Shift` + :kbd:`a` will synchronize the top
+times in the views.
 
 The right side of the display has a proportionally sized 'scrollbar' that
 shows:
@@ -31,14 +33,62 @@ shows:
 * the locations of search hits by using a tick-mark pointing to the left;
 * the locations of bookmarks by using a tick-mark pointing to the right.
 
-Above and below the main body are status lines that display:
+Top Status Bar
+--------------
 
-* the current time;
-* the name of the file the top line was pulled from;
-* the log format for the top line;
-* the current view;
-* the line number for the top line in the display;
-* the current search hit, the total number of hits, and the search term;
+The top status bar shows the current time and messages stored in the
+:code:`lnav_user_notifications` table.
+
+Below the top status bar is the breadcrumb bar that displays the semantic
+location of the top line in the main view.  For example, within a
+pretty-printed JSON document, it will show the path to property at the top
+of the view.  The actual content of the bar depends on the current view and
+will be updated as you navigate around the main view.  The bar can also be
+used to navigate around the document by focusing on it.
+
+Breadcrumb Bar
+--------------
+
+.. figure:: lnav-breadcrumbs-help.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the breadcrumb bar focused and navigating the help text
+
+To focus on the breadcrumb bar, press :kbd:`ENTER`.  The :kbd:`←`/:kbd:`→`
+cursor keys can be used to select a crumb and the :kbd:`↑`/:kbd:`↓` keys can
+be used select a value of that crumb.  To accept a value and drop focus on the
+bar, press :kbd:`ENTER`.  To accept a value and move to the next crumb, press
+:kbd:`→`.  Using :kbd:`→` makes it quicker to drill down into a document
+without having to constantly switch focus.  To drop focus on the bar without
+accepting anything, press :kbd:`Escape`.
+
+There are three types of crumbs:
+
+* a dropdown where one of a limited set of values can be selected;
+* a combobox where a value can be entered directly or selected;
+* a numeric input for entering array indexes.
+
+When a dropdown or combobox is selected, you can type part of the desired value
+to filter the list of values.  For example, the first crumb is always the
+current view, typing in "hi" will filter the list down to the "HIST" value.
+
+Configuration Panels
+--------------------
+
+After the main view content, there is a header bar for two configuration
+panels: Files and Filters.  These panels provide visual access to parts of
+lnav's configuration.
+
+The Files panel is open initially to display progress in loading files.
+The following information can be displayed for each file:
+
+* the "unique" portion of the path relative to the other files;
+* the amount of data that has been indexed;
+* the date range of log messages contained in the file;
+* the errors that were encountered while trying to index the file;
+* the notes recorded for files where some automatic action was taken,
+  like hiding the file if it was seen as a duplicate of another file.
 
 If the view supports filtering, there will be a status line showing the
 following:
@@ -93,6 +143,14 @@ On color displays, the log messages will be highlighted as follows:
   .. code-block::  lnav
 
     :config /ui/theme grayscale
+
+The breadcrumb bar will show:
+
+* the timestamp
+* the log format for the top line;
+* the name of the file the top line was pulled from;
+* the line number for the top line in the display;
+* the current search hit, the total number of hits, and the search term;
 
 DB
 ^^

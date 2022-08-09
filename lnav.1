@@ -19,7 +19,7 @@
 .ft R
 .fi
 ..
-.TH LNAV "1" "August 2013"
+.TH LNAV "1" "August 2022"
 .SH NAME
 lnav \- ncurses-based log file viewer
 .SH SYNOPSIS
@@ -49,12 +49,30 @@ Print help and exit
 \fB\-H\fR
 Display the internal help text.
 .TP
+\fB\-n\fR
+Run without the curses UI.  (headless mode)
+.TP
+\fB\-c\fR cmd
+Execute a command after the files have been loaded.
+.TP
+\fB\-f\fR path
+Execute the commands in the given file.
+.TP
 \fB\-I\fR path
 Add the given configuration directory to the search path.
+.TP
+\fB\-n\fR
+Do not open the default syslog file if no files are given.
+.TP
+\fB\-q\fR
+Quiet mode.  Do not print the log messages after executing all of the commands.
 .TP
 \fB\-i\fR
 Install the given format files in the $HOME/.lnav/formats/installed directory
 and exit.
+.TP
+\fB\-u\fR
+Update formats installed from git repositories.
 .TP
 \fB\-C\fR
 Check the configuration and exit.  The log format files will be loaded and
@@ -66,9 +84,6 @@ Write debug messages to the given file.
 .TP
 \fB\-V\fR
 Print version information.
-.TP
-\fB\-a\fR
-Load all of the most recent log file types.
 .TP
 \fB\-r\fR
 Recursively load files from the given directories.

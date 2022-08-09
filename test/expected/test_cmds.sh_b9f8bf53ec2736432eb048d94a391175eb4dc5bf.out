@@ -1,2 +1,2 @@
-[31mFeb  3 09:23:38[0m[31m [0m[31mveridian[0m[31m [0m[31mautomount[0m[31m[[0m[31m7998[0m[31m][0m[31m: [0m[31mlookup(file): lookup for foobar failed[0m
+[4m[31mFeb  3 09:23:38[0m[4m[31m [0m[4m[31mveridian[0m[4m[31m [0m[4m[31mautomount[0m[4m[31m[[0m[4m[31m7998[0m[4m[31m][0m[4m[31m: [0m[4m[31mlookup(file): lookup for foobar failed[0m
 Jan  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt

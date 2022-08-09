@@ -44,7 +44,7 @@ status_field::set_value(std::string value)
 
     sa.clear();
 
-    scrub_ansi_string(value, sa);
+    scrub_ansi_string(value, &sa);
     this->sf_value.with_string(value);
 }
 

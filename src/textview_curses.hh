@@ -563,21 +563,10 @@ public:
             : this->tc_sub_source->text_source_name(*this);
     }
 
-    bool grep_value_for_line(vis_line_t line, std::string& value_out)
+    bool grep_value_for_line(vis_line_t line, std::string& value_out);
+
+    void grep_quiesce()
     {
-        bool retval = false;
-
-        if (this->tc_sub_source
-            && line < (int) this->tc_sub_source->text_line_count()) {
-            this->tc_sub_source->text_value_for_line(
-                *this, line, value_out, text_sub_source::RF_RAW);
-            retval = true;
-        }
-
-        return retval;
-    }
-
-    void grep_quiesce() {
         if (this->tc_sub_source != nullptr) {
             this->tc_sub_source->quiesce();
         }
@@ -649,10 +638,7 @@ public:
         return retval;
     }
 
-    bool get_hide_fields() const
-    {
-        return this->tc_hide_fields;
-    }
+    bool get_hide_fields() const { return this->tc_hide_fields; }
 
     void execute_search(const std::string& regex_orig);
 

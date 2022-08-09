@@ -40,6 +40,8 @@ string_attr_type<void> SA_PREFORMATTED("preformatted");
 string_attr_type<std::string> SA_INVALID("invalid");
 string_attr_type<std::string> SA_ERROR("error");
 string_attr_type<int64_t> SA_LEVEL("level");
+string_attr_type<string_fragment> SA_ORIGIN("origin");
+string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
 
 string_attr_type<role_t> VC_ROLE("role");
 string_attr_type<role_t> VC_ROLE_FG("role-fg");

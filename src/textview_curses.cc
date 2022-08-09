@@ -438,7 +438,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
 
-    scrub_ansi_string(str, sa);
+    scrub_ansi_string(str, &sa);
 
     struct line_range body, orig_line;
 
@@ -788,6 +788,23 @@ textview_curses::set_sub_source(text_sub_source* src)
         this->reload_data();
     }
     return *this;
+}
+
+bool
+textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
+{
+    bool retval = false;
+
+    if (this->tc_sub_source
+        && line < (int) this->tc_sub_source->text_line_count())
+    {
+        this->tc_sub_source->text_value_for_line(
+            *this, line, value_out, text_sub_source::RF_RAW);
+        scrub_ansi_string(value_out, nullptr);
+        retval = true;
+    }
+
+    return retval;
 }
 
 void

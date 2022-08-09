@@ -326,7 +326,7 @@ open_pretty_view()
                 al.get_string(),
                 text_sub_source::RF_FULL | text_sub_source::RF_REWRITE);
             lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
-            scrub_ansi_string(al.get_string(), al.get_attrs());
+            scrub_ansi_string(al.get_string(), &al.get_attrs());
             if (log_tc->get_hide_fields()) {
                 al.apply_hide();
             }

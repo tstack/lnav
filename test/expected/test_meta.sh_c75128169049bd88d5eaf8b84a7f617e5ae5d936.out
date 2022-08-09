@@ -1,4 +1,4 @@
-[1mlog_line [0m[1m log_comment  [0m[1mlog_tags [0m
+[1m[4mlog_line [0m[1m[4m log_comment  [0m[1m[4mlog_tags [0m
 [1m       0[0m[1m [0m[1mHello, World![0m[1m [0m[1m["#foo"] [0m
        1 <NULL>        <NULL>   
 [1m       2[0m[1m [0m[1m<[0m[1mNULL[0m[1m>       [0m[1m [0m[1m<[0m[1mNULL[0m[1m>   [0m

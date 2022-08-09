@@ -1412,7 +1412,7 @@ readline_curses::do_update()
 
         if (!this->rc_alt_value.empty()) {
             alt_al.get_string() = this->rc_alt_value;
-            scrub_ansi_string(alt_al.get_string(), alt_al.get_attrs());
+            scrub_ansi_string(alt_al.get_string(), &alt_al.get_attrs());
 
             alt_start = getmaxx(this->vc_window) - alt_al.get_string().size();
         }

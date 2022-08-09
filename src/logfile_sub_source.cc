@@ -2178,14 +2178,14 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                uniq_path.template get<std::string>()));
         });
 
-    string_attrs_t sa;
     logline_value_vector values;
     auto& sbr = values.lvv_sbr;
+    attr_line_t al(to_string(sbr));
 
     lf->read_full_message(msg_start_iter, sbr);
-    format->annotate(file_line_number, sa, values);
+    format->annotate(file_line_number, al.get_attrs(), values);
 
-    auto opid_opt = get_string_attr(sa, logline::L_OPID);
+    auto opid_opt = get_string_attr(al.get_attrs(), logline::L_OPID);
     if (opid_opt && !opid_opt.value().saw_string_attr->sa_range.empty()) {
         const auto& opid_range = opid_opt.value().saw_string_attr->sa_range;
         const auto opid_str
@@ -2224,14 +2224,16 @@ logfile_sub_source::text_crumbs_for_line(int line,
     }
 
     auto sf = sbr.to_string_fragment();
+    auto body_opt = get_string_attr(al.get_attrs(), SA_BODY);
     auto sf_lines = sf.split_lines();
     auto msg_line_number = std::distance(msg_start_iter, line_pair.second);
     auto line_from_top = line - msg_line_number;
-    if (sf_lines.size() > 1) {
+    if (sf_lines.size() > 1 && body_opt) {
         if (this->lss_token_meta_line != file_line_number
             || this->lss_token_meta_size != sf.length())
         {
-            this->lss_token_meta = lnav::document::discover_structure(sf);
+            this->lss_token_meta = lnav::document::discover_structure(
+                al, body_opt.value().saw_string_attr->sa_range);
             this->lss_token_meta_line = file_line_number;
             this->lss_token_meta_size = sf.length();
         }
