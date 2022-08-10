@@ -60,7 +60,7 @@ status_field::do_cylon()
         ? cycle_pos
         : (this->sf_width - (cycle_pos - this->sf_width) - 1);
     auto stop = std::min(start + 3, this->sf_width);
-    struct line_range lr(std::max(start, 0L), stop);
+    struct line_range lr(std::max<long>(start, 0L), stop);
     auto& vc = view_colors::singleton();
 
     auto attrs = vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS);
