@@ -253,9 +253,16 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                     this->ss_details_view->set_sub_source(
                         row_details_source.get());
                     this->ss_details_source = std::move(row_details_source);
+                    auto* overlay_source = dynamic_cast<list_overlay_source*>(
+                        this->ss_details_source.get());
+                    if (overlay_source != nullptr) {
+                        this->ss_details_view->set_overlay_source(
+                            overlay_source);
+                    }
                 } else {
                     this->ss_details_view->set_sub_source(
                         this->ss_no_details_source);
+                    this->ss_details_view->set_overlay_source(nullptr);
                 }
             }
             return true;
@@ -464,6 +471,7 @@ spectrogram_source::reset_details_source()
 {
     if (this->ss_details_view != nullptr) {
         this->ss_details_view->set_sub_source(this->ss_no_details_source);
+        this->ss_details_view->set_overlay_source(nullptr);
     }
     this->ss_details_source.reset();
 }

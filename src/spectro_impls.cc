@@ -32,12 +32,14 @@
 #include "base/itertools.hh"
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
+#include "scn/scn.h"
 
 using namespace lnav::roles::literals;
 
 class filtered_sub_source
     : public text_sub_source
-    , public text_time_translator {
+    , public text_time_translator
+    , public list_overlay_source {
 public:
     size_t text_line_count() override { return this->fss_lines.size(); }
 
@@ -88,8 +90,22 @@ public:
                });
     }
 
+    bool list_value_for_overlay(const listview_curses& lv,
+                                int y,
+                                int bottom,
+                                vis_line_t line,
+                                attr_line_t& value_out) override
+    {
+        if (this->fss_overlay_delegate != nullptr) {
+            return this->fss_overlay_delegate->list_value_for_overlay(
+                lv, y, bottom, line, value_out);
+        }
+        return false;
+    }
+
     text_sub_source* fss_delegate;
     text_time_translator* fss_time_delegate;
+    list_overlay_source* fss_overlay_delegate{nullptr};
     std::vector<vis_line_t> fss_lines;
 };
 
@@ -124,7 +140,8 @@ log_spectro_value_source::update_stats()
         auto ll = lf->begin();
 
         if (this->lsvs_begin_time == 0
-            || ll->get_time() < this->lsvs_begin_time) {
+            || ll->get_time() < this->lsvs_begin_time)
+        {
             this->lsvs_begin_time = ll->get_time();
         }
         ll = lf->end();
@@ -216,6 +233,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
 
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
+        retval->fss_overlay_delegate = nullptr;
         for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
             const auto& ll = msg_info.get_logline();
             if (ll.get_time() >= sr.sr_end_time) {
@@ -231,14 +249,16 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                 switch (lv_iter->lv_meta.lvm_kind) {
                     case value_kind_t::VALUE_FLOAT:
                         if (range_min <= lv_iter->lv_value.d
-                            && lv_iter->lv_value.d < range_max) {
+                            && lv_iter->lv_value.d < range_max)
+                        {
                             retval->fss_lines.emplace_back(
                                 msg_info.get_vis_line());
                         }
                         break;
                     case value_kind_t::VALUE_INTEGER:
                         if (range_min <= lv_iter->lv_value.i
-                            && lv_iter->lv_value.i < range_max) {
+                            && lv_iter->lv_value.i < range_max)
+                        {
                             retval->fss_lines.emplace_back(
                                 msg_info.get_vis_line());
                         }
@@ -292,14 +312,16 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
             switch (lv_iter->lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_FLOAT:
                     if (range_min <= lv_iter->lv_value.d
-                        && lv_iter->lv_value.d <= range_max) {
+                        && lv_iter->lv_value.d <= range_max)
+                    {
                         log_tc.toggle_user_mark(&textview_curses::BM_USER,
                                                 curr_line);
                     }
                     break;
                 case value_kind_t::VALUE_INTEGER:
                     if (range_min <= lv_iter->lv_value.i
-                        && lv_iter->lv_value.i <= range_max) {
+                        && lv_iter->lv_value.i <= range_max)
+                    {
                         log_tc.toggle_user_mark(&textview_curses::BM_USER,
                                                 curr_line);
                     }
@@ -326,7 +348,6 @@ db_spectro_value_source::update_stats()
 
     auto& dls = lnav_data.ld_db_row_source;
     auto& chart = dls.dls_chart;
-    date_time_scanner dts;
 
     this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
 
@@ -456,12 +477,12 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         = dls.row_for_time({sr.sr_end_time, 0}).value_or(dls.dls_rows.size());
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-        double value = 0.0;
+        auto scan_res = scn::scan_value<double>(scn::string_view{
+            dls.dls_rows[lpc][this->dsvs_column_index.value()]});
 
-        sscanf(
-            dls.dls_rows[lpc][this->dsvs_column_index.value()], "%lf", &value);
-
-        row_out.add_value(sr, value, false);
+        if (scan_res) {
+            row_out.add_value(sr, scan_res.value(), false);
+        }
     }
 
     row_out.sr_details_source_provider = [this](const spectrogram_request& sr,
@@ -472,17 +493,21 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
 
         retval->fss_delegate = &dls;
         retval->fss_time_delegate = &dls;
+        retval->fss_overlay_delegate = &lnav_data.ld_db_overlay;
         auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
         auto end_row = dls.row_for_time({sr.sr_end_time, 0})
                            .value_or(dls.dls_rows.size());
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-            double value = 0.0;
-
-            sscanf(dls.dls_rows[lpc][this->dsvs_column_index.value()],
-                   "%lf",
-                   &value);
-            if (range_min <= value && value < range_max) {
+            auto scan_res = scn::scan_value<double>(scn::string_view{
+                dls.dls_rows[lpc][this->dsvs_column_index.value()]});
+            if (!scan_res) {
+                continue;
+            }
+            auto value = scan_res.value();
+            if ((range_min == value)
+                || (range_min < value && value < range_max))
+            {
                 retval->fss_lines.emplace_back(lpc);
             }
         }
