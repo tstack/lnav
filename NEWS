@@ -118,6 +118,10 @@ lnav v0.11.0:
      * In cases where there were many different colors on screen, some
        text would be colored incorrectly.
      * The pretty-print view now handles ANSI escape sequences.
+     * The "overstrike" convention for doing bold and underline is now
+       supported.  (Overstrike is a character followed by a backspace
+       and then the same character for bold or an underscore for
+       underline.)
 
 lnav v0.10.1:
      Features:

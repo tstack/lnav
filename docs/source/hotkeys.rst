@@ -259,7 +259,8 @@ Session
    * - Keypress
      - Command
    * - :kbd:`Ctrl` + :kbd:`R`
-     - Reset the current :ref:`session<sessions>` state.
+     - Reset the current :ref:`session<sessions>` state.  The session state
+       includes things like filters, bookmarks, and hidden fields.
 
 Query Prompts
 -------------

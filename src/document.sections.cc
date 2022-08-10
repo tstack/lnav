@@ -199,15 +199,15 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
     }
 
     for (auto& interval : intervals) {
-        auto start_off_opt
-            = get_string_attr(orig_attrs, &SA_ORIGIN_OFFSET, interval.start);
-        if (start_off_opt) {
-            interval.start += start_off_opt.value()->sa_value.get<int64_t>();
+        auto start_off_iter = find_string_attr_containing(
+            orig_attrs, &SA_ORIGIN_OFFSET, interval.start);
+        if (start_off_iter != orig_attrs.end()) {
+            interval.start += start_off_iter->sa_value.get<int64_t>();
         }
-        auto stop_off_opt
-            = get_string_attr(orig_attrs, &SA_ORIGIN_OFFSET, interval.stop - 1);
-        if (stop_off_opt) {
-            interval.stop += stop_off_opt.value()->sa_value.get<int64_t>();
+        auto stop_off_iter = find_string_attr_containing(
+            orig_attrs, &SA_ORIGIN_OFFSET, interval.stop - 1);
+        if (stop_off_iter != orig_attrs.end()) {
+            interval.stop += stop_off_iter->sa_value.get<int64_t>();
         }
     }
 

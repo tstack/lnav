@@ -37,6 +37,8 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 
+using namespace lnav::roles::literals;
+
 filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
@@ -488,6 +490,8 @@ filter_sub_source::rl_change(readline_curses* rc)
 void
 filter_sub_source::rl_perform(readline_curses* rc)
 {
+    static const intern_string_t INPUT_SRC = intern_string::lookup("input");
+
     textview_curses* top_view = *lnav_data.ld_view_stack.top();
     text_sub_source* tss = top_view->get_sub_source();
     filter_stack& fs = tss->get_filters();
@@ -514,6 +518,18 @@ filter_sub_source::rl_perform(readline_curses* rc)
                                          nullptr))
                     == nullptr)
                 {
+                    auto um = lnav::console::user_message::error(
+                                  "invalid regular expression")
+                                  .with_reason(errptr)
+                                  .with_snippet(lnav::console::snippet::from(
+                                      INPUT_SRC, new_value));
+                    um.um_snippets.back()
+                        .s_content.append("\n")
+                        .append(eoff, ' ')
+                        .append("^ "_comment)
+                        .append(lnav::roles::comment(errptr));
+                    lnav_data.ld_exec_context.ec_error_callback_stack.back()(
+                        um);
                     this->rl_abort(rc);
                 } else {
                     tf->lf_deleted = true;
@@ -548,6 +564,16 @@ filter_sub_source::rl_perform(readline_curses* rc)
                                                   nullptr);
 #endif
                 if (retcode != SQLITE_OK) {
+                    auto sqlerr = annotate_sql_with_error(
+                        lnav_data.ld_db.in(), full_sql.c_str(), nullptr);
+                    auto um
+                        = lnav::console::user_message::error(
+                              "invalid SQL expression")
+                              .with_reason(sqlite3_errmsg(lnav_data.ld_db.in()))
+                              .with_snippet(lnav::console::snippet::from(
+                                  INPUT_SRC, sqlerr));
+                    lnav_data.ld_exec_context.ec_error_callback_stack.back()(
+                        um);
                     this->rl_abort(rc);
                 } else {
                     lnav_data.ld_log_source.set_sql_filter(new_value,

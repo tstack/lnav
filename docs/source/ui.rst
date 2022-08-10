@@ -76,9 +76,22 @@ current view, typing in "hi" will filter the list down to the "HIST" value.
 Configuration Panels
 --------------------
 
+.. figure:: lnav-config-header.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the header for the configuration panels when they are hidden.
+
 After the main view content, there is a header bar for two configuration
 panels: Files and Filters.  These panels provide visual access to parts of
-lnav's configuration.
+lnav's configuration.  To access the panels, press the :kbd:`TAB` key.
+To hide the panels again, press :kbd:`q`.
+
+.. figure:: lnav-files-panel.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the files panel showing the loaded files.
 
 The Files panel is open initially to display progress in loading files.
 The following information can be displayed for each file:
@@ -90,6 +103,12 @@ The following information can be displayed for each file:
 * the notes recorded for files where some automatic action was taken,
   like hiding the file if it was seen as a duplicate of another file.
 
+.. figure:: lnav-filters-panel.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the filters panel showing an OUT and a disabled IN filter.
+
 If the view supports filtering, there will be a status line showing the
 following:
 
@@ -100,30 +119,40 @@ To edit the filters, you can press TAB to change the focus from the main
 view to the filter editor.  The editor allows you to create, enable/disable,
 and delete filters easily.
 
+Bottom Status Bar
+-----------------
+
+The second to last line is the bottom status bar, which shows the following:
+
+* the line number of the top line, starting from zero;
+* the location within the view, as a percentage;
+* the current search hit, the total number of hits, and the search term;
+* the loading indicator.
+
+When the interactive prompt is active, this bar can show the prompt
+description, help text, or error message.
+
+Prompt
+------
+
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
 unix-timestamp into a human-readable date.  The command-line is by
 the readline library, so the usual set of keyboard shortcuts can
 be used.
 
-The body of the display is also used to display other content, such
-as: the help file, histograms of the log messages over time, and
-SQL results.  The views are organized into a stack so that any time
-you activate a new view with a key press or command, the new view
-is pushed onto the stack.  Pressing the same key again will pop the
-view off of the stack and return you to the previous view.  Note
-that you can always use 'q' to pop the top view off of the stack.
-
 .. _ui_views:
 
 Views
 -----
 
+The accessible content within lnav is separated into the following views.
+
 LOG
 ^^^
 
 The log view displays the log messages from any loaded log files in time
-order.
+order.  This view will be shown by default if any log messages are available.
 
 On color displays, the log messages will be highlighted as follows:
 
@@ -144,19 +173,66 @@ On color displays, the log messages will be highlighted as follows:
 
     :config /ui/theme grayscale
 
-The breadcrumb bar will show:
+The breadcrumb bar will show the following crumbs:
 
-* the timestamp
+* the timestamp for the top line;
 * the log format for the top line;
 * the name of the file the top line was pulled from;
-* the line number for the top line in the display;
-* the current search hit, the total number of hits, and the search term;
+* the "operation ID" of the top log message, if it is supported by the log
+  format.
+
+These crumbs are interactive and can be used to navigate to different parts
+of the log view.  For example, selecting a different value in the log format
+crumb will jump to the first message with that format.
+
+TEXT
+^^^^
+
+The text view displays files for which lnav could not detect any log messages.
+
+Files with an :code:`.md` extension will be treated as Markdown files and
+rendered separately.
 
 DB
 ^^
 
+The DB view shows the results of queries done through the SQLite interface.
+You can execute a query by pressing :kbd:`;` and then entering a SQL statement.
+You can switch to the SQL view by pressing :kbd:`v`.
+
 HELP
 ^^^^
 
+The help view displays the builtin help text.  Press :kbd:`?` to switch to the
+help view at any time.  While in the help view, the breadcrumb bar can be used
+to navigate to different sections of the document.
+
 HIST
 ^^^^
+
+The histogram view displays a stacked bar chart of messages over time
+classified by their log level and whether they've been bookmarked.  Press
+:kbd:`i` to switch back and forth to the histogram view.  You can also press
+:kbd:`Shift`+:kbd:`i` to toggle the histogram view while synchronizing the top
+time.  While in the histogram view, pressing :kbd:`z`/:kbd:`Shift`+:kbd:`z`
+will zoom in/out.
+
+PRETTY
+^^^^^^
+
+The pretty-print view takes the text displayed in the current view and shows
+the result of a pretty-printer run on that text.  For example, if a log
+message contained an XML message on a single line, the pretty-printer would
+break the XML across multiple lines with appropriate indentation.
+
+SCHEMA
+^^^^^^
+
+The schema view displays the current schema of the builtin SQLite database.
+
+SPECTRO
+^^^^^^^
+
+The spectrogram view is a "three"-dimensional display of values of a log field
+or a SQL column.  The dimensions are time on the Y axis, the range of values
+on the X axis, and number of data points as a color.

@@ -210,6 +210,9 @@ view_curses::mvwattrline(WINDOW* window,
             }
         }
     }
+    if (lr_bytes.lr_start == -1) {
+        lr_bytes.lr_start = expanded_line.size();
+    }
     if (lr_bytes.lr_end == -1) {
         lr_bytes.lr_end = expanded_line.size();
     }

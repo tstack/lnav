@@ -42,7 +42,7 @@
 static pcrepp&
 ansi_regex()
 {
-    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(.)\b\\3|.\b_|_\b.");
+    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:[^\b]\b[^\b])+");
 
     return retval;
 }
@@ -61,32 +61,69 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         auto* caps = context.all();
         const auto sf = pi.get_string_fragment(caps);
 
-        if (sf.length() == 3 && sf[1] == '\b') {
+        if (sf.length() >= 3 && sf[1] == '\b') {
+            ssize_t fill_index = sf.sf_begin;
+            ssize_t erased_size = (sf.length() / 3) * 2;
+            ssize_t output_size = sf.length() / 3;
+            line_range bold_range;
+            line_range ul_range;
+
             if (sa != nullptr) {
-                shift_string_attrs(*sa, caps->c_begin + 1, -2);
-                if (sf[0] == '_' || sf[2] == '_') {
-                    sa->emplace_back(
-                        line_range{caps->c_begin, caps->c_begin + 1},
-                        VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                shift_string_attrs(
+                    *sa, caps->c_begin + sf.length() / 3, -erased_size);
+                sa->emplace_back(line_range{last_origin_offset_end,
+                                            caps->c_begin + (int) output_size},
+                                 SA_ORIGIN_OFFSET.value(origin_offset));
+            }
+            for (size_t triple_index = 0; triple_index < output_size;
+                 triple_index++)
+            {
+                char lhs = sf[triple_index * 3];
+                char rhs = sf[triple_index * 3 + 2];
+
+                if (lhs == '_' || rhs == '_') {
+                    if (sa != nullptr && bold_range.is_valid()) {
+                        sa->emplace_back(bold_range,
+                                         VC_STYLE.value(text_attrs{A_BOLD}));
+                        bold_range.clear();
+                    }
+                    if (ul_range.is_valid()) {
+                        ul_range.lr_end += 1;
+                    } else {
+                        ul_range.lr_start = fill_index;
+                        ul_range.lr_end = fill_index + 1;
+                    }
+                    str[fill_index++] = lhs == '_' ? rhs : lhs;
                 } else {
-                    sa->emplace_back(
-                        line_range{caps->c_begin, caps->c_begin + 1},
-                        VC_STYLE.value(text_attrs{A_BOLD}));
+                    if (sa != nullptr && ul_range.is_valid()) {
+                        sa->emplace_back(
+                            ul_range, VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                        ul_range.clear();
+                    }
+                    if (bold_range.is_valid()) {
+                        bold_range.lr_end += 1;
+                    } else {
+                        bold_range.lr_start = fill_index;
+                        bold_range.lr_end = fill_index + 1;
+                    }
+                    str[fill_index++] = rhs;
                 }
-                sa->emplace_back(
-                    line_range{last_origin_offset_end, caps->c_begin + 1},
-                    SA_ORIGIN_OFFSET.value(origin_offset));
             }
-            if (sf[0] == '_') {
-                str.erase(str.begin() + caps->c_begin,
-                          str.begin() + caps->c_end - 1);
-                last_origin_offset_end = caps->c_begin + 1;
-            } else {
-                str.erase(str.begin() + caps->c_begin + 1,
-                          str.begin() + caps->c_end);
-                last_origin_offset_end = caps->c_begin + 1;
+
+            if (sa != nullptr && ul_range.is_valid()) {
+                sa->emplace_back(ul_range,
+                                 VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                ul_range.clear();
             }
-            origin_offset += 2;
+            if (sa != nullptr && bold_range.is_valid()) {
+                sa->emplace_back(bold_range,
+                                 VC_STYLE.value(text_attrs{A_BOLD}));
+                bold_range.clear();
+            }
+
+            str.erase(str.begin() + fill_index, str.begin() + caps->c_end);
+            last_origin_offset_end = caps->c_begin + output_size;
+            origin_offset += erased_size;
             pi.reset(str);
             continue;
         }

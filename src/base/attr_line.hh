@@ -51,7 +51,9 @@ struct line_range {
     int lr_end;
 
     explicit line_range(int start = -1, int end = -1)
-        : lr_start(start), lr_end(end){};
+        : lr_start(start), lr_end(end)
+    {
+    }
 
     bool is_valid() const { return this->lr_start != -1; }
 
@@ -61,6 +63,11 @@ struct line_range {
     }
 
     bool empty() const { return this->length() == 0; }
+
+    void clear() {
+        this->lr_start = -1;
+        this->lr_end = -1;
+    }
 
     int end_for_string(const std::string& str) const
     {
