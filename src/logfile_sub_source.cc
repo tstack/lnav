@@ -2180,9 +2180,9 @@ logfile_sub_source::text_crumbs_for_line(int line,
 
     logline_value_vector values;
     auto& sbr = values.lvv_sbr;
-    attr_line_t al(to_string(sbr));
 
     lf->read_full_message(msg_start_iter, sbr);
+    attr_line_t al(to_string(sbr));
     format->annotate(file_line_number, al.get_attrs(), values);
 
     auto opid_opt = get_string_attr(al.get_attrs(), logline::L_OPID);

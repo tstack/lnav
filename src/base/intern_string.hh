@@ -119,7 +119,10 @@ struct string_fragment {
     {
     }
 
-    bool is_valid() const { return this->sf_begin != -1; }
+    bool is_valid() const
+    {
+        return this->sf_begin != -1 && this->sf_begin <= this->sf_end;
+    }
 
     int length() const { return this->sf_end - this->sf_begin; }
 
