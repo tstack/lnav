@@ -9,7 +9,9 @@ the following tables/views:
 * `environ`_
 * `lnav_events`_
 * `lnav_file`_
+* `lnav_user_notifications`_
 * `lnav_views`_
+* `lnav_views_echo`_
 * `lnav_view_stack`_
 * `lnav_view_filters`_
 * `lnav_view_filter_stats`_
@@ -84,6 +86,37 @@ following columns are available in this table:
   :time_offset: The millisecond offset for timestamps.  This column can be
     UPDATEd to change the offset of timestamps in the file.
 
+.. _table_lnav_user_notifications:
+
+lnav_user_notifications
+-----------------------
+
+The :code:`lnav_user_notifications` table allows you to display a custom message
+in the top-right corner of the UI.  For example, to display "Hello, World!",
+you can enter:
+
+.. code-block:: custsqlite
+
+    ;REPLACE INTO lnav_user_notifications (message) VALUES ('Hello, World!')
+
+There are additional columns to have finer control of what is displayed and
+when:
+
+  :id: The unique ID for the message, defaults to "org.lnav.user".  This is
+    the primary key for the table, so more than one type of message is not
+    allowed.
+  :priority: The priority of the message.  Higher priority messages will be
+    displayed until they are cleared or are expired.
+  :created: The time the message was created.
+  :expiration: The time when the message should expire or NULL if it should
+    not automatically expire.
+  :views: A JSON array of view names where the message is applicable or NULL
+    if the message should be shown in all views.
+  :message: The message itself.
+
+This table will most likely be used in combination with :ref:`Events` and the
+`lnav_views_echo`_ table.
+
 lnav_views
 ----------
 
@@ -104,6 +137,17 @@ available in this table:
   :paused: Indicates if the view is paused and will not load new data.
   :search: The search string for this view.  This value can be UPDATEd to
     initiate a text search in this view.
+
+lnav_views_echo
+---------------
+
+The :code:`lnav_views_echo` table is a real SQLite table that you can create
+TRIGGERs on in order to react to users moving around in a view.
+
+.. note::
+
+    The table is periodically updated to reflect the current state of the views.
+    The changes are *not* performed immediately after the user action.
 
 lnav_view_stack
 ---------------

@@ -188,7 +188,7 @@ CREATE TABLE lnav_views (
     paused INTEGER,         -- Indicates if the view is paused and will not load new data.
     search TEXT,            -- The text to search for in the view.
     filtering INTEGER,      -- Indicates if the view is applying filters.
-    top_meta TEXT           --
+    top_meta TEXT           -- A JSON object that contains metadata related to the top line in the view.
 );
 )";
 

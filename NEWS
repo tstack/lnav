@@ -77,6 +77,9 @@ lnav v0.11.0:
        have a unique color).  Also, operations or previews that use
        that regular expression will highlight the matched data with
        the same color.
+     * Added an lnav_views_echo table that is a real SQLite table that
+       you can create TRIGGERs on in order to perform actions when
+       scrolling in a view.
 
      Breaking Changes:
      * Added a 'language' column to the lnav_view_filters table that

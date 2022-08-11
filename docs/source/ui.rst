@@ -10,7 +10,7 @@ with status bars above and below, and the interactive prompt as the last line.
    :align: center
    :alt: Screenshot of lnav showing a mix of syslog and web access_log messages.
 
-   Screenshot of **lnav** viewing syslog messages.
+   Screenshot of **lnav** viewing syslog and web access_log messages.
 
 The default view shows the log messages from the log files that have been
 loaded.  There are other views for displaying content like plaintext files
@@ -37,7 +37,7 @@ Top Status Bar
 --------------
 
 The top status bar shows the current time and messages stored in the
-:code:`lnav_user_notifications` table.
+:ref:`table_lnav_user_notifications` table.
 
 Below the top status bar is the breadcrumb bar that displays the semantic
 location of the top line in the main view.  For example, within a
@@ -137,9 +137,20 @@ Prompt
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
-unix-timestamp into a human-readable date.  The command-line is by
-the readline library, so the usual set of keyboard shortcuts can
-be used.
+unix-timestamp into a human-readable date.  The following key-presses
+will activate a corresponding prompt:
+
+* :kbd:`/` - The search prompt.  You can enter a PCRE-flavored regular
+  expression to search for in the current view.
+* :kbd:`:` - The command prompt.  Commands are used to perform common
+  operations.
+* :kbd:`;` - The SQL prompt.  SQL queries can be used for log analysis
+  and manipulating **lnav**'s state.
+* :kbd:`|` - The script prompt.  Enter a path to the lnav script to
+  execute, along with the arguments to pass in.
+
+The command-line is by the readline library, so the usual set of keyboard
+shortcuts can be used for editing and moving within the command-line.
 
 .. _ui_views:
 
@@ -233,6 +244,25 @@ The schema view displays the current schema of the builtin SQLite database.
 SPECTRO
 ^^^^^^^
 
-The spectrogram view is a "three"-dimensional display of values of a log field
-or a SQL column.  The dimensions are time on the Y axis, the range of values
-on the X axis, and number of data points as a color.
+The spectrogram view is a "three"-dimensional display of data points of a log
+field or a SQL query column.  The dimensions are time on the Y axis, the range
+of data point values on the X axis, and the number of data points as a color.
+For example, if you were to visualize process CPU usage over time, the range
+of values on the X axis would be CPU percentages and there would be colored
+blocks at each point on the line where a process had that CPU percentage, like
+so
+
+.. figure:: lnav-spectro-cpu-pct.png
+   :align: center
+
+   Screenshot of the **lnav** spectrogram view showing CPU usage of processes.
+
+The colors correspond to the relative number of data points in a bucket.
+The legend overlaid at the top line in the view shows the counts of data
+points that are in a particular color, with green having the fewest number of
+data points, yellow the middle, and red the most.  You can select a particular
+bucket using the cursor keys to see the exact number of data points and the
+range of values.  The panel at the bottom of the view shows the data points
+themselves from the original source, the log file or the SQL query results.
+You can press :kbd:`TAB` to focus on the details panel so you can scroll
+around and get a closer look at the values.
