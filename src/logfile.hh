@@ -33,6 +33,7 @@
 #ifndef logfile_hh
 #define logfile_hh
 
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -85,8 +86,7 @@ public:
 struct logfile_activity {
     int64_t la_polls{0};
     int64_t la_reads{0};
-    struct rusage la_initial_index_rusage {
-    };
+    struct rusage la_initial_index_rusage {};
 };
 
 /**
@@ -197,41 +197,20 @@ public:
                 || this->lf_time_offset.tv_usec != 0);
     }
 
-    iterator begin()
-    {
-        return this->lf_index.begin();
-    }
+    iterator begin() { return this->lf_index.begin(); }
 
-    const_iterator begin() const
-    {
-        return this->lf_index.begin();
-    }
+    const_iterator begin() const { return this->lf_index.begin(); }
 
-    const_iterator cbegin() const
-    {
-        return this->lf_index.begin();
-    }
+    const_iterator cbegin() const { return this->lf_index.begin(); }
 
-    iterator end()
-    {
-        return this->lf_index.end();
-    }
+    iterator end() { return this->lf_index.end(); }
 
-    const_iterator end() const
-    {
-        return this->lf_index.end();
-    }
+    const_iterator end() const { return this->lf_index.end(); }
 
-    const_iterator cend() const
-    {
-        return this->lf_index.end();
-    }
+    const_iterator cend() const { return this->lf_index.end(); }
 
     /** @return The number of lines in the index. */
-    size_t size() const
-    {
-        return this->lf_index.size();
-    }
+    size_t size() const { return this->lf_index.size(); }
 
     nonstd::optional<const_iterator> find_from_time(
         const struct timeval& tv) const;
@@ -341,10 +320,7 @@ public:
         return retval;
     }
 
-    bool is_indexing() const
-    {
-        return this->lf_indexing;
-    }
+    bool is_indexing() const { return this->lf_indexing; }
 
     /** Check the invariants for this object. */
     bool invariant()
@@ -402,8 +378,7 @@ private:
     nonstd::optional<ghc::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
-    struct stat lf_stat {
-    };
+    struct stat lf_stat {};
     std::shared_ptr<log_format> lf_format;
     std::vector<logline> lf_index;
     time_t lf_index_time{0};
@@ -430,6 +405,7 @@ private:
     nonstd::optional<tm> lf_cached_base_tm;
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
+    std::set<intern_string_t> lf_mismatched_formats;
 };
 
 class logline_observer {

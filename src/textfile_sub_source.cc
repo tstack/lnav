@@ -545,7 +545,7 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
-            if (!retval) {
+            if (!retval && lf->is_indexing()) {
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
                 if (ms_iter != this->tss_doc_metadata.end()) {
@@ -563,6 +563,8 @@ textfile_sub_source::rescan_files(
                     if (read_res.isOk()) {
                         auto content = attr_line_t(read_res.unwrap());
 
+                        log_info("generating metdata for: %s",
+                                 lf->get_filename().c_str());
                         scrub_ansi_string(content.get_string(),
                                           &content.get_attrs());
                         this->tss_doc_metadata[lf->get_filename()]

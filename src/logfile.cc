@@ -209,8 +209,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         const auto& root_formats = log_format::get_root_formats();
 
         /*
-         * Try each scanner until we get a match.  Fortunately, all the formats
-         * are sufficiently different that there are no ambiguities...
+         * Try each scanner until we get a match.  Fortunately, the formats
+         * tend to be sufficiently different that there are few ambiguities...
          */
         for (auto iter = root_formats.begin();
              iter != root_formats.end() && (found != log_format::SCAN_MATCH);
@@ -223,12 +223,17 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 continue;
             }
 
+            if (this->lf_mismatched_formats.count((*iter)->get_name()) > 0) {
+                continue;
+            }
+
             if (!(*iter)->match_name(this->lf_filename)) {
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file name: %s",
                               (*iter)->get_name().get(),
                               this->lf_filename.c_str());
                 }
+                this->lf_mismatched_formats.insert((*iter)->get_name());
                 continue;
             }
             if (!(*iter)->match_mime_type(this->lf_options.loo_file_format)) {
@@ -266,7 +271,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                  * written out at the same time as the last one, so we need to
                  * go back and update everything.
                  */
-                logline& last_line = this->lf_index[this->lf_index.size() - 1];
+                auto& last_line = this->lf_index[this->lf_index.size() - 1];
 
                 for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
                     if (this->lf_format->lf_multiline) {

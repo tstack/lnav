@@ -39,10 +39,11 @@
 #include "scn/scn.h"
 #include "view_curses.hh"
 
-static pcrepp&
+static const pcrepp&
 ansi_regex()
 {
-    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:[^\b]\b[^\b])+");
+    static const pcrepp retval(
+        "\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:[^\x08]\x08[^\x08])+");
 
     return retval;
 }
@@ -51,13 +52,13 @@ void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
     pcre_context_static<60> context;
-    auto& regex = ansi_regex();
+    const auto& regex = ansi_regex();
     pcre_input pi(str);
     int64_t origin_offset = 0;
     int last_origin_offset_end = 0;
 
     replace(str.begin(), str.end(), '\0', ' ');
-    while (regex.match(context, pi)) {
+    while (regex.match(context, pi, PCRE_NO_UTF8_CHECK)) {
         auto* caps = context.all();
         const auto sf = pi.get_string_fragment(caps);
 

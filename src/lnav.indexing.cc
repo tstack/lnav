@@ -103,6 +103,10 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
             lnav_data.ld_files_view.do_update();
         }
     }
+    if (handle_winch()) {
+        layout_views();
+        lnav_data.ld_view_stack.do_update();
+    }
     refresh();
 }
 
