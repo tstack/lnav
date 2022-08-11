@@ -109,10 +109,7 @@ struct supervisor {
 
     ~supervisor();
 
-    bool empty() const
-    {
-        return this->s_service_list.empty();
-    }
+    bool empty() const { return this->s_service_list.empty(); }
 
     void add_child_service(std::shared_ptr<service_base> new_service);
 
@@ -134,15 +131,9 @@ public:
 
     virtual ~service_base() = default;
 
-    bool is_looping() const
-    {
-        return this->s_looping;
-    }
+    bool is_looping() const { return this->s_looping; }
 
-    msg_port& get_port()
-    {
-        return this->s_port;
-    }
+    msg_port& get_port() { return this->s_port; }
 
     friend supervisor;
 
@@ -153,16 +144,16 @@ private:
 
 protected:
     virtual void* run();
-    virtual void loop_body(){};
-    virtual void child_finished(std::shared_ptr<service_base> child){};
-    virtual void stopped(){};
+    virtual void loop_body() {}
+    virtual void child_finished(std::shared_ptr<service_base> child) {}
+    virtual void stopped() {}
     virtual std::chrono::milliseconds compute_timeout(
         mstime_t current_time) const
     {
         using namespace std::literals::chrono_literals;
 
         return 1s;
-    };
+    }
 
     const std::string s_name;
     bool s_started{false};

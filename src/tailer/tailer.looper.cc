@@ -31,6 +31,7 @@
 
 #include "tailer.looper.hh"
 
+#include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
@@ -702,7 +703,8 @@ tailer::looper::host_tailer::loop_body()
                                        ghc::filesystem::path(pob.pob_path))
                                        .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
-                auto fd = auto_fd(::open(local_path.c_str(), O_RDONLY));
+                auto open_res
+                    = lnav::filesystem::open_file(local_path, O_RDONLY);
 
                 if (this->ht_active_files.count(local_path) == 0) {
                     this->ht_active_files.insert(local_path);
@@ -744,8 +746,9 @@ tailer::looper::host_tailer::loop_body()
                         });
                 }
 
-                if (fd == -1) {
-                    log_debug("file not found, sending need block");
+                if (open_res.isErr()) {
+                    log_debug("file not found (%s), sending need block",
+                              open_res.unwrapErr().c_str());
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
                                 TPPT_STRING,
@@ -754,6 +757,7 @@ tailer::looper::host_tailer::loop_body()
                     return std::move(this->ht_state);
                 }
 
+                auto fd = open_res.unwrap();
                 struct stat st;
 
                 if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode)) {
@@ -848,12 +852,13 @@ tailer::looper::host_tailer::loop_body()
                           ptb.ptb_bits.size(),
                           local_path.c_str());
                 ghc::filesystem::create_directories(local_path.parent_path());
-                auto fd = auto_fd(::open(
-                    local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0600));
+                auto create_res = lnav::filesystem::create_file(
+                    local_path, O_WRONLY | O_APPEND | O_CREAT, 0600);
 
-                if (fd == -1) {
-                    log_error("open: %s", strerror(errno));
+                if (create_res.isErr()) {
+                    log_error("open: %s", create_res.unwrapErr().c_str());
                 } else {
+                    auto fd = create_res.unwrap();
                     ftruncate(fd, ptb.ptb_offset);
                     pwrite(fd,
                            ptb.ptb_bits.data(),
@@ -932,7 +937,7 @@ tailer::looper::host_tailer::loop_body()
                 auto remote_link_path = ghc::filesystem::path(pl.pl_link_value);
                 std::string link_path;
 
-                if (remote_path.is_absolute()) {
+                if (remote_link_path.is_absolute()) {
                     auto local_link_path = this->ht_local_path
                         / remote_link_path.relative_path();
 

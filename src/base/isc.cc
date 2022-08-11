@@ -56,7 +56,18 @@ service_base::run()
         this->s_port.process_for(timeout);
         this->s_children.cleanup_children();
 
-        this->loop_body();
+        try {
+            this->loop_body();
+        } catch (const std::exception& e) {
+            log_error("%s: loop_body() failed with -- %s",
+                      this->s_name.c_str(),
+                      e.what());
+            this->s_looping = false;
+        } catch (...) {
+            log_error("%s: loop_body() failed with non-standard exception",
+                      this->s_name.c_str());
+            this->s_looping = false;
+        }
     }
     if (!this->s_children.empty()) {
         log_debug("stopping children of service: %s", this->s_name.c_str());
