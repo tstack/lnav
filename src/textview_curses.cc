@@ -242,15 +242,14 @@ textview_curses::reload_data()
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
-    listview_curses::reload_data();
-
     if (this->tc_sub_source != nullptr) {
-        auto ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
+        auto* ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
 
         if (ttt != nullptr) {
             ttt->data_reloaded(this);
         }
     }
+    listview_curses::reload_data();
 }
 
 void
@@ -820,6 +819,13 @@ void
 text_time_translator::data_reloaded(textview_curses* tc)
 {
     if (tc->get_inner_height() == 0) {
+        return;
+    }
+    if (tc->get_top() > tc->get_inner_height()) {
+        if (this->ttt_top_time.tv_sec != 0) {
+            this->row_for_time(this->ttt_top_time) |
+                [tc](auto new_top) { tc->set_top(new_top); };
+        }
         return;
     }
     this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
