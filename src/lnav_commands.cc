@@ -2715,18 +2715,16 @@ com_file_visibility(exec_context& ec,
 
             if (tss.empty()) {
                 return ec.make_error("no text files are opened");
-            } else {
-                lf = tss.current_file();
             }
+            lf = tss.current_file();
         } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
             if (tc->get_inner_height() == 0) {
                 return ec.make_error("no log files loaded");
-            } else {
-                logfile_sub_source& lss = lnav_data.ld_log_source;
-                vis_line_t vl = tc->get_top();
-                content_line_t cl = lss.at(vl);
-                lf = lss.find(cl);
             }
+            auto& lss = lnav_data.ld_log_source;
+            auto vl = tc->get_top();
+            auto cl = lss.at(vl);
+            lf = lss.find(cl);
         } else {
             return ec.make_error(
                 ":{} must be run in the log or text file views", args[0]);

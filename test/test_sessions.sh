@@ -29,12 +29,14 @@ run_cap_test ${lnav_test} -nq \
 mkdir -p support-dump
 echo 'Hello' > support-dump/readme
 cp ${test_dir}/logfile_access_log.0 support-dump/
+cp ${test_dir}/logfile_access_log.1 support-dump/
 
 run_cap_test ${lnav_test} -nq \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ":goto 1" \
+    -c ":hide-file */logfile_access_log.1" \
     -c ":export-session-to -" \
-    support-dump/logfile_access_log.0
+    support-dump/logfile_access_log.*
 
 run_cap_test ${lnav_test} -nq \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \

@@ -955,6 +955,32 @@ tailer::looper::host_tailer::loop_body()
                     log_error("symlink failed: %s", strerror(errno));
                 }
 
+                if (pl.pl_root_path == pl.pl_path) {
+                    auto iter = conn.c_desired_paths.find(pl.pl_path);
+
+                    if (iter != conn.c_desired_paths.end()) {
+                        if (iter->second.loo_tail) {
+                            conn.c_synced_desired_paths.insert(pl.pl_path);
+                        } else {
+                            log_info("synced desired path: %s",
+                                     iter->first.c_str());
+                            conn.c_desired_paths.erase(iter);
+                        }
+                    }
+                } else {
+                    auto iter = conn.c_child_paths.find(pl.pl_path);
+
+                    if (iter != conn.c_child_paths.end()) {
+                        if (iter->second.loo_tail) {
+                            conn.c_synced_child_paths.insert(pl.pl_path);
+                        } else {
+                            log_info("synced child path: %s",
+                                     iter->first.c_str());
+                            conn.c_child_paths.erase(iter);
+                        }
+                    }
+                }
+
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_preview_error& ppe) {

@@ -403,6 +403,19 @@ rescan_files(bool req)
             delay = 30ms;
         }
         done = fc.fc_file_names.empty() && all_synced;
+        if (!done && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+            lnav_data.ld_files_view.set_needs_update();
+            lnav_data.ld_files_view.do_update();
+            lnav_data.ld_top_source.update_time();
+            lnav_data.ld_status[LNS_TOP].do_update();
+            lnav_data.ld_status[LNS_BOTTOM].do_update();
+            lnav_data.ld_rl_view->do_update();
+            if (handle_winch()) {
+                layout_views();
+                lnav_data.ld_view_stack.do_update();
+            }
+            refresh();
+        }
     } while (!done && lnav_data.ld_looping);
     return true;
 }

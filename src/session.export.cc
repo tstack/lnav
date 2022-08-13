@@ -112,13 +112,22 @@ namespace session {
 static nonstd::optional<ghc::filesystem::path>
 find_container_dir(ghc::filesystem::path file_path)
 {
+    if (!ghc::filesystem::exists(file_path)) {
+        return nonstd::nullopt;
+    }
+
     nonstd::optional<ghc::filesystem::path> dir_with_last_readme;
 
-    while (file_path.has_parent_path()) {
+    while (file_path.has_parent_path()
+           && file_path != file_path.root_directory())
+    {
         auto parent = file_path.parent_path();
         bool has_readme_entry = false;
+        std::error_code ec;
 
-        for (const auto& entry : ghc::filesystem::directory_iterator(parent)) {
+        for (const auto& entry :
+             ghc::filesystem::directory_iterator(parent, ec))
+        {
             if (!entry.is_regular_file()) {
                 continue;
             }
@@ -270,9 +279,11 @@ SELECT content_id, format, time_offset FROM lnav_file
         auto container_path_opt = find_container_dir(file_path);
         if (container_path_opt) {
             auto container_parent = container_path_opt.value().parent_path();
+            auto file_container_path
+                = ghc::filesystem::relative(file_path, container_parent)
+                      .string();
             file_containers[container_parent.string()].push_back(
-                ghc::filesystem::relative(file_path, container_parent)
-                    .string());
+                file_container_path);
         } else {
             raw_files.insert(file_path_str);
         }
@@ -430,6 +441,27 @@ SELECT content_id, format, time_offset FROM lnav_file
             if (lss->get_max_log_time(max_time)) {
                 sql_strftime(tsbuf, sizeof(tsbuf), max_time, 'T');
                 fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
+            }
+            for (const auto& ld : *lss) {
+                if (ld->is_visible()) {
+                    continue;
+                }
+
+                auto container_path_opt
+                    = find_container_dir(ld->get_file_ptr()->get_path());
+                if (!container_path_opt) {
+                    fmt::print(file,
+                               FMT_STRING(":hide-file {}\n"),
+                               ld->get_file_ptr()->get_path().string());
+                    continue;
+                }
+                auto container_parent
+                    = container_path_opt.value().parent_path();
+                auto file_container_path = ghc::filesystem::relative(
+                    ld->get_file_ptr()->get_path(), container_parent);
+                fmt::print(file,
+                           FMT_STRING(":hide-file */{}\n"),
+                           file_container_path.string());
             }
         }
 

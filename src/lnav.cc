@@ -3048,6 +3048,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
         } catch (const line_buffer::error& e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));
+        } catch (const std::exception& e) {
+            fprintf(stderr, "error: %s\n", e.what());
         }
 
         // When reading from stdin, tell the user where the capture file is
