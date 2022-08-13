@@ -83,7 +83,7 @@ find_matching_bracket(
     }
 
     if (line[x] == left && is_bracket(line, x, is_lit)) {
-        for (size_t lpc = x + 1; lpc < sub.lr_end; lpc++) {
+        for (int lpc = x + 1; lpc < sub.lr_end; lpc++) {
             if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 depth += 1;
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
@@ -103,7 +103,7 @@ find_matching_bracket(
 
     depth = 0;
 
-    for (size_t lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
+    for (auto lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
             if (!first_left) {
@@ -171,7 +171,7 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
     attr_line_builder alb(al);
     bool backslash_is_quoted = false;
 
-    for (size_t lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
+    for (auto lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (lpc == 0 || line[lpc - 1] != '\\') {
             switch (line[lpc]) {
                 case '^':

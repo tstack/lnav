@@ -33,6 +33,8 @@
 #define lnav_auto_mem_hh
 
 #include <exception>
+#include <iterator>
+#include <utility>
 
 #include <assert.h>
 #include <stdlib.h>

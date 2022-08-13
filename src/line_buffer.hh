@@ -254,7 +254,8 @@ private:
     bool in_range(file_off_t off) const
     {
         return this->lb_file_offset <= off
-            && off < (this->lb_file_offset + this->lb_buffer.size());
+            && off
+            < (this->lb_file_offset + (file_ssize_t) this->lb_buffer.size());
     }
 
     void resize_buffer(size_t new_max);
@@ -295,7 +296,7 @@ private:
      */
     const char* get_range(file_off_t start, file_ssize_t& avail_out) const
     {
-        auto buffer_offset = start - this->lb_file_offset;
+        size_t buffer_offset = start - this->lb_file_offset;
 
         require(buffer_offset >= 0);
         require(this->lb_buffer.size() >= buffer_offset);

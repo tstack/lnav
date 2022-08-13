@@ -570,7 +570,7 @@ textfile_sub_source::rescan_files(
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
-                                static_cast<file_size_t>(st.st_size),
+                                static_cast<file_ssize_t>(st.st_size),
                                 lnav::document::discover_structure(
                                     content, line_range{0, -1}),
                             };

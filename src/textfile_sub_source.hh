@@ -145,13 +145,13 @@ private:
 
     struct rendered_file {
         time_t rf_mtime;
-        file_size_t rf_file_size;
+        file_ssize_t rf_file_size;
         std::unique_ptr<plain_text_source> rf_text_source;
     };
 
     struct metadata_state {
         time_t ms_mtime;
-        file_size_t ms_file_size;
+        file_ssize_t ms_file_size;
         lnav::document::metadata ms_metadata;
     };
 

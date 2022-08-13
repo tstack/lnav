@@ -180,7 +180,7 @@ bottom_status_source::update_hits(textview_curses* tc)
 }
 
 void
-bottom_status_source::update_loading(file_off_t off, file_size_t total)
+bottom_status_source::update_loading(file_off_t off, file_ssize_t total)
 {
     auto& sf = this->bss_fields[BSF_LOADING];
 
@@ -195,7 +195,7 @@ bottom_status_source::update_loading(file_off_t off, file_size_t total)
         } else {
             sf.clear();
         }
-    } else if ((size_t) off == total) {
+    } else if (off == total) {
         static const std::vector<std::string> DOTS = {
             "   ",
             ".  ",

@@ -115,7 +115,7 @@ highlighter::annotate(attr_line_t& al, int start) const
 
             this->annotate_capture(al, lr);
         } else {
-            for (size_t lpc = 0; lpc < pc.get_count() - 1; lpc++) {
+            for (int lpc = 0; lpc < pc.get_count() - 1; lpc++) {
                 line_range lr{start + pc[lpc]->c_begin, start + pc[lpc]->c_end};
                 const auto* name = this->h_regex->name_for_capture(lpc);
 

@@ -516,7 +516,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                 case encode_algo::hex: {
                     auto buf = auto_buffer::alloc(blob_len * 2 + 1);
 
-                    for (size_t lpc = 0; lpc < blob_len; lpc++) {
+                    for (int lpc = 0; lpc < blob_len; lpc++) {
                         fmt::format_to(std::back_inserter(buf),
                                        FMT_STRING("{:x}"),
                                        blob[lpc]);
@@ -550,7 +550,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                 case encode_algo::hex: {
                     auto buf = auto_buffer::alloc(text_len * 2 + 1);
 
-                    for (size_t lpc = 0; lpc < text_len; lpc++) {
+                    for (int lpc = 0; lpc < text_len; lpc++) {
                         fmt::format_to(std::back_inserter(buf),
                                        FMT_STRING("{:x}"),
                                        text[lpc]);
@@ -569,6 +569,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
             }
         }
     }
+    ensure(false);
 }
 
 static mapbox::util::variant<blob_auto_buffer, auto_mem<char>>
@@ -612,6 +613,7 @@ sql_decode(string_fragment str, encode_algo algo)
         }
 #endif
     }
+    ensure(false);
 }
 
 std::string

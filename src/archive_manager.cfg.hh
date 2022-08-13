@@ -37,7 +37,7 @@
 namespace archive_manager {
 
 struct config {
-    int64_t amc_min_free_space{32 * 1024 * 1024};
+    uint64_t amc_min_free_space{32 * 1024 * 1024};
     std::chrono::seconds amc_cache_ttl{std::chrono::hours(48)};
 };
 

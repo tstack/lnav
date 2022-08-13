@@ -41,8 +41,7 @@
 
 namespace tailer {
 
-struct packet_eof {
-};
+struct packet_eof {};
 
 struct packet_error {
     std::string pe_path;
@@ -122,12 +121,9 @@ using packet = mapbox::util::variant<packet_eof,
                                      packet_possible_path,
                                      packet_synced>;
 
-struct recv_payload_type {
-};
-struct recv_payload_length {
-};
-struct recv_payload_content {
-};
+struct recv_payload_type {};
+struct recv_payload_length {};
+struct recv_payload_content {};
 
 int readall(int sock, void* buf, size_t len);
 
@@ -137,12 +133,11 @@ template<class...>
 using void_t = void;
 
 template<class, class = void>
-struct has_data : std::false_type {
-};
+struct has_data : std::false_type {};
 
 template<class T>
-struct has_data<T, decltype(void(std::declval<T&>().data()))> : std::true_type {
-};
+struct has_data<T, decltype(void(std::declval<T&>().data()))>
+    : std::true_type {};
 
 template<typename T, std::enable_if_t<has_data<T>::value, bool> = true>
 uint8_t*
@@ -191,7 +186,7 @@ struct protocol_recv {
         if (payload_type != PAYLOAD_TYPE) {
             return Err(fmt::format(
                 FMT_STRING("payload-type mismatch, got: {}; expected: {}"),
-                payload_type,
+                (int) payload_type,
                 PAYLOAD_TYPE));
         }
 
@@ -206,7 +201,8 @@ struct protocol_recv {
                       "read_length() cannot be called in this state");
 
         if (readall(this->pr_fd, &this->pr_length, sizeof(this->pr_length))
-            == -1) {
+            == -1)
+        {
             return Err(
                 fmt::format(FMT_STRING("unable to read content length: {}"),
                             strerror(errno)));
@@ -234,7 +230,8 @@ struct protocol_recv {
             this->pr_length = sizeof(T);
         }
         if (readall(this->pr_fd, details::get_data(data), this->pr_length)
-            == -1) {
+            == -1)
+        {
             return Err(fmt::format(FMT_STRING("unable to read content -- {}"),
                                    strerror(errno)));
         }

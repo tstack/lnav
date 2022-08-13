@@ -404,7 +404,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     "time values only work in a time-indexed view");
             }
 
-            auto matched_size = scan_end - args[1].c_str();
+            size_t matched_size = scan_end - args[1].c_str();
             if (matched_size != args[1].size()) {
                 auto um
                     = lnav::console::user_message::error(
@@ -3516,7 +3516,7 @@ com_zoom_to(exec_context& ec,
     } else if (args.size() > 1) {
         bool found = false;
 
-        for (int lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
+        for (size_t lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc].c_str())
                 == 0)
             {

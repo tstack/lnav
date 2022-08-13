@@ -200,7 +200,7 @@ struct string_fragment {
 
     bool endswith(const char* suffix) const
     {
-        auto suffix_len = strlen(suffix);
+        int suffix_len = strlen(suffix);
 
         if (suffix_len > this->length()) {
             return false;
@@ -235,7 +235,7 @@ struct string_fragment {
     template<typename P>
     string_fragment find_left_boundary(size_t start, P&& predicate) const
     {
-        assert(start < this->length());
+        assert((int) start < this->length());
 
         while (start > 0) {
             if (predicate(this->data()[start])) {
@@ -255,7 +255,7 @@ struct string_fragment {
     template<typename P>
     string_fragment find_right_boundary(size_t start, P&& predicate) const
     {
-        while (start < this->length()) {
+        while ((int) start < this->length()) {
             if (predicate(this->data()[start])) {
                 break;
             }

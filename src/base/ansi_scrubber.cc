@@ -76,7 +76,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                             caps->c_begin + (int) output_size},
                                  SA_ORIGIN_OFFSET.value(origin_offset));
             }
-            for (size_t triple_index = 0; triple_index < output_size;
+            for (ssize_t triple_index = 0; triple_index < output_size;
                  triple_index++)
             {
                 char lhs = sf[triple_index * 3];
