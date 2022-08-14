@@ -483,7 +483,7 @@
 :export-session-to *path*
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Export the current lnav state to an lnav script file
+  Export the current lnav state to an executable lnav script file that contains the commands needed to restore the current session
 
   **Parameters**
     * **path\*** --- The path to the file to write

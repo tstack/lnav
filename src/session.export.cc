@@ -207,6 +207,7 @@ SELECT content_id, format, time_offset FROM lnav_file
 )";
 
     static constexpr const char LOG_DIR_INSERT[] = R"(
+# Set this environment variable to override this value or edit this script.
 ;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_{}', {})
 )";
 
@@ -444,6 +445,12 @@ SELECT content_id, format, time_offset FROM lnav_file
             }
             for (const auto& ld : *lss) {
                 if (ld->is_visible()) {
+                    continue;
+                }
+
+                if (ld->get_file_ptr()->get_open_options().loo_source
+                    == logfile_name_source::ARCHIVE)
+                {
                     continue;
                 }
 

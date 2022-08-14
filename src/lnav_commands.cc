@@ -5473,7 +5473,9 @@ readline_context::command_t STD_COMMANDS[] = {
      com_export_session_to,
 
      help_text(":export-session-to")
-         .with_summary("Export the current lnav state to an lnav script file")
+         .with_summary("Export the current lnav state to an executable lnav "
+                       "script file that contains the commands needed to "
+                       "restore the current session")
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})},
     {"rebuild",

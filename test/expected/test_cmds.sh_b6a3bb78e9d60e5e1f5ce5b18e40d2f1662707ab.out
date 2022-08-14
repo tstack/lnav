@@ -982,7 +982,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mexport-session-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Export the current lnav state to an lnav script file
+  Export the current lnav state to an executable lnav script file that
+  contains the commands needed to restore the current session
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m

@@ -1,4 +1,3 @@
-
 .. _usage:
 
 Usage
@@ -263,3 +262,30 @@ commands into a :ref:`script<scripts>` and execute that script with the
 
 .. [#] The expression :code:`regexp_match('bound to ([^ ]+)', log_body) as ip`
    can be used to extract the IP address from the log message body.
+
+Sharing Sessions With Others
+----------------------------
+
+After setting up filters, bookmarks, and making notes, you might want to share
+your work with others.  If they have access to the same log files, you can
+use the :ref:`:export-session-to<export_session_to>` command to write an
+executable **lnav** script that will recreate the current session state.  The
+script contains various SQL statements and **lnav** commands that capture the
+current state.  So, you should feel free to modify the script or use it as a
+reference to learn about more advanced uses of lnav.
+
+The script will capture the file paths that were explicitly specified and
+not the files that were actually opened.  For example, if you specified
+"/var/log" on the command line, the script will include
+:code:`:open /var/log/*` and not an individual open for each file in that
+directory.
+
+Also, in order to support archives of log files, lnav will try to find the
+directory where the archive was unpacked and use that as the base for the
+:code:`:open` command.  Currently, this is done by searching for the top
+"README" file in the directory hierarchy containing the files [1]_.  The
+consumer of the session script can then set the :code:`LOG_DIR_0` (or 1, 2,
+...) environment variable to change where the log files will be loaded from.
+
+.. [1] It is assumed a log archive would have a descriptive README file.
+   Other heuristics may be added in the future.
