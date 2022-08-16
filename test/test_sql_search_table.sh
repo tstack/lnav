@@ -19,3 +19,8 @@ run_cap_test ${lnav_test} -n \
     -c ";select * from procstate_procs where cmd_name = '[kthreadd]'" \
     -c ";select * from procstate_procs where cmd_name = '[kthreadd]'" \
     ${test_dir}/logfile_procstate.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':create-search-table asl_mod ASL Module "(?<name>[^"]+)"' \
+    -c ';SELECT * FROM asl_mod' \
+    ${test_dir}/logfile_syslog.3
