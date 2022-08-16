@@ -119,11 +119,13 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     this->lst_line_values_cache.lvv_values.clear();
 
     if (this->lst_match_index >= 0) {
-        this->lst_input.pi_offset = this->lst_input.pi_next_offset;
         if (this->lst_regex.match(
                 this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
         {
-            // log_debug("matched within line");
+#if 0
+            log_debug("matched within line: %d",
+                      this->lst_match_context.get_count());
+#endif
             this->lst_match_index += 1;
             return true;
         }

@@ -230,7 +230,8 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
     }
 
     if (!lc.lc_format_name.empty()
-        && lc.lc_format_name != lf->get_format_name()) {
+        && lc.lc_format_name != lf->get_format_name())
+    {
         return false;
     }
 
@@ -395,7 +396,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     p_cur->log_cursor.lc_sub_index = 0;
 
     for (auto& ld : *p_vt->lss) {
-        auto *lf = ld->get_file_ptr();
+        auto* lf = ld->get_file_ptr();
 
         if (lf == nullptr) {
             continue;
@@ -450,6 +451,7 @@ populate_indexed_columns(vtab_cursor* vc, vtab* vt)
             auto ll = lf->begin() + line_number;
 
             vc->cache_msg(lf, ll);
+            require(vc->line_values.lvv_sbr.get_data() != nullptr);
             vt->vi->extract(lf, line_number, vc->line_values);
         }
 
@@ -540,7 +542,7 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
     auto* vt = (vtab*) cur->pVtab;
     auto done = false;
 
-    vc->line_values.clear();
+    vc->line_values.lvv_values.clear();
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0)
@@ -633,7 +635,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     auto& bm_meta = vt->lss->get_user_bookmark_metadata();
                     auto meta_iter = bm_meta.find(part_line);
                     if (meta_iter != bm_meta.end()
-                        && !meta_iter->second.bm_name.empty()) {
+                        && !meta_iter->second.bm_name.empty())
+                    {
                         sqlite3_result_text(ctx,
                                             meta_iter->second.bm_name.c_str(),
                                             meta_iter->second.bm_name.size(),
@@ -663,6 +666,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
             if (ll->is_time_skewed()) {
                 if (vc->line_values.lvv_values.empty()) {
                     vc->cache_msg(lf, ll);
+                    require(vc->line_values.lvv_sbr.get_data() != nullptr);
                     vt->vi->extract(lf, line_number, vc->line_values);
                 }
 
@@ -811,6 +815,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     case log_footer_columns::opid: {
                         if (vc->line_values.lvv_values.empty()) {
                             vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
                             vt->vi->extract(lf, line_number, vc->line_values);
                         }
 
@@ -877,6 +883,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     case log_footer_columns::body: {
                         if (vc->line_values.lvv_values.empty()) {
                             vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
                             vt->vi->extract(lf, line_number, vc->line_values);
                         }
 
@@ -945,6 +953,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
             } else {
                 if (vc->line_values.lvv_values.empty()) {
                     vc->cache_msg(lf, ll);
+                    require(vc->line_values.lvv_sbr.get_data() != nullptr);
                     vt->vi->extract(lf, line_number, vc->line_values);
                 }
 
@@ -962,7 +971,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             yajlpp_map root(gen);
 
                             for (const auto& lv_struct :
-                                 vc->line_values.lvv_values) {
+                                 vc->line_values.lvv_values)
+                            {
                                 if (lv_struct.lv_meta.lvm_column != sub_col) {
                                     continue;
                                 }
@@ -1518,7 +1528,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                     continue;
                                 }
                                 if (fn_constraint.matches(
-                                        lf->get_unique_path())) {
+                                        lf->get_unique_path()))
+                                {
                                     found = true;
                                     log_time_range->add(
                                         lf->front().get_timeval());
@@ -1617,7 +1628,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                   std::greater<>());
 
         if (max_indexed_line
-            && max_indexed_line.value() < vt->lss->text_line_count()) {
+            && max_indexed_line.value() < vt->lss->text_line_count())
+        {
             log_debug("max indexed out of sync, clearing other indexes");
             p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
             p_cur->log_cursor.lc_curr_line = 0_vl;
@@ -1659,7 +1671,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                         vis_line_t(vt->lss->text_line_count())))
                 {
                     if (log_time_range->tr_end.value()
-                        < msg_info.get_logline().get_timeval()) {
+                        < msg_info.get_logline().get_timeval())
+                    {
                         break;
                     }
                     p_cur->log_cursor.lc_end_line

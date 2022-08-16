@@ -757,19 +757,22 @@ logfile::read_full_message(logfile::const_iterator ll,
 #endif
 
     msg_out.disown();
+    auto range_for_line = this->get_file_range(ll);
     try {
-        auto read_result
-            = this->lf_line_buffer.read_range(this->get_file_range(ll));
+        auto read_result = this->lf_line_buffer.read_range(range_for_line);
 
         if (read_result.isErr()) {
+            log_error("unable to read range %d:%d",
+                      range_for_line.fr_offset,
+                      range_for_line.fr_size);
             return;
         }
         msg_out = read_result.unwrap();
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(*ll, msg_out, true);
         }
-    } catch (line_buffer::error& e) {
-        /* ... */
+    } catch (const line_buffer::error& e) {
+        log_error("failed to read line");
     }
 }
 
