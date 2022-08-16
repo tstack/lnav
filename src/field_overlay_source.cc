@@ -443,6 +443,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     if (iter != bm.end()) {
         const bookmark_metadata& line_meta = iter->second;
         size_t filename_width = this->fos_lss.get_filename_offset();
+        auto* tc = dynamic_cast<const textview_curses*>(&lv);
 
         if (!line_meta.bm_comment.empty()) {
             const auto* lead = line_meta.bm_tags.empty() ? " \u2514 "
@@ -452,6 +453,15 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             al.with_string(lead).append(
                 lnav::roles::comment(line_meta.bm_comment));
             al.insert(0, filename_width, ' ');
+            if (tc != nullptr) {
+                auto hl = tc->get_highlights();
+                auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
+
+                if (hl_iter != hl.end()) {
+                    hl_iter->second.annotate(al, filename_width);
+                }
+            }
+
             dst.emplace_back(al);
         }
         if (!line_meta.bm_tags.empty()) {
@@ -473,6 +483,14 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                 }
             }
             al.insert(0, filename_width, ' ');
+            if (tc != nullptr) {
+                auto hl = tc->get_highlights();
+                auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
+
+                if (hl_iter != hl.end()) {
+                    hl_iter->second.annotate(al, filename_width);
+                }
+            }
             dst.emplace_back(al);
         }
     }
