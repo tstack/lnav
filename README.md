@@ -81,7 +81,7 @@ $ journalctl -o json | lnav
 In case some MESSAGE fields contain special characters such as
 ANSI color codes which are considered as unprintable by journalctl,
 specifying `journalctl`'s `-a` option might be preferable in order
-to output those messages still in a non binary representation:
+to output those messages still in a non-binary representation:
 
 ```
 $ journalctl -a -o json | lnav
@@ -100,6 +100,15 @@ efficiency you may want to limit the number of log lines fed into
 
 In case of a persistent journal, you may want to limit the number
 of log lines fed into `lnav` via `journalctl`'s `-b` option.
+
+## Support
+
+Please file issues on this repository or use the discussions section.
+The following alternatives are also available:
+
+- [support@lnav.org](mailto:support@lnav.org)
+- [Discord](https://discord.gg/erBPnKwz7R)
+- [Google Groups](https://groups.google.com/g/lnav)
 
 ## Links
 
