@@ -444,6 +444,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_shlexer.sh_e8fa2239ab17e7563d0c524f5400a79d6ff8bfda.out \
     $(srcdir)/%reldir%/test_sql.sh_02def66745b063518473df862987747909f56ccc.err \
     $(srcdir)/%reldir%/test_sql.sh_02def66745b063518473df862987747909f56ccc.out \
+    $(srcdir)/%reldir%/test_sql.sh_0a5d13b62da4cb66a59a51b0240b5fe0b6036b7e.err \
+    $(srcdir)/%reldir%/test_sql.sh_0a5d13b62da4cb66a59a51b0240b5fe0b6036b7e.out \
     $(srcdir)/%reldir%/test_sql.sh_0d46ee142f80f262c8c14a22751571cc567df525.err \
     $(srcdir)/%reldir%/test_sql.sh_0d46ee142f80f262c8c14a22751571cc567df525.out \
     $(srcdir)/%reldir%/test_sql.sh_13429aed81d7edfd47b57e9cdb8a25c43aff35c4.err \
@@ -522,6 +524,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_b2694e4fbecdd128798af25ee0d069e7e35fb499.out \
     $(srcdir)/%reldir%/test_sql.sh_b5aa0561a65de7e8e22085db184c72a94b1a89a9.err \
     $(srcdir)/%reldir%/test_sql.sh_b5aa0561a65de7e8e22085db184c72a94b1a89a9.out \
+    $(srcdir)/%reldir%/test_sql.sh_bd46ca4560f8be6307a914e39539bbac0368080a.err \
+    $(srcdir)/%reldir%/test_sql.sh_bd46ca4560f8be6307a914e39539bbac0368080a.out \
     $(srcdir)/%reldir%/test_sql.sh_c20b0320096342c180146a5d18a6de82319d70b2.err \
     $(srcdir)/%reldir%/test_sql.sh_c20b0320096342c180146a5d18a6de82319d70b2.out \
     $(srcdir)/%reldir%/test_sql.sh_c353ef036c505b75996252138fbd4c8d22e8149c.err \
@@ -538,6 +542,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_dd540973a0dc86320d84706845a15608196ae5be.out \
     $(srcdir)/%reldir%/test_sql.sh_e70dc7d2b686c7f91c2b41b10f3920c50f3ea405.err \
     $(srcdir)/%reldir%/test_sql.sh_e70dc7d2b686c7f91c2b41b10f3920c50f3ea405.out \
+    $(srcdir)/%reldir%/test_sql.sh_ff8a978fc0de0fed675a3cd1454cf435a6856fd5.err \
+    $(srcdir)/%reldir%/test_sql.sh_ff8a978fc0de0fed675a3cd1454cf435a6856fd5.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_028d5d5af2f3519b59d349d41cb7ecf385253b51.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_028d5d5af2f3519b59d349d41cb7ecf385253b51.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_0a37c43350ddd7a2d0d75695be32fac083ad04a4.err \

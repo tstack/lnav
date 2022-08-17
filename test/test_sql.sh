@@ -1077,3 +1077,16 @@ content
 1.0
 1.0
 EOF
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT echoln(sc_bytes), 123 FROM access_log' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT lnav_top_file()' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view db' \
+    -c ';SELECT lnav_top_file()' \
+    ${test_dir}/logfile_access_log.0
