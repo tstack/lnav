@@ -9,6 +9,12 @@
  ▌[7] - https://snapcraft.io//lnav/badge.svg                                      
  ▌[8] - https://snapcraft.io/lnav                                                 
 
+[4m<img[0m
+[4msrc[0m[4m=[0m[4m[35m"https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m
+[4mheight[0m[4m=[0m[4m[35m"20"[0m[4m>[1][0m
+
+ ▌[1] - https://discord.gg/erBPnKwz7R 
+
 This is the source repository for [1mlnav[0m, visit [4mhttps://lnav.org[1][0m for
 a high level overview.
 
@@ -84,7 +90,7 @@ will make use of additional fields such as PRIORITY and _SYSTEMD_UNIT:
 In case some MESSAGE fields contain special characters such as ANSI
 color codes which are considered as unprintable by journalctl,
 specifying [37m[40m journalctl [0m's [37m[40m -a [0m option might be preferable in order to
-output those messages still in a non binary representation:
+output those messages still in a non-binary representation:
 
  ▌[37m[40m$ journalctl -a -o json | lnav          [0m
 
@@ -99,6 +105,19 @@ efficiency you may want to limit the number of log lines fed into [37m[40m lna
 
 In case of a persistent journal, you may want to limit the number of
 log lines fed into [37m[40m lnav [0m via [37m[40m journalctl [0m's [37m[40m -b [0m option.
+
+[1mSupport[0m
+
+Please file issues on this repository or use the discussions section.
+The following alternatives are also available:
+
+ [33m•[0m [4msupport@lnav.org[1][0m
+ [33m•[0m [4mDiscord[2][0m
+ [33m•[0m [4mGoogle Groups[3][0m
+
+ ▌[1] - mailto:support@lnav.org          
+ ▌[2] - https://discord.gg/erBPnKwz7R    
+ ▌[3] - https://groups.google.com/g/lnav 
 
 [1mLinks[0m
 

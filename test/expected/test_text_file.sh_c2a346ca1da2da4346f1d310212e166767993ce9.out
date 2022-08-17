@@ -22,7 +22,7 @@
                     ]
                 },
                 {
-                    "display_value": "Contributing",
+                    "display_value": "Support",
                     "search_placeholder": "",
                     "possibilities": [
                         {
@@ -44,16 +44,10 @@
                             "display_value": "See Also"
                         },
                         {
-                            "display_value": "Usage"
-                        }
-                    ]
-                },
-                {
-                    "display_value": "⋯",
-                    "search_placeholder": "",
-                    "possibilities": [
+                            "display_value": "Support"
+                        },
                         {
-                            "display_value": "Building From Source"
+                            "display_value": "Usage"
                         }
                     ]
                 }
