@@ -1,11 +1,14 @@
 ---
+
 # Feel free to add content and custom Front Matter to this file.
+
 # To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
 
 layout: top
 ---
 
-![Screenshot of lnav](/assets/images/lnav-front-page.png){: style="float: right"}
+![Screenshot of lnav](/assets/images/lnav-front-page.png){:
+style="float: right; max-width: 50%"}
 
 <div id="top-description">
 An advanced log file viewer for the small-scale
