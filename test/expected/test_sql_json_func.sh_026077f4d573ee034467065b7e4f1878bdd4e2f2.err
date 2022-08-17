@@ -1,4 +1,4 @@
 error: sqlite3_exec failed -- parse error: premature EOF
-                                       [null, true, 20, 30, 40
+                                       [123, true
                      (right here) ------^
 

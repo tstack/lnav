@@ -295,7 +295,7 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
     {
         case yajl_status_error: {
             err = yajl_get_error(handle.in(),
-                                 0,
+                                 1,
                                  (const unsigned char*) json_in,
                                  strlen(json_in));
             sqlite3_result_error(context, (const char*) err, -1);
@@ -319,7 +319,7 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
     switch (yajl_complete_parse(handle.in())) {
         case yajl_status_error: {
             err = yajl_get_error(handle.in(),
-                                 0,
+                                 1,
                                  (const unsigned char*) json_in,
                                  strlen(json_in));
             sqlite3_result_error(context, (const char*) err, -1);

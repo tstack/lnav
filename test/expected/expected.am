@@ -672,6 +672,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_017d24148f3e28f719429b709f4aa5478f458443.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_017d24148f3e28f719429b709f4aa5478f458443.out \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_026077f4d573ee034467065b7e4f1878bdd4e2f2.err \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_026077f4d573ee034467065b7e4f1878bdd4e2f2.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_191436b38db80b1dd9e7e0814c31c5fa7239dc51.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_191436b38db80b1dd9e7e0814c31c5fa7239dc51.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_1a74914cbf12fcd5c06935b992f6355acdbcf2d8.err \
@@ -708,6 +710,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_json_func.sh_8cae9740ddfd6ba4c865fca0117b7bea3bb556e5.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_8e229f1b5fa3d3803e9db2f295a8d1a490e1b3db.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_8e229f1b5fa3d3803e9db2f295a8d1a490e1b3db.out \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_8e3724c90bf96dff5d8ba3cfaf4b7e2eaa9e5f66.err \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_8e3724c90bf96dff5d8ba3cfaf4b7e2eaa9e5f66.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_93ba3ba52b0dd2d5a3ba43bcb7c3638c05ecfe75.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_93ba3ba52b0dd2d5a3ba43bcb7c3638c05ecfe75.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_97aa53b581838f5875fe2beda8d1cb245a24f3d6.err \
@@ -730,6 +734,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_json_func.sh_bbd979ed74b46ae1696ed7312a48a436bcf99ec0.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_c1ae603d969a5b106328287523c0ddfed07146ad.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_c1ae603d969a5b106328287523c0ddfed07146ad.out \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_e0ab80f50fb008700ab6cfb90694ed014d40e44b.err \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_e0ab80f50fb008700ab6cfb90694ed014d40e44b.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_ebafb98307f307ae8d8ab6921c32929aab3a1a16.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_ebafb98307f307ae8d8ab6921c32929aab3a1a16.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_ee36fbea10a33ca106a211feb05d61ecf8e74634.err \

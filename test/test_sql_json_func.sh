@@ -1,5 +1,7 @@
 #! /bin/bash
 
+run_cap_test ./drive_sql "select json_concat('[null,', 1.0, 2.0)"
+
 run_cap_test ./drive_sql "select json_concat(json('[null, true, 0]'), 1.0, 2.0)"
 
 run_cap_test ./drive_sql "select json_concat(json('[\"tag0\"]'), 'tag1', 'tag2')"
@@ -39,6 +41,10 @@ EOF
 run_cap_test env TEST_COMMENT='contains4' ./drive_sql <<EOF
 select json_contains('["hi", "bye", "solong]', 'bye') as res
 EOF
+
+run_cap_test ./drive_sql "select jget()"
+
+run_cap_test ./drive_sql "select jget('[123, true', '/0')"
 
 run_cap_test ./drive_sql "select jget('4', '')"
 
