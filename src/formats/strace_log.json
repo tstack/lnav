@@ -20,9 +20,6 @@
                 "identifier": true,
                 "rewriter": ":pipe-line-to explain-syscall.sh ${syscall}"
             },
-            "args": {
-                "kind": "string"
-            },
             "rc": {
                 "kind": "integer",
                 "foreign-key": true

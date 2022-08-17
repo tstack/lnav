@@ -1769,7 +1769,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->elf_has_module_format = true;
         }
 
-        for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
+        for (auto name_iter = pat.p_pcre->named_begin();
              name_iter != pat.p_pcre->named_end();
              ++name_iter)
         {
@@ -1901,6 +1901,31 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
         if (vd->vd_meta.lvm_kind == value_kind_t::VALUE_UNKNOWN) {
             vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        }
+
+        if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
+            bool found_in_pattern = false;
+            for (const auto& pat : this->elf_patterns) {
+                auto cap_index = pat.second->p_pcre->name_index(
+                    vd->vd_meta.lvm_name.get());
+                if (cap_index >= 0) {
+                    found_in_pattern = true;
+                    break;
+                }
+            }
+            if (!found_in_pattern) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid value ")
+                            .append_quoted(lnav::roles::symbol(
+                                fmt::format(FMT_STRING("/{}/value/{}"),
+                                            this->elf_name,
+                                            vd->vd_meta.lvm_name.get()))))
+                        .with_reason(
+                            attr_line_t("no patterns have a capture named ")
+                                .append_quoted(vd->vd_meta.lvm_name.get()))
+                        .with_snippets(this->get_snippets()));
+            }
         }
 
         for (act_iter = vd->vd_action_list.begin();

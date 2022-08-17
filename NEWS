@@ -82,6 +82,8 @@ lnav v0.11.0:
        scrolling in a view.
 
      Breaking Changes:
+     * Formats definitions are now checked to ensure that values have a
+       corresponding capture in at least one pattern.
      * Added a 'language' column to the lnav_view_filters table that
        specifies the language of the 'pattern' column, either 'regex'
        or 'sql'.

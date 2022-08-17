@@ -26,16 +26,6 @@
                 "kind": "integer",
                 "description": "Line number – in the module – where log entry was emitted"
             },
-            "head": {
-                "kind": "string",
-                "description": "<head>",
-                "hidden": true
-            },
-            "source": {
-                "kind": "string",
-                "description": "request <source>",
-                "hidden": true
-            },
             "msg_data": {
                 "kind": "xml",
                 "rewriter": ";SELECT node_path FROM xpath('//*', :msg_data)"

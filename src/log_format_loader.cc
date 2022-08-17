@@ -916,19 +916,19 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 }
 
 struct json_path_container root_format_handler
-    = json_path_container{json_path_handler("$schema", read_id)
-                              .with_synopsis(
-                                  "The URI of the schema for this file")
-                              .with_description(
-                                  "Specifies the type of this file"),
+        = json_path_container{
+                json_path_handler("$schema", read_id)
+                        .with_synopsis("The URI of the schema for this file")
+                        .with_description("Specifies the type of this file"),
 
-                          yajlpp::pattern_property_handler(
-                              "(?<format_name>\\w+)")
-                              .with_description(
-                                  "The definition of a log file format.")
-                              .with_obj_provider(ensure_format)
-                              .with_children(format_handlers)}
-          .with_schema_id(DEFAULT_FORMAT_SCHEMA);
+                yajlpp::pattern_property_handler(
+                        "(?<format_name>\\w+)")
+                        .with_description(
+                                "The definition of a log file format.")
+                        .with_obj_provider(ensure_format)
+                        .with_children(format_handlers),
+        }
+                .with_schema_id(DEFAULT_FORMAT_SCHEMA);
 
 static void
 write_sample_file()

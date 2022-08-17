@@ -1,6 +1,6 @@
 [1m[31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
  [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:29
 [36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40mdef                                 [0m
@@ -98,6 +98,9 @@
          [1mstd       [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mpid>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m”
          [1mwith-level[0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
          
+[1m[31m✘ error[0m: invalid value “[1m/invalid_props_log/value/non-existent[0m”
+ [1m[31mreason[0m: no patterns have a capture named “non-existent”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
 [1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
@@ -105,10 +108,10 @@
            [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
 [1m[31m✘ error[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
  [1m[31mreason[0m: Unknown color: 'not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:18
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:23
 [1m[31m✘ error[0m: “also not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/background-color[0m”
  [1m[31mreason[0m: Unknown color: 'also not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:19
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
 [1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
  [1m[31mreason[0m: no regexes specified
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4

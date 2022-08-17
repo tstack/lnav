@@ -17,10 +17,6 @@
             "logger": {
                 "kind": "string",
                 "identifier": true
-            },
-            "thread": {
-                "kind": "string",
-                "identifier": true
             }
         },
         "level-field": "level",

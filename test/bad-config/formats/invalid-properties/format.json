@@ -13,6 +13,11 @@
                 "line": "1428634687123: 1234 abc"
             }
         ],
+        "value": {
+            "non-existent": {
+                "kind": "string"
+            }
+        },
         "highlights": {
             "hl1": {
                 "color": "not a color",

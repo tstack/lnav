@@ -19,7 +19,7 @@
                 "kind": "string",
                 "identifier": true
             },
-            "alb": {
+            "elb": {
                 "kind": "string",
                 "identifier": true
             },
