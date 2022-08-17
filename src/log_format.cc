@@ -1904,6 +1904,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
+            std::set<std::string> available_captures;
+
             bool found_in_pattern = false;
             for (const auto& pat : this->elf_patterns) {
                 auto cap_index = pat.second->p_pcre->name_index(
@@ -1912,8 +1914,20 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     found_in_pattern = true;
                     break;
                 }
+
+                for (auto name_iter = pat.second->p_pcre->named_begin();
+                     name_iter != pat.second->p_pcre->named_end();
+                     ++name_iter)
+                {
+                    available_captures.insert(name_iter->pnc_name);
+                }
             }
             if (!found_in_pattern) {
+                auto notes
+                    = attr_line_t("the following captures are available:\n  ")
+                          .join(available_captures,
+                                VC_ROLE.value(role_t::VCR_SYMBOL),
+                                ", ");
                 errors.emplace_back(
                     lnav::console::user_message::error(
                         attr_line_t("invalid value ")
@@ -1924,7 +1938,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         .with_reason(
                             attr_line_t("no patterns have a capture named ")
                                 .append_quoted(vd->vd_meta.lvm_name.get()))
-                        .with_snippets(this->get_snippets()));
+                        .with_note(notes)
+                        .with_snippets(this->get_snippets())
+                        .with_help("values are populated from captures in "
+                                   "patterns, so at least one pattern must "
+                                   "have a capture with this value name"));
             }
         }
 

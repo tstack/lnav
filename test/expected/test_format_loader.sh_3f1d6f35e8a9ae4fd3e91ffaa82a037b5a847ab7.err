@@ -101,6 +101,9 @@
 [1m[31m✘ error[0m: invalid value “[1m/invalid_props_log/value/non-existent[0m”
  [1m[31mreason[0m: no patterns have a capture named “non-existent”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m =[0m [36mnote[0m: the following captures are available:
+           [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
+[36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
 [1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
