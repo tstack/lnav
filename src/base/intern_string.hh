@@ -132,6 +132,17 @@ struct string_fragment {
 
     char front() const { return this->sf_string[this->sf_begin]; }
 
+    uint32_t front_codepoint() const
+    {
+        size_t index = 0;
+        try {
+            return ww898::utf::utf8::read(
+                [this, &index]() { return this->data()[index++]; });
+        } catch (const std::runtime_error& e) {
+            return this->data()[0];
+        }
+    }
+
     char back() const { return this->sf_string[this->sf_end - 1]; }
 
     iterator begin() const { return &this->sf_string[this->sf_begin]; }
@@ -139,6 +150,26 @@ struct string_fragment {
     iterator end() const { return &this->sf_string[this->sf_end]; }
 
     bool empty() const { return !this->is_valid() || length() == 0; }
+
+    Result<ssize_t, const char*> codepoint_to_byte_index(ssize_t cp_index) const
+    {
+        ssize_t retval = 0;
+
+        while (cp_index > 0) {
+            if (retval >= this->length()) {
+                return Err("index is beyond the end of the string");
+            }
+            auto ch_len = TRY(ww898::utf::utf8::char_size([this, retval]() {
+                return std::make_pair(this->data()[retval],
+                                      this->length() - retval - 1);
+            }));
+
+            retval += ch_len;
+            cp_index -= 1;
+        }
+
+        return Ok(retval);
+    }
 
     char operator[](int index) const
     {
@@ -274,6 +305,19 @@ struct string_fragment {
     {
         return this->template find_left_boundary(start, predicate)
             .find_right_boundary(0, predicate);
+    }
+
+    nonstd::optional<std::pair<uint32_t, string_fragment>> consume_codepoint()
+        const
+    {
+        auto cp = this->front_codepoint();
+        auto index_res = this->codepoint_to_byte_index(1);
+
+        if (index_res.isErr()) {
+            return nonstd::nullopt;
+        }
+
+        return std::make_pair(cp, this->substr(index_res.unwrap()));
     }
 
     template<typename P>

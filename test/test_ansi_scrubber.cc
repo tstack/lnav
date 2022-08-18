@@ -46,12 +46,15 @@ int
 main(int argc, char* argv[])
 {
     {
-        std::string boldish = "h\bhe\bel\blo\bo _\ba_\bb_\bc a\b_ b";
+        std::string boldish
+            = "\u2022\b\u2022\u2023\b\u2023 h\bhe\bel\blo\bo _\ba_\bb_\bc a\b_ "
+              "b";
         string_attrs_t sa;
 
         sa.clear();
         scrub_ansi_string(boldish, &sa);
-        assert(boldish == "helo abc a b");
+        printf("boldish %s\n", boldish.c_str());
+        assert(boldish == "\u2022\u2023 helo abc a b");
         for (const auto& attr : sa) {
             printf("attr %d:%d %s\n",
                    attr.sa_range.lr_start,

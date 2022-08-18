@@ -42,8 +42,8 @@
 static const pcrepp&
 ansi_regex()
 {
-    static const pcrepp retval(
-        "\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:[^\x08]\x08[^\x08])+");
+    static const pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:\\X\x08\\X)+",
+                               PCRE_UTF8);
 
     return retval;
 }
@@ -61,28 +61,35 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     while (regex.match(context, pi, PCRE_NO_UTF8_CHECK)) {
         auto* caps = context.all();
         const auto sf = pi.get_string_fragment(caps);
+        auto bs_index_res = sf.codepoint_to_byte_index(1);
 
-        if (sf.length() >= 3 && sf[1] == '\b') {
+        if (sf.length() >= 3 && bs_index_res.isOk()
+            && sf[bs_index_res.unwrap()] == '\b')
+        {
             ssize_t fill_index = sf.sf_begin;
-            ssize_t erased_size = (sf.length() / 3) * 2;
-            ssize_t output_size = sf.length() / 3;
             line_range bold_range;
             line_range ul_range;
+            auto sub_sf = sf;
 
-            if (sa != nullptr) {
-                shift_string_attrs(
-                    *sa, caps->c_begin + sf.length() / 3, -erased_size);
-                sa->emplace_back(line_range{last_origin_offset_end,
-                                            caps->c_begin + (int) output_size},
-                                 SA_ORIGIN_OFFSET.value(origin_offset));
-            }
-            for (ssize_t triple_index = 0; triple_index < output_size;
-                 triple_index++)
-            {
-                char lhs = sf[triple_index * 3];
-                char rhs = sf[triple_index * 3 + 2];
+            while (!sub_sf.empty()) {
+                auto lhs_opt = sub_sf.consume_codepoint();
+                if (!lhs_opt) {
+                    break;
+                }
+                auto lhs_pair = lhs_opt.value();
+                auto mid_opt = lhs_pair.second.consume_codepoint();
+                if (!mid_opt) {
+                    break;
+                }
+                auto mid_pair = mid_opt.value();
+                auto rhs_opt = mid_pair.second.consume_codepoint();
+                if (!rhs_opt) {
+                    break;
+                }
+                auto rhs_pair = rhs_opt.value();
+                sub_sf = rhs_pair.second;
 
-                if (lhs == '_' || rhs == '_') {
+                if (lhs_pair.first == '_' || rhs_pair.first == '_') {
                     if (sa != nullptr && bold_range.is_valid()) {
                         sa->emplace_back(bold_range,
                                          VC_STYLE.value(text_attrs{A_BOLD}));
@@ -94,7 +101,11 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         ul_range.lr_start = fill_index;
                         ul_range.lr_end = fill_index + 1;
                     }
-                    str[fill_index++] = lhs == '_' ? rhs : lhs;
+                    auto cp = lhs_pair.first == '_' ? rhs_pair.first
+                                                    : lhs_pair.first;
+                    ww898::utf::utf8::write(cp, [&str, &fill_index](auto ch) {
+                        str[fill_index++] = ch;
+                    });
                 } else {
                     if (sa != nullptr && ul_range.is_valid()) {
                         sa->emplace_back(
@@ -107,8 +118,24 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         bold_range.lr_start = fill_index;
                         bold_range.lr_end = fill_index + 1;
                     }
-                    str[fill_index++] = rhs;
+                    ww898::utf::utf8::write(lhs_pair.first,
+                                            [&str, &fill_index](auto ch) {
+                                                str[fill_index++] = ch;
+                                            });
                 }
+            }
+
+            auto output_size = fill_index - sf.sf_begin;
+            auto erased_size = sf.length() - output_size;
+
+            if (sa != nullptr) {
+#if 0
+                shift_string_attrs(
+                    *sa, caps->c_begin + sf.length() / 3, -erased_size);
+#endif
+                sa->emplace_back(line_range{last_origin_offset_end,
+                                            caps->c_begin + (int) output_size},
+                                 SA_ORIGIN_OFFSET.value(origin_offset));
             }
 
             if (sa != nullptr && ul_range.is_valid()) {

@@ -6,8 +6,8 @@ run_cap_test ${lnav_test} -n \
     -c ":switch-to-view help" \
     ${test_dir}/logfile_access_log.0
 
-run_cap_test ${lnav_test} -n \
-    -c ":goto 2011-11-02 17:19:39" \
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -c ":goto 2011-11-03 00:19:39" \
     -c ";SELECT log_top_line()" \
     ${test_dir}/logfile_bro_http.log.0
 
