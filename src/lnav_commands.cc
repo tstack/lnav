@@ -396,7 +396,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     r, R, "to move forward/backward the same amount of time"));
             }
         } else if ((scan_end = dts.scan(
-                        args[1].c_str(), args[1].size(), nullptr, &tm, tv))
+                        all_args.c_str(), all_args.size(), nullptr, &tm, tv))
                    != nullptr)
         {
             if (ttt == nullptr) {
@@ -404,11 +404,11 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     "time values only work in a time-indexed view");
             }
 
-            size_t matched_size = scan_end - args[1].c_str();
-            if (matched_size != args[1].size()) {
+            size_t matched_size = scan_end - all_args.c_str();
+            if (matched_size != all_args.size()) {
                 auto um
                     = lnav::console::user_message::error(
-                          attr_line_t("invalid timestamp: ").append(args[1]))
+                          attr_line_t("invalid timestamp: ").append(all_args))
                           .with_reason(
                               attr_line_t("the leading part of the timestamp "
                                           "was matched, however, the trailing "
@@ -423,12 +423,12 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                           .with_help(
                               "fix the timestamp or remove the trailing text");
 
-                auto unmatched_size = args[1].size() - matched_size;
+                auto unmatched_size = all_args.size() - matched_size;
                 auto& snippet_copy = um.um_snippets.back();
                 attr_line_builder alb(snippet_copy.s_content);
 
                 alb.append("\n")
-                    .append(1 + cmdline.find(args[1]), ' ')
+                    .append(1 + cmdline.find(all_args), ' ')
                     .append(matched_size, ' ');
                 {
                     auto attr_guard
