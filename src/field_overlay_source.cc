@@ -91,12 +91,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                 sattr.sa_value.get<decltype(SA_INVALID)::value_type>());
             auto al = attr_line_t(emsg)
                           .with_attr(string_attr(
-                              line_range{1, 2},
-                              VC_GRAPHIC.value(ACS_LLCORNER)))
-                          .with_attr(
-                              string_attr(line_range{0, 22},
-                                          VC_ROLE.value(
-                                              role_t::VCR_INVALID_MSG)));
+                              line_range{1, 2}, VC_GRAPHIC.value(ACS_LLCORNER)))
+                          .with_attr(string_attr(
+                              line_range{0, 22},
+                              VC_ROLE.value(role_t::VCR_INVALID_MSG)));
             this->fos_lines.emplace_back(al);
         }
     }
@@ -121,8 +119,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         time_str.append("   Out-Of-Time-Order Message");
         time_lr.lr_start = 3;
         time_lr.lr_end = time_str.length();
-        time_line.with_attr(string_attr(
-            time_lr, VC_ROLE.value(role_t::VCR_SKEWED_TIME)));
+        time_line.with_attr(
+            string_attr(time_lr, VC_ROLE.value(role_t::VCR_SKEWED_TIME)));
         time_str.append(" --");
     }
 
@@ -170,9 +168,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             time_lr.lr_start = time_str.length();
             time_str.append(orig_timestamp);
             time_lr.lr_end = time_str.length();
-            time_line.with_attr(string_attr(
-                time_lr,
-                VC_ROLE.value(role_t::VCR_SKEWED_TIME)));
+            time_line.with_attr(
+                string_attr(time_lr, VC_ROLE.value(role_t::VCR_SKEWED_TIME)));
 
             timersub(&curr_tv, &actual_tv, &diff_tv);
             time_str.append(";  Diff: ");
@@ -201,6 +198,16 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
                        std::chrono::duration_cast<std::chrono::milliseconds>(
                            std::chrono::microseconds(offset_tv.tv_usec))
                            .count());
+    }
+
+    if (format->lf_date_time.dts_fmt_lock != -1) {
+        const auto* ts_formats = format->get_timestamp_formats();
+        if (ts_formats == nullptr) {
+            ts_formats = PTIMEC_FORMAT_STR;
+        }
+        time_line.append("  Format: ")
+            .append(lnav::roles::symbol(
+                ts_formats[format->lf_date_time.dts_fmt_lock]));
     }
 
     if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show)
@@ -320,8 +327,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             auto prefix_len = field_name.length() - orig_field_name.length();
             al.with_attr(string_attr(
                 line_range(3 + prefix_len, 3 + prefix_len + field_name.size()),
-                VC_STYLE.value(
-                    vc.attrs_for_ident(orig_field_name))));
+                VC_STYLE.value(vc.attrs_for_ident(orig_field_name))));
         } else {
             al.with_attr(string_attr(
                 line_range(8, 8 + lv.lv_meta.lvm_struct_name.size()),
@@ -399,9 +405,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     } else {
         this->fos_lines.emplace_back(
             " Discovered fields for logline table from message format: ");
-        this->fos_lines.back().with_attr(string_attr(
-            line_range(23, 23 + 7),
-            VC_STYLE.value(vc.attrs_for_ident("logline"))));
+        this->fos_lines.back().with_attr(
+            string_attr(line_range(23, 23 + 7),
+                        VC_STYLE.value(vc.attrs_for_ident("logline"))));
         auto& al = this->fos_lines.back();
         auto& disc_str = al.get_string();
 
@@ -525,7 +531,7 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
         value_out = this->fos_lines[y - 1];
         return true;
     }
-    
+
     if (!this->fos_meta_lines.empty()) {
         value_out = this->fos_meta_lines.front();
         this->fos_meta_lines.erase(this->fos_meta_lines.begin());
