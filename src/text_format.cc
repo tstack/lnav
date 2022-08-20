@@ -43,6 +43,9 @@ detect_text_format(string_fragment sf,
     static const auto BZ2_EXT = ghc::filesystem::path(".bz2");
     static const auto MD_EXT = ghc::filesystem::path(".md");
 
+    static const pcrepp MAN_MATCHERS
+        = pcrepp(R"(^[A-Z]+\(\d\)\s+)", PCRE_MULTILINE);
+
     // XXX This is a pretty crude way of detecting format...
     static const pcrepp PYTHON_MATCHERS = pcrepp(
         "(?:"
@@ -118,6 +121,10 @@ detect_text_format(string_fragment sf,
         {
             return text_format_t::TF_JSON;
         }
+    }
+
+    if (MAN_MATCHERS.match(pc, pi)) {
+        return text_format_t::TF_MAN;
     }
 
     if (PYTHON_MATCHERS.match(pc, pi)) {

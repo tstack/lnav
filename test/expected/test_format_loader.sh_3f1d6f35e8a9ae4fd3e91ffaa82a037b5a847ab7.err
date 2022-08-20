@@ -1,6 +1,19 @@
+[1m[31m✘ error[0m: “invalid(abc” is not a valid regular expression for property “[1m/invalid_props_log/tags/badtag3/pattern[0m”
+ [1m[31mreason[0m: missing )
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:35
+[36m | [0m[37m[40m                "pattern": "invalid(abc"[0m
+[36m --> [0m[1m/invalid_props_log/tags/badtag3/pattern[0m
+[36m | [0m[37m[40minvalid[0m[1m[7m[32m[40m([0m[37m[40mabc                             [0m
+[36m | [0m[37m[40m           [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                  [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/invalid_props_log/tags/badtag3/pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           The regular expression to match against the body of the log message
+         [1mExample[0m
+           \w+ is down
 [1m[31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
  [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:29
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:40
 [36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40mdef                                 [0m
@@ -104,6 +117,15 @@
 [36m =[0m [36mnote[0m: the following captures are available:
            [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
 [36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
+[1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag[0m”
+ [1m[31mreason[0m: tag definitions must have a non-empty pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag2[0m”
+ [1m[31mreason[0m: tag definitions must have a non-empty pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag3[0m”
+ [1m[31mreason[0m: tag definitions must have a non-empty pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
 [1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4

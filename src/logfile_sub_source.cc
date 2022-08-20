@@ -518,27 +518,23 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
         if (bv_iter != bv.begin()) {
             --bv_iter;
-            content_line_t part_start_line = this->at(*bv_iter);
-            std::map<content_line_t, bookmark_metadata>::iterator bm_iter;
+            auto line_meta_opt = this->find_bookmark_metadata(*bv_iter);
 
-            if ((bm_iter = this->lss_user_mark_metadata.find(part_start_line))
-                    != this->lss_user_mark_metadata.end()
-                && !bm_iter->second.bm_name.empty())
-            {
+            if (line_meta_opt && !line_meta_opt.value()->bm_name.empty()) {
                 lr.lr_start = 0;
                 lr.lr_end = -1;
                 value_out.emplace_back(
-                    lr, logline::L_PARTITION.value(&bm_iter->second));
+                    lr, logline::L_PARTITION.value(line_meta_opt.value()));
             }
         }
 
-        auto bm_iter
-            = this->lss_user_mark_metadata.find(this->at(vis_line_t(row)));
+        auto line_meta_opt = this->find_bookmark_metadata(vis_line_t(row));
 
-        if (bm_iter != this->lss_user_mark_metadata.end()) {
+        if (line_meta_opt) {
             lr.lr_start = 0;
             lr.lr_end = -1;
-            value_out.emplace_back(lr, logline::L_META.value(&bm_iter->second));
+            value_out.emplace_back(
+                lr, logline::L_META.value(line_meta_opt.value()));
         }
     }
 
@@ -922,6 +918,20 @@ logfile_sub_source::rebuild_index(
                     content_line_t con_line(file_index * MAX_LINES_PER_FILE
                                             + line_index);
 
+                    if (lf_iter->is_marked()) {
+                        auto start_iter = lf_iter;
+                        while (start_iter->is_continued()) {
+                            --start_iter;
+                        }
+                        int start_index
+                            = start_iter - ld->get_file_ptr()->begin();
+                        content_line_t start_con_line(
+                            file_index * MAX_LINES_PER_FILE + start_index);
+
+                        this->lss_user_marks[&textview_curses::BM_META]
+                            .insert_once(start_con_line);
+                        lf_iter->set_mark(false);
+                    }
                     this->lss_index.push_back(con_line);
                 }
 
@@ -1436,10 +1446,10 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_comment") == 0) {
-            const auto& bm = this->get_user_bookmark_metadata();
-            auto cl = this->get_file_base_content_line(ld);
-            cl += content_line_t(std::distance(lf->cbegin(), ll));
-            auto bm_iter = bm.find(cl);
+            const auto& bm = lf->get_bookmark_metadata();
+            auto line_number
+                = static_cast<uint32_t>(std::distance(lf->cbegin(), ll));
+            auto bm_iter = bm.find(line_number);
             if (bm_iter != bm.end() && !bm_iter->second.bm_comment.empty()) {
                 const auto& meta = bm_iter->second;
                 sqlite3_bind_text(stmt,
@@ -1451,10 +1461,10 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_tags") == 0) {
-            const auto& bm = this->get_user_bookmark_metadata();
-            auto cl = this->get_file_base_content_line(ld);
-            cl += content_line_t(std::distance(lf->cbegin(), ll));
-            auto bm_iter = bm.find(cl);
+            const auto& bm = lf->get_bookmark_metadata();
+            auto line_number
+                = static_cast<uint32_t>(std::distance(lf->cbegin(), ll));
+            auto bm_iter = bm.find(line_number);
             if (bm_iter != bm.end() && !bm_iter->second.bm_tags.empty()) {
                 const auto& meta = bm_iter->second;
                 yajlpp_gen gen;
@@ -1681,8 +1691,8 @@ logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
         for (iter = this->lss_user_marks[bm].begin();
              iter != this->lss_user_marks[bm].end();)
         {
-            auto bm_iter = this->lss_user_mark_metadata.find(*iter);
-            if (bm_iter != this->lss_user_mark_metadata.end()) {
+            auto line_meta_opt = this->find_bookmark_metadata(*iter);
+            if (line_meta_opt) {
                 ++iter;
                 continue;
             }
@@ -1894,19 +1904,17 @@ bool
 logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
                                                       std::string& value_out)
 {
-    content_line_t cl = this->lmg_source.at(vis_line_t(line));
-    std::map<content_line_t, bookmark_metadata>& user_mark_meta
-        = lmg_source.get_user_bookmark_metadata();
-    auto meta_iter = user_mark_meta.find(cl);
-
-    if (meta_iter == user_mark_meta.end()) {
+    auto line_meta_opt = this->lmg_source.find_bookmark_metadata(line);
+    if (!line_meta_opt) {
         value_out.clear();
     } else {
-        bookmark_metadata& bm = meta_iter->second;
+        bookmark_metadata& bm = *(line_meta_opt.value());
 
         value_out.append(bm.bm_comment);
+        value_out.append("\x1c");
         for (const auto& tag : bm.bm_tags) {
             value_out.append(tag);
+            value_out.append("\x1c");
         }
     }
 
@@ -2355,5 +2363,57 @@ logfile_sub_source::quiesce()
         }
 
         lf->quiesce();
+    }
+}
+
+bookmark_metadata&
+logfile_sub_source::get_bookmark_metadata(content_line_t cl)
+{
+    auto line_pair = this->find_line_with_file(cl).value();
+    auto line_number = static_cast<uint32_t>(
+        std::distance(line_pair.first->begin(), line_pair.second));
+
+    return line_pair.first->get_bookmark_metadata()[line_number];
+}
+
+nonstd::optional<bookmark_metadata*>
+logfile_sub_source::find_bookmark_metadata(content_line_t cl)
+{
+    auto line_pair = this->find_line_with_file(cl).value();
+    auto line_number = static_cast<uint32_t>(
+        std::distance(line_pair.first->begin(), line_pair.second));
+
+    auto& bm = line_pair.first->get_bookmark_metadata();
+    auto bm_iter = bm.find(line_number);
+    if (bm_iter == bm.end()) {
+        return nonstd::nullopt;
+    }
+
+    return &bm_iter->second;
+}
+
+void
+logfile_sub_source::erase_bookmark_metadata(content_line_t cl)
+{
+    auto line_pair = this->find_line_with_file(cl).value();
+    auto line_number = static_cast<uint32_t>(
+        std::distance(line_pair.first->begin(), line_pair.second));
+
+    auto& bm = line_pair.first->get_bookmark_metadata();
+    auto bm_iter = bm.find(line_number);
+    if (bm_iter != bm.end()) {
+        bm.erase(bm_iter);
+    }
+}
+
+void
+logfile_sub_source::clear_bookmark_metadata()
+{
+    for (auto& ld : *this) {
+        if (ld->get_file_ptr() == nullptr) {
+            continue;
+        }
+
+        ld->get_file_ptr()->get_bookmark_metadata().clear();
     }
 }

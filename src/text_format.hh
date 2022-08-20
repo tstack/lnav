@@ -50,6 +50,7 @@ enum class text_format_t {
     TF_SQL,
     TF_XML,
     TF_JSON,
+    TF_MAN,
     TF_MARKDOWN,
 };
 
@@ -87,6 +88,9 @@ struct formatter<text_format_t> : formatter<string_view> {
                 break;
             case text_format_t::TF_JSON:
                 name = "application/json";
+                break;
+            case text_format_t::TF_MAN:
+                name = "text/man";
                 break;
             case text_format_t::TF_MARKDOWN:
                 name = "text/markdown";

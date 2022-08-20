@@ -47,6 +47,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/lnav_log.hh"
 #include "base/result.h"
+#include "bookmarks.hh"
 #include "byte_array.hh"
 #include "ghc/filesystem.hpp"
 #include "line_buffer.hh"
@@ -353,6 +354,12 @@ public:
 
     void dump_stats();
 
+    robin_hood::unordered_map<uint32_t, bookmark_metadata>&
+    get_bookmark_metadata()
+    {
+        return this->lf_bookmark_metadata;
+    }
+
 protected:
     /**
      * Process a line from the file.
@@ -406,6 +413,9 @@ private:
 
     nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
     std::set<intern_string_t> lf_mismatched_formats;
+    robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
+
+    std::vector<std::shared_ptr<format_tag_def>> lf_applicable_taggers;
 };
 
 class logline_observer {

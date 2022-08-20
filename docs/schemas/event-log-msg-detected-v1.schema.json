@@ -21,6 +21,11 @@
             "description": "The path of the file containing the log message",
             "type": "string"
         },
+        "line-number": {
+            "title": "/line-number",
+            "description": "The line number in the file, starting from zero",
+            "type": "integer"
+        },
         "format": {
             "title": "/format",
             "description": "The name of the log format that matched this log message",

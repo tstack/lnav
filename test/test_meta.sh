@@ -97,3 +97,7 @@ run_cap_test ${lnav_test} -n \
     -c ":comment foo" \
     -c ";UPDATE access_log SET log_comment = null" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -d /tmp/lnav.err -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_xml_msg.0

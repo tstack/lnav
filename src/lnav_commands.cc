@@ -2869,13 +2869,12 @@ com_comment(exec_context& ec,
                 "The :comment command only works in the log view");
         }
         auto& lss = lnav_data.ld_log_source;
-        auto& bm = lss.get_user_bookmark_metadata();
 
         args[1] = trim(remaining_args(cmdline, args));
 
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
 
-        auto& line_meta = bm[lss.at(tc->get_top())];
+        auto& line_meta = lss.get_bookmark_metadata(tc->get_top());
 
         line_meta.bm_comment = args[1];
         lss.set_line_meta_changed();
@@ -2898,14 +2897,12 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
         return "";
     }
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    std::map<content_line_t, bookmark_metadata>& bm
-        = lss.get_user_bookmark_metadata();
+    auto& lss = lnav_data.ld_log_source;
 
-    auto line_meta = bm.find(lss.at(tc->get_top()));
+    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
 
-    if (line_meta != bm.end() && !line_meta->second.bm_comment.empty()) {
-        return trim(cmdline) + " " + trim(line_meta->second.bm_comment);
+    if (line_meta_opt && !line_meta_opt.value()->bm_comment.empty()) {
+        return trim(cmdline) + " " + trim(line_meta_opt.value()->bm_comment);
     }
 
     return "";
@@ -2929,17 +2926,15 @@ com_clear_comment(exec_context& ec,
             return ec.make_error(
                 "The :clear-comment command only works in the log view");
         }
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& lss = lnav_data.ld_log_source;
 
-        auto iter = bm.find(lss.at(tc->get_top()));
-        if (iter != bm.end()) {
-            bookmark_metadata& line_meta = iter->second;
+        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
+        if (line_meta_opt) {
+            bookmark_metadata& line_meta = *(line_meta_opt.value());
 
             line_meta.bm_comment.clear();
             if (line_meta.empty()) {
-                bm.erase(iter);
+                lss.erase_bookmark_metadata(tc->get_top());
                 tc->set_user_mark(
                     &textview_curses::BM_META, tc->get_top(), false);
             }
@@ -2973,12 +2968,10 @@ com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error("The :tag command only works in the log view");
         }
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& lss = lnav_data.ld_log_source;
 
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
-        bookmark_metadata& line_meta = bm[lss.at(tc->get_top())];
+        auto& line_meta = lss.get_bookmark_metadata(tc->get_top());
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
             std::string tag = args[lpc];
 
@@ -3019,13 +3012,11 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return ec.make_error(
                 "The :untag command only works in the log view");
         }
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& lss = lnav_data.ld_log_source;
 
-        auto iter = bm.find(lss.at(tc->get_top()));
-        if (iter != bm.end()) {
-            bookmark_metadata& line_meta = iter->second;
+        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
+        if (line_meta_opt) {
+            bookmark_metadata& line_meta = *(line_meta_opt.value());
 
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 std::string tag = args[lpc];
@@ -3091,26 +3082,24 @@ com_delete_tags(exec_context& ec,
             known_tags.erase(tag);
         }
 
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        bookmark_vector<vis_line_t>& vbm
-            = tc->get_bookmarks()[&textview_curses::BM_META];
-        std::map<content_line_t, bookmark_metadata>& bm
-            = lss.get_user_bookmark_metadata();
+        auto& lss = lnav_data.ld_log_source;
+        auto& vbm = tc->get_bookmarks()[&textview_curses::BM_META];
 
         for (auto iter = vbm.begin(); iter != vbm.end();) {
-            content_line_t cl = lss.at(*iter);
-            auto line_meta = bm.find(cl);
+            auto line_meta_opt = lss.find_bookmark_metadata(*iter);
 
-            if (line_meta == bm.end()) {
+            if (!line_meta_opt) {
                 ++iter;
                 continue;
             }
 
+            auto& line_meta = line_meta_opt.value();
             for (const auto& tag : tags) {
-                line_meta->second.remove_tag(tag);
+                line_meta->remove_tag(tag);
             }
 
-            if (line_meta->second.empty()) {
+            if (line_meta->empty()) {
+                lss.erase_bookmark_metadata(*iter);
                 size_t off = distance(vbm.begin(), iter);
 
                 tc->set_user_mark(&textview_curses::BM_META, *iter, false);
@@ -3143,14 +3132,12 @@ com_partition_name(exec_context& ec,
         } else {
             textview_curses& tc = lnav_data.ld_views[LNV_LOG];
             logfile_sub_source& lss = lnav_data.ld_log_source;
-            std::map<content_line_t, bookmark_metadata>& bm
-                = lss.get_user_bookmark_metadata();
 
             args[1] = trim(remaining_args(cmdline, args));
 
             tc.set_user_mark(&textview_curses::BM_META, tc.get_top(), true);
 
-            bookmark_metadata& line_meta = bm[lss.at(tc.get_top())];
+            auto& line_meta = lss.get_bookmark_metadata(tc.get_top());
 
             line_meta.bm_name = args[1];
             retval = "info: name set for partition";
@@ -3175,7 +3162,6 @@ com_clear_partition(exec_context& ec,
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_META];
-        auto& bm = lss.get_user_bookmark_metadata();
         nonstd::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_top())) {
@@ -3188,11 +3174,11 @@ com_clear_partition(exec_context& ec,
         }
 
         if (!ec.ec_dry_run) {
-            content_line_t cl = lss.at(part_start.value());
-            bookmark_metadata& line_meta = bm[cl];
+            auto& line_meta = lss.get_bookmark_metadata(part_start.value());
 
             line_meta.bm_name.clear();
             if (line_meta.empty()) {
+                lss.erase_bookmark_metadata(part_start.value());
                 tc.set_user_mark(
                     &textview_curses::BM_META, part_start.value(), false);
             }

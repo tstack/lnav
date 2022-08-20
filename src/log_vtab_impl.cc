@@ -631,16 +631,15 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
                 if (iter != bv.begin()) {
                     --iter;
-                    content_line_t part_line = vt->lss->at(*iter);
-                    auto& bm_meta = vt->lss->get_user_bookmark_metadata();
-                    auto meta_iter = bm_meta.find(part_line);
-                    if (meta_iter != bm_meta.end()
-                        && !meta_iter->second.bm_name.empty())
+                    auto line_meta_opt = vt->lss->find_bookmark_metadata(*iter);
+                    if (line_meta_opt
+                        && !line_meta_opt.value()->bm_name.empty())
                     {
-                        sqlite3_result_text(ctx,
-                                            meta_iter->second.bm_name.c_str(),
-                                            meta_iter->second.bm_name.size(),
-                                            SQLITE_TRANSIENT);
+                        sqlite3_result_text(
+                            ctx,
+                            line_meta_opt.value()->bm_name.c_str(),
+                            line_meta_opt.value()->bm_name.size(),
+                            SQLITE_TRANSIENT);
                     } else {
                         sqlite3_result_null(ctx);
                     }
@@ -731,13 +730,12 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         }
 
         case VT_COL_LOG_COMMENT: {
-            const auto& bm = vt->lss->get_user_bookmark_metadata();
-
-            auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
-            if (bm_iter == bm.end() || bm_iter->second.bm_comment.empty()) {
+            auto line_meta_opt
+                = vt->lss->find_bookmark_metadata(vc->log_cursor.lc_curr_line);
+            if (!line_meta_opt || line_meta_opt.value()->bm_comment.empty()) {
                 sqlite3_result_null(ctx);
             } else {
-                const auto& meta = bm_iter->second;
+                const auto& meta = *(line_meta_opt.value());
                 sqlite3_result_text(ctx,
                                     meta.bm_comment.c_str(),
                                     meta.bm_comment.length(),
@@ -747,13 +745,12 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         }
 
         case VT_COL_LOG_TAGS: {
-            const auto& bm = vt->lss->get_user_bookmark_metadata();
-
-            auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
-            if (bm_iter == bm.end() || bm_iter->second.bm_tags.empty()) {
+            auto line_meta_opt
+                = vt->lss->find_bookmark_metadata(vc->log_cursor.lc_curr_line);
+            if (!line_meta_opt || line_meta_opt.value()->bm_tags.empty()) {
                 sqlite3_result_null(ctx);
             } else {
-                const auto& meta = bm_iter->second;
+                const auto& meta = *(line_meta_opt.value());
 
                 yajlpp_gen gen;
 
@@ -1912,8 +1909,6 @@ vt_update(sqlite3_vtab* tab,
         int val = sqlite3_value_int(argv[2 + VT_COL_MARK]);
         vis_line_t vrowid(rowid);
 
-        std::map<content_line_t, bookmark_metadata>& bm
-            = vt->lss->get_user_bookmark_metadata();
         const auto* part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
         const auto* log_comment
             = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
@@ -1958,12 +1953,12 @@ vt_update(sqlite3_vtab* tab,
 
         if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
-            bm.erase(vt->lss->at(vrowid));
+            vt->lss->erase_bookmark_metadata(vrowid);
             vt->lss->set_line_meta_changed();
         }
 
         if (has_meta) {
-            bookmark_metadata& line_meta = bm[vt->lss->at(vrowid)];
+            auto& line_meta = vt->lss->get_bookmark_metadata(vrowid);
 
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, true);
             if (part_name) {

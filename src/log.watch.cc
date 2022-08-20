@@ -256,6 +256,30 @@ eval_with(logfile& lf, logfile::iterator ll)
                 }
                 continue;
             }
+            if (strcmp(name, ":log_tags") == 0) {
+                const auto& bm = lf.get_bookmark_metadata();
+                auto bm_iter = bm.find(line_number);
+                if (bm_iter != bm.end() && !bm_iter->second.bm_tags.empty()) {
+                    const auto& meta = bm_iter->second;
+                    yajlpp_gen gen;
+
+                    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                    {
+                        yajlpp_array arr(gen);
+
+                        for (const auto& str : meta.bm_tags) {
+                            arr.gen(str);
+                        }
+                    }
+
+                    string_fragment sf = gen.to_string_fragment();
+
+                    sqlite3_bind_text(
+                        stmt, lpc + 1, sf.data(), sf.length(), SQLITE_TRANSIENT);
+                }
+                continue;
+            }
             auto found = false;
             for (const auto& lv : values.lvv_values) {
                 if (lv.lv_meta.lvm_name != &name[1]) {
@@ -323,6 +347,7 @@ eval_with(logfile& lf, logfile::iterator ll)
             watch_pair.first,
             lf.get_filename(),
             lf.get_format_name().to_string(),
+            (uint32_t) line_number,
             timestamp_buffer,
         };
         for (const auto& lv : values.lvv_values) {

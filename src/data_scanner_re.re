@@ -243,6 +243,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        ("\r"?"\n"|"\\n") { RET(DT_LINE); }
        SPACE+ { RET(DT_WHITE); }
        "." { RET(DT_DOT); }
+       "\\". { RET(DT_ESCAPED_CHAR); }
        . { RET(DT_GARBAGE); }
 
      */

@@ -24,6 +24,17 @@
                 "background-color": "also not a color"
             }
         },
+        "tags": {
+            "badtag": {
+                "paths": []
+            },
+            "badtag2": {
+                "pattern": ""
+            },
+            "badtag3": {
+                "pattern": "invalid(abc"
+            }
+        },
         "search-table": {
             "bad_table_regex": {
                 "pattern": "abc(def"

@@ -87,6 +87,9 @@ const typed_json_path_container<msg_detected> msg_detected::handlers = typed_jso
     yajlpp::property_handler("filename")
         .with_description("The path of the file containing the log message")
         .for_field(&msg_detected::md_filename),
+    yajlpp::property_handler("line-number")
+        .with_description("The line number in the file, starting from zero")
+        .for_field(&msg_detected::md_line_number),
     yajlpp::property_handler("format")
         .with_description("The name of the log format that matched this log message")
         .for_field(&msg_detected::md_format),

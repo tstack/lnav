@@ -284,6 +284,49 @@
                     },
                     "additionalProperties": false
                 },
+                "tags": {
+                    "description": "The tags to automatically apply to log messages",
+                    "title": "/<format_name>/tags",
+                    "type": "object",
+                    "patternProperties": {
+                        "([^/]+)": {
+                            "description": "The name of the tag to apply",
+                            "title": "/<format_name>/tags/<tag_name>",
+                            "type": "object",
+                            "properties": {
+                                "paths": {
+                                    "description": "Restrict tagging to the given paths",
+                                    "title": "/<format_name>/tags/<tag_name>/paths",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "glob": {
+                                                "title": "/<format_name>/tags/<tag_name>/paths/glob",
+                                                "description": "The glob to match against file paths",
+                                                "type": "string",
+                                                "examples": [
+                                                    "*/system.log*"
+                                                ]
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "pattern": {
+                                    "title": "/<format_name>/tags/<tag_name>/pattern",
+                                    "description": "The regular expression to match against the body of the log message",
+                                    "type": "string",
+                                    "examples": [
+                                        "\\w+ is down"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "action": {
                     "title": "/<format_name>/action",
                     "type": "object",

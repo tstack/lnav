@@ -308,6 +308,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_meta.sh_7b75763926d832bf9784ca234a060859770aabe7.out \
     $(srcdir)/%reldir%/test_meta.sh_811b1a8a176b25001a89e35b295a1117ab76969b.err \
     $(srcdir)/%reldir%/test_meta.sh_811b1a8a176b25001a89e35b295a1117ab76969b.out \
+    $(srcdir)/%reldir%/test_meta.sh_83ac877aa9d38b25945cf96d6326a2468187c40f.err \
+    $(srcdir)/%reldir%/test_meta.sh_83ac877aa9d38b25945cf96d6326a2468187c40f.out \
     $(srcdir)/%reldir%/test_meta.sh_a7489c1f0e001adc732b7e2ab31bb30960fda078.err \
     $(srcdir)/%reldir%/test_meta.sh_a7489c1f0e001adc732b7e2ab31bb30960fda078.out \
     $(srcdir)/%reldir%/test_meta.sh_c063f96398650f130941bbbf4cf63c1244fdbee5.err \

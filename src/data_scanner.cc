@@ -243,6 +243,10 @@ static struct {
         "dot",
         pcrepp("\\A(\\.)"),
     },
+    {
+        "escc",
+        pcrepp("\\A(\\\\\\.)"),
+    },
 
     {
         "gbg",

@@ -359,7 +359,7 @@ libdatascanner_a_SOURCES = \
 	data_scanner_re.cc
 # XXX The data_scanner_re optimized build is taking 30+ minutes to run for
 # some reason, so we need to override the flags
-libdatascanner_a_CXXFLAGS = -O1
+libdatascanner_a_CXXFLAGS = -O1 -g
 
 libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \

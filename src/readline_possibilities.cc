@@ -464,13 +464,12 @@ add_tag_possibilities()
     {
         logfile_sub_source& lss = lnav_data.ld_log_source;
         if (lss.text_line_count() > 0) {
-            content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());
-            const auto& user_meta = lss.get_user_bookmark_metadata();
-            auto meta_iter = user_meta.find(cl);
-
-            if (meta_iter != user_meta.end()) {
-                rc->add_possibility(
-                    ln_mode_t::COMMAND, "line-tags", meta_iter->second.bm_tags);
+            auto line_meta_opt = lss.find_bookmark_metadata(
+                lnav_data.ld_views[LNV_LOG].get_top());
+            if (line_meta_opt) {
+                rc->add_possibility(ln_mode_t::COMMAND,
+                                    "line-tags",
+                                    line_meta_opt.value()->bm_tags);
             }
         }
     }

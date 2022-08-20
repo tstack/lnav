@@ -29,6 +29,7 @@
 
 #include <memory>
 
+#include <fnmatch.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -1964,6 +1965,23 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->set_rewrite_src_name();
     }
 
+    for (const auto& td_pair : this->lf_tag_defs) {
+        const auto& td = td_pair.second;
+
+        if (td->ftd_pattern == nullptr || td->ftd_pattern->empty()) {
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t("invalid tag definition ")
+                        .append_quoted(lnav::roles::symbol(
+                            fmt::format(FMT_STRING("/{}/tags/{}"),
+                                        this->elf_name,
+                                        td_pair.first))))
+                    .with_reason(
+                        "tag definitions must have a non-empty pattern")
+                    .with_snippets(this->get_snippets()));
+        }
+    }
+
     if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
         && this->elf_samples.empty())
     {
@@ -2914,6 +2932,12 @@ external_log_format::get_value_metadata() const
     }
 
     return retval;
+}
+
+bool
+format_tag_def::path_restriction::matches(const char* fn) const
+{
+    return fnmatch(this->p_glob.c_str(), fn, 0) == 0;
 }
 
 /* XXX */

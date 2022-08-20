@@ -92,6 +92,7 @@ enum data_token_t {
     DT_LINE,
     DT_WHITE,
     DT_DOT,
+    DT_ESCAPED_CHAR,
 
     DT_GARBAGE,
 

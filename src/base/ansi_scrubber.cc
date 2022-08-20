@@ -153,6 +153,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             last_origin_offset_end = caps->c_begin + output_size;
             origin_offset += erased_size;
             pi.reset(str);
+            pi.pi_next_offset = last_origin_offset_end;
             continue;
         }
 
@@ -274,10 +275,12 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             }
             sa->emplace_back(line_range{last_origin_offset_end, caps->c_begin},
                              SA_ORIGIN_OFFSET.value(origin_offset));
+            last_origin_offset_end = caps->c_begin;
             origin_offset += caps->length();
         }
 
         pi.reset(str);
+        pi.pi_next_offset = caps->c_begin;
     }
 
     if (sa != nullptr && last_origin_offset_end > 0) {

@@ -1,0 +1,37 @@
+[2020-12-10 06:56:41,061] INFO [m:108] Calling 'x' with params:
+
+[2020-12-10 06:56:41,092] DEBUG [connect.client:69] Full request text:
+ └ #xml-req
+<?xml version='1.0' encoding='iso-8859-2'?>
+<a-request>
+  <head>
+    x
+  </head>
+  <source>
+    x
+  </source>
+  <request id="1">
+    <name>
+      x
+    </name>
+  </request>
+</a-request>
+
+[2020-12-10 06:56:41,099] DEBUG [m:85] Full reply text:
+<?xml version='1.0' encoding='iso-8859-2'?>
+<a-reply>
+  <head>
+    x
+  </head>
+  <reply id="2">
+    <status>
+      <result>OK</result>
+    </status>
+    <name>
+      x
+    </name>
+  </reply>
+  <technical-track>
+    x
+  </technical-track>
+</a-reply>

@@ -118,10 +118,7 @@ struct logline_value_meta {
     {
     }
 
-    bool is_hidden() const
-    {
-        return this->lvm_hidden || this->lvm_user_hidden;
-    }
+    bool is_hidden() const { return this->lvm_hidden || this->lvm_user_hidden; }
 
     logline_value_meta& with_struct_name(intern_string_t name)
     {
@@ -518,6 +515,8 @@ public:
     bool lf_time_ordered{true};
     bool lf_specialized{false};
     nonstd::optional<int64_t> lf_max_unrecognized_lines;
+    std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
+        lf_tag_defs;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;

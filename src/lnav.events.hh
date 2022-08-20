@@ -64,6 +64,7 @@ struct msg_detected {
     std::string md_watch_name;
     std::string md_filename;
     std::string md_format;
+    uint32_t md_line_number;
     std::string md_timestamp;
     std::map<std::string, json_any_t> md_values;
     std::string md_schema{SCHEMA_ID};

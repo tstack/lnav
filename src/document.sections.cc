@@ -254,8 +254,9 @@ public:
         pcre_context_static<30> pc;
         data_token_t dt = DT_INVALID;
         auto& pi = this->sw_scanner.get_input();
+        size_t garbage_count = 0;
 
-        while (this->sw_scanner.tokenize2(pc, dt)) {
+        while (garbage_count < 1000 && this->sw_scanner.tokenize2(pc, dt)) {
             element el(dt, pc);
 
             switch (dt) {
@@ -361,6 +362,9 @@ public:
                 case DT_WHITE:
                     break;
                 default:
+                    if (dt == DT_GARBAGE) {
+                        garbage_count += 1;
+                    }
                     this->sw_values.emplace_back(el);
                     break;
             }

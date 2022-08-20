@@ -472,10 +472,29 @@ public:
         return this->lss_user_marks;
     }
 
-    std::map<content_line_t, bookmark_metadata>& get_user_bookmark_metadata()
+    bookmark_metadata& get_bookmark_metadata(content_line_t cl);
+
+    bookmark_metadata& get_bookmark_metadata(vis_line_t vl)
     {
-        return this->lss_user_mark_metadata;
+        return this->get_bookmark_metadata(this->at(vl));
     }
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+        content_line_t cl);
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(vis_line_t vl)
+    {
+        return this->find_bookmark_metadata(this->at(vl));
+    }
+
+    void erase_bookmark_metadata(content_line_t cl);
+
+    void erase_bookmark_metadata(vis_line_t vl)
+    {
+        this->erase_bookmark_metadata(this->at(vl));
+    }
+
+    void clear_bookmark_metadata();
 
     int get_filtered_count() const
     {
@@ -960,7 +979,6 @@ private:
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
     bookmarks<content_line_t>::type lss_user_marks;
-    std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
     auto_mem<sqlite3_stmt> lss_marker_stmt{sqlite3_finalize};
     std::string lss_marker_stmt_text;
 

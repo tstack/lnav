@@ -50,6 +50,11 @@
                 "color": "Gold1"
             }
         },
+        "tags": {
+            "xml-req": {
+                "pattern": "Full request text:"
+            }
+        },
         "sample": [
             {
                 "line": "[2020-12-10 06:56:41,477] INFO [m:108] Calling 'x' with params:",

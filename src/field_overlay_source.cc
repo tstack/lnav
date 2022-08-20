@@ -45,8 +45,8 @@ json_string extract(const char* str);
 void
 field_overlay_source::build_field_lines(const listview_curses& lv)
 {
-    logfile_sub_source& lss = this->fos_lss;
-    view_colors& vc = view_colors::singleton();
+    auto& lss = this->fos_lss;
+    auto& vc = view_colors::singleton();
 
     this->fos_lines.clear();
 
@@ -63,7 +63,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     bool display = false;
 
     if (ll->is_time_skewed()
-        || ll->get_msg_level() == log_level_t::LEVEL_INVALID) {
+        || ll->get_msg_level() == log_level_t::LEVEL_INVALID)
+    {
         display = true;
     }
     if (!this->fos_contexts.empty()) {
@@ -301,7 +302,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
             if (curr_elf && curr_elf->elf_body_field == lv.lv_meta.lvm_name) {
                 field_name = LOG_BODY;
             } else if (curr_elf
-                       && curr_elf->lf_timestamp_field == lv.lv_meta.lvm_name) {
+                       && curr_elf->lf_timestamp_field == lv.lv_meta.lvm_name)
+            {
                 field_name = LOG_TIME;
             } else {
                 field_name = lv.lv_meta.lvm_name.to_string();
@@ -396,7 +398,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     }
 
     if (!this->fos_contexts.empty()
-        && !this->fos_contexts.top().c_show_discovered) {
+        && !this->fos_contexts.top().c_show_discovered)
+    {
         return;
     }
 
@@ -441,64 +444,60 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                                       std::vector<attr_line_t>& dst,
                                       vis_line_t row)
 {
-    content_line_t cl = this->fos_lss.at(row);
-    auto const& bm = this->fos_lss.get_user_bookmark_metadata();
-    view_colors& vc = view_colors::singleton();
-    auto iter = bm.find(cl);
+    auto line_meta_opt = this->fos_lss.find_bookmark_metadata(row);
 
-    if (iter != bm.end()) {
-        const bookmark_metadata& line_meta = iter->second;
-        size_t filename_width = this->fos_lss.get_filename_offset();
-        auto* tc = dynamic_cast<const textview_curses*>(&lv);
+    if (!line_meta_opt) {
+        return;
+    }
+    auto& vc = view_colors::singleton();
+    const auto& line_meta = *(line_meta_opt.value());
+    size_t filename_width = this->fos_lss.get_filename_offset();
+    const auto* tc = dynamic_cast<const textview_curses*>(&lv);
 
-        if (!line_meta.bm_comment.empty()) {
-            const auto* lead = line_meta.bm_tags.empty() ? " \u2514 "
-                                                         : " \u251c ";
-            attr_line_t al;
+    if (!line_meta.bm_comment.empty()) {
+        const auto* lead = line_meta.bm_tags.empty() ? " \u2514 " : " \u251c ";
+        attr_line_t al;
 
-            al.with_string(lead).append(
-                lnav::roles::comment(line_meta.bm_comment));
-            al.insert(0, filename_width, ' ');
-            if (tc != nullptr) {
-                auto hl = tc->get_highlights();
-                auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
+        al.with_string(lead).append(lnav::roles::comment(line_meta.bm_comment));
+        al.insert(0, filename_width, ' ');
+        if (tc != nullptr) {
+            auto hl = tc->get_highlights();
+            auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
 
-                if (hl_iter != hl.end()) {
-                    hl_iter->second.annotate(al, filename_width);
-                }
+            if (hl_iter != hl.end()) {
+                hl_iter->second.annotate(al, filename_width);
             }
-
-            dst.emplace_back(al);
         }
-        if (!line_meta.bm_tags.empty()) {
-            attr_line_t al;
 
-            al.with_string(" \u2514");
-            for (const auto& str : line_meta.bm_tags) {
-                al.append(1, ' ').append(
-                    str, VC_STYLE.value(vc.attrs_for_ident(str)));
-            }
+        dst.emplace_back(al);
+    }
+    if (!line_meta.bm_tags.empty()) {
+        attr_line_t al;
 
-            const auto* tc = dynamic_cast<const textview_curses*>(&lv);
-            if (tc) {
-                const auto& hm = tc->get_highlights();
-                auto hl_iter = hm.find({highlight_source_t::PREVIEW, "search"});
-
-                if (hl_iter != hm.end()) {
-                    hl_iter->second.annotate(al, 2);
-                }
-            }
-            al.insert(0, filename_width, ' ');
-            if (tc != nullptr) {
-                auto hl = tc->get_highlights();
-                auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
-
-                if (hl_iter != hl.end()) {
-                    hl_iter->second.annotate(al, filename_width);
-                }
-            }
-            dst.emplace_back(al);
+        al.with_string(" \u2514");
+        for (const auto& str : line_meta.bm_tags) {
+            al.append(1, ' ').append(str,
+                                     VC_STYLE.value(vc.attrs_for_ident(str)));
         }
+
+        if (tc != nullptr) {
+            const auto& hm = tc->get_highlights();
+            auto hl_iter = hm.find({highlight_source_t::PREVIEW, "search"});
+
+            if (hl_iter != hm.end()) {
+                hl_iter->second.annotate(al, 2);
+            }
+        }
+        al.insert(0, filename_width, ' ');
+        if (tc != nullptr) {
+            auto hl = tc->get_highlights();
+            auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
+
+            if (hl_iter != hl.end()) {
+                hl_iter->second.annotate(al, filename_width);
+            }
+        }
+        dst.emplace_back(al);
     }
 }
 
@@ -532,7 +531,8 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
         return true;
     }
 
-    if (!this->fos_meta_lines.empty()) {
+    if (!this->fos_meta_lines.empty() && this->fos_meta_lines_row == row - 1_vl)
+    {
         value_out = this->fos_meta_lines.front();
         this->fos_meta_lines.erase(this->fos_meta_lines.begin());
 
@@ -540,7 +540,9 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
     }
 
     if (row < lv.get_inner_height()) {
+        this->fos_meta_lines.clear();
         this->build_meta_line(lv, this->fos_meta_lines, row);
+        this->fos_meta_lines_row = row;
     }
 
     return false;

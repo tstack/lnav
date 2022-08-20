@@ -39,6 +39,7 @@
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
+#include "pcrepp/pcrepp.hh"
 #include "ptimec.hh"
 #include "robin_hood/robin_hood.h"
 
@@ -158,10 +159,7 @@ public:
         }
     }
 
-    bool is_ignored() const
-    {
-        return this->ll_level & LEVEL_IGNORE;
-    }
+    bool is_ignored() const { return this->ll_level & LEVEL_IGNORE; }
 
     void set_mark(bool val)
     {
@@ -194,10 +192,7 @@ public:
     bool is_valid_utf() const { return this->ll_valid_utf; }
 
     /** @param l The logging level. */
-    void set_level(log_level_t l)
-    {
-        this->ll_level = l;
-    };
+    void set_level(log_level_t l) { this->ll_level = l; };
 
     /** @return The logging level. */
     log_level_t get_level_and_flags() const
@@ -305,6 +300,20 @@ private:
     uint8_t ll_module_id : 7;
     uint8_t ll_expr_mark : 1;
     char ll_schema[2];
+};
+
+struct format_tag_def {
+    format_tag_def(std::string name) : ftd_name(name) {}
+
+    struct path_restriction {
+        std::string p_glob;
+
+        bool matches(const char* fn) const;
+    };
+
+    std::string ftd_name;
+    std::vector<path_restriction> ftd_paths;
+    std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> ftd_pattern;
 };
 
 #endif

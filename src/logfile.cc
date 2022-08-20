@@ -266,6 +266,25 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_content_id
                     = hasher().update(sbr.get_data(), sbr.length()).to_string();
 
+                for (auto& td_pair : this->lf_format->lf_tag_defs) {
+                    bool matches = td_pair.second->ftd_paths.empty();
+                    for (const auto& pr : td_pair.second->ftd_paths) {
+                        if (pr.matches(this->lf_filename.c_str())) {
+                            matches = true;
+                            break;
+                        }
+                    }
+                    if (!matches) {
+                        continue;
+                    }
+
+                    log_info("%s: found applicable tag definition /%s/tags/%s",
+                             this->lf_filename.c_str(),
+                             this->lf_format->get_name().get(),
+                             td_pair.second->ftd_name.c_str());
+                    this->lf_applicable_taggers.emplace_back(td_pair.second);
+                }
+
                 /*
                  * We'll go ahead and assume that any previous lines were
                  * written out at the same time as the last one, so we need to
@@ -601,8 +620,32 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 break;
             }
 #endif
-            if (this->lf_format && !this->back().is_continued()) {
-                lnav::log::watch::eval_with(*this, this->end() - 1);
+            if (this->lf_format) {
+                if (!this->lf_applicable_taggers.empty()) {
+                    auto sf = sbr.to_string_fragment();
+
+                    for (const auto& td : this->lf_applicable_taggers) {
+                        pcre_context_static<30> pc;
+                        pcre_input pi(sf);
+                        if (td->ftd_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK))
+                        {
+                            auto curr_ll = this->end() - 1;
+                            curr_ll->set_mark(true);
+                            while (curr_ll->is_continued()) {
+                                --curr_ll;
+                            }
+                            auto line_number = static_cast<uint32_t>(
+                                std::distance(this->begin(), curr_ll));
+
+                            this->lf_bookmark_metadata[line_number].add_tag(
+                                td->ftd_name);
+                        }
+                    }
+                }
+
+                if (!this->back().is_continued()) {
+                    lnav::log::watch::eval_with(*this, this->end() - 1);
+                }
             }
 
             if (li.li_partial) {

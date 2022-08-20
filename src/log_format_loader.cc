@@ -149,6 +149,26 @@ value_def_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
     return retval.get();
 }
 
+static format_tag_def*
+format_tag_def_provider(const yajlpp_provider_context& ypc,
+                        external_log_format* elf)
+{
+    const intern_string_t tag_name = ypc.get_substr_i(0);
+
+    auto iter = elf->lf_tag_defs.find(tag_name);
+    std::shared_ptr<format_tag_def> retval;
+
+    if (iter == elf->lf_tag_defs.end()) {
+        auto tag_with_hash = fmt::format(FMT_STRING("#{}"), tag_name);
+        retval = std::make_shared<format_tag_def>(tag_with_hash);
+        elf->lf_tag_defs[tag_name] = retval;
+    } else {
+        retval = iter->second;
+    }
+
+    return retval.get();
+}
+
 static scaling_factor*
 scaling_factor_provider(const yajlpp_provider_context& ypc,
                         external_log_format::value_def* value_def)
@@ -703,6 +723,34 @@ static struct json_path_container value_handlers = {
         .with_children(value_def_handlers),
 };
 
+static struct json_path_container tag_path_handlers = {
+    yajlpp::property_handler("glob")
+        .with_synopsis("<glob>")
+        .with_description("The glob to match against file paths")
+        .with_example("*/system.log*")
+        .for_field(&format_tag_def::path_restriction::p_glob),
+};
+
+static struct json_path_container format_tag_def_handlers = {
+    yajlpp::property_handler("paths#")
+        .with_description("Restrict tagging to the given paths")
+        .for_field(&format_tag_def::ftd_paths)
+        .with_children(tag_path_handlers),
+    yajlpp::property_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description("The regular expression to match against the body of "
+                          "the log message")
+        .with_example("\\w+ is down")
+        .for_field(&format_tag_def::ftd_pattern),
+};
+
+static struct json_path_container tag_handlers = {
+    yajlpp::pattern_property_handler("(?<tag_name>[^/]+)")
+        .with_description("The name of the tag to apply")
+        .with_obj_provider(format_tag_def_provider)
+        .with_children(format_tag_def_handlers),
+};
+
 static struct json_path_container highlight_handlers = {
     yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
         .with_description("The definition of a highlight")
@@ -850,6 +898,10 @@ struct json_path_container format_handlers = {
         .with_description("The set of value definitions")
         .with_children(value_handlers),
 
+    yajlpp::property_handler("tags")
+        .with_description("The tags to automatically apply to log messages")
+        .with_children(tag_handlers),
+
     yajlpp::property_handler("action").with_children(action_handlers),
     yajlpp::property_handler("sample#")
         .with_description("An array of sample log messages to be tested "
@@ -981,7 +1033,8 @@ write_sample_file()
             = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);
         auto script_path = lnav::paths::dotlnav() / path;
         if (lnav::filesystem::statp(script_path, &st) == 0
-            && st.st_size == sf.length()) {
+            && st.st_size == sf.length())
+        {
             // Assume it's the right contents and move on...
             continue;
         }
@@ -1053,7 +1106,8 @@ load_format_file(const ghc::filesystem::path& filename,
                 break;
             }
             if (offset == 0 && (rc > 2) && (buffer[0] == '#')
-                && (buffer[1] == '!')) {
+                && (buffer[1] == '!'))
+            {
                 // Turn it into a JavaScript comment.
                 buffer[0] = buffer[1] = '/';
             }
@@ -1095,7 +1149,8 @@ load_from_path(const ghc::filesystem::path& path,
                 log_warning("Empty format file: %s", filename.c_str());
             } else {
                 for (auto iter = format_list.begin(); iter != format_list.end();
-                     ++iter) {
+                     ++iter)
+                {
                     log_info("  found format: %s", iter->get());
                 }
             }

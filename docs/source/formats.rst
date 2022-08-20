@@ -1,4 +1,3 @@
-
 .. _log_formats:
 
 Log Formats
@@ -275,6 +274,18 @@ should be another object with the following fields:
           ;SELECT :sc_status || ' (' || (
               SELECT message FROM http_status_codes
                   WHERE status = :sc_status) || ') '
+
+  :tags: This object contains the tags that should automatically be added to
+    log messages.
+
+    :pattern: The regular expression evaluated over a line in the log file as
+      it is read in.  If there is a match, the log message the line is a part
+      of will have this tag added to it.
+    :paths: This array contains objects that define restrictions on the file
+      paths that the tags will be applied to.  The objects in this array can
+      contain:
+
+      :glob: A glob pattern to check against the log files read by lnav.
 
   .. _format_sample:
 

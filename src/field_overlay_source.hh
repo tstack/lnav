@@ -79,6 +79,7 @@ public:
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_lines;
+    vis_line_t fos_meta_lines_row{0_vl};
     std::vector<attr_line_t> fos_meta_lines;
 };
 
