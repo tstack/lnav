@@ -745,7 +745,7 @@ static struct json_path_container format_tag_def_handlers = {
 };
 
 static struct json_path_container tag_handlers = {
-    yajlpp::pattern_property_handler("(?<tag_name>[^/]+)")
+    yajlpp::pattern_property_handler("(?<tag_name>[\\w:;\\._\\-]+)")
         .with_description("The name of the tag to apply")
         .with_obj_provider(format_tag_def_provider)
         .with_children(format_tag_def_handlers),

@@ -289,7 +289,7 @@
                     "title": "/<format_name>/tags",
                     "type": "object",
                     "patternProperties": {
-                        "([^/]+)": {
+                        "([\\w:;\\._\\-]+)": {
                             "description": "The name of the tag to apply",
                             "title": "/<format_name>/tags/<tag_name>",
                             "type": "object",
