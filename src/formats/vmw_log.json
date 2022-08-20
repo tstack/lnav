@@ -132,6 +132,7 @@
         },
         "tags": {
             "test-failure": {
+                "description": "Tag for gtest test-case failures",
                 "paths": [
                     {
                         "glob": "*/test.log"

@@ -320,6 +320,31 @@
                                     "examples": [
                                         "\\w+ is down"
                                     ]
+                                },
+                                "description": {
+                                    "title": "/<format_name>/tags/<tag_name>/description",
+                                    "description": "A description of this tag",
+                                    "type": "string"
+                                },
+                                "level": {
+                                    "title": "/<format_name>/tags/<tag_name>/level",
+                                    "description": "Constrain hits to log messages with this level",
+                                    "type": "string",
+                                    "enum": [
+                                        "trace",
+                                        "debug5",
+                                        "debug4",
+                                        "debug3",
+                                        "debug2",
+                                        "debug",
+                                        "info",
+                                        "stats",
+                                        "notice",
+                                        "warning",
+                                        "error",
+                                        "critical",
+                                        "fatal"
+                                    ]
                                 }
                             },
                             "additionalProperties": false

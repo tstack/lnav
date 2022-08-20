@@ -742,10 +742,19 @@ static struct json_path_container format_tag_def_handlers = {
                           "the log message")
         .with_example("\\w+ is down")
         .for_field(&format_tag_def::ftd_pattern),
+    yajlpp::property_handler("description")
+        .with_synopsis("<string>")
+        .with_description("A description of this tag")
+        .for_field(&format_tag_def::ftd_description),
+    json_path_handler("level")
+        .with_synopsis("<log-level>")
+        .with_description("Constrain hits to log messages with this level")
+        .with_enum_values(LEVEL_ENUM)
+        .for_field(&format_tag_def::ftd_level),
 };
 
 static struct json_path_container tag_handlers = {
-    yajlpp::pattern_property_handler("(?<tag_name>[\\w:;\\._\\-]+)")
+    yajlpp::pattern_property_handler(R"((?<tag_name>[\w:;\._\-]+))")
         .with_description("The name of the tag to apply")
         .with_obj_provider(format_tag_def_provider)
         .with_children(format_tag_def_handlers),

@@ -312,8 +312,10 @@ struct format_tag_def {
     };
 
     std::string ftd_name;
+    std::string ftd_description;
     std::vector<path_restriction> ftd_paths;
     std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> ftd_pattern;
+    log_level_t ftd_level{LEVEL_UNKNOWN};
 };
 
 #endif

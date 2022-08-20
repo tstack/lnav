@@ -625,11 +625,18 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                     auto sf = sbr.to_string_fragment();
 
                     for (const auto& td : this->lf_applicable_taggers) {
+                        auto curr_ll = this->end() - 1;
+
+                        if (td->ftd_level != LEVEL_UNKNOWN
+                            && td->ftd_level != curr_ll->get_msg_level())
+                        {
+                            continue;
+                        }
+
                         pcre_context_static<30> pc;
                         pcre_input pi(sf);
                         if (td->ftd_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK))
                         {
-                            auto curr_ll = this->end() - 1;
                             curr_ll->set_mark(true);
                             while (curr_ll->is_continued()) {
                                 --curr_ll;
