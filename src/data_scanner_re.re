@@ -47,6 +47,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         cap[1].c_end = pi.pi_next_offset; \
         token_out = tok; \
     }
+
 #   define RET(tok) { \
         CAPTURE(tok); \
         return true; \
@@ -136,7 +137,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        EOF { return false; }
 
-       ("u"|"r")?'"'('\\'.|[^\x00\"\\]|'""')*'"' {
+       ("u"|"r")?'"'('\\'.|[^\x00"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (pi.get_string()[cap[1].c_begin]) {
            case 'u':
@@ -151,7 +152,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00\'\\])*"'"/[^sS] {
+       ("u"|"r")?"'"('\\'.|"''"|[^\x00'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            switch (pi.get_string()[cap[1].c_begin]) {
            case 'u':
@@ -163,7 +164,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            cap[1].c_end -= 1;
            return true;
        }
-       [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../")[a-zA-Z0-9_\.\-\~/!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
@@ -236,7 +237,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 

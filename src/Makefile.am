@@ -86,7 +86,7 @@ time_fmts.cc: ptimec$(BUILD_EXEEXT)
 
 if HAVE_RE2C
 %.cc: %.re
-	$(RE2C_V)$(RE2C_CMD) --tags -8 -o $@ $<
+	$(RE2C_V)$(RE2C_CMD) --bit-vectors -W --tags -8 -o $@ $<
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
@@ -357,9 +357,6 @@ THIRD_PARTY_SRCS = \
 
 libdatascanner_a_SOURCES = \
 	data_scanner_re.cc
-# XXX The data_scanner_re optimized build is taking 30+ minutes to run for
-# some reason, so we need to override the flags
-libdatascanner_a_CXXFLAGS = -O1 -g
 
 libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \
