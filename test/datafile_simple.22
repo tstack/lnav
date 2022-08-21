@@ -1,0 +1,9 @@
+             C:\Program Files (x86)\Google\Chrome\Application\new_chrome.exe
+ key   0:0                                                                    
+path   0:63  ^-------------------------------------------------------------^  C:\Program Files (x86)\Google\Chrome\Application\new_chrome.exe
+pair   0:63  ^-------------------------------------------------------------^  C:\Program Files (x86)\Google\Chrome\Application\new_chrome.exe
+msg         :C:\Program Files (x86)\Google\Chrome\Application\new_chrome.exe
+format      :#
+{
+    "col_0": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\new_chrome.exe"
+}
