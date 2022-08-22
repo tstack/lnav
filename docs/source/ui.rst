@@ -184,6 +184,15 @@ On color displays, the log messages will be highlighted as follows:
 
     :config /ui/theme grayscale
 
+.. note::
+
+  If a log message has a timestamp that is out-of-order with its neighboring
+  messages, the timestamp will be highlighted in yellow.  When one of these
+  messages is at the top of the log view, an overlay will display the
+  difference between the "actual time" and the "received time".  The "actual
+  time" is the original textual timestamp.  The "received time" is the time
+  of an earlier message that is larger than this log message's time.
+
 The breadcrumb bar will show the following crumbs:
 
 * the timestamp for the top line;
