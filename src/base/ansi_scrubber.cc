@@ -74,17 +74,17 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             while (!sub_sf.empty()) {
                 auto lhs_opt = sub_sf.consume_codepoint();
                 if (!lhs_opt) {
-                    break;
+                    return;
                 }
                 auto lhs_pair = lhs_opt.value();
                 auto mid_opt = lhs_pair.second.consume_codepoint();
                 if (!mid_opt) {
-                    break;
+                    return;
                 }
                 auto mid_pair = mid_opt.value();
                 auto rhs_opt = mid_pair.second.consume_codepoint();
                 if (!rhs_opt) {
-                    break;
+                    return;
                 }
                 auto rhs_pair = rhs_opt.value();
                 sub_sf = rhs_pair.second;
@@ -118,10 +118,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         bold_range.lr_start = fill_index;
                         bold_range.lr_end = fill_index + 1;
                     }
-                    ww898::utf::utf8::write(lhs_pair.first,
-                                            [&str, &fill_index](auto ch) {
-                                                str[fill_index++] = ch;
-                                            });
+                    try {
+                        ww898::utf::utf8::write(lhs_pair.first,
+                                                [&str, &fill_index](auto ch) {
+                                                    str[fill_index++] = ch;
+                                                });
+                    } catch (const std::runtime_error& e) {
+                        log_error("invalid UTF-8 at %d", sf.sf_begin);
+                        return;
+                    }
                 }
             }
 
