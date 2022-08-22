@@ -1203,3 +1203,31 @@ view_colors::roles::file()
 {
     return VC_ROLE.value(role_t::VCR_FILE);
 }
+
+#include <term.h>
+
+Result<screen_curses, std::string>
+screen_curses::create()
+{
+    int errret = 0;
+    if (setupterm(nullptr, STDIN_FILENO, &errret) == ERR) {
+        switch (errret) {
+            case 1:
+                return Err(std::string("the terminal is a hardcopy, da fuq?!"));
+            case 0:
+                return Err(
+                    fmt::format(FMT_STRING("the TERM environment variable is "
+                                           "set to an unknown value: {}"),
+                                getenv("TERM")));
+            case -1:
+                return Err(
+                    std::string("the terminfo database could not be found"));
+            default:
+                return Err(std::string("setupterm() failed unexpectedly"));
+        }
+    }
+
+    newterm(nullptr, stdout, stdin);
+
+    return Ok(screen_curses{stdscr});
+}

@@ -53,7 +53,6 @@
 #else
 #    error "SysV or X/Open-compatible Curses header file required"
 #endif
-
 #include <functional>
 #include <map>
 #include <string>
@@ -84,15 +83,40 @@ class view_curses;
  */
 class screen_curses : public log_crash_recoverer {
 public:
-    void log_crash_recover() override { endwin(); }
+    static Result<screen_curses, std::string> create();
 
-    screen_curses() : sc_main_window(initscr()) {}
+    void log_crash_recover() override
+    {
+        if (this->sc_main_window != nullptr) {
+            endwin();
+        }
+    }
 
-    virtual ~screen_curses() { endwin(); }
+    virtual ~screen_curses()
+    {
+        if (this->sc_main_window != nullptr) {
+            endwin();
+        }
+    }
+
+    screen_curses(screen_curses&& other)
+        : sc_main_window(std::exchange(other.sc_main_window, nullptr))
+    {
+    }
+
+    screen_curses(const screen_curses&) = delete;
+
+    screen_curses& operator=(screen_curses&& other)
+    {
+        this->sc_main_window = std::exchange(other.sc_main_window, nullptr);
+        return *this;
+    }
 
     WINDOW* get_window() { return this->sc_main_window; }
 
 private:
+    screen_curses(WINDOW* win) : sc_main_window(win) {}
+
     WINDOW* sc_main_window;
 };
 

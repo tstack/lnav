@@ -1006,13 +1006,6 @@ looper()
     static auto* filter_source = injector::get<filter_sub_source*>();
 
     try {
-        auto_fd errpipe[2];
-        auto_fd::pipe(errpipe);
-
-        dup2(errpipe[1], STDERR_FILENO);
-        errpipe[1].reset();
-        log_pipe_err(errpipe[0]);
-
         auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
                                           sql_cmd_map_tag>();
         auto& ec = lnav_data.ld_exec_context;
@@ -1091,7 +1084,26 @@ looper()
         (void) signal(SIGWINCH, sigwinch);
         (void) signal(SIGCHLD, sigchld);
 
-        screen_curses sc;
+        auto create_screen_res = screen_curses::create();
+
+        if (create_screen_res.isErr()) {
+            log_error("create screen failed with: %s",
+                      create_screen_res.unwrapErr().c_str());
+            lnav::console::print(
+                stderr,
+                lnav::console::user_message::error("unable to open TUI")
+                    .with_reason(create_screen_res.unwrapErr()));
+            return;
+        }
+
+        auto sc = create_screen_res.unwrap();
+
+        auto_fd errpipe[2];
+        auto_fd::pipe(errpipe);
+
+        dup2(errpipe[1], STDERR_FILENO);
+        errpipe[1].reset();
+        log_pipe_err(errpipe[0]);
         lnav_behavior lb;
 
         ui_periodic_timer::singleton();
@@ -1264,8 +1276,8 @@ looper()
         lnav_data.ld_status[LNS_TOP].set_enabled(false);
         lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
-        for (auto& sc : lnav_data.ld_status) {
-            sc.set_window(lnav_data.ld_window);
+        for (auto& stat_bar : lnav_data.ld_status) {
+            stat_bar.set_window(lnav_data.ld_window);
         }
         lnav_data.ld_status[LNS_BOTTOM].set_data_source(
             &lnav_data.ld_bottom_source);

@@ -53,7 +53,7 @@ main(int argc, char* argv[])
     setlocale(LC_ALL, "");
 
     {
-        screen_curses sc;
+        auto sc = screen_curses::create().unwrap();
         WINDOW* win = sc.get_window();
         struct line_range lr(0, 40);
         attr_line_t al;

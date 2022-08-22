@@ -101,8 +101,7 @@ main(int argc, char* argv[])
 
     drive_data.dd_rl_view = &rlc;
 
-    screen_curses sc;
-
+    auto sc = screen_curses::create().unwrap();
     keypad(stdscr, TRUE);
     nonl();
     cbreak();

@@ -108,8 +108,7 @@ main(int argc, char* argv[])
             "ab\bcdef",
         };
 
-        screen_curses sc;
-
+        auto sc = screen_curses::create().unwrap();
         noecho();
         vt.set_window(sc.get_window());
         vt.set_width(10);
