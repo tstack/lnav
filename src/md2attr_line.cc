@@ -192,6 +192,53 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                                                    code_detail->lang.size);
         if (lang_sf == "lnav") {
             readline_lnav_highlighter(block_text, block_text.length());
+        } else if (lang_sf == "sql" || lang_sf == "sqlite") {
+            readline_sqlite_highlighter(block_text, block_text.length());
+        } else if (lang_sf == "shell" || lang_sf == "bash") {
+            readline_shlex_highlighter(block_text, block_text.length());
+        } else if (lang_sf == "console"
+                   || lang_sf.iequal(
+                       string_fragment::from_const("shellsession")))
+        {
+            static const pcrepp SH_PROMPT(R"([^\$>#%]*[\$>#%]\s+)");
+
+            attr_line_t new_block_text;
+            attr_line_t cmd_block;
+            int prompt_size = 0;
+
+            for (auto line : block_text.split_lines()) {
+                if (!cmd_block.empty()
+                    && endswith(cmd_block.get_string(), "\\\n"))
+                {
+                    cmd_block.append(line).append("\n");
+                    continue;
+                }
+
+                if (!cmd_block.empty()) {
+                    readline_shlex_highlighter_int(
+                        cmd_block,
+                        cmd_block.length(),
+                        line_range{prompt_size, (int) cmd_block.length()});
+                    new_block_text.append(cmd_block);
+                    cmd_block.clear();
+                }
+
+                pcre_context_static<10> pc;
+                pcre_input pi(line.get_string());
+
+                if (SH_PROMPT.match(pc, pi)) {
+                    prompt_size = pc.all()->length();
+                    line.with_attr(string_attr{
+                        line_range{0, prompt_size},
+                        VC_ROLE.value(role_t::VCR_LIST_GLYPH),
+                    });
+                    cmd_block.append(line).append("\n");
+                } else {
+                    line.with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
+                    new_block_text.append(line).append("\n");
+                }
+            }
+            block_text = new_block_text;
         }
 
         auto code_lines = block_text.rtrim().split_lines();

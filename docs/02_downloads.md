@@ -15,8 +15,8 @@ Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/rele
 
 Install from the [Snap Store](https://snapcraft.io/lnav):
 
-```shell
-% sudo snap install lnav
+```console
+$ sudo snap install lnav
 ```
 
 ## MacOS
@@ -26,8 +26,8 @@ Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/rele
 
 Install using [Homebrew](https://formulae.brew.sh/formula/lnav):
 
-```shell
-% brew install lnav
+```console
+$ brew install lnav
 ```
 
 ## Source
@@ -37,12 +37,12 @@ Download the [source](https://github.com/tstack/lnav/releases/download/v{{site.v
 and install any dependencies.  The following commands will unpack the source
 tar ball, configure the build for your system, build, and then install:
 
-```shell
-% tar xvfz lnav-{{site.version}}.tar.gz
-% cd lnav-{{site.version}}
-% ./configure
-% make
-% make install
+```console
+$ tar xvfz lnav-{{site.version}}.tar.gz
+$ cd lnav-{{site.version}}
+$ ./configure
+$ make
+$ make install
 ```
 
 ### GitHub

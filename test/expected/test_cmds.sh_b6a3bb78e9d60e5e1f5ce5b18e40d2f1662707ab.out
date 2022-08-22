@@ -70,7 +70,7 @@ been loaded, you can use the following options:
    the file "foo.log" and go to the tenth line in the file,
    you can do:
    
-    ▌[37m[40mlnav -c ':goto 10' foo.log              [0m
+    ▌[37m[40mlnav -c [0m[35m[40m':goto 10'[0m[37m[40m foo.log              [0m
    
    This option can be given multiple times to execute
    multiple operations in sequence.

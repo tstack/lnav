@@ -45,10 +45,6 @@ static void readline_sqlite_highlighter_int(attr_line_t& al,
                                             int x,
                                             line_range sub);
 
-static void readline_shlex_highlighter_int(attr_line_t& al,
-                                           int x,
-                                           line_range sub);
-
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
 {
@@ -307,7 +303,7 @@ readline_sqlite_highlighter(attr_line_t& al, int x)
         al, x, line_range{0, (int) al.get_string().length()});
 }
 
-static void
+void
 readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     attr_line_builder alb(al);

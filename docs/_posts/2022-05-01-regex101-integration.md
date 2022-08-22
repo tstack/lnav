@@ -39,7 +39,7 @@ defaults to "std" if not given). For example, the following command can be used
 to import the regex at "https://regex101.com/r/zpEnjV/2" into the format named "
 re101_example_log":
 
-```shell
+```console
 $ lnav -m regex101 import https://regex101.com/r/zpEnjV/2 re101_example_log
 ```
 
@@ -53,7 +53,7 @@ If you have a log format with a regex that needs to be updated, you can push
 the regex to regex101.com for editing with a command like (replace
 "myformat_log"/"std" with the name of your format and regex):
 
-```shell
+```console
 $ lnav -m format myformat_log regex std regex101 push
 ```
 
@@ -63,7 +63,7 @@ the new regex101.com entry will be printed out. You can use that URL to edit the
 regex to your needs. Once you're done editing the regex, you can pull the
 changes down to a "patch" file using the following command:
 
-```shell
+```console
 $ lnav -m format myformat_log regex std regex101 pull
 ```
 

@@ -126,8 +126,8 @@ flag to specify the commands or queries you want to execute. For example, to get
 the top 10 client IP addresses from an apache access log file and write the
 results to standard out in CSV format:
 
-```shell
-% lnav -n \
+```console
+$ lnav -n \
     -c ';SELECT c_ip, count(*) AS total FROM access_log GROUP BY c_ip ORDER BY total DESC LIMIT 10' \
     -c ':write-csv-to -' \
     access.log

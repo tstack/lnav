@@ -143,7 +143,7 @@ Lnav follows the usual GNU style for configuring and installing software:
 
 Run `./autogen.sh` if compiling from a cloned repository.
 
-```
+```console
 $ ./configure
 $ make
 $ sudo make install
