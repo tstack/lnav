@@ -222,6 +222,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
     }
 
     this->fos_known_key_size = LOG_BODY.length();
+    if (!this->fos_contexts.empty()) {
+        this->fos_known_key_size += this->fos_contexts.top().c_prefix.length();
+    }
     this->fos_unknown_key_size = 0;
 
     for (auto& ldh_line_value : this->fos_log_helper.ldh_line_values.lvv_values)
