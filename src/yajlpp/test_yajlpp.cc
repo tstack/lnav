@@ -93,6 +93,7 @@ main(int argc, char* argv[])
         auto handle = yajl_alloc(&cbs, nullptr, nullptr);
         auto rc = yajl_parse(handle, (const unsigned char*) UNICODE_BARF, 12);
         assert(rc == yajl_status_ok);
+        yajl_free(handle);
     }
 
     struct json_path_container test_obj_handler = {

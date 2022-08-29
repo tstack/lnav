@@ -52,6 +52,8 @@ steps:
 Welcome to the first _interactive_ **lnav** tutorial!
 
 This tutorial will guide you through the basics of navigating log files.
+Pressing `q` will display an example log file to try out commands on.
+Pressing `y` will return you to the next step in the tutorial.
 
 ## Step 1
 

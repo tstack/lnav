@@ -4333,7 +4333,9 @@ com_config(exec_context& ec,
                     if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
-                        save_config();
+                        if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
+                            save_config();
+                        }
                     }
                 }
             }
@@ -4380,7 +4382,9 @@ com_reset_config(exec_context& ec,
             if (!ec.ec_dry_run) {
                 reset_config(option);
                 rollback_lnav_config = lnav_config;
-                save_config();
+                if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
+                    save_config();
+                }
             }
             if (option == "*") {
                 retval = "info: reset all options";
