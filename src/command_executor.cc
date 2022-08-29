@@ -1106,6 +1106,15 @@ exec_context::execute(const std::string& cmdline)
 void
 exec_context::add_error_context(lnav::console::user_message& um)
 {
+    switch (um.um_level) {
+        case lnav::console::user_message::level::raw:
+        case lnav::console::user_message::level::info:
+        case lnav::console::user_message::level::ok:
+            return;
+        default:
+            break;
+    }
+
     if (um.um_snippets.empty()) {
         um.with_snippets(this->ec_source);
     }

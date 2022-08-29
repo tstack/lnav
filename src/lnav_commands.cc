@@ -715,12 +715,14 @@ com_goto_mark(exec_context& ec,
                 }
 
                 if (!new_top) {
-                    return ec.make_error(
-                        "no more {} bookmarks after here",
+                    auto um = lnav::console::user_message::info(fmt::format(
+                        FMT_STRING("no more {} bookmarks after here"),
                         fmt::join(mark_types
                                       | lnav::itertools::map(
                                           &bookmark_type_t::get_name),
-                                  ", "));
+                                  ", ")));
+
+                    return Err(um);
                 }
             } else {
                 for (const auto& bt : mark_types) {
@@ -733,7 +735,14 @@ com_goto_mark(exec_context& ec,
                 }
 
                 if (!new_top) {
-                    return ec.make_error("no more bookmarks before here");
+                    auto um = lnav::console::user_message::info(fmt::format(
+                        FMT_STRING("no more {} bookmarks before here"),
+                        fmt::join(mark_types
+                                      | lnav::itertools::map(
+                                          &bookmark_type_t::get_name),
+                                  ", ")));
+
+                    return Err(um);
                 }
             }
 

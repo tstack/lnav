@@ -1194,11 +1194,18 @@ looper()
 
         auto ecb_guard
             = lnav_data.ld_exec_context.add_error_callback([](const auto& um) {
-                  lnav_data.ld_user_message_source.replace_with(
-                      um.to_attr_line().rtrim());
-                  lnav_data.ld_user_message_view.reload_data();
-                  lnav_data.ld_user_message_expiration
-                      = std::chrono::steady_clock::now() + 20s;
+                  auto al = um.to_attr_line().rtrim();
+
+                  if (al.get_string().find('\n') == std::string::npos) {
+                      if (lnav_data.ld_rl_view) {
+                          lnav_data.ld_rl_view->set_attr_value(al);
+                      }
+                  } else {
+                      lnav_data.ld_user_message_source.replace_with(al);
+                      lnav_data.ld_user_message_view.reload_data();
+                      lnav_data.ld_user_message_expiration
+                          = std::chrono::steady_clock::now() + 20s;
+                  }
               });
 
         {
