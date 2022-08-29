@@ -39,6 +39,7 @@
 #include "base/result.h"
 #include "log_level.hh"
 #include "mapbox/variant.hpp"
+#include "yajlpp/yajlpp.hh"
 
 struct rgb_color {
     static Result<rgb_color, std::string> from_str(const string_fragment& sf);
@@ -121,17 +122,13 @@ struct term_color_palette {
 
 namespace styling {
 
-struct semantic {
-};
+struct semantic {};
 
 class color_unit {
 public:
     static Result<color_unit, std::string> from_str(const string_fragment& sf);
 
-    static color_unit make_empty()
-    {
-        return color_unit{rgb_color{}};
-    }
+    static color_unit make_empty() { return color_unit{rgb_color{}}; }
 
     bool empty() const
     {
@@ -164,65 +161,65 @@ struct highlighter_config {
 
 struct lnav_theme {
     std::map<std::string, std::string> lt_vars;
-    style_config lt_style_identifier;
-    style_config lt_style_text;
-    style_config lt_style_alt_text;
-    style_config lt_style_ok;
-    style_config lt_style_info;
-    style_config lt_style_error;
-    style_config lt_style_warning;
-    style_config lt_style_popup;
-    style_config lt_style_focused;
-    style_config lt_style_disabled_focused;
-    style_config lt_style_scrollbar;
-    style_config lt_style_hidden;
-    style_config lt_style_adjusted_time;
-    style_config lt_style_skewed_time;
-    style_config lt_style_offset_time;
-    style_config lt_style_invalid_msg;
-    style_config lt_style_status_title;
-    style_config lt_style_status_title_hotkey;
-    style_config lt_style_status_disabled_title;
-    style_config lt_style_status_subtitle;
-    style_config lt_style_status_info;
-    style_config lt_style_status_hotkey;
-    style_config lt_style_quoted_code;
-    style_config lt_style_code_border;
-    style_config lt_style_keyword;
-    style_config lt_style_string;
-    style_config lt_style_comment;
-    style_config lt_style_doc_directive;
-    style_config lt_style_variable;
-    style_config lt_style_symbol;
-    style_config lt_style_number;
-    style_config lt_style_re_special;
-    style_config lt_style_re_repeat;
-    style_config lt_style_diff_delete;
-    style_config lt_style_diff_add;
-    style_config lt_style_diff_section;
-    style_config lt_style_low_threshold;
-    style_config lt_style_med_threshold;
-    style_config lt_style_high_threshold;
-    style_config lt_style_status;
-    style_config lt_style_warn_status;
-    style_config lt_style_alert_status;
-    style_config lt_style_active_status;
-    style_config lt_style_inactive_status;
-    style_config lt_style_inactive_alert_status;
-    style_config lt_style_file;
-    style_config lt_style_header[6];
-    style_config lt_style_hr;
-    style_config lt_style_hyperlink;
-    style_config lt_style_list_glyph;
-    style_config lt_style_breadcrumb;
-    style_config lt_style_table_border;
-    style_config lt_style_table_header;
-    style_config lt_style_quote_border;
-    style_config lt_style_quoted_text;
-    style_config lt_style_footnote_border;
-    style_config lt_style_footnote_text;
-    style_config lt_style_snippet_border;
-    std::map<log_level_t, style_config> lt_level_styles;
+    positioned_property<style_config> lt_style_identifier;
+    positioned_property<style_config> lt_style_text;
+    positioned_property<style_config> lt_style_alt_text;
+    positioned_property<style_config> lt_style_ok;
+    positioned_property<style_config> lt_style_info;
+    positioned_property<style_config> lt_style_error;
+    positioned_property<style_config> lt_style_warning;
+    positioned_property<style_config> lt_style_popup;
+    positioned_property<style_config> lt_style_focused;
+    positioned_property<style_config> lt_style_disabled_focused;
+    positioned_property<style_config> lt_style_scrollbar;
+    positioned_property<style_config> lt_style_hidden;
+    positioned_property<style_config> lt_style_adjusted_time;
+    positioned_property<style_config> lt_style_skewed_time;
+    positioned_property<style_config> lt_style_offset_time;
+    positioned_property<style_config> lt_style_invalid_msg;
+    positioned_property<style_config> lt_style_status_title;
+    positioned_property<style_config> lt_style_status_title_hotkey;
+    positioned_property<style_config> lt_style_status_disabled_title;
+    positioned_property<style_config> lt_style_status_subtitle;
+    positioned_property<style_config> lt_style_status_info;
+    positioned_property<style_config> lt_style_status_hotkey;
+    positioned_property<style_config> lt_style_quoted_code;
+    positioned_property<style_config> lt_style_code_border;
+    positioned_property<style_config> lt_style_keyword;
+    positioned_property<style_config> lt_style_string;
+    positioned_property<style_config> lt_style_comment;
+    positioned_property<style_config> lt_style_doc_directive;
+    positioned_property<style_config> lt_style_variable;
+    positioned_property<style_config> lt_style_symbol;
+    positioned_property<style_config> lt_style_number;
+    positioned_property<style_config> lt_style_re_special;
+    positioned_property<style_config> lt_style_re_repeat;
+    positioned_property<style_config> lt_style_diff_delete;
+    positioned_property<style_config> lt_style_diff_add;
+    positioned_property<style_config> lt_style_diff_section;
+    positioned_property<style_config> lt_style_low_threshold;
+    positioned_property<style_config> lt_style_med_threshold;
+    positioned_property<style_config> lt_style_high_threshold;
+    positioned_property<style_config> lt_style_status;
+    positioned_property<style_config> lt_style_warn_status;
+    positioned_property<style_config> lt_style_alert_status;
+    positioned_property<style_config> lt_style_active_status;
+    positioned_property<style_config> lt_style_inactive_status;
+    positioned_property<style_config> lt_style_inactive_alert_status;
+    positioned_property<style_config> lt_style_file;
+    positioned_property<style_config> lt_style_header[6];
+    positioned_property<style_config> lt_style_hr;
+    positioned_property<style_config> lt_style_hyperlink;
+    positioned_property<style_config> lt_style_list_glyph;
+    positioned_property<style_config> lt_style_breadcrumb;
+    positioned_property<style_config> lt_style_table_border;
+    positioned_property<style_config> lt_style_table_header;
+    positioned_property<style_config> lt_style_quote_border;
+    positioned_property<style_config> lt_style_quoted_text;
+    positioned_property<style_config> lt_style_footnote_border;
+    positioned_property<style_config> lt_style_footnote_text;
+    positioned_property<style_config> lt_style_snippet_border;
+    std::map<log_level_t, positioned_property<style_config>> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };
 

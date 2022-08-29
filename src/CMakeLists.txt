@@ -406,6 +406,7 @@ add_library(
         sequence_matcher.cc
         shlex.cc
         sqlite-extension-func.cc
+        static_file_vtab.cc
         statusview_curses.cc
         string-extension-functions.cc
         sysclip.cc
@@ -435,6 +436,7 @@ add_library(
         xml_util.cc
         xpath_vtab.cc
         xterm_mouse.cc
+        yaml-extension-functions.cc
         third-party/md4c/md4c.c
         third-party/sqlite/ext/series.c
         third-party/sqlite/ext/dbdump.c
@@ -525,6 +527,7 @@ add_library(
         sqlitepp.hh
         sql_help.hh
         sql_util.hh
+        static_file_vtab.hh
         strong_int.hh
         sysclip.hh
         sysclip.cfg.hh
@@ -591,7 +594,10 @@ add_library(
 set(lnav_SRCS lnav.cc)
 
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
-        third-party third-party/base64/include)
+        third-party
+        third-party/base64/include
+        third-party/rapidyaml
+        )
 
 target_link_libraries(
         diag

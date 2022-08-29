@@ -364,7 +364,8 @@ rl_change(readline_curses* rc)
                 }
 
                 if (cmd.c_prompt != nullptr && generation == 0
-                    && trim(line) == args[0]) {
+                    && trim(line) == args[0])
+                {
                     const auto new_prompt
                         = cmd.c_prompt(lnav_data.ld_exec_context, line);
 
@@ -386,7 +387,8 @@ rl_change(readline_curses* rc)
             auto iter = scripts.as_scripts.find(script_name);
 
             if (iter == scripts.as_scripts.end()
-                || iter->second[0].sm_description.empty()) {
+                || iter->second[0].sm_description.empty())
+            {
                 lnav_data.ld_bottom_source.set_prompt(
                     "Enter a script to execute: " ABORT_MSG);
             } else {
@@ -779,7 +781,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         .with_fd(std::move(fd_copy))
                         .with_include_in_session(false)
                         .with_detect_format(false);
-                    lnav_data.ld_files_to_front.emplace_back(desc, 0);
+                    lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
 
                     if (lnav_data.ld_rl_view != nullptr) {
                         lnav_data.ld_rl_view->set_alt_value(

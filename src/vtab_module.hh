@@ -413,6 +413,8 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
             Return retval = f(from_sqlite<Args>()(argc, argv, Idx)...);
 
             to_sqlite(context, std::move(retval));
+        } catch (const lnav::console::user_message& um) {
+            to_sqlite(context, um);
         } catch (from_sqlite_conversion_error& e) {
             char buffer[256];
 
@@ -935,6 +937,8 @@ struct tvt_iterator_cursor {
 
 template<typename T>
 struct tvt_no_update : public T {
+    using T::T;
+
     int delete_row(sqlite3_vtab* vt, sqlite3_int64 rowid)
     {
         vt->zErrMsg = sqlite3_mprintf("Rows cannot be deleted from this table");

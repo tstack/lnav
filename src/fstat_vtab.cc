@@ -104,7 +104,7 @@ CREATE TABLE fstat (
         cursor(sqlite3_vtab* vt) : base({vt})
         {
             memset(&this->c_stat, 0, sizeof(this->c_stat));
-        };
+        }
 
         void load_stat()
         {
@@ -115,7 +115,7 @@ CREATE TABLE fstat (
             {
                 this->c_path_index += 1;
             }
-        };
+        }
 
         int next()
         {
@@ -125,24 +125,18 @@ CREATE TABLE fstat (
             }
 
             return SQLITE_OK;
-        };
-
-        int reset()
-        {
-            return SQLITE_OK;
         }
 
-        int eof()
-        {
-            return this->c_path_index >= this->c_glob->gl_pathc;
-        };
+        int reset() { return SQLITE_OK; }
+
+        int eof() { return this->c_path_index >= this->c_glob->gl_pathc; }
 
         int get_rowid(sqlite3_int64& rowid_out)
         {
             rowid_out = this->c_path_index;
 
             return SQLITE_OK;
-        };
+        }
     };
 
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)

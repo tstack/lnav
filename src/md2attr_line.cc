@@ -33,6 +33,7 @@
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "pcrepp/pcrepp.hh"
+#include "pugixml/pugixml.hpp"
 #include "readline_highlighters.hh"
 #include "view_curses.hh"
 
@@ -145,8 +146,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 last_block.append("\n");
             }
             if (this->ml_list_stack.empty()
-                && !endswith(last_block.get_string(), "\n\n"))
-            {
+                && !endswith(last_block.get_string(), "\n\n")) {
                 last_block.append("\n");
             }
         }
@@ -208,8 +208,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
             for (auto line : block_text.split_lines()) {
                 if (!cmd_block.empty()
-                    && endswith(cmd_block.get_string(), "\\\n"))
-                {
+                    && endswith(cmd_block.get_string(), "\\\n")) {
                     cmd_block.append(line).append("\n");
                     continue;
                 }
@@ -361,8 +360,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 }
             }
             for (size_t line_index = 0; line_index < max_cell_lines;
-                 line_index++)
-            {
+                 line_index++) {
                 size_t col = 0;
                 for (const auto& cell : cells) {
                     block_text.append(" ");
@@ -392,6 +390,12 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
     } else if (bl.is<MD_BLOCK_TD_DETAIL*>()) {
         this->ml_tables.back().t_rows.back().r_columns.push_back(block_text);
     } else {
+        if (bl.is<block_html>()) {
+            if (startswith(block_text.get_string(), "<!--")) {
+                return Ok();
+            }
+        }
+
         text_wrap_settings tws = {0, this->ml_blocks.size() == 1 ? 70 : 10000};
 
         if (!last_block.empty()) {
@@ -456,6 +460,15 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             lr,
             VC_STYLE.value(text_attrs{A_BOLD}),
         });
+    } else if (sp.is<span_u>()) {
+        line_range lr{
+            static_cast<int>(this->ml_span_starts.back()),
+            static_cast<int>(last_block.length()),
+        };
+        last_block.with_attr({
+            lr,
+            VC_STYLE.value(text_attrs{A_UNDERLINE}),
+        });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
         auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
         auto href_str = std::string(a_detail->href.text, a_detail->href.size);
@@ -475,6 +488,7 @@ Result<void, std::string>
 md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 {
     static const auto& entity_map = md4cpp::get_xml_entity_map();
+    static const auto& vc = view_colors::singleton();
 
     auto& last_block = this->ml_blocks.back();
 
@@ -497,6 +511,45 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             }
             break;
         }
+        case MD_TEXT_HTML: {
+            last_block.append(sf);
+            if (sf.startswith("<span ")) {
+                this->ml_html_span_starts.push_back(last_block.length()
+                                                    - sf.length());
+            } else if (sf == "</span>" && !this->ml_html_span_starts.empty()) {
+                std::string html_span = last_block.get_string().substr(
+                    this->ml_html_span_starts.back());
+
+                pugi::xml_document doc;
+
+                auto load_res = doc.load_string(html_span.c_str());
+                if (load_res) {
+                    auto span = doc.child("span");
+                    if (span) {
+                        auto styled_span = attr_line_t(span.text().get());
+
+                        auto span_class = span.attribute("class");
+                        if (span_class) {
+                            auto cl_iter
+                                = vc.vc_class_to_role.find(span_class.value());
+
+                            if (cl_iter == vc.vc_class_to_role.end()) {
+                                log_error("unknown span class: %s",
+                                          span_class.value());
+                            } else {
+                                styled_span.with_attr_for_all(cl_iter->second);
+                            }
+                        }
+                        last_block.erase(this->ml_html_span_starts.back());
+                        last_block.append(styled_span);
+                    }
+                } else {
+                    log_error("failed to parse: %s", load_res.description());
+                }
+                this->ml_html_span_starts.pop_back();
+            }
+            break;
+        }
         default: {
             static const pcrepp REPL_RE(R"(-{2,3}|:[^:\s]*(?:::[^:\s]*)*:)");
             static const auto& emojis = md4cpp::get_emoji_map();
@@ -508,29 +561,36 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
             pcre_input pi(sf);
             pcre_context_static<30> pc;
+            std::string span_text;
 
             while (REPL_RE.match(pc, pi)) {
                 auto prev = pi.get_up_to(pc.all());
-                last_block.append(prev);
+                span_text.append(prev.data(), prev.length());
 
                 auto matched = pi.get_string_fragment(pc.all());
 
                 if (matched == "--") {
-                    last_block.append("\u2013");
+                    span_text.append("\u2013");
                 } else if (matched == "---") {
-                    last_block.append("\u2014");
+                    span_text.append("\u2014");
                 } else if (matched.startswith(":")) {
                     auto em_iter
                         = emojis.em_shortname2emoji.find(matched.to_string());
                     if (em_iter == emojis.em_shortname2emoji.end()) {
-                        last_block.append(matched);
+                        span_text.append(matched.data(), matched.length());
                     } else {
-                        last_block.append(em_iter->second.get().e_value);
+                        span_text.append(em_iter->second.get().e_value);
                     }
                 }
             }
 
-            this->ml_blocks.back().append(sf.substr(pi.pi_offset));
+            auto last_frag = sf.substr(pi.pi_offset);
+            span_text.append(last_frag.data(), last_frag.length());
+
+            text_wrap_settings tws
+                = {0, this->ml_blocks.size() == 1 ? 70 : 10000};
+
+            last_block.append(span_text, &tws);
             break;
         }
     }

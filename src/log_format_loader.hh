@@ -40,6 +40,7 @@
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "ghc/filesystem.hpp"
+#include "shlex.resolver.hh"
 
 class log_vtab_manager;
 
@@ -54,6 +55,7 @@ void load_format_vtabs(log_vtab_manager* vtab_manager,
                        std::vector<lnav::console::user_message>& errors);
 
 void load_format_extra(sqlite3* db,
+                       const std::map<std::string, scoped_value_t>& global_vars,
                        const std::vector<ghc::filesystem::path>& extra_paths,
                        std::vector<lnav::console::user_message>& errors);
 

@@ -66,6 +66,8 @@ child_poller::poll(file_collection& fc)
             return child_poll_result_t::ALIVE;
         },
         [this, &fc](auto_pid<process_state::finished>& finished) {
+            require(this->cp_finalizer);
+
             this->cp_finalizer(fc, finished);
             return child_poll_result_t::FINISHED;
         });

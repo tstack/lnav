@@ -266,8 +266,11 @@ struct string_fragment {
     template<typename P>
     string_fragment find_left_boundary(size_t start, P&& predicate) const
     {
-        assert((int) start < this->length());
+        assert((int) start <= this->length());
 
+        if (start > 0 && start == this->length()) {
+            start -= 1;
+        }
         while (start > 0) {
             if (predicate(this->data()[start])) {
                 start += 1;

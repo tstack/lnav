@@ -100,11 +100,19 @@ highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
 void
 highlighter::annotate(attr_line_t& al, int start) const
 {
+    if (!this->h_regex) {
+        return;
+    }
+
     auto& vc = view_colors::singleton();
     const auto& str = al.get_string();
     auto& sa = al.get_attrs();
     auto sf = string_fragment::from_str_range(
         str, start, std::min(size_t{8192}, str.size()));
+
+    if (!sf.is_valid()) {
+        return;
+    }
 
     pcre_context_static<60> pc;
     pcre_input pi(sf);

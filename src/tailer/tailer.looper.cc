@@ -349,7 +349,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         }
 
         std::vector<std::string> error_queue;
-        log_debug("starting err reader");
+        log_debug("tailer(%s): starting err reader", netloc.c_str());
         std::thread err_reader([netloc,
                                 err = std::move(err_pipe.read_end()),
                                 &error_queue]() mutable {
@@ -358,25 +358,30 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             read_err_pipe(netloc, err, error_queue);
         });
 
-        log_debug("writing to child");
+        log_debug("tailer(%s): writing to child", netloc.c_str());
         auto sf = tailer_bin[0].to_string_fragment();
         ssize_t total_bytes = 0;
+        bool write_failed = false;
 
         while (total_bytes < sf.length()) {
             log_debug("attempting to write %d", sf.length() - total_bytes);
             auto rc = write(
                 in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
 
-            log_debug("wrote %d", rc);
             if (rc < 0) {
+                log_error("  tailer(%s): write failed -- %s",
+                          netloc.c_str(),
+                          strerror(errno));
+                write_failed = true;
                 break;
             }
+            log_debug("  wrote %d", rc);
             total_bytes += rc;
         }
 
         in_pipe.write_end().reset();
 
-        while (true) {
+        while (!write_failed) {
             char buffer[1024];
 
             auto rc = read(out_pipe.read_end(), buffer, sizeof(buffer));
@@ -1142,6 +1147,7 @@ tailer::looper::remote_path_queue::send_synced_to_main(
 void
 tailer::looper::report_error(std::string path, std::string msg)
 {
+    log_error("reporting error: %s -- %s", path.c_str(), msg.c_str());
     isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
         file_collection fc;
 

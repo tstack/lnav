@@ -88,16 +88,20 @@ public:
                            auto_pid<process_state::finished>&)> finalizer)
         : cp_child(std::move(child)), cp_finalizer(std::move(finalizer))
     {
+        ensure(this->cp_finalizer);
     }
 
     child_poller(child_poller&& other) noexcept
         : cp_child(std::move(other.cp_child)),
           cp_finalizer(std::move(other.cp_finalizer))
     {
+        ensure(this->cp_finalizer);
     }
 
     child_poller& operator=(child_poller&& other) noexcept
     {
+        require(other.cp_finalizer);
+
         this->cp_child = std::move(other.cp_child);
         this->cp_finalizer = std::move(other.cp_finalizer);
 
@@ -105,6 +109,10 @@ public:
     }
 
     ~child_poller() noexcept = default;
+
+    child_poller(const child_poller&) = delete;
+
+    child_poller& operator=(const child_poller&) = delete;
 
     child_poll_result_t poll(file_collection& fc);
 

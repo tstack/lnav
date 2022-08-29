@@ -644,13 +644,16 @@ textview_curses::execute_search(const std::string& regex_orig)
     }
 }
 
-void
-textview_curses::horiz_shift(vis_line_t start,
-                             vis_line_t end,
-                             int off_start,
-                             std::pair<int, int>& range_out)
+nonstd::optional<std::pair<int, int>>
+textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
 {
-    auto& hl = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
+    auto hl_iter
+        = this->tc_highlights.find({highlight_source_t::PREVIEW, "search"});
+    if (hl_iter == this->tc_highlights.end()
+        || hl_iter->second.h_regex == nullptr)
+    {
+        return nonstd::nullopt;
+    }
     int prev_hit = -1, next_hit = INT_MAX;
 
     for (; start < end; ++start) {
@@ -660,7 +663,7 @@ textview_curses::horiz_shift(vis_line_t start,
         const auto& str = rows[0].get_string();
         pcre_context_static<60> pc;
         pcre_input pi(str);
-        while (hl.h_regex->match(pc, pi)) {
+        while (hl_iter->second.h_regex->match(pc, pi)) {
             if (pc.all()->c_begin < off_start) {
                 prev_hit = std::max(prev_hit, pc.all()->c_begin);
             } else if (pc.all()->c_begin > off_start) {
@@ -669,7 +672,10 @@ textview_curses::horiz_shift(vis_line_t start,
         }
     }
 
-    range_out = std::make_pair(prev_hit, next_hit);
+    if (prev_hit == -1 && next_hit == INT_MAX) {
+        return nonstd::nullopt;
+    }
+    return std::make_pair(prev_hit, next_hit);
 }
 
 void
@@ -1116,4 +1122,13 @@ logfile_filter_state::content_line_to_vis_line(uint32_t line)
     }
 
     return nonstd::make_optional(std::distance(this->tfs_index.begin(), iter));
+}
+
+std::string
+text_anchors::to_anchor_string(const std::string& raw)
+{
+    static const pcrepp ANCHOR_RE(R"([^\w]+)");
+
+    return fmt::format(FMT_STRING("#{}"),
+                       ANCHOR_RE.replace(tolower(raw).c_str(), "-"));
 }

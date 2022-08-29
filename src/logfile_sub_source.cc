@@ -46,6 +46,7 @@
 #include "lnav.events.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
+#include "md2attr_line.hh"
 #include "readline_highlighters.hh"
 #include "relative_time.hh"
 #include "sql_util.hh"
@@ -1908,9 +1909,19 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
     if (!line_meta_opt) {
         value_out.clear();
     } else {
-        bookmark_metadata& bm = *(line_meta_opt.value());
+        auto& bm = *(line_meta_opt.value());
 
-        value_out.append(bm.bm_comment);
+        {
+            md2attr_line mdal;
+
+            auto parse_res = md4cpp::parse(bm.bm_comment, mdal);
+            if (parse_res.isOk()) {
+                value_out.append(parse_res.unwrap().get_string());
+            } else {
+                value_out.append(bm.bm_comment);
+            }
+        }
+
         value_out.append("\x1c");
         for (const auto& tag : bm.bm_tags) {
             value_out.append(tag);

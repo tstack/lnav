@@ -158,6 +158,8 @@ struct key_repeat_history {
     };
 };
 
+using file_location_t = mapbox::util::variant<vis_line_t, std::string>;
+
 struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t ld_session_time;
@@ -171,7 +173,7 @@ struct lnav_data_t {
     std::vector<ghc::filesystem::path> ld_config_paths;
     file_collection ld_active_files;
     std::list<child_poller> ld_child_pollers;
-    std::list<std::pair<std::string, int>> ld_files_to_front;
+    std::list<std::pair<std::string, file_location_t>> ld_files_to_front;
     bool ld_stdout_used;
     sig_atomic_t ld_looping;
     sig_atomic_t ld_winched;
@@ -258,8 +260,7 @@ struct lnav_data_t {
     bool ld_show_help_view{false};
 };
 
-struct static_service {
-};
+struct static_service {};
 
 class main_looper
     : public isc::service<main_looper>

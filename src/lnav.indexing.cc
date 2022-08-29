@@ -150,8 +150,8 @@ public:
 
             auto iter = session_data.sd_file_states.find(lf->get_filename());
             if (iter != session_data.sd_file_states.end()) {
-                log_debug("found state for log file %d",
-                          iter->second.fs_is_visible);
+                log_info("  found visibility state for log file: %d",
+                         iter->second.fs_is_visible);
 
                 lnav_data.ld_log_source.find_data(lf) | [&iter](auto ld) {
                     ld->set_visibility(iter->second.fs_is_visible);
@@ -181,7 +181,7 @@ public:
     }
 
     std::shared_ptr<logfile> front_file;
-    int front_top{-1};
+    file_location_t front_top;
     bool did_promotion{false};
 };
 
@@ -219,12 +219,35 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 old_bottoms[LNV_TEXT] = -1_vl;
             }
 
-            if (cb.front_top < 0) {
-                cb.front_top += text_view.get_inner_height();
-            }
-            if (cb.front_top < text_view.get_inner_height()) {
-                text_view.set_top(vis_line_t(cb.front_top));
+            nonstd::optional<vis_line_t> new_top_opt;
+            cb.front_top.match(
+                [&new_top_opt](vis_line_t vl) {
+                    log_info("file open request to jump to line: %d", (int) vl);
+                    if (vl < 0_vl) {
+                        vl += lnav_data.ld_views[LNV_TEXT].get_inner_height();
+                    }
+                    if (vl < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
+                        new_top_opt = vl;
+                    }
+                },
+                [&new_top_opt](const std::string& loc) {
+                    log_info("file open request to jump to anchor: %s",
+                             loc.c_str());
+                    auto* ta = dynamic_cast<text_anchors*>(
+                        lnav_data.ld_views[LNV_TEXT].get_sub_source());
+
+                    if (ta != nullptr) {
+                        new_top_opt = ta->row_for_anchor(loc);
+                    }
+                });
+            if (new_top_opt) {
+                log_info("  setting requested top line: %d",
+                         (int) new_top_opt.value());
+                text_view.set_top(new_top_opt.value());
+                log_info("  actual top is now: %d", (int) text_view.get_top());
                 scroll_downs[LNV_TEXT] = false;
+            } else {
+                log_warning("could not jump to requested line");
             }
         }
         if (cb.did_promotion && deadline) {
@@ -364,6 +387,7 @@ update_active_files(file_collection& new_files)
             lnav_data.ld_active_files.fc_child_pollers.begin()),
         std::make_move_iterator(
             lnav_data.ld_active_files.fc_child_pollers.end()));
+    lnav_data.ld_active_files.fc_child_pollers.clear();
 
     lnav::events::publish(
         lnav_data.ld_db.in(), new_files.fc_files, [](const auto& lf) {
@@ -393,11 +417,18 @@ rescan_files(bool req)
                 continue;
             }
 
+            if (lnav_data.ld_active_files.fc_name_to_errors.count(pair.first)) {
+                continue;
+            }
+
             if (lnav_data.ld_active_files.fc_synced_files.count(pair.first)
                 == 0)
             {
                 all_synced = false;
             }
+        }
+        if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+            return false;
         }
         if (!all_synced) {
             delay = 30ms;

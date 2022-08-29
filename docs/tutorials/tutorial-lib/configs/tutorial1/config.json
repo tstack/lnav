@@ -1,0 +1,18 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "global": {
+        "lnav_tutorial_name": "tutorial1"
+    },
+    "ui": {
+        "keymap-defs": {
+            "default": {
+                "x79": {
+                    "command": "|lnav-tutorial-key-handler next"
+                },
+                "x59": {
+                    "command": "|lnav-tutorial-key-handler prev"
+                }
+            }
+        }
+    }
+}

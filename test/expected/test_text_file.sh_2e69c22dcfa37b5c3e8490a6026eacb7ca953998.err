@@ -1,0 +1,2 @@
+[1m[31m✘ error[0m: unable to open file: [1mnon-existent:[0m
+ [1m[31mreason[0m: failed to ssh to host: ssh: Could not resolve hostname non-existent: nodename nor servname provided, or not known

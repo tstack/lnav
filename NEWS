@@ -18,6 +18,16 @@ lnav v0.11.0:
        TEXT view.  The breadcrumb bar at the top will also be updated
        depending on the section of the document that you are in and you
        can use it to jump to different parts of the doc.
+     * The ":goto" command will now accept anchor links (i.e. #section-id)
+       as an argument when the text file being viewed has sections.  You
+       can also specify an anchor when opening a file by appending
+       "#<link-name>".  For example, "README.md#screenshot".
+     * Log message comments are now treated as markdown and rendered
+       accordingly in the overlay.  Multi-line comments are now supported
+       as well.
+     * Metadata embedded in files can now be accessed by the
+       "lnav_file_metadata" table.  Currently, only the front-matter in
+       Markdown files is supported.
      * Added an integration with regex101.com to make it easier to edit
        log message regular expressions.  Using the new "management CLI"
        (activated by the -m option), a log format can be created from
@@ -88,6 +98,8 @@ lnav v0.11.0:
      * Added an lnav_views_echo table that is a real SQLite table that
        you can create TRIGGERs on in order to perform actions when
        scrolling in a view.
+     * Added a "yaml_to_json()" SQL function that converts a YAML
+       document to the equivalent JSON.
 
      Breaking Changes:
      * Formats definitions are now checked to ensure that values have a

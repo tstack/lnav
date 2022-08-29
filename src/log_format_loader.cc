@@ -1304,6 +1304,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 
 static void
 exec_sql_in_path(sqlite3* db,
+                 const std::map<std::string, scoped_value_t>& global_vars,
                  const ghc::filesystem::path& path,
                  std::vector<lnav::console::user_message>& errors)
 {
@@ -1321,7 +1322,7 @@ exec_sql_in_path(sqlite3* db,
                 auto content = read_res.unwrap();
 
                 sql_execute_script(
-                    db, filename.c_str(), content.c_str(), errors);
+                    db, global_vars, filename.c_str(), content.c_str(), errors);
             } else {
                 errors.emplace_back(
                     lnav::console::user_message::error(
@@ -1335,11 +1336,12 @@ exec_sql_in_path(sqlite3* db,
 
 void
 load_format_extra(sqlite3* db,
+                  const std::map<std::string, scoped_value_t>& global_vars,
                   const std::vector<ghc::filesystem::path>& extra_paths,
                   std::vector<lnav::console::user_message>& errors)
 {
     for (const auto& extra_path : extra_paths) {
-        exec_sql_in_path(db, extra_path, errors);
+        exec_sql_in_path(db, global_vars, extra_path, errors);
     }
 }
 

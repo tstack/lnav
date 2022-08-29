@@ -2,6 +2,6 @@
  [1m[31mreason[0m: expecting line number/percentage, timestamp, or relative time
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m invalid                           [0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp|#anchor[0m
          ══════════════════════════════════════════════════════════════════════
            Go to the given location in the top view

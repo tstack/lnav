@@ -87,6 +87,10 @@ struct hier_node {
     template<typename F>
     static void depth_first(hier_node* root, F func)
     {
+        if (root == nullptr) {
+            return;
+        }
+
         for (auto& child : root->hn_children) {
             depth_first(child.get(), func);
         }

@@ -101,3 +101,10 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -d /tmp/lnav.err -n \
     -I ${test_dir} \
     ${test_dir}/logfile_xml_msg.0
+
+run_cap_test ${lnav_test} -n -f- \
+    ${test_dir}/logfile_access_log.0 <<'EOF'
+:comment Hello, **World**!
+
+This is `markdown` now!
+EOF

@@ -6,6 +6,15 @@ unset XDG_CONFIG_HOME
 run_cap_test ${lnav_test} -n \
     ${top_srcdir}/README.md
 
+run_cap_test ${lnav_test} -n -c ':goto #screenshot' \
+    ${top_srcdir}/README.md
+
+run_cap_test ${lnav_test} -n ${top_srcdir}/README.md#screenshot
+
+run_cap_test ${lnav_test} -n ${test_dir}/non-existent:4
+
+run_cap_test ${lnav_test} -n ${top_srcdir}/README.md:-4
+
 run_cap_test ${lnav_test} -n \
     -c ':goto 115' \
     -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \

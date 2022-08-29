@@ -46,16 +46,18 @@ int sqlite3_series_init(sqlite3* db,
                         const sqlite3_api_routines* pApi);
 }
 
-sqlite_registration_func_t sqlite_registration_funcs[]
-    = {common_extension_functions,
-       state_extension_functions,
-       string_extension_functions,
-       network_extension_functions,
-       fs_extension_functions,
-       json_extension_functions,
-       time_extension_functions,
+sqlite_registration_func_t sqlite_registration_funcs[] = {
+    common_extension_functions,
+    state_extension_functions,
+    string_extension_functions,
+    network_extension_functions,
+    fs_extension_functions,
+    json_extension_functions,
+    yaml_extension_functions,
+    time_extension_functions,
 
-       nullptr};
+    nullptr,
+};
 
 int
 register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)

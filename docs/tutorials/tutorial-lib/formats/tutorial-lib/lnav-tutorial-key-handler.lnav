@@ -1,0 +1,29 @@
+
+;SELECT filepath AS tutorial_path FROM lnav_file
+   WHERE filepath GLOB '*/tutorial1/index.md' LIMIT 1
+;SELECT CASE
+   WHEN $1 = 'next' AND
+        step < (SELECT max(step) FROM lnav_tutorial_steps WHERE name = $lnav_tutorial_name)
+        THEN step + 1
+   WHEN $1 = 'prev' AND step > 1 THEN step - 1
+   ELSE step
+   END AS new_step
+   FROM lnav_tutorial_step WHERE name = $lnav_tutorial_name
+;SELECT CASE
+   WHEN $1 = 'next' AND
+        step = (SELECT max(step) FROM lnav_tutorial_steps WHERE name = $lnav_tutorial_name)
+        THEN '#conclusion'
+        ELSE '#step-' || $new_step
+        END AS new_anchor
+   FROM lnav_tutorial_step WHERE name = $lnav_tutorial_name
+;UPDATE lnav_tutorial_step SET step = $new_step WHERE name = $lnav_tutorial_name
+;UPDATE lnav_views SET top_meta = json_object(
+    'file', $tutorial_path,
+    'anchor', $new_anchor
+)
+    WHERE name = 'text'
+:switch-to-view text
+;UPDATE lnav_views SET top = 0
+    WHERE name = 'log'
+;REPLACE INTO lnav_user_notifications (id, views, message)
+    SELECT * FROM lnav_tutorial_log_notification;

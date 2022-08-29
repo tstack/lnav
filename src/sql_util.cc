@@ -50,6 +50,7 @@
 #include "pcrepp/pcrepp.hh"
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
+#include "shlex.resolver.hh"
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 
@@ -727,11 +728,109 @@ annotate_sql_with_error(sqlite3* db, const char* sql, const char* tail)
     return retval;
 }
 
-void
+static void
+sql_execute_script(sqlite3* db,
+                   const std::map<std::string, scoped_value_t>& global_vars,
+                   const char* src_name,
+                   sqlite3_stmt* stmt,
+                   std::vector<lnav::console::user_message>& errors)
+{
+    std::map<std::string, scoped_value_t> lvars;
+    bool done = false;
+    int param_count;
+
+    sqlite3_clear_bindings(stmt);
+
+    param_count = sqlite3_bind_parameter_count(stmt);
+    for (int lpc = 0; lpc < param_count; lpc++) {
+        const char* name;
+
+        name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+        if (name[0] == '$') {
+            const char* env_value;
+            auto iter = lvars.find(&name[1]);
+            if (iter != lvars.end()) {
+                mapbox::util::apply_visitor(
+                    sqlitepp::bind_visitor(stmt, lpc + 1), iter->second);
+            } else {
+                auto giter = global_vars.find(&name[1]);
+                if (giter != global_vars.end()) {
+                    mapbox::util::apply_visitor(
+                        sqlitepp::bind_visitor(stmt, lpc + 1), giter->second);
+                } else if ((env_value = getenv(&name[1])) != nullptr) {
+                    sqlite3_bind_text(
+                        stmt, lpc + 1, env_value, -1, SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_bind_null(stmt, lpc + 1);
+                }
+            }
+        } else {
+            sqlite3_bind_null(stmt, lpc + 1);
+        }
+    }
+    while (!done) {
+        int retcode = sqlite3_step(stmt);
+        switch (retcode) {
+            case SQLITE_OK:
+            case SQLITE_DONE:
+                done = true;
+                break;
+
+            case SQLITE_ROW: {
+                int ncols = sqlite3_column_count(stmt);
+
+                for (int lpc = 0; lpc < ncols; lpc++) {
+                    const char* name = sqlite3_column_name(stmt, lpc);
+                    auto* raw_value = sqlite3_column_value(stmt, lpc);
+                    auto value_type = sqlite3_value_type(raw_value);
+                    scoped_value_t value;
+
+                    switch (value_type) {
+                        case SQLITE_INTEGER:
+                            value = (int64_t) sqlite3_value_int64(raw_value);
+                            break;
+                        case SQLITE_FLOAT:
+                            value = sqlite3_value_double(raw_value);
+                            break;
+                        case SQLITE_NULL:
+                            value = null_value_t{};
+                            break;
+                        default:
+                            value = string_fragment::from_bytes(
+                                sqlite3_value_text(raw_value),
+                                sqlite3_value_bytes(raw_value));
+                            break;
+                    }
+                    lvars[name] = value;
+                }
+                break;
+            }
+
+            default: {
+                const auto* sql_str = sqlite3_sql(stmt);
+                auto sql_content
+                    = annotate_sql_with_error(db, sql_str, nullptr);
+
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        "failed to execute SQL statement")
+                        .with_reason(sqlite3_errmsg_to_attr_line(db))
+                        .with_snippet(lnav::console::snippet::from(
+                            intern_string::lookup(src_name), sql_content)));
+                done = true;
+                break;
+            }
+        }
+    }
+
+    sqlite3_reset(stmt);
+}
+
+static void
 sql_compile_script(sqlite3* db,
+                   const std::map<std::string, scoped_value_t>& global_vars,
                    const char* src_name,
                    const char* script_orig,
-                   std::vector<sqlite3_stmt*>& stmts,
                    std::vector<lnav::console::user_message>& errors)
 {
     const char* script = script_orig;
@@ -766,115 +865,27 @@ sql_compile_script(sqlite3* db,
                             intern_string::lookup(src_name), sql_content)
                             .with_line(line_number)));
             break;
-        } else if (script == tail) {
+        }
+        if (script == tail) {
             break;
-        } else if (stmt == nullptr) {
+        }
+        if (stmt == nullptr) {
         } else {
-            stmts.push_back(stmt.release());
+            sql_execute_script(db, global_vars, src_name, stmt.in(), errors);
         }
 
         script = tail;
     }
 }
 
-static void
-sql_execute_script(sqlite3* db,
-                   const char* src_name,
-                   const std::vector<sqlite3_stmt*>& stmts,
-                   std::vector<lnav::console::user_message>& errors)
-{
-    std::map<std::string, std::string> lvars;
-
-    for (sqlite3_stmt* stmt : stmts) {
-        bool done = false;
-        int param_count;
-
-        sqlite3_clear_bindings(stmt);
-
-        param_count = sqlite3_bind_parameter_count(stmt);
-        for (int lpc = 0; lpc < param_count; lpc++) {
-            const char* name;
-
-            name = sqlite3_bind_parameter_name(stmt, lpc + 1);
-            if (name[0] == '$') {
-                std::map<std::string, std::string>::iterator iter;
-                const char* env_value;
-
-                if ((iter = lvars.find(&name[1])) != lvars.end()) {
-                    sqlite3_bind_text(stmt,
-                                      lpc + 1,
-                                      iter->second.c_str(),
-                                      -1,
-                                      SQLITE_TRANSIENT);
-                } else if ((env_value = getenv(&name[1])) != nullptr) {
-                    sqlite3_bind_text(
-                        stmt, lpc + 1, env_value, -1, SQLITE_TRANSIENT);
-                } else {
-                    sqlite3_bind_null(stmt, lpc + 1);
-                }
-            } else {
-                sqlite3_bind_null(stmt, lpc + 1);
-            }
-        }
-        while (!done) {
-            int retcode = sqlite3_step(stmt);
-            switch (retcode) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-
-                case SQLITE_ROW: {
-                    int ncols = sqlite3_column_count(stmt);
-
-                    for (int lpc = 0; lpc < ncols; lpc++) {
-                        const char* name = sqlite3_column_name(stmt, lpc);
-                        const char* value
-                            = (const char*) sqlite3_column_text(stmt, lpc);
-
-                        lvars[name] = value;
-                    }
-                    break;
-                }
-
-                default: {
-                    const auto* sql_str = sqlite3_sql(stmt);
-                    auto sql_content
-                        = annotate_sql_with_error(db, sql_str, nullptr);
-
-                    errors.emplace_back(
-                        lnav::console::user_message::error(
-                            "failed to execute SQL statement")
-                            .with_reason(sqlite3_errmsg_to_attr_line(db))
-                            .with_snippet(lnav::console::snippet::from(
-                                intern_string::lookup(src_name), sql_content)));
-                    done = true;
-                    break;
-                }
-            }
-        }
-
-        sqlite3_reset(stmt);
-    }
-}
-
 void
 sql_execute_script(sqlite3* db,
+                   const std::map<std::string, scoped_value_t>& global_vars,
                    const char* src_name,
                    const char* script,
                    std::vector<lnav::console::user_message>& errors)
 {
-    std::vector<sqlite3_stmt*> stmts;
-    auto init_error_count = errors.size();
-
-    sql_compile_script(db, src_name, script, stmts, errors);
-    if (errors.size() == init_error_count) {
-        sql_execute_script(db, src_name, stmts, errors);
-    }
-
-    for (sqlite3_stmt* stmt : stmts) {
-        sqlite3_finalize(stmt);
-    }
+    sql_compile_script(db, global_vars, src_name, script, errors);
 }
 
 static struct {

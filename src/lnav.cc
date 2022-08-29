@@ -118,6 +118,7 @@
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
+#include "scn/scn.h"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "spectro_source.hh"
@@ -125,6 +126,7 @@
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlitepp.client.hh"
+#include "static_file_vtab.hh"
 #include "tailer/tailer.looper.hh"
 #include "term_extra.hh"
 #include "termios_guard.hh"
@@ -1079,6 +1081,60 @@ looper()
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::COMMAND, "levelname", level_names);
 
+        auto echo_views_stmt_res = prepare_stmt(lnav_data.ld_db,
+#if SQLITE_VERSION_NUMBER < 3033000
+                                                R"(
+        UPDATE lnav_views_echo
+          SET top = (SELECT top FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              left = (SELECT left FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              height = (SELECT height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              inner_height = (SELECT inner_height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              top_time = (SELECT top_time FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              search = (SELECT search FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name)
+          WHERE EXISTS (SELECT * FROM lnav_views WHERE name = lnav_views_echo.name AND
+                    (
+                        lnav_views.top != lnav_views_echo.top OR
+                        lnav_views.left != lnav_views_echo.left OR
+                        lnav_views.height != lnav_views_echo.height OR
+                        lnav_views.inner_height != lnav_views_echo.inner_height OR
+                        lnav_views.top_time != lnav_views_echo.top_time OR
+                        lnav_views.search != lnav_views_echo.search
+                    ))
+        )"
+#else
+                                                R"(
+        UPDATE lnav_views_echo
+          SET top = orig.top,
+              left = orig.left,
+              height = orig.height,
+              inner_height = orig.inner_height,
+              top_time = orig.top_time,
+              search = orig.search
+          FROM (SELECT * FROM lnav_views) AS orig
+          WHERE orig.name = lnav_views_echo.name AND
+                (
+                    orig.top != lnav_views_echo.top OR
+                    orig.left != lnav_views_echo.left OR
+                    orig.height != lnav_views_echo.height OR
+                    orig.inner_height != lnav_views_echo.inner_height OR
+                    orig.top_time != lnav_views_echo.top_time OR
+                    orig.search != lnav_views_echo.search
+                )
+        )"
+#endif
+        );
+
+        if (echo_views_stmt_res.isErr()) {
+            lnav::console::print(
+                stderr,
+                lnav::console::user_message::error(
+                    "unable to prepare UPDATE statement for lnav_views_echo "
+                    "table")
+                    .with_reason(echo_views_stmt_res.unwrapErr()));
+            return;
+        }
+        auto echo_views_stmt = echo_views_stmt_res.unwrap();
+
         (void) signal(SIGINT, sigint);
         (void) signal(SIGTERM, sigint);
         (void) signal(SIGWINCH, sigwinch);
@@ -1369,33 +1425,6 @@ looper()
         auto next_rebuild_time = ui_clock::now();
         auto next_status_update_time = next_rebuild_time;
         auto next_rescan_time = next_rebuild_time;
-
-        auto echo_views_stmt = prepare_stmt(lnav_data.ld_db,
-#if SQLITE_VERSION_NUMBER < 3033000
-                                            R"(
-UPDATE lnav_views_echo
-  SET top = (SELECT top FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-      left = (SELECT left FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-      height = (SELECT height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-      inner_height = (SELECT inner_height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-      top_time = (SELECT top_time FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-      search = (SELECT search FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name)
-)"
-#else
-                                            R"(
-UPDATE lnav_views_echo
-  SET top = orig.top,
-      left = orig.left,
-      height = orig.height,
-      inner_height = orig.inner_height,
-      top_time = orig.top_time,
-      search = orig.search
-  FROM (SELECT * FROM lnav_views) AS orig
-  WHERE orig.name = lnav_views_echo.name
-)"
-#endif
-                                            )
-                                   .unwrap();
 
         while (lnav_data.ld_looping) {
             auto loop_deadline
@@ -1723,7 +1752,6 @@ UPDATE lnav_views_echo
                     && lnav_data.ld_text_source.text_line_count() > 0)
                 {
                     ensure_view(&lnav_data.ld_views[LNV_TEXT]);
-                    lnav_data.ld_views[LNV_TEXT].set_top(0_vl);
                     lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                         f, F, "to switch to the next/previous file"));
                 }
@@ -1811,8 +1839,12 @@ UPDATE lnav_views_echo
                     {
                         const auto& vs
                             = session_data.sd_view_states[view_index];
+                        auto& tview = lnav_data.ld_views[view_index];
 
-                        if (vs.vs_top > 0) {
+                        if (vs.vs_top > 0 && tview.get_top() == 0_vl) {
+                            log_info("restoring %s view top: %d",
+                                     lnav_view_strings[view_index],
+                                     vs.vs_top);
                             lnav_data.ld_views[view_index].set_top(
                                 vis_line_t(vs.vs_top));
                         }
@@ -1820,7 +1852,7 @@ UPDATE lnav_views_echo
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
                         if (lnav_data.ld_active_files.fc_name_to_errors.empty())
                         {
-                            log_debug("switching to paging!");
+                            log_info("switching to paging!");
                             lnav_data.ld_mode = ln_mode_t::PAGING;
                             lnav_data.ld_active_files.fc_files
                                 | lnav::itertools::for_each(
@@ -2017,6 +2049,7 @@ main(int argc, char* argv[])
     }
 
     register_environ_vtab(lnav_data.ld_db.in());
+    register_static_file_vtab(lnav_data.ld_db.in());
     {
         static auto vtab_modules
             = injector::get<std::vector<std::shared_ptr<vtab_module_base>>>();
@@ -2476,7 +2509,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 lnav_data.ld_pipers.push_back(pp);
                 lnav_data.ld_active_files.fc_file_names[desc].with_fd(
                     pp->get_fd());
-                lnav_data.ld_files_to_front.template emplace_back(desc, 0);
+                lnav_data.ld_files_to_front.template emplace_back(desc, 0_vl);
             }))
         .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(2_vl)
@@ -2557,8 +2590,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    load_format_extra(
-        lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
+    load_format_extra(lnav_data.ld_db.in(),
+                      ec.ec_global_vars,
+                      lnav_data.ld_config_paths,
+                      loader_errors);
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {
@@ -2622,8 +2657,35 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     for (auto& file_path : file_args) {
+        auto file_path_without_trailer = file_path;
+        auto file_loc = file_location_t{mapbox::util::no_init{}};
         auto_mem<char> abspath;
         struct stat st;
+
+        auto colon_index = file_path.rfind(':');
+        if (colon_index != std::string::npos) {
+            file_path_without_trailer = file_path.substr(0, colon_index);
+            auto top_range = scn::string_view{&file_path[colon_index + 1],
+                                              &(*file_path.cend())};
+            auto scan_res = scn::scan_value<int>(top_range);
+
+            if (scan_res) {
+                file_path_without_trailer = file_path.substr(0, colon_index);
+                file_loc = vis_line_t(scan_res.value());
+            } else {
+                log_warning(
+                    "failed to parse line number from file path with colon: %s",
+                    file_path.c_str());
+            }
+        }
+        auto hash_index = file_path.rfind('#');
+        if (hash_index != std::string::npos) {
+            file_loc = file_path.substr(hash_index);
+            file_path_without_trailer = file_path.substr(0, hash_index);
+        }
+        if (stat(file_path_without_trailer.c_str(), &st) == 0) {
+            file_path = file_path_without_trailer;
+        }
 
         if (file_path == "-") {
             load_stdin = true;
@@ -2711,6 +2773,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
                 abspath.in(), logfile_open_options());
+            if (file_loc.valid()) {
+                lnav_data.ld_files_to_front.emplace_back(abspath.in(),
+                                                         file_loc);
+            }
         }
     }
 
@@ -2933,13 +2999,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 log_tc->set_top(0_vl);
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
-                text_tc->set_top(0_vl);
-                text_tc->set_height(vis_line_t(text_tc->get_inner_height()));
+                text_tc->set_height(vis_line_t(text_tc->get_inner_height()
+                                               - text_tc->get_top()));
                 setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
                 if (lnav_data.ld_log_source.text_line_count() == 0
                     && lnav_data.ld_text_source.text_line_count() > 0)
                 {
-                    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+                    ensure_view(&lnav_data.ld_views[LNV_TEXT]);
                 }
 
                 log_info("Executing initial commands");

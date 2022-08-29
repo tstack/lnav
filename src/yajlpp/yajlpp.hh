@@ -94,6 +94,7 @@ class yajlpp_parse_context;
 struct yajlpp_provider_context {
     pcre_extractor ypc_extractor;
     size_t ypc_index{0};
+    yajlpp_parse_context* ypc_parse_context;
 
     static constexpr size_t nindex = static_cast<size_t>(-1);
 
@@ -135,10 +136,7 @@ public:
         this->ye_msg = reinterpret_cast<const char*>(yajl_msg.in());
     }
 
-    const char* what() const noexcept override
-    {
-        return this->ye_msg.c_str();
-    }
+    const char* what() const noexcept override { return this->ye_msg.c_str(); }
 
 private:
     std::string ye_msg;
@@ -517,10 +515,7 @@ public:
         return yajl_gen_status_ok;
     }
 
-    yajl_gen_status operator()()
-    {
-        return yajl_gen_null(this->yg_handle);
-    }
+    yajl_gen_status operator()() { return yajl_gen_null(this->yg_handle); }
 
 private:
     yajl_gen yg_handle;
@@ -543,10 +538,7 @@ public:
         yajl_gen_map_open(handle);
     }
 
-    ~yajlpp_map()
-    {
-        yajl_gen_map_close(this->ycb_handle);
-    }
+    ~yajlpp_map() { yajl_gen_map_close(this->ycb_handle); }
 };
 
 class yajlpp_array : public yajlpp_container_base {
@@ -556,10 +548,7 @@ public:
         yajl_gen_array_open(handle);
     }
 
-    ~yajlpp_array()
-    {
-        yajl_gen_array_close(this->ycb_handle);
-    }
+    ~yajlpp_array() { yajl_gen_array_close(this->ycb_handle); }
 };
 
 class yajlpp_gen_context {
@@ -606,15 +595,9 @@ public:
         this->yg_handle = yajl_gen_alloc(nullptr);
     }
 
-    yajl_gen get_handle() const
-    {
-        return this->yg_handle.in();
-    }
+    yajl_gen get_handle() const { return this->yg_handle.in(); }
 
-    operator yajl_gen()
-    {
-        return this->yg_handle.in();
-    }
+    operator yajl_gen() { return this->yg_handle.in(); }
 
     string_fragment to_string_fragment();
 

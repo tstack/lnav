@@ -1626,7 +1626,7 @@ jget(*json*, *ptr*, *\[default\]*)
       Hello
 
   **See Also**
-    :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
+    :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
 
 ----
 
@@ -1710,7 +1710,7 @@ json_concat(*json*, *value*)
       [1,2,3,4,5]
 
   **See Also**
-    :ref:`jget`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
+    :ref:`jget`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
 
 ----
 
@@ -1742,7 +1742,7 @@ json_contains(*json*, *value*)
       1
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_group_array`, :ref:`json_group_object`
+    :ref:`jget`, :ref:`json_concat`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
 
 ----
 
@@ -1773,7 +1773,7 @@ json_group_array(*value*)
       [1,2,3]
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_object`
+    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_object`, :ref:`yaml_to_json`
 
 ----
 
@@ -1805,7 +1805,7 @@ json_group_object(*name*, *value*)
       {"a":1,"b":2}
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`
+    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`yaml_to_json`
 
 ----
 
@@ -3727,6 +3727,30 @@ xpath(*xpath*, *xmldoc*)
 
   **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`
+
+----
+
+
+.. _yaml_to_json:
+
+yaml_to_json(*yaml*)
+^^^^^^^^^^^^^^^^^^^^
+
+  Convert a YAML document to a JSON-encoded string
+
+  **Parameters**
+    * **yaml\*** --- The YAML value to convert to JSON.
+
+  **Examples**
+    To convert the document "abc: def":
+
+    .. code-block::  custsqlite
+
+      ;SELECT yaml_to_json('abc: def')
+      {"abc": "def"}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
 
 ----
 

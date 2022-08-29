@@ -727,7 +727,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n19
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n21
 }
 
 run_test schema_dump
@@ -735,12 +735,14 @@ run_test schema_dump
 check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
+CREATE VIRTUAL TABLE lnav_static_files USING lnav_static_file_vtab_impl();
 CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
 CREATE VIRTUAL TABLE lnav_view_files USING lnav_view_files_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
 CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
+CREATE VIRTUAL TABLE lnav_file_metadata USING lnav_file_metadata_impl();
 CREATE VIEW lnav_view_filters_and_stats AS
   SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();

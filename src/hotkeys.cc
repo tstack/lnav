@@ -162,6 +162,8 @@ handle_keyseq(const char* keyseq)
     auto& var_stack = ec.ec_local_vars;
 
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
+    ec.ec_error_callback_stack
+        = lnav_data.ld_exec_context.ec_error_callback_stack;
     var_stack.push(std::map<std::string, scoped_value_t>());
     auto& vars = var_stack.top();
     vars["keyseq"] = keyseq;
@@ -174,11 +176,7 @@ handle_keyseq(const char* keyseq)
     } else {
         auto um = result.unwrapErr();
 
-        um.um_snippets.clear();
-        um.um_reason.clear();
-        um.um_notes.clear();
-        um.um_help.clear();
-        lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
+        ec.ec_error_callback_stack.back()(um);
     }
 
     if (!kc.kc_alt_msg.empty()) {
@@ -295,12 +293,10 @@ handle_paging_key(int ch)
             break;
 
         case '>': {
-            std::pair<int, int> range;
-
-            tc->horiz_shift(
-                tc->get_top(), tc->get_bottom(), tc->get_left(), range);
-            if (range.second != INT_MAX) {
-                tc->set_left(range.second);
+            auto range_opt = tc->horiz_shift(
+                tc->get_top(), tc->get_bottom(), tc->get_left());
+            if (range_opt && range_opt.value().second != INT_MAX) {
+                tc->set_left(range_opt.value().second);
                 lnav_data.ld_rl_view->set_alt_value(
                     HELP_MSG_1(m, "to bookmark a line"));
             } else {
@@ -312,12 +308,10 @@ handle_paging_key(int ch)
             if (tc->get_left() == 0) {
                 alerter::singleton().chime("no more search hits to the left");
             } else {
-                std::pair<int, int> range;
-
-                tc->horiz_shift(
-                    tc->get_top(), tc->get_bottom(), tc->get_left(), range);
-                if (range.first != -1) {
-                    tc->set_left(range.first);
+                auto range_opt = tc->horiz_shift(
+                    tc->get_top(), tc->get_bottom(), tc->get_left());
+                if (range_opt && range_opt.value().first != -1) {
+                    tc->set_left(range_opt.value().first);
                 } else {
                     tc->set_left(0);
                 }
@@ -395,8 +389,7 @@ handle_paging_key(int ch)
                     tc->shift_top(1_vl);
                 }
                 if (lnav_data.ld_last_user_mark[tc] + 1
-                    >= tc->get_inner_height())
-                {
+                    >= tc->get_inner_height()) {
                     break;
                 }
                 lnav_data.ld_last_user_mark[tc] += 1;
@@ -442,8 +435,7 @@ handle_paging_key(int ch)
 
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc)
-                == lnav_data.ld_last_user_mark.end())
-            {
+                == lnav_data.ld_last_user_mark.end()) {
                 alerter::singleton().chime("no lines have been marked");
             } else {
                 int start_line = std::min((int) tc->get_top(),
@@ -459,20 +451,20 @@ handle_paging_key(int ch)
             break;
 
 #if 0
-    case 'S':
-        {
-            bookmark_vector<vis_line_t>::iterator iter;
+            case 'S':
+                {
+                    bookmark_vector<vis_line_t>::iterator iter;
 
-            for (iter = bm[&textview_curses::BM_SEARCH].begin();
-                 iter != bm[&textview_curses::BM_SEARCH].end();
-                 ++iter) {
-                tc->toggle_user_mark(&textview_curses::BM_USER, *iter);
-            }
+                    for (iter = bm[&textview_curses::BM_SEARCH].begin();
+                         iter != bm[&textview_curses::BM_SEARCH].end();
+                         ++iter) {
+                        tc->toggle_user_mark(&textview_curses::BM_USER, *iter);
+                    }
 
-            lnav_data.ld_last_user_mark[tc] = -1;
-            tc->reload_data();
-        }
-        break;
+                    lnav_data.ld_last_user_mark[tc] = -1;
+                    tc->reload_data();
+                }
+                break;
 #endif
 
         case 's':
@@ -487,8 +479,7 @@ handle_paging_key(int ch)
                 while (next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL)
-                    {
+                               == log_accel::A_DECEL) {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -511,8 +502,7 @@ handle_paging_key(int ch)
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL)
-                    {
+                               == log_accel::A_DECEL) {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -625,8 +615,7 @@ handle_paging_key(int ch)
                     while (true) {
                         if (ch == 'o') {
                             if (++next_helper.lh_current_line
-                                >= tc->get_inner_height())
-                            {
+                                >= tc->get_inner_height()) {
                                 break;
                             }
                         } else {
@@ -782,8 +771,7 @@ handle_paging_key(int ch)
                     for (row = 0; row < dls.dls_rows.size(); row++) {
                         if (strcmp(dls.dls_rows[row][log_line_index.value()],
                                    linestr.data())
-                            == 0)
-                        {
+                            == 0) {
                             vis_line_t db_line(row);
 
                             db_tc->set_top(db_line);
@@ -821,8 +809,7 @@ handle_paging_key(int ch)
                         size_t col_len = strlen(col_value);
 
                         if (dts.scan(col_value, col_len, nullptr, &tm, tv)
-                            != nullptr)
-                        {
+                            != nullptr) {
                             lnav_data.ld_log_source.find_from_time(tv) |
                                 [tc](auto vl) {
                                     tc->set_top(vl);

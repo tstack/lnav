@@ -100,6 +100,11 @@ public:
     using iterator = std::vector<logline>::iterator;
     using const_iterator = std::vector<logline>::const_iterator;
 
+    struct metadata {
+        text_format_t m_format;
+        std::string m_value;
+    };
+
     /**
      * Construct a logfile with the given arguments.
      *
@@ -360,6 +365,16 @@ public:
         return this->lf_bookmark_metadata;
     }
 
+    std::map<std::string, metadata>& get_embedded_metadata()
+    {
+        return this->lf_embedded_metadata;
+    }
+
+    const std::map<std::string, metadata>& get_embedded_metadata() const
+    {
+        return this->lf_embedded_metadata;
+    }
+
 protected:
     /**
      * Process a line from the file.
@@ -416,6 +431,7 @@ private:
     robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
 
     std::vector<std::shared_ptr<format_tag_def>> lf_applicable_taggers;
+    std::map<std::string, metadata> lf_embedded_metadata;
 };
 
 class logline_observer {

@@ -122,6 +122,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/fmtlib \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
+	-I$(srcdir)/third-party/rapidyaml \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
@@ -284,6 +285,7 @@ noinst_HEADERS = \
 	sql_help.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
+	static_file_vtab.hh \
 	styling.hh \
 	statusview_curses.hh \
 	strong_int.hh \
@@ -436,6 +438,7 @@ libdiag_a_SOURCES = \
 	spectro_source.cc \
 	sqlitepp.cc \
 	sqlite-extension-func.cc \
+	static_file_vtab.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \
 	styling.cc \
@@ -461,6 +464,7 @@ libdiag_a_SOURCES = \
 	xml_util.cc \
 	xpath_vtab.cc \
 	xterm_mouse.cc \
+	yaml-extension-functions.cc \
 	spookyhash/SpookyV2.cpp
 
 PLUGIN_SRCS = \

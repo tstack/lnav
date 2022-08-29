@@ -389,7 +389,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
  Key(s)               Action                                            
 ════════════════════════════════════════════════════════════════════════
- [1m/[0mregexp              Start a search for the given regular expression.
+ [1m/[0m[4mregexp[0m              Start a search for the given regular expression.
                       The search is live, so when there is a pause in
                       typing, the currently running search will be
                       canceled and a new one started. The first ten
@@ -770,7 +770,9 @@ For support questions, email:
 
 [4m:[0m[1m[4mcomment[0m[4m [0m[4mtext[0m
 ══════════════════════════════════════════════════════════════════════
-  Attach a comment to the top log line
+  Attach a comment to the top log line.  The comment will be displayed
+  right below the log message it is associated with. The comment can
+  be formatted using markdown and you can add new-lines with '\n'.
 [4mParameter[0m
   [4mtext[0m   The comment text
 [4mSee Also[0m
@@ -1045,12 +1047,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp[0m
+[4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp|#anchor[0m
 ══════════════════════════════════════════════════════════════════════
   Go to the given location in the top view
 [4mParameter[0m
-  [4mline#|N%|timestamp[0m   A line number, percent
-                       into the file, or a timestamp
+  [4mline#|N%|timestamp|#anchor[0m   A line
+                               number, percent into the file,
+                               timestamp, or an anchor in a text file
 [4mSee Also[0m
   [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 [4mExamples[0m
@@ -1064,6 +1067,10 @@ For support questions, email:
 
 #3 To go to the first message on the first day of 2017:
    [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 2017-01-01                                  [0m
+   
+
+#4 To go to the Screenshots section:
+   [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m #screenshots                                [0m
    
 
 
@@ -2600,7 +2607,7 @@ For support questions, email:
   [4mdefault[0m   The default value if the value was not found
 [4mSee Also[0m
   [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
-  [1mjson_group_object()[0m
+  [1mjson_group_object()[0m, [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To get the root of a JSON value:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[35m[40m'1'[0m[37m[40m, [0m[35m[40m''[0m[37m[40m)                              [0m
@@ -2655,7 +2662,8 @@ For support questions, email:
   [4mjson[0m    The initial JSON value.
   [4mvalue[0m   The value(s) to add to the end of the array.
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
+  [1mjget()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To append the number 4 to null:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_concat[0m[37m[40m([0m[1m[36m[40mNULL[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m)                       [0m
@@ -2677,7 +2685,8 @@ For support questions, email:
   [4mjson[0m    The JSON value to query.
   [4mvalue[0m   The value to look for in the first argument
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m
+  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To test if a JSON array contains the number 4:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_contains[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m)              [0m
@@ -2694,7 +2703,8 @@ For support questions, email:
 [4mParameter[0m
   [4mvalue[0m   The values to append to the array
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_object()[0m
+  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_object()[0m, 
+  [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To create an array from arguments:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[35m[40m'one'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m3.4[0m[37m[40m)            [0m
@@ -2712,7 +2722,8 @@ For support questions, email:
   [4mname[0m    The property name for the value
   [4mvalue[0m   The value to add to the object
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m
+  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
+  [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To create an object from arguments:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)          [0m
@@ -4119,6 +4130,20 @@ For support questions, email:
 
 #3 To select the text nodes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello &#x2605;</def></abc>'[0m[37m[40m)[0m
+   
+
+
+[1m[4myaml_to_json[0m[4m([0m[4myaml[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Convert a YAML document to a JSON-encoded string
+[4mParameter[0m
+  [4myaml[0m   The YAML value to convert to JSON.
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m
+[4mExample[0m
+#1 To convert the document "abc: def":
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40myaml_to_json[0m[37m[40m([0m[35m[40m'abc: def'[0m[37m[40m)                   [0m
    
 
 

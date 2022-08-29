@@ -118,6 +118,9 @@ SYNOPSIS
 DESCRIPTION
     Lorem ipsum
 
+   AbcDef
+      Lorem ipsum
+
 )";
 
     auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});

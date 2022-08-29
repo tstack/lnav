@@ -1,0 +1,19 @@
+[4mBuild[0m
+
+Lnav follows the usual GNU style for configuring and installing
+software:
+
+Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
+
+ ▌[33m[40m$ [0m[37m[40m./configure                           [0m
+ ▌[33m[40m$ [0m[37m[40mmake                                  [0m
+ ▌[33m[40m$ [0m[37m[40msudo make install                     [0m
+
+[1mSee Also[0m
+
+[4mAngle-grinder[1][0m is a tool to slice and dice log files on the
+command-line. If you're familiar with the SumoLogic query language,
+you might find this tool more comfortable to work with.
+
+ ▌[1] - https://github.com/rcoh/angle-grinder 
+

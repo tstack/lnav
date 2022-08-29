@@ -683,7 +683,6 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
     }
 
     this->ypc_sibling_handlers = orig_handlers;
-
     pcre_input pi(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
@@ -731,7 +730,7 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                         || index != yajlpp_provider_context::nindex))
                 {
                     this->ypc_obj_stack.push(jph.jph_obj_provider(
-                        {{this->ypc_pcre_context, pi}, index},
+                        {{this->ypc_pcre_context, pi}, index, this},
                         this->ypc_obj_stack.top()));
                 }
             }
@@ -1080,7 +1079,7 @@ const intern_string_t
 yajlpp_parse_context::get_full_path() const
 {
     if (this->ypc_path.size() <= 1) {
-        static intern_string_t SLASH = intern_string::lookup("/");
+        static const intern_string_t SLASH = intern_string::lookup("/");
 
         return SLASH;
     }

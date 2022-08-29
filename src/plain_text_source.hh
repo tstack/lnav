@@ -40,7 +40,8 @@
 
 class plain_text_source
     : public text_sub_source
-    , public vis_location_history {
+    , public vis_location_history
+    , public text_anchors {
 public:
     struct text_line {
         text_line(file_off_t off, attr_line_t value)
@@ -82,10 +83,7 @@ public:
 
     size_t text_line_count() override { return this->tds_lines.size(); }
 
-    bool empty() const
-    {
-        return this->tds_lines.empty();
-    }
+    bool empty() const { return this->tds_lines.empty(); }
 
     size_t text_line_width(textview_curses& curses) override;
 
@@ -119,6 +117,10 @@ public:
 
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
+
+    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id) override;
+    nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
+    std::unordered_set<std::string> get_anchors() override;
 
 protected:
     size_t compute_longest_line();

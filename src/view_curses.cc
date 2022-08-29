@@ -325,7 +325,8 @@ view_curses::mvwattrline(WINDOW* window,
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
-                attrs = vc.vc_level_attrs[iter->sa_value.get<int64_t>()].first;
+                attrs = vc.attrs_for_level(
+                    (log_level_t) iter->sa_value.get<int64_t>());
             } else if (iter->sa_type == &VC_ROLE) {
                 auto role = iter->sa_value.get<role_t>();
                 attrs = vc.attrs_for_role(role);
@@ -581,13 +582,26 @@ attr_for_colors(nonstd::optional<short> fg, nonstd::optional<short> bg)
     return retval;
 }
 
-std::pair<text_attrs, text_attrs>
+view_colors::role_attrs
 view_colors::to_attrs(const lnav_theme& lt,
-                      const style_config& sc,
-                      const style_config& fallback_sc,
+                      const positioned_property<style_config>& pp_sc,
+                      const positioned_property<style_config>& pp_fallback_sc,
                       lnav_config_listener::error_reporter& reporter)
 {
+    const auto& sc = pp_sc.pp_value;
+    const auto& fallback_sc = pp_fallback_sc.pp_value;
     std::string fg1, bg1, fg_color, bg_color;
+    intern_string_t role_class;
+
+    if (!pp_sc.pp_path.empty()) {
+        auto role_class_path
+            = ghc::filesystem::path(pp_sc.pp_path.to_string()).parent_path();
+        auto inner = role_class_path.filename().string();
+        auto outer = role_class_path.parent_path().filename().string();
+
+        role_class = intern_string::lookup(
+            fmt::format(FMT_STRING("-lnav_{}_{}"), outer, inner));
+    }
 
     fg1 = sc.sc_color;
     if (fg1.empty()) {
@@ -629,7 +643,7 @@ view_colors::to_attrs(const lnav_theme& lt,
         retval2.ta_attrs |= A_BOLD;
     }
 
-    return {retval1, retval2};
+    return {retval1, retval2, role_class};
 }
 
 void
@@ -695,14 +709,17 @@ view_colors::init_roles(const lnav_theme& lt,
 
     if (lnav_config.lc_ui_dim_text) {
         this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TEXT)]
-            .first.ta_attrs
+            .ra_normal.ta_attrs
             |= A_DIM;
         this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TEXT)]
-            .second.ta_attrs
+            .ra_reverse.ta_attrs
             |= A_DIM;
     }
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SEARCH)]
-        = std::make_pair(text_attrs{A_REVERSE}, text_attrs{A_REVERSE});
+        = role_attrs{text_attrs{A_REVERSE}, text_attrs{A_REVERSE}};
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SEARCH)]
+        .ra_class_name
+        = intern_string::lookup("-lnav_styles_search");
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_IDENTIFIER)]
         = this->to_attrs(
             lt, lt.lt_style_identifier, lt.lt_style_text, reporter);
@@ -743,17 +760,19 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(
             lt, lt.lt_style_active_status, lt.lt_style_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ACTIVE_STATUS2)]
-        = std::make_pair(this->vc_role_attrs[lnav::enums::to_underlying(
-                                                 role_t::VCR_ACTIVE_STATUS)]
-                             .first,
-                         this->vc_role_attrs[lnav::enums::to_underlying(
-                                                 role_t::VCR_ACTIVE_STATUS)]
-                             .second);
+        = role_attrs{
+            this->vc_role_attrs[lnav::enums::to_underlying(
+                                    role_t::VCR_ACTIVE_STATUS)]
+                .ra_normal,
+            this->vc_role_attrs[lnav::enums::to_underlying(
+                                    role_t::VCR_ACTIVE_STATUS)]
+                .ra_reverse,
+        };
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ACTIVE_STATUS2)]
-        .first.ta_attrs
+        .ra_normal.ta_attrs
         |= A_BOLD;
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ACTIVE_STATUS2)]
-        .second.ta_attrs
+        .ra_reverse.ta_attrs
         |= A_BOLD;
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS_TITLE)]
         = this->to_attrs(
@@ -824,61 +843,69 @@ view_colors::init_roles(const lnav_theme& lt,
             lt, lt.lt_style_snippet_border, lt.lt_style_text, reporter);
 
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status_subtitle.sc_background_color;
-        stitch_sc.sc_background_color
-            = lt.lt_style_status_title.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status_subtitle.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status_title.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_TITLE_TO_SUB)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status_title.sc_background_color;
-        stitch_sc.sc_background_color
-            = lt.lt_style_status_subtitle.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status_title.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status_subtitle.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_SUB_TO_TITLE)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
     }
 
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status.sc_background_color;
-        stitch_sc.sc_background_color
-            = lt.lt_style_status_subtitle.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status_subtitle.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_SUB_TO_NORMAL)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status_subtitle.sc_background_color;
-        stitch_sc.sc_background_color = lt.lt_style_status.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status_subtitle.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_SUB)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
     }
 
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status.sc_background_color;
-        stitch_sc.sc_background_color
-            = lt.lt_style_status_title.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status_title.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
     }
     {
-        style_config stitch_sc;
+        positioned_property<style_config> stitch_sc;
 
-        stitch_sc.sc_color = lt.lt_style_status_title.sc_background_color;
-        stitch_sc.sc_background_color = lt.lt_style_status.sc_background_color;
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status_title.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE)]
             = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
@@ -909,19 +936,21 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(
             lt, lt.lt_style_scrollbar, lt.lt_style_status, reporter);
     {
-        style_config bar_sc;
+        positioned_property<style_config> bar_sc;
 
-        bar_sc.sc_color = lt.lt_style_error.sc_color;
-        bar_sc.sc_background_color = lt.lt_style_scrollbar.sc_background_color;
+        bar_sc.pp_value.sc_color = lt.lt_style_error.pp_value.sc_color;
+        bar_sc.pp_value.sc_background_color
+            = lt.lt_style_scrollbar.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_SCROLLBAR_ERROR)]
             = this->to_attrs(lt, bar_sc, lt.lt_style_alert_status, reporter);
     }
     {
-        style_config bar_sc;
+        positioned_property<style_config> bar_sc;
 
-        bar_sc.sc_color = lt.lt_style_warning.sc_color;
-        bar_sc.sc_background_color = lt.lt_style_scrollbar.sc_background_color;
+        bar_sc.pp_value.sc_color = lt.lt_style_warning.pp_value.sc_color;
+        bar_sc.pp_value.sc_background_color
+            = lt.lt_style_scrollbar.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_SCROLLBAR_WARNING)]
             = this->to_attrs(lt, bar_sc, lt.lt_style_warn_status, reporter);
@@ -984,7 +1013,7 @@ view_colors::init_roles(const lnav_theme& lt,
 
         if (level_iter == lt.lt_level_styles.end()) {
             this->vc_level_attrs[level]
-                = std::make_pair(text_attrs{}, text_attrs{});
+                = role_attrs{text_attrs{}, text_attrs{}};
         } else {
             this->vc_level_attrs[level] = this->to_attrs(
                 lt, level_iter->second, lt.lt_style_text, reporter);
@@ -995,6 +1024,28 @@ view_colors::init_roles(const lnav_theme& lt,
         this->vc_color_pair_end = 1;
     }
     this->vc_dyn_pairs.clear();
+
+    for (int32_t role_index = 0;
+         role_index < lnav::enums::to_underlying(role_t::VCR__MAX);
+         role_index++)
+    {
+        const auto& ra = this->vc_role_attrs[role_index];
+        if (ra.ra_class_name.empty()) {
+            continue;
+        }
+
+        this->vc_class_to_role[ra.ra_class_name.to_string()]
+            = VC_ROLE.value(role_t(role_index));
+    }
+    for (int level_index = 0; level_index < LEVEL__MAX; level_index++) {
+        const auto& ra = this->vc_level_attrs[level_index];
+        if (ra.ra_class_name.empty()) {
+            continue;
+        }
+
+        this->vc_class_to_role[ra.ra_class_name.to_string()]
+            = SA_LEVEL.value(level_index);
+    }
 }
 
 int
@@ -1196,12 +1247,6 @@ bool
 lab_color::operator!=(const lab_color& rhs) const
 {
     return !(rhs == *this);
-}
-
-string_attr_pair
-view_colors::roles::file()
-{
-    return VC_ROLE.value(role_t::VCR_FILE);
 }
 
 #include <term.h>

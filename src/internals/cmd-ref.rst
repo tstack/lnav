@@ -161,7 +161,7 @@
 :comment *text*
 ^^^^^^^^^^^^^^^
 
-  Attach a comment to the top log line
+  Attach a comment to the top log line.  The comment will be displayed right below the log message it is associated with. The comment can be formatted using markdown and you can add new-lines with '\n'.
 
   **Parameters**
     * **text\*** --- The comment text
@@ -571,13 +571,13 @@
 
 .. _goto:
 
-:goto *line#|N%|timestamp*
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+:goto *line#|N%|timestamp|#anchor*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Go to the given location in the top view
 
   **Parameters**
-    * **line#|N%|timestamp\*** --- A line number, percent into the file, or a timestamp
+    * **line#|N%|timestamp|#anchor\*** --- A line number, percent into the file, timestamp, or an anchor in a text file
 
   **Examples**
     To go to line 22:
@@ -597,6 +597,12 @@
     .. code-block::  lnav
 
       :goto 2017-01-01
+
+    To go to the Screenshots section:
+
+    .. code-block::  lnav
+
+      :goto #screenshots
 
   **See Also**
     :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`

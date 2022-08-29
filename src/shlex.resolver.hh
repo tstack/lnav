@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 
+#include "base/intern_string.hh"
 #include "fmt/format.h"
 #include "mapbox/variant.hpp"
 
@@ -85,10 +86,7 @@ public:
         return this->end();
     }
 
-    const_iterator end() const
-    {
-        return this->sr_stack.back()->end();
-    }
+    const_iterator end() const { return this->sr_stack.back()->end(); }
 
     std::vector<const std::map<std::string, scoped_value_t>*> sr_stack;
 };

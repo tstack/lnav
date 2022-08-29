@@ -237,6 +237,20 @@ protected:
     };
 };
 
+class text_anchors {
+public:
+    virtual ~text_anchors() = default;
+
+    static std::string to_anchor_string(const std::string& raw);
+
+    virtual nonstd::optional<vis_line_t> row_for_anchor(const std::string& id)
+        = 0;
+
+    virtual nonstd::optional<std::string> anchor_for_row(vis_line_t vl) = 0;
+
+    virtual std::unordered_set<std::string> get_anchors() = 0;
+};
+
 class location_history {
 public:
     virtual ~location_history() = default;
@@ -514,15 +528,14 @@ public:
         return this->tc_delegate;
     }
 
-    void horiz_shift(vis_line_t start,
-                     vis_line_t end,
-                     int off_start,
-                     std::pair<int, int>& range_out);
+    nonstd::optional<std::pair<int, int>> horiz_shift(vis_line_t start,
+                                                      vis_line_t end,
+                                                      int off_start);
 
     void set_search_action(action sa)
     {
         this->tc_search_action = std::move(sa);
-    };
+    }
 
     void grep_end_batch(grep_proc<vis_line_t>& gp);
     void grep_end(grep_proc<vis_line_t>& gp);

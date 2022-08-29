@@ -35,6 +35,8 @@
 
 #include <string.h>
 
+#include "auto_mem.hh"
+#include "intern_string.hh"
 #include "ww898/cp_utf8.hpp"
 
 void scrub_to_utf8(char* buffer, size_t length);
@@ -44,6 +46,12 @@ is_line_ending(char ch)
 {
     return ch == '\r' || ch == '\n';
 }
+
+void quote_content(auto_buffer& buf,
+                   const string_fragment& sf,
+                   char quote_char);
+
+size_t unquote_content(char* dst, const char* str, size_t len, char quote_char);
 
 size_t unquote(char* dst, const char* str, size_t len);
 

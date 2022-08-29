@@ -31,9 +31,13 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
+#include "bound_tags.hh"
 #include "config.h"
+#include "lnav.events.hh"
 #include "md2attr_line.hh"
+#include "sqlitepp.hh"
 
 using namespace lnav::roles::literals;
 
@@ -439,6 +443,10 @@ textfile_sub_source::rescan_files(
     textfile_sub_source::scan_callback& callback,
     nonstd::optional<ui_clock::time_point> deadline)
 {
+    static auto& lnav_db
+        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
+                        sqlite_db_tag>();
+
     file_iterator iter;
     bool retval = false;
 
@@ -502,6 +510,7 @@ textfile_sub_source::rescan_files(
                 if (read_res.isOk()) {
                     auto content = read_res.unwrap();
                     auto content_sf = string_fragment{content};
+                    std::string frontmatter;
                     auto front_matter_terminator = content.length() > 8
                         ? content.find("\n---\n", 4)
                         : std::string::npos;
@@ -509,6 +518,8 @@ textfile_sub_source::rescan_files(
                     if (startswith(content, "---\n")
                         && front_matter_terminator != std::string::npos)
                     {
+                        frontmatter
+                            = content.substr(4, front_matter_terminator - 3);
                         content_sf
                             = content_sf.substr(front_matter_terminator + 4);
                     }
@@ -524,7 +535,21 @@ textfile_sub_source::rescan_files(
                     rf.rf_text_source = std::make_unique<plain_text_source>();
                     rf.rf_text_source->register_view(this->tss_view);
                     if (parse_res.isOk()) {
+                        auto& lf_meta = lf->get_embedded_metadata();
+
                         rf.rf_text_source->replace_with(parse_res.unwrap());
+
+                        if (!frontmatter.empty()) {
+                            lf_meta["net.daringfireball.markdown.frontmatter"]
+                                = {text_format_t::TF_YAML, frontmatter};
+                        }
+
+                        lnav::events::publish(
+                            lnav_db,
+                            lnav::events::file::format_detected{
+                                lf->get_filename(),
+                                fmt::to_string(lf->get_text_format()),
+                            });
                     } else {
                         auto view_content
                             = lnav::console::user_message::error(
@@ -636,4 +661,148 @@ textfile_sub_source::quiesce()
     for (auto& lf : this->tss_files) {
         lf->quiesce();
     }
+}
+
+nonstd::optional<vis_line_t>
+textfile_sub_source::row_for_anchor(const std::string& id)
+{
+    auto lf = this->current_file();
+    if (!lf) {
+        return nonstd::nullopt;
+    }
+
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return rend_iter->second.rf_text_source->row_for_anchor(id);
+    }
+
+    auto iter = this->tss_doc_metadata.find(lf->get_filename());
+    if (iter == this->tss_doc_metadata.end()) {
+        return nonstd::nullopt;
+    }
+
+    const auto& meta = iter->second.ms_metadata;
+    nonstd::optional<vis_line_t> retval;
+
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(),
+        [lf, &id, &retval](const lnav::document::hier_node* node) {
+            for (const auto& child_pair : node->hn_named_children) {
+                auto child_anchor
+                    = text_anchors::to_anchor_string(child_pair.first);
+
+                if (child_anchor == id) {
+                    auto ll_opt
+                        = lf->line_for_offset(child_pair.second->hn_start);
+                    if (ll_opt != lf->end()) {
+                        retval = vis_line_t(
+                            std::distance(lf->cbegin(), ll_opt.value()));
+                    }
+                }
+            }
+        });
+
+    return retval;
+}
+
+std::unordered_set<std::string>
+textfile_sub_source::get_anchors()
+{
+    std::unordered_set<std::string> retval;
+
+    auto lf = this->current_file();
+    if (!lf) {
+        return retval;
+    }
+
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return rend_iter->second.rf_text_source->get_anchors();
+    }
+
+    auto iter = this->tss_doc_metadata.find(lf->get_filename());
+    if (iter == this->tss_doc_metadata.end()) {
+        return retval;
+    }
+
+    const auto& meta = iter->second.ms_metadata;
+
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(),
+        [&retval](const lnav::document::hier_node* node) {
+            if (retval.size() > 100) {
+                return;
+            }
+
+            for (const auto& child_pair : node->hn_named_children) {
+                retval.emplace(
+                    text_anchors::to_anchor_string(child_pair.first));
+            }
+        });
+
+    return retval;
+}
+
+nonstd::optional<std::string>
+textfile_sub_source::anchor_for_row(vis_line_t vl)
+{
+    nonstd::optional<std::string> retval;
+
+    auto lf = this->current_file();
+    if (!lf) {
+        return retval;
+    }
+
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return rend_iter->second.rf_text_source->anchor_for_row(vl);
+    }
+
+    auto iter = this->tss_doc_metadata.find(lf->get_filename());
+    if (iter == this->tss_doc_metadata.end()) {
+        return retval;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
+    auto ll_next_iter = ll_iter + 1;
+    auto end_offset = (ll_next_iter == lf->end())
+        ? lf->get_index_size() - 1
+        : ll_next_iter->get_offset() - 1;
+    iter->second.ms_metadata.m_sections_tree.visit_overlapping(
+        ll_iter->get_offset(),
+        end_offset,
+        [&retval](const lnav::document::section_interval_t& iv) {
+            retval = iv.value.match(
+                [](const std::string& str) {
+                    return nonstd::make_optional(
+                        text_anchors::to_anchor_string(str));
+                },
+                [](size_t) { return nonstd::nullopt; });
+        });
+
+    return retval;
+}
+
+bool
+textfile_sub_source::to_front(const std::string& filename)
+{
+    auto lf_opt = this->tss_files
+        | lnav::itertools::find_if([&filename](const auto& elem) {
+                      return elem->get_filename() == filename;
+                  });
+    if (!lf_opt) {
+        lf_opt = this->tss_hidden_files
+            | lnav::itertools::find_if([&filename](const auto& elem) {
+                     return elem->get_filename() == filename;
+                 });
+    }
+
+    if (!lf_opt) {
+        return false;
+    }
+
+    this->to_front(*(lf_opt.value()));
+
+    return true;
 }

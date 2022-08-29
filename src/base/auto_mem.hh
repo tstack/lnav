@@ -34,6 +34,7 @@
 
 #include <exception>
 #include <iterator>
+#include <string>
 #include <utility>
 
 #include <assert.h>
@@ -238,10 +239,15 @@ public:
 
     const char* begin() const { return this->ab_buffer; }
 
-    void push_back(char ch)
+    auto_buffer& push_back(char ch)
     {
+        if (this->ab_size == this->ab_capacity) {
+            this->expand_by(256);
+        }
         this->ab_buffer[this->ab_size] = ch;
         this->ab_size += 1;
+
+        return *this;
     }
 
     void pop_back() { this->ab_size -= 1; }
@@ -369,6 +375,8 @@ public:
 
         this->expand_to(this->ab_capacity + amount);
     }
+
+    std::string to_string() const { return {this->ab_buffer, this->ab_size}; }
 
 private:
     auto_buffer(char* buffer, size_t capacity)

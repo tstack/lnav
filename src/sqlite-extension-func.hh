@@ -88,11 +88,15 @@ int json_extension_functions(struct FuncDef** basic_funcs,
 int time_extension_functions(struct FuncDef** basic_funcs,
                              struct FuncDefAgg** agg_funcs);
 
+int yaml_extension_functions(struct FuncDef** basic_funcs,
+                             struct FuncDefAgg** agg_funcs);
+
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
 
-extern "C" {
+extern "C"
+{
 int sqlite3_db_dump(
     sqlite3* db, /* The database connection */
     const char* zSchema, /* Which schema to dump.  Usually "main". */

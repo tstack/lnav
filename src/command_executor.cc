@@ -63,48 +63,6 @@ SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
     ORDER BY total DESC
 )";
 
-struct bind_visitor {
-    bind_visitor(sqlite3_stmt* stmt, int index) : bv_stmt(stmt), bv_index(index)
-    {
-    }
-
-    void operator()(const std::string& str) const
-    {
-        sqlite3_bind_text(this->bv_stmt,
-                          this->bv_index,
-                          str.c_str(),
-                          str.size(),
-                          SQLITE_TRANSIENT);
-    }
-
-    void operator()(const string_fragment& str) const
-    {
-        sqlite3_bind_text(this->bv_stmt,
-                          this->bv_index,
-                          str.data(),
-                          str.length(),
-                          SQLITE_TRANSIENT);
-    }
-
-    void operator()(null_value_t) const
-    {
-        sqlite3_bind_null(this->bv_stmt, this->bv_index);
-    }
-
-    void operator()(int64_t value) const
-    {
-        sqlite3_bind_int64(this->bv_stmt, this->bv_index, value);
-    }
-
-    void operator()(double value) const
-    {
-        sqlite3_bind_double(this->bv_stmt, this->bv_index, value);
-    }
-
-    sqlite3_stmt* bv_stmt;
-    int bv_index;
-};
-
 int
 sql_progress(const struct log_cursor& lc)
 {
@@ -272,12 +230,12 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
             }
 
             if ((local_var = lvars.find(&name[1])) != lvars.end()) {
-                mapbox::util::apply_visitor(bind_visitor(stmt, lpc + 1),
-                                            local_var->second);
+                mapbox::util::apply_visitor(
+                    sqlitepp::bind_visitor(stmt, lpc + 1), local_var->second);
                 retval[name] = local_var->second;
             } else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
-                mapbox::util::apply_visitor(bind_visitor(stmt, lpc + 1),
-                                            global_var->second);
+                mapbox::util::apply_visitor(
+                    sqlitepp::bind_visitor(stmt, lpc + 1), global_var->second);
                 retval[name] = global_var->second;
             } else if ((env_value = getenv(&name[1])) != nullptr) {
                 sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
@@ -620,6 +578,9 @@ execute_file_contents(exec_context& ec,
         line_number += 1;
 
         if (trim(line.in()).empty()) {
+            if (multiline && cmdline) {
+                cmdline = cmdline.value() + "\n";
+            }
             continue;
         }
         if (line[0] == '#') {
@@ -920,7 +881,7 @@ execute_init_commands(
             .with_fd(std::move(fd_copy))
             .with_include_in_session(false)
             .with_detect_format(false);
-        lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0);
+        lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
 
         if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_alt_value(
@@ -1063,7 +1024,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         .with_fd(pp->get_fd())
         .with_include_in_session(false)
         .with_detect_format(false);
-    lnav_data.ld_files_to_front.emplace_back(desc, 0);
+    lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
     if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(X, "to close the file"));
     }

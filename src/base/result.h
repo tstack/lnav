@@ -1,6 +1,6 @@
-/* 
+/*
    Mathieu Stefani, 03 mai 2016
-   
+
    This header provides a Result type that can be used to replace exceptions in code
    that has to handle error.
 
@@ -774,7 +774,7 @@ struct Result {
     {
         if (!isOk()) {
             ::fprintf(stderr, "%s\n", str);
-            std::terminate();
+            abort();
         }
         return expect_impl(std::is_same<T, void>());
     }
@@ -887,7 +887,7 @@ struct Result {
         }
 
         ::fprintf(stderr, "Attempting to unwrap an error Result\n");
-        std::terminate();
+        abort();
     }
 
     template<typename U = T>
@@ -901,7 +901,7 @@ struct Result {
         }
 
         ::fprintf(stderr, "Attempting to unwrap an error Result\n");
-        std::terminate();
+        abort();
     }
 
     template<typename U = T>
@@ -913,7 +913,7 @@ struct Result {
         }
 
         ::fprintf(stderr, "Attempting to unwrap an error Result\n");
-        std::terminate();
+        abort();
     }
 
     E unwrapErr() const
@@ -923,7 +923,7 @@ struct Result {
         }
 
         ::fprintf(stderr, "Attempting to unwrapErr an ok Result\n");
-        std::terminate();
+        abort();
     }
 
 private:

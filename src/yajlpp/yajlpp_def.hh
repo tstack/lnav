@@ -37,7 +37,6 @@
 #include "config.h"
 #include "mapbox/variant.hpp"
 #include "relative_time.hh"
-#include "view_curses.hh"
 #include "yajlpp.hh"
 
 #define FOR_FIELD(T, FIELD) for_field<T, decltype(T ::FIELD), &T ::FIELD>()
@@ -432,11 +431,13 @@ struct json_path_handler : public json_path_handler_base {
             }
 
             if ((rc = yajl_gen_string(handle, pair.first))
-                != yajl_gen_status_ok) {
+                != yajl_gen_status_ok)
+            {
                 return rc;
             }
             if ((rc = yajl_gen_string(handle, pair.second))
-                != yajl_gen_status_ok) {
+                != yajl_gen_status_ok)
+            {
                 return rc;
             }
         }
@@ -669,6 +670,22 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    template<typename T, typename U>
+    json_path_handler& for_child(positioned_property<U>(T::*field))
+    {
+        this->jph_obj_provider
+            = [field](const yajlpp_provider_context& ypc, void* root) -> void* {
+            auto& child = json_path_handler::get_field(root, field);
+
+            if (ypc.ypc_parse_context != nullptr && child.pp_path.empty()) {
+                child.pp_path = ypc.ypc_parse_context->get_full_path();
+            }
+            return &child.pp_value;
+        };
+
+        return *this;
+    }
+
     template<typename... Args>
     json_path_handler& for_child(Args... args)
     {
@@ -685,7 +702,8 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  LastIs<std::map<std::string, std::string>, Args...>::value,
-                 bool> = true>
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -732,7 +750,8 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  LastIs<std::map<std::string, json_any_t>, Args...>::value,
-                 bool> = true>
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(bool_field_cb);
@@ -859,7 +878,8 @@ struct json_path_handler : public json_path_handler_base {
     template<
         typename... Args,
         std::enable_if_t<LastIs<nonstd::optional<std::string>, Args...>::value,
-                         bool> = true>
+                         bool>
+        = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -920,7 +940,8 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  LastIs<positioned_property<std::string>, Args...>::value,
-                 bool> = true>
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -975,9 +996,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<LastIs<intern_string_t, Args...>::value, bool> = true>
+    template<typename... Args,
+             std::enable_if_t<LastIs<intern_string_t, Args...>::value, bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1031,7 +1052,8 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  LastIs<positioned_property<intern_string_t>, Args...>::value,
-                 bool> = true>
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1191,9 +1213,10 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename... Args,
-             std::enable_if_t<LastIs<std::chrono::seconds, Args...>::value,
-                              bool> = true>
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<std::chrono::seconds, Args...>::value, bool>
+        = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);

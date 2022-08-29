@@ -45,6 +45,7 @@
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "static_file_vtab.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
@@ -108,6 +109,7 @@ open_schema_view()
 
     schema += "\n\n-- Virtual Table Definitions --\n\n";
     schema += ENVIRON_CREATE_STMT;
+    schema += STATIC_FILE_CREATE_STMT;
     schema += vtab_module_schemas;
     for (const auto& vtab_iter : *lnav_data.ld_vtab_manager) {
         schema += "\n" + vtab_iter.second->get_table_statement();

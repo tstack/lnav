@@ -56,6 +56,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -228,16 +229,8 @@ public:
         require(role < role_t::VCR__MAX);
 
         return selected
-            ? this->vc_role_attrs[lnav::enums::to_underlying(role)].second
-            : this->vc_role_attrs[lnav::enums::to_underlying(role)].first;
-    }
-
-    text_attrs reverse_attrs_for_role(role_t role) const
-    {
-        require(role > role_t::VCR_NONE);
-        require(role < role_t::VCR__MAX);
-
-        return this->vc_role_reverse_colors[lnav::enums::to_underlying(role)];
+            ? this->vc_role_attrs[lnav::enums::to_underlying(role)].ra_reverse
+            : this->vc_role_attrs[lnav::enums::to_underlying(role)].ra_normal;
     }
 
     nonstd::optional<short> color_for_ident(const char* str, size_t len) const;
@@ -259,6 +252,11 @@ public:
         return this->attrs_for_ident(str.c_str(), str.length());
     }
 
+    text_attrs attrs_for_level(log_level_t level) const
+    {
+        return this->vc_level_attrs[level].ra_normal;
+    }
+
     int ensure_color_pair(short fg, short bg);
 
     int ensure_color_pair(nonstd::optional<short> fg,
@@ -272,22 +270,12 @@ public:
 
     nonstd::optional<short> match_color(const styling::color_unit& color) const;
 
-    std::pair<text_attrs, text_attrs> to_attrs(
-        const lnav_theme& lt,
-        const style_config& sc,
-        const style_config& fallback_sc,
-        lnav_config_listener::error_reporter& reporter);
-
-    std::pair<text_attrs, text_attrs> vc_level_attrs[LEVEL__MAX];
-
     short ansi_to_theme_color(short ansi_fg) const
     {
         return this->vc_ansi_to_theme[ansi_fg];
     }
 
-    struct roles {
-        static string_attr_pair file();
-    };
+    std::unordered_map<std::string, string_attr_pair> vc_class_to_role;
 
     static bool initialized;
 
@@ -301,12 +289,21 @@ private:
         int dp_color_pair;
     };
 
+    struct role_attrs {
+        text_attrs ra_normal;
+        text_attrs ra_reverse;
+        intern_string_t ra_class_name;
+    };
+
+    role_attrs to_attrs(const lnav_theme& lt,
+                        const positioned_property<style_config>& sc,
+                        const positioned_property<style_config>& fallback_sc,
+                        lnav_config_listener::error_reporter& reporter);
+
+    role_attrs vc_level_attrs[LEVEL__MAX];
+
     /** Map of role IDs to attribute values. */
-    std::pair<text_attrs, text_attrs>
-        vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
-    /** Map of role IDs to reverse-video attribute values. */
-    text_attrs
-        vc_role_reverse_colors[lnav::enums::to_underlying(role_t::VCR__MAX)];
+    role_attrs vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
     short vc_ansi_to_theme[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
     int vc_color_pair_end{0};

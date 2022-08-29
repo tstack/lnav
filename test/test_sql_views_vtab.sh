@@ -167,3 +167,7 @@ run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":next-mark search" \
     ${test_dir}/logfile_generic.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top_meta = json_object('anchor', '#build') WHERE name = 'text'" \
+    ${top_srcdir}/README.md

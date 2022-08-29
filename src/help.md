@@ -107,8 +107,8 @@ down to display the new lines, much like `tail -f`.
 
 On color displays, the lines will be highlighted as follows:
 
-* Errors will be colored in ${ansi_red}red${ansi_norm};
-* warnings will be ${ansi_yellow}yellow${ansi_norm};
+* Errors will be colored in <span class="-lnav_log-level-styles_error">red</span>;
+* warnings will be <span class="-lnav_log-level-styles_warning">yellow</span>;
 * boundaries between days will be ${ansi_underline}underlined${ansi_norm}; and
 * various color highlights will be applied to: IP addresses, SQL keywords,
   XML tags, file and line numbers in Java backtraces, and quoted strings.

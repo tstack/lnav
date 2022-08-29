@@ -38,6 +38,7 @@
 
 #include "base/auto_mem.hh"
 #include "optional.hpp"
+#include "shlex.resolver.hh"
 
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void* mem);
@@ -59,6 +60,48 @@ quote(const nonstd::optional<std::string>& str)
 }
 
 extern const char* ERROR_PREFIX;
+
+struct bind_visitor {
+    bind_visitor(sqlite3_stmt* stmt, int index) : bv_stmt(stmt), bv_index(index)
+    {
+    }
+
+    void operator()(const std::string& str) const
+    {
+        sqlite3_bind_text(this->bv_stmt,
+                          this->bv_index,
+                          str.c_str(),
+                          str.size(),
+                          SQLITE_TRANSIENT);
+    }
+
+    void operator()(const string_fragment& str) const
+    {
+        sqlite3_bind_text(this->bv_stmt,
+                          this->bv_index,
+                          str.data(),
+                          str.length(),
+                          SQLITE_TRANSIENT);
+    }
+
+    void operator()(null_value_t) const
+    {
+        sqlite3_bind_null(this->bv_stmt, this->bv_index);
+    }
+
+    void operator()(int64_t value) const
+    {
+        sqlite3_bind_int64(this->bv_stmt, this->bv_index, value);
+    }
+
+    void operator()(double value) const
+    {
+        sqlite3_bind_double(this->bv_stmt, this->bv_index, value);
+    }
+
+    sqlite3_stmt* bv_stmt;
+    int bv_index;
+};
 
 }  // namespace sqlitepp
 

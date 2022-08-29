@@ -57,19 +57,46 @@ scrub_to_utf8(char* buffer, size_t length)
     }
 }
 
-size_t
-unquote(char* dst, const char* str, size_t len)
+void
+quote_content(auto_buffer& buf, const string_fragment& sf, char quote_char)
 {
-    if (str[0] == 'r' || str[0] == 'u') {
-        str += 1;
-        len -= 1;
+    for (char ch : sf) {
+        if (ch == quote_char) {
+            buf.push_back('\\').push_back(ch);
+            continue;
+        }
+        switch (ch) {
+            case '\\':
+                buf.push_back('\\').push_back('\\');
+                break;
+            case '\n':
+                buf.push_back('\\').push_back('n');
+                break;
+            case '\t':
+                buf.push_back('\\').push_back('t');
+                break;
+            case '\r':
+                buf.push_back('\\').push_back('r');
+                break;
+            case '\a':
+                buf.push_back('\\').push_back('a');
+                break;
+            case '\b':
+                buf.push_back('\\').push_back('b');
+                break;
+            default:
+                buf.push_back(ch);
+                break;
+        }
     }
-    char quote_char = str[0];
+}
+
+size_t
+unquote_content(char* dst, const char* str, size_t len, char quote_char)
+{
     size_t index = 0;
 
-    require(str[0] == '\'' || str[0] == '"');
-
-    for (size_t lpc = 1; lpc < (len - 1); lpc++, index++) {
+    for (size_t lpc = 0; lpc < len; lpc++, index++) {
         dst[index] = str[lpc];
         if (str[lpc] == quote_char) {
             lpc += 1;
@@ -94,6 +121,20 @@ unquote(char* dst, const char* str, size_t len)
     dst[index] = '\0';
 
     return index;
+}
+
+size_t
+unquote(char* dst, const char* str, size_t len)
+{
+    if (str[0] == 'r' || str[0] == 'u') {
+        str += 1;
+        len -= 1;
+    }
+    char quote_char = str[0];
+
+    require(str[0] == '\'' || str[0] == '"');
+
+    return unquote_content(dst, &str[1], len - 2, quote_char);
 }
 
 size_t

@@ -2,6 +2,7 @@
     {
         "top_meta": {
             "file": "{top_srcdir}/README.md",
+            "anchor": "#support",
             "breadcrumbs": [
                 {
                     "display_value": "README.md",

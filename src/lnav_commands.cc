@@ -335,10 +335,25 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     std::string retval;
 
     if (args.empty()) {
-        args.emplace_back("move-time");
+        args.emplace_back("move-args");
     } else if (args.size() > 1) {
         std::string all_args = remaining_args(cmdline, args);
         auto* tc = *lnav_data.ld_view_stack.top();
+        nonstd::optional<vis_line_t> dst_vl;
+
+        if (startswith(all_args, "#")) {
+            auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+
+            if (ta == nullptr) {
+                return ec.make_error("view does not support anchor links");
+            }
+
+            dst_vl = ta->row_for_anchor(all_args);
+            if (!dst_vl) {
+                return ec.make_error("unable to find anchor: {}", all_args);
+            }
+        }
+
         auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
         int line_number, consumed;
         date_time_scanner dts;
@@ -346,10 +361,12 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         struct timeval tv;
         struct exttm tm;
         float value;
-        nonstd::optional<vis_line_t> dst_vl;
         auto parse_res = relative_time::from_str(all_args);
 
-        if (parse_res.isOk()) {
+        if (dst_vl) {
+
+        }
+        else if (parse_res.isOk()) {
             if (ttt == nullptr) {
                 return ec.make_error(
                     "relative time values only work in a time-indexed view");
@@ -2355,7 +2372,6 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     std::vector<std::string> word_exp;
-    size_t colon_index;
     std::string pat;
     file_collection fc;
 
@@ -2372,17 +2388,27 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("unable to parse arguments");
     }
 
-    std::vector<std::pair<std::string, int>> files_to_front;
+    std::vector<std::pair<std::string, file_location_t>> files_to_front;
     std::vector<std::string> closed_files;
 
     for (auto fn : split_args) {
-        int top = 0;
+        file_location_t file_loc;
 
-        if (access(fn.c_str(), R_OK) != 0
-            && (colon_index = fn.rfind(':')) != std::string::npos)
-        {
-            if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1) {
-                fn = fn.substr(0, colon_index);
+        if (access(fn.c_str(), R_OK) != 0) {
+            auto colon_index = fn.rfind(':');
+            auto hash_index = fn.rfind('#');
+            if (colon_index != std::string::npos) {
+                auto top_range = scn::string_view{
+                    &fn[colon_index + 1], &(*fn.cend())};
+                auto scan_res = scn::scan_value<int>(top_range);
+
+                if (scan_res) {
+                    fn = fn.substr(0, colon_index);
+                    file_loc = vis_line_t(scan_res.value());
+                }
+            } else if (hash_index != std::string::npos) {
+                file_loc = fn.substr(hash_index);
+                fn = fn.substr(0, hash_index);
             }
         }
 
@@ -2398,7 +2424,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     break;
                 }
 
-                files_to_front.emplace_back(fn, top);
+                files_to_front.emplace_back(fn, file_loc);
                 retval = "";
                 break;
             }
@@ -2418,7 +2444,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         ul->copy_fd());
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
-                    lnav_data.ld_files_to_front.emplace_back(fn, top);
+                    lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
                     retval = "info: opened URL";
                 } else {
                     retval = "";
@@ -2520,7 +2546,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 fn = abspath.in();
                 fc.fc_file_names.emplace(fn, logfile_open_options());
                 retval = "info: opened -- " + fn;
-                files_to_front.emplace_back(fn, top);
+                files_to_front.emplace_back(fn, file_loc);
 
                 closed_files.push_back(fn);
                 if (lnav_data.ld_rl_view != nullptr) {
@@ -2862,7 +2888,7 @@ com_comment(exec_context& ec,
         if (ec.ec_dry_run) {
             return Ok(std::string());
         }
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error(
@@ -2871,12 +2897,15 @@ com_comment(exec_context& ec,
         auto& lss = lnav_data.ld_log_source;
 
         args[1] = trim(remaining_args(cmdline, args));
+        auto unquoted = auto_buffer::alloc(args[1].size() + 1);
+        auto unquoted_len = unquote_content(unquoted.in(), args[1].c_str(), args[1].size(), 0);
+        unquoted.resize(unquoted_len + 1);
 
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
 
         auto& line_meta = lss.get_bookmark_metadata(tc->get_top());
 
-        line_meta.bm_comment = args[1];
+        line_meta.bm_comment = unquoted.in();
         lss.set_line_meta_changed();
         lss.text_filters_changed();
         tc->reload_data();
@@ -2902,7 +2931,11 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
     auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
 
     if (line_meta_opt && !line_meta_opt.value()->bm_comment.empty()) {
-        return trim(cmdline) + " " + trim(line_meta_opt.value()->bm_comment);
+        auto trimmed_comment = trim(line_meta_opt.value()->bm_comment);
+        auto buf = auto_buffer::alloc(trimmed_comment.size() + 16);
+        quote_content(buf, trimmed_comment, 0);
+
+        return trim(cmdline) + " " + buf.to_string();
     }
 
     return "";
@@ -4428,8 +4461,10 @@ com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 static void
 command_prompt(std::vector<std::string>& args)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* rlc = lnav_data.ld_rl_view;
 
+    rlc->clear_possibilities(ln_mode_t::COMMAND, "move-args");
     if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
         static const char* MOVE_TIMES[]
             = {"here", "now", "today", "yesterday", nullptr};
@@ -4497,10 +4532,9 @@ command_prompt(std::vector<std::string>& args)
 
         ldh.clear();
 
-        readline_curses* rlc = lnav_data.ld_rl_view;
-
         rlc->clear_possibilities(ln_mode_t::COMMAND, "move-time");
         rlc->add_possibility(ln_mode_t::COMMAND, "move-time", MOVE_TIMES);
+        rlc->add_possibility(ln_mode_t::COMMAND, "move-args", MOVE_TIMES);
         rlc->clear_possibilities(ln_mode_t::COMMAND, "line-time");
         {
             struct timeval tv = lf->get_time_offset();
@@ -4509,6 +4543,7 @@ command_prompt(std::vector<std::string>& args)
             sql_strftime(
                 buffer, sizeof(buffer), ll->get_time(), ll->get_millis(), 'T');
             rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "move-args", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);
             sql_strftime(buffer,
                          sizeof(buffer),
@@ -4516,6 +4551,7 @@ command_prompt(std::vector<std::string>& args)
                          ll->get_millis() - (tv.tv_usec / 1000),
                          'T');
             rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
+            rlc->add_possibility(ln_mode_t::COMMAND, "move-args", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);
         }
     }
@@ -4536,6 +4572,11 @@ command_prompt(std::vector<std::string>& args)
     add_tag_possibilities();
     add_file_possibilities();
     add_recent_netlocs_possibilities();
+
+    auto *ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+    if (ta != nullptr) {
+        rlc->add_possibility(ln_mode_t::COMMAND, "move-args", ta->get_anchors());
+    }
 
     if (tc == &lnav_data.ld_views[LNV_LOG]) {
         add_filter_expr_possibilities(
@@ -4797,13 +4838,15 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":goto")
          .with_summary("Go to the given location in the top view")
          .with_parameter(
-             help_text("line#|N%|timestamp",
-                       "A line number, percent into the file, or a timestamp"))
+             help_text("line#|N%|timestamp|#anchor",
+                       "A line number, percent into the file, timestamp, "
+                       "or an anchor in a text file"))
          .with_examples(
              {{"To go to line 22", "22"},
               {"To go to the line 75% of the way into the view", "75%"},
               {"To go to the first message on the first day of 2017",
-               "2017-01-01"}})
+               "2017-01-01"},
+              {"To go to the Screenshots section", "#screenshots"}})
          .with_tags({"navigation"})},
     {"relative-goto",
      com_relative_goto,
@@ -5326,7 +5369,11 @@ readline_context::command_t STD_COMMANDS[] = {
         com_comment,
 
         help_text(":comment")
-            .with_summary("Attach a comment to the top log line")
+            .with_summary(
+                "Attach a comment to the top log line.  The comment will be "
+                "displayed right below the log message it is associated with. "
+                "The comment can be formatted using markdown and you can add "
+                "new-lines with '\\n'.")
             .with_parameter(help_text("text", "The comment text"))
             .with_example({"To add the comment 'This is where it all went "
                            "wrong' to the top line",

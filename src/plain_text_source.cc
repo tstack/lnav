@@ -303,3 +303,71 @@ plain_text_source::text_crumbs_for_line(int line,
             : breadcrumb::crumb::expected_input_t::index_or_exact;
     }
 }
+
+nonstd::optional<vis_line_t>
+plain_text_source::row_for_anchor(const std::string& id)
+{
+    nonstd::optional<vis_line_t> retval;
+
+    if (this->tds_doc_sections.m_sections_root == nullptr) {
+        return retval;
+    }
+
+    lnav::document::hier_node::depth_first(
+        this->tds_doc_sections.m_sections_root.get(),
+        [this, &id, &retval](const lnav::document::hier_node* node) {
+            for (const auto& child_pair : node->hn_named_children) {
+                auto child_anchor
+                    = text_anchors::to_anchor_string(child_pair.first);
+
+                if (child_anchor == id) {
+                    retval = this->line_for_offset(child_pair.second->hn_start);
+                }
+            }
+        });
+
+    return retval;
+}
+
+std::unordered_set<std::string>
+plain_text_source::get_anchors()
+{
+    std::unordered_set<std::string> retval;
+
+    lnav::document::hier_node::depth_first(
+        this->tds_doc_sections.m_sections_root.get(),
+        [&retval](const lnav::document::hier_node* node) {
+            for (const auto& child_pair : node->hn_named_children) {
+                retval.emplace(
+                    text_anchors::to_anchor_string(child_pair.first));
+            }
+        });
+
+    return retval;
+}
+
+nonstd::optional<std::string>
+plain_text_source::anchor_for_row(vis_line_t vl)
+{
+    nonstd::optional<std::string> retval;
+
+    if (vl > this->tds_lines.size()
+        || this->tds_doc_sections.m_sections_root == nullptr)
+    {
+        return retval;
+    }
+
+    const auto& tl = this->tds_lines[vl];
+
+    this->tds_doc_sections.m_sections_tree.visit_overlapping(
+        tl.tl_offset, [&retval](const lnav::document::section_interval_t& iv) {
+            retval = iv.value.match(
+                [](const std::string& str) {
+                    return nonstd::make_optional(
+                        text_anchors::to_anchor_string(str));
+                },
+                [](size_t) { return nonstd::nullopt; });
+        });
+
+    return retval;
+}

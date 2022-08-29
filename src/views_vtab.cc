@@ -162,12 +162,14 @@ static const typed_json_path_container<resolved_crumb> breadcrumb_crumb_handlers
 struct top_line_meta {
     nonstd::optional<std::string> tlm_time;
     nonstd::optional<std::string> tlm_file;
+    nonstd::optional<std::string> tlm_anchor;
     std::vector<resolved_crumb> tlm_crumbs;
 };
 
 static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
     yajlpp::property_handler("time").for_field(&top_line_meta::tlm_time),
     yajlpp::property_handler("file").for_field(&top_line_meta::tlm_file),
+    yajlpp::property_handler("anchor").for_field(&top_line_meta::tlm_anchor),
     yajlpp::property_handler("breadcrumbs#")
         .for_field(&top_line_meta::tlm_crumbs)
         .with_children(breadcrumb_crumb_handlers),
@@ -283,6 +285,7 @@ CREATE TABLE lnav_views (
                 if (tss != nullptr && tss->text_line_count() > 0) {
                     auto* time_source = dynamic_cast<text_time_translator*>(
                         tc.get_sub_source());
+                    auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
                     std::vector<breadcrumb::crumb> crumbs;
 
                     tss->text_crumbs_for_line(tc.get_top(), crumbs);
@@ -301,6 +304,9 @@ CREATE TABLE lnav_views (
                                          ' ');
                             tlm.tlm_time = timestamp;
                         }
+                    }
+                    if (ta != nullptr) {
+                        tlm.tlm_anchor = ta->anchor_for_row(tc.get_top());
                     }
                     tlm.tlm_file = tc.map_top_row([](const auto& al) {
                         return get_string_attr(al.get_attrs(), logline::L_FILE)
@@ -383,6 +389,50 @@ CREATE TABLE lnav_views (
             } else {
                 tab->zErrMsg = sqlite3_mprintf("Invalid time: %s", top_time);
                 return SQLITE_ERROR;
+            }
+        }
+        if (top_meta != nullptr) {
+            static const intern_string_t SQL_SRC
+                = intern_string::lookup("top_meta");
+
+            auto parse_res = top_line_meta_handlers.parser_for(SQL_SRC).of(
+                string_fragment::from_c_str(top_meta));
+            if (parse_res.isErr()) {
+                auto errmsg = parse_res.unwrapErr();
+                tab->zErrMsg = sqlite3_mprintf(
+                    "Invalid top_meta: %s",
+                    errmsg[0].to_attr_line().get_string().c_str());
+                return SQLITE_ERROR;
+            }
+
+            auto tlm = parse_res.unwrap();
+
+            if (index == LNV_TEXT && tlm.tlm_file) {
+                if (!lnav_data.ld_text_source.to_front(tlm.tlm_file.value())) {
+                    auto errmsg = parse_res.unwrapErr();
+                    tab->zErrMsg = sqlite3_mprintf("unknown top_meta.file: %s",
+                                                   tlm.tlm_file->c_str());
+                    return SQLITE_ERROR;
+                }
+            }
+
+            auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
+            if (ta != nullptr && tlm.tlm_anchor
+                && !tlm.tlm_anchor.value().empty())
+            {
+                auto req_anchor = tlm.tlm_anchor.value();
+                auto req_anchor_top = ta->row_for_anchor(req_anchor);
+                if (req_anchor_top) {
+                    auto curr_anchor = ta->anchor_for_row(tc.get_top());
+
+                    if (!curr_anchor || curr_anchor.value() != req_anchor) {
+                        tc.set_top(req_anchor_top.value());
+                    }
+                } else {
+                    tab->zErrMsg = sqlite3_mprintf(
+                        "unknown top_meta.anchor: %s", req_anchor.c_str());
+                    return SQLITE_ERROR;
+                }
             }
         }
         tc.set_left(left);

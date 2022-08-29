@@ -105,16 +105,12 @@ char* sql_quote_ident(const char* ident);
 
 std::string sql_safe_ident(const string_fragment& ident);
 
-void sql_compile_script(sqlite3* db,
-                        const char* src_name,
-                        const char* script,
-                        std::vector<sqlite3_stmt*>& stmts,
-                        std::vector<lnav::console::user_message>& errors);
-
-void sql_execute_script(sqlite3* db,
-                        const char* src_name,
-                        const char* script,
-                        std::vector<lnav::console::user_message>& errors);
+void sql_execute_script(
+    sqlite3* db,
+    const std::map<std::string, scoped_value_t>& global_vars,
+    const char* src_name,
+    const char* script,
+    std::vector<lnav::console::user_message>& errors);
 
 int guess_type_from_pcre(const std::string& pattern, std::string& collator);
 

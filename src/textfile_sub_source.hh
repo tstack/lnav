@@ -40,7 +40,8 @@
 
 class textfile_sub_source
     : public text_sub_source
-    , public vis_location_history {
+    , public vis_location_history
+    , public text_anchors {
 public:
     using file_iterator = std::deque<std::shared_ptr<logfile>>::iterator;
 
@@ -94,6 +95,8 @@ public:
 
     void to_front(const std::shared_ptr<logfile>& lf);
 
+    bool to_front(const std::string& filename);
+
     void set_top_from_off(file_off_t off);
 
     void rotate_left();
@@ -132,6 +135,12 @@ public:
 
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
+
+    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id) override;
+
+    nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
+
+    std::unordered_set<std::string> get_anchors() override;
 
     void quiesce() override;
 

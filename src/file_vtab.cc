@@ -63,15 +63,9 @@ CREATE TABLE lnav_file (
 
     explicit lnav_file(file_collection& fc) : lf_collection(fc) {}
 
-    iterator begin()
-    {
-        return this->lf_collection.fc_files.begin();
-    }
+    iterator begin() { return this->lf_collection.fc_files.begin(); }
 
-    iterator end()
-    {
-        return this->lf_collection.fc_files.end();
-    }
+    iterator end() { return this->lf_collection.fc_files.end(); }
 
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)
     {
@@ -170,14 +164,14 @@ CREATE TABLE lnav_file (
     {
         vt->zErrMsg = sqlite3_mprintf("Rows cannot be deleted from this table");
         return SQLITE_ERROR;
-    };
+    }
 
     int insert_row(sqlite3_vtab* tab, sqlite3_int64& rowid_out)
     {
         tab->zErrMsg
             = sqlite3_mprintf("Rows cannot be inserted into this table");
         return SQLITE_ERROR;
-    };
+    }
 
     int update_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid,
@@ -223,9 +217,113 @@ CREATE TABLE lnav_file (
         }
 
         return SQLITE_OK;
-    };
+    }
 
     file_collection& lf_collection;
+};
+
+struct lnav_file_metadata {
+    static constexpr const char* NAME = "lnav_file_metadata";
+    static constexpr const char* CREATE_STMT = R"(
+-- Access the metadata embedded in open files
+CREATE TABLE lnav_file_metadata (
+    filepath text,    -- The path to the file.
+    descriptor text,  -- The descriptor that identifies the source of the metadata.
+    mimetype text,    -- The MIME type of the metadata.
+    content text      -- The metadata itself.
+);
+)";
+
+    struct cursor {
+        struct metadata_row {
+            metadata_row(std::shared_ptr<logfile> lf, std::string desc)
+                : mr_logfile(lf), mr_descriptor(std::move(desc))
+            {
+            }
+            std::shared_ptr<logfile> mr_logfile;
+            std::string mr_descriptor;
+        };
+
+        sqlite3_vtab_cursor base;
+        lnav_file_metadata& c_meta;
+        std::vector<metadata_row>::iterator c_iter;
+        std::vector<metadata_row> c_rows;
+
+        cursor(sqlite3_vtab* vt)
+            : base({vt}),
+              c_meta(((vtab_module<lnav_file_metadata>::vtab*) vt)->v_impl)
+        {
+            for (auto& lf : this->c_meta.lfm_collection.fc_files) {
+                auto& lf_meta = lf->get_embedded_metadata();
+
+                for (const auto& meta_pair : lf_meta) {
+                    this->c_rows.emplace_back(lf, meta_pair.first);
+                }
+            }
+        }
+
+        ~cursor() { this->c_iter = this->c_rows.end(); }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    explicit lnav_file_metadata(file_collection& fc) : lfm_collection(fc) {}
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        auto& mr = *vc.c_iter;
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, mr.mr_logfile->get_filename());
+                break;
+            case 1:
+                to_sqlite(ctx, mr.mr_descriptor);
+                break;
+            case 2:
+                to_sqlite(
+                    ctx,
+                    fmt::to_string(
+                        mr.mr_logfile->get_embedded_metadata()[mr.mr_descriptor]
+                            .m_format));
+                break;
+            case 3:
+                to_sqlite(
+                    ctx,
+                    fmt::to_string(
+                        mr.mr_logfile->get_embedded_metadata()[mr.mr_descriptor]
+                            .m_value));
+                break;
+            default:
+                ensure(0);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    file_collection& lfm_collection;
 };
 
 struct injectable_lnav_file : vtab_module<lnav_file> {
@@ -233,5 +331,14 @@ struct injectable_lnav_file : vtab_module<lnav_file> {
     using injectable = injectable_lnav_file(file_collection&);
 };
 
+struct injectable_lnav_file_metadata
+    : vtab_module<tvt_no_update<lnav_file_metadata>> {
+    using vtab_module<tvt_no_update<lnav_file_metadata>>::vtab_module;
+    using injectable = injectable_lnav_file_metadata(file_collection&);
+};
+
 static auto file_binder
     = injector::bind_multiple<vtab_module_base>().add<injectable_lnav_file>();
+
+static auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
+                                   .add<injectable_lnav_file_metadata>();

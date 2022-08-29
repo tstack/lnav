@@ -35,6 +35,7 @@
 #include "config.h"
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
+#include "md2attr_line.hh"
 #include "readline_highlighters.hh"
 #include "relative_time.hh"
 #include "vtab_module.hh"
@@ -459,20 +460,41 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 
     if (!line_meta.bm_comment.empty()) {
         const auto* lead = line_meta.bm_tags.empty() ? " \u2514 " : " \u251c ";
+        md2attr_line mdal;
         attr_line_t al;
 
-        al.with_string(lead).append(lnav::roles::comment(line_meta.bm_comment));
-        al.insert(0, filename_width, ' ');
-        if (tc != nullptr) {
-            auto hl = tc->get_highlights();
-            auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
-
-            if (hl_iter != hl.end()) {
-                hl_iter->second.annotate(al, filename_width);
-            }
+        auto parse_res = md4cpp::parse(line_meta.bm_comment, mdal);
+        if (parse_res.isOk()) {
+            al = parse_res.unwrap();
+        } else {
+            log_error("%d: cannot convert comment to markdown: %s",
+                      (int) row,
+                      parse_res.unwrapErr().c_str());
+            al = line_meta.bm_comment;
         }
 
-        dst.emplace_back(al);
+        auto comment_lines = al.rtrim().split_lines();
+        for (size_t lpc = 0; lpc < comment_lines.size(); lpc++) {
+            auto& comment_line = comment_lines[lpc];
+
+            if (lpc == 0 && comment_line.empty()) {
+                continue;
+            }
+            comment_line.with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
+            comment_line.insert(
+                0, lpc == comment_lines.size() - 1 ? lead : " \u2502 ");
+            comment_line.insert(0, filename_width, ' ');
+            if (tc != nullptr) {
+                auto hl = tc->get_highlights();
+                auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
+
+                if (hl_iter != hl.end()) {
+                    hl_iter->second.annotate(comment_line, filename_width);
+                }
+            }
+
+            dst.emplace_back(comment_line);
+        }
     }
     if (!line_meta.bm_tags.empty()) {
         attr_line_t al;

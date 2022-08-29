@@ -42,16 +42,17 @@
 
 enum class text_format_t {
     TF_UNKNOWN,
-    TF_LOG,
-    TF_PYTHON,
-    TF_RUST,
-    TF_JAVA,
     TF_C_LIKE,
-    TF_SQL,
-    TF_XML,
+    TF_JAVA,
     TF_JSON,
+    TF_LOG,
     TF_MAN,
     TF_MARKDOWN,
+    TF_PYTHON,
+    TF_RUST,
+    TF_SQL,
+    TF_XML,
+    TF_YAML,
 };
 
 namespace fmt {
@@ -94,6 +95,9 @@ struct formatter<text_format_t> : formatter<string_view> {
                 break;
             case text_format_t::TF_MARKDOWN:
                 name = "text/markdown";
+                break;
+            case text_format_t::TF_YAML:
+                name = "application/yaml";
                 break;
         }
         return formatter<string_view>::format(name, ctx);

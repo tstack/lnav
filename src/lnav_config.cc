@@ -620,42 +620,42 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for top-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[0];
+                return &root->lt_style_header[0].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("h2")
         .with_description("Styling for 2nd-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[1];
+                return &root->lt_style_header[1].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("h3")
         .with_description("Styling for 3rd-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[2];
+                return &root->lt_style_header[2].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("h4")
         .with_description("Styling for 4th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[3];
+                return &root->lt_style_header[3].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("h5")
         .with_description("Styling for 5th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[4];
+                return &root->lt_style_header[4].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("h6")
         .with_description("Styling for 6th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                return &root->lt_style_header[5];
+                return &root->lt_style_header[5].pp_value;
             })
         .with_children(style_config_handlers),
     yajlpp::property_handler("hr")
@@ -844,10 +844,14 @@ static const struct json_path_container theme_log_level_styles_handlers = {
         "warning|error|critical|fatal|invalid)")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                style_config& sc = root->lt_level_styles[string2level(
+                auto& sc = root->lt_level_styles[string2level(
                     ypc.ypc_extractor.get_substr_i("level").get())];
 
-                return &sc;
+                if (ypc.ypc_parse_context != nullptr && sc.pp_path.empty()) {
+                    sc.pp_path = ypc.ypc_parse_context->get_full_path();
+                }
+
+                return &sc.pp_value;
             })
         .with_path_provider<lnav_theme>(
             [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
