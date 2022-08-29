@@ -61,7 +61,7 @@ struct static_file_info {
     ghc::filesystem::path sfi_path;
 };
 
-struct vtab_cursor {
+struct sf_vtab_cursor {
     sqlite3_vtab_cursor base;
     std::map<std::string, static_file_info>::iterator vc_files_iter;
     std::map<std::string, static_file_info> vc_files;
@@ -133,7 +133,7 @@ sfvt_destroy(sqlite3_vtab* p_vt)
 static int sfvt_next(sqlite3_vtab_cursor* cur);
 
 static void
-find_static_files(vtab_cursor* p_cur, const ghc::filesystem::path& dir)
+find_static_files(sf_vtab_cursor* p_cur, const ghc::filesystem::path& dir)
 {
     auto& file_map = p_cur->vc_files;
     std::error_code ec;
@@ -165,7 +165,7 @@ sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 
     p_vt->base.zErrMsg = NULL;
 
-    vtab_cursor* p_cur = (vtab_cursor*) new vtab_cursor();
+    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) new sf_vtab_cursor();
 
     if (p_cur == nullptr) {
         return SQLITE_NOMEM;
@@ -190,7 +190,7 @@ sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 static int
 sfvt_close(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* p_cur = (vtab_cursor*) cur;
+    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
 
     p_cur->vc_files_iter = p_cur->vc_files.end();
     /* Free cursor struct. */
@@ -202,7 +202,7 @@ sfvt_close(sqlite3_vtab_cursor* cur)
 static int
 sfvt_eof(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
 
     return vc->vc_files_iter == vc->vc_files.end();
 }
@@ -210,7 +210,7 @@ sfvt_eof(sqlite3_vtab_cursor* cur)
 static int
 sfvt_next(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
 
     if (vc->vc_files_iter != vc->vc_files.end()) {
         ++vc->vc_files_iter;
@@ -222,7 +222,7 @@ sfvt_next(sqlite3_vtab_cursor* cur)
 static int
 sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
 
     switch (col) {
         case 0:
@@ -260,7 +260,7 @@ sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 static int
 sfvt_rowid(sqlite3_vtab_cursor* cur, sqlite_int64* p_rowid)
 {
-    vtab_cursor* p_cur = (vtab_cursor*) cur;
+    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
 
     *p_rowid = std::distance(p_cur->vc_files.begin(), p_cur->vc_files_iter);
 
@@ -280,7 +280,7 @@ sfvt_filter(sqlite3_vtab_cursor* cur,
             int argc,
             sqlite3_value** argv)
 {
-    vtab_cursor* p_cur = (vtab_cursor*) cur;
+    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
 
     p_cur->vc_files_iter = p_cur->vc_files.begin();
     return SQLITE_OK;

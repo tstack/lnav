@@ -51,7 +51,7 @@ struct vtab {
     sqlite3* db;
 };
 
-struct vtab_cursor {
+struct env_vtab_cursor {
     sqlite3_vtab_cursor base;
     char** env_cursor;
 };
@@ -128,7 +128,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 
     p_vt->base.zErrMsg = NULL;
 
-    vtab_cursor* p_cur = (vtab_cursor*) new vtab_cursor();
+    env_vtab_cursor* p_cur = (env_vtab_cursor*) new env_vtab_cursor();
 
     if (p_cur == NULL) {
         return SQLITE_NOMEM;
@@ -145,7 +145,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 static int
 vt_close(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* p_cur = (vtab_cursor*) cur;
+    env_vtab_cursor* p_cur = (env_vtab_cursor*) cur;
 
     /* Free cursor struct. */
     delete p_cur;
@@ -156,7 +156,7 @@ vt_close(sqlite3_vtab_cursor* cur)
 static int
 vt_eof(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    env_vtab_cursor* vc = (env_vtab_cursor*) cur;
 
     return vc->env_cursor[0] == NULL;
 }
@@ -164,7 +164,7 @@ vt_eof(sqlite3_vtab_cursor* cur)
 static int
 vt_next(sqlite3_vtab_cursor* cur)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    env_vtab_cursor* vc = (env_vtab_cursor*) cur;
 
     if (vc->env_cursor[0] != NULL) {
         vc->env_cursor += 1;
@@ -176,7 +176,7 @@ vt_next(sqlite3_vtab_cursor* cur)
 static int
 vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 {
-    vtab_cursor* vc = (vtab_cursor*) cur;
+    env_vtab_cursor* vc = (env_vtab_cursor*) cur;
     const char* eq = strchr(vc->env_cursor[0], '=');
 
     switch (col) {
@@ -197,7 +197,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 static int
 vt_rowid(sqlite3_vtab_cursor* cur, sqlite_int64* p_rowid)
 {
-    vtab_cursor* p_cur = (vtab_cursor*) cur;
+    env_vtab_cursor* p_cur = (env_vtab_cursor*) cur;
 
     *p_rowid = (int64_t) p_cur->env_cursor[0];
 
