@@ -529,5 +529,5 @@ http://lnav.org
 
 For support questions, email:
 
-lnav@googlegroups.com
-support@lnav.org
+* lnav@googlegroups.com
+* support@lnav.org

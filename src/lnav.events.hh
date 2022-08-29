@@ -75,6 +75,17 @@ struct msg_detected {
 
 }  // namespace log
 
+namespace session {
+
+struct loaded {
+    std::string l_schema{SCHEMA_ID};
+
+    static const std::string SCHEMA_ID;
+    static const typed_json_path_container<loaded> handlers;
+};
+
+}  // namespace session
+
 int register_events_tab(sqlite3* db);
 
 namespace details {

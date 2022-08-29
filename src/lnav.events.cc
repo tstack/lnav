@@ -105,6 +105,20 @@ const typed_json_path_container<msg_detected> msg_detected::handlers = typed_jso
 
 }  // namespace log
 
+namespace session {
+
+const std::string loaded::SCHEMA_ID
+    = "https://lnav.org/event-session-loaded-v1.schema.json";
+
+const typed_json_path_container<loaded> loaded::handlers = typed_json_path_container<loaded>{
+    yajlpp::property_handler("$schema").for_field(&loaded::l_schema)
+        .with_example(loaded::SCHEMA_ID),
+}
+    .with_schema_id2(loaded::SCHEMA_ID)
+    .with_description2("Event fired when a session is loaded.");
+
+}  // namespace session
+
 int
 register_events_tab(sqlite3* db)
 {

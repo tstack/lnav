@@ -5,7 +5,9 @@ steps:
       description: "Move to an error"
       view_ptr: /top
       view_value: 6
-      notification: "Press e/Shift+E to move through the errors"
+      notification: |
+        Press `e`/`Shift+E` to move through the
+        <span class="-lnav_log-level-styles_error">errors</span>
       comment: |
         You found the error!
         [Log formats](https://docs.lnav.org/en/latest/formats.html#format-file-reference)
@@ -14,7 +16,9 @@ steps:
         how the levels are displayed.
     move-to-warning:
       description: "Move to a warning"
-      notification: "Press w/Shift+W to move through the warnings"
+      notification: |
+        Press `w`/`Shift+W` to move through the
+        <span class="-lnav_log-level-styles_warning">warnings</span>
       view_ptr: /top
       view_value: 3
       comment: |
@@ -25,12 +29,12 @@ steps:
         view.
   - search-for-term:
       description: "Search for something"
-      notification: "Press / to search for '1AF9...'"
+      notification: "Press `/` to search for '1AF9...'"
       view_ptr: /search
       view_value: 1AF9293A-F42D-4318-BCDF-60234B240955
     move-to-next-hit:
       description: "Move to the next hit"
-      notification: "Press n/Shift+N to move through the search hits"
+      notification: "Press `n`/`Shift+N` to move through the search hits"
       view_ptr: /top
       view_value: 53
       comment: |
@@ -43,7 +47,7 @@ steps:
         the way back to the start of the line.
     move-right:
       description: "Move to the right"
-      notification: "Press > to move horizontally to view the search hit"
+      notification: "Press `>` to move horizontally to view the search hit"
       view_ptr: /left
       view_value: 150
 ---
@@ -71,8 +75,8 @@ can then use the following hotkeys to jump to them in the log view:
 
 To complete this step in the tutorial, you'll need to navigate to the
 errors and warnings in the sample log file. You can check the upper-right
-status bar for tips on what you need to do next. Now, press `q` to switch
-to the log view and begin navigating the sample log file.
+↗↗↗ status bar for tips on what you need to do next. Now, press `q` to
+switch to the log view and begin navigating the sample log file.
 
 ## Step 2
 
@@ -87,12 +91,13 @@ Press `q` to switch to the log view and try searching for the UUID.
 
 ## Conclusion
 
-That's all for now, visit https://lnav.org/downloads to find how to
-download/install a copy of lnav for your system.  The full documentation
-is available at https://docs.lnav.org.
+That's all for now, thanks for your time! Visit the
+[downloads](https://lnav.org/downloads) page to find out how to
+download or install **lnav** for your system. The full
+documentation is available at https://docs.lnav.org
 
 ## Colophon
 
 The source for this tutorial is available here:
 
-https://github.com/tstack/lnav/tree/master/docs/tutorials/tutorial1
+https://github.com/tstack/lnav/tree/master/docs/tutorials/

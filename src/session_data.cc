@@ -46,6 +46,7 @@
 #include "base/paths.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "lnav.events.hh"
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "log_format_ext.hh"
@@ -964,6 +965,9 @@ load_session()
             lnav_data.ld_text_source.text_filters_changed();
         }
     };
+
+    lnav::events::publish(lnav_data.ld_db.in(),
+                          lnav::events::session::loaded{});
 }
 
 static void

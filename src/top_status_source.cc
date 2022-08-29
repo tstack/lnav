@@ -34,8 +34,13 @@
 #include "base/injector.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "lnav.hh"
 #include "lnav_config.hh"
 #include "logfile_sub_source.hh"
+#include "md2attr_line.hh"
+#include "md4cpp.hh"
+#include "shlex.hh"
+#include "shlex.resolver.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
 
@@ -107,7 +112,23 @@ top_status_source::update_user_msg()
     auto fetch_res = um_stmt.ums_stmt.fetch_row<std::string>();
     fetch_res.match(
         [&al](const std::string& value) {
-            al.with_ansi_string(value);
+            shlex lexer(value);
+            std::string user_note;
+
+            lexer.with_ignore_quotes(true).eval(
+                user_note, lnav_data.ld_exec_context.ec_global_vars);
+
+            md2attr_line mdal;
+            auto parse_res = md4cpp::parse(user_note, mdal);
+            if (parse_res.isOk()) {
+                al = parse_res.unwrap();
+            } else {
+                log_error("failed to parse user note as markdown: %s",
+                          parse_res.unwrapErr().c_str());
+                al = user_note;
+            }
+
+            scrub_ansi_string(al.get_string(), &al.get_attrs());
             al.append(" ");
         },
         [](const prepared_stmt::end_of_rows&) {},

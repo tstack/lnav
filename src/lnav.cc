@@ -1336,7 +1336,8 @@ looper()
             = &lnav_data.ld_exec_context;
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
-        lnav_data.ld_status[LNS_TOP].set_enabled(false);
+        lnav_data.ld_status[LNS_TOP].set_default_role(
+            role_t::VCR_INACTIVE_STATUS);
         lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
         for (auto& stat_bar : lnav_data.ld_status) {

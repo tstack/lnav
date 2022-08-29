@@ -1,3 +1,5 @@
+
+-- Tracks the current step in the tutorial
 CREATE TABLE lnav_tutorial_step
 (
     name TEXT    NOT NULL PRIMARY KEY,
@@ -7,6 +9,7 @@ CREATE TABLE lnav_tutorial_step
 INSERT INTO lnav_tutorial_step
     VALUES ('tutorial1', 1);
 
+-- A description of each step in the tutorial with its achievements
 CREATE TABLE lnav_tutorial_steps
 (
     name         TEXT    NOT NULL,
@@ -15,6 +18,7 @@ CREATE TABLE lnav_tutorial_steps
     PRIMARY KEY (name, step)
 );
 
+-- Tracks the progress through the achievements in a step of the tutorial
 CREATE TABLE IF NOT EXISTS lnav_tutorial_progress
 (
     name     TEXT    NOT NULL,
@@ -34,6 +38,8 @@ CREATE TABLE IF NOT EXISTS lnav_tutorial_lines
     log_comment TEXT
 );
 
+-- Copy the tutorial data from the markdown frontmatter to
+-- the appropriate tables.
 CREATE TRIGGER IF NOT EXISTS add_tutorial_data
     AFTER INSERT
     ON lnav_events
@@ -63,7 +69,14 @@ BEGIN
     REPLACE INTO lnav_user_notifications (id, views, message)
     SELECT *
         FROM lnav_tutorial_log_notification;
+END;
 
+CREATE TRIGGER IF NOT EXISTS tutorial_move_log_after_load
+    AFTER INSERT
+    ON lnav_events
+    WHEN jget(new.content, '/$schema') = 'https://lnav.org/event-session-loaded-v1.schema.json'
+BEGIN
+    UPDATE lnav_views SET top = 0 WHERE name = 'log';
 END;
 
 CREATE TRIGGER IF NOT EXISTS lnav_tutorial_view_listener UPDATE OF top
@@ -122,9 +135,9 @@ SELECT *
     FROM (SELECT 'org.lnav.tutorial.log' AS id, '["log"]' AS views, jget(value, '/notification') AS message
               FROM lnav_tutorial_remaining_achievements
           UNION ALL
-          SELECT 'org.lnav.tutorial.log'                          AS id,
-                 '["log"]'                                        AS views,
-                 'Press y to go to the next step in the tutorial' AS message)
+          SELECT 'org.lnav.tutorial.log'                            AS id,
+                 '["log"]'                                          AS views,
+                 'Press `y` to go to the next step in the tutorial' AS message)
     LIMIT 1;
 
 CREATE TRIGGER IF NOT EXISTS lnav_tutorial_progress_listener
@@ -138,4 +151,4 @@ BEGIN
 END;
 
 REPLACE INTO lnav_user_notifications (id, views, message)
-    VALUES ('org.lnav.tutorial.text', '["text"]', 'Press "q" to go to the log view')
+    VALUES ('org.lnav.tutorial.text', '["text"]', 'Press `q` to go to the log view')

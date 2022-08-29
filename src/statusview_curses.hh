@@ -171,6 +171,9 @@ public:
     void set_enabled(bool value) { this->sc_enabled = value; }
     bool get_enabled() const { return this->sc_enabled; }
 
+    void set_default_role(role_t role) { this->sc_default_role = role; }
+    role_t get_default_role() const { return this->sc_default_role; }
+
     void window_change();
 
     void do_update() override;
@@ -180,6 +183,7 @@ private:
     WINDOW* sc_window{nullptr};
     int sc_top{0};
     bool sc_enabled{true};
+    role_t sc_default_role{role_t::VCR_STATUS};
 };
 
 #endif

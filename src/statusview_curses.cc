@@ -101,7 +101,7 @@ statusview_curses::do_update()
     top = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
     auto attrs = vc.attrs_for_role(
-        this->sc_enabled ? role_t::VCR_STATUS : role_t::VCR_INACTIVE_STATUS);
+        this->sc_enabled ? this->sc_default_role : role_t::VCR_INACTIVE_STATUS);
 
     auto pair = vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color);
     wattr_set(this->sc_window, attrs.ta_attrs, pair, nullptr);
