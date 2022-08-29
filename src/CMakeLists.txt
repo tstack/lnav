@@ -73,6 +73,7 @@ set(TIME_FORMATS
         "%m/%d/%Y %H:%M:%S"
         "%d/%b/%y %H:%M:%S"
         "%m%d %H:%M:%S"
+        "%Y%m%d %H:%M:%S"
         "%Y%m%d.%H%M%S"
         "%H:%M:%S"
         "%M:%S"
