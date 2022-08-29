@@ -9,6 +9,7 @@ sudo apk add \
     zip \
     perl \
     ncurses \
+    ncurses-dev \
     autoconf \
     automake \
     elfutils \
