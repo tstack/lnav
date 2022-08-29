@@ -169,6 +169,7 @@ dist_noinst_DATA = \
 
 noinst_HEADERS = \
     third-party/md4c/md4c.h \
+    third-party/rapidyaml/ryml_all.hpp \
 	all_logs_vtab.hh \
 	archive_manager.hh \
 	archive_manager.cfg.hh \
