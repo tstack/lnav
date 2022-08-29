@@ -2114,6 +2114,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                          nullptr,
                          nullptr);
         }
+
+        lnav_data.ld_db.reset();
     });
 
 #ifdef HAVE_LIBCURL
