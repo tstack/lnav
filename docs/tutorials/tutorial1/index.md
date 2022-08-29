@@ -93,4 +93,4 @@ is available at https://docs.lnav.org.
 
 The source for this tutorial is available here:
 
-https://github.com/tstack/lnav/tree/master/docs/tutorial/tutorial1
+https://github.com/tstack/lnav/tree/master/docs/tutorials/tutorial1
