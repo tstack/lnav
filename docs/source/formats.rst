@@ -298,8 +298,8 @@ should be another object with the following fields:
       does not match the level parsed by lnav for this sample message.
 
   :highlights: This object contains the definitions for patterns to be
-      highlighted in a log message.  Each entry should have a name and a
-      definition with the following fields:
+    highlighted in a log message.  Each entry should have a name and a
+    definition with the following fields:
 
     :pattern: The regular expression to match in the log message body.
     :color: The foreground color to use when highlighting the part of the
