@@ -507,27 +507,21 @@ filter_sub_source::rl_perform(readline_curses* rc)
         switch (tf->get_lang()) {
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {
-                auto_mem<pcre> code;
-                const char* errptr;
-                int eoff;
+                auto compile_res = pcrepp::shared_from_str(
+                    new_value, PCRE_CASELESS | PCRE_UTF8);
 
-                if ((code = pcre_compile(new_value.c_str(),
-                                         PCRE_CASELESS | PCRE_UTF8,
-                                         &errptr,
-                                         &eoff,
-                                         nullptr))
-                    == nullptr)
-                {
+                if (compile_res.isErr()) {
+                    auto ce = compile_res.unwrapErr();
                     auto um = lnav::console::user_message::error(
                                   "invalid regular expression")
-                                  .with_reason(errptr)
+                                  .with_reason(ce.ce_msg)
                                   .with_snippet(lnav::console::snippet::from(
                                       INPUT_SRC, new_value));
                     um.um_snippets.back()
                         .s_content.append("\n")
-                        .append(eoff, ' ')
+                        .append(ce.ce_offset, ' ')
                         .append("^ "_comment)
-                        .append(lnav::roles::comment(errptr));
+                        .append(lnav::roles::comment(ce.ce_msg));
                     lnav_data.ld_exec_context.ec_error_callback_stack.back()(
                         um);
                     this->rl_abort(rc);
@@ -535,10 +529,11 @@ filter_sub_source::rl_perform(readline_curses* rc)
                     tf->lf_deleted = true;
                     tss->text_filters_changed();
 
-                    auto pf = std::make_shared<pcre_filter>(tf->get_type(),
-                                                            new_value,
-                                                            tf->get_index(),
-                                                            code.release());
+                    auto pf
+                        = std::make_shared<pcre_filter>(tf->get_type(),
+                                                        new_value,
+                                                        tf->get_index(),
+                                                        compile_res.unwrap());
 
                     *iter = pf;
                     tss->text_filters_changed();

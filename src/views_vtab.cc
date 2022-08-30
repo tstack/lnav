@@ -97,30 +97,29 @@ struct from_sqlite<filter_lang_t> {
 };
 
 template<>
-struct from_sqlite<std::pair<std::string, auto_mem<pcre>>> {
-    inline std::pair<std::string, auto_mem<pcre>> operator()(
-        int argc, sqlite3_value** val, int argi)
+struct from_sqlite<std::shared_ptr<pcrepp>> {
+    inline std::shared_ptr<pcrepp> operator()(int argc,
+                                              sqlite3_value** val,
+                                              int argi)
     {
         const char* pattern = (const char*) sqlite3_value_text(val[argi]);
-        const char* errptr;
-        auto_mem<pcre> code;
-        int eoff;
 
         if (pattern == nullptr || pattern[0] == '\0') {
             throw sqlite_func_error("Expecting a non-empty pattern value");
         }
 
-        code = pcre_compile(
-            pattern, PCRE_CASELESS | PCRE_UTF8, &errptr, &eoff, nullptr);
+        auto compile_res
+            = pcrepp::shared_from_str(pattern, PCRE_CASELESS | PCRE_UTF8);
 
-        if (code == nullptr) {
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
             throw sqlite_func_error(
                 "Invalid regular expression for pattern: {} at offset {}",
-                errptr,
-                eoff);
+                ce.ce_msg,
+                ce.ce_offset);
         }
 
-        return std::make_pair(std::string(pattern), std::move(code));
+        return compile_res.unwrap();
     }
 };
 
@@ -684,14 +683,13 @@ CREATE TABLE lnav_view_filters (
         std::shared_ptr<text_filter> tf;
         switch (lang.value_or(filter_lang_t::REGEX)) {
             case filter_lang_t::REGEX: {
-                auto pattern
-                    = from_sqlite<std::pair<std::string, auto_mem<pcre>>>()(
-                        1, &pattern_str, 0);
+                auto pattern = from_sqlite<std::shared_ptr<pcrepp>>()(
+                    1, &pattern_str, 0);
                 auto pf = std::make_shared<pcre_filter>(
                     type.value_or(text_filter::type_t::EXCLUDE),
-                    pattern.first,
+                    pattern->get_pattern(),
                     *filter_index,
-                    pattern.second.release());
+                    pattern);
                 auto new_cmd = pf->to_command();
                 for (auto& filter : fs) {
                     if (filter->to_command() == new_cmd) {
@@ -877,10 +875,9 @@ CREATE TABLE lnav_view_filters (
             tss->text_filters_changed();
 
             auto pattern
-                = from_sqlite<std::pair<std::string, auto_mem<pcre>>>()(
-                    1, &pattern_val, 0);
+                = from_sqlite<std::shared_ptr<pcrepp>>()(1, &pattern_val, 0);
             auto pf = std::make_shared<pcre_filter>(
-                type, pattern.first, tf->get_index(), pattern.second.release());
+                type, pattern->get_pattern(), tf->get_index(), pattern);
             auto conflict_mode = sqlite3_vtab_on_conflict(mod_vt->v_db);
             auto new_cmd = pf->to_command();
             for (auto& filter : fs) {

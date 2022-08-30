@@ -82,7 +82,10 @@ public:
 
 class pcre_filter : public text_filter {
 public:
-    pcre_filter(type_t type, const std::string& id, size_t index, pcre* code)
+    pcre_filter(type_t type,
+                const std::string& id,
+                size_t index,
+                std::shared_ptr<pcrepp> code)
         : text_filter(type, filter_lang_t::REGEX, id, index), pf_pcre(code)
     {
     }
@@ -96,7 +99,7 @@ public:
         pcre_context_static<30> pc;
         pcre_input pi(line.get_data(), 0, line.length());
 
-        return this->pf_pcre.match(pc, pi);
+        return this->pf_pcre->match(pc, pi);
     }
 
     std::string to_command() const override
@@ -107,7 +110,7 @@ public:
     }
 
 protected:
-    pcrepp pf_pcre;
+    std::shared_ptr<pcrepp> pf_pcre;
 };
 
 class sql_filter : public text_filter {

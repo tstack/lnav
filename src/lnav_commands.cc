@@ -1814,7 +1814,7 @@ com_filter(exec_context& ec,
                 return ec.make_error("too many filters");
             }
             auto pf = std::make_shared<pcre_filter>(
-                lt, args[1], *filter_index, compile_res.unwrap()->release());
+                lt, args[1], *filter_index, compile_res.unwrap());
 
             log_debug("%s [%d] %s",
                       args[0].c_str(),
