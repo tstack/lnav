@@ -3,7 +3,7 @@
 export LNAVSECURE=1
 export TERM=xterm-256color
 
-timeout --foreground --kill-after=30s 20s lnav \
+timeout --foreground --kill-after=30s 5m lnav \
     -I /tutorials/tutorial-lib \
     /tutorials/tutorial1/tutorial1.glog \
     /tutorials/tutorial1/index.md#tutorial-1
