@@ -1066,6 +1066,7 @@ looper()
         rlc->add_context(ln_mode_t::SQL, sql_context);
         rlc->add_context(ln_mode_t::EXEC, exec_context);
         rlc->add_context(ln_mode_t::USER, user_context);
+        rlc->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
         rlc->start();
 
         filter_source->fss_editor->start();

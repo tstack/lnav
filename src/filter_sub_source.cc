@@ -42,6 +42,7 @@ using namespace lnav::roles::literals;
 filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
+    this->fss_editor->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
     this->fss_editor->add_context(filter_lang_t::REGEX,

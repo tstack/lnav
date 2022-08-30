@@ -147,6 +147,8 @@ lnav v0.11.0:
        supported.  (Overstrike is a character followed by a backspace
        and then the same character for bold or an underscore for
        underline.)
+     * The ":eval" command now works with searching (using the '/'
+       prefix).
 
 lnav v0.10.1:
      Features:

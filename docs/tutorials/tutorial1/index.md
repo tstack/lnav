@@ -49,7 +49,27 @@ steps:
       description: "Move to the right"
       notification: "Press `>` to move horizontally to view the search hit"
       view_ptr: /left
-      view_value: 150
+      view_value: 582
+  - move-to-half-hour:
+      description: "Move to the next half-hour"
+      notification: "Press `3`/`Shift+3` to move through the half-hour marks"
+      view_ptr: /top
+      view_value: 34
+      comment: |
+        This file is in the _glog_ format and timestamps consist of the
+        year, month, and day squished together.  This log message's
+        timestamp is March 22nd, 2017.  You can see the timestamp for
+        the top line in the view in the breadcrumb bar.  Next, go to the
+        log messages for the following day using `:goto March 23` or the
+        breadcrumb bar above.
+    move-to-timestamp:
+      description: "Move to a given timestamp"
+      notification: "Move to '**March 23**' using `:goto` or the breadcrumb bar"
+      view_ptr: /top
+      view_value: 79
+      comment: |
+        Many different timestamp formats are recognized as well as
+        relative times, like `+1h` or `-2h`.
 ---
 # Tutorial 1
 
@@ -88,6 +108,25 @@ that is in one of the error messages, you can enter "1AF9" and then
 press `TAB` to complete the rest of the UUID.
 
 Press `q` to switch to the log view and try searching for the UUID.
+
+## Step 3
+
+To move to a particular time in the logs, you have a few options:
+
+* The number keys can be used to move to messages at the ten-minute
+  marks within an hour.  For example, pressing `2` will move to the
+  first message after the next twenty-minute mark, pressing `3`
+  will move to the next half-hour mark, and so on.
+* Pressing `ENTER` to focus on the breadcrumb bar, then you
+  can press `TAB` (or right-arrow) to move to the time crumb.
+  With the time crumb selected, you can then type in an absolute
+  or relative time.  Or, you can use the up and down arrow keys
+  to select a preset relative time.
+* Pressing `:` will activate the command prompt, then you can use
+  the `:goto` command to move to a given timestamp (or line number).
+
+Press `q` to switch to the log view and try moving to different
+times.
 
 ## Conclusion
 

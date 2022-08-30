@@ -71,7 +71,23 @@ ptime_fmt(const char* fmt,
     for (ssize_t lpc = 0; fmt[lpc]; lpc++) {
         if (fmt[lpc] == '%') {
             switch (fmt[lpc + 1]) {
-                case 'a':
+                case 'B': {
+                    size_t b_len = len - off;
+                    char full_month[b_len + 1];
+                    const char* end_of_date;
+
+                    memcpy(full_month, &str[off], b_len);
+                    full_month[b_len] = '\0';
+                    if ((end_of_date = strptime(full_month, "%B", &dst->et_tm))
+                        != nullptr)
+                    {
+                        off += end_of_date - full_month;
+                        lpc += 1;
+                    } else {
+                        return false;
+                    }
+                    break;
+                }
                 case 'Z':
                     if (fmt[lpc + 2]) {
                         if (!ptime_upto(fmt[lpc + 2], str, off, len)) {
@@ -109,8 +125,9 @@ ptime_fmt(const char* fmt,
                     FMT_CASE('@', at);
             }
         } else {
-            if (!ptime_char(fmt[lpc], str, off, len))
+            if (!ptime_char(fmt[lpc], str, off, len)) {
                 return false;
+            }
         }
     }
 

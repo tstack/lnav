@@ -615,12 +615,12 @@ ptime_e(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     dst->et_tm.tm_mday = 0;
     PTIME_CONSUME(1, {
-        if (str[off_inout] < '1' || str[off_inout] > '9') {
+        if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
         }
         dst->et_tm.tm_mday = str[off_inout] - '0';
     });
-    if (off_inout + 1 < len) {
+    if (off_inout < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
             dst->et_tm.tm_mday *= 10;
             dst->et_tm.tm_mday += str[off_inout] - '0';
@@ -658,7 +658,7 @@ ptime_m(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_mon = str[off_inout] - '0';
     });
-    if (off_inout + 1 < len) {
+    if (off_inout < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
             dst->et_tm.tm_mon *= 10;
             dst->et_tm.tm_mon += str[off_inout] - '0';
@@ -694,7 +694,7 @@ ptime_k(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_hour = str[off_inout] - '0';
     });
-    if (off_inout + 1 < len) {
+    if (off_inout < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
             dst->et_tm.tm_hour *= 10;
             dst->et_tm.tm_hour += str[off_inout] - '0';

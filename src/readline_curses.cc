@@ -1021,14 +1021,16 @@ readline_curses::start()
         }
     }
 
-    auto config_dir = lnav::paths::dotlnav();
-    for (auto& pair : this->rc_contexts) {
-        pair.second->load();
+    if (this->rc_save_history) {
+        auto config_dir = lnav::paths::dotlnav();
+        for (auto& pair : this->rc_contexts) {
+            pair.second->load();
 
-        auto hpath
-            = (config_dir / pair.second->get_name()).string() + ".history";
-        write_history(hpath.c_str());
-        pair.second->save();
+            auto hpath
+                = (config_dir / pair.second->get_name()).string() + ".history";
+            write_history(hpath.c_str());
+            pair.second->save();
+        }
     }
 
     _exit(0);

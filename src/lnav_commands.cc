@@ -332,6 +332,20 @@ com_current_time(exec_context& ec,
 static Result<std::string, lnav::console::user_message>
 com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
+    static const char* INTERACTIVE_FMTS[] = {
+        "%B %e %H:%M:%S",
+        "%b %e %H:%M:%S",
+        "%B %e %H:%M",
+        "%b %e %H:%M",
+        "%B %e %I:%M%p",
+        "%b %e %I:%M%p",
+        "%B %e %I%p",
+        "%b %e %I%p",
+        "%B %e",
+        "%b %e",
+        nullptr,
+    };
+
     std::string retval;
 
     if (args.empty()) {
@@ -362,6 +376,18 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         struct exttm tm;
         float value;
         auto parse_res = relative_time::from_str(all_args);
+
+        if (ttt != nullptr && tc->get_inner_height() > 0_vl) {
+            auto top_time_opt = ttt->time_for_row(tc->get_top());
+
+            if (top_time_opt) {
+                auto top_time_tv = top_time_opt.value();
+                struct tm top_tm;
+
+                localtime_r(&top_time_tv.tv_sec, &top_tm);
+                dts.set_base_time(top_time_tv.tv_sec, top_tm);
+            }
+        }
 
         if (dst_vl) {
 
@@ -414,6 +440,9 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
         } else if ((scan_end = dts.scan(
                         all_args.c_str(), all_args.size(), nullptr, &tm, tv))
+                   != nullptr ||
+                   (scan_end = dts.scan(
+                        all_args.c_str(), all_args.size(), INTERACTIVE_FMTS, &tm, tv))
                    != nullptr)
         {
             if (ttt == nullptr) {
@@ -460,6 +489,24 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return Err(um);
             }
 
+            if (!(tm.et_flags & ETF_DAY_SET)) {
+                tm.et_tm.tm_mday = 1;
+            }
+            if (!(tm.et_flags & ETF_HOUR_SET)) {
+                tm.et_tm.tm_hour = 0;
+            }
+            if (!(tm.et_flags & ETF_MINUTE_SET)) {
+                tm.et_tm.tm_min = 0;
+            }
+            if (!(tm.et_flags & ETF_SECOND_SET)) {
+                tm.et_tm.tm_sec = 0;
+            }
+            if (!(tm.et_flags & ETF_MICROS_SET) &&
+                !(tm.et_flags & ETF_MILLIS_SET)) {
+                tm.et_nsec = 0;
+            }
+            tv.tv_sec = tm2sec(&tm.et_tm);
+            tv.tv_usec = tm.et_nsec / 1000;
             dst_vl = ttt->row_for_time(tv);
         } else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {
@@ -4179,9 +4226,16 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return execute_sql(ec, expanded_cmd.substr(1), alt_msg);
             case '|':
                 return execute_file(ec, expanded_cmd.substr(1));
+            case '/': {
+                auto search_cmd = expanded_cmd.substr(1);
+                lnav_data.ld_view_stack.top() | [&search_cmd](auto tc) {
+                    tc->execute_search(search_cmd);
+                };
+                break;
+            }
             default:
                 return ec.make_error(
-                    "expecting argument to start with ':', ';', "
+                    "expecting argument to start with ':', ';', '/', "
                     "or '|' to signify a command, SQL query, or script to "
                     "execute");
         }

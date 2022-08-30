@@ -3,7 +3,13 @@
 export LNAVSECURE=1
 export TERM=xterm-256color
 
-timeout --foreground 5m lnav \
+timeout --foreground --kill-after=30s 20s lnav \
     -I /tutorials/tutorial-lib \
     /tutorials/tutorial1/tutorial1.glog \
     /tutorials/tutorial1/index.md#tutorial-1
+
+if [ $? = 124 ]; then
+  echo "error: reached connection time limit, reconnect if you're not a bot."
+else
+  echo "Thanks for trying out lnav!  Have a nice day!"
+fi

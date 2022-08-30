@@ -321,6 +321,10 @@ public:
         return this->rc_remote_complete_path;
     }
 
+    void set_save_history(bool value) {
+        this->rc_save_history = value;
+    }
+
 private:
     enum {
         RCF_MASTER,
@@ -333,6 +337,7 @@ private:
 
     friend class readline_context;
 
+    bool rc_save_history{true};
     int rc_active_context{-1};
     pid_t rc_child{-1};
     auto_fd rc_pty[2];
