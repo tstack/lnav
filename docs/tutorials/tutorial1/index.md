@@ -135,6 +135,9 @@ That's all for now, thanks for your time! Visit the
 download or install **lnav** for your system. The full
 documentation is available at https://docs.lnav.org
 
+Press `q` to switch to the log view and then press `q` again to
+exit **lnav**.
+
 ## Colophon
 
 The source for this tutorial is available here:
