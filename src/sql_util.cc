@@ -963,7 +963,7 @@ sqlite3_type_to_string(int type)
 void
 sqlite_close_wrapper(void* mem)
 {
-    sqlite3_close((sqlite3*) mem);
+    sqlite3_close_v2((sqlite3*) mem);
 }
 
 int
