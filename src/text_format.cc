@@ -42,6 +42,7 @@ detect_text_format(string_fragment sf,
     static const auto GZ_EXT = ghc::filesystem::path(".gz");
     static const auto BZ2_EXT = ghc::filesystem::path(".bz2");
     static const auto MD_EXT = ghc::filesystem::path(".md");
+    static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
     static const pcrepp MAN_MATCHERS
         = pcrepp(R"(^[A-Z]+\(\d\)\s+)", PCRE_MULTILINE);
@@ -104,7 +105,7 @@ detect_text_format(string_fragment sf,
             path = path->stem();
         }
 
-        if (path->extension() == MD_EXT) {
+        if (path->extension() == MD_EXT || path->extension() == MARKDOWN_EXT) {
             return text_format_t::TF_MARKDOWN;
         }
     }
