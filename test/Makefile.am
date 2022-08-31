@@ -203,6 +203,7 @@ dist_noinst_SCRIPTS = \
 	test_sql_fs_func.sh \
 	test_sql_indexes.sh \
 	test_sql_json_func.sh \
+	test_sql_regexp.sh \
 	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
@@ -407,6 +408,7 @@ TESTS = \
 	test_sql_fs_func.sh \
 	test_sql_indexes.sh \
 	test_sql_json_func.sh \
+	test_sql_regexp.sh \
 	test_sql_search_table.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
