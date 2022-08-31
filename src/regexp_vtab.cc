@@ -242,6 +242,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_input = std::make_unique<pcre_input>(pCur->c_content);
     pCur->c_matched = pCur->c_pattern.match(
         pCur->c_context, *(pCur->c_input), PCRE_NO_UTF8_CHECK);
+    pCur->c_match_index = 0;
 
     return SQLITE_OK;
 }
@@ -321,7 +322,8 @@ CREATE TABLE regexp_capture_into_json (
                     yajlpp_map root_map(gen);
 
                     for (int lpc = 0; lpc < vc.c_pattern.get_capture_count();
-                         lpc++) {
+                         lpc++)
+                    {
                         const auto& colname = vc.c_namer->cn_names[lpc];
                         const auto* cap = vc.c_context[lpc];
 
@@ -456,6 +458,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_input = std::make_unique<pcre_input>(pCur->c_content);
     pCur->c_matched = pCur->c_pattern.match(
         pCur->c_context, *(pCur->c_input), PCRE_NO_UTF8_CHECK);
+    pCur->c_match_index = 0;
 
     return SQLITE_OK;
 }
