@@ -88,6 +88,7 @@ ptime_fmt(const char* fmt,
                     }
                     break;
                 }
+                case 'a':
                 case 'Z':
                     if (fmt[lpc + 2]) {
                         if (!ptime_upto(fmt[lpc + 2], str, off, len)) {
