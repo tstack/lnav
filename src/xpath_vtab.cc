@@ -111,10 +111,7 @@ CREATE TABLE xpath (
 
         cursor(sqlite3_vtab* vt) : base({vt}) {}
 
-        ~cursor()
-        {
-            this->reset();
-        }
+        ~cursor() { this->reset(); }
 
         int reset()
         {
@@ -131,9 +128,7 @@ CREATE TABLE xpath (
             return SQLITE_OK;
         }
 
-        int eof()
-        {
-            return this->c_rowid >= (int64_t) this->c_results.size(); }
+        int eof() { return this->c_rowid >= (int64_t) this->c_results.size(); }
 
         int get_rowid(sqlite3_int64& rowid_out)
         {
@@ -288,7 +283,7 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         }
     }
 
-    viu.allocate_args(2);
+    viu.allocate_args(XP_COL_XPATH, XP_COL_VALUE, 2);
     return SQLITE_OK;
 }
 

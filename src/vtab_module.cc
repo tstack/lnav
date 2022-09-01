@@ -65,3 +65,45 @@ sqlite3_error_to_user_message(sqlite3* db)
     return lnav::console::user_message::error("SQL statement failed")
         .with_reason(errmsg);
 }
+
+void
+vtab_index_usage::column_used(
+    const vtab_index_constraints::const_iterator& iter)
+{
+    this->viu_min_column = std::min(iter->iColumn, this->viu_min_column);
+    this->viu_max_column = std::max(iter->iColumn, this->viu_max_column);
+    this->viu_index_info.idxNum |= (1L << iter.i_index);
+    this->viu_used_column_count += 1;
+}
+
+void
+vtab_index_usage::allocate_args(int low, int high, int required)
+{
+    int n_arg = 0;
+
+    if (this->viu_min_column != low || this->viu_max_column > high
+        || this->viu_used_column_count < required)
+    {
+        this->viu_index_info.estimatedCost = 2147483647;
+        this->viu_index_info.estimatedRows = 2147483647;
+        return;
+    }
+
+    for (int lpc = 0; lpc <= this->viu_max_column; lpc++) {
+        for (int cons_index = 0; cons_index < this->viu_index_info.nConstraint;
+             cons_index++)
+        {
+            if (this->viu_index_info.aConstraint[cons_index].iColumn != lpc) {
+                continue;
+            }
+            if (!(this->viu_index_info.idxNum & (1L << cons_index))) {
+                continue;
+            }
+
+            this->viu_index_info.aConstraintUsage[cons_index].argvIndex
+                = ++n_arg;
+        }
+    }
+    this->viu_index_info.estimatedCost = 1.0;
+    this->viu_index_info.estimatedRows = 1;
+}

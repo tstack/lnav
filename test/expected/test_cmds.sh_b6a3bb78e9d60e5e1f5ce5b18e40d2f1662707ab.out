@@ -3384,7 +3384,7 @@ For support questions, email:
    
 
 
-[1m[4mregexp_capture_into_json[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m)[0m
+[1m[4mregexp_capture_into_json[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m, [[0m[4moptions[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that executes a regular-expression over a
   string and returns the captured values as a JSON object.  If the
@@ -3393,6 +3393,10 @@ For support questions, email:
 [4mParameters[0m
   [4mstring[0m    The string to match against the given pattern.
   [4mpattern[0m   The regular expression to match.
+  [4moptions[0m   A JSON object with the following option:
+            convert-numbers - True (default) if text that looks like
+            numeric data should be converted to JSON numbers, false if
+            they should be captured as strings.
 [4mResults[0m
   [4mmatch_index[0m   The match iteration.  This value will
                 increase each time a new match is found in the input

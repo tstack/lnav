@@ -91,6 +91,12 @@ map_elements_to_json2(yajl_gen gen,
     int col = 0;
 
     for (auto& iter : *el) {
+        if (iter.e_token != DNT_PAIR) {
+            log_warning("dropping non-pair element: %s",
+                        dp.get_element_string(iter).c_str());
+            continue;
+        }
+
         const data_parser::element& pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
@@ -139,6 +145,11 @@ map_elements_to_json(yajl_gen gen,
     std::vector<std::string> names;
 
     for (auto& iter : *el) {
+        if (iter.e_token != DNT_PAIR) {
+            unique_names = false;
+            continue;
+        }
+
         const auto& pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
@@ -154,9 +165,8 @@ map_elements_to_json(yajl_gen gen,
         if (names | lnav::itertools::find(key_str)) {
             unique_names = false;
             break;
-        } else {
-            names.push_back(key_str);
         }
+        names.push_back(key_str);
     }
 
     names.clear();
@@ -187,7 +197,8 @@ elements_to_json(yajl_gen gen,
 
                     if (key_str.empty()
                         && el->front().get_pair_value().value_token()
-                            == DNT_GROUP) {
+                            == DNT_GROUP)
+                    {
                         element_to_json(gen, dp, el->front().get_pair_value());
                     } else {
                         yajlpp_map singleton_map(gen);

@@ -568,47 +568,14 @@ public:
     {
     }
 
-    void column_used(const vtab_index_constraints::const_iterator& iter)
-    {
-        this->viu_max_column = std::max(iter->iColumn, this->viu_max_column);
-        this->viu_index_info.idxNum |= (1L << iter.i_index);
-        this->viu_used_column_count += 1;
-    }
+    void column_used(const vtab_index_constraints::const_iterator& iter);
 
-    void allocate_args(int expected)
-    {
-        int n_arg = 0;
-
-        if (this->viu_used_column_count != expected) {
-            this->viu_index_info.estimatedCost = 2147483647;
-            this->viu_index_info.estimatedRows = 2147483647;
-            return;
-        }
-
-        for (int lpc = 0; lpc <= this->viu_max_column; lpc++) {
-            for (int cons_index = 0;
-                 cons_index < this->viu_index_info.nConstraint;
-                 cons_index++)
-            {
-                if (this->viu_index_info.aConstraint[cons_index].iColumn != lpc)
-                {
-                    continue;
-                }
-                if (!(this->viu_index_info.idxNum & (1L << cons_index))) {
-                    continue;
-                }
-
-                this->viu_index_info.aConstraintUsage[cons_index].argvIndex
-                    = ++n_arg;
-            }
-        }
-        this->viu_index_info.estimatedCost = 1.0;
-        this->viu_index_info.estimatedRows = 1;
-    }
+    void allocate_args(int low, int high, int required);
 
 private:
     sqlite3_index_info& viu_index_info;
     int viu_used_column_count{0};
+    int viu_min_column{INT_MAX};
     int viu_max_column{0};
 };
 

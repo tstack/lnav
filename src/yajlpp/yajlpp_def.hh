@@ -1465,7 +1465,7 @@ struct typed_json_path_container : public json_path_container {
         return yajlpp_parser<T>{src, this};
     }
 
-    std::string to_string(T& obj) const
+    std::string to_string(const T& obj) const
     {
         yajlpp_gen gen;
         yajlpp_gen_context ygc(gen, *this);

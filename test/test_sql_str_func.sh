@@ -107,3 +107,8 @@ run_cap_test ./drive_sql "SELECT encode('foo', null)"
 run_cap_test ./drive_sql "SELECT encode(null, 'base64')"
 
 run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT log_body, extract(log_body) from vmw_log' \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_vmw_log.0

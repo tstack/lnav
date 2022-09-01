@@ -34,12 +34,14 @@
 #include "base/lnav_log.hh"
 #include "column_namer.hh"
 #include "config.h"
+#include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "scn/scn.h"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 enum {
     RC_COL_MATCH_INDEX,
@@ -202,7 +204,7 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         }
     }
 
-    viu.allocate_args(2);
+    viu.allocate_args(RC_COL_VALUE, RC_COL_PATTERN, 2);
     return SQLITE_OK;
 }
 
@@ -253,7 +255,19 @@ enum {
     RCJ_COL_CONTENT,
     RCJ_COL_VALUE,
     RCJ_COL_PATTERN,
+    RCJ_COL_FLAGS,
 };
+
+struct regexp_capture_flags {
+    bool convert_numbers{true};
+};
+
+const typed_json_path_container<regexp_capture_flags>
+    regexp_capture_flags_handlers
+    = typed_json_path_container<regexp_capture_flags>{
+        yajlpp::property_handler("convert-numbers")
+            .for_field(&regexp_capture_flags::convert_numbers),
+    };
 
 struct regexp_capture_into_json {
     static constexpr const char* NAME = "regexp_capture_into_json";
@@ -265,7 +279,8 @@ CREATE TABLE regexp_capture_into_json (
     match_index INTEGER,
     content TEXT,
     value TEXT HIDDEN,
-    pattern TEXT HIDDEN
+    pattern TEXT HIDDEN,
+    flags TEXT HIDDEN
 );
 )";
 
@@ -280,6 +295,8 @@ CREATE TABLE regexp_capture_into_json (
         bool c_matched{false};
         size_t c_match_index{0};
         sqlite3_int64 c_rowid{0};
+        std::string c_flags_string;
+        nonstd::optional<regexp_capture_flags> c_flags;
 
         cursor(sqlite3_vtab* vt) : base({vt}) { this->c_context.set_count(0); }
 
@@ -332,7 +349,7 @@ CREATE TABLE regexp_capture_into_json (
 
                         if (!cap->is_valid()) {
                             yajl_gen_null(gen);
-                        } else {
+                        } else if (!vc.c_flags || vc.c_flags->convert_numbers) {
                             auto cap_view = vc.c_input->to_string_view(cap);
                             auto scan_int_res
                                 = scn::scan_value<int64_t>(cap_view);
@@ -354,6 +371,10 @@ CREATE TABLE regexp_capture_into_json (
 
                             yajl_gen_pstring(
                                 gen, cap_view.data(), cap_view.length());
+                        } else {
+                            yajl_gen_pstring(gen,
+                                             vc.c_input->get_substr_start(cap),
+                                             cap->length());
                         }
                     }
                 }
@@ -384,6 +405,14 @@ CREATE TABLE regexp_capture_into_json (
                     ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
                 break;
             }
+            case RCJ_COL_FLAGS: {
+                if (!vc.c_flags) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, vc.c_flags_string);
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -404,12 +433,13 @@ rcjBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         switch (iter->iColumn) {
             case RCJ_COL_VALUE:
             case RCJ_COL_PATTERN:
+            case RCJ_COL_FLAGS:
                 viu.column_used(iter);
                 break;
         }
     }
 
-    viu.allocate_args(2);
+    viu.allocate_args(RCJ_COL_VALUE, RCJ_COL_FLAGS, 2);
     return SQLITE_OK;
 }
 
@@ -422,14 +452,16 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
 {
     auto* pCur = (regexp_capture_into_json::cursor*) pVtabCursor;
 
-    if (argc != 2) {
+    if (argc < 2 || argc > 3) {
         pCur->c_content.clear();
         pCur->c_pattern.clear();
+        pCur->c_flags_string.clear();
+        pCur->c_flags = nonstd::nullopt;
         return SQLITE_OK;
     }
 
     auto byte_count = sqlite3_value_bytes(argv[0]);
-    auto blob = (const char*) sqlite3_value_blob(argv[0]);
+    const auto* blob = (const char*) sqlite3_value_blob(argv[0]);
 
     pCur->c_content_as_blob = (sqlite3_value_type(argv[0]) == SQLITE_BLOB);
     pCur->c_content.assign(blob, byte_count);
@@ -440,6 +472,32 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
             "Invalid regular expression: %s", re_res.unwrapErr().ce_msg);
         return SQLITE_ERROR;
+    }
+
+    pCur->c_flags_string.clear();
+    pCur->c_flags = nonstd::nullopt;
+    if (argc == 3) {
+        static const intern_string_t FLAGS_SRC = intern_string::lookup("flags");
+        const auto flags_json = from_sqlite<string_fragment>()(argc, argv, 2);
+
+        if (!flags_json.empty()) {
+            const auto parse_res
+                = regexp_capture_flags_handlers.parser_for(FLAGS_SRC).of(
+                    flags_json);
+
+            if (parse_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              "unable to parse flags")
+                              .with_reason(parse_res.unwrapErr()[0]);
+
+                pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+                    "%s%s", sqlitepp::ERROR_PREFIX, lnav::to_json(um).c_str());
+                return SQLITE_ERROR;
+            }
+
+            pCur->c_flags_string = flags_json.to_string();
+            pCur->c_flags = parse_res.unwrap();
+        }
     }
 
     pCur->c_pattern = re_res.unwrap();
@@ -527,6 +585,13 @@ register_regexp_vtab(sqlite3* db)
               .with_parameter(
                   {"string", "The string to match against the given pattern."})
               .with_parameter({"pattern", "The regular expression to match."})
+              .with_parameter(help_text{
+                  "options",
+                  "A JSON object with the following option: "
+                  "convert-numbers - True (default) if text that looks like "
+                  "numeric data should be converted to JSON numbers, "
+                  "false if they should be captured as strings."}
+                                  .optional())
               .with_result({
                   "match_index",
                   "The match iteration.  This value will increase "

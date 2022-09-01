@@ -1,0 +1,9 @@
+[1m[31m✘ error[0m: unable to parse flags
+ [1m[31mreason[0m: invalid JSON
+[1m[31m |      [0m  [1m[31mreason[0m: lexical error: invalid char in json text.
+[1m[31m |      [0m [1m[31m |      [0m                                       {abc
+[1m[31m |      [0m [1m[31m |      [0m                      (right here) ------^
+[1m[31m |      [0m [36m --> [0m[1mflags[0m:1
+[1m[31m |      [0m [36m | [0m[37m[40m{abc[0m
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mfrom[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[35m[40m'foo=0x123e;'[0m[37m[40m, [0m[35m[40m'(?<key>\w+)=(?<value>[^;]+)'[0m[37m[40m, [0m[35m[40m'{abc'[0m[37m[40m)[0m

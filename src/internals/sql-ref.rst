@@ -2742,14 +2742,15 @@ regexp_capture(*string*, *pattern*)
 
 .. _regexp_capture_into_json:
 
-regexp_capture_into_json(*string*, *pattern*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+regexp_capture_into_json(*string*, *pattern*, *\[options\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   A table-valued function that executes a regular-expression over a string and returns the captured values as a JSON object.  If the regex only matches a subset of the input string, it will be rerun on the remaining parts of the string until no more matches are found.
 
   **Parameters**
     * **string\*** --- The string to match against the given pattern.
     * **pattern\*** --- The regular expression to match.
+    * **options** --- A JSON object with the following option: convert-numbers - True (default) if text that looks like numeric data should be converted to JSON numbers, false if they should be captured as strings.
 
   **Examples**
     To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':

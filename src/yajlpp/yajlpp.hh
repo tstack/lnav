@@ -567,9 +567,9 @@ public:
     }
 
     template<typename T>
-    yajlpp_gen_context& with_obj(T& obj)
+    yajlpp_gen_context& with_obj(const T& obj)
     {
-        this->ygc_obj_stack.push(&obj);
+        this->ygc_obj_stack.push((void*) &obj);
         return *this;
     }
 

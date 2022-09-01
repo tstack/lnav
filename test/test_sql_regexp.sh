@@ -12,5 +12,13 @@ run_cap_test ${lnav_test} -n \
    ${test_dir}/logfile_syslog.3
 
 run_cap_test ${lnav_test} -n \
+   -c ";SELECT * from regexp_capture_into_json('foo=0x123e;', '(?<key>\w+)=(?<value>[^;]+)', json_object('convert-numbers', json('false')))" \
+   ${test_dir}/logfile_syslog.3
+
+run_cap_test ${lnav_test} -n \
+   -c ";SELECT * from regexp_capture_into_json('foo=0x123e;', '(?<key>\w+)=(?<value>[^;]+)', '{abc')" \
+   ${test_dir}/logfile_syslog.3
+
+run_cap_test ${lnav_test} -n \
    -c ";SELECT * from regexp_capture_into_json('foo=123e;', '(?<key>\w+)=(?<value>[^;]+)')" \
    ${test_dir}/logfile_syslog.3

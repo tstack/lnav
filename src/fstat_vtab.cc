@@ -303,7 +303,7 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         }
     }
 
-    viu.allocate_args(1);
+    viu.allocate_args(FSTAT_COL_PATTERN, FSTAT_COL_PATTERN, 1);
     return SQLITE_OK;
 }
 
