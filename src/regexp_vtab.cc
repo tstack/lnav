@@ -35,6 +35,7 @@
 #include "column_namer.hh"
 #include "config.h"
 #include "pcrepp/pcrepp.hh"
+#include "scn/scn.h"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -332,31 +333,27 @@ CREATE TABLE regexp_capture_into_json (
                         if (!cap->is_valid()) {
                             yajl_gen_null(gen);
                         } else {
-                            auto* cap_start = vc.c_input->get_substr_start(cap);
-                            char* cap_copy = (char*) alloca(cap->length() + 1);
-                            long long int i_value;
-                            double d_value;
-                            int end_index;
+                            auto cap_view = vc.c_input->to_string_view(cap);
+                            auto scan_int_res
+                                = scn::scan_value<int64_t>(cap_view);
 
-                            memcpy(cap_copy, cap_start, cap->length());
-                            cap_copy[cap->length()] = '\0';
-
-                            if (sscanf(cap_copy, "%lld%n", &i_value, &end_index)
-                                    == 1
-                                && (end_index == cap->length()))
-                            {
-                                yajl_gen_integer(gen, i_value);
-                            } else if (sscanf(cap_copy,
-                                              "%lf%n",
-                                              &d_value,
-                                              &end_index)
-                                           == 1
-                                       && (end_index == cap->length()))
-                            {
-                                yajl_gen_number(gen, cap_start, cap->length());
-                            } else {
-                                yajl_gen_pstring(gen, cap_start, cap->length());
+                            if (scan_int_res && scan_int_res.range().empty()) {
+                                yajl_gen_integer(gen, scan_int_res.value());
+                                continue;
                             }
+
+                            auto scan_float_res
+                                = scn::scan_value<double>(cap_view);
+                            if (scan_float_res
+                                && scan_float_res.range().empty())
+                            {
+                                yajl_gen_number(
+                                    gen, cap_view.data(), cap_view.length());
+                                continue;
+                            }
+
+                            yajl_gen_pstring(
+                                gen, cap_view.data(), cap_view.length());
                         }
                     }
                 }

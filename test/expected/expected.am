@@ -754,8 +754,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_json_func.sh_f34205b59e04f261897ad89f659595c743a18ca9.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_f34f5dfa938a1ac7721f924beb16bbceec127a1b.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_f34f5dfa938a1ac7721f924beb16bbceec127a1b.out \
+    $(srcdir)/%reldir%/test_sql_regexp.sh_51293df041b6969ccecc60204dce3676d0fb006d.err \
+    $(srcdir)/%reldir%/test_sql_regexp.sh_51293df041b6969ccecc60204dce3676d0fb006d.out \
     $(srcdir)/%reldir%/test_sql_regexp.sh_b841a0c09601e2419eeb99e85f7e286c889e4801.err \
     $(srcdir)/%reldir%/test_sql_regexp.sh_b841a0c09601e2419eeb99e85f7e286c889e4801.out \
+    $(srcdir)/%reldir%/test_sql_regexp.sh_bbd1128cf61a9af8f9dc937b46217443f42e1a7a.err \
+    $(srcdir)/%reldir%/test_sql_regexp.sh_bbd1128cf61a9af8f9dc937b46217443f42e1a7a.out \
     $(srcdir)/%reldir%/test_sql_search_table.sh_1a0d872ebc492fcecb2e79a0993170d5fc771a5b.err \
     $(srcdir)/%reldir%/test_sql_search_table.sh_1a0d872ebc492fcecb2e79a0993170d5fc771a5b.out \
     $(srcdir)/%reldir%/test_sql_search_table.sh_3f5f74863d065418bca5a000e6ad3d9344635164.err \
