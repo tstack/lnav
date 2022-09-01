@@ -210,8 +210,11 @@ TEXT
 
 The text view displays files for which lnav could not detect any log messages.
 
-Files with an :code:`.md` extension will be treated as Markdown files and
-rendered separately.
+Markdown
+""""""""
+
+Files with an :code:`.md` (or :code:`.markdown`) extension will be treated as
+Markdown files and rendered separately.
 
 DB
 ^^

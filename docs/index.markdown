@@ -18,6 +18,15 @@ An advanced log file viewer for the small-scale
 <p>Watch and analyze your log files from a terminal.</p>
 
 <p>No server. No setup. Still featureful.</p>
+
+<div id="playground-box">
+<h4>Try it out:</h4>
+
+<code>
+<span class="prompt">$</span>
+<a href="ssh://playground@demo.lnav.org">ssh playground@demo.lnav.org</a>
+</code>
+</div>
 </div>
 
 <div class="dlrow">

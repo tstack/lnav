@@ -1,0 +1,31 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+#playground-box {
+  font-size: x-large;
+  border-radius: 25px;
+  background: #8d8;
+  padding: 20px;
+  display: inline-block;
+}
+
+#playground-box h4 {
+  margin-bottom: 0;
+}
+
+#playground-box code {
+  padding-left: 20px;
+  background: #444;
+  border-color: #444;
+}
+
+#playground-box code a {
+  padding-right: 20px;
+  color: white;
+}
+
+#playground-box .prompt {
+  color: #4f4;
+}
