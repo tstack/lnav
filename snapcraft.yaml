@@ -4,6 +4,7 @@ summary: Log File Navigator
 description: |
   The Log File Navigator, **lnav** for short, is an advanced log file viewer
   for the small-scale.
+icon: docs/assets/images/favicon.png
 
 base: core20
 grade: stable
