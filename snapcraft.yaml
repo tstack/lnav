@@ -47,6 +47,9 @@ parts:
     after:
       - selective-checkout
     plugin: autotools
+    configflags:
+      - CFLAGS="-O2"
+      - CXXFLAGS="-O2"
     source: https://github.com/tstack/lnav.git
     source-depth: 500
     override-pull: |

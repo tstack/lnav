@@ -328,6 +328,7 @@ dist_noinst_DATA = \
 	logfile_uwsgi.0 \
 	logfile_vami.0 \
 	logfile_vdsm.0 \
+	logfile_vmw_log.0 \
 	logfile_vpxd.0 \
 	logfile_w3c.0 \
 	logfile_w3c.1 \
