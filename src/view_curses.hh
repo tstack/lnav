@@ -210,7 +210,7 @@ public:
      * called before this method, but the returned attributes cannot be used
      * with curses code until this method is called.
      */
-    static void init();
+    static void init(bool headless);
 
     void init_roles(const lnav_theme& lt,
                     lnav_config_listener::error_reporter& reporter);

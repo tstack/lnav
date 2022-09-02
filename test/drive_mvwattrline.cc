@@ -61,7 +61,7 @@ main(int argc, char* argv[])
 
         curs_set(0);
         noecho();
-        view_colors::singleton().init();
+        view_colors::singleton().init(false);
 
         al.with_string("Plain text");
         view_curses::mvwattrline(win, y++, 0, al, lr);

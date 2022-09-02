@@ -520,10 +520,10 @@ static color_listener _COLOR_LISTENER;
 term_color_palette* view_colors::vc_active_palette;
 
 void
-view_colors::init()
+view_colors::init(bool headless)
 {
     vc_active_palette = ansi_colors();
-    if (has_colors()) {
+    if (!headless && has_colors()) {
         start_color();
 
         if (lnav_config.lc_ui_default_colors) {

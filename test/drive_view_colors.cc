@@ -92,7 +92,7 @@ main(int argc, char* argv[])
         }
     }
 
-    view_colors::init();
+    view_colors::init(false);
     curs_set(0);
     tc.tc_window = win;
     tc.do_update();

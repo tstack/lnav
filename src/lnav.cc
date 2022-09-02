@@ -1191,7 +1191,7 @@ looper()
         define_key("\033Oc", KEY_END);
 
         view_colors& vc = view_colors::singleton();
-        view_colors::init();
+        view_colors::init(false);
 
         auto ecb_guard
             = lnav_data.ld_exec_context.add_error_callback([](const auto& um) {
@@ -2982,7 +2982,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 textview_curses *log_tc, *text_tc, *tc;
                 bool output_view = true;
 
-                view_colors::init();
+                view_colors::init(true);
                 rescan_files(true);
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair :
