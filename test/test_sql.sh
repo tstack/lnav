@@ -1092,3 +1092,6 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view db' \
     -c ';SELECT lnav_top_file()' \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -Nn \
+     -c ";select *,case match_index when 2 then replicate('abc', 1000) else '' end from regexp_capture_into_json('10;50;50;50;', '(\d+);')"

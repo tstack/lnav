@@ -175,6 +175,8 @@ public:
         struct line_range lr;
         vis_line_t height;
 
+        lr.lr_unit = line_range::unit::codepoint;
+
         size_t ident_to_show = this->sbc_show_state.match(
             [](const show_none) { return -1; },
             [ident_index](const show_all) { return ident_index; },

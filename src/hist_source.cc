@@ -123,7 +123,7 @@ hist_source2::add_value(time_t row,
         this->hs_last_row = row;
     }
 
-    bucket_t& bucket = this->find_bucket(this->hs_last_bucket);
+    auto& bucket = this->find_bucket(this->hs_last_bucket);
     bucket.b_time = row;
     bucket.b_values[htype].hv_value += value;
 }

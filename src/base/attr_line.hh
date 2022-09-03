@@ -47,11 +47,17 @@
  * Encapsulates a range in a string.
  */
 struct line_range {
+    enum class unit {
+        bytes,
+        codepoint,
+    };
+
     int lr_start;
     int lr_end;
+    unit lr_unit;
 
-    explicit line_range(int start = -1, int end = -1)
-        : lr_start(start), lr_end(end)
+    explicit line_range(int start = -1, int end = -1, unit u = unit::bytes)
+        : lr_start(start), lr_end(end), lr_unit(u)
     {
     }
 
