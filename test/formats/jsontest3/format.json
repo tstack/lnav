@@ -6,6 +6,7 @@
         "file-pattern": "logfile_json3\\.json",
         "json": true,
         "hide-extra": true,
+        "convert-to-local-time": true,
         "line-format": [
             {
                 "field": "__timestamp__"
@@ -52,18 +53,18 @@
             "response/status": {
                 "kind": "string"
             },
-            "details1" : {
+            "details1": {
                 "hidden": true
             },
-            "details2" : {
+            "details2": {
                 "hidden": true
             },
-            "details3" : {
+            "details3": {
                 "hidden": true
             }
         },
-        "timestamp-field" : "started_at",
-        "timestamp-divisor" : 1000,
+        "timestamp-field": "started_at",
+        "timestamp-divisor": 1000,
         "level-field": "response/status",
         "level": {
             "info": "2\\d+",

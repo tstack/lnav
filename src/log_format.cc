@@ -479,6 +479,15 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
 
         tv.tv_sec = val / divisor;
         tv.tv_usec = (val % divisor) * (1000000.0 / divisor);
+        if (jlu->jlu_format->lf_date_time.dts_local_time) {
+            struct tm ltm;
+            localtime_r(&tv.tv_sec, &ltm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            ltm.tm_zone = nullptr;
+#endif
+            ltm.tm_isdst = 0;
+            tv.tv_sec = tm2sec(&ltm);
+        }
         jlu->jlu_base_line->set_time(tv);
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         if (jlu->jlu_format->elf_level_pairs.empty()) {
@@ -524,6 +533,15 @@ read_json_double(yajlpp_parse_context* ypc, double val)
 
         tv.tv_sec = val / divisor;
         tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+        if (jlu->jlu_format->lf_date_time.dts_local_time) {
+            struct tm ltm;
+            localtime_r(&tv.tv_sec, &ltm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            ltm.tm_zone = nullptr;
+#endif
+            ltm.tm_isdst = 0;
+            tv.tv_sec = tm2sec(&ltm);
+        }
         jlu->jlu_base_line->set_time(tv);
     }
 

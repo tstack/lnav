@@ -98,12 +98,23 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_nested_json.json
 
 # json log3 format is not working"
-run_cap_test ${lnav_test} -n \
+run_cap_test env TZ=UTC ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json3.json
 
 # json log3 format is not working"
-run_cap_test ${lnav_test} -n \
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';select * from json_log3' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json3.json
+
+run_cap_test env TZ=America/New_York ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json3.json
+
+# json log3 format is not working"
+run_cap_test env TZ=America/New_York ${lnav_test} -n \
     -I ${test_dir} \
     -c ';select * from json_log3' \
     -c ':write-csv-to -' \
