@@ -261,7 +261,7 @@ view_curses::mvwattrline(WINDOW* window,
 
         if (attr_range.lr_end != -1) {
             for (const auto& adj : utf_adjustments) {
-                if (adj.uda_origin < iter->sa_range.lr_end) {
+                if (adj.uda_origin < iter->sa_range.lr_start) {
                     attr_range.lr_end += adj.uda_offset;
                 }
             }
