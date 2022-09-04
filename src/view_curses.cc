@@ -324,6 +324,7 @@ view_curses::mvwattrline(WINDOW* window,
 
             if (iter->sa_type == &VC_GRAPHIC) {
                 graphic = iter->sa_value.get<int64_t>();
+                attrs = text_attrs{};
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
