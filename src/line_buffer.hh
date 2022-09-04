@@ -67,9 +67,8 @@ struct line_info {
  */
 class line_buffer {
 public:
-    static const ssize_t DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
-    static const ssize_t MAX_LINE_BUFFER_SIZE
-        = 4 * 4 * DEFAULT_LINE_BUFFER_SIZE;
+    static const ssize_t DEFAULT_LINE_BUFFER_SIZE;
+    static const ssize_t MAX_LINE_BUFFER_SIZE;
     class error : public std::exception {
     public:
         error(int err) : e_err(err){};

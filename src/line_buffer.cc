@@ -67,6 +67,10 @@ static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
 static const ssize_t INITIAL_COMPRESSED_BUFFER_SIZE = 5 * 1024 * 1024;
 static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
+const ssize_t line_buffer::DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
+const ssize_t line_buffer::MAX_LINE_BUFFER_SIZE
+    = 4 * 4 * line_buffer::DEFAULT_LINE_BUFFER_SIZE;
+
 class io_looper : public isc::service<io_looper> {};
 
 struct io_looper_tag {};
