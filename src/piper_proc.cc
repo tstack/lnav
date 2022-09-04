@@ -172,7 +172,8 @@ piper_proc::piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd)
                     woff += wrc;
 
                     last_range = li.li_file_range;
-                    if (sbr.get_data()[sbr.length() - 1] != '\n'
+                    if (li.li_partial
+                        && sbr.get_data()[sbr.length() - 1] != '\n'
                         && (last_range.next_offset() != lb.get_file_size()))
                     {
                         woff = last_woff;

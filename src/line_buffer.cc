@@ -404,7 +404,9 @@ line_buffer::set_fd(auto_fd& fd)
 void
 line_buffer::resize_buffer(size_t new_max)
 {
-    if (new_max > (size_t) this->lb_buffer.capacity()) {
+    if (new_max <= MAX_LINE_BUFFER_SIZE
+        && new_max > (size_t) this->lb_buffer.capacity())
+    {
         /* Still need more space, try a realloc. */
         this->lb_share_manager.invalidate_refs();
         this->lb_buffer.expand_to(new_max);
@@ -1067,7 +1069,7 @@ line_buffer::load_next_line(file_range prev_line)
 #endif
         if (lf != nullptr
             || (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE)
-            || (request_size == MAX_LINE_BUFFER_SIZE)
+            || (request_size >= MAX_LINE_BUFFER_SIZE)
             || (!got_new_data
                 && (!this->is_pipe() || request_size > DEFAULT_INCREMENT)))
         {
@@ -1122,7 +1124,9 @@ line_buffer::load_next_line(file_range prev_line)
             if (!this->is_pipe() || !this->is_pipe_closed()) {
                 retval.li_partial = true;
             }
-            request_size += DEFAULT_INCREMENT;
+            request_size
+                = std::min<ssize_t>(this->lb_buffer.size() + DEFAULT_INCREMENT,
+                                    MAX_LINE_BUFFER_SIZE);
         }
 
         if (!done

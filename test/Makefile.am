@@ -467,6 +467,7 @@ DISTCLEANFILES = \
 	logfile_syslog_test.2 \
 	logfile_syslog_fr_test.0 \
 	logfile_syslog_with_mixed_times_test.0 \
+	textfile_long_lines.0 \
 	not:a:remote:file \
 	rollover_in.0 \
 	test-logs.tgz \

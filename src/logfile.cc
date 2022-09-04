@@ -479,6 +479,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 this->lf_line_buffer.flush_at(0);
             }
         } else {
+            this->lf_line_buffer.flush_at(0);
             off = 0;
         }
         if (this->lf_logline_observer != nullptr) {

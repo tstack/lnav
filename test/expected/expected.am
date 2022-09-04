@@ -8,6 +8,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.out \
     $(srcdir)/%reldir%/test_cli.sh_a1a09f890f4604309d0a81bbbec8e50fb7d5e887.err \
     $(srcdir)/%reldir%/test_cli.sh_a1a09f890f4604309d0a81bbbec8e50fb7d5e887.out \
+    $(srcdir)/%reldir%/test_cli.sh_f2e41555f1a5f40f54ce241207af602ed1503a2b.err \
+    $(srcdir)/%reldir%/test_cli.sh_f2e41555f1a5f40f54ce241207af602ed1503a2b.out \
     $(srcdir)/%reldir%/test_cmds.sh_017b495b95218b7c083951e2dba331cfec6e90be.err \
     $(srcdir)/%reldir%/test_cmds.sh_017b495b95218b7c083951e2dba331cfec6e90be.out \
     $(srcdir)/%reldir%/test_cmds.sh_0b1e4b1523dfca71927b1fe721c74490c51361d1.err \
