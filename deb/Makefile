@@ -28,6 +28,7 @@ build: $(PKG)
 $(BIN): $(SRC)
 	@mkdir -p $(shell dirname $@)
 	cp $? $@
+	strip -s $@
 
 $(HLP): ../src/help.txt
 	@mkdir -p $(shell dirname $@)
