@@ -28,6 +28,7 @@
  */
 
 #include <vector>
+#include <algorithm>
 
 #include "command_executor.hh"
 
@@ -926,6 +927,31 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             dls.push_header(colname, type, graphable);
             if (graphable) {
                 auto attrs = vc.attrs_for_ident(colname);
+                dls.dls_headers[lpc].hm_colorstr = colname;
+                for (
+                    std::string suf = " ";
+                    std::any_of(
+                        dls.fg_colors_vec.cend() - ( std::min((int)dls.fg_colors_vec.size(), (int) (view_colors::HI_COLOR_COUNT - 1))),
+                        dls.fg_colors_vec.cend(),
+                        [attrs](auto el) {return el == attrs.ta_fg_color;}
+                        ) ||
+                    std::any_of(
+                        dls.bg_colors_vec.cend() - ( std::min((int)dls.bg_colors_vec.size(), (int) (view_colors::HI_COLOR_COUNT - 1))),
+                        dls.bg_colors_vec.cend(),
+                        [attrs](auto el) {return el == attrs.ta_bg_color;}
+                    );
+                    suf += " "
+                ) {
+                    attrs = vc.attrs_for_ident(colname + suf);
+                    dls.dls_headers[lpc].hm_colorstr = colname + suf;
+                }
+
+                if (attrs.ta_fg_color) {
+                    dls.fg_colors_vec.emplace_back(attrs.ta_fg_color);
+                }
+                if (attrs.ta_bg_color) {
+                    dls.bg_colors_vec.emplace_back(attrs.ta_bg_color);
+                }
                 chart.with_attrs_for_ident(colname, attrs);
             }
         }

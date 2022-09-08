@@ -99,7 +99,7 @@ public:
     }
 
     struct header_meta {
-        explicit header_meta(std::string name) : hm_name(std::move(name)) {}
+        explicit header_meta(std::string name) : hm_name(std::move(name)), hm_colorstr(std::move(name)) {}
 
         bool operator==(const std::string& name) const
         {
@@ -107,6 +107,7 @@ public:
         }
 
         std::string hm_name;
+        std::string hm_colorstr;
         int hm_column_type{SQLITE3_TEXT};
         unsigned int hm_sub_type{0};
         bool hm_graphable{false};
@@ -114,6 +115,8 @@ public:
     };
 
     stacked_bar_chart<std::string> dls_chart;
+    std::vector<nonstd::optional<short>> fg_colors_vec;
+    std::vector<nonstd::optional<short>> bg_colors_vec;
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char*>> dls_rows;
     std::vector<struct timeval> dls_time_column;

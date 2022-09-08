@@ -260,6 +260,8 @@ db_label_source::clear()
     this->dls_time_column.clear();
     this->dls_cell_width.clear();
     this->dls_allocator = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
+    this->fg_colors_vec.clear();
+    this->bg_colors_vec.clear();
 }
 
 nonstd::optional<size_t>
@@ -436,7 +438,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
             text_attrs attrs;
             if (this->dos_labels->dls_headers[lpc].hm_graphable) {
-                attrs = vc.attrs_for_ident(dls->dls_headers[lpc].hm_name)
+                attrs = vc.attrs_for_ident(dls->dls_headers[lpc].hm_colorstr)
                     | text_attrs{A_REVERSE};
             } else {
                 attrs.ta_attrs = A_UNDERLINE;
