@@ -12,6 +12,7 @@ test/*.err
 *.trs
 *~
 .idea/
+Makefile
 Makefile.in
 TESTS_ENVIRONMENT
 aclocal.m4
@@ -124,7 +125,6 @@ src/xml-entities-json.cc
 src/xml-entities-json.h
 src/xterm-palette-json.cc
 src/xterm-palette-json.h
-Makefile
 src/Makefile
 src/base/Makefile
 src/fmtlib/Makefile

@@ -1,0 +1,17 @@
+Package: ${NAME}
+Version: ${VERSION}
+Architecture: ${ARCH}
+Maintainer: -
+Depends: libbz2-1.0, libc6 (>= 2.31), libcurl3-gnutls (>= 7.28.0), libgcc-s1 (>= 3.0), libncursesw6 (>= 6), libpcre3, libpcrecpp0v5 (>= 7.7), libreadline8 (>= 6.1), libsqlite3-0 (>= 3.9.1), libstdc++6 (>= 10.3.0), libtinfo6 (>= 6), zlib1g (>= 1:1.2.2.4)
+Section: admin
+Priority: optional
+Homepage: https://lnav.org
+Description: ncurses-based log file viewer
+ The log file navigator, lnav, is an enhanced log file viewer that
+ takes advantage of any semantic information that can be gleaned from
+ the files being viewed, such as timestamps and log levels.  Using this
+ extra semantic information, lnav can do things like interleaving
+ messages from different files, generate histograms of messages over
+ time, and providing hotkeys for navigating through the file.  It is
+ hoped that these features will allow the user to quickly and
+ efficiently zero in on problems.
