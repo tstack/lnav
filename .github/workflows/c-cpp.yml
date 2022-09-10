@@ -61,6 +61,7 @@ jobs:
           automake
           autoconf
           g++
+          libpcre2-dev
           libpcre3-dev
           libncurses-dev
           libsqlite3-dev
@@ -122,7 +123,7 @@ jobs:
           msys/libsqlite-devel
           msys/libunistring-devel
           msys/ncurses-devel
-          msys/pcre-devel
+          msys/pcre2-devel
           msys/zlib-devel
     - name: '🔧 Generate and configure'
       run: |
