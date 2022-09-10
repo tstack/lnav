@@ -2727,12 +2727,12 @@ regexp_capture(*string*, *pattern*)
 
       ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
       match_index capture_index capture_name capture_count range_start range_stop content 
-                0             0 <NULL>                   3           1          4 a=1     
-                0             1                          3           1          2 a       
-                0             2                          3           3          4 1       
-                1             0 <NULL>                   3           6          9 b=2     
-                1             1                          3           6          7 b       
-                1             2                          3           8          9 2       
+                0             0       <NULL>             3           1          4 a=1     
+                0             1       <NULL>             3           1          2 a       
+                0             2       <NULL>             3           3          4 1       
+                1             0       <NULL>             3           6          9 b=2     
+                1             1       <NULL>             3           6          7 b       
+                1             2       <NULL>             3           8          9 2       
 
   **See Also**
     :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`

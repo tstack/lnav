@@ -29,7 +29,7 @@
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "safe/safe.h"
 #include "scn/scn.h"
 #include "spookyhash/SpookyV2.h"
@@ -47,7 +47,7 @@
 using namespace mapbox;
 
 struct cache_entry {
-    std::shared_ptr<pcrepp> re2;
+    std::shared_ptr<lnav::pcre2pp::code> re2;
     std::shared_ptr<column_namer> cn{
         std::make_shared<column_namer>(column_namer::language::JSON)};
 };
@@ -61,15 +61,22 @@ find_re(string_fragment re)
 
     auto iter = cache.find(re);
     if (iter == cache.end()) {
+        auto compile_res = lnav::pcre2pp::code::from(re);
+        if (compile_res.isErr()) {
+            const static intern_string_t SRC = intern_string::lookup("arg");
+
+            throw lnav::console::to_user_message(SRC, compile_res.unwrapErr());
+        }
+
         cache_entry c;
 
-        c.re2 = std::make_shared<pcrepp>(re.to_string());
+        c.re2 = compile_res.unwrap().to_shared();
         auto pair = cache.insert(
             std::make_pair(string_fragment::from_str(c.re2->get_pattern()), c));
 
         for (int lpc = 0; lpc < c.re2->get_capture_count(); lpc++) {
-            c.cn->add_column(
-                string_fragment::from_c_str(c.re2->name_for_capture(lpc)));
+            c.cn->add_column(string_fragment::from_c_str(
+                c.re2->get_name_for_capture(lpc + 1)));
         }
 
         iter = pair.first;
@@ -81,90 +88,78 @@ find_re(string_fragment re)
 static bool
 regexp(string_fragment re, string_fragment str)
 {
-    cache_entry* reobj = find_re(re);
-    pcre_context_static<30> pc;
-    pcre_input pi(str);
+    auto* reobj = find_re(re);
 
-    return reobj->re2->match(pc, pi);
+    return reobj->re2->find_in(str).ignore_error().has_value();
 }
 
 static util::variant<int64_t, double, const char*, string_fragment, json_string>
-regexp_match(string_fragment re, const char* str)
+regexp_match(string_fragment re, string_fragment str)
 {
-    cache_entry* reobj = find_re(re);
-    pcre_context_static<30> pc;
-    pcre_input pi(str);
-    pcrepp& extractor = *reobj->re2;
+    auto* reobj = find_re(re);
+    auto& extractor = *reobj->re2;
 
     if (extractor.get_capture_count() == 0) {
-        throw pcrepp::error("regular expression does not have any captures");
+        throw std::runtime_error(
+            "regular expression does not have any captures");
     }
 
-    if (!extractor.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
+    auto md = extractor.create_match_data();
+    auto match_res = extractor.capture_from(str).into(md).matches();
+    if (match_res.is<lnav::pcre2pp::matcher::not_found>()) {
         return static_cast<const char*>(nullptr);
+    }
+    if (match_res.is<lnav::pcre2pp::matcher::error>()) {
+        auto err = match_res.get<lnav::pcre2pp::matcher::error>();
+
+        throw std::runtime_error(err.get_message());
     }
 
     yajlpp_gen gen;
     yajl_gen_config(gen, yajl_gen_beautify, false);
 
     if (extractor.get_capture_count() == 1) {
-        pcre_context::capture_t* cap = pc[0];
-        const char* cap_start = pi.get_substr_start(cap);
+        auto cap = md[1];
 
-        if (!cap->is_valid()) {
+        if (!cap) {
             return static_cast<const char*>(nullptr);
         }
 
-        char* cap_copy = (char*) alloca(cap->length() + 1);
-        long long int i_value;
-        double d_value;
-        int end_index;
-
-        memcpy(cap_copy, cap_start, cap->length());
-        cap_copy[cap->length()] = '\0';
-
-        if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1
-            && (end_index == cap->length()))
-        {
-            return (int64_t) i_value;
+        auto scan_int_res = scn::scan_value<int64_t>(cap->to_string_view());
+        if (scan_int_res && scan_int_res.empty()) {
+            return scan_int_res.value();
         }
-        if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1
-            && (end_index == cap->length()))
-        {
-            return d_value;
+
+        auto scan_float_res = scn::scan_value<double>(cap->to_string_view());
+        if (scan_float_res && scan_float_res.empty()) {
+            return scan_float_res.value();
         }
-        return string_fragment(str, cap->c_begin, cap->c_end);
+
+        return cap.value();
     } else {
         yajlpp_map root_map(gen);
 
         for (int lpc = 0; lpc < extractor.get_capture_count(); lpc++) {
             const auto& colname = reobj->cn->cn_names[lpc];
-            const auto* cap = pc[lpc];
+            const auto cap = md[lpc + 1];
 
             yajl_gen_pstring(gen, colname.data(), colname.length());
 
-            if (!cap->is_valid()) {
+            if (!cap) {
                 yajl_gen_null(gen);
             } else {
-                const char* cap_start = pi.get_substr_start(cap);
-                char* cap_copy = (char*) alloca(cap->length() + 1);
-                long long int i_value;
-                double d_value;
-                int end_index;
-
-                memcpy(cap_copy, cap_start, cap->length());
-                cap_copy[cap->length()] = '\0';
-
-                if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1
-                    && (end_index == cap->length()))
-                {
-                    yajl_gen_integer(gen, i_value);
-                } else if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1
-                           && (end_index == cap->length()))
-                {
-                    yajl_gen_number(gen, cap_start, cap->length());
+                auto scan_int_res
+                    = scn::scan_value<int64_t>(cap->to_string_view());
+                if (scan_int_res && scan_int_res.empty()) {
+                    yajl_gen_integer(gen, scan_int_res.value());
                 } else {
-                    yajl_gen_pstring(gen, cap_start, cap->length());
+                    auto scan_float_res
+                        = scn::scan_value<double>(cap->to_string_view());
+                    if (scan_float_res && scan_float_res.empty()) {
+                        yajl_gen_number(gen, cap->data(), cap->length());
+                    } else {
+                        yajl_gen_pstring(gen, cap->data(), cap->length());
+                    }
                 }
             }
         }
@@ -263,9 +258,9 @@ logfmt2json(string_fragment line)
 }
 
 static std::string
-regexp_replace(const char* str, string_fragment re, const char* repl)
+regexp_replace(string_fragment str, string_fragment re, const char* repl)
 {
-    cache_entry* reobj = find_re(re);
+    auto* reobj = find_re(re);
 
     return reobj->re2->replace(str, repl);
 }

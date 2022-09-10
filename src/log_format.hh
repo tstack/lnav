@@ -57,7 +57,7 @@
 #include "log_format_fwd.hh"
 #include "log_level.hh"
 #include "optional.hpp"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
 
 struct sqlite3;
@@ -522,29 +522,32 @@ protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
 
     struct pcre_format {
-        explicit pcre_format(const char* regex)
-            : name(regex), pcre(regex),
-              pf_timestamp_index(this->pcre.name_index("timestamp"))
+        template<typename T, std::size_t N>
+        explicit pcre_format(const T (&regex)[N])
+            : name(regex),
+              pcre(lnav::pcre2pp::code::from_const(regex).to_shared()),
+              pf_timestamp_index(this->pcre->name_index("timestamp"))
         {
         }
 
-        pcre_format() : name(nullptr), pcre("") {}
+        pcre_format() = default;
 
-        const char* name;
-        pcrepp pcre;
+        const char* name{nullptr};
+        std::shared_ptr<lnav::pcre2pp::code> pcre;
         int pf_timestamp_index{-1};
     };
 
     static bool next_format(pcre_format* fmt, int& index, int& locked_index);
 
     const char* log_scanf(uint32_t line_number,
-                          const char* line,
-                          size_t len,
+                          string_fragment line,
                           pcre_format* fmt,
                           const char* time_fmt[],
                           struct exttm* tm_out,
                           struct timeval* tv_out,
-                          ...);
+
+                          string_fragment* ts_out,
+                          nonstd::optional<string_fragment>* level_out);
 };
 
 #endif

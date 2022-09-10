@@ -47,7 +47,7 @@
 #include "bound_tags.hh"
 #include "config.h"
 #include "lnav_util.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
 #include "shlex.resolver.hh"
@@ -902,40 +902,42 @@ static struct {
 int
 guess_type_from_pcre(const std::string& pattern, std::string& collator)
 {
-    try {
-        static const std::vector<int> number_matches = {1, 2};
+    static const std::vector<int> number_matches = {1, 2};
 
-        pcrepp re(pattern);
-        std::vector<int> matches;
-        int retval = SQLITE3_TEXT;
-        int index = 0;
-
-        collator.clear();
-        for (const auto& test_value : TYPE_TEST_VALUE) {
-            pcre_context_static<30> pc;
-            pcre_input pi(test_value.sample);
-
-            if (re.match(pc, pi, PCRE_ANCHORED) && pc[0]->c_begin == 0
-                && pc[0]->length() == (int) pi.pi_length)
-            {
-                matches.push_back(index);
-            }
-
-            index += 1;
-        }
-
-        if (matches.size() == 1) {
-            retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
-            collator = TYPE_TEST_VALUE[matches.front()].collator;
-        } else if (matches == number_matches) {
-            retval = SQLITE_FLOAT;
-            collator = "";
-        }
-
-        return retval;
-    } catch (pcrepp::error& e) {
+    auto compile_res = lnav::pcre2pp::code::from(pattern);
+    if (compile_res.isErr()) {
         return SQLITE3_TEXT;
     }
+
+    auto re = compile_res.unwrap();
+    std::vector<int> matches;
+    int retval = SQLITE3_TEXT;
+    int index = 0;
+
+    collator.clear();
+    for (const auto& test_value : TYPE_TEST_VALUE) {
+        auto find_res
+            = re.find_in(string_fragment::from_c_str(test_value.sample),
+                         PCRE2_ANCHORED)
+                  .ignore_error();
+        if (find_res && find_res->f_all.sf_begin == 0
+            && find_res->f_remaining.empty())
+        {
+            matches.push_back(index);
+        }
+
+        index += 1;
+    }
+
+    if (matches.size() == 1) {
+        retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
+        collator = TYPE_TEST_VALUE[matches.front()].collator;
+    } else if (matches == number_matches) {
+        retval = SQLITE_FLOAT;
+        collator = "";
+    }
+
+    return retval;
 }
 
 const char*
@@ -1038,50 +1040,79 @@ annotate_sql_statement(attr_line_t& al)
     static const std::string keyword_re_str = R"(\A)" + sql_keyword_re();
 
     static const struct {
-        pcrepp re;
+        lnav::pcre2pp::code re;
         string_attr_type<void>* type;
     } PATTERNS[] = {
-        {pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR},
-        {pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR},
-        {pcrepp{keyword_re_str, PCRE_CASELESS}, &SQL_KEYWORD_ATTR},
-        {pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR},
         {
-            pcrepp{R"(\A-?\d+(?:\.\d*(?:[eE][\-\+]?\d+)?)?|0x[0-9a-fA-F]+$)"},
+            lnav::pcre2pp::code::from_const(R"(\A,)"),
+            &SQL_COMMA_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A\(|\A\))"),
+            &SQL_PAREN_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from(keyword_re_str, PCRE2_CASELESS).unwrap(),
+            &SQL_KEYWORD_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A'[^']*('(?:'[^']*')*|$))"),
+            &SQL_STRING_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A-?\d+(?:\.\d*(?:[eE][\-\+]?\d+)?)?|0x[0-9a-fA-F]+$)"),
             &SQL_NUMBER_ATTR,
         },
-        {pcrepp{R"(\A(((\$|:|@)?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)]))",
-                PCRE_CASELESS},
-         &SQL_IDENTIFIER_ATTR},
-        {pcrepp{R"(\A--.*)"}, &SQL_COMMENT_ATTR},
-        {pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR},
-        {pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR},
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A(((\$|:|@)?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)]))",
+                PCRE2_CASELESS),
+            &SQL_IDENTIFIER_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A--.*)"),
+            &SQL_COMMENT_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A(\*|<|>|=|!|\-|\+|\|\|))"),
+            &SQL_OPERATOR_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A.)"),
+            &SQL_GARBAGE_ATTR,
+        },
     };
 
-    static const pcrepp cmd_pattern{R"(^(\.\w+))"};
-    static const pcrepp ws_pattern(R"(\A\s+)");
+    static const auto cmd_pattern
+        = lnav::pcre2pp::code::from_const(R"(^(\.\w+))");
+    static const auto ws_pattern = lnav::pcre2pp::code::from_const(R"(\A\s+)");
 
-    pcre_context_static<30> pc;
-    pcre_input pi(al.get_string());
     auto& line = al.get_string();
     auto& sa = al.get_attrs();
 
-    if (cmd_pattern.match(pc, pi, PCRE_ANCHORED)) {
-        auto* cap = pc.all();
-        sa.emplace_back(line_range(cap->c_begin, cap->c_end),
+    auto cmd_find_res
+        = cmd_pattern.find_in(line, PCRE2_ANCHORED).ignore_error();
+    if (cmd_find_res) {
+        auto cap = cmd_find_res->f_all;
+        sa.emplace_back(line_range(cap.sf_begin, cap.sf_end),
                         SQL_COMMAND_ATTR.value());
         return;
     }
 
-    while (pi.pi_next_offset < line.length()) {
-        if (ws_pattern.match(pc, pi, PCRE_ANCHORED)) {
+    auto remaining = string_fragment::from_str(line);
+    while (!remaining.empty()) {
+        auto ws_find_res = ws_pattern.find_in(remaining).ignore_error();
+        if (ws_find_res) {
+            remaining = ws_find_res->f_remaining;
             continue;
         }
         for (const auto& pat : PATTERNS) {
-            if (pat.re.match(pc, pi, PCRE_ANCHORED)) {
-                auto* cap = pc.all();
-                struct line_range lr(cap->c_begin, cap->c_end);
-
-                sa.emplace_back(lr, pat.type->value());
+            auto pat_find_res = pat.re.find_in(remaining).ignore_error();
+            if (pat_find_res) {
+                sa.emplace_back(to_line_range(pat_find_res->f_all),
+                                pat.type->value());
+                remaining = pat_find_res->f_remaining;
                 break;
             }
         }

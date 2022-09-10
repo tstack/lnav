@@ -471,9 +471,7 @@ static const struct json_path_container keymap_def_handlers = {
             "an 'x' followed by the hexadecimal representation of the byte.")
         .with_obj_provider<key_command, key_map>(
             [](const yajlpp_provider_context& ypc, key_map* km) {
-                key_command& retval
-                    = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr(
-                        "key_seq")];
+                auto& retval = km->km_seq_to_cmd[ypc.get_substr("key_seq")];
 
                 return &retval;
             })
@@ -492,8 +490,7 @@ static const struct json_path_container keymap_defs_handlers = {
         .with_obj_provider<key_map, _lnav_config>(
             [](const yajlpp_provider_context& ypc, _lnav_config* root) {
                 key_map& retval
-                    = root->lc_ui_keymaps[ypc.ypc_extractor.get_substr(
-                        "keymap_name")];
+                    = root->lc_ui_keymaps[ypc.get_substr("keymap_name")];
                 return &retval;
             })
         .with_path_provider<_lnav_config>(
@@ -845,7 +842,7 @@ static const struct json_path_container theme_log_level_styles_handlers = {
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
                 auto& sc = root->lt_level_styles[string2level(
-                    ypc.ypc_extractor.get_substr_i("level").get())];
+                    ypc.get_substr_i("level").get())];
 
                 if (ypc.ypc_parse_context != nullptr && sc.pp_path.empty()) {
                     sc.pp_path = ypc.ypc_parse_context->get_full_path();
@@ -877,15 +874,14 @@ static const struct json_path_container highlighter_handlers = {
 
 static const struct json_path_container theme_highlights_handlers = {
     yajlpp::pattern_property_handler("(?<highlight_name>[\\w\\-]+)")
-        .with_obj_provider<highlighter_config, lnav_theme>(
-            [](const yajlpp_provider_context& ypc, lnav_theme* root) {
-                highlighter_config& hc
-                    = root->lt_highlights[ypc.ypc_extractor
-                                              .get_substr_i("highlight_name")
-                                              .get()];
+        .with_obj_provider<highlighter_config,
+                           lnav_theme>([](const yajlpp_provider_context& ypc,
+                                          lnav_theme* root) {
+            highlighter_config& hc
+                = root->lt_highlights[ypc.get_substr_i("highlight_name").get()];
 
-                return &hc;
-            })
+            return &hc;
+        })
         .with_path_provider<lnav_theme>(
             [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
                 for (const auto& pair : cfg->lt_highlights) {
@@ -940,8 +936,7 @@ static const struct json_path_container theme_defs_handlers = {
         .with_obj_provider<lnav_theme, _lnav_config>(
             [](const yajlpp_provider_context& ypc, _lnav_config* root) {
                 lnav_theme& lt
-                    = root->lc_ui_theme_defs[ypc.ypc_extractor.get_substr(
-                        "theme_name")];
+                    = root->lc_ui_theme_defs[ypc.get_substr("theme_name")];
 
                 return &lt;
             })
@@ -953,8 +948,7 @@ static const struct json_path_container theme_defs_handlers = {
             })
         .with_obj_deleter(
             +[](const yajlpp_provider_context& ypc, _lnav_config* root) {
-                root->lc_ui_theme_defs.erase(
-                    ypc.ypc_extractor.get_substr("theme_name"));
+                root->lc_ui_theme_defs.erase(ypc.get_substr("theme_name"));
             })
         .with_children(theme_def_handlers),
 };
@@ -1137,9 +1131,8 @@ static const struct json_path_container sysclip_impls_handlers = {
         .with_obj_provider<sysclip::clipboard, _lnav_config>(
             [](const yajlpp_provider_context& ypc, _lnav_config* root) {
                 auto& retval
-                    = root->lc_sysclip
-                          .c_clipboard_impls[ypc.ypc_extractor.get_substr(
-                              "clipboard_impl_name")];
+                    = root->lc_sysclip.c_clipboard_impls[ypc.get_substr(
+                        "clipboard_impl_name")];
                 return &retval;
             })
         .with_path_provider<_lnav_config>(
@@ -1178,8 +1171,7 @@ static const struct json_path_container log_source_watch_handlers = {
                            _lnav_config>(
             [](const yajlpp_provider_context& ypc, _lnav_config* root) {
                 auto& retval = root->lc_log_source
-                                   .c_watch_exprs[ypc.ypc_extractor.get_substr(
-                                       "watch_name")];
+                                   .c_watch_exprs[ypc.get_substr("watch_name")];
                 return &retval;
             })
         .with_path_provider<_lnav_config>(
@@ -1191,7 +1183,7 @@ static const struct json_path_container log_source_watch_handlers = {
         .with_obj_deleter(
             +[](const yajlpp_provider_context& ypc, _lnav_config* root) {
                 root->lc_log_source.c_watch_exprs.erase(
-                    ypc.ypc_extractor.get_substr("watch_name"));
+                    ypc.get_substr("watch_name"));
             })
         .with_children(log_source_watch_expr_handlers),
 };
@@ -1525,14 +1517,12 @@ reset_config(const std::string& path)
         }
 
         if (jph != nullptr && jph->jph_children && jph->jph_obj_deleter) {
-            pcre_context_static<30> pc;
             auto key_start = ypc.ypc_path_index_stack.back();
-            pcre_input pi(&ypc.ypc_path[key_start + 1],
-                          0,
-                          ypc.ypc_path.size() - key_start - 2);
-            yajlpp_provider_context provider_ctx{{pc, pi},
-                                                 static_cast<size_t>(-1)};
-            jph->jph_regex->match(pc, pi);
+            auto path_frag = string_fragment::from_byte_range(
+                ypc.ypc_path.data(), key_start + 1, ypc.ypc_path.size());
+            auto md = jph->jph_regex->create_match_data();
+            yajlpp_provider_context provider_ctx{&md, static_cast<size_t>(-1)};
+            jph->jph_regex->capture_from(path_frag).into(md).matches();
 
             jph->jph_obj_deleter(provider_ctx, ypc.ypc_obj_stack.top());
         }

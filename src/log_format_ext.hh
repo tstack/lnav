@@ -35,6 +35,7 @@
 #include <unordered_map>
 
 #include "log_format.hh"
+#include "log_search_table_fwd.hh"
 #include "yajlpp/yajlpp.hh"
 
 class module_format;
@@ -99,7 +100,9 @@ public:
     struct pattern {
         intern_string_t p_name;
         std::string p_config_path;
-        std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> p_pcre;
+        factory_container<lnav::pcre2pp::code,
+                          int>::with_default_args<PCRE2_DOTALL>
+            p_pcre;
         std::vector<indexed_value_def> p_value_by_index;
         std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index{-1};
@@ -113,8 +116,7 @@ public:
     };
 
     struct level_pattern {
-        std::string lp_regex;
-        std::shared_ptr<pcrepp> lp_pcre;
+        factory_container<lnav::pcre2pp::code> lp_pcre;
     };
 
     struct yajl_handle_deleter {
@@ -273,7 +275,7 @@ public:
     };
 
     struct highlighter_def {
-        std::shared_ptr<pcrepp> hd_pattern;
+        factory_container<lnav::pcre2pp::code> hd_pattern;
         positioned_property<std::string> hd_color;
         positioned_property<std::string> hd_background_color;
         bool hd_underline{false};
@@ -309,11 +311,10 @@ public:
             return "";
         }
         int pat_index = this->pattern_index_for_line(line_number);
-        return this->elf_pattern_order[pat_index]->p_pcre->get_pattern();
+        return this->elf_pattern_order[pat_index]->p_pcre.value->get_pattern();
     }
 
-    log_level_t convert_level(const pcre_input& pi,
-                              const pcre_context::capture_t* level_cap,
+    log_level_t convert_level(string_fragment str,
                               scan_batch_context* sbc) const;
 
     using mod_map_t = std::map<intern_string_t, module_format>;
@@ -325,9 +326,8 @@ public:
     std::vector<ghc::filesystem::path> elf_format_source_order;
     std::map<intern_string_t, int> elf_format_sources;
     std::list<intern_string_t> elf_collision;
-    std::string elf_file_pattern;
     std::set<file_format_t> elf_mime_types;
-    std::shared_ptr<pcrepp> elf_filename_pcre;
+    factory_container<lnav::pcre2pp::code> elf_filename_pcre;
     std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
     std::vector<std::shared_ptr<pattern>> elf_pattern_order;
     std::vector<sample> elf_samples;
@@ -338,7 +338,7 @@ public:
     int elf_column_count{0};
     double elf_timestamp_divisor{1.0};
     intern_string_t elf_level_field;
-    pcrepp elf_level_pointer;
+    factory_container<lnav::pcre2pp::code> elf_level_pointer;
     intern_string_t elf_body_field;
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
@@ -348,10 +348,12 @@ public:
     bool elf_has_module_format{false};
     bool elf_builtin_format{false};
 
+    using search_table_pcre2pp
+        = factory_container<lnav::pcre2pp::code, int>::with_default_args<
+            log_search_table_ns::PATTERN_OPTIONS>;
+
     struct search_table_def {
-        std::shared_ptr<
-            pcrepp_with_options<PCRE_CASELESS | PCRE_MULTILINE | PCRE_DOTALL>>
-            std_pattern;
+        search_table_pcre2pp std_pattern;
         std::string std_glob;
         log_level_t std_level{LEVEL_UNKNOWN};
     };
@@ -410,8 +412,7 @@ public:
 private:
     const intern_string_t elf_name;
 
-    static uint8_t module_scan(const pcre_input& pi,
-                               pcre_context::capture_t* body_cap,
+    static uint8_t module_scan(string_fragment body_cap,
                                const intern_string_t& mod_name);
 };
 

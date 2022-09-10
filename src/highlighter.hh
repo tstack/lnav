@@ -36,15 +36,15 @@
 #include <utility>
 
 #include "optional.hpp"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "text_format.hh"
 #include "view_curses.hh"
 
 struct highlighter {
     highlighter() = default;
 
-    explicit highlighter(std::shared_ptr<pcrepp> regex)
-        : h_regex(std::move(regex))
+    explicit highlighter(const std::shared_ptr<lnav::pcre2pp::code>& regex)
+        : h_regex(regex)
     {
     }
 
@@ -113,7 +113,7 @@ struct highlighter {
     role_t h_role{role_t::VCR_NONE};
     styling::color_unit h_fg{styling::color_unit::make_empty()};
     styling::color_unit h_bg{styling::color_unit::make_empty()};
-    std::shared_ptr<pcrepp> h_regex;
+    std::shared_ptr<lnav::pcre2pp::code> h_regex;
     text_attrs h_attrs;
     std::set<text_format_t> h_text_formats;
     intern_string_t h_format_name;

@@ -32,6 +32,8 @@
 #ifndef lnav_log_format_fwd_hh
 #define lnav_log_format_fwd_hh
 
+#include <utility>
+
 #include <sys/types.h>
 
 #include "ArenaAlloc/arenaalloc.h"
@@ -39,9 +41,10 @@
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "ptimec.hh"
 #include "robin_hood/robin_hood.h"
+#include "yajlpp/yajlpp.hh"
 
 class log_format;
 
@@ -303,7 +306,7 @@ private:
 };
 
 struct format_tag_def {
-    format_tag_def(std::string name) : ftd_name(name) {}
+    explicit format_tag_def(std::string name) : ftd_name(std::move(name)) {}
 
     struct path_restriction {
         std::string p_glob;
@@ -314,7 +317,8 @@ struct format_tag_def {
     std::string ftd_name;
     std::string ftd_description;
     std::vector<path_restriction> ftd_paths;
-    std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> ftd_pattern;
+    factory_container<lnav::pcre2pp::code, int>::with_default_args<PCRE2_DOTALL>
+        ftd_pattern;
     log_level_t ftd_level{LEVEL_UNKNOWN};
 };
 

@@ -297,45 +297,38 @@ log_format::next_format(pcre_format* fmt, int& index, int& locked_index)
 
 const char*
 log_format::log_scanf(uint32_t line_number,
-                      const char* line,
-                      size_t len,
+                      string_fragment line,
                       pcre_format* fmt,
                       const char* time_fmt[],
                       struct exttm* tm_out,
                       struct timeval* tv_out,
-                      ...)
+
+                      string_fragment* ts_out,
+                      nonstd::optional<string_fragment>* level_out)
 {
     int curr_fmt = -1;
     const char* retval = nullptr;
     bool done = false;
-    pcre_input pi(line, 0, len);
-    pcre_context_static<128> pc;
-    va_list args;
     int pat_index = this->last_pattern_index();
 
     while (!done && next_format(fmt, curr_fmt, pat_index)) {
-        va_start(args, tv_out);
-
-        pi.reset(line, 0, len);
-        if (!fmt[curr_fmt].pcre.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
+        auto md = fmt[curr_fmt].pcre->create_match_data();
+        auto match_res = fmt[curr_fmt]
+                             .pcre->capture_from(line)
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        if (!match_res) {
             retval = nullptr;
         } else {
-            pcre_context::capture_t* ts = pc[fmt[curr_fmt].pf_timestamp_index];
+            auto ts = md[fmt[curr_fmt].pf_timestamp_index];
 
-            for (auto& iter : pc) {
-                pcre_context::capture_t* cap
-                    = va_arg(args, pcre_context::capture_t*);
-
-                *cap = iter;
-            }
-
-            retval = this->lf_date_time.scan(pi.get_substr_start(ts),
-                                             ts->length(),
-                                             nullptr,
-                                             tm_out,
-                                             *tv_out);
+            retval = this->lf_date_time.scan(
+                ts->data(), ts->length(), nullptr, tm_out, *tv_out);
 
             if (retval) {
+                *ts_out = ts.value();
+                *level_out = md[2];
                 if (curr_fmt != pat_index) {
                     uint32_t lock_line;
 
@@ -351,8 +344,6 @@ log_format::log_scanf(uint32_t line_number,
                 done = true;
             }
         }
-
-        va_end(args);
     }
 
     return retval;
@@ -495,11 +486,9 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
 
             snprintf(level_buf, sizeof(level_buf), "%lld", val);
 
-            pcre_input pi(level_buf);
-            pcre_context::capture_t level_cap = {0, (int) strlen(level_buf)};
-
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-                pi, &level_cap, jlu->jlu_batch_context));
+                string_fragment::from_c_str(level_buf),
+                jlu->jlu_batch_context));
         } else {
             std::vector<std::pair<int64_t, log_level_t>>::iterator iter;
 
@@ -589,7 +578,7 @@ json_array_end(void* ctx)
 }
 
 static struct json_path_container json_log_handlers = {
-    json_path_handler(pcrepp("\\w+"))
+    yajlpp::pattern_property_handler("\\w+")
         .add_cb(read_json_null)
         .add_cb(read_json_bool)
         .add_cb(read_json_int)
@@ -664,13 +653,14 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
     return 1;
 }
 
-static struct json_path_container json_log_rewrite_handlers
-    = {json_path_handler(pcrepp("\\w+"))
-           .add_cb(rewrite_json_null)
-           .add_cb(rewrite_json_bool)
-           .add_cb(rewrite_json_int)
-           .add_cb(rewrite_json_double)
-           .add_cb(rewrite_json_field)};
+static struct json_path_container json_log_rewrite_handlers = {
+    yajlpp::pattern_property_handler("\\w+")
+        .add_cb(rewrite_json_null)
+        .add_cb(rewrite_json_bool)
+        .add_cb(rewrite_json_int)
+        .add_cb(rewrite_json_double)
+        .add_cb(rewrite_json_field),
+};
 
 bool
 external_log_format::scan_for_partial(shared_buffer_ref& sbr,
@@ -680,11 +670,9 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
         return false;
     }
 
-    auto& pat = this->elf_pattern_order[this->last_pattern_index()];
-    pcre_input pi(sbr.get_data(), 0, sbr.length());
-
+    const auto& pat = this->elf_pattern_order[this->last_pattern_index()];
     if (!this->lf_multiline) {
-        len_out = pat->p_pcre->match_partial(pi);
+        len_out = pat->p_pcre.value->match_partial(sbr.to_string_fragment());
         return true;
     }
 
@@ -694,7 +682,7 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
         return false;
     }
 
-    len_out = pat->p_pcre->match_partial(pi);
+    len_out = pat->p_pcre.value->match_partial(sbr.to_string_fragment());
     return (int) len_out > pat->p_timestamp_end;
 }
 
@@ -809,20 +797,24 @@ external_log_format::scan(logfile& lf,
         return log_format::SCAN_MATCH;
     }
 
-    pcre_input pi(sbr.get_data(), 0, sbr.length());
-    pcre_context_static<128> pc;
     int curr_fmt = -1, orig_lock = this->last_pattern_index();
     int pat_index = orig_lock;
+    auto line_sf = sbr.to_string_fragment();
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
-        auto* pat = fpat->p_pcre.get();
+        auto* pat = fpat->p_pcre.value.get();
 
         if (fpat->p_module_format) {
             continue;
         }
 
-        if (!pat->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
+        auto md = pat->create_match_data();
+        auto match_res = pat->capture_from(line_sf)
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        if (!match_res) {
             if (!this->lf_pattern_locks.empty() && pat_index != -1) {
                 curr_fmt = -1;
                 pat_index = -1;
@@ -830,41 +822,39 @@ external_log_format::scan(logfile& lf,
             continue;
         }
 
-        pcre_context::capture_t* ts = pc[fpat->p_timestamp_field_index];
-        pcre_context::capture_t* time_cap = pc[fpat->p_time_field_index];
-        pcre_context::capture_t* level_cap = pc[fpat->p_level_field_index];
-        pcre_context::capture_t* mod_cap = pc[fpat->p_module_field_index];
-        pcre_context::capture_t* opid_cap = pc[fpat->p_opid_field_index];
-        pcre_context::capture_t* body_cap = pc[fpat->p_body_field_index];
-        const char* ts_str = pi.get_substr_start(ts);
-        auto ts_str_len = ts->length();
+        auto ts = md[fpat->p_timestamp_field_index];
+        auto time_cap = md[fpat->p_time_field_index];
+        auto level_cap = md[fpat->p_level_field_index];
+        auto mod_cap = md[fpat->p_module_field_index];
+        auto opid_cap = md[fpat->p_opid_field_index];
+        auto body_cap = md[fpat->p_body_field_index];
         const char* last;
         struct exttm log_time_tm;
         struct timeval log_tv;
         uint8_t mod_index = 0, opid = 0;
         char combined_datetime_buf[512];
 
-        if (time_cap != nullptr) {
-            ts_str_len = snprintf(combined_datetime_buf,
-                                  sizeof(combined_datetime_buf),
-                                  "%.*sT%.*s",
-                                  ts->length(),
-                                  ts_str,
-                                  time_cap->length(),
-                                  pi.get_substr_start(time_cap));
-            ts_str = combined_datetime_buf;
+        if (ts && time_cap) {
+            auto ts_str_len = snprintf(combined_datetime_buf,
+                                       sizeof(combined_datetime_buf),
+                                       "%.*sT%.*s",
+                                       ts->length(),
+                                       ts->data(),
+                                       time_cap->length(),
+                                       time_cap->data());
+            ts = string_fragment::from_bytes(combined_datetime_buf, ts_str_len);
         }
 
-        if ((last = this->lf_date_time.scan(ts_str,
-                                            ts_str_len,
+        if ((last = this->lf_date_time.scan(ts->data(),
+                                            ts->length(),
                                             this->get_timestamp_formats(),
                                             &log_time_tm,
                                             log_tv))
             == nullptr)
         {
             this->lf_date_time.unlock();
-            if ((last = this->lf_date_time.scan(ts_str,
-                                                ts_str_len,
+            if ((last = this->lf_date_time.scan(ts->data(),
+                                                ts->length(),
                                                 this->get_timestamp_formats(),
                                                 &log_time_tm,
                                                 log_tv))
@@ -874,7 +864,8 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        auto level = this->convert_level(pi, level_cap, &sbc);
+        auto level = this->convert_level(
+            level_cap.value_or(string_fragment::invalid()), &sbc);
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
 
@@ -885,29 +876,27 @@ external_log_format::scan(logfile& lf,
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
-        if (opid_cap != nullptr && !opid_cap->empty()) {
-            auto opid_sf = pi.get_string_fragment(opid_cap);
+        if (opid_cap && !opid_cap->empty()) {
             {
-                auto opid_iter = sbc.sbc_opids.find(opid_sf);
+                auto opid_iter = sbc.sbc_opids.find(opid_cap.value());
 
                 if (opid_iter == sbc.sbc_opids.end()) {
-                    auto opid_copy = opid_sf.to_owned(sbc.sbc_allocator);
+                    auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
                     auto otr = opid_time_range{log_tv, log_tv};
                     sbc.sbc_opids.emplace(opid_copy, otr);
                 } else {
                     opid_iter->second.otr_end = log_tv;
                 }
             }
-            opid = hash_str(pi.get_substr_start(opid_cap), opid_cap->length());
+            opid = hash_str(opid_cap->data(), opid_cap->length());
         }
 
-        if (mod_cap != nullptr) {
-            intern_string_t mod_name = intern_string::lookup(
-                pi.get_substr_start(mod_cap), mod_cap->length());
+        if (mod_cap) {
+            intern_string_t mod_name = intern_string::lookup(mod_cap.value());
             auto mod_iter = MODULE_FORMATS.find(mod_name);
 
             if (mod_iter == MODULE_FORMATS.end()) {
-                mod_index = module_scan(pi, body_cap, mod_name);
+                mod_index = this->module_scan(body_cap.value(), mod_name);
                 mod_iter = MODULE_FORMATS.find(mod_name);
             } else if (mod_iter->second.mf_mod_format) {
                 mod_index = mod_iter->second.mf_mod_format->lf_mod_index;
@@ -918,24 +907,25 @@ external_log_format::scan(logfile& lf,
                     mod_iter->second.mf_mod_format);
 
                 if (mod_elf) {
-                    pcre_context_static<128> mod_pc;
                     shared_buffer_ref body_ref;
 
-                    body_cap->ltrim(sbr.get_data());
+                    body_cap->trim();
 
-                    pcre_input mod_pi(
-                        pi.get_substr_start(body_cap), 0, body_cap->length());
                     int mod_pat_index = mod_elf->last_pattern_index();
                     auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
-
-                    if (mod_pat.p_pcre->match(
-                            mod_pc, mod_pi, PCRE_NO_UTF8_CHECK))
-                    {
-                        auto* mod_level_cap
-                            = mod_pc[mod_pat.p_level_field_index];
+                    auto mod_md = mod_pat.p_pcre.value->create_match_data();
+                    auto match_res
+                        = mod_pat.p_pcre.value->capture_from(body_cap.value())
+                              .into(mod_md)
+                              .matches(PCRE2_NO_UTF_CHECK)
+                              .ignore_error();
+                    if (match_res) {
+                        auto mod_level_cap
+                            = mod_md[mod_pat.p_level_field_index];
 
                         level = mod_elf->convert_level(
-                            mod_pi, mod_level_cap, &sbc);
+                            mod_level_cap.value_or(string_fragment::invalid()),
+                            &sbc);
                     }
                 }
             }
@@ -944,17 +934,17 @@ external_log_format::scan(logfile& lf,
         for (auto value_index : fpat->p_numeric_value_indexes) {
             const indexed_value_def& ivd = fpat->p_value_by_index[value_index];
             const value_def& vd = *ivd.ivd_value_def;
-            pcre_context::capture_t* num_cap = pc[ivd.ivd_index];
+            auto num_cap = md[ivd.ivd_index];
 
-            if (num_cap != nullptr && num_cap->is_valid()) {
+            if (num_cap && num_cap->is_valid()) {
                 const struct scaling_factor* scaling = nullptr;
 
                 if (ivd.ivd_unit_field_index >= 0) {
-                    auto unit_cap = pc[ivd.ivd_unit_field_index];
+                    auto unit_cap = md[ivd.ivd_unit_field_index];
 
-                    if (unit_cap != nullptr && unit_cap->is_valid()) {
-                        intern_string_t unit_val = intern_string::lookup(
-                            pi.get_substr_start(unit_cap), unit_cap->length());
+                    if (unit_cap && unit_cap->is_valid()) {
+                        intern_string_t unit_val
+                            = intern_string::lookup(unit_cap.value());
 
                         auto unit_iter = vd.vd_unit_scaling.find(unit_val);
                         if (unit_iter != vd.vd_unit_scaling.end()) {
@@ -966,7 +956,7 @@ external_log_format::scan(logfile& lf,
                 }
 
                 auto scan_res
-                    = scn::scan_value<double>(pi.to_string_view(num_cap));
+                    = scn::scan_value<double>(num_cap->to_string_view());
                 if (scan_res) {
                     auto dvalue = scan_res.value();
                     if (scaling != nullptr) {
@@ -1012,15 +1002,12 @@ external_log_format::scan(logfile& lf,
 }
 
 uint8_t
-external_log_format::module_scan(const pcre_input& pi,
-                                 pcre_context::capture_t* body_cap,
+external_log_format::module_scan(string_fragment body_cap,
                                  const intern_string_t& mod_name)
 {
     uint8_t mod_index;
-    body_cap->ltrim(pi.get_string());
-    pcre_input body_pi(pi.get_substr_start(body_cap), 0, body_cap->length());
+    body_cap.trim();
     auto& ext_fmts = GRAPH_ORDERED_FORMATS;
-    pcre_context_static<128> pc;
     module_format mf;
 
     for (auto& elf : ext_fmts) {
@@ -1034,7 +1021,12 @@ external_log_format::module_scan(const pcre_input& pi,
                 continue;
             }
 
-            if (!pat->match(pc, body_pi)) {
+            auto md = pat.value->create_match_data();
+            auto match_res = pat.value->capture_from(body_cap)
+                                 .into(md)
+                                 .matches(PCRE2_NO_UTF_CHECK)
+                                 .ignore_error();
+            if (!match_res) {
                 continue;
             }
 
@@ -1063,10 +1055,7 @@ external_log_format::annotate(uint64_t line_number,
                               bool annotate_module) const
 {
     auto& line = values.lvv_sbr;
-    pcre_context_static<128> pc;
-    pcre_input pi(line.get_data(), 0, line.length());
     struct line_range lr;
-    pcre_context::capture_t *cap, *body_cap, *module_cap = nullptr;
 
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         values = this->jlf_line_values;
@@ -1083,14 +1072,20 @@ external_log_format::annotate(uint64_t line_number,
     int pat_index = this->pattern_index_for_line(line_number);
     auto& pat = *this->elf_pattern_order[pat_index];
 
-    sa.reserve(pat.p_pcre->get_capture_count());
-    if (!pat.p_pcre->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
+    sa.reserve(pat.p_pcre.value->get_capture_count());
+    auto md = pat.p_pcre.value->create_match_data();
+    auto match_res = pat.p_pcre.value->capture_from(line.to_string_fragment())
+                         .into(md)
+                         .matches(PCRE2_NO_UTF_CHECK)
+                         .ignore_error();
+    if (!match_res) {
         // A continued line still needs a body.
         lr.lr_start = 0;
         lr.lr_end = line.length();
         sa.emplace_back(lr, SA_BODY.value());
         if (!this->lf_multiline) {
-            auto len = pat.p_pcre->match_partial(pi);
+            auto len
+                = pat.p_pcre.value->match_partial(line.to_string_fragment());
             sa.emplace_back(
                 line_range{(int) len, -1},
                 SA_INVALID.value("Log line does not match any pattern"));
@@ -1098,45 +1093,43 @@ external_log_format::annotate(uint64_t line_number,
         return;
     }
 
+    nonstd::optional<string_fragment> module_cap;
     if (!pat.p_module_format) {
-        cap = pc[pat.p_timestamp_field_index];
-        if (cap->is_valid()) {
-            lr.lr_start = cap->c_begin;
-            lr.lr_end = cap->c_end;
-            sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+        auto ts_cap = md[pat.p_timestamp_field_index];
+        if (ts_cap) {
+            sa.emplace_back(to_line_range(ts_cap.value()),
+                            logline::L_TIMESTAMP.value());
         }
 
         if (pat.p_module_field_index != -1) {
-            module_cap = pc[pat.p_module_field_index];
-            if (module_cap != nullptr && module_cap->is_valid()) {
-                lr.lr_start = module_cap->c_begin;
-                lr.lr_end = module_cap->c_end;
-                sa.emplace_back(lr, logline::L_MODULE.value());
+            module_cap = md[pat.p_module_field_index];
+            if (module_cap) {
+                sa.emplace_back(to_line_range(module_cap.value()),
+                                logline::L_MODULE.value());
             }
         }
 
-        cap = pc[pat.p_opid_field_index];
-        if (cap != nullptr && cap->is_valid()) {
-            lr.lr_start = cap->c_begin;
-            lr.lr_end = cap->c_end;
-            sa.emplace_back(lr, logline::L_OPID.value());
+        auto opid_cap = md[pat.p_opid_field_index];
+        if (opid_cap) {
+            sa.emplace_back(to_line_range(opid_cap.value()),
+                            logline::L_OPID.value());
         }
     }
 
-    body_cap = pc[pat.p_body_field_index];
+    auto body_cap = md[pat.p_body_field_index];
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def& ivd = pat.p_value_by_index[lpc];
         const struct scaling_factor* scaling = nullptr;
-        auto* cap = pc[ivd.ivd_index];
+        auto cap = md[ivd.ivd_index];
         const auto& vd = *ivd.ivd_value_def;
 
         if (ivd.ivd_unit_field_index >= 0) {
-            auto* unit_cap = pc[ivd.ivd_unit_field_index];
+            auto unit_cap = md[ivd.ivd_unit_field_index];
 
-            if (unit_cap != nullptr && unit_cap->c_begin != -1) {
-                intern_string_t unit_val = intern_string::lookup(
-                    pi.get_substr_start(unit_cap), unit_cap->length());
+            if (unit_cap) {
+                intern_string_t unit_val
+                    = intern_string::lookup(unit_cap.value());
                 auto unit_iter = vd.vd_unit_scaling.find(unit_val);
                 if (unit_iter != vd.vd_unit_scaling.end()) {
                     const struct scaling_factor& sf = unit_iter->second;
@@ -1146,9 +1139,9 @@ external_log_format::annotate(uint64_t line_number,
             }
         }
 
-        if (cap->is_valid()) {
+        if (cap) {
             values.lvv_values.emplace_back(
-                vd.vd_meta, line, line_range{cap->c_begin, cap->c_end});
+                vd.vd_meta, line, to_line_range(cap.value()));
             values.lvv_values.back().apply_scaling(scaling);
         } else {
             values.lvv_values.emplace_back(vd.vd_meta);
@@ -1159,11 +1152,8 @@ external_log_format::annotate(uint64_t line_number,
     }
 
     bool did_mod_annotate_body = false;
-    if (annotate_module && module_cap != nullptr && body_cap != nullptr
-        && body_cap->is_valid())
-    {
-        intern_string_t mod_name = intern_string::lookup(
-            pi.get_substr_start(module_cap), module_cap->length());
+    if (annotate_module && module_cap && body_cap && body_cap->is_valid()) {
+        intern_string_t mod_name = intern_string::lookup(module_cap.value());
         auto mod_iter = MODULE_FORMATS.find(mod_name);
 
         if (mod_iter != MODULE_FORMATS.end()
@@ -1171,9 +1161,9 @@ external_log_format::annotate(uint64_t line_number,
         {
             auto& mf = mod_iter->second;
 
-            body_cap->ltrim(line.get_data());
+            body_cap->trim();
             auto narrow_res
-                = line.narrow(body_cap->c_begin, body_cap->length());
+                = line.narrow(body_cap->sf_begin, body_cap->length());
             auto pre_mod_values_size = values.lvv_values.size();
             auto pre_mod_sa_size = sa.size();
             mf.mf_mod_format->annotate(line_number, sa, values, false);
@@ -1181,19 +1171,18 @@ external_log_format::annotate(uint64_t line_number,
                  lpc < values.lvv_values.size();
                  lpc++)
             {
-                values.lvv_values[lpc].lv_origin.shift(0, body_cap->c_begin);
+                values.lvv_values[lpc].lv_origin.shift(0, body_cap->sf_begin);
             }
             for (size_t lpc = pre_mod_sa_size; lpc < sa.size(); lpc++) {
-                sa[lpc].sa_range.shift(0, body_cap->c_begin);
+                sa[lpc].sa_range.shift(0, body_cap->sf_begin);
             }
             line.widen(narrow_res);
             did_mod_annotate_body = true;
         }
     }
     if (!did_mod_annotate_body) {
-        if (body_cap != nullptr && body_cap->is_valid()) {
-            lr.lr_start = body_cap->c_begin;
-            lr.lr_end = body_cap->c_end;
+        if (body_cap && body_cap->is_valid()) {
+            lr = to_line_range(body_cap.value());
         } else {
             lr.lr_start = line.length();
             lr.lr_end = line.length();
@@ -1282,26 +1271,21 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         jlu->jlu_format->lf_timestamp_flags
             = tm_out.et_flags & ~ETF_MACHINE_ORIENTED;
         jlu->jlu_base_line->set_time(tv_out);
-    } else if (!jlu->jlu_format->elf_level_pointer.empty()) {
-        pcre_context_static<30> pc;
-        pcre_input pi(field_name);
-
-        if (jlu->jlu_format->elf_level_pointer.match(
-                pc, pi, PCRE_NO_UTF8_CHECK))
+    } else if (jlu->jlu_format->elf_level_pointer.value != nullptr) {
+        if (jlu->jlu_format->elf_level_pointer.value
+                ->find_in(field_name.to_string_fragment(), PCRE2_NO_UTF_CHECK)
+                .ignore_error()
+                .has_value())
         {
-            pcre_input pi_level((const char*) str, 0, len);
-            pcre_context::capture_t level_cap = {0, (int) len};
-
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-                pi_level, &level_cap, jlu->jlu_batch_context));
+                string_fragment::from_bytes(str, len), jlu->jlu_batch_context));
         }
-    } else if (jlu->jlu_format->elf_level_field == field_name) {
-        pcre_input pi((const char*) str, 0, len);
-        pcre_context::capture_t level_cap = {0, (int) len};
-
+    }
+    if (jlu->jlu_format->elf_level_field == field_name) {
         jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-            pi, &level_cap, jlu->jlu_batch_context));
-    } else if (jlu->jlu_format->elf_opid_field == field_name) {
+            string_fragment::from_bytes(str, len), jlu->jlu_batch_context));
+    }
+    if (jlu->jlu_format->elf_opid_field == field_name) {
         uint8_t opid = hash_str((const char*) str, len);
         jlu->jlu_base_line->set_opid(opid);
     }
@@ -1780,7 +1764,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     {
         pattern& pat = *iter->second;
 
-        if (pat.p_pcre == nullptr) {
+        if (pat.p_pcre.value == nullptr) {
             continue;
         }
 
@@ -1788,30 +1772,27 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->elf_has_module_format = true;
         }
 
-        for (auto name_iter = pat.p_pcre->named_begin();
-             name_iter != pat.p_pcre->named_end();
-             ++name_iter)
-        {
+        for (auto named_cap : pat.p_pcre.value->get_named_captures()) {
             const intern_string_t name
-                = intern_string::lookup(name_iter->pnc_name, -1);
+                = intern_string::lookup(named_cap.get_name());
 
             if (name == this->lf_timestamp_field) {
-                pat.p_timestamp_field_index = name_iter->index();
+                pat.p_timestamp_field_index = named_cap.get_index();
             }
             if (name == this->lf_time_field) {
-                pat.p_time_field_index = name_iter->index();
+                pat.p_time_field_index = named_cap.get_index();
             }
             if (name == this->elf_level_field) {
-                pat.p_level_field_index = name_iter->index();
+                pat.p_level_field_index = named_cap.get_index();
             }
             if (name == this->elf_module_id_field) {
-                pat.p_module_field_index = name_iter->index();
+                pat.p_module_field_index = named_cap.get_index();
             }
             if (name == this->elf_opid_field) {
-                pat.p_opid_field_index = name_iter->index();
+                pat.p_opid_field_index = named_cap.get_index();
             }
             if (name == this->elf_body_field) {
-                pat.p_body_field_index = name_iter->index();
+                pat.p_body_field_index = named_cap.get_index();
             }
 
             auto value_iter = this->elf_value_defs.find(name);
@@ -1819,10 +1800,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 auto vd = value_iter->second;
                 indexed_value_def ivd;
 
-                ivd.ivd_index = name_iter->index();
+                ivd.ivd_index = named_cap.get_index();
                 if (!vd->vd_unit_field.empty()) {
                     ivd.ivd_unit_field_index
-                        = pat.p_pcre->name_index(vd->vd_unit_field.get());
+                        = pat.p_pcre.value->name_index(vd->vd_unit_field.get());
                 } else {
                     ivd.ivd_unit_field_index = -1;
                 }
@@ -1927,18 +1908,17 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             bool found_in_pattern = false;
             for (const auto& pat : this->elf_patterns) {
-                auto cap_index = pat.second->p_pcre->name_index(
+                auto cap_index = pat.second->p_pcre.value->name_index(
                     vd->vd_meta.lvm_name.get());
                 if (cap_index >= 0) {
                     found_in_pattern = true;
                     break;
                 }
 
-                for (auto name_iter = pat.second->p_pcre->named_begin();
-                     name_iter != pat.second->p_pcre->named_end();
-                     ++name_iter)
+                for (auto named_cap :
+                     pat.second->p_pcre.value->get_named_captures())
                 {
-                    available_captures.insert(name_iter->pnc_name);
+                    available_captures.insert(named_cap.get_name().to_string());
                 }
             }
             if (!found_in_pattern) {
@@ -1986,7 +1966,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     for (const auto& td_pair : this->lf_tag_defs) {
         const auto& td = td_pair.second;
 
-        if (td->ftd_pattern == nullptr || td->ftd_pattern->empty()) {
+        if (td->ftd_pattern.value == nullptr
+            || td->ftd_pattern.value->get_pattern().empty())
+        {
             errors.emplace_back(
                 lnav::console::user_message::error(
                     attr_line_t("invalid tag definition ")
@@ -2017,8 +1999,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     for (auto& elf_sample : this->elf_samples) {
         auto sample_lines
             = string_fragment(elf_sample.s_line.pp_value).split_lines();
-        pcre_context_static<128> pc;
-        pcre_input pi(sample_lines[0]);
         bool found = false;
 
         for (auto pat_iter = this->elf_pattern_order.begin();
@@ -2027,11 +2007,16 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         {
             auto& pat = *(*pat_iter);
 
-            if (!pat.p_pcre) {
+            if (!pat.p_pcre.value) {
                 continue;
             }
 
-            if (!pat.p_pcre->match(pc, pi)) {
+            auto md = pat.p_pcre.value->create_match_data();
+            auto match_res = pat.p_pcre.value->capture_from(sample_lines[0])
+                                 .into(md)
+                                 .matches()
+                                 .ignore_error();
+            if (!match_res) {
                 continue;
             }
             found = true;
@@ -2040,23 +2025,21 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 continue;
             }
 
-            if (pat.p_pcre->name_index(this->lf_timestamp_field.to_string())
+            if (pat.p_pcre.value->name_index(this->lf_timestamp_field.get())
                 < 0)
             {
                 attr_line_t notes;
                 bool first_note = true;
 
-                if (pat.p_pcre->p_named_count > 0) {
+                if (pat.p_pcre.value->get_capture_count() > 0) {
                     notes.append("the following captures are available:\n  ");
                 }
-                for (auto name_iter = pat.p_pcre->named_begin();
-                     name_iter != pat.p_pcre->named_end();
-                     ++name_iter)
-                {
+                for (auto named_cap : pat.p_pcre.value->get_named_captures()) {
                     if (!first_note) {
                         notes.append(", ");
                     }
-                    notes.append(lnav::roles::symbol(name_iter->pnc_name));
+                    notes.append(
+                        lnav::roles::symbol(named_cap.get_name().to_string()));
                     first_note = false;
                 }
                 errors.emplace_back(
@@ -2075,21 +2058,23 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 continue;
             }
 
-            const auto* ts_cap = pc[this->lf_timestamp_field.get()];
-            const auto* level_cap = pc[pat.p_level_field_index];
-            const char* ts = pi.get_substr_start(ts_cap);
-            auto ts_frag = pi.get_string_fragment(ts_cap);
-            ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
+            const auto ts_cap = md[pat.p_timestamp_field_index];
+            const auto level_cap = md[pat.p_level_field_index];
             const char* const* custom_formats = this->get_timestamp_formats();
             date_time_scanner dts;
             struct timeval tv;
             struct exttm tm;
 
-            if (ts_cap->c_begin == 0) {
-                pat.p_timestamp_end = ts_cap->c_end;
+            if (ts_cap && ts_cap->sf_begin == 0) {
+                pat.p_timestamp_end = ts_cap->sf_end;
             }
-            if (ts_len == -1
-                || dts.scan(ts, ts_len, custom_formats, &tm, tv) == nullptr)
+            if (ts_cap
+                && dts.scan(ts_cap->data(),
+                            ts_cap->length(),
+                            custom_formats,
+                            &tm,
+                            tv)
+                    == nullptr)
             {
                 attr_line_t notes;
 
@@ -2100,9 +2085,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     {
                         off_t off = 0;
 
-                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
+                        PTIMEC_FORMATS[lpc].pf_func(
+                            &tm, ts_cap->data(), off, ts_cap->length());
                         notes.append("\n  ")
-                            .append(ts_frag)
+                            .append(ts_cap.value())
                             .append("\n")
                             .append(2 + off, ' ')
                             .append("^ "_snippet_border)
@@ -2115,9 +2101,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     for (int lpc = 0; custom_formats[lpc] != nullptr; lpc++) {
                         off_t off = 0;
 
-                        ptime_fmt(custom_formats[lpc], &tm, ts, off, ts_len);
+                        ptime_fmt(custom_formats[lpc],
+                                  &tm,
+                                  ts_cap->data(),
+                                  off,
+                                  ts_cap->length());
                         notes.append("\n  ")
-                            .append(ts_frag)
+                            .append(ts_cap.value())
                             .append("\n")
                             .append(2 + off, ' ')
                             .append("^ "_snippet_border)
@@ -2132,7 +2122,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         attr_line_t("invalid sample log message: ")
                             .append(lnav::to_json(elf_sample.s_line.pp_value)))
                         .with_reason(attr_line_t("unrecognized timestamp -- ")
-                                         .append(ts_frag))
+                                         .append(ts_cap.value()))
                         .with_snippet(elf_sample.s_line.to_snippet())
                         .with_note(notes)
                         .with_help(attr_line_t("If the timestamp format is not "
@@ -2142,7 +2132,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                        .append(" property")));
             }
 
-            log_level_t level = this->convert_level(pi, level_cap, nullptr);
+            log_level_t level = this->convert_level(
+                level_cap.value_or(string_fragment::invalid()), nullptr);
 
             if (elf_sample.s_level != LEVEL_UNKNOWN
                 && elf_sample.s_level != level)
@@ -2153,8 +2144,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .append(lnav::roles::symbol(pat.p_name.to_string()))
                     .append("\n")
                     .append("captured level = ")
-                    .append_quoted(
-                        pi.get_string_fragment(level_cap).to_string());
+                    .append_quoted(level_cap->to_string());
                 errors.emplace_back(
                     lnav::console::user_message::error(
                         attr_line_t("invalid sample log message: ")
@@ -2171,11 +2161,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             }
 
             {
-                pcre_context_static<128> pc_full;
-                pcre_input pi_full(elf_sample.s_line.pp_value);
-
-                if (!pat.p_pcre->match(pc_full, pi_full)) {
-                    attr_line_t regex_al = pat.p_pcre->get_pattern();
+                auto full_match_res
+                    = pat.p_pcre.value->capture_from(elf_sample.s_line.pp_value)
+                          .into(md)
+                          .matches()
+                          .ignore_error();
+                if (!full_match_res) {
+                    attr_line_t regex_al = pat.p_pcre.value->get_pattern();
                     lnav::snippets::regex_highlighter(
                         regex_al, -1, line_range{0, (int) regex_al.length()});
                     errors.emplace_back(
@@ -2194,14 +2186,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             .with_help(
                                 attr_line_t("use ").append_quoted(".*").append(
                                     " to match new-lines")));
-                } else if (static_cast<size_t>(pc_full.all()->length())
+                } else if (static_cast<size_t>(full_match_res->f_all.length())
                            != elf_sample.s_line.pp_value.length())
                 {
-                    attr_line_t regex_al = pat.p_pcre->get_pattern();
+                    attr_line_t regex_al = pat.p_pcre.value->get_pattern();
                     lnav::snippets::regex_highlighter(
                         regex_al, -1, line_range{0, (int) regex_al.length()});
                     auto match_length
-                        = static_cast<size_t>(pc_full.all()->length());
+                        = static_cast<size_t>(full_match_res->f_all.length());
                     attr_line_t sample_al = elf_sample.s_line.pp_value;
                     sample_al.append("\n")
                         .append(match_length, ' ')
@@ -2235,14 +2227,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             size_t max_name_width = 0;
 
             for (const auto& pat_iter : this->elf_pattern_order) {
-                pattern& pat = *pat_iter;
+                auto& pat = *pat_iter;
 
-                if (!pat.p_pcre) {
+                if (!pat.p_pcre.value) {
                     continue;
                 }
 
-                partial_indexes.emplace_back(pat.p_pcre->match_partial(pi),
-                                             pat.p_name);
+                partial_indexes.emplace_back(
+                    pat.p_pcre.value->match_partial(sample_lines[0]),
+                    pat.p_name);
                 max_name_width = std::max(max_name_width, pat.p_name.size());
             }
             for (const auto& line_frag : sample_lines) {
@@ -2273,7 +2266,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             attr_line_t regex_note;
             for (const auto& pat_iter : this->elf_pattern_order) {
-                if (!pat_iter->p_pcre) {
+                if (!pat_iter->p_pcre.value) {
                     regex_note
                         .append(
                             lnav::roles::symbol(fmt::format(FMT_STRING("{:{}}"),
@@ -2283,7 +2276,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     continue;
                 }
 
-                attr_line_t regex_al = pat_iter->p_pcre->get_pattern();
+                attr_line_t regex_al = pat_iter->p_pcre.value->get_pattern();
                 lnav::snippets::regex_highlighter(
                     regex_al, -1, line_range{0, (int) regex_al.length()});
 
@@ -2444,20 +2437,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             attrs.ta_attrs |= A_BLINK;
         }
 
-        if (hd.hd_pattern != nullptr) {
-            auto regex = pcrepp::shared_from_str(hd.hd_pattern->get_pattern(),
-                                                 PCRE_CASELESS | PCRE_UTF8);
-
-            if (regex.isErr()) {
-                log_error("unable to recompile highlighter pattern");
-            } else {
-                this->lf_highlighters.emplace_back(regex.unwrap());
-                this->lf_highlighters.back()
-                    .with_name(hd_pair.first.to_string())
-                    .with_format_name(this->elf_name)
-                    .with_color(fg, bg)
-                    .with_attrs(attrs);
-            }
+        if (hd.hd_pattern.value != nullptr) {
+            this->lf_highlighters.emplace_back(hd.hd_pattern.value);
+            this->lf_highlighters.back()
+                .with_name(hd_pair.first.to_string())
+                .with_format_name(this->elf_name)
+                .with_color(fg, bg)
+                .with_attrs(attrs);
         }
     }
 }
@@ -2468,12 +2454,12 @@ external_log_format::register_vtabs(
     std::vector<lnav::console::user_message>& errors)
 {
     for (auto& elf_search_table : this->elf_search_tables) {
-        if (elf_search_table.second.std_pattern == nullptr) {
+        if (elf_search_table.second.std_pattern.value == nullptr) {
             continue;
         }
 
         auto lst = std::make_shared<log_search_table>(
-            *elf_search_table.second.std_pattern, elf_search_table.first);
+            elf_search_table.second.std_pattern.value, elf_search_table.first);
         lst->lst_format = this;
         lst->lst_log_path_glob = elf_search_table.second.std_glob;
         if (elf_search_table.second.std_level != LEVEL_UNKNOWN) {
@@ -2495,16 +2481,15 @@ external_log_format::match_samples(const std::vector<sample>& samples) const
 {
     for (const auto& sample_iter : samples) {
         for (const auto& pat_iter : this->elf_pattern_order) {
-            pattern& pat = *pat_iter;
+            auto& pat = *pat_iter;
 
-            if (!pat.p_pcre) {
+            if (!pat.p_pcre.value) {
                 continue;
             }
 
-            pcre_context_static<128> pc;
-            pcre_input pi(sample_iter.s_line.pp_value);
-
-            if (pat.p_pcre->match(pc, pi)) {
+            if (pat.p_pcre.value->find_in(sample_iter.s_line.pp_value)
+                    .ignore_error())
+            {
                 return true;
             }
         }
@@ -2522,7 +2507,7 @@ public:
 
     void get_columns(std::vector<vtab_column>& cols) const override
     {
-        const external_log_format& elf = this->elt_format;
+        const auto& elf = this->elt_format;
 
         cols.resize(elf.elf_column_count);
         for (const auto& vd : elf.elf_value_def_order) {
@@ -2684,14 +2669,13 @@ external_log_format::specialized(int fmt_lock)
 bool
 external_log_format::match_name(const std::string& filename)
 {
-    if (this->elf_file_pattern.empty()) {
+    if (this->elf_filename_pcre.value == nullptr) {
         return true;
     }
 
-    pcre_context_static<10> pc;
-    pcre_input pi(filename);
-
-    return this->elf_filename_pcre->match(pc, pi);
+    return this->elf_filename_pcre.value->find_in(filename)
+        .ignore_error()
+        .has_value();
 }
 
 bool
@@ -2734,15 +2718,13 @@ external_log_format::value_line_count(const intern_string_t ist,
 }
 
 log_level_t
-external_log_format::convert_level(const pcre_input& pi,
-                                   const pcre_context::capture_t* level_cap,
+external_log_format::convert_level(string_fragment sf,
                                    scan_batch_context* sbc) const
 {
     log_level_t retval = LEVEL_INFO;
 
-    if (level_cap != nullptr && level_cap->is_valid()) {
+    if (sf.is_valid()) {
         if (sbc != nullptr && sbc->sbc_cached_level_count > 0) {
-            auto sf = pi.get_string_fragment(level_cap);
             auto cached_level_iter
                 = std::find(std::begin(sbc->sbc_cached_level_strings),
                             std::begin(sbc->sbc_cached_level_strings)
@@ -2765,16 +2747,14 @@ external_log_format::convert_level(const pcre_input& pi,
             }
         }
 
-        pcre_context_static<128> pc_level;
-        pcre_input pi_level(
-            pi.get_substr_start(level_cap), 0, level_cap->length());
-
         if (this->elf_level_patterns.empty()) {
-            retval = string2level(pi_level.get_string(), level_cap->length());
+            retval = string2level(sf.data(), sf.length());
         } else {
             for (const auto& elf_level_pattern : this->elf_level_patterns) {
-                if (elf_level_pattern.second.lp_pcre->match(
-                        pc_level, pi_level, PCRE_NO_UTF8_CHECK))
+                if (elf_level_pattern.second.lp_pcre.value
+                        ->find_in(sf, PCRE2_NO_UTF_CHECK)
+                        .ignore_error()
+                        .has_value())
                 {
                     retval = elf_level_pattern.first;
                     break;
@@ -2782,7 +2762,7 @@ external_log_format::convert_level(const pcre_input& pi,
             }
         }
 
-        if (sbc != nullptr && level_cap->length() < 10) {
+        if (sbc != nullptr && sf.length() < 10) {
             size_t cache_index;
 
             if (sbc->sbc_cached_level_count == 4) {
@@ -2791,8 +2771,7 @@ external_log_format::convert_level(const pcre_input& pi,
                 cache_index = sbc->sbc_cached_level_count;
                 sbc->sbc_cached_level_count += 1;
             }
-            sbc->sbc_cached_level_strings[cache_index]
-                = std::string(pi_level.get_string(), pi_level.pi_length);
+            sbc->sbc_cached_level_strings[cache_index] = sf.to_string();
             sbc->sbc_cached_level_values[cache_index] = retval;
         }
     }

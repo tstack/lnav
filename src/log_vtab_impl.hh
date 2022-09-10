@@ -37,6 +37,7 @@
 #include <sqlite3.h>
 
 #include "logfile_sub_source.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
 
 class textview_curses;
@@ -65,7 +66,7 @@ struct log_cursor {
     struct string_constraint {
         unsigned char sc_op;
         std::string sc_value;
-        std::shared_ptr<pcrepp> sc_pattern;
+        std::shared_ptr<lnav::pcre2pp::code> sc_pattern;
 
         string_constraint(unsigned char op, std::string value);
 

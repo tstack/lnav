@@ -492,6 +492,7 @@ add_library(
         log_gutter_source.hh
         log_level.hh
         log_search_table.hh
+        log_search_table_fwd.hh
         logfile_sub_source.cfg.hh
         logfile.hh
         logfile_fwd.hh

@@ -39,7 +39,7 @@ log_data_table::log_data_table(logfile_sub_source& lss,
     : log_vtab_impl(table_name), ldt_log_source(lss),
       ldt_template_line(template_line)
 {
-    std::shared_ptr<logfile> lf = lss.find(template_line);
+    auto lf = lss.find(template_line);
     auto format = lf->get_format();
 
     this->vi_supports_indexes = false;
@@ -53,7 +53,7 @@ log_data_table::get_columns_int()
     auto& cols = this->ldt_cols;
     auto& metas = this->ldt_value_metas;
     content_line_t cl_copy = this->ldt_template_line;
-    std::shared_ptr<logfile> lf = this->ldt_log_source.find(cl_copy);
+    auto lf = this->ldt_log_source.find(cl_copy);
     struct line_range body;
     string_attrs_t sa;
     logline_value_vector line_values;

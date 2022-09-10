@@ -86,6 +86,8 @@ public:
 
     ~auto_mem() { this->reset(); }
 
+    bool empty() const { return this->am_ptr == nullptr; }
+
     operator T*() const { return this->am_ptr; }
 
     T* operator->() { return this->am_ptr; }

@@ -563,6 +563,12 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);
             }
+            if (!li.li_valid_utf
+                && this->lf_text_format != text_format_t::TF_MARKDOWN
+                && this->lf_text_format != text_format_t::TF_LOG)
+            {
+                this->lf_text_format = text_format_t::TF_BINARY;
+            }
 
             auto read_result
                 = this->lf_line_buffer.read_range(li.li_file_range);
@@ -634,9 +640,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                             continue;
                         }
 
-                        pcre_context_static<30> pc;
-                        pcre_input pi(sf);
-                        if (td->ftd_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK))
+                        if (td->ftd_pattern.value
+                                ->find_in(sf, PCRE2_NO_UTF_CHECK)
+                                .ignore_error()
+                                .has_value())
                         {
                             curr_ll->set_mark(true);
                             while (curr_ll->is_continued()) {

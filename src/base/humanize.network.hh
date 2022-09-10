@@ -33,6 +33,7 @@
 #include <string>
 
 #include "fmt/format.h"
+#include "intern_string.hh"
 #include "network.tcp.hh"
 #include "optional.hpp"
 
@@ -99,13 +100,7 @@ namespace humanize {
 namespace network {
 namespace path {
 
-nonstd::optional<::network::path> from_str(const char* str);
-
-inline nonstd::optional<::network::path>
-from_str(const std::string& str)
-{
-    return from_str(str.c_str());
-}
+nonstd::optional<::network::path> from_str(string_fragment sf);
 
 }  // namespace path
 }  // namespace network

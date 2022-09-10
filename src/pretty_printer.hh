@@ -48,18 +48,13 @@
 class pretty_printer {
 public:
     struct element {
-        element(data_token_t token, pcre_context& pc)
-            : e_token(token), e_capture(*pc.all())
-        {
-        }
-
-        element(data_token_t token, pcre_context::capture_t& cap)
+        element(data_token_t token, data_scanner::capture_t& cap)
             : e_token(token), e_capture(cap)
         {
         }
 
         data_token_t e_token;
-        pcre_context::capture_t e_capture;
+        data_scanner::capture_t e_capture;
     };
 
     pretty_printer(data_scanner* ds, string_attrs_t sa, int leading_indent = 0)
@@ -67,13 +62,15 @@ public:
           pp_attrs(std::move(sa))
     {
         this->pp_body_lines.push(0);
-
-        pcre_context_static<30> pc;
-        data_token_t dt;
-
         this->pp_scanner->reset();
-        while (this->pp_scanner->tokenize2(pc, dt)) {
-            if (dt == DT_XML_CLOSE_TAG || dt == DT_XML_DECL_TAG) {
+        while (true) {
+            auto tok_res = this->pp_scanner->tokenize2();
+            if (!tok_res) {
+                break;
+            }
+            if (tok_res->tr_token == DT_XML_CLOSE_TAG
+                || tok_res->tr_token == DT_XML_DECL_TAG)
+            {
                 pp_is_xml = true;
                 break;
             }

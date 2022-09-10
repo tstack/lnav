@@ -42,6 +42,7 @@
 
 enum class text_format_t {
     TF_UNKNOWN,
+    TF_BINARY,
     TF_C_LIKE,
     TF_JAVA,
     TF_JSON,
@@ -64,6 +65,9 @@ struct formatter<text_format_t> : formatter<string_view> {
         string_view name = "unknown";
         switch (tf) {
             case text_format_t::TF_UNKNOWN:
+                name = "text/plain";
+                break;
+            case text_format_t::TF_BINARY:
                 name = "application/octet-stream";
                 break;
             case text_format_t::TF_LOG:

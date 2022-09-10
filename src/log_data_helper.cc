@@ -85,7 +85,8 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
             body.lr_end = this->ldh_line_values.lvv_sbr.length();
         }
         this->ldh_scanner = std::make_unique<data_scanner>(
-            this->ldh_line_values.lvv_sbr, body.lr_start, body.lr_end);
+            this->ldh_line_values.lvv_sbr.to_string_fragment().sub_range(
+                body.lr_start, body.lr_end));
         this->ldh_parser
             = std::make_unique<data_parser>(this->ldh_scanner.get());
         this->ldh_msg_format.clear();

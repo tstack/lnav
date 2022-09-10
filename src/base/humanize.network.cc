@@ -30,39 +30,44 @@
 #include "humanize.network.hh"
 
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 
 namespace humanize {
 namespace network {
 namespace path {
 
 nonstd::optional<::network::path>
-from_str(const char* str)
+from_str(string_fragment sf)
 {
-    static const pcrepp REMOTE_PATTERN(
-        "(?:(?<username>[\\w\\._\\-]+)@)?"
+    static const auto REMOTE_PATTERN = lnav::pcre2pp::code::from_const(
+        "^(?:(?<username>[\\w\\._\\-]+)@)?"
         "(?:\\[(?<ipv6>[^\\]]+)\\]|(?<hostname>[^\\[/:]+)):"
-        "(?<path>.*)");
+        "(?<path>.*)$");
+    static thread_local auto REMOTE_MATCH_DATA
+        = REMOTE_PATTERN.create_match_data();
 
-    pcre_context_static<30> pc;
-    pcre_input pi(str);
+    auto match_res = REMOTE_PATTERN.capture_from(sf)
+                         .into(REMOTE_MATCH_DATA)
+                         .matches()
+                         .ignore_error();
 
-    if (!REMOTE_PATTERN.match(pc, pi)) {
+    if (!match_res) {
         return nonstd::nullopt;
     }
 
-    const auto username = pi.get_substr_opt(pc["username"]);
-    const auto ipv6 = pi.get_substr_opt(pc["ipv6"]);
-    const auto hostname = pi.get_substr_opt(pc["hostname"]);
+    const auto username = REMOTE_MATCH_DATA["username"].map(
+        [](auto sf) { return sf.to_string(); });
+    const auto ipv6 = REMOTE_MATCH_DATA["ipv6"];
+    const auto hostname = REMOTE_MATCH_DATA["hostname"];
     const auto locality_hostname = ipv6 ? ipv6.value() : hostname.value();
-    auto path = pi.get_substr(pc["path"]);
+    auto path = *REMOTE_MATCH_DATA["path"];
 
     if (path.empty()) {
-        path = ".";
+        path = string_fragment::from_const(".");
     }
     return ::network::path{
-        {username, locality_hostname, nonstd::nullopt},
-        path,
+        {username, locality_hostname.to_string(), nonstd::nullopt},
+        path.to_string(),
     };
 }
 

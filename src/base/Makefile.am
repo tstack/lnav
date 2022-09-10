@@ -45,6 +45,7 @@ noinst_HEADERS = \
     itertools.hh \
     lnav_log.hh \
     lnav.console.hh \
+    lnav.console.into.hh \
     lnav.gzip.hh \
     log_level_enum.hh \
     lrucache.hpp \

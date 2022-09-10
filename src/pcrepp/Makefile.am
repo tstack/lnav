@@ -16,18 +16,18 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 noinst_LIBRARIES = libpcrepp.a
 
 noinst_HEADERS = \
-	pcrepp.hh
+	pcre2pp.hh
 
 libpcrepp_a_SOURCES = \
-	pcrepp.cc
+	pcre2pp.cc
 
-test_pcrepp_SOURCES = test_pcrepp.cc
-test_pcrepp_LDADD = \
+test_pcre2pp_SOURCES = test_pcre2pp.cc
+test_pcre2pp_LDADD = \
     libpcrepp.a \
     $(PCRE_LIBS)
 
 check_PROGRAMS = \
-	test_pcrepp
+	test_pcre2pp
 
 TESTS = \
-	test_pcrepp
+	test_pcre2pp

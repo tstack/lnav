@@ -21,7 +21,14 @@ EOF
 
 run_test grep_slice '.*' gp.dat
 
-check_output "grep_proc didn't find all lines?" < gp.dat
+check_output "grep_proc didn't find all lines?" <<EOF
+Hello, World!
+
+
+Goodbye, World?
+
+
+EOF
 
 run_test grep_slice '\w+,' gp.dat
 

@@ -145,8 +145,10 @@ json_path_handler_base::json_path_handler_base(const std::string& property)
     : jph_property(property.back() == '#'
                        ? property.substr(0, property.size() - 1)
                        : property),
-      jph_regex(
-          std::make_shared<pcrepp>(pcrepp::quote(property), PCRE_ANCHORED)),
+      jph_regex(lnav::pcre2pp::code::from(lnav::pcre2pp::quote(property),
+                                          PCRE2_ANCHORED)
+                    .unwrap()
+                    .to_shared()),
       jph_is_array(property.back() == '#')
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
@@ -160,28 +162,20 @@ scrub_pattern(const std::string& pattern)
     return std::regex_replace(pattern, CAPTURE, "(");
 }
 
-json_path_handler_base::json_path_handler_base(const pcrepp& property)
-    : jph_property(scrub_pattern(property.p_pattern)),
-      jph_regex(std::make_shared<pcrepp>(property)),
-      jph_is_array(property.p_pattern.back() == '#'),
-      jph_is_pattern_property(true)
-{
-    memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
-}
-
-json_path_handler_base::json_path_handler_base(std::string property,
-                                               const pcrepp& property_re)
-    : jph_property(std::move(property)),
-      jph_regex(std::make_shared<pcrepp>(property_re)),
-      jph_is_array(property_re.p_pattern.find('#') != std::string::npos)
+json_path_handler_base::json_path_handler_base(
+    const std::shared_ptr<const lnav::pcre2pp::code>& property)
+    : jph_property(scrub_pattern(property->get_pattern())), jph_regex(property),
+      jph_is_array(property->get_pattern().find('#') != std::string::npos),
+      jph_is_pattern_property(property->get_capture_count() > 0)
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
 
 json_path_handler_base::json_path_handler_base(
-    std::string property, const std::shared_ptr<pcrepp>& property_re)
+    std::string property,
+    const std::shared_ptr<const lnav::pcre2pp::code>& property_re)
     : jph_property(std::move(property)), jph_regex(property_re),
-      jph_is_array(property_re->p_pattern.find('#') != std::string::npos)
+      jph_is_array(property_re->get_pattern().find('#') != std::string::npos)
 {
     memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
 }
@@ -191,14 +185,12 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 {
     if (this->jph_is_array) {
         auto size = this->jph_size_provider(ygc.ygc_obj_stack.top());
+        auto md = lnav::pcre2pp::match_data::unitialized();
 
         yajl_gen_string(handle, this->jph_property);
         yajl_gen_array_open(handle);
         for (size_t index = 0; index < size; index++) {
-            pcre_context_static<30> pc;
-            pcre_input pi("");
-
-            yajlpp_provider_context ypc{{pc, pi}, index};
+            yajlpp_provider_context ypc{&md, index};
             yajlpp_gen_context elem_ygc(handle, *this->jph_children);
             elem_ygc.ygc_depth = 1;
             elem_ygc.ygc_obj_stack.push(
@@ -232,16 +224,17 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
             ygc.ygc_depth += 1;
 
             if (this->jph_obj_provider) {
-                pcre_context_static<30> pc;
-                pcre_input pi(full_path);
+                auto md = this->jph_regex->create_match_data();
+                auto find_res = this->jph_regex->capture_from(full_path)
+                                    .into(md)
+                                    .matches();
 
-                this->jph_regex->match(pc, pi);
                 ygc.ygc_obj_stack.push(this->jph_obj_provider(
-                    {{pc, pi}, yajlpp_provider_context::nindex},
+                    {&md, yajlpp_provider_context::nindex},
                     ygc.ygc_obj_stack.top()));
                 if (!ygc.ygc_default_stack.empty()) {
                     ygc.ygc_default_stack.push(this->jph_obj_provider(
-                        {{pc, pi}, yajlpp_provider_context::nindex},
+                        {&md, yajlpp_provider_context::nindex},
                         ygc.ygc_default_stack.top()));
                 }
             }
@@ -301,8 +294,9 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                 schema.gen(this->jph_description);
             }
             if (this->jph_is_pattern_property) {
-                ygc.ygc_path.emplace_back(fmt::format(
-                    FMT_STRING("<{}>"), this->jph_regex->name_for_capture(0)));
+                ygc.ygc_path.emplace_back(
+                    fmt::format(FMT_STRING("<{}>"),
+                                this->jph_regex->get_name_for_capture(1)));
             } else {
                 ygc.ygc_path.emplace_back(this->jph_property);
             }
@@ -312,7 +306,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
                                        fmt::join(ygc.ygc_path, "/")));
                 schema.gen("type");
                 if (this->jph_is_array) {
-                    if (this->jph_regex->p_pattern.find("#?")
+                    if (this->jph_regex->get_pattern().find("#?")
                         == std::string::npos)
                     {
                         schema.gen("array");
@@ -349,7 +343,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
 
         if (this->jph_is_pattern_property) {
             ygc.ygc_path.emplace_back(fmt::format(
-                FMT_STRING("<{}>"), this->jph_regex->name_for_capture(0)));
+                FMT_STRING("<{}>"), this->jph_regex->get_name_for_capture(1)));
         } else {
             ygc.ygc_path.emplace_back(this->jph_property);
         }
@@ -365,7 +359,8 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
         schema.gen("type");
 
         if (this->jph_is_array) {
-            if (this->jph_regex->p_pattern.find("#?") == std::string::npos) {
+            if (this->jph_regex->get_pattern().find("#?") == std::string::npos)
+            {
                 schema.gen("array");
             } else {
                 yajlpp_array type_array(ygc.ygc_handle);
@@ -493,7 +488,7 @@ json_path_handler_base::walk(
     if (this->jph_children) {
         for (const auto& lpath : local_paths) {
             for (const auto& jph : this->jph_children->jpc_children) {
-                static const auto POSS_SRC
+                static const intern_string_t POSS_SRC
                     = intern_string::lookup("possibilities");
 
                 std::string full_path = base + lpath;
@@ -509,16 +504,18 @@ json_path_handler_base::walk(
 
                 ypc.set_path(full_path).with_obj(root).update_callbacks();
                 if (this->jph_obj_provider) {
+                    auto md = this->jph_regex->create_match_data();
                     std::string full_path = lpath + "/";
-                    pcre_input pi(full_path);
 
-                    if (!this->jph_regex->match(ypc.ypc_pcre_context, pi)) {
+                    if (!this->jph_regex->capture_from(full_path)
+                             .into(md)
+                             .matches()
+                             .ignore_error())
+                    {
                         ensure(false);
                     }
                     child_root = this->jph_obj_provider(
-                        {{ypc.ypc_pcre_context, pi},
-                         yajlpp_provider_context::nindex},
-                        root);
+                        {&md, yajlpp_provider_context::nindex}, root);
                 }
 
                 jph.walk(cb, child_root, full_path);
@@ -683,8 +680,6 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
     }
 
     this->ypc_sibling_handlers = orig_handlers;
-    pcre_input pi(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
-
     this->ypc_callbacks = DEFAULT_CALLBACKS;
 
     if (handlers == nullptr) {
@@ -709,12 +704,16 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         }
     }
 
+    auto path_frag = string_fragment::from_byte_range(
+        this->ypc_path.data(), 1 + child_start, this->ypc_path.size() - 1);
     for (const auto& jph : handlers->jpc_children) {
-        pi.reset(&this->ypc_path[1 + child_start],
-                 0,
-                 this->ypc_path.size() - 2 - child_start);
-        if (jph.jph_regex->match(this->ypc_pcre_context, pi)) {
-            pcre_context::capture_t* cap = this->ypc_pcre_context.all();
+        auto md = jph.jph_regex->create_match_data();
+        if (jph.jph_regex->capture_from(path_frag)
+                .into(md)
+                .matches()
+                .ignore_error())
+        {
+            auto cap = md[0].value();
 
             if (jph.jph_is_array) {
                 this->ypc_array_handler_count += 1;
@@ -724,31 +723,24 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                     ? static_cast<size_t>(-1)
                     : this->ypc_array_index[this->ypc_array_handler_count - 1];
 
-                if ((1 + child_start + cap->c_end
-                     != (int) this->ypc_path.size() - 1)
+                if ((cap.sf_end != (int) this->ypc_path.size() - 1)
                     && (!jph.is_array()
                         || index != yajlpp_provider_context::nindex))
                 {
                     this->ypc_obj_stack.push(jph.jph_obj_provider(
-                        {{this->ypc_pcre_context, pi}, index, this},
-                        this->ypc_obj_stack.top()));
+                        {&md, index, this}, this->ypc_obj_stack.top()));
                 }
             }
 
             if (jph.jph_children) {
                 this->ypc_handler_stack.emplace_back(&jph);
 
-                if (1 + child_start + cap->c_end
-                    != (int) this->ypc_path.size() - 1)
-                {
-                    this->update_callbacks(jph.jph_children,
-                                           1 + child_start + cap->c_end);
+                if (cap.sf_end != (int) this->ypc_path.size() - 1) {
+                    this->update_callbacks(jph.jph_children, cap.sf_end);
                     return;
                 }
             } else {
-                if (1 + child_start + cap->c_end
-                    != (int) this->ypc_path.size() - 1)
-                {
+                if (cap.sf_end != (int) this->ypc_path.size() - 1) {
                     continue;
                 }
 
@@ -953,13 +945,16 @@ yajlpp_parse_context::handle_unused_or_delete(void* ctx)
     if (!ypc->ypc_handler_stack.empty()
         && ypc->ypc_handler_stack.back()->jph_obj_deleter)
     {
-        pcre_context_static<30> pc;
+        auto& jph = ypc->ypc_handler_stack.back();
+        auto md = jph->jph_regex->create_match_data();
         auto key_start = ypc->ypc_path_index_stack.back();
-        pcre_input pi(&ypc->ypc_path[key_start + 1],
-                      0,
-                      ypc->ypc_path.size() - key_start - 2);
-        yajlpp_provider_context provider_ctx{{pc, pi}, static_cast<size_t>(-1)};
-        ypc->ypc_handler_stack.back()->jph_regex->match(pc, pi);
+        auto path_frag = string_fragment::from_byte_range(
+            ypc->ypc_path.data(), key_start + 1, ypc->ypc_path.size() - 1);
+        yajlpp_provider_context provider_ctx{&md, static_cast<size_t>(-1)};
+        ypc->ypc_handler_stack.back()
+            ->jph_regex->capture_from(path_frag)
+            .into(md)
+            .matches();
 
         ypc->ypc_handler_stack.back()->jph_obj_deleter(
             provider_ctx, ypc->ypc_obj_stack.top());
@@ -1426,35 +1421,11 @@ json_path_handler_base::report_enum_error(yajlpp_parse_context* ypc,
 }
 
 void
-json_path_handler_base::report_regex_value_error(
-    yajlpp_parse_context* ypc,
-    const std::string& value,
-    const pcrepp::compile_error& pcre_error) const
+json_path_handler_base::report_error(yajlpp_parse_context* ypc,
+                                     const std::string& value,
+                                     lnav::console::user_message um) const
 {
-    attr_line_t pcre_error_content{value};
-
-    lnav::snippets::regex_highlighter(pcre_error_content,
-                                      pcre_error_content.length(),
-                                      line_range{
-                                          0,
-                                          (int) pcre_error_content.length(),
-                                      });
-    pcre_error_content.append("\n")
-        .append(pcre_error.ce_offset, ' ')
-        .append(lnav::roles::error("^ "))
-        .append(lnav::roles::error(pcre_error.ce_msg))
-        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-    ypc->report_error(lnav::console::user_message::error(
-                          attr_line_t()
-                              .append_quoted(value)
-                              .append(" is not a valid regular expression for "
-                                      "property ")
-                              .append_quoted(lnav::roles::symbol(
-                                  ypc->get_full_path().to_string())))
-                          .with_reason(pcre_error.ce_msg)
-                          .with_snippet(ypc->get_snippet())
-                          .with_snippet(lnav::console::snippet::from(
-                              ypc->get_full_path(), pcre_error_content))
+    ypc->report_error(um.with_snippet(ypc->get_snippet())
                           .with_help(this->get_help_text(ypc)));
 }
 

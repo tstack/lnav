@@ -56,7 +56,7 @@ main(int argc, char* argv[])
     }
 
     shlex lexer(argv[1], strlen(argv[1]));
-    pcre_context::capture_t cap;
+    string_fragment cap;
     shlex_token_t token;
 
     printf("    %s\n", argv[1]);
@@ -64,12 +64,12 @@ main(int argc, char* argv[])
         int lpc;
 
         printf("%s ", ST_TOKEN_NAMES[(int) token]);
-        for (lpc = 0; lpc < cap.c_end; lpc++) {
-            if (lpc == cap.c_begin) {
+        for (lpc = 0; lpc < cap.sf_end; lpc++) {
+            if (lpc == cap.sf_begin) {
                 fputc('^', stdout);
-            } else if (lpc == (cap.c_end - 1)) {
+            } else if (lpc == (cap.sf_end - 1)) {
                 fputc('^', stdout);
-            } else if (lpc > cap.c_begin) {
+            } else if (lpc > cap.sf_begin) {
                 fputc('-', stdout);
             } else {
                 fputc(' ', stdout);

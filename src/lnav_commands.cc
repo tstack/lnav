@@ -64,6 +64,7 @@
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_search_table.hh"
+#include "log_search_table_fwd.hh"
 #include "readline_callbacks.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
@@ -1669,6 +1670,8 @@ com_highlight(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("filter");
     } else if (args.size() > 1) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+
         auto* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
         auto re_frag = remaining_args_frag(cmdline, args);
@@ -1678,22 +1681,14 @@ com_highlight(exec_context& ec,
         }
 
         auto compile_res
-            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(ce.ce_msg)
-                          .with_snippets(ec.ec_source);
-            um.um_snippets.back()
-                .s_content.append("\n")
-                .append(re_frag.sf_begin + ce.ce_offset, ' ')
-                .append("^ "_comment)
-                .append(lnav::roles::comment(ce.ce_msg));
+            auto um = lnav::console::to_user_message(PATTERN_SRC, ce);
             return Err(um);
         }
-        highlighter hl(compile_res.unwrap());
+        highlighter hl(compile_res.unwrap().to_shared());
         auto hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
 
         if (ec.ec_dry_run) {
@@ -1799,6 +1794,8 @@ com_filter(exec_context& ec,
         return ec.make_error("{} view does not support filtering",
                              lnav_view_strings[tc - lnav_data.ld_views]);
     } else if (args.size() > 1) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+
         auto* tss = tc->get_sub_source();
         auto& fs = tss->get_filters();
         auto re_frag = remaining_args_frag(cmdline, args);
@@ -1814,19 +1811,11 @@ com_filter(exec_context& ec,
         }
 
         auto compile_res
-            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(ce.ce_msg)
-                          .with_snippets(ec.ec_source);
-            um.um_snippets.back()
-                .s_content.append("\n")
-                .append(re_frag.sf_begin + ce.ce_offset, ' ')
-                .append("^ "_comment)
-                .append(lnav::roles::comment(ce.ce_msg));
+            auto um = lnav::console::to_user_message(PATTERN_SRC, ce);
             return Err(um);
         }
         if (ec.ec_dry_run) {
@@ -1837,7 +1826,7 @@ com_filter(exec_context& ec,
                 retval = "";
             } else {
                 auto& hm = tc->get_highlights();
-                highlighter hl(compile_res.unwrap());
+                highlighter hl(compile_res.unwrap().to_shared());
                 auto role = (args[0] == "filter-out") ? role_t::VCR_DIFF_DELETE
                                                       : role_t::VCR_DIFF_ADD;
                 hl.with_role(role);
@@ -1861,7 +1850,7 @@ com_filter(exec_context& ec,
                 return ec.make_error("too many filters");
             }
             auto pf = std::make_shared<pcre_filter>(
-                lt, args[1], *filter_index, compile_res.unwrap());
+                lt, args[1], *filter_index, compile_res.unwrap().to_shared());
 
             log_debug("%s [%d] %s",
                       args[0].c_str(),
@@ -2227,6 +2216,7 @@ com_create_search_table(exec_context& ec,
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
         string_fragment regex_frag;
         std::string regex;
 
@@ -2237,28 +2227,19 @@ com_create_search_table(exec_context& ec,
             regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
 
-        auto re_res = pcrepp::shared_from_str(
-            regex, log_search_table::pattern_options());
+        auto compile_res = lnav::pcre2pp::code::from(
+            regex, log_search_table_ns::PATTERN_OPTIONS);
 
-        if (re_res.isErr()) {
-            auto re_err = re_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(re_err.ce_msg)
-                          .with_snippets(ec.ec_source);
-            if (args.size() >= 3) {
-                um.um_snippets.back()
-                    .s_content.append("\n")
-                    .append(regex_frag.sf_begin + re_err.ce_offset, ' ')
-                    .append("^ "_comment)
-                    .append(lnav::roles::comment(re_err.ce_msg));
-            }
+        if (compile_res.isErr()) {
+            auto re_err = compile_res.unwrapErr();
+            auto um = lnav::console::to_user_message(PATTERN_SRC, re_err)
+                .with_snippets(ec.ec_source);
             return Err(um);
         }
 
-        auto re = re_res.unwrap();
+        auto re = compile_res.unwrap().to_shared();
         auto tab_name = intern_string::lookup(args[1]);
-        auto lst = std::make_shared<log_search_table>(*re, tab_name);
+        auto lst = std::make_shared<log_search_table>(re, tab_name);
         if (ec.ec_dry_run) {
             auto* tc = &lnav_data.ld_views[LNV_LOG];
             auto& hm = tc->get_highlights();
@@ -4726,7 +4707,7 @@ search_files_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_mode = ln_mode_t::SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        auto path = pcrepp::quote(lf->get_unique_path());
+        auto path = lnav::pcre2pp::quote(lf->get_unique_path());
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::SEARCH_FILES, "*", path);
     }

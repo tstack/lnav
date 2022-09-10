@@ -68,6 +68,9 @@ run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+)', 'foo=abc
 
 run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+\.\w+)', 'foo=abc; 123.456') as result"
 
+run_cap_test ${lnav_test} -nN \
+   -c ";SELECT regexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;')"
+
 run_cap_test ./drive_sql "select extract('foo=1') as result"
 
 run_cap_test ./drive_sql "select extract('foo=1; bar=2') as result"

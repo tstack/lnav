@@ -162,12 +162,14 @@ main(int argc, char* argv[])
                     scan_batch_context sbc{allocator};
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
-                         ++iter) {
+                         ++iter)
+                    {
                         line_info li = {{13}};
 
                         (*iter)->clear();
                         if ((*iter)->scan(*lf, index, li, sbr, sbc)
-                            == log_format::SCAN_MATCH) {
+                            == log_format::SCAN_MATCH)
+                        {
                             format = (*iter)->specialized();
                             found = true;
                         }
@@ -188,7 +190,7 @@ main(int argc, char* argv[])
 
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");
 
-                data_scanner ds(sub_line, body.lr_start, sub_line.length());
+                data_scanner ds(sub_line, body.lr_start);
                 data_parser dp(&ds);
                 std::string msg_format;
 
@@ -200,8 +202,7 @@ main(int argc, char* argv[])
                 fprintf(out, "format      :%s\n", msg_format.c_str());
 
                 if (pretty_print) {
-                    data_scanner ds2(
-                        sub_line, body.lr_start, sub_line.length());
+                    data_scanner ds2(sub_line, body.lr_start);
                     pretty_printer pp(&ds2, sa);
                     attr_line_t pretty_out;
 

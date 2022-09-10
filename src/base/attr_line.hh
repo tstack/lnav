@@ -70,7 +70,8 @@ struct line_range {
 
     bool empty() const { return this->length() == 0; }
 
-    void clear() {
+    void clear()
+    {
         this->lr_start = -1;
         this->lr_end = -1;
     }
@@ -162,6 +163,12 @@ struct line_range {
         return this->length();
     }
 };
+
+inline line_range
+to_line_range(const string_fragment& frag)
+{
+    return line_range{frag.sf_begin, frag.sf_end};
+}
 
 struct string_attr {
     string_attr(const struct line_range& lr, const string_attr_pair& value)

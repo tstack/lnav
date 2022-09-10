@@ -41,59 +41,10 @@
 #include "config.h"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "log_vtab_impl.hh"
-#include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
-static const pcrepp RDNS_PATTERN(
-    "^(?:com|net|org|edu|[a-z][a-z])"
-    "(\\.\\w+)+(.+)");
-
-/**
- * Attempt to scrub a reverse-DNS string.
- *
- * @param  str The string to scrub.  If the string looks like a reverse-DNS
- *   string, the leading components of the name will be reduced to a single
- *   letter.  For example, "com.example.foo" will be reduced to "c.e.foo".
- * @return     The scrubbed version of the input string or the original string
- *   if it is not a reverse-DNS string.
- */
-static std::string
-scrub_rdns(const std::string& str)
-{
-    pcre_context_static<30> context;
-    pcre_input input(str);
-    std::string retval;
-
-    if (RDNS_PATTERN.match(context, input)) {
-        pcre_context::capture_t* cap;
-
-        cap = context.begin();
-        for (int index = 0; index < cap->c_begin; index++) {
-            if (index == 0 || str[index - 1] == '.') {
-                if (index > 0) {
-                    retval.append(1, '.');
-                }
-                retval.append(1, str[index]);
-            }
-        }
-        retval += input.get_substr(cap);
-        retval += input.get_substr(cap + 1);
-    } else {
-        retval = str;
-    }
-    return retval;
-}
-
 class generic_log_format : public log_format {
-    static pcrepp& scrub_pattern()
-    {
-        static pcrepp SCRUB_PATTERN(
-            "\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:(.*)");
-
-        return SCRUB_PATTERN;
-    }
-
     static pcre_format* get_pcre_log_formats()
     {
         static pcre_format log_fmt[] = {
@@ -140,23 +91,6 @@ class generic_log_format : public log_format {
         return intern_string::lookup("generic_log");
     }
 
-    void scrub(std::string& line) override
-    {
-        pcre_context_static<30> context;
-        pcre_input pi(line);
-        std::string new_line;
-
-        if (scrub_pattern().match(context, pi)) {
-            pcre_context::capture_t* cap;
-
-            for (cap = context.begin(); cap != context.end(); cap++) {
-                new_line += scrub_rdns(pi.get_substr(cap));
-            }
-
-            line = new_line;
-        }
-    }
-
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& li,
@@ -165,12 +99,12 @@ class generic_log_format : public log_format {
     {
         struct exttm log_time;
         struct timeval log_tv;
-        pcre_context::capture_t ts, level;
+        string_fragment ts;
+        nonstd::optional<string_fragment> level;
         const char* last_pos;
 
         if ((last_pos = this->log_scanf(dst.size(),
-                                        sbr.get_data(),
-                                        sbr.length(),
+                                        sbr.to_string_fragment(),
                                         get_pcre_log_formats(),
                                         nullptr,
                                         &log_time,
@@ -180,8 +114,10 @@ class generic_log_format : public log_format {
                                         &level))
             != nullptr)
         {
-            const char* level_str = &sbr.get_data()[level.c_begin];
-            log_level_t level_val = string2level(level_str, level.length());
+            log_level_t level_val = log_level_t::LEVEL_UNKNOWN;
+            if (level) {
+                level_val = string2level(level->data(), level->length());
+            }
 
             if (!((log_time.et_flags & ETF_DAY_SET)
                   && (log_time.et_flags & ETF_MONTH_SET)
@@ -204,26 +140,28 @@ class generic_log_format : public log_format {
     {
         auto& line = values.lvv_sbr;
         int pat_index = this->pattern_index_for_line(line_number);
-        pcre_format& fmt = get_pcre_log_formats()[pat_index];
-        struct line_range lr;
+        auto& fmt = get_pcre_log_formats()[pat_index];
         int prefix_len = 0;
-        pcre_input pi(line.get_data(), 0, line.length());
-        pcre_context_static<30> pc;
-
-        if (!fmt.pcre.match(pc, pi)) {
+        auto md = fmt.pcre->create_match_data();
+        auto match_res = fmt.pcre->capture_from(line.to_string_fragment())
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        if (!match_res) {
             return;
         }
 
-        lr.lr_start = pc[0]->c_begin;
-        lr.lr_end = pc[0]->c_end;
+        auto lr = to_line_range(md[fmt.pf_timestamp_index].value());
         sa.emplace_back(lr, logline::L_TIMESTAMP.value());
 
-        const char* level = &line.get_data()[pc[1]->c_begin];
-
-        if (string2level(level, pc[1]->length(), true) == LEVEL_UNKNOWN) {
-            prefix_len = pc[0]->c_end;
-        } else {
-            prefix_len = pc[1]->c_end;
+        prefix_len = lr.lr_end;
+        auto level_cap = md[2];
+        if (level_cap) {
+            if (string2level(level_cap->data(), level_cap->length(), true)
+                != LEVEL_UNKNOWN)
+            {
+                prefix_len = level_cap->sf_end;
+            }
         }
 
         lr.lr_start = 0;
@@ -377,15 +315,9 @@ struct separated_string {
         size_t index() const { return this->i_index; }
     };
 
-    iterator begin()
-    {
-        return {*this, this->ss_str};
-    }
+    iterator begin() { return {*this, this->ss_str}; }
 
-    iterator end()
-    {
-        return {*this, this->ss_str + this->ss_len};
-    }
+    iterator end() { return {*this, this->ss_str + this->ss_len}; }
 };
 
 class bro_log_format : public log_format {
@@ -472,7 +404,8 @@ public:
                 string_fragment sf = *iter;
 
                 if (this->lf_date_time.scan(
-                        sf.data(), sf.length(), nullptr, &tm, tv)) {
+                        sf.data(), sf.length(), nullptr, &tm, tv))
+                {
                     this->lf_timestamp_flags = tm.et_flags;
                     found_ts = true;
                 }
@@ -527,18 +460,19 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
-        static const pcrepp SEP_RE(R"(^#separator\s+(.+))");
+        static const auto SEP_RE
+            = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
 
         if (!this->blf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);
         }
 
         if (dst.empty() || dst.size() > 20 || sbr.empty()
-            || sbr.get_data()[0] == '#') {
+            || sbr.get_data()[0] == '#')
+        {
             return SCAN_NO_MATCH;
         }
 
-        pcre_context_static<20> pc;
         auto line_iter = dst.begin();
         auto read_result = lf.read_line(line_iter);
 
@@ -547,16 +481,19 @@ public:
         }
 
         auto line = read_result.unwrap();
-        pcre_input pi(line.get_data(), 0, line.length());
+        auto md = SEP_RE.create_match_data();
 
-        if (!SEP_RE.match(pc, pi)) {
+        auto match_res = SEP_RE.capture_from(line.to_string_fragment())
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        if (!match_res) {
             return SCAN_NO_MATCH;
         }
 
         this->clear();
 
-        auto sep
-            = from_escaped_string(pi.get_substr_start(pc[0]), pc[0]->length());
+        auto sep = from_escaped_string(md[1]->data(), md[1]->length());
         this->blf_separator = intern_string::lookup(sep);
 
         for (++line_iter; line_iter != dst.end(); ++line_iter) {
@@ -897,7 +834,8 @@ struct ws_separated_string {
 
             this->i_pos = this->i_next_pos;
             while (this->i_pos < (ss.ss_str + ss.ss_len)
-                   && isspace(*this->i_pos)) {
+                   && isspace(*this->i_pos))
+            {
                 this->i_pos += 1;
                 this->i_next_pos += 1;
             }
@@ -1070,7 +1008,8 @@ public:
                                      sbr_sf.length(),
                                      nullptr,
                                      &tm,
-                                     tv)) {
+                                     tv))
+                        {
                             this->lf_date_time.set_base_time(tv.tv_sec,
                                                              tm.et_tm);
                             this->wlf_time_scanner.set_base_time(tv.tv_sec,
@@ -1088,7 +1027,8 @@ public:
                 || F_DATE_UTC == fd.fd_name)
             {
                 if (this->lf_date_time.scan(
-                        sf.data(), sf.length(), nullptr, &date_tm, date_tv)) {
+                        sf.data(), sf.length(), nullptr, &date_tm, date_tv))
+                {
                     this->lf_timestamp_flags |= date_tm.et_flags;
                     found_date = true;
                 }
@@ -1173,7 +1113,8 @@ public:
         }
 
         if (dst.empty() || dst.size() > 20 || sbr.empty()
-            || sbr.get_data()[0] == '#') {
+            || sbr.get_data()[0] == '#')
+        {
             return SCAN_NO_MATCH;
         }
 
@@ -1598,8 +1539,7 @@ struct logfmt_pair_handler {
 
     date_time_scanner& lph_dt_scanner;
     bool lph_found_time{false};
-    struct exttm lph_time_tm {
-    };
+    struct exttm lph_time_tm {};
     struct timeval lph_tv {
         0, 0
     };

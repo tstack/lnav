@@ -41,10 +41,10 @@ data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);
 data_parser::data_parser(data_scanner* ds)
     : dp_errors("dp_errors", __FILE__, __LINE__),
       dp_pairs("dp_pairs", __FILE__, __LINE__), dp_msg_format(nullptr),
-      dp_msg_format_begin(ds->get_input().pi_offset), dp_scanner(ds)
+      dp_msg_format_begin(ds->get_init_offset()), dp_scanner(ds)
 {
     if (TRACE_FILE != nullptr) {
-        fprintf(TRACE_FILE, "input %s\n", ds->get_input().get_string());
+        fprintf(TRACE_FILE, "input %s\n", ds->get_input().to_string().c_str());
     }
 }
 
@@ -110,7 +110,8 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                         key_comps.POP_FRONT();
                         found = true;
                     } else if (key_iter->e_token
-                               == in_list.el_format.df_terminator) {
+                               == in_list.el_format.df_terminator)
+                    {
                         std::vector<element> key_copy;
 
                         value.SPLICE(value.end(),
@@ -259,17 +260,18 @@ data_parser::pairup(data_parser::schema_id_t* schema,
 
         if (!has_value) {
             element_list_t ELEMENT_LIST_T(blank_value);
-            pcre_input& pi = this->dp_scanner->get_input();
-            const char* str = pi.get_string();
             struct element blank;
 
             blank.e_token = DT_QUOTED_STRING;
             blank.e_capture.c_begin = blank.e_capture.c_end
                 = pair_subs.front().e_capture.c_end;
-            if ((blank.e_capture.c_begin >= 0)
-                && ((size_t) blank.e_capture.c_begin < pi.pi_length))
+            if (blank.e_capture.c_begin >= 0
+                && blank.e_capture.c_begin
+                    < this->dp_scanner->get_input().sf_end)
             {
-                switch (str[blank.e_capture.c_begin]) {
+                switch (this->dp_scanner->to_string_fragment(blank.e_capture)
+                            .front())
+                {
                     case '=':
                     case ':':
                         blank.e_capture.c_begin += 1;
@@ -387,23 +389,23 @@ data_parser::pairup(data_parser::schema_id_t* schema,
     }
 
     if (schema != nullptr && this->dp_msg_format != nullptr) {
-        pcre_input& pi = this->dp_scanner->get_input();
         for (auto& fiter : pairs_out) {
             *(this->dp_msg_format) += this->get_string_up_to_value(fiter);
             this->dp_msg_format->append("#");
         }
-        if ((size_t) this->dp_msg_format_begin < pi.pi_length) {
-            const char* str = pi.get_string();
-            pcre_context::capture_t last(this->dp_msg_format_begin,
-                                         pi.pi_length);
+        if ((size_t) this->dp_msg_format_begin
+            < this->dp_scanner->get_input().length())
+        {
+            auto last = this->dp_scanner->get_input().substr(
+                this->dp_msg_format_begin);
 
-            switch (str[last.c_begin]) {
+            switch (last.front()) {
                 case '\'':
                 case '"':
-                    last.c_begin += 1;
+                    last.sf_begin += 1;
                     break;
             }
-            *(this->dp_msg_format) += pi.get_substr(&last);
+            *(this->dp_msg_format) += last.to_string();
         }
     }
 
@@ -415,21 +417,20 @@ data_parser::pairup(data_parser::schema_id_t* schema,
 void
 data_parser::discover_format()
 {
-    pcre_context_static<30> pc;
     std::stack<discover_format_state> state_stack;
-    struct element elem;
-
     this->dp_group_token.push_back(DT_INVALID);
     this->dp_group_stack.resize(1);
 
     state_stack.push(discover_format_state());
-    while (this->dp_scanner->tokenize2(pc, elem.e_token)) {
-        pcre_context::iterator pc_iter;
+    while (true) {
+        auto tok_res = this->dp_scanner->tokenize2();
+        if (!tok_res) {
+            break;
+        }
 
-        pc_iter = std::find_if(pc.begin(), pc.end(), capture_if_not(-1));
-        require(pc_iter != pc.end());
-
-        elem.e_capture = *pc_iter;
+        element elem;
+        elem.e_token = tok_res->tr_token;
+        elem.e_capture = tok_res->tr_inner_capture;
 
         require(elem.e_capture.c_begin >= 0);
         require(elem.e_capture.c_end >= 0);
@@ -598,22 +599,19 @@ data_parser::parse()
 std::string
 data_parser::get_element_string(const data_parser::element& elem) const
 {
-    pcre_input& pi = this->dp_scanner->get_input();
-
-    return pi.get_substr(&elem.e_capture);
+    return this->dp_scanner->to_string_fragment(elem.e_capture).to_string();
 }
 
 std::string
 data_parser::get_string_up_to_value(const data_parser::element& elem)
 {
-    pcre_input& pi = this->dp_scanner->get_input();
     const element& val_elem
         = elem.e_token == DNT_PAIR ? elem.e_sub_elements->back() : elem;
 
     if (this->dp_msg_format_begin <= val_elem.e_capture.c_begin) {
-        pcre_context::capture_t leading_and_key = pcre_context::capture_t(
+        auto leading_and_key = data_scanner::capture_t(
             this->dp_msg_format_begin, val_elem.e_capture.c_begin);
-        const char* str = pi.get_string();
+        auto str = this->dp_scanner->get_input().data();
         if (leading_and_key.length() >= 2) {
             switch (str[leading_and_key.c_end - 1]) {
                 case '\'':
@@ -635,7 +633,8 @@ data_parser::get_string_up_to_value(const data_parser::element& elem)
             }
         }
         this->dp_msg_format_begin = val_elem.e_capture.c_end;
-        return pi.get_substr(&leading_and_key);
+        return this->dp_scanner->to_string_fragment(leading_and_key)
+            .to_string();
     } else {
         this->dp_msg_format_begin = val_elem.e_capture.c_end;
     }
@@ -646,19 +645,18 @@ const char*
 data_parser::get_element_string(const data_parser::element& elem,
                                 size_t& len_out)
 {
-    pcre_input& pi = this->dp_scanner->get_input();
-
     len_out = elem.e_capture.length();
-    return pi.get_substr_start(&elem.e_capture);
+    return this->dp_scanner->to_string_fragment(elem.e_capture).data();
 }
 
 void
 data_parser::print(FILE* out, data_parser::element_list_t& el)
 {
-    fprintf(
-        out, "             %s\n", this->dp_scanner->get_input().get_string());
+    fprintf(out,
+            "             %s\n",
+            this->dp_scanner->get_input().to_string().c_str());
     for (auto& iter : el) {
-        iter.print(out, this->dp_scanner->get_input());
+        iter.print(out, *this->dp_scanner);
     }
 }
 
@@ -939,7 +937,8 @@ data_parser::element::value_token() const
 
     if (this->e_token == DNT_VALUE) {
         if (this->e_sub_elements != nullptr
-            && this->e_sub_elements->size() == 1) {
+            && this->e_sub_elements->size() == 1)
+        {
             retval = this->e_sub_elements->front().e_token;
         } else {
             retval = DT_SYMBOL;
@@ -955,7 +954,8 @@ data_parser::element::get_value_elem() const
 {
     if (this->e_token == DNT_VALUE) {
         if (this->e_sub_elements != nullptr
-            && this->e_sub_elements->size() == 1) {
+            && this->e_sub_elements->size() == 1)
+        {
             return this->e_sub_elements->front();
         }
     }
@@ -972,13 +972,13 @@ data_parser::element::get_pair_elem() const
 }
 
 void
-data_parser::element::print(FILE* out, pcre_input& pi, int offset) const
+data_parser::element::print(FILE* out, data_scanner& ds, int offset) const
 {
     int lpc;
 
     if (this->e_sub_elements != nullptr) {
         for (auto& e_sub_element : *this->e_sub_elements) {
-            e_sub_element.print(out, pi, offset + 1);
+            e_sub_element.print(out, ds, offset + 1);
         }
     }
 
@@ -998,11 +998,11 @@ data_parser::element::print(FILE* out, pcre_input& pi, int offset) const
             fputc(' ', out);
         }
     }
-    for (; lpc < (int) pi.pi_length; lpc++) {
+    for (; lpc < (int) ds.get_input().length(); lpc++) {
         fputc(' ', out);
     }
 
-    std::string sub = pi.get_substr(&this->e_capture);
+    std::string sub = ds.to_string_fragment(this->e_capture).to_string();
     fprintf(out, "  %s\n", sub.c_str());
 }
 

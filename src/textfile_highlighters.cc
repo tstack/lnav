@@ -33,21 +33,11 @@
 
 #include "config.h"
 
-static std::shared_ptr<pcrepp>
-xpcre_compile(const char* pattern, int options = 0)
+template<typename T, std::size_t N>
+static std::shared_ptr<lnav::pcre2pp::code>
+xpcre_compile(const T (&pattern)[N], int options = 0)
 {
-    auto compile_res = pcrepp::shared_from_str(pattern, options);
-
-    if (compile_res.isErr()) {
-        auto ce = compile_res.unwrapErr();
-
-        fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
-        fprintf(stderr, "internal error: %s\n", ce.ce_msg);
-
-        exit(1);
-    }
-
-    return compile_res.unwrap();
+    return lnav::pcre2pp::code::from_const(pattern, options).to_shared();
 }
 
 void
@@ -382,7 +372,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bWITH\\b|"
                                     "\\bWITHOUT\\b"
                                     ")",
-                                    PCRE_CASELESS))
+                                    PCRE2_CASELESS))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_SQL)
               .with_role(role_t::VCR_KEYWORD);

@@ -2939,6 +2939,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         isc::supervisor root_superv(injector::get<isc::service_list>());
 
         try {
+            char pcre2_version[128];
+
+            pcre2_config(PCRE2_CONFIG_VERSION, pcre2_version);
             log_info("startup: %s", VCS_PACKAGE_STRING);
             log_host_info();
             log_info("Libraries:");
@@ -2952,7 +2955,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
 #endif
             log_info("  ncurses=%s", NCURSES_VERSION);
-            log_info("  pcre=%s", pcre_version());
+            log_info("  pcre2=%s", pcre2_version);
             log_info("  readline=%s", rl_library_version);
             log_info("  sqlite=%s", sqlite3_version);
             log_info("  zlib=%s", zlibVersion());

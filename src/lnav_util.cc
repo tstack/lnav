@@ -144,7 +144,7 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     },
                     [&](const intern_string_t& str) { elem_map.gen(str); },
                     [&](const std::string& str) { elem_map.gen(str); },
-                    [&](const text_attrs& ta) { elem_map.gen(""); },
+                    [&](const text_attrs& ta) { elem_map.gen(ta.ta_attrs); },
                     [&](const std::shared_ptr<logfile>& lf) {
                         elem_map.gen("");
                     },
@@ -234,7 +234,10 @@ read_string_attr_type(yajlpp_parse_context* ypc,
         sa->sa_type = &VC_ROLE;
     } else if (type == "preformatted") {
         sa->sa_type = &SA_PREFORMATTED;
+    } else if (type == "style") {
+        sa->sa_type = &VC_STYLE;
     } else {
+        log_error("unhandled string_attr type: %s", type.c_str());
         ensure(false);
     }
     return 1;
@@ -247,6 +250,10 @@ read_string_attr_int_value(yajlpp_parse_context* ypc, long long in)
 
     if (sa->sa_type == &VC_ROLE) {
         sa->sa_value = static_cast<role_t>(in);
+    } else if (sa->sa_type == &VC_STYLE) {
+        sa->sa_value = text_attrs{
+            static_cast<int32_t>(in),
+        };
     }
     return 1;
 }

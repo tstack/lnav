@@ -32,6 +32,7 @@
 #ifndef intern_string_hh
 #define intern_string_hh
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -48,9 +49,17 @@
 struct string_fragment {
     using iterator = const char*;
 
+    static string_fragment invalid()
+    {
+        string_fragment retval;
+
+        retval.invalidate();
+        return retval;
+    }
+
     static string_fragment from_c_str(const char* str)
     {
-        return string_fragment{str, 0, (int) strlen(str)};
+        return string_fragment{str, 0, str != nullptr ? (int) strlen(str) : 0};
     }
 
     template<typename T, std::size_t N>
@@ -129,6 +138,11 @@ struct string_fragment {
     Result<ssize_t, const char*> utf8_length() const;
 
     const char* data() const { return &this->sf_string[this->sf_begin]; }
+
+    const unsigned char* udata() const
+    {
+        return (const unsigned char*) &this->sf_string[this->sf_begin];
+    }
 
     char front() const { return this->sf_string[this->sf_begin]; }
 
@@ -250,6 +264,12 @@ struct string_fragment {
     {
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_end};
+    }
+
+    string_fragment sub_range(int begin, int end) const
+    {
+        return string_fragment{
+            this->sf_string, this->sf_begin + begin, this->sf_begin + end};
     }
 
     nonstd::optional<size_t> find(char ch) const
@@ -521,10 +541,23 @@ operator<(const char* left, const string_fragment& right)
     return rc < 0;
 }
 
+inline void
+operator+=(std::string& left, const string_fragment& right)
+{
+    left.append(right.data(), right.length());
+}
+
 inline bool
 operator<(const string_fragment& left, const char* right)
 {
     return strncmp(left.data(), right, left.length()) < 0;
+}
+
+inline std::ostream&
+operator<<(std::ostream& os, const string_fragment& sf)
+{
+    os.write(sf.data(), sf.length());
+    return os;
 }
 
 class intern_string {

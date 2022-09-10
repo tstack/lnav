@@ -44,7 +44,6 @@
 #include "lnav_util.hh"
 #include "logfile.hh"
 #include "pcap_manager.hh"
-#include "pcrepp/pcrepp.hh"
 #include "service_tags.hh"
 #include "tailer/tailer.looper.hh"
 
@@ -84,7 +83,8 @@ file_collection::close_files(const std::vector<std::shared_ptr<logfile>>& files)
             auto path_str = actual_path_opt.value().string();
 
             for (auto iter = REALPATH_CACHE.begin();
-                 iter != REALPATH_CACHE.end();) {
+                 iter != REALPATH_CACHE.end();)
+            {
                 if (iter->first == path_str || iter->second == path_str) {
                     iter = REALPATH_CACHE.erase(iter);
                 } else {
@@ -339,7 +339,8 @@ file_collection::watch_logfile(const std::string& filename,
                              error_queue = convert_res.cr_error_queue](
                                 auto& fc, auto& child) {
                                 if (child.was_normal_exit()
-                                    && child.exit_status() == EXIT_SUCCESS) {
+                                    && child.exit_status() == EXIT_SUCCESS)
+                                {
                                     log_info("pcap[%d] exited normally",
                                              child.in());
                                     return;

@@ -30,7 +30,7 @@
 #include "snippet_highlighters.hh"
 
 #include "attr_line.builder.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "view_curses.hh"
 
 namespace lnav {
@@ -225,21 +225,24 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
                     break;
                 }
                 case '>': {
-                    static const pcrepp CAP_RE(R"(\(\?\<\w+$)");
+                    static const auto CAP_RE
+                        = lnav::pcre2pp::code::from_const(R"(\(\?\<\w+$)");
 
                     auto capture_start
                         = string_fragment::from_str_range(
                               line, sub.lr_start, lpc)
                               .find_left_boundary(lpc - sub.lr_start - 1,
                                                   string_fragment::tag1{'('});
-                    pcre_context_static<30> pc;
-                    pcre_input pi(capture_start);
 
-                    if (CAP_RE.match(pc, pi)) {
+                    auto cap_find_res
+                        = CAP_RE.find_in(capture_start).ignore_error();
+
+                    if (cap_find_res) {
                         alb.overlay_attr(
-                            line_range(
-                                capture_start.sf_begin + pc.all()->c_begin + 3,
-                                capture_start.sf_begin + pc.all()->c_end),
+                            line_range(capture_start.sf_begin
+                                           + cap_find_res->f_all.sf_begin + 3,
+                                       capture_start.sf_begin
+                                           + cap_find_res->f_all.sf_end),
                             VC_ROLE.value(role_t::VCR_IDENTIFIER));
                         alb.overlay_attr(line_range(lpc, lpc + 1),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));

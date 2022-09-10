@@ -34,26 +34,28 @@
 #include "config.h"
 #include "data_scanner.hh"
 
-bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
+nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 {
+    data_token_t token_out = DT_INVALID;
+    capture_t cap_all;
+    capture_t cap_inner;
 #   define YYCTYPE unsigned char
 #   define CAPTURE(tok) { \
         if (YYCURSOR.val == EMPTY) { \
-            pi.pi_next_offset = pi.pi_length; \
+            this->ds_next_offset = this->ds_input.length(); \
         } else { \
-            pi.pi_next_offset = YYCURSOR.val - (const unsigned char *) pi.get_string(); \
+            this->ds_next_offset = YYCURSOR.val - this->ds_input.udata(); \
         } \
-        cap[0].c_end = pi.pi_next_offset; \
-        cap[1].c_end = pi.pi_next_offset; \
+        cap_all.c_end = this->ds_next_offset; \
+        cap_inner.c_end = this->ds_next_offset; \
         token_out = tok; \
     }
 
 #   define RET(tok) { \
         CAPTURE(tok); \
-        return true; \
+        return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()}; \
     }
     static const unsigned char *EMPTY = (const unsigned char *) "";
-    pcre_input &pi = this->ds_pcre_input;
     struct _YYCURSOR {
         YYCTYPE operator*() const {
             if (this->val < this->lim) {
@@ -91,22 +93,20 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         const YYCTYPE *val{nullptr};
         const YYCTYPE *lim{nullptr};
     } YYCURSOR;
-    YYCURSOR = (const unsigned char *) pi.get_string() + pi.pi_next_offset;
+    YYCURSOR = (const unsigned char *) this->ds_input.udata() + this->ds_next_offset;
     _YYCURSOR yyt1;
     _YYCURSOR yyt2;
     _YYCURSOR yyt3;
     _YYCURSOR yyt4;
-    const YYCTYPE *YYLIMIT = (const unsigned char *) pi.get_string() + pi.pi_length;
+    const YYCTYPE *YYLIMIT = (const unsigned char *) this->ds_input.end();
     const YYCTYPE *YYMARKER = YYCURSOR;
-    pcre_context::capture_t *cap = pc.all();
 
     YYCURSOR.lim = YYLIMIT;
 
-    pc.set_count(2);
-    cap[0].c_begin = pi.pi_next_offset;
-    cap[0].c_end = pi.pi_next_offset;
-    cap[1].c_begin = pi.pi_next_offset;
-    cap[1].c_end = pi.pi_next_offset;
+    cap_all.c_begin = this->ds_next_offset;
+    cap_all.c_end = this->ds_next_offset;
+    cap_inner.c_begin = this->ds_next_offset;
+    cap_inner.c_end = this->ds_next_offset;
 
     /*!re2c
        re2c:yyfill:enable = 0;
@@ -135,41 +135,41 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
                   (IPV6SEG":"){1,4}":"IPV4ADDR
                   );
 
-       EOF { return false; }
+       EOF { return nonstd::nullopt; }
 
        ("u"|"r")?'"'('\\'.|[^\x00"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
-           switch (pi.get_string()[cap[1].c_begin]) {
+           switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
            case 'r':
-               cap[1].c_begin += 1;
+               cap_inner.c_begin += 1;
                break;
            }
-           cap[1].c_begin += 1;
-           cap[1].c_end -= 1;
-           return true;
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
        ("u"|"r")?"'"('\\'.|"''"|[^\x00'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
-           switch (pi.get_string()[cap[1].c_begin]) {
+           switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
            case 'r':
-               cap[1].c_begin += 1;
+               cap_inner.c_begin += 1;
                break;
            }
-           cap[1].c_begin += 1;
-           cap[1].c_end -= 1;
-           return true;
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
        [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
-           if ((YYCURSOR - (const unsigned char *) pi.get_string()) == 17) {
+           if ((YYCURSOR - this->ds_input.udata()) == 17) {
                RET(DT_MAC_ADDRESS);
            } else {
                RET(DT_HEX_DUMP);

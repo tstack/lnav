@@ -32,7 +32,7 @@
 #include "base/attr_line.builder.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "pugixml/pugixml.hpp"
 #include "readline_highlighters.hh"
 #include "view_curses.hh"
@@ -146,7 +146,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 last_block.append("\n");
             }
             if (this->ml_list_stack.empty()
-                && !endswith(last_block.get_string(), "\n\n")) {
+                && !endswith(last_block.get_string(), "\n\n"))
+            {
                 last_block.append("\n");
             }
         }
@@ -200,7 +201,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                    || lang_sf.iequal(
                        string_fragment::from_const("shellsession")))
         {
-            static const pcrepp SH_PROMPT(R"([^\$>#%]*[\$>#%]\s+)");
+            static const auto SH_PROMPT
+                = lnav::pcre2pp::code::from_const(R"([^\$>#%]*[\$>#%]\s+)");
 
             attr_line_t new_block_text;
             attr_line_t cmd_block;
@@ -208,7 +210,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
             for (auto line : block_text.split_lines()) {
                 if (!cmd_block.empty()
-                    && endswith(cmd_block.get_string(), "\\\n")) {
+                    && endswith(cmd_block.get_string(), "\\\n"))
+                {
                     cmd_block.append(line).append("\n");
                     continue;
                 }
@@ -222,11 +225,11 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     cmd_block.clear();
                 }
 
-                pcre_context_static<10> pc;
-                pcre_input pi(line.get_string());
+                auto sh_find_res
+                    = SH_PROMPT.find_in(line.get_string()).ignore_error();
 
-                if (SH_PROMPT.match(pc, pi)) {
-                    prompt_size = pc.all()->length();
+                if (sh_find_res) {
+                    prompt_size = sh_find_res->f_all.length();
                     line.with_attr(string_attr{
                         line_range{0, prompt_size},
                         VC_ROLE.value(role_t::VCR_LIST_GLYPH),
@@ -360,7 +363,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 }
             }
             for (size_t line_index = 0; line_index < max_cell_lines;
-                 line_index++) {
+                 line_index++)
+            {
                 size_t col = 0;
                 for (const auto& cell : cells) {
                     block_text.append(" ");
@@ -551,7 +555,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             break;
         }
         default: {
-            static const pcrepp REPL_RE(R"(-{2,3}|:[^:\s]*(?:::[^:\s]*)*:)");
+            static const auto REPL_RE = lnav::pcre2pp::code::from_const(
+                R"(-{2,3}|:[^:\s]*(?:::[^:\s]*)*:)");
             static const auto& emojis = md4cpp::get_emoji_map();
 
             if (this->ml_code_depth > 0) {
@@ -559,33 +564,35 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                 return Ok();
             }
 
-            pcre_input pi(sf);
-            pcre_context_static<30> pc;
             std::string span_text;
 
-            while (REPL_RE.match(pc, pi)) {
-                auto prev = pi.get_up_to(pc.all());
-                span_text.append(prev.data(), prev.length());
+            auto loop_res = REPL_RE.capture_from(sf).for_each(
+                [&span_text](lnav::pcre2pp::match_data& md) {
+                    span_text += md.leading();
 
-                auto matched = pi.get_string_fragment(pc.all());
+                    auto matched = *md[0];
 
-                if (matched == "--") {
-                    span_text.append("\u2013");
-                } else if (matched == "---") {
-                    span_text.append("\u2014");
-                } else if (matched.startswith(":")) {
-                    auto em_iter
-                        = emojis.em_shortname2emoji.find(matched.to_string());
-                    if (em_iter == emojis.em_shortname2emoji.end()) {
-                        span_text.append(matched.data(), matched.length());
-                    } else {
-                        span_text.append(em_iter->second.get().e_value);
+                    if (matched == "--") {
+                        span_text.append("\u2013");
+                    } else if (matched == "---") {
+                        span_text.append("\u2014");
+                    } else if (matched.startswith(":")) {
+                        auto em_iter = emojis.em_shortname2emoji.find(
+                            matched.to_string());
+                        if (em_iter == emojis.em_shortname2emoji.end()) {
+                            span_text += matched;
+                        } else {
+                            span_text.append(em_iter->second.get().e_value);
+                        }
                     }
-                }
-            }
+                });
 
-            auto last_frag = sf.substr(pi.pi_offset);
-            span_text.append(last_frag.data(), last_frag.length());
+            if (loop_res.isOk()) {
+                span_text += loop_res.unwrap();
+            } else {
+                log_error("span replacement regex failed: %d",
+                          loop_res.unwrapErr().e_error_code);
+            }
 
             text_wrap_settings tws
                 = {0, this->ml_blocks.size() == 1 ? 70 : 10000};

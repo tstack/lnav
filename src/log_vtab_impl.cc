@@ -1195,13 +1195,15 @@ log_cursor::string_constraint::string_constraint(unsigned char op,
     : sc_op(op), sc_value(std::move(value))
 {
     if (op == SQLITE_INDEX_CONSTRAINT_REGEXP) {
-        try {
-            this->sc_pattern
-                = std::make_shared<pcrepp>(this->sc_value, PCRE_UTF8);
-        } catch (const pcrepp::error& err) {
+        auto compile_res = lnav::pcre2pp::code::from(value);
+
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
             log_error("unable to compile regexp constraint: %s -- %s",
                       this->sc_value.c_str(),
-                      err.e_msg.c_str());
+                      ce.get_message().c_str());
+        } else {
+            this->sc_pattern = compile_res.unwrap().to_shared();
         }
     }
 }
@@ -1230,10 +1232,9 @@ log_cursor::string_constraint::matches(const std::string& sf) const
             return sqlite3_strglob(this->sc_value.c_str(), sf.data()) == 0;
         case SQLITE_INDEX_CONSTRAINT_REGEXP: {
             if (this->sc_pattern != nullptr) {
-                pcre_context_static<30> pc;
-                pcre_input pi(sf);
-
-                return this->sc_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK);
+                return this->sc_pattern->find_in(sf, PCRE2_NO_UTF_CHECK)
+                    .ignore_error()
+                    .has_value();
             }
             // return true here so that the regexp is actually run and fails
             return true;

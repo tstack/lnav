@@ -40,7 +40,6 @@
 #include "base/lnav_log.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
-#include "pcrepp/pcrepp.hh"
 
 #define ELEMENT_LIST_T(var) var("" #var, __FILE__, __LINE__, group_depth)
 #define PUSH_FRONT(elem)    push_front(elem, __FILE__, __LINE__)
@@ -334,9 +333,9 @@ public:
 
         const element& get_pair_elem() const;
 
-        void print(FILE* out, pcre_input& pi, int offset = 0) const;
+        void print(FILE* out, data_scanner&, int offset = 0) const;
 
-        pcre_context::capture_t e_capture;
+        data_scanner::capture_t e_capture;
         data_token_t e_token;
 
         element_list_t* e_sub_elements;

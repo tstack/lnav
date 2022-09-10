@@ -44,10 +44,7 @@ using namespace std;
 
 class my_source : public grep_proc_source<vis_line_t> {
 public:
-    my_source(auto_fd& fd)
-    {
-        this->ms_buffer.set_fd(fd);
-    };
+    my_source(auto_fd& fd) { this->ms_buffer.set_fd(fd); };
 
     bool grep_value_for_line(vis_line_t line_number, string& value_out)
     {
@@ -117,7 +114,6 @@ main(int argc, char* argv[])
     int retval = EXIT_SUCCESS;
     const char* errptr;
     auto_fd fd;
-    pcre* code;
     int eoff;
 
     if (argc < 3) {
@@ -126,29 +122,35 @@ main(int argc, char* argv[])
     } else if ((fd = open(argv[2], O_RDONLY)) == -1) {
         perror("open");
         retval = EXIT_FAILURE;
-    } else if ((code
-                = pcre_compile(argv[1], PCRE_CASELESS, &errptr, &eoff, NULL))
-               == NULL)
-    {
-        fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
     } else {
-        auto psuperv = std::make_shared<pollable_supervisor>();
-        my_source ms(fd);
-        my_sink msink;
+        auto compile_res = lnav::pcre2pp::code::from(
+            string_fragment::from_c_str(argv[1]), PCRE2_CASELESS);
 
-        grep_proc<vis_line_t> gp(code, ms, psuperv);
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
+            fprintf(stderr,
+                    "error: invalid pattern -- %s\n",
+                    ce.get_message().c_str());
+        } else {
+            auto co = compile_res.unwrap().to_shared();
+            auto psuperv = std::make_shared<pollable_supervisor>();
+            my_source ms(fd);
+            my_sink msink;
 
-        gp.set_sink(&msink);
-        gp.queue_request();
-        gp.start();
+            grep_proc<vis_line_t> gp(co, ms, psuperv);
 
-        while (!msink.ms_finished) {
-            vector<struct pollfd> pollfds;
+            gp.set_sink(&msink);
+            gp.queue_request();
+            gp.start();
 
-            psuperv->update_poll_set(pollfds);
-            poll(&pollfds[0], pollfds.size(), -1);
+            while (!msink.ms_finished) {
+                vector<struct pollfd> pollfds;
 
-            psuperv->check_poll_set(pollfds);
+                psuperv->update_poll_set(pollfds);
+                poll(&pollfds[0], pollfds.size(), -1);
+
+                psuperv->check_poll_set(pollfds);
+            }
         }
     }
 

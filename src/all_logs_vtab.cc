@@ -29,8 +29,8 @@
 
 #include "all_logs_vtab.hh"
 
-#include "config.h"
 #include "base/attr_line.hh"
+#include "config.h"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -65,7 +65,7 @@ all_logs_vtab::extract(logfile* lf,
                        logline_value_vector& values)
 {
     auto& line = values.lvv_sbr;
-    auto format = lf->get_format_ptr();
+    auto* format = lf->get_format_ptr();
 
     logline_value_vector sub_values;
 
@@ -79,7 +79,8 @@ all_logs_vtab::extract(logfile* lf,
         body.lr_end = line.length();
     }
 
-    data_scanner ds(line, body.lr_start, body.lr_end);
+    data_scanner ds(
+        line.to_string_fragment().sub_range(body.lr_start, body.lr_end));
     data_parser dp(&ds);
     std::string str;
 

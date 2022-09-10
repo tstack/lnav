@@ -1,3 +1,9 @@
+lnav v0.11.1:
+     Breaking changes:
+     * The regexp_capture() table-valued-function now returns NULL
+       instead of an empty string for the `capture_name` column if
+       the capture is not named.
+
 lnav v0.11.0:
      Features:
      * Redesigned the top status area to allow for user-specified

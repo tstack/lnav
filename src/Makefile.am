@@ -239,6 +239,7 @@ noinst_HEADERS = \
 	log_level.hh \
 	log_level_re.re \
 	log_search_table.hh \
+	log_search_table_fwd.hh \
 	logfile.hh \
 	logfile.cfg.hh \
 	logfile_fwd.hh \

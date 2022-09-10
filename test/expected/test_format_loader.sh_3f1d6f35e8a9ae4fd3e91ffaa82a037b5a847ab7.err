@@ -1,56 +1,56 @@
-[1m[31m✘ error[0m: “invalid(abc” is not a valid regular expression for property “[1m/invalid_props_log/tags/badtag3/pattern[0m”
- [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:35
-[36m | [0m[37m[40m                "pattern": "invalid(abc"[0m
+[1m[31m✘ error[0m: “invalid(abc” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_props_log/tags/badtag3/pattern[0m
 [36m | [0m[37m[40minvalid[0m[1m[7m[32m[40m([0m[37m[40mabc                             [0m
-[36m | [0m[37m[40m           [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                  [0m
+[36m | [0m[37m[40m           [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:35
+[36m | [0m[37m[40m                "pattern": "invalid(abc"[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/tags/badtag3/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            The regular expression to match against the body of the log message
          [1mExample[0m
            \w+ is down
-[1m[31m✘ error[0m: “abc(def” is not a valid regular expression for property “[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m”
- [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:40
-[36m | [0m[37m[40m                "pattern": "abc(def"    [0m
+[1m[31m✘ error[0m: “abc(def” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40mdef                                 [0m
-[36m | [0m[37m[40m       [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                      [0m
+[36m | [0m[37m[40m       [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m    [0m
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:40
+[36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/search-table/bad_table_regex/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            The regular expression for this search table.
-[1m[31m✘ error[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression for property “[1m/bad_regex_log/regex/std/pattern[0m”
- [1m[31mreason[0m: missing )
+[1m[31m✘ error[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
+[36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
+[36m | [0m[1m[36m[40m^[0m[1m[7m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mtimestamp>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[37m[40m: [0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mbody>[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[1m[32m[40m)[0m[1m[36m[40m$[0m[37m[40m                             [0m
+[36m | [0m[37m[40m                               [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:6
 [36m | [0m[37m[40m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"[0m
-[36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
-[36m | [0m[1m[36m[40m^[0m[1m[7m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mtimestamp>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[37m[40m: [0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mbody>[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[1m[32m[40m)[0m[1m[36m[40m$[0m[37m[40m           [0m
-[36m | [0m[37m[40m                               [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/regex/std/pattern[0m [4m<message-regex>[0m
          [1mDescription[0m
            The regular expression to match a log message and capture fields.
-[1m[31m✘ error[0m: “(foo” is not a valid regular expression for property “[1m/bad_regex_log/level/error[0m”
- [1m[31mreason[0m: missing )
+[1m[31m✘ error[0m: “(foo” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
+[36m --> [0m[1mpattern[0m
+[36m | [0m[1m[7m[32m[40m([0m[37m[40mfoo                                    [0m
+[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m       [0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:13
 [36m | [0m[37m[40m            "error": "(foo"             [0m
-[36m --> [0m[1m/bad_regex_log/level/error[0m
-[36m | [0m[1m[7m[32m[40m([0m[37m[40mfoo                                    [0m
-[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                         [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/level/error[0m [4m<pattern|integer>[0m
          [1mDescription[0m
            The regular expression used to match the log text for this level.  For JSON logs with numeric levels, this should be the number for the corresponding level.
-[1m[31m✘ error[0m: “abc(” is not a valid regular expression for property “[1m/bad_regex_log/highlights/foobar/pattern[0m”
- [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:25
-[36m | [0m[37m[40m                "pattern": "abc("       [0m
+[1m[31m✘ error[0m: “abc(” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/bad_regex_log/highlights/foobar/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
-[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                         [0m
+[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m       [0m
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:25
+[36m | [0m[37m[40m                "pattern": "abc("       [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/bad_regex_log/highlights/foobar/pattern[0m [4m<regex>[0m
          [1mDescription[0m
@@ -153,8 +153,11 @@
 [36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[37m[40mTALE[0m[37m[40m [0m[1m[37m[40minvalid[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mx[0m[37m[40m [0m[37m[40my[0m[37m[40m [0m[37m[40mz[0m[37m[40m);            [0m
 [36m | [0m[37m[40m       [0m[36m[40m^ [0m[1m[31m[40mnear "TALE": syntax error[0m[37m[40m      [0m
 [1m[31m✘ error[0m: failed to execute SQL statement
- [1m[31mreason[0m: [1m[31m✘ error[0m: call to [1m[4mregexp_match[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m failed
-[1m[31m |      [0m  [1m[31mreason[0m: missing )
+ [1m[31mreason[0m: [1m[31m✘ error[0m: “abc(” is not a valid regular expression
+[1m[31m |      [0m  [1m[31mreason[0m: missing closing parenthesis
+[1m[31m |      [0m [36m --> [0m[1marg[0m
+[1m[31m |      [0m [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
+[1m[31m |      [0m [36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init2.sql[0m
 [36m | [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[1m[7m[31m[40m([0m[35m[40m'abc('[0m[37m[40m, [0m[35m[40m'123'[0m[37m[40m)      [0m
 [36m | [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msqlite_master[0m[37m[40m;                     [0m

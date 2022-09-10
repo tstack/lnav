@@ -251,13 +251,16 @@ public:
     metadata walk()
     {
         metadata_builder mb;
-        pcre_context_static<30> pc;
         data_token_t dt = DT_INVALID;
-        auto& pi = this->sw_scanner.get_input();
         size_t garbage_count = 0;
 
-        while (garbage_count < 1000 && this->sw_scanner.tokenize2(pc, dt)) {
-            element el(dt, pc);
+        while (garbage_count < 1000) {
+            auto tokenize_res = this->sw_scanner.tokenize2();
+            if (!tokenize_res) {
+                break;
+            }
+
+            element el(tokenize_res->tr_token, tokenize_res->tr_capture);
 
             switch (dt) {
                 case DT_XML_DECL_TAG:
@@ -271,7 +274,7 @@ public:
                     this->sw_interval_state.back().is_line_number
                         = this->sw_line_number;
                     this->sw_interval_state.back().is_name
-                        = pi.get_substr(&el.e_capture);
+                        = tokenize_res->to_string();
                     this->sw_depth += 1;
                     this->sw_interval_state.resize(this->sw_depth + 1);
                     this->sw_hier_nodes.push_back(
@@ -328,13 +331,14 @@ public:
                             = std::move(this->sw_hier_nodes.back());
                         this->sw_hier_nodes.pop_back();
                         if (this->sw_interval_state.back().is_start) {
-                            pcre_context::capture_t obj_cap = {
+                            data_scanner::capture_t obj_cap = {
                                 static_cast<int>(this->sw_interval_state.back()
                                                      .is_start.value()),
                                 el.e_capture.c_end,
                             };
 
-                            auto sf = pi.get_string_fragment(&obj_cap);
+                            auto sf
+                                = this->sw_scanner.to_string_fragment(obj_cap);
                             if (!sf.find('\n')) {
                                 this->sw_hier_stage->hn_named_children.clear();
                                 this->sw_hier_stage->hn_children.clear();
@@ -396,18 +400,13 @@ public:
 
 private:
     struct element {
-        element(data_token_t token, pcre_context& pc)
-            : e_token(token), e_capture(*pc.all())
-        {
-        }
-
-        element(data_token_t token, pcre_context::capture_t& cap)
+        element(data_token_t token, data_scanner::capture_t& cap)
             : e_token(token), e_capture(cap)
         {
         }
 
         data_token_t e_token;
-        pcre_context::capture_t e_capture;
+        data_scanner::capture_t e_capture;
     };
 
     struct interval_state {
@@ -416,11 +415,10 @@ private:
         std::string is_name;
     };
 
-    nonstd::optional<pcre_context::capture_t> flush_values()
+    nonstd::optional<data_scanner::capture_t> flush_values()
     {
-        nonstd::optional<pcre_context::capture_t> last_key;
-        nonstd::optional<pcre_context::capture_t> retval;
-        auto& pi = this->sw_scanner.get_input();
+        nonstd::optional<data_scanner::capture_t> last_key;
+        nonstd::optional<data_scanner::capture_t> retval;
 
         if (!this->sw_values.empty()) {
             if (!this->sw_interval_state.back().is_start) {
@@ -443,7 +441,9 @@ private:
                 case DT_EQUALS:
                     if (last_key) {
                         this->sw_interval_state.back().is_name
-                            = pi.get_substr(&last_key.value());
+                            = this->sw_scanner
+                                  .to_string_fragment(last_key.value())
+                                  .to_string();
                         if (!this->sw_interval_state.back().is_name.empty()) {
                             this->sw_interval_state.back().is_start
                                 = static_cast<ssize_t>(
@@ -464,7 +464,7 @@ private:
         return retval;
     }
 
-    void append_child_node(nonstd::optional<pcre_context::capture_t> terminator)
+    void append_child_node(nonstd::optional<data_scanner::capture_t> terminator)
     {
         auto& ivstate = this->sw_interval_state.back();
         if (!ivstate.is_start || !terminator || this->sw_depth == 0) {

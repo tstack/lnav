@@ -105,6 +105,11 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename P>
+    json_path_handler(P path) : json_path_handler_base(path)
+    {
+    }
+
+    template<typename P>
     json_path_handler(P path,
                       int (*str_func)(yajlpp_parse_context*,
                                       const unsigned char*,
@@ -115,18 +120,8 @@ struct json_path_handler : public json_path_handler_base {
             = (int (*)(void*, const unsigned char*, size_t)) str_func;
     }
 
-    template<typename P>
-    json_path_handler(P path) : json_path_handler_base(path)
-    {
-    }
-
-    json_path_handler(const std::string& path, const pcrepp& re)
-        : json_path_handler_base(path, re)
-    {
-    }
-
     json_path_handler(const std::string& path,
-                      const std::shared_ptr<pcrepp>& re)
+                      const std::shared_ptr<const lnav::pcre2pp::code>& re)
         : json_path_handler_base(path, re)
     {
     }
@@ -194,10 +189,11 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    json_path_handler& with_pattern(const char* re)
+    template<typename T, std::size_t N>
+    json_path_handler& with_pattern(const T (&re)[N])
     {
         this->jph_pattern_re = re;
-        this->jph_pattern = std::make_shared<pcrepp>(re);
+        this->jph_pattern = lnav::pcre2pp::code::from_const(re).to_shared();
         return *this;
     }
 
@@ -341,10 +337,8 @@ struct json_path_handler : public json_path_handler_base {
 
         if (jph.jph_pattern) {
             auto sf = to_string_fragment(field_ptr);
-            pcre_input pi(sf);
-            pcre_context_static<30> pc;
 
-            if (!jph.jph_pattern->match(pc, pi)) {
+            if (!jph.jph_pattern->find_in(sf).ignore_error()) {
                 jph.report_pattern_error(&ypc, sf.to_string());
             }
         }
@@ -833,10 +827,7 @@ struct json_path_handler : public json_path_handler_base {
             auto jph = ypc->ypc_current_handler;
 
             if (jph->jph_pattern) {
-                pcre_input pi(value_str);
-                pcre_context_static<30> pc;
-
-                if (!jph->jph_pattern->match(pc, pi)) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
                     jph->report_pattern_error(ypc, value_str);
                 }
             }
@@ -891,10 +882,7 @@ struct json_path_handler : public json_path_handler_base {
             auto jph = ypc->ypc_current_handler;
 
             if (jph->jph_pattern) {
-                pcre_input pi(value_str);
-                pcre_context_static<30> pc;
-
-                if (!jph->jph_pattern->match(pc, pi)) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
                     jph->report_pattern_error(ypc, value_str);
                 }
             }
@@ -953,10 +941,7 @@ struct json_path_handler : public json_path_handler_base {
             auto jph = ypc->ypc_current_handler;
 
             if (jph->jph_pattern) {
-                pcre_input pi(value_str);
-                pcre_context_static<30> pc;
-
-                if (!jph->jph_pattern->match(pc, pi)) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
                     jph->report_pattern_error(ypc, value_str);
                 }
             }
@@ -1010,10 +995,7 @@ struct json_path_handler : public json_path_handler_base {
             auto jph = ypc->ypc_current_handler;
 
             if (jph->jph_pattern) {
-                pcre_input pi(value_str);
-                pcre_context_static<30> pc;
-
-                if (!jph->jph_pattern->match(pc, pi)) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
                     jph->report_pattern_error(ypc, value_str);
                 }
             }
@@ -1065,10 +1047,7 @@ struct json_path_handler : public json_path_handler_base {
             auto jph = ypc->ypc_current_handler;
 
             if (jph->jph_pattern) {
-                pcre_input pi(value_str);
-                pcre_context_static<30> pc;
-
-                if (!jph->jph_pattern->match(pc, pi)) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
                     jph->report_pattern_error(ypc, value_str);
                 }
             }
@@ -1107,55 +1086,35 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename C, typename T, typename... Args>
-    json_path_handler& for_field(Args... args, std::shared_ptr<T> C::*ptr_arg)
+    template<typename>
+    struct int_ {
+        typedef int type;
+    };
+    template<typename C,
+             typename T,
+             typename int_<decltype(T::from(intern_string_t{}))>::type = 0,
+             typename... Args>
+    json_path_handler& for_field(Args... args, T C::*ptr_arg)
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args..., ptr_arg](yajlpp_parse_context* ypc,
                                               const unsigned char* str,
                                               size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+            auto* obj = ypc->ypc_obj_stack.top();
+            auto value_frag = string_fragment::from_bytes(str, len);
+            const auto* jph = ypc->ypc_current_handler;
 
-            try {
-                auto re = std::make_shared<T>(value_str);
+            auto from_res = T::from(ypc->get_full_path(), value_frag);
+            if (from_res.isErr()) {
+                jph->report_error(
+                    ypc, value_frag.to_string(), from_res.unwrapErr());
+            } else {
                 json_path_handler::get_field(obj, args..., ptr_arg)
-                    = std::move(re);
-            } catch (const pcrepp::error& e) {
-                pcrepp::compile_error ce;
-
-                ce.ce_msg = e.what();
-                ce.ce_offset = e.e_offset;
-                jph->report_regex_value_error(ypc, value_str, ce);
+                    = from_res.unwrap();
             }
 
             return 1;
         };
-        this->jph_gen_callback
-            = [args..., ptr_arg](yajlpp_gen_context& ygc,
-                                 const json_path_handler_base& jph,
-                                 yajl_gen handle) {
-                  const auto& field = json_path_handler::get_field(
-                      ygc.ygc_obj_stack.top(), args..., ptr_arg);
-
-                  if (!ygc.ygc_default_stack.empty()) {
-                      const auto& field_def = json_path_handler::get_field(
-                          ygc.ygc_default_stack.top(), args..., ptr_arg);
-
-                      if (field == field_def) {
-                          return yajl_gen_status_ok;
-                      }
-                  }
-
-                  if (ygc.ygc_depth) {
-                      yajl_gen_string(handle, jph.jph_property);
-                  }
-
-                  yajlpp_generator gen(handle);
-
-                  return gen(field->get_pattern());
-              };
         return *this;
     }
 
@@ -1225,7 +1184,8 @@ struct json_path_handler : public json_path_handler_base {
                                      size_t len) {
             auto obj = ypc->ypc_obj_stack.top();
             auto handler = ypc->ypc_current_handler;
-            auto parse_res = relative_time::from_str((const char*) str, len);
+            auto parse_res = relative_time::from_str(
+                string_fragment::from_bytes(str, len));
 
             if (parse_res.isErr()) {
                 auto parse_error = parse_res.unwrapErr();
@@ -1495,10 +1455,11 @@ property_handler(const std::string& path)
     return {path};
 }
 
+template<typename T, std::size_t N>
 inline json_path_handler
-pattern_property_handler(const std::string& path)
+pattern_property_handler(const T (&path)[N])
 {
-    return {pcrepp(path)};
+    return {lnav::pcre2pp::code::from_const(path).to_shared()};
 }
 }  // namespace yajlpp
 

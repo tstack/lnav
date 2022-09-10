@@ -35,7 +35,7 @@
 #include "lnav_config.hh"
 #include "log_format.hh"
 #include "log_format_ext.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "regex101.client.hh"
 #include "session_data.hh"
 #include "yajlpp/yajlpp.hh"
@@ -47,8 +47,10 @@ regex101::import(const std::string& url,
                  const std::string& name,
                  const std::string& pat_name)
 {
-    static const pcrepp USER_URL{R"(^https://regex101.com/r/(\w+)(?:/(\d+))?)"};
-    static const pcrepp NAME_RE{R"(^\w+$)"};
+    static const auto USER_URL = lnav::pcre2pp::code::from_const(
+        R"(^https://regex101.com/r/(\w+)(?:/(\d+))?)");
+    static thread_local auto URL_MATCH_DATA = USER_URL.create_match_data();
+    static const auto NAME_RE = lnav::pcre2pp::code::from_const(R"(^\w+$)");
 
     if (url.empty()) {
         return Err(lnav::console::user_message::error(
@@ -76,11 +78,9 @@ regex101::import(const std::string& url,
         }
     }
 
-    pcre_context_static<30> pc_name;
-    pcre_input pi_name{name};
-
-    if (!NAME_RE.match(pc_name, pi_name)) {
-        auto partial_len = NAME_RE.match_partial(pi_name);
+    auto name_find_res = NAME_RE.find_in(name).ignore_error();
+    if (!name_find_res) {
+        auto partial_len = NAME_RE.match_partial(name);
         return Err(
             lnav::console::user_message::error(
                 attr_line_t("unable to import: ")
@@ -95,11 +95,12 @@ regex101::import(const std::string& url,
                                .append("^ matched up to here"_comment)));
     }
 
-    pcre_context_static<30> pc;
-    pcre_input pi{url};
-
-    if (!USER_URL.match(pc, pi)) {
-        auto partial_len = USER_URL.match_partial(pi);
+    auto user_find_res = USER_URL.capture_from(url)
+                             .into(URL_MATCH_DATA)
+                             .matches()
+                             .ignore_error();
+    if (!user_find_res) {
+        auto partial_len = USER_URL.match_partial(url);
         return Err(lnav::console::user_message::error(
                        attr_line_t("unrecognized regex101.com URL: ")
                            .append(lnav::roles::file(url)))
@@ -112,7 +113,7 @@ regex101::import(const std::string& url,
                                       .append("^ matched up to here"_comment)));
     }
 
-    auto permalink = pi.get_substr(pc[0]);
+    auto permalink = URL_MATCH_DATA[1]->to_string();
 
     auto format_filename = existing_format
         ? fmt::format(FMT_STRING("{}.regex101-{}.json"), name, permalink)
@@ -155,7 +156,7 @@ regex101::import(const std::string& url,
                                  .append(" flavor of regexes are supported")));
     }
 
-    auto regex_res = pcrepp::from_str(entry.e_regex);
+    auto regex_res = lnav::pcre2pp::code::from(entry.e_regex);
     if (regex_res.isErr()) {
         auto parse_error = regex_res.unwrapErr();
         return Err(lnav::console::user_message::error(
@@ -163,7 +164,7 @@ regex101::import(const std::string& url,
                            .append_quoted(lnav::roles::symbol(entry.e_regex))
                            .append(" from ")
                            .append_quoted(lnav::roles::symbol(url)))
-                       .with_reason(parse_error.ce_msg)
+                       .with_reason(parse_error.get_message())
                        .with_help("fix the regex and try the import again"));
     }
 
@@ -205,16 +206,13 @@ regex101::import(const std::string& url,
                 {
                     yajlpp_map value_map(gen);
 
-                    for (auto named_iter = regex.named_begin();
-                         named_iter != regex.named_end();
-                         ++named_iter)
-                    {
-                        if (strcmp(named_iter->pnc_name, "body") == 0) {
+                    for (auto named_cap : regex.get_named_captures()) {
+                        if (named_cap.get_name() == "body") {
                             // don't need to add this as a value
                             continue;
                         }
 
-                        value_map.gen(named_iter->pnc_name);
+                        value_map.gen(named_cap.get_name());
                         {
                             yajlpp_map cap_map(gen);
 
@@ -374,7 +372,7 @@ regex101::convert_format_pattern(
 {
     regex101::client::entry en;
 
-    en.e_regex = pattern->p_pcre->get_pattern();
+    en.e_regex = pattern->p_pcre.value->get_pattern();
     for (const auto& sample : format->elf_samples) {
         if (en.e_test_string.empty()) {
             en.e_test_string = sample.s_line.pp_value;

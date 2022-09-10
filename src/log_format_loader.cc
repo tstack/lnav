@@ -57,9 +57,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-static void extract_metadata(const char* contents,
-                             size_t len,
-                             struct script_metadata& meta_out);
+static void extract_metadata(string_fragment, struct script_metadata& meta_out);
 
 using log_formats_map_t
     = std::map<intern_string_t, std::shared_ptr<external_log_format>>;
@@ -276,30 +274,7 @@ read_format_field(yajlpp_parse_context* ypc,
                              leading_slash ? len - 1 : len);
     auto field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "file-pattern") {
-        try {
-            elf->elf_file_pattern = value;
-            elf->elf_filename_pcre
-                = std::make_shared<pcrepp>(elf->elf_file_pattern);
-        } catch (const pcrepp::error& e) {
-            pcrepp::compile_error ce;
-
-            ce.ce_msg = e.what();
-            ce.ce_offset = e.e_offset;
-            ypc->ypc_current_handler->report_regex_value_error(ypc, value, ce);
-        }
-    } else if (field_name == "level-pointer") {
-        auto pcre_res = pcrepp::from_str(value);
-
-        if (pcre_res.isErr()) {
-            auto pcre_error = pcre_res.unwrapErr();
-
-            ypc->ypc_current_handler->report_regex_value_error(
-                ypc, value, pcre_error);
-        } else {
-            elf->elf_level_pointer = pcre_res.unwrap();
-        }
-    } else if (field_name == "timestamp-format") {
+    if (field_name == "timestamp-format") {
         elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
     } else if (field_name == "module-field") {
         elf->elf_module_id_field = intern_string::lookup(value);
@@ -321,17 +296,20 @@ read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     auto regex = std::string((const char*) str, len);
     auto level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
-    elf->elf_level_patterns[level].lp_regex = regex;
+    auto value_frag = string_fragment::from_bytes(str, len);
 
-    try {
-        elf->elf_level_patterns[level].lp_pcre
-            = std::make_shared<pcrepp>(regex);
-    } catch (const pcrepp::error& e) {
-        pcrepp::compile_error ce;
-
-        ce.ce_msg = e.what();
-        ce.ce_offset = e.e_offset;
-        ypc->ypc_current_handler->report_regex_value_error(ypc, regex, ce);
+    auto compile_res = lnav::pcre2pp::code::from(value_frag);
+    if (compile_res.isErr()) {
+        static const intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
+        auto ce = compile_res.unwrapErr();
+        ypc->ypc_current_handler->report_error(
+            ypc,
+            value_frag.to_string(),
+            lnav::console::to_user_message(PATTERN_SRC, ce));
+    } else {
+        elf->elf_level_patterns[level].lp_pcre.value
+            = compile_res.unwrap().to_shared();
     }
 
     return 1;
@@ -781,7 +759,9 @@ static struct json_path_container action_def_handlers = {
 };
 
 static struct json_path_container action_handlers = {
-    json_path_handler(pcrepp("(?<action_name>\\w+)"), read_action_def)
+    json_path_handler(
+        lnav::pcre2pp::code::from_const("(?<action_name>\\w+)").to_shared(),
+        read_action_def)
         .with_children(action_def_handlers),
 };
 
@@ -849,9 +829,10 @@ struct json_path_container format_handlers = {
         .with_synopsis("<number>")
         .with_description(
             "The value to divide a numeric timestamp by in a JSON log."),
-    json_path_handler("file-pattern", read_format_field)
+    json_path_handler("file-pattern")
         .with_description("A regular expression that restricts this format to "
-                          "log files with a matching name"),
+                          "log files with a matching name")
+        .for_field(&external_log_format::elf_filename_pcre),
     json_path_handler("mime-types#", read_format_field)
         .with_description("A list of mime-types this format should be used for")
         .with_enum_values(MIME_TYPE_ENUM),
@@ -859,9 +840,10 @@ struct json_path_container format_handlers = {
         .with_description(
             "The name of the level field in the log message pattern")
         .for_field(&external_log_format::elf_level_field),
-    json_path_handler("level-pointer", read_format_field)
+    json_path_handler("level-pointer")
         .with_description("A regular-expression that matches the JSON-pointer "
-                          "of the level property"),
+                          "of the level property")
+        .for_field(&external_log_format::elf_level_pointer),
     json_path_handler("timestamp-field", read_format_field)
         .with_description(
             "The name of the timestamp field in the log message pattern")
@@ -876,7 +858,8 @@ struct json_path_container format_handlers = {
         .with_description(
             "The name of the body field in the log message pattern")
         .for_field(&external_log_format::elf_body_field),
-    json_path_handler("url", pcrepp("^url#?"))
+    json_path_handler("url",
+                      lnav::pcre2pp::code::from_const("^url#?").to_shared())
         .add_cb(read_format_field)
         .with_description("A URL with more information about this log format"),
     json_path_handler("title", read_format_field)
@@ -1037,7 +1020,7 @@ write_sample_file()
         auto_fd script_fd;
         struct stat st;
 
-        extract_metadata(sf.data(), sf.length(), meta);
+        extract_metadata(sf, meta);
         auto path
             = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);
         auto script_path = lnav::paths::dotlnav() / path;
@@ -1346,23 +1329,24 @@ load_format_extra(sqlite3* db,
 }
 
 static void
-extract_metadata(const char* contents,
-                 size_t len,
-                 struct script_metadata& meta_out)
+extract_metadata(string_fragment contents, struct script_metadata& meta_out)
 {
-    static const pcrepp SYNO_RE("^#\\s+@synopsis:(.*)$", PCRE_MULTILINE);
-    static const pcrepp DESC_RE("^#\\s+@description:(.*)$", PCRE_MULTILINE);
+    static const auto SYNO_RE = lnav::pcre2pp::code::from_const(
+        "^#\\s+@synopsis:(.*)$", PCRE2_MULTILINE);
+    static const auto DESC_RE = lnav::pcre2pp::code::from_const(
+        "^#\\s+@description:(.*)$", PCRE2_MULTILINE);
 
-    pcre_input pi(contents, 0, len);
-    pcre_context_static<16> pc;
-
-    pi.reset(contents, 0, len);
-    if (SYNO_RE.match(pc, pi)) {
-        meta_out.sm_synopsis = trim(pi.get_substr(pc[0]));
+    auto syno_md = SYNO_RE.create_match_data();
+    auto syno_match_res
+        = SYNO_RE.capture_from(contents).into(syno_md).matches().ignore_error();
+    if (syno_match_res) {
+        meta_out.sm_synopsis = syno_md[1]->trim().to_string();
     }
-    pi.reset(contents, 0, len);
-    if (DESC_RE.match(pc, pi)) {
-        meta_out.sm_description = trim(pi.get_substr(pc[0]));
+    auto desc_md = DESC_RE.create_match_data();
+    auto desc_match_res
+        = DESC_RE.capture_from(contents).into(desc_md).matches().ignore_error();
+    if (desc_match_res) {
+        meta_out.sm_description = desc_md[1]->trim().to_string();
     }
 
     if (!meta_out.sm_synopsis.empty()) {
@@ -1390,7 +1374,7 @@ extract_metadata_from_file(struct script_metadata& meta_inout)
         size_t len;
 
         len = fread(buffer, 1, sizeof(buffer), fp.in());
-        extract_metadata(buffer, len, meta_inout);
+        extract_metadata(string_fragment::from_bytes(buffer, len), meta_inout);
     }
 }
 

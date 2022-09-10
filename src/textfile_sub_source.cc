@@ -570,7 +570,9 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
-            if (!retval && lf->is_indexing()) {
+            if (!retval && lf->is_indexing()
+                && lf->get_text_format() != text_format_t::TF_BINARY)
+            {
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
                 if (ms_iter != this->tss_doc_metadata.end()) {

@@ -35,15 +35,15 @@
 
 #include "base/opt_util.hh"
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "scn/scn.h"
 #include "view_curses.hh"
 
-static const pcrepp&
+static const lnav::pcre2pp::code&
 ansi_regex()
 {
-    static const pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:\\X\x08\\X)+",
-                               PCRE_UTF8);
+    static const auto retval = lnav::pcre2pp::code::from_const(
+        "\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:\\X\x08\\X)+");
 
     return retval;
 }
@@ -51,16 +51,25 @@ ansi_regex()
 void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
-    pcre_context_static<60> context;
     const auto& regex = ansi_regex();
-    pcre_input pi(str);
+    auto md = regex.create_match_data();
     int64_t origin_offset = 0;
     int last_origin_offset_end = 0;
 
     replace(str.begin(), str.end(), '\0', ' ');
-    while (regex.match(context, pi, PCRE_NO_UTF8_CHECK)) {
-        auto* caps = context.all();
-        const auto sf = pi.get_string_fragment(caps);
+    auto matcher = regex.capture_from(str).into(md);
+    while (true) {
+        auto match_res = matcher.matches(PCRE2_NO_UTF_CHECK);
+
+        if (match_res.is<lnav::pcre2pp::matcher::not_found>()) {
+            break;
+        }
+        if (match_res.is<lnav::pcre2pp::matcher::error>()) {
+            log_error("ansi scrub regex failure");
+            break;
+        }
+
+        const auto sf = md[0].value();
         auto bs_index_res = sf.codepoint_to_byte_index(1);
 
         if (sf.length() >= 3 && bs_index_res.isOk()
@@ -139,7 +148,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     *sa, caps->c_begin + sf.length() / 3, -erased_size);
 #endif
                 sa->emplace_back(line_range{last_origin_offset_end,
-                                            caps->c_begin + (int) output_size},
+                                            sf.sf_begin + (int) output_size},
                                  SA_ORIGIN_OFFSET.value(origin_offset));
             }
 
@@ -154,27 +163,28 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 bold_range.clear();
             }
 
-            str.erase(str.begin() + fill_index, str.begin() + caps->c_end);
-            last_origin_offset_end = caps->c_begin + output_size;
+            str.erase(str.begin() + fill_index, str.begin() + sf.sf_end);
+            last_origin_offset_end = sf.sf_begin + output_size;
             origin_offset += erased_size;
-            pi.reset(str);
-            pi.pi_next_offset = last_origin_offset_end;
+            matcher.reload_input(str, last_origin_offset_end);
             continue;
         }
 
+        auto seq = md[1].value();
+        auto terminator = md[2].value();
         struct line_range lr;
         bool has_attrs = false;
         text_attrs attrs;
         auto role = nonstd::optional<role_t>();
         size_t lpc;
 
-        switch (pi.get_substr_start(&caps[2])[0]) {
+        switch (terminator[0]) {
             case 'm':
-                for (lpc = caps[1].c_begin;
-                     lpc != std::string::npos && lpc < (size_t) caps[1].c_end;)
+                for (lpc = seq.sf_begin;
+                     lpc != std::string::npos && lpc < (size_t) seq.sf_end;)
                 {
                     auto ansi_code_res = scn::scan_value<int>(
-                        scn::string_view{&str[lpc], &str[caps[1].c_end]});
+                        scn::string_view{&str[lpc], &str[seq.sf_end]});
 
                     if (ansi_code_res) {
                         auto ansi_code = ansi_code_res.value();
@@ -215,11 +225,11 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 break;
 
             case 'C': {
-                auto spaces_res = scn::scan_value<unsigned int>(
-                    pi.to_string_view(&caps[1]));
+                auto spaces_res
+                    = scn::scan_value<unsigned int>(seq.to_string_view());
 
                 if (spaces_res && spaces_res.value() > 0) {
-                    str.insert((std::string::size_type) caps[0].c_end,
+                    str.insert((std::string::size_type) sf.sf_end,
                                spaces_res.value(),
                                ' ');
                 }
@@ -229,13 +239,13 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             case 'H': {
                 unsigned int row = 0, spaces = 0;
 
-                if (scn::scan(pi.to_string_view(&caps[1]), "{};{}", row, spaces)
+                if (scn::scan(seq.to_string_view(), "{};{}", row, spaces)
                     && spaces > 1)
                 {
                     int ispaces = spaces - 1;
-                    if (ispaces > caps[0].c_begin) {
-                        str.insert((unsigned long) caps[0].c_end,
-                                   ispaces - caps[0].c_begin,
+                    if (ispaces > sf.sf_begin) {
+                        str.insert((unsigned long) sf.sf_end,
+                                   ispaces - sf.sf_begin,
                                    ' ');
                     }
                 }
@@ -243,8 +253,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             }
 
             case 'O': {
-                auto role_res
-                    = scn::scan_value<int>(pi.to_string_view(&caps[1]));
+                auto role_res = scn::scan_value<int>(seq.to_string_view());
 
                 if (role_res) {
                     role_t role_tmp = (role_t) role_res.value();
@@ -258,18 +267,18 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 break;
             }
         }
-        str.erase(str.begin() + caps[0].c_begin, str.begin() + caps[0].c_end);
+        str.erase(str.begin() + sf.sf_begin, str.begin() + sf.sf_end);
         if (sa != nullptr) {
-            shift_string_attrs(*sa, caps[0].c_begin, -caps[0].length());
+            shift_string_attrs(*sa, sf.sf_begin, -sf.length());
 
             if (has_attrs) {
                 for (auto rit = sa->rbegin(); rit != sa->rend(); rit++) {
                     if (rit->sa_range.lr_end != -1) {
                         continue;
                     }
-                    rit->sa_range.lr_end = caps[0].c_begin;
+                    rit->sa_range.lr_end = sf.sf_begin;
                 }
-                lr.lr_start = caps[0].c_begin;
+                lr.lr_start = sf.sf_begin;
                 lr.lr_end = -1;
                 if (attrs.ta_attrs || attrs.ta_fg_color || attrs.ta_bg_color) {
                     sa->emplace_back(lr, VC_STYLE.value(attrs));
@@ -278,14 +287,13 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     sa->emplace_back(lr, VC_ROLE.value(r));
                 };
             }
-            sa->emplace_back(line_range{last_origin_offset_end, caps->c_begin},
+            sa->emplace_back(line_range{last_origin_offset_end, sf.sf_begin},
                              SA_ORIGIN_OFFSET.value(origin_offset));
-            last_origin_offset_end = caps->c_begin;
-            origin_offset += caps->length();
+            last_origin_offset_end = sf.sf_begin;
+            origin_offset += sf.length();
         }
 
-        pi.reset(str);
-        pi.pi_next_offset = caps->c_begin;
+        matcher.reload_input(str, sf.sf_begin);
     }
 
     if (sa != nullptr && last_origin_offset_end > 0) {

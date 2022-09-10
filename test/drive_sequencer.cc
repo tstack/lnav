@@ -43,7 +43,6 @@
 
 #include "config.h"
 #include "logfile.hh"
-#include "pcrepp/pcrepp.hh"
 #include "sequence_matcher.hh"
 #include "sequence_sink.hh"
 #include "textview_curses.hh"
@@ -52,10 +51,7 @@ using namespace std;
 
 class my_source : public grep_proc_source<vis_line_t> {
 public:
-    my_source(auto_fd& fd) : ms_offset(0)
-    {
-        this->ms_buffer.set_fd(fd);
-    };
+    my_source(auto_fd& fd) : ms_offset(0) { this->ms_buffer.set_fd(fd); };
 
     bool grep_value_for_line(vis_line_t line_number, string& value_out)
     {

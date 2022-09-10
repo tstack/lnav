@@ -219,9 +219,9 @@
                                                 "([^/]+)": {
                                                     "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>",
                                                     "type": "object",
-                                                    "patternProperties": {
+                                                    "properties": {
                                                         "op": {
-                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/<>",
+                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/op",
                                                             "type": "string",
                                                             "enum": [
                                                                 "identity",
@@ -230,7 +230,7 @@
                                                             ]
                                                         },
                                                         "value": {
-                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/<>",
+                                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>/value",
                                                             "type": "number"
                                                         }
                                                     },
