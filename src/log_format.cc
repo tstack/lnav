@@ -1932,7 +1932,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                 VC_ROLE.value(role_t::VCR_SYMBOL),
                                 ", ");
                 errors.emplace_back(
-                    lnav::console::user_message::error(
+                    lnav::console::user_message::warning(
                         attr_line_t("invalid value ")
                             .append_quoted(lnav::roles::symbol(
                                 fmt::format(FMT_STRING("/{}/value/{}"),

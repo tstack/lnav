@@ -2312,8 +2312,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     load_config(lnav_data.ld_config_paths, config_errors);
     if (!config_errors.empty()) {
-        print_user_msgs(config_errors);
-        return EXIT_FAILURE;
+        if (print_user_msgs(config_errors) != EXIT_SUCCESS) {
+            return EXIT_FAILURE;
+        }
     }
     add_global_vars(ec);
 
@@ -2420,8 +2421,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto format_list = load_format_file(src_path, loader_errors);
 
                 if (!loader_errors.empty()) {
-                    print_user_msgs(loader_errors);
-                    return EXIT_FAILURE;
+                    if (print_user_msgs(loader_errors) != EXIT_SUCCESS) {
+                        return EXIT_FAILURE;
+                    }
                 }
                 if (format_list.empty()) {
                     lnav::console::print(
@@ -2611,9 +2613,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {
-        print_user_msgs(loader_errors);
-        if (mmode_ops == nullptr) {
-            return EXIT_FAILURE;
+        if (print_user_msgs(loader_errors) != EXIT_SUCCESS) {
+            if (mmode_ops == nullptr) {
+                return EXIT_FAILURE;
+            }
         }
     }
 

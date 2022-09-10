@@ -4,6 +4,13 @@ lnav v0.11.1:
        instead of an empty string for the `capture_name` column if
        the capture is not named.
 
+     Fixes:
+     * Reduce the "no patterns have a capture" error to a warning
+       so that it doesn't block lnav from starting up.
+
+     Cost of Doing Business:
+     * Migrated from pcre to pcre2.
+
 lnav v0.11.0:
      Features:
      * Redesigned the top status area to allow for user-specified
