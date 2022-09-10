@@ -1908,6 +1908,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             bool found_in_pattern = false;
             for (const auto& pat : this->elf_patterns) {
+                if (pat.second->p_pcre.value == nullptr) {
+                    continue;
+                }
+
                 auto cap_index = pat.second->p_pcre.value->name_index(
                     vd->vd_meta.lvm_name.get());
                 if (cap_index >= 0) {
