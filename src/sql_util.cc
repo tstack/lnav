@@ -282,7 +282,9 @@ const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
     {SQLITE_INDEX_CONSTRAINT_LIMIT, "LIMIT"},
     {SQLITE_INDEX_CONSTRAINT_OFFSET, "OFFSET"},
 #endif
+#if defined(SQLITE_INDEX_CONSTRAINT_FUNCTION)
     {SQLITE_INDEX_CONSTRAINT_FUNCTION, "function"},
+#endif
 };
 
 std::multimap<std::string, help_text*> sqlite_function_help;

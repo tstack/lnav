@@ -524,7 +524,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                     auto_mem<char> retval(curl_free);
 
                     retval = curl_easy_escape(get_curl_easy(), blob, blob_len);
-                    return retval;
+                    return std::move(retval);
                 }
 #endif
             }
@@ -558,7 +558,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                     auto_mem<char> retval(curl_free);
 
                     retval = curl_easy_escape(get_curl_easy(), text, text_len);
-                    return retval;
+                    return std::move(retval);
                 }
 #endif
             }
@@ -604,7 +604,7 @@ sql_decode(string_fragment str, encode_algo algo)
             retval = curl_easy_unescape(
                 get_curl_easy(), str.data(), str.length(), nullptr);
 
-            return retval;
+            return std::move(retval);
         }
 #endif
     }

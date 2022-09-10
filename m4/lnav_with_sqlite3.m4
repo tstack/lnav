@@ -106,6 +106,15 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
 
     AC_SUBST(HAVE_SQLITE3_ERROR_OFFSET)
 
+    AC_CHECK_FUNC(sqlite3_drop_modules,
+        HAVE_SQLITE3_DROP_MODULES=1
+        AC_DEFINE([HAVE_SQLITE3_DROP_MODULES], [1],
+            [Have the sqlite3_drop_modules function]
+        )
+    )
+
+    AC_SUBST(HAVE_SQLITE3_DROP_MODULES)
+
     AS_VAR_SET(CFLAGS, $saved_CFLAGS)
     AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
