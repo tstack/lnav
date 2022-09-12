@@ -73,7 +73,7 @@ parts:
       - git-core
       - libcurl4
       - libncursesw6
-      - libpcre2
+      - libpcre2-8-0
       - libgpm2
       - libarchive13
       - libicu66
