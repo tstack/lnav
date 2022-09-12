@@ -672,7 +672,7 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
 
     const auto& pat = this->elf_pattern_order[this->last_pattern_index()];
     if (!this->lf_multiline) {
-        len_out = pat->p_pcre.value->match_partial(sbr.to_string_fragment());
+        len_out = pat->p_pcre.pp_value->match_partial(sbr.to_string_fragment());
         return true;
     }
 
@@ -682,7 +682,7 @@ external_log_format::scan_for_partial(shared_buffer_ref& sbr,
         return false;
     }
 
-    len_out = pat->p_pcre.value->match_partial(sbr.to_string_fragment());
+    len_out = pat->p_pcre.pp_value->match_partial(sbr.to_string_fragment());
     return (int) len_out > pat->p_timestamp_end;
 }
 
@@ -803,7 +803,7 @@ external_log_format::scan(logfile& lf,
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
-        auto* pat = fpat->p_pcre.value.get();
+        auto* pat = fpat->p_pcre.pp_value.get();
 
         if (fpat->p_module_format) {
             continue;
@@ -913,12 +913,12 @@ external_log_format::scan(logfile& lf,
 
                     int mod_pat_index = mod_elf->last_pattern_index();
                     auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
-                    auto mod_md = mod_pat.p_pcre.value->create_match_data();
-                    auto match_res
-                        = mod_pat.p_pcre.value->capture_from(body_cap.value())
-                              .into(mod_md)
-                              .matches(PCRE2_NO_UTF_CHECK)
-                              .ignore_error();
+                    auto mod_md = mod_pat.p_pcre.pp_value->create_match_data();
+                    auto match_res = mod_pat.p_pcre.pp_value
+                                         ->capture_from(body_cap.value())
+                                         .into(mod_md)
+                                         .matches(PCRE2_NO_UTF_CHECK)
+                                         .ignore_error();
                     if (match_res) {
                         auto mod_level_cap
                             = mod_md[mod_pat.p_level_field_index];
@@ -1021,8 +1021,8 @@ external_log_format::module_scan(string_fragment body_cap,
                 continue;
             }
 
-            auto md = pat.value->create_match_data();
-            auto match_res = pat.value->capture_from(body_cap)
+            auto md = pat.pp_value->create_match_data();
+            auto match_res = pat.pp_value->capture_from(body_cap)
                                  .into(md)
                                  .matches(PCRE2_NO_UTF_CHECK)
                                  .ignore_error();
@@ -1072,12 +1072,13 @@ external_log_format::annotate(uint64_t line_number,
     int pat_index = this->pattern_index_for_line(line_number);
     auto& pat = *this->elf_pattern_order[pat_index];
 
-    sa.reserve(pat.p_pcre.value->get_capture_count());
-    auto md = pat.p_pcre.value->create_match_data();
-    auto match_res = pat.p_pcre.value->capture_from(line.to_string_fragment())
-                         .into(md)
-                         .matches(PCRE2_NO_UTF_CHECK)
-                         .ignore_error();
+    sa.reserve(pat.p_pcre.pp_value->get_capture_count());
+    auto md = pat.p_pcre.pp_value->create_match_data();
+    auto match_res
+        = pat.p_pcre.pp_value->capture_from(line.to_string_fragment())
+              .into(md)
+              .matches(PCRE2_NO_UTF_CHECK)
+              .ignore_error();
     if (!match_res) {
         // A continued line still needs a body.
         lr.lr_start = 0;
@@ -1085,7 +1086,7 @@ external_log_format::annotate(uint64_t line_number,
         sa.emplace_back(lr, SA_BODY.value());
         if (!this->lf_multiline) {
             auto len
-                = pat.p_pcre.value->match_partial(line.to_string_fragment());
+                = pat.p_pcre.pp_value->match_partial(line.to_string_fragment());
             sa.emplace_back(
                 line_range{(int) len, -1},
                 SA_INVALID.value("Log line does not match any pattern"));
@@ -1271,8 +1272,8 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         jlu->jlu_format->lf_timestamp_flags
             = tm_out.et_flags & ~ETF_MACHINE_ORIENTED;
         jlu->jlu_base_line->set_time(tv_out);
-    } else if (jlu->jlu_format->elf_level_pointer.value != nullptr) {
-        if (jlu->jlu_format->elf_level_pointer.value
+    } else if (jlu->jlu_format->elf_level_pointer.pp_value != nullptr) {
+        if (jlu->jlu_format->elf_level_pointer.pp_value
                 ->find_in(field_name.to_string_fragment(), PCRE2_NO_UTF_CHECK)
                 .ignore_error()
                 .has_value())
@@ -1764,7 +1765,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     {
         pattern& pat = *iter->second;
 
-        if (pat.p_pcre.value == nullptr) {
+        if (pat.p_pcre.pp_value == nullptr) {
             continue;
         }
 
@@ -1772,7 +1773,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->elf_has_module_format = true;
         }
 
-        for (auto named_cap : pat.p_pcre.value->get_named_captures()) {
+        for (auto named_cap : pat.p_pcre.pp_value->get_named_captures()) {
             const intern_string_t name
                 = intern_string::lookup(named_cap.get_name());
 
@@ -1802,8 +1803,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
                 ivd.ivd_index = named_cap.get_index();
                 if (!vd->vd_unit_field.empty()) {
-                    ivd.ivd_unit_field_index
-                        = pat.p_pcre.value->name_index(vd->vd_unit_field.get());
+                    ivd.ivd_unit_field_index = pat.p_pcre.pp_value->name_index(
+                        vd->vd_unit_field.get());
                 } else {
                     ivd.ivd_unit_field_index = -1;
                 }
@@ -1908,11 +1909,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             bool found_in_pattern = false;
             for (const auto& pat : this->elf_patterns) {
-                if (pat.second->p_pcre.value == nullptr) {
+                if (pat.second->p_pcre.pp_value == nullptr) {
                     continue;
                 }
 
-                auto cap_index = pat.second->p_pcre.value->name_index(
+                auto cap_index = pat.second->p_pcre.pp_value->name_index(
                     vd->vd_meta.lvm_name.get());
                 if (cap_index >= 0) {
                     found_in_pattern = true;
@@ -1920,7 +1921,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 }
 
                 for (auto named_cap :
-                     pat.second->p_pcre.value->get_named_captures())
+                     pat.second->p_pcre.pp_value->get_named_captures())
                 {
                     available_captures.insert(named_cap.get_name().to_string());
                 }
@@ -1970,8 +1971,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     for (const auto& td_pair : this->lf_tag_defs) {
         const auto& td = td_pair.second;
 
-        if (td->ftd_pattern.value == nullptr
-            || td->ftd_pattern.value->get_pattern().empty())
+        if (td->ftd_pattern.pp_value == nullptr
+            || td->ftd_pattern.pp_value->get_pattern().empty())
         {
             errors.emplace_back(
                 lnav::console::user_message::error(
@@ -2000,23 +2001,26 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 .with_snippets(this->get_snippets()));
     }
 
-    for (auto& elf_sample : this->elf_samples) {
+    for (size_t sample_index = 0; sample_index < this->elf_samples.size();
+         sample_index += 1)
+    {
+        auto& elf_sample = this->elf_samples[sample_index];
         auto sample_lines
             = string_fragment(elf_sample.s_line.pp_value).split_lines();
         bool found = false;
 
         for (auto pat_iter = this->elf_pattern_order.begin();
-             pat_iter != this->elf_pattern_order.end() && !found;
+             pat_iter != this->elf_pattern_order.end();
              ++pat_iter)
         {
             auto& pat = *(*pat_iter);
 
-            if (!pat.p_pcre.value) {
+            if (!pat.p_pcre.pp_value) {
                 continue;
             }
 
-            auto md = pat.p_pcre.value->create_match_data();
-            auto match_res = pat.p_pcre.value->capture_from(sample_lines[0])
+            auto md = pat.p_pcre.pp_value->create_match_data();
+            auto match_res = pat.p_pcre.pp_value->capture_from(sample_lines[0])
                                  .into(md)
                                  .matches()
                                  .ignore_error();
@@ -2029,16 +2033,20 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 continue;
             }
 
-            if (pat.p_pcre.value->name_index(this->lf_timestamp_field.get())
+            elf_sample.s_matched_regexes.insert(pat.p_name.to_string());
+            pat.p_matched_samples.insert(sample_index);
+
+            if (pat.p_pcre.pp_value->name_index(this->lf_timestamp_field.get())
                 < 0)
             {
                 attr_line_t notes;
                 bool first_note = true;
 
-                if (pat.p_pcre.value->get_capture_count() > 0) {
+                if (pat.p_pcre.pp_value->get_capture_count() > 0) {
                     notes.append("the following captures are available:\n  ");
                 }
-                for (auto named_cap : pat.p_pcre.value->get_named_captures()) {
+                for (auto named_cap : pat.p_pcre.pp_value->get_named_captures())
+                {
                     if (!first_note) {
                         notes.append(", ");
                     }
@@ -2136,7 +2144,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                        .append(" property")));
             }
 
-            log_level_t level = this->convert_level(
+            auto level = this->convert_level(
                 level_cap.value_or(string_fragment::invalid()), nullptr);
 
             if (elf_sample.s_level != LEVEL_UNKNOWN
@@ -2166,12 +2174,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             {
                 auto full_match_res
-                    = pat.p_pcre.value->capture_from(elf_sample.s_line.pp_value)
+                    = pat.p_pcre.pp_value
+                          ->capture_from(elf_sample.s_line.pp_value)
                           .into(md)
                           .matches()
                           .ignore_error();
                 if (!full_match_res) {
-                    attr_line_t regex_al = pat.p_pcre.value->get_pattern();
+                    attr_line_t regex_al = pat.p_pcre.pp_value->get_pattern();
                     lnav::snippets::regex_highlighter(
                         regex_al, -1, line_range{0, (int) regex_al.length()});
                     errors.emplace_back(
@@ -2193,7 +2202,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 } else if (static_cast<size_t>(full_match_res->f_all.length())
                            != elf_sample.s_line.pp_value.length())
                 {
-                    attr_line_t regex_al = pat.p_pcre.value->get_pattern();
+                    attr_line_t regex_al = pat.p_pcre.pp_value->get_pattern();
                     lnav::snippets::regex_highlighter(
                         regex_al, -1, line_range{0, (int) regex_al.length()});
                     auto match_length
@@ -2233,12 +2242,12 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             for (const auto& pat_iter : this->elf_pattern_order) {
                 auto& pat = *pat_iter;
 
-                if (!pat.p_pcre.value) {
+                if (!pat.p_pcre.pp_value) {
                     continue;
                 }
 
                 partial_indexes.emplace_back(
-                    pat.p_pcre.value->match_partial(sample_lines[0]),
+                    pat.p_pcre.pp_value->match_partial(sample_lines[0]),
                     pat.p_name);
                 max_name_width = std::max(max_name_width, pat.p_name.size());
             }
@@ -2270,7 +2279,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
             attr_line_t regex_note;
             for (const auto& pat_iter : this->elf_pattern_order) {
-                if (!pat_iter->p_pcre.value) {
+                if (!pat_iter->p_pcre.pp_value) {
                     regex_note
                         .append(
                             lnav::roles::symbol(fmt::format(FMT_STRING("{:{}}"),
@@ -2280,7 +2289,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     continue;
                 }
 
-                attr_line_t regex_al = pat_iter->p_pcre.value->get_pattern();
+                attr_line_t regex_al = pat_iter->p_pcre.pp_value->get_pattern();
                 lnav::snippets::regex_highlighter(
                     regex_al, -1, line_range{0, (int) regex_al.length()});
 
@@ -2300,6 +2309,52 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_snippet(elf_sample.s_line.to_snippet())
                     .with_note(notes.rtrim())
                     .with_note(regex_note));
+        }
+    }
+
+    if (!this->elf_samples.empty()) {
+        for (const auto& elf_sample : this->elf_samples) {
+            if (elf_sample.s_matched_regexes.size() <= 1) {
+                continue;
+            }
+
+            errors.emplace_back(
+                lnav::console::user_message::warning(
+                    attr_line_t("invalid log format: ")
+                        .append_quoted(
+                            lnav::roles::symbol(this->elf_name.to_string())))
+                    .with_reason(
+                        attr_line_t(
+                            "sample is matched by more than one regex: ")
+                            .join(elf_sample.s_matched_regexes,
+                                  VC_ROLE.value(role_t::VCR_SYMBOL),
+                                  ", "))
+                    .with_snippet(lnav::console::snippet::from(
+                        elf_sample.s_line.pp_location,
+                        attr_line_t().append(lnav::roles::quoted_code(
+                            elf_sample.s_line.pp_value))))
+                    .with_help("log format regexes must match a single type "
+                               "of log message"));
+        }
+
+        for (const auto& pat : this->elf_pattern_order) {
+            if (pat->p_module_format) {
+                continue;
+            }
+
+            if (pat->p_matched_samples.empty()) {
+                errors.emplace_back(
+                    lnav::console::user_message::warning(
+                        attr_line_t("invalid pattern: ")
+                            .append_quoted(
+                                lnav::roles::symbol(pat->p_config_path)))
+                        .with_reason("pattern does not match any samples")
+                        .with_snippet(lnav::console::snippet::from(
+                            pat->p_pcre.pp_location, ""))
+                        .with_help(
+                            "every pattern should have at least one sample "
+                            "that it matches"));
+            }
         }
     }
 
@@ -2441,8 +2496,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             attrs.ta_attrs |= A_BLINK;
         }
 
-        if (hd.hd_pattern.value != nullptr) {
-            this->lf_highlighters.emplace_back(hd.hd_pattern.value);
+        if (hd.hd_pattern.pp_value != nullptr) {
+            this->lf_highlighters.emplace_back(hd.hd_pattern.pp_value);
             this->lf_highlighters.back()
                 .with_name(hd_pair.first.to_string())
                 .with_format_name(this->elf_name)
@@ -2458,12 +2513,13 @@ external_log_format::register_vtabs(
     std::vector<lnav::console::user_message>& errors)
 {
     for (auto& elf_search_table : this->elf_search_tables) {
-        if (elf_search_table.second.std_pattern.value == nullptr) {
+        if (elf_search_table.second.std_pattern.pp_value == nullptr) {
             continue;
         }
 
         auto lst = std::make_shared<log_search_table>(
-            elf_search_table.second.std_pattern.value, elf_search_table.first);
+            elf_search_table.second.std_pattern.pp_value,
+            elf_search_table.first);
         lst->lst_format = this;
         lst->lst_log_path_glob = elf_search_table.second.std_glob;
         if (elf_search_table.second.std_level != LEVEL_UNKNOWN) {
@@ -2487,11 +2543,11 @@ external_log_format::match_samples(const std::vector<sample>& samples) const
         for (const auto& pat_iter : this->elf_pattern_order) {
             auto& pat = *pat_iter;
 
-            if (!pat.p_pcre.value) {
+            if (!pat.p_pcre.pp_value) {
                 continue;
             }
 
-            if (pat.p_pcre.value->find_in(sample_iter.s_line.pp_value)
+            if (pat.p_pcre.pp_value->find_in(sample_iter.s_line.pp_value)
                     .ignore_error())
             {
                 return true;
@@ -2673,11 +2729,11 @@ external_log_format::specialized(int fmt_lock)
 bool
 external_log_format::match_name(const std::string& filename)
 {
-    if (this->elf_filename_pcre.value == nullptr) {
+    if (this->elf_filename_pcre.pp_value == nullptr) {
         return true;
     }
 
-    return this->elf_filename_pcre.value->find_in(filename)
+    return this->elf_filename_pcre.pp_value->find_in(filename)
         .ignore_error()
         .has_value();
 }
@@ -2755,7 +2811,7 @@ external_log_format::convert_level(string_fragment sf,
             retval = string2level(sf.data(), sf.length());
         } else {
             for (const auto& elf_level_pattern : this->elf_level_patterns) {
-                if (elf_level_pattern.second.lp_pcre.value
+                if (elf_level_pattern.second.lp_pcre.pp_value
                         ->find_in(sf, PCRE2_NO_UTF_CHECK)
                         .ignore_error()
                         .has_value())

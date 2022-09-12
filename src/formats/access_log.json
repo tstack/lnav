@@ -7,7 +7,7 @@
         "multiline": false,
         "regex": {
             "ts-first-noquotes": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?!\")(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
             },
             "ts-first": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
@@ -93,6 +93,14 @@
             {
                 "line": "10.112.72.172 - - [11/Feb/2013:06:43:36 +0000] \"GET /client/ HTTP/1.1\" 404 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\"",
                 "level": "error"
+            },
+            {
+                "line": "2013-02-11T06:43:36 10.112.72.172 - GET \"/client/\" -1 200 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\"",
+                "level": "info"
+            },
+            {
+                "line": "2013-02-11T06:43:36 10.112.72.172 - GET /client/ -1 200 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\"",
+                "level": "info"
             },
             {
                 "line": "10.1.10.51 -  -  [23/Dec/2014:21:20:35 +0000] \"POST /api/1/rest/foo/bar HTTP/1.1\" 200 - \"-\" \"-\"  293"

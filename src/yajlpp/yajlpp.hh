@@ -90,41 +90,46 @@ struct positioned_property {
 };
 
 template<typename T, typename... Types>
-struct factory_container {
+struct factory_container : public positioned_property<std::shared_ptr<T>> {
     template<Types... DefaultArgs>
-    struct with_default_args {
+    struct with_default_args : public positioned_property<std::shared_ptr<T>> {
         template<typename... Args>
         static Result<with_default_args, lnav::console::user_message> from(
-            intern_string_t src, Args... args)
+            intern_string_t src, source_location loc, Args... args)
         {
             auto from_res = T::from(args..., DefaultArgs...);
 
             if (from_res.isOk()) {
-                return Ok(with_default_args{from_res.unwrap().to_shared()});
+                with_default_args retval;
+
+                retval.pp_path = src;
+                retval.pp_location = loc;
+                retval.pp_value = from_res.unwrap().to_shared();
+                return Ok(retval);
             }
 
             return Err(
                 lnav::console::to_user_message(src, from_res.unwrapErr()));
         }
-
-        std::shared_ptr<T> value;
     };
 
     template<typename... Args>
     static Result<factory_container, lnav::console::user_message> from(
-        intern_string_t src, Args... args)
+        intern_string_t src, source_location loc, Args... args)
     {
         auto from_res = T::from(args...);
 
         if (from_res.isOk()) {
-            return Ok(factory_container{from_res.unwrap().to_shared()});
+            factory_container retval;
+
+            retval.pp_path = src;
+            retval.pp_location = loc;
+            retval.pp_value = from_res.unwrap().to_shared();
+            return Ok(retval);
         }
 
-        return Err(
-            lnav::console::to_user_message(src, from_res.unwrapErr()));
+        return Err(lnav::console::to_user_message(src, from_res.unwrapErr()));
     }
-
-    std::shared_ptr<T> value;
 };
 
 class yajlpp_gen_context;

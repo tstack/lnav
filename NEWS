@@ -1,4 +1,13 @@
 lnav v0.11.1:
+     Features:
+     * Additional validation checks for log formats have been
+       added and will result in warnings.  Pass `-W` on the
+       command-line to view the warnings.  The following new
+       check have been added:
+       - Each regex must have a corresponding sample log message
+         that it matches.
+       - Each sample must be matched by only one regex.
+
      Breaking changes:
      * The regexp_capture() table-valued-function now returns NULL
        instead of an empty string for the `capture_name` column if

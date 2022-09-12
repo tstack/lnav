@@ -1090,10 +1090,13 @@ struct json_path_handler : public json_path_handler_base {
     struct int_ {
         typedef int type;
     };
-    template<typename C,
-             typename T,
-             typename int_<decltype(T::from(intern_string_t{}))>::type = 0,
-             typename... Args>
+    template<
+        typename C,
+        typename T,
+        typename int_<decltype(T::from(
+            intern_string_t{}, source_location{}, string_fragment{}))>::type
+        = 0,
+        typename... Args>
     json_path_handler& for_field(Args... args, T C::*ptr_arg)
     {
         this->add_cb(str_field_cb2);
@@ -1103,8 +1106,9 @@ struct json_path_handler : public json_path_handler_base {
             auto* obj = ypc->ypc_obj_stack.top();
             auto value_frag = string_fragment::from_bytes(str, len);
             const auto* jph = ypc->ypc_current_handler;
+            auto loc = source_location{ypc->ypc_source, ypc->get_line_number()};
 
-            auto from_res = T::from(ypc->get_full_path(), value_frag);
+            auto from_res = T::from(ypc->get_full_path(), loc, value_frag);
             if (from_res.isErr()) {
                 jph->report_error(
                     ypc, value_frag.to_string(), from_res.unwrapErr());

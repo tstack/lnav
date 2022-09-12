@@ -372,7 +372,7 @@ regex101::convert_format_pattern(
 {
     regex101::client::entry en;
 
-    en.e_regex = pattern->p_pcre.value->get_pattern();
+    en.e_regex = pattern->p_pcre.pp_value->get_pattern();
     for (const auto& sample : format->elf_samples) {
         if (en.e_test_string.empty()) {
             en.e_test_string = sample.s_line.pp_value;

@@ -258,6 +258,8 @@ struct lnav_data_t {
 
     bool ld_initial_build{false};
     bool ld_show_help_view{false};
+
+    ghc::filesystem::file_time_type ld_last_dot_lnav_time;
 };
 
 struct static_service {};

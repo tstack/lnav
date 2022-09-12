@@ -31,7 +31,7 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 # config bad theme
-run_cap_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -W -n \
     -I ${test_dir}/bad-config2 \
     ${test_dir}/logfile_access_log.0
 

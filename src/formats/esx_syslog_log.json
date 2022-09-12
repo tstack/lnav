@@ -56,6 +56,9 @@
                 "line": "2022-06-02T05:34:23Z In(14)[+] hostprofile[1001430319]: {'mode': 'Disabled', 'exceptionUsers': []}"
             },
             {
+                "line": "2022-06-02 In(14) hostprofile[1001430319]: 05:34:23.666 {'mode': 'Disabled', 'exceptionUsers': []}"
+            },
+            {
                 "line": "2022-06-01T13:42:40.681Z In(05) host-16250 <analytics> Skip service health check. State STOPPED, Curr request 0"
             }
         ]

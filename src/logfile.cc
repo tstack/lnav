@@ -640,7 +640,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                             continue;
                         }
 
-                        if (td->ftd_pattern.value
+                        if (td->ftd_pattern.pp_value
                                 ->find_in(sf, PCRE2_NO_UTF_CHECK)
                                 .ignore_error()
                                 .has_value())

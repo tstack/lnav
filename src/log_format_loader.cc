@@ -308,7 +308,7 @@ read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
             value_frag.to_string(),
             lnav::console::to_user_message(PATTERN_SRC, ce));
     } else {
-        elf->elf_level_patterns[level].lp_pcre.value
+        elf->elf_level_patterns[level].lp_pcre.pp_value
             = compile_res.unwrap().to_shared();
     }
 

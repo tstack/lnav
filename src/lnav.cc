@@ -596,6 +596,10 @@ make it easier to navigate through files quickly.
         .append("     ")
         .append("An additional configuration directory.\n")
         .append("  ")
+        .append("-W"_symbol)
+        .append("         ")
+        .append("Print warnings related to lnav's configuration.\n")
+        .append("  ")
         .append("-u"_symbol)
         .append("         ")
         .append("Update formats installed from git repositories.\n")
@@ -1946,9 +1950,19 @@ wait_for_children()
     } while (lnav_data.ld_looping);
 }
 
+struct mode_flags_t {
+    bool mf_check_configs{false};
+    bool mf_install{false};
+    bool mf_update_formats{false};
+    bool mf_no_default{false};
+    bool mf_print_warnings{false};
+};
+
 static int
-print_user_msgs(std::vector<lnav::console::user_message> error_list)
+print_user_msgs(std::vector<lnav::console::user_message> error_list,
+                mode_flags_t mf)
 {
+    size_t warning_count = 0;
     int retval = EXIT_SUCCESS;
 
     for (auto& iter : error_list) {
@@ -1958,6 +1972,13 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list)
             case lnav::console::user_message::level::raw:
             case lnav::console::user_message::level::ok:
                 out_file = stdout;
+                break;
+            case lnav::console::user_message::level::warning:
+                warning_count += 1;
+                if (!mf.mf_print_warnings) {
+                    continue;
+                }
+                out_file = stderr;
                 break;
             default:
                 out_file = stderr;
@@ -1970,15 +1991,28 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list)
         }
     }
 
+    if (warning_count > 0 && !mf.mf_print_warnings
+        && !(lnav_data.ld_flags & LNF_HEADLESS)
+        && (std::chrono::system_clock::now() - lnav_data.ld_last_dot_lnav_time
+            > 24h))
+    {
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::warning(
+                attr_line_t()
+                    .append(lnav::roles::number(fmt::to_string(warning_count)))
+                    .append(" issues were detected when checking lnav's "
+                            "configuration"))
+                .with_help(
+                    attr_line_t("pass ")
+                        .append(lnav::roles::symbol("-W"))
+                        .append(" on the command line to display the issues\n")
+                        .append("(this message will only be displayed once a "
+                                "day)")));
+    }
+
     return retval;
 }
-
-struct mode_flags_t {
-    bool mf_check_configs{false};
-    bool mf_install{false};
-    bool mf_update_formats{false};
-    bool mf_no_default{false};
-};
 
 enum class verbosity_t : int {
     quiet,
@@ -2039,6 +2073,11 @@ main(int argc, char* argv[])
 
     stable_sort(lnav_data.ld_db_key_names.begin(),
                 lnav_data.ld_db_key_names.end());
+
+    auto dot_lnav_path = lnav::paths::dotlnav();
+    std::error_code last_write_ec;
+    lnav_data.ld_last_dot_lnav_time
+        = ghc::filesystem::last_write_time(dot_lnav_path, last_write_ec);
 
     ensure_dotlnav();
 
@@ -2176,6 +2215,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             "-R", lnav_data.ld_active_files.fc_rotated, "rotated");
         auto* recurse_flag = app.add_flag(
             "-r", lnav_data.ld_active_files.fc_recursive, "recurse");
+        app.add_flag("-W", mode_flags.mf_print_warnings);
         auto* headless_flag = app.add_flag(
             "-n",
             [](size_t count) { lnav_data.ld_flags |= LNF_HEADLESS; },
@@ -2188,7 +2228,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 perror("Read key from STDIN");
             }
         };
-        app.add_flag("-W", wait_cb);
+        app.add_flag("-S", wait_cb);
 
         auto cmd_appender
             = [](std::string cmd) { lnav_data.ld_commands.emplace_back(cmd); };
@@ -2273,7 +2313,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return EXIT_SUCCESS;
     } catch (const CLI::ParseError& e) {
         if (!arg_errors.empty()) {
-            print_user_msgs(arg_errors);
+            print_user_msgs(arg_errors, mode_flags);
             return e.get_exit_code();
         }
 
@@ -2312,7 +2352,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     load_config(lnav_data.ld_config_paths, config_errors);
     if (!config_errors.empty()) {
-        if (print_user_msgs(config_errors) != EXIT_SUCCESS) {
+        if (print_user_msgs(config_errors, mode_flags) != EXIT_SUCCESS) {
             return EXIT_FAILURE;
         }
     }
@@ -2421,7 +2461,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto format_list = load_format_file(src_path, loader_errors);
 
                 if (!loader_errors.empty()) {
-                    if (print_user_msgs(loader_errors) != EXIT_SUCCESS) {
+                    if (print_user_msgs(loader_errors, mode_flags)
+                        != EXIT_SUCCESS)
+                    {
                         return EXIT_FAILURE;
                     }
                 }
@@ -2613,7 +2655,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {
-        if (print_user_msgs(loader_errors) != EXIT_SUCCESS) {
+        if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
             if (mmode_ops == nullptr) {
                 return EXIT_FAILURE;
             }
@@ -2623,7 +2665,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     if (mmode_ops) {
         auto perform_res = lnav::management::perform(mmode_ops);
 
-        return print_user_msgs(perform_res);
+        return print_user_msgs(perform_res, mode_flags);
     }
 
     if (!mode_flags.mf_check_configs && !lnav_data.ld_show_help_view) {

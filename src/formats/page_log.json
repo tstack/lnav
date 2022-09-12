@@ -7,7 +7,7 @@
         "multiline": false,
         "regex": {
             "pre-1.7": {
-                "pattern": "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)(?<body>.*)$"
+                "pattern": "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$"
             },
             "1.7": {
                 "pattern": "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)(?<body>.*)$"

@@ -35,7 +35,7 @@ first few lines of the file given as its argument:
    Screenshot of the preview shown for the :code:`:open` command.
 
 The :lnavcmd:`:filter-out pattern` command is another instance where the preview behavior
-can help you craft the correct command-line.  This command takes a PCRE regular
+can help you craft the correct command-line.  This command takes a PCRE2 regular
 expression that specifies the log messages that should be filtered out of the
 view.  The preview for this command will highlight the portion of the log
 messages that match the expression in red.  Thus, you can be certain that the

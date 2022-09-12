@@ -94,7 +94,7 @@ like so:
        "$schema": "https://lnav.org/schemas/format-v1.schema.json"
    }
 
-Each format to be defined in the file should a separate field in the top-level
+Each format to be defined in the file should be a separate field in the top-level
 object.  The field name should be the symbolic name of the format.  This value
 will also be used as the SQL table name for the log.  The value for each field
 should be another object with the following fields:
@@ -111,11 +111,19 @@ should be another object with the following fields:
   .. _format_regex:
 
   :regex: This object contains sub-objects that describe the message formats
-    to match in a plain log file.  Log files that contain JSON messages should
-    not specify this field.
+    to match in a plain-text log file.  Each :code:`regex` MUST only match one
+    type of log message.  It must not match log messages that are matched by
+    other regexes in this format.  This uniqueness requirement is necessary
+    because **lnav** will "lock-on" to a regex and use it to match against
+    the next line in a file. So, if the regexes do not uniquely match each
+    type of log message, messages can be matched by the wrong regex.  The
+    "lock-on" behavior is needed to avoid the performance hit of having to
+    try too many different regexes.
+
+    .. note:: Log files that contain JSON messages should not specify this field.
 
     :pattern: The regular expression that should be used to match log messages.
-      The `PCRE <http://www.pcre.org>`_ library is used by **lnav** to do all
+      The `PCRE2 <http://www.pcre.org>`_ library is used by **lnav** to do all
       regular expression matching.
 
     :module-format: If true, this regex will only be used to parse message

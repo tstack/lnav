@@ -46,6 +46,7 @@ public:
         positioned_property<std::string> s_line;
         std::string s_description;
         log_level_t s_level{LEVEL_UNKNOWN};
+        std::set<std::string> s_matched_regexes;
     };
 
     struct value_def {
@@ -113,6 +114,7 @@ public:
         int p_body_field_index{-1};
         int p_timestamp_end{-1};
         bool p_module_format{false};
+        std::set<size_t> p_matched_samples;
     };
 
     struct level_pattern {
@@ -311,7 +313,8 @@ public:
             return "";
         }
         int pat_index = this->pattern_index_for_line(line_number);
-        return this->elf_pattern_order[pat_index]->p_pcre.value->get_pattern();
+        return this->elf_pattern_order[pat_index]
+            ->p_pcre.pp_value->get_pattern();
     }
 
     log_level_t convert_level(string_fragment str,

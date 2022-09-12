@@ -1,4 +1,3 @@
-
 Introduction
 ============
 
@@ -18,8 +17,7 @@ Dependencies
 When compiling from source, the following dependencies are required:
 
 * `NCurses <http://www.gnu.org/s/ncurses/>`_
-* `PCRE <http://www.pcre.org>`_ -- Versions greater than 8.20 give better
-  performance since the PCRE JIT will be leveraged.
+* `PCRE2 <http://www.pcre.org>`_
 * `SQLite <http://www.sqlite.org>`_
 * `ZLib <http://wwww.zlib.net>`_
 * `Bzip2 <http://www.bzip.org>`_
