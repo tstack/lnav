@@ -54,6 +54,7 @@ struct line_info {
     file_range li_file_range;
     bool li_partial{false};
     bool li_valid_utf{true};
+    bool li_has_ansi{false};
 };
 
 /**
@@ -320,6 +321,7 @@ private:
     nonstd::optional<auto_buffer> lb_alt_buffer;
     std::vector<uint32_t> lb_alt_line_starts;
     std::vector<bool> lb_alt_line_is_utf;
+    std::vector<bool> lb_alt_line_has_ansi;
     std::future<bool> lb_loader_future;
     nonstd::optional<file_off_t> lb_loader_file_offset;
 
@@ -342,6 +344,7 @@ private:
 
     std::vector<uint32_t> lb_line_starts;
     std::vector<bool> lb_line_is_utf;
+    std::vector<bool> lb_line_has_ansi;
     stats lb_stats;
 
     nonstd::optional<auto_fd> lb_cached_fd;

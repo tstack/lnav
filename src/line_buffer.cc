@@ -651,21 +651,22 @@ line_buffer::load_next_buffer()
 
             auto before = line_start - this->lb_alt_buffer->begin();
             auto remaining = this->lb_alt_buffer.value().size() - before;
-            auto utf8_end = is_utf8((unsigned char*) line_start,
-                                    remaining,
-                                    &msg,
-                                    &faulty_bytes,
-                                    '\n');
+            auto utf_scan_res = is_utf8((unsigned char*) line_start,
+                                        remaining,
+                                        &msg,
+                                        &faulty_bytes,
+                                        '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(line_start, '\n', remaining);
-                utf8_end = lf - line_start;
+                utf_scan_res.usr_end = lf - line_start;
                 valid_utf = false;
             }
-            if (utf8_end >= 0) {
-                lf = line_start + utf8_end;
+            if (utf_scan_res.usr_end >= 0) {
+                lf = line_start + utf_scan_res.usr_end;
             }
             this->lb_alt_line_starts.emplace_back(before);
             this->lb_alt_line_is_utf.emplace_back(valid_utf);
+            this->lb_alt_line_has_ansi.emplace_back(utf_scan_res.usr_has_ansi);
 
             if (lf != nullptr) {
                 line_start = lf + 1;
@@ -727,6 +728,8 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_alt_line_starts.clear();
         this->lb_line_is_utf = std::move(this->lb_alt_line_is_utf);
         this->lb_alt_line_is_utf.clear();
+        this->lb_line_has_ansi = std::move(this->lb_alt_line_has_ansi);
+        this->lb_alt_line_has_ansi.clear();
         this->lb_stats.s_used_preloads += 1;
     }
     if (this->in_range(start) && this->in_range(start + max_length - 1)) {
@@ -1045,17 +1048,20 @@ line_buffer::load_next_line(file_range prev_line)
             const char* msg;
             int faulty_bytes;
 
-            utf8_end = is_utf8((unsigned char*) line_start,
-                               retval.li_file_range.fr_size,
-                               &msg,
-                               &faulty_bytes,
-                               '\n');
+            auto scan_res = is_utf8((unsigned char*) line_start,
+                                    retval.li_file_range.fr_size,
+                                    &msg,
+                                    &faulty_bytes,
+                                    '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(
                     line_start, '\n', retval.li_file_range.fr_size);
                 utf8_end = lf - line_start;
                 retval.li_valid_utf = false;
+            } else {
+                utf8_end = scan_res.usr_end;
             }
+            retval.li_has_ansi = scan_res.usr_has_ansi;
         }
 
         if (utf8_end >= 0) {

@@ -90,7 +90,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
         } else if (iter->e_token == in_list.el_format.df_qualifier) {
             value.SPLICE(
                 value.end(), key_comps, key_comps.begin(), key_comps.end());
-            strip(value, element_if(DT_WHITE));
+            strip(value, element_is_space{});
             if (!value.empty()) {
                 el_stack.PUSH_BACK(element(value, DNT_VALUE));
             }
@@ -119,7 +119,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                                      key_comps.begin(),
                                      key_iter);
                         key_comps.POP_FRONT();
-                        strip(key_comps, element_if(DT_WHITE));
+                        strip(key_comps, element_is_space{});
                         if (key_comps.empty()) {
                             key_iter = key_comps.end();
                         } else {
@@ -160,12 +160,12 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 key_comps.resize(1);
             }
 
-            strip(value, element_if(DT_WHITE));
+            strip(value, element_is_space{});
             value.remove_if(element_if(DT_COMMA));
             if (!value.empty()) {
                 el_stack.PUSH_BACK(element(value, DNT_VALUE));
             }
-            strip(key_comps, element_if(DT_WHITE));
+            strip(key_comps, element_is_space{});
             if (!key_comps.empty()) {
                 if (key_is_values) {
                     el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
@@ -531,8 +531,8 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
     key_comps.remove_if(element_if(DT_COMMA));
     value.remove_if(element_if(in_list.el_format.df_terminator));
     value.remove_if(element_if(DT_COMMA));
-    strip(key_comps, element_if(DT_WHITE));
-    strip(value, element_if(DT_WHITE));
+    strip(key_comps, element_is_space{});
+    strip(value, element_is_space{});
     if ((el_stack.empty() || el_stack.back().e_token != DNT_KEY)
         && value.empty() && key_comps.size() > 1
         && (key_comps.front().e_token == DT_WORD
@@ -550,7 +550,9 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
                 if (found_value) {
                     key_end = key_comps.begin();
                 }
-            } else if (key_iter->e_token == DT_WHITE) {
+            } else if (key_iter->e_token == DT_WHITE
+                       || key_iter->e_token == DT_CSI)
+            {
             } else {
                 if (!found_value) {
                     key_end = key_iter;
@@ -562,7 +564,7 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
             key_end = key_comps.begin();
         }
         value.SPLICE(value.end(), key_comps, key_end, key_comps.end());
-        strip(key_comps, element_if(DT_WHITE));
+        strip(key_comps, element_is_space{});
         if (!key_comps.empty()) {
             el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
         }
@@ -571,9 +573,9 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
         value.SPLICE(
             value.end(), key_comps, key_comps.begin(), key_comps.end());
     }
-    strip(value, element_if(DT_WHITE));
+    strip(value, element_is_space{});
     strip(value, element_if(DT_COLON));
-    strip(value, element_if(DT_WHITE));
+    strip(value, element_is_space{});
     if (!value.empty()) {
         if (value.size() == 2 && value.back().e_token == DNT_GROUP) {
             element_list_t ELEMENT_LIST_T(group_pair);
@@ -681,6 +683,7 @@ dfs_prefix_next(data_format_state_t state, data_token_t next_token)
                 case DT_HEX_NUMBER:
                 case DT_NUMBER:
                 case DT_WHITE:
+                case DT_CSI:
                 case DT_LSQUARE:
                 case DT_RSQUARE:
                 case DT_LANGLE:

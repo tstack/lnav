@@ -59,21 +59,26 @@
   `faulty_bytes` the number of actually existing bytes taking part in this
   error.
 */
-ssize_t
+utf8_scan_result
 is_utf8(const unsigned char* str,
         size_t len,
         const char** message,
         int* faulty_bytes,
         nonstd::optional<unsigned char> terminator)
 {
-    size_t i = 0;
+    bool has_ansi = false;
+    ssize_t i = 0;
 
     *message = nullptr;
     *faulty_bytes = 0;
     while (i < len) {
+        if (str[i] == '\x1b') {
+            has_ansi = true;
+        }
+
         if (terminator && str[i] == terminator.value()) {
             *message = nullptr;
-            return i;
+            return {i, has_ansi};
         }
 
         if (str[i] <= 0x7F) /* 00..7F */ {
@@ -85,14 +90,14 @@ is_utf8(const unsigned char* str,
                         = "After a first byte between C2 and DF, expecting a "
                           "2nd byte between 80 and BF";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte between C2 and DF, expecting a 2nd "
                       "byte.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 2;
         } else if (str[i] == 0xE0) /* E0 A0..BF 80..BF */ {
@@ -102,21 +107,21 @@ is_utf8(const unsigned char* str,
                         = "After a first byte of E0, expecting a 2nd byte "
                           "between A0 and BF.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte of E0, expecting a 3nd byte "
                           "between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte of E0, expecting two following "
                       "bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 3;
         } else if (str[i] >= 0xE1 && str[i] <= 0xEC) /* E1..EC 80..BF 80..BF */
@@ -127,21 +132,21 @@ is_utf8(const unsigned char* str,
                         = "After a first byte between E1 and EC, expecting the "
                           "2nd byte between 80 and BF.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte between E1 and EC, expecting the "
                           "3rd byte between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte between E1 and EC, expecting two "
                       "following bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 3;
         } else if (str[i] == 0xED) /* ED 80..9F 80..BF */ {
@@ -151,21 +156,21 @@ is_utf8(const unsigned char* str,
                         = "After a first byte of ED, expecting 2nd byte "
                           "between 80 and 9F.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte of ED, expecting 3rd byte "
                           "between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte of ED, expecting two following "
                       "bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 3;
         } else if (str[i] >= 0xEE && str[i] <= 0xEF) /* EE..EF 80..BF 80..BF */
@@ -176,21 +181,21 @@ is_utf8(const unsigned char* str,
                         = "After a first byte between EE and EF, expecting 2nd "
                           "byte between 80 and BF.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte between EE and EF, expecting 3rd "
                           "byte between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte between EE and EF, two following "
                       "bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 3;
         } else if (str[i] == 0xF0) /* F0 90..BF 80..BF 80..BF */ {
@@ -200,60 +205,61 @@ is_utf8(const unsigned char* str,
                         = "After a first byte of F0, expecting 2nd byte "
                           "between 90 and BF.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte of F0, expecting 3rd byte "
                           "between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 3] < 0x80 || str[i + 3] > 0xBF) {
                     *message
                         = "After a first byte of F0, expecting 4th byte "
                           "between 80 and BF.";
                     *faulty_bytes = 4;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte of F0, expecting three following "
                       "bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 4;
         } else if (str[i] >= 0xF1
-                   && str[i] <= 0xF3) /* F1..F3 80..BF 80..BF 80..BF */ {
+                   && str[i] <= 0xF3) /* F1..F3 80..BF 80..BF 80..BF */
+        {
             if (i + 3 < len) /* Expect a 2nd, 3rd 3th byte */ {
                 if (str[i + 1] < 0x80 || str[i + 1] > 0xBF) {
                     *message
                         = "After a first byte of F1, F2, or F3, expecting a "
                           "2nd byte between 80 and BF.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte of F1, F2, or F3, expecting a "
                           "3rd byte between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 3] < 0x80 || str[i + 3] > 0xBF) {
                     *message
                         = "After a first byte of F1, F2, or F3, expecting a "
                           "4th byte between 80 and BF.";
                     *faulty_bytes = 4;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte of F1, F2, or F3, expecting three "
                       "following bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 4;
         } else if (str[i] == 0xF4) /* F4 80..8F 80..BF 80..BF */ {
@@ -263,36 +269,36 @@ is_utf8(const unsigned char* str,
                         = "After a first byte of F4, expecting 2nd byte "
                           "between 80 and 8F.";
                     *faulty_bytes = 2;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 2] < 0x80 || str[i + 2] > 0xBF) {
                     *message
                         = "After a first byte of F4, expecting 3rd byte "
                           "between 80 and BF.";
                     *faulty_bytes = 3;
-                    return i;
+                    return {i, has_ansi};
                 }
                 if (str[i + 3] < 0x80 || str[i + 3] > 0xBF) {
                     *message
                         = "After a first byte of F4, expecting 4th byte "
                           "between 80 and BF.";
                     *faulty_bytes = 4;
-                    return i;
+                    return {i, has_ansi};
                 }
             } else {
                 *message
                     = "After a first byte of F4, expecting three following "
                       "bytes.";
                 *faulty_bytes = 1;
-                return i;
+                return {i, has_ansi};
             }
             i += 4;
         } else {
             *message
                 = "Expecting bytes in the following ranges: 00..7F C2..F4.";
             *faulty_bytes = 1;
-            return i;
+            return {i, has_ansi};
         }
     }
-    return -1;
+    return {-1, has_ansi};
 }

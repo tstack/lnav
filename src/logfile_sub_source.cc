@@ -197,6 +197,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             = this->lss_token_file->read_line(this->lss_token_line)
                   .map([](auto sbr) { return to_string(sbr); })
                   .unwrapOr({});
+        if (this->lss_token_line->has_ansi()) {
+            scrub_ansi_string(this->lss_token_value, &this->lss_token_attrs);
+        }
     }
     this->lss_token_shift_start = 0;
     this->lss_token_shift_size = 0;

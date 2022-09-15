@@ -185,6 +185,9 @@ static struct {
     {
         "escc",
     },
+    {
+        "csi",
+    },
 
     {
         "gbg",

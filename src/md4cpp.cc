@@ -267,14 +267,14 @@ parse(const string_fragment& sf, event_handler& eh)
     const char* utf8_errmsg = nullptr;
     int utf8_faulty_bytes = 0;
 
-    auto utf8_erroff = is_utf8((unsigned char*) sf.data(),
-                               sf.length(),
-                               &utf8_errmsg,
-                               &utf8_faulty_bytes);
+    auto scan_res = is_utf8((unsigned char*) sf.data(),
+                            sf.length(),
+                            &utf8_errmsg,
+                            &utf8_faulty_bytes);
     if (utf8_errmsg != nullptr) {
         return Err(
             fmt::format(FMT_STRING("file has invalid UTF-8 at offset {}: {}"),
-                        utf8_erroff,
+                        scan_res.usr_end,
                         utf8_errmsg));
     }
 

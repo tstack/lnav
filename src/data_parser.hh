@@ -77,7 +77,9 @@ struct data_format {
                 data_token_t terminator = DT_INVALID) noexcept
         : df_name(name), df_appender(appender), df_terminator(terminator),
           df_qualifier(DT_INVALID), df_separator(DT_COLON),
-          df_prefix_terminator(DT_INVALID){};
+          df_prefix_terminator(DT_INVALID)
+    {
+    }
 
     const char* df_name;
     data_token_t df_appender;
@@ -234,7 +236,7 @@ public:
             int group_depth = -1;
 
             LIST_INIT_TRACE;
-        };
+        }
 
         element_list_t(const element_list_t& other) : std::list<element>(other)
         {
@@ -247,7 +249,7 @@ public:
             int line = __LINE__;
 
             LIST_DEINIT_TRACE;
-        };
+        }
 
         void push_front(const element& elem, const char* fn, int line)
         {
@@ -255,7 +257,7 @@ public:
 
             require(elem.e_capture.c_end >= -1);
             this->std::list<element>::push_front(elem);
-        };
+        }
 
         void push_back(const element& elem, const char* fn, int line)
         {
@@ -263,28 +265,28 @@ public:
 
             require(elem.e_capture.c_end >= -1);
             this->std::list<element>::push_back(elem);
-        };
+        }
 
         void pop_front(const char* fn, int line)
         {
             LIST_TRACE;
 
             this->std::list<element>::pop_front();
-        };
+        }
 
         void pop_back(const char* fn, int line)
         {
             LIST_TRACE;
 
             this->std::list<element>::pop_back();
-        };
+        }
 
         void clear2(const char* fn, int line)
         {
             LIST_TRACE;
 
             this->std::list<element>::clear();
-        };
+        }
 
         void swap(element_list_t& other, const char* fn, int line)
         {
@@ -345,24 +347,31 @@ public:
         bool operator()(data_token_t token, const element& elem) const
         {
             return token == elem.e_token || token == DT_ANY;
-        };
+        }
 
         bool operator()(const element& elem, data_token_t token) const
         {
             return (*this)(token, elem);
-        };
+        }
     };
 
     struct element_if {
-        element_if(data_token_t token) : ei_token(token){};
+        element_if(data_token_t token) : ei_token(token) {}
 
         bool operator()(const element& a) const
         {
             return a.e_token == this->ei_token;
-        };
+        }
 
     private:
         data_token_t ei_token;
+    };
+
+    struct element_is_space {
+        bool operator()(const element& el) const
+        {
+            return el.e_token == DT_WHITE || el.e_token == DT_CSI;
+        }
     };
 
     struct discover_format_state {
@@ -418,4 +427,5 @@ public:
 private:
     data_scanner* dp_scanner;
 };
+
 #endif

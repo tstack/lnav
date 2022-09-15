@@ -93,6 +93,7 @@ enum data_token_t {
     DT_WHITE,
     DT_DOT,
     DT_ESCAPED_CHAR,
+    DT_CSI,
 
     DT_GARBAGE,
 

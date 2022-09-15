@@ -194,6 +194,10 @@ public:
 
     bool is_valid_utf() const { return this->ll_valid_utf; }
 
+    void set_has_ansi(bool v) { this->ll_has_ansi = v; }
+
+    bool has_ansi() const { return this->ll_has_ansi; }
+
     /** @param l The logging level. */
     void set_level(log_level_t l) { this->ll_level = l; };
 
@@ -293,7 +297,8 @@ public:
     }
 
 private:
-    file_off_t ll_offset;
+    file_off_t ll_offset : 63;
+    uint8_t ll_has_ansi : 1;
     time_t ll_time;
     unsigned int ll_millis : 10;
     unsigned int ll_opid : 6;

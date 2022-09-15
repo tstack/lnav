@@ -129,7 +129,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                         pugi::xpath_query query("//*");
                         auto node_set = doc.select_nodes(query);
 
-                        for (auto& xpath_node : node_set) {
+                        for (const auto& xpath_node : node_set) {
                             auto node_path = lnav::pugixml::get_actual_path(
                                 xpath_node.node());
                             for (auto& attr : xpath_node.node().attributes()) {
@@ -175,10 +175,8 @@ log_data_helper::get_line_bounds(size_t& line_index_out,
 
     line_end_index_out = 0;
     do {
-        const char* line_end;
-
         line_index_out = line_end_index_out;
-        line_end = (const char*) memchr(
+        const auto* line_end = (const char*) memchr(
             this->ldh_line_values.lvv_sbr.get_data() + line_index_out + 1,
             '\n',
             this->ldh_line_values.lvv_sbr.length() - line_index_out - 1);

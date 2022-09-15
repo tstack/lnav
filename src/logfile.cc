@@ -42,6 +42,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/string_util.hh"
@@ -309,6 +310,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         case log_format::SCAN_MATCH: {
             if (!this->lf_index.empty()) {
                 this->lf_index.back().set_valid_utf(li.li_valid_utf);
+                this->lf_index.back().set_has_ansi(li.li_has_ansi);
             }
             if (prescan_size > 0 && this->lf_index.size() >= prescan_size
                 && prescan_time != this->lf_index[prescan_size - 1].get_time())
@@ -369,6 +371,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                         last_mod,
                                         last_opid);
             this->lf_index.back().set_valid_utf(li.li_valid_utf);
+            this->lf_index.back().set_has_ansi(li.li_has_ansi);
             break;
         }
         case log_format::SCAN_INCOMPLETE:
@@ -582,6 +585,17 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 
             auto sbr = read_result.unwrap();
             sbr.rtrim(is_line_ending);
+
+            if (li.li_has_ansi) {
+                auto tmp_line = sbr.to_string_fragment().to_string();
+
+                scrub_ansi_string(tmp_line, nullptr);
+                memcpy(sbr.get_writable_data(),
+                       tmp_line.c_str(),
+                       tmp_line.length());
+                sbr.narrow(0, tmp_line.length());
+            }
+
             this->lf_longest_line
                 = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = li.li_partial;

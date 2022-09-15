@@ -114,6 +114,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 
        SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
+       ESC = "\x1b";
        NUM = [0-9];
        ALPHANUM = [a-zA-Z0-9_];
        EOF = "\x00";
@@ -137,7 +138,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 
        EOF { return nonstd::nullopt; }
 
-       ("u"|"r")?'"'('\\'.|[^\x00"\\]|'""')*'"' {
+       ("u"|"r")?'"'('\\'.|[^\x00\x1b"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
@@ -152,7 +153,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00'\\])*"'"/[^sS] {
+       ("u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
@@ -164,7 +165,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       [a-zA-Z0-9]+":/""/"?[^\x00\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
@@ -198,6 +199,10 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 
        "\n"[A-Z][A-Z _\-0-9]+"\n" {
            RET(DT_H1);
+       }
+
+       ESC"["[0-9=;?]*[a-zA-Z] {
+           RET(DT_CSI);
        }
 
        ":" { RET(DT_COLON); }
@@ -237,7 +242,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       [^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 

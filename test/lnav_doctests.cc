@@ -31,6 +31,7 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "byte_array.hh"
+#include "data_scanner.hh"
 #include "doctest/doctest.h"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -148,10 +149,7 @@ class my_path_source : public unique_path_source {
 public:
     explicit my_path_source(ghc::filesystem::path p) : mps_path(std::move(p)) {}
 
-    ghc::filesystem::path get_path() const override
-    {
-        return this->mps_path;
-    }
+    ghc::filesystem::path get_path() const override { return this->mps_path; }
 
     ghc::filesystem::path mps_path;
 };
@@ -213,4 +211,21 @@ TEST_CASE("user_message to json")
     auto json2 = lnav::to_json(um2);
 
     CHECK(json == json2);
+}
+
+TEST_CASE("data_scanner CSI")
+{
+    static const char INPUT[] = "\x1b[32mHello\x1b[0m";
+
+    data_scanner ds(string_fragment::from_const(INPUT));
+
+    auto tok_res = ds.tokenize2();
+    CHECK(tok_res->tr_token == DT_CSI);
+    CHECK(tok_res->to_string() == "\x1b[32m");
+    tok_res = ds.tokenize2();
+    CHECK(tok_res->tr_token == DT_SYMBOL);
+    CHECK(tok_res->to_string() == "Hello");
+    tok_res = ds.tokenize2();
+    CHECK(tok_res->tr_token == DT_CSI);
+    CHECK(tok_res->to_string() == "\x1b[0m");
 }
