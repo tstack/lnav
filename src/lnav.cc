@@ -2125,28 +2125,30 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         lnav_data.ld_vtab_manager = nullptr;
 
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         std::vector<std::string> tables_to_drop;
-        bool done = false;
+        {
+            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+            bool done = false;
 
-        sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
-        do {
-            auto ret = sqlite3_step(stmt.in());
+            sqlite3_prepare_v2(
+                lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
+            do {
+                auto ret = sqlite3_step(stmt.in());
 
-            switch (ret) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-                case SQLITE_ROW:
-                    tables_to_drop.emplace_back(
-                        fmt::format(FMT_STRING("DROP TABLE {}"),
-                                    reinterpret_cast<const char*>(
-                                        sqlite3_column_text(stmt.in(), 0))));
-                    break;
-            }
-        } while (!done);
+                switch (ret) {
+                    case SQLITE_OK:
+                    case SQLITE_DONE:
+                        done = true;
+                        break;
+                    case SQLITE_ROW:
+                        tables_to_drop.emplace_back(fmt::format(
+                            FMT_STRING("DROP TABLE {}"),
+                            reinterpret_cast<const char*>(
+                                sqlite3_column_text(stmt.in(), 0))));
+                        break;
+                }
+            } while (!done);
+        }
 
         for (auto& drop_stmt : tables_to_drop) {
             sqlite3_exec(lnav_data.ld_db.in(),
