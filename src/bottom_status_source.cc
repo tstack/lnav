@@ -69,21 +69,16 @@ bottom_status_source::update_line_number(listview_curses* lc)
         sf.set_value(" L%'d", (int) lc->get_top());
     }
 
-    if (lc->get_inner_height() > 0) {
-        std::vector<attr_line_t> rows(1);
-
-        lc->get_data_source()->listview_value_for_rows(
-            *lc, lc->get_top(), rows);
-        const auto& sa = rows[0].get_attrs();
-        auto error_wrapper = get_string_attr(sa, SA_ERROR);
-        if (error_wrapper) {
-            this->bss_line_error.set_value(error_wrapper.value().get());
-        } else {
-            this->bss_line_error.clear();
-        }
-    } else {
-        this->bss_line_error.clear();
-    }
+    this->bss_line_error.set_value(
+        lc->map_top_row([](const attr_line_t& top_row)
+                            -> nonstd::optional<std::string> {
+              const auto& sa = top_row.get_attrs();
+              auto error_wrapper = get_string_attr(sa, SA_ERROR);
+              if (error_wrapper) {
+                  return error_wrapper.value().get();
+              }
+              return nonstd::nullopt;
+          }).value_or(""));
 }
 
 void
