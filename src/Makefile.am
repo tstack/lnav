@@ -367,6 +367,7 @@ THIRD_PARTY_SRCS = \
 	third-party/sqlite/ext/series.c
 
 libdatascanner_a_SOURCES = \
+	data_scanner.cc \
 	data_scanner_re.cc
 
 libdiag_a_SOURCES = \
@@ -380,7 +381,6 @@ libdiag_a_SOURCES = \
 	column_namer.cc \
 	command_executor.cc \
 	curl_looper.cc \
-	data_scanner.cc \
 	db_sub_source.cc \
 	document.sections.cc \
 	dump_internals.cc \
