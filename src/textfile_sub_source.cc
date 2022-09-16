@@ -72,10 +72,14 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            auto read_result = lf->read_line(
-                lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
-            if (read_result.isOk()) {
-                value_out = to_string(read_result.unwrap());
+            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+                value_out.clear();
+            } else {
+                auto read_result = lf->read_line(
+                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                if (read_result.isOk()) {
+                    value_out = to_string(read_result.unwrap());
+                }
             }
         } else {
             rend_iter->second.rf_text_source->text_value_for_line(
@@ -122,8 +126,11 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            retval = lf->line_length(lf->begin()
-                                     + lfo->lfo_filter_state.tfs_index[line]);
+            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            } else {
+                retval = lf->line_length(
+                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+            }
         } else {
             retval = rend_iter->second.rf_text_source->text_size_for_line(
                 tc, line, flags);
@@ -325,6 +332,9 @@ textfile_sub_source::text_crumbs_for_line(
     if (meta_iter != this->tss_doc_metadata.end()) {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+        if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            return;
+        }
         auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
         auto ll_next_iter = ll_iter + 1;
         auto end_offset = (ll_next_iter == lf->end())
@@ -766,6 +776,9 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
+        return retval;
+    }
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto ll_next_iter = ll_iter + 1;
     auto end_offset = (ll_next_iter == lf->end())

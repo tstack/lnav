@@ -86,6 +86,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             auto* tss = top_view->get_sub_source();
 
             tss->toggle_apply_filters();
+            top_view->reload_data();
             break;
         }
         case ' ': {
@@ -102,6 +103,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             fs.set_filter_enabled(tf, !tf->is_enabled());
             tss->text_filters_changed();
             lv.reload_data();
+            top_view->reload_data();
             return true;
         }
         case 't': {
@@ -123,6 +125,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             tss->text_filters_changed();
             lv.reload_data();
+            top_view->reload_data();
             return true;
         }
         case 'D': {
@@ -139,6 +142,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             fs.delete_filter(tf->get_id());
             lv.reload_data();
             tss->text_filters_changed();
+            top_view->reload_data();
             return true;
         }
         case 'i': {
@@ -576,6 +580,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
     this->fss_editor->set_visible(false);
+    top_view->reload_data();
     this->tss_view->reload_data();
 }
 
