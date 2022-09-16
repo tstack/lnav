@@ -237,10 +237,12 @@ text_anonymizer::next(string_fragment line)
 
                             auto eq_index = comp.find('=');
                             if (eq_index != std::string::npos) {
+                                auto new_key
+                                    = this->next(comp.substr(0, eq_index));
+                                auto new_value
+                                    = this->next(comp.substr(eq_index + 1));
                                 anon_query = fmt::format(
-                                    FMT_STRING("{}={}"),
-                                    this->next(comp.substr(0, eq_index)),
-                                    this->next(comp.substr(eq_index + 1)));
+                                    FMT_STRING("{}={}"), new_key, new_value);
                             } else {
                                 anon_query = this->next(comp);
                             }
