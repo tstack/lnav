@@ -688,6 +688,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_json_func.sh_98ce02dff32d955466524bb167fa45fdf8591788.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_9ab4f51486d7cc99c584721bf0e50c223dac4f18.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_9ab4f51486d7cc99c584721bf0e50c223dac4f18.out \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_9d260ed24b28579ef1dbed25b10c42741e52b023.err \
+    $(srcdir)/%reldir%/test_sql_json_func.sh_9d260ed24b28579ef1dbed25b10c42741e52b023.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_9fbfe3c93467666c45b643f3b8ba990a294c17ff.err \
     $(srcdir)/%reldir%/test_sql_json_func.sh_9fbfe3c93467666c45b643f3b8ba990a294c17ff.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_a4ffc64f89cf9917fbc918227fd3c05e54d9e8b5.err \

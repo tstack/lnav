@@ -128,3 +128,5 @@ EOF
 )
 
 run_cap_test ./drive_sql "$GROUP_ARRAY_SELECT_2"
+
+run_cap_test ./drive_sql "SELECT json_group_array(column1) FROM (VALUES (1)) WHERE 0"

@@ -295,7 +295,7 @@ textfile_sub_source::text_crumbs_for_line(
     auto lf = this->current_file();
     crumbs.emplace_back(
         lf->get_unique_path(),
-        attr_line_t().append(lnav::roles::identifier(lf->get_unique_path())),
+        attr_line_t().append(lf->get_unique_path()),
         [this]() {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
