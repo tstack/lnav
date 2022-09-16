@@ -56,6 +56,7 @@ main(int argc, char* argv[])
 {
     int c, retval = EXIT_SUCCESS;
     bool prompt = false, is_log = false, pretty_print = false;
+    bool scanner_details = false;
 
     {
         static auto builtin_formats
@@ -75,7 +76,7 @@ main(int argc, char* argv[])
         load_formats(paths, errors);
     }
 
-    while ((c = getopt(argc, argv, "pPl")) != -1) {
+    while ((c = getopt(argc, argv, "pPls")) != -1) {
         switch (c) {
             case 'p':
                 prompt = true;
@@ -87,6 +88,10 @@ main(int argc, char* argv[])
 
             case 'l':
                 is_log = true;
+                break;
+
+            case 's':
+                scanner_details = true;
                 break;
 
             default:
@@ -191,6 +196,52 @@ main(int argc, char* argv[])
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");
 
                 data_scanner ds(sub_line, body.lr_start);
+
+                if (scanner_details) {
+                    fprintf(out,
+                            "             %s\n",
+                            ds.get_input().to_string().c_str());
+                    while (true) {
+                        auto tok_res = ds.tokenize2();
+
+                        if (!tok_res) {
+                            break;
+                        }
+
+                        fprintf(out,
+                                "%4s %3d:%-3d ",
+                                data_scanner::token2name(tok_res->tr_token),
+                                tok_res->tr_capture.c_begin,
+                                tok_res->tr_capture.c_end);
+                        size_t cap_index = 0;
+                        for (; cap_index < tok_res->tr_capture.c_end;
+                             cap_index++)
+                        {
+                            if (cap_index == tok_res->tr_capture.c_begin) {
+                                fputc('^', out);
+                            } else if (cap_index
+                                       == (tok_res->tr_capture.c_end - 1))
+                            {
+                                fputc('^', out);
+                            } else if (cap_index > tok_res->tr_capture.c_begin)
+                            {
+                                fputc('-', out);
+                            } else {
+                                fputc(' ', out);
+                            }
+                        }
+                        for (; cap_index < (int) ds.get_input().length();
+                             cap_index++)
+                        {
+                            fputc(' ', out);
+                        }
+
+                        auto sub = tok_res->to_string();
+                        fprintf(out, "  %s\n", sub.c_str());
+                    }
+                }
+
+                ds.reset();
                 data_parser dp(&ds);
                 std::string msg_format;
 

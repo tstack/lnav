@@ -58,10 +58,6 @@ libtailerservice_a_CPPFLAGS = \
     -I$(srcdir)/../third-party \
 	-I$(top_srcdir)/src/third-party/scnlib/include
 
-libtailerservice_a_LIBADD = \
-    libtailercommon.a \
-    libtailerpp.a
-
 libtailerservice_a_SOURCES = \
     tailerbin.cc \
     tailer.looper.cc

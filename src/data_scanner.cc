@@ -60,6 +60,9 @@ static struct {
     {
         "time",
     },
+    {
+        "dt",
+    },
     /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
     {
         "ipv6",
@@ -110,31 +113,31 @@ static struct {
     },
 
     {
-        "lcurly",
+        "lcur",
     },
     {
-        "rcurly",
-    },
-
-    {
-        "lsquare",
-    },
-    {
-        "rsquare",
+        "rcur",
     },
 
     {
-        "lparen",
+        "lsqu",
     },
     {
-        "rparen",
+        "rsqu",
     },
 
     {
-        "langle",
+        "lpar",
     },
     {
-        "rangle",
+        "rpar",
+    },
+
+    {
+        "lang",
+    },
+    {
+        "rang",
     },
 
     {
@@ -145,6 +148,9 @@ static struct {
         "uuid",
     },
 
+    {
+        "cc",
+    },
     {
         "vers",
     },
@@ -203,7 +209,6 @@ const char* DNT_NAMES[DNT_MAX - DNT_KEY] = {
     "meas",
     "var",
     "rang",
-    "dt",
     "grp",
 };
 
@@ -220,4 +225,39 @@ data_scanner::token2name(data_token_t token)
         return "any";
     }
     return DNT_NAMES[token - DNT_KEY];
+}
+
+bool
+data_scanner::is_credit_card(string_fragment cc) const
+{
+    auto cc_no_spaces = cc.to_string();
+    auto new_end = std::remove_if(cc_no_spaces.begin(),
+                                  cc_no_spaces.end(),
+                                  [](auto ch) { return ch == ' '; });
+    cc_no_spaces.erase(new_end, cc_no_spaces.end());
+    int len = cc_no_spaces.size();
+    int double_even_sum = 0;
+
+    // Step 1: double every second digit, starting from right.
+    // if results in 2 digit number, add the digits to obtain single digit
+    // number. sum all answers to obtain 'double_even_sum'
+
+    for (int lpc = len - 2; lpc >= 0; lpc = lpc - 2) {
+        int dbl = ((cc_no_spaces[lpc] - '0') * 2);
+        if (dbl > 9) {
+            dbl = (dbl / 10) + (dbl % 10);
+        }
+        double_even_sum += dbl;
+    }
+
+    // Step 2: add every odd placed digit from right to double_even_sum's value
+
+    for (int lpc = len - 1; lpc >= 0; lpc = lpc - 2) {
+        double_even_sum += (cc_no_spaces[lpc] - 48);
+    }
+
+    // Step 3: check if final 'double_even_sum' is multiple of 10
+    // if yes, it is valid.
+
+    return double_even_sum % 10 == 0;
 }

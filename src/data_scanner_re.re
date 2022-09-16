@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "base/date_time_scanner.hh"
 #include "config.h"
 #include "data_scanner.hh"
 
@@ -56,6 +57,38 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
         return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()}; \
     }
     static const unsigned char *EMPTY = (const unsigned char *) "";
+
+    if (this->ds_next_offset < this->ds_input.length()) {
+        date_time_scanner dts;
+        struct exttm tm;
+        struct timeval tv;
+        auto dt_end = dts.scan(this->ds_input.data() + this->ds_next_offset,
+                               this->ds_input.length() - this->ds_next_offset,
+                               nullptr,
+                               &tm,
+                               tv);
+        if (dt_end != nullptr &&
+            !(tm.et_flags & ETF_MACHINE_ORIENTED) &&
+            (tm.et_flags & ETF_DAY_SET ||
+            (tm.et_flags & ETF_HOUR_SET && tm.et_flags & ETF_MINUTE_SET))) {
+            cap_all.c_begin = this->ds_next_offset;
+            cap_inner.c_begin = this->ds_next_offset;
+            this->ds_next_offset = dt_end - this->ds_input.data();
+            cap_all.c_end = this->ds_next_offset;
+            cap_inner.c_end = this->ds_next_offset;
+            if (tm.et_flags & ETF_DAY_SET) {
+                if (tm.et_flags & ETF_MINUTE_SET) {
+                    token_out = DT_DATE_TIME;
+                } else {
+                    token_out = DT_DATE;
+                }
+            } else {
+                token_out = DT_TIME;
+            }
+            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+        }
+    }
+
     struct _YYCURSOR {
         YYCTYPE operator*() const {
             if (this->val < this->lim) {
@@ -169,8 +202,8 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
        ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
-       [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
-           if ((YYCURSOR - this->ds_input.udata()) == 17) {
+       [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {
+           if ((YYCURSOR.val - (this->ds_input.udata() + this->ds_next_offset)) == 17) {
                RET(DT_MAC_ADDRESS);
            } else {
                RET(DT_HEX_DUMP);
@@ -224,6 +257,19 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
        }
 
        [0-9a-fA-F]{8}("-"[0-9a-fA-F]{4}){3}"-"[0-9a-fA-F]{12} { RET(DT_UUID); }
+
+       (NUM{4}" "NUM{4}" "NUM{4}" "NUM{4}|NUM{16})/[^0-9] {
+           CAPTURE(DT_CREDIT_CARD_NUMBER);
+           if (!this->is_credit_card(this->to_string_fragment(cap_all))) {
+               if (cap_all.length() > 16) {
+                   cap_all.c_end = cap_all.c_begin + 4;
+                   cap_inner.c_end = cap_inner.c_begin + 4;
+               }
+               this->ds_next_offset = cap_all.c_end;
+               token_out = DT_NUMBER;
+           }
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
 
        [0-9]"."[0-9]+'e'[\-\+][0-9]+ { RET(DT_NUMBER); }
 

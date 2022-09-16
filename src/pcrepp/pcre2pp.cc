@@ -402,9 +402,10 @@ matcher::matches(uint32_t options)
         {
             this->mb_input.i_next_offset = -1;
         } else if (this->mb_match_data[0]->empty()) {
-            this->mb_input.i_next_offset = this->mb_match_data[0]->sf_end + 1;
+            this->mb_input.i_next_offset
+                = this->mb_match_data.md_ovector[1] + 1;
         } else {
-            this->mb_input.i_next_offset = this->mb_match_data[0]->sf_end;
+            this->mb_input.i_next_offset = this->mb_match_data.md_ovector[1];
         }
         this->mb_match_data.md_input.i_next_offset
             = this->mb_input.i_next_offset;

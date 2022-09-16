@@ -112,9 +112,7 @@ int
 main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
-    const char* errptr;
     auto_fd fd;
-    int eoff;
 
     if (argc < 3) {
         fprintf(stderr, "error: expecting pattern and file arguments\n");

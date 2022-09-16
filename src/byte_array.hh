@@ -38,13 +38,25 @@
 
 #include "base/lnav_log.hh"
 #include "fmt/format.h"
+#include "optional.hpp"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
     static constexpr size_t BYTE_COUNT = COUNT * sizeof(T);
     static constexpr size_t STRING_SIZE = BYTE_COUNT * 2 + 1;
 
-    byte_array() {}
+    byte_array() = default;
+
+    static byte_array from(std::initializer_list<T> bytes)
+    {
+        byte_array retval;
+        size_t index = 0;
+
+        for (const auto by : bytes) {
+            retval.ba_data[index++] = by;
+        }
+        return retval;
+    }
 
     byte_array(const byte_array& other)
     {
@@ -69,19 +81,47 @@ struct byte_array {
     void clear() { memset(this->ba_data, 0, BYTE_COUNT); }
 
     template<typename OutputIt>
-    void to_string(OutputIt out) const
+    void to_string(OutputIt out,
+                   nonstd::optional<char> separator = nonstd::nullopt) const
     {
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
+            if (lpc > 0 && separator) {
+                *out = separator.value();
+            }
             fmt::format_to(out, FMT_STRING("{:02x}"), this->ba_data[lpc]);
         }
     }
 
-    std::string to_string() const
+    std::string to_uuid_string() const
+    {
+        return fmt::format(
+            FMT_STRING("{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-"
+                       "{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}"),
+            this->ba_data[0 % BYTE_COUNT],
+            this->ba_data[1 % BYTE_COUNT],
+            this->ba_data[2 % BYTE_COUNT],
+            this->ba_data[3 % BYTE_COUNT],
+            this->ba_data[4 % BYTE_COUNT],
+            this->ba_data[5 % BYTE_COUNT],
+            this->ba_data[6 % BYTE_COUNT],
+            this->ba_data[7 % BYTE_COUNT],
+            this->ba_data[8 % BYTE_COUNT],
+            this->ba_data[9 % BYTE_COUNT],
+            this->ba_data[10 % BYTE_COUNT],
+            this->ba_data[11 % BYTE_COUNT],
+            this->ba_data[12 % BYTE_COUNT],
+            this->ba_data[13 % BYTE_COUNT],
+            this->ba_data[14 % BYTE_COUNT],
+            this->ba_data[15 % BYTE_COUNT]);
+    }
+
+    std::string to_string(nonstd::optional<char> separator
+                          = nonstd::nullopt) const
     {
         std::string retval;
 
         retval.reserve(STRING_SIZE);
-        this->to_string(std::back_inserter(retval));
+        this->to_string(std::back_inserter(retval), separator);
         return retval;
     }
 
@@ -94,7 +134,7 @@ struct byte_array {
         return &ptr[offset];
     }
 
-    unsigned char ba_data[BYTE_COUNT];
+    unsigned char ba_data[BYTE_COUNT]{};
 };
 
 template<size_t COUNT, typename T = unsigned char>

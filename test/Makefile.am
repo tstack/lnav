@@ -76,6 +76,7 @@ check_PROGRAMS = \
 	test_log_accel \
 	test_ncurses_unicode \
 	test_reltime \
+	test_text_anonymizer \
 	test_top_status
 
 AM_LDFLAGS = \
@@ -135,6 +136,8 @@ test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 
 test_log_accel_SOURCES = test_log_accel.cc
+
+test_text_anonymizer_SOURCES = test_text_anonymizer.cc
 
 test_top_status_SOURCES = test_top_status.cc
 
@@ -416,6 +419,7 @@ TESTS = \
 	test_sql_views_vtab.sh \
 	test_sql_xml_func.sh \
 	test_sql_yaml_func.sh \
+	test_text_anonymizer \
 	test_text_file.sh \
 	test_tui.sh \
 	test_data_parser.sh \

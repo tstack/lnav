@@ -7,6 +7,15 @@ lnav v0.11.1:
        - Each regex must have a corresponding sample log message
          that it matches.
        - Each sample must be matched by only one regex.
+     * Added built-in support for anonymizing content.  The
+       `:write-*` commands now accept an `--anonymize` option
+       and there is an `anonymize()` SQL function.  The
+       anonymization process will try to replace identifying
+       information with random data.  For example, IPv4 addresses
+       are replaced with addresses in the 10.0.0.0/8 range.
+       (This feature is mainly intended to help with providing
+        information to lnav support that does not have sensitive
+        values.)
 
      Breaking changes:
      * The regexp_capture() table-valued-function now returns NULL

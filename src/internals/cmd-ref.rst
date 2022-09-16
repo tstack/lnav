@@ -1415,12 +1415,13 @@
 
 .. _write_table_to:
 
-:write-table-to *path*
-^^^^^^^^^^^^^^^^^^^^^^
+:write-table-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write SQL results to the given file in a tabular format
 
   **Parameters**
+    * **--anonymize** --- Anonymize the table contents
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1438,12 +1439,13 @@
 
 .. _write_csv_to:
 
-:write-csv-to *path*
-^^^^^^^^^^^^^^^^^^^^
+:write-csv-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write SQL results to the given file in CSV format
 
   **Parameters**
+    * **--anonymize** --- Anonymize the row contents
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1461,12 +1463,13 @@
 
 .. _write_json_to:
 
-:write-json-to *path*
-^^^^^^^^^^^^^^^^^^^^^
+:write-json-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write SQL results to the given file in JSON format
 
   **Parameters**
+    * **--anonymize** --- Anonymize the JSON values
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1484,12 +1487,13 @@
 
 .. _write_jsonlines_to:
 
-:write-jsonlines-to *path*
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+:write-jsonlines-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write SQL results to the given file in JSON Lines format
 
   **Parameters**
+    * **--anonymize** --- Anonymize the JSON values
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1507,13 +1511,14 @@
 
 .. _write_raw_to:
 
-:write-raw-to *\[--view={log,db}\]* *path*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:write-raw-to *\[--view={log,db}\]* *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   In the log view, write the original log file content of the marked messages to the file.  In the DB view, the contents of the cells are written to the output file.
 
   **Parameters**
     * **--view={log,db}** --- The view to use as the source of data
+    * **--anonymize** --- Anonymize the lines
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1531,12 +1536,13 @@
 
 .. _write_screen_to:
 
-:write-screen-to *path*
-^^^^^^^^^^^^^^^^^^^^^^^
+:write-screen-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write the displayed text or SQL results to the given file without any formatting
 
   **Parameters**
+    * **--anonymize** --- Anonymize the lines
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1554,12 +1560,13 @@
 
 .. _write_to:
 
-:write-to *path*
-^^^^^^^^^^^^^^^^
+:write-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Overwrite the given file with any marked lines in the current view
 
   **Parameters**
+    * **--anonymize** --- Anonymize the lines
     * **path\*** --- The path to the file to write
 
   **Examples**
@@ -1577,12 +1584,13 @@
 
 .. _write_view_to:
 
-:write-view-to *path*
-^^^^^^^^^^^^^^^^^^^^^
+:write-view-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Write the text in the top view to the given file without any formatting
 
   **Parameters**
+    * **--anonymize** --- Anonymize the lines
     * **path\*** --- The path to the file to write
 
   **Examples**

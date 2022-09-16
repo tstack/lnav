@@ -76,6 +76,56 @@ an error message in the status bar, like so:
    This makes it easier to run **lnav** in restricted environments without the
    risk of privilege escalation.
 
+I/O Commands
+------------
+
+Anonymization
+^^^^^^^^^^^^^
+
+Anonymization is the process of removing identifying information from content
+to make it safer for sharing with others.  For example, an IP address can
+often be used to uniquely identify an entity.  Substituting all instances of
+a particular IP with the same dummy value would remove the identifying data
+without losing statistical accuracy.  **lnav** has built-in support for
+anonymization through the :code:`--anonymize` flag on the :code:`:write-*`
+collection of commands.  While the anonymization process should catch most
+
+  :IPv4 Addresses: Are replaced with addresses in the :code:`10.0.0.0/8` range.
+
+  :IPv6 Addresses: Are replaced with addresses in the :code:`2001:db8::/32` range.
+
+  :URL User Names: Are replaced with a random animal name.
+
+  :URL Passwords: Are replaced with a hash of the input password.
+
+  :URL Hosts: Are replaced with a random name under the example.com domain.
+
+  :URL Paths: Are recursively examined for substitution.
+
+  :URL Query Strings: Are recursively examined for substitution.
+
+  :URL Fragments: Are recursively examined for substitution.
+
+  :Paths: Are recursively examined for substitution.
+
+  :Credit Card Numbers: Are replaced with a 16 digit hash of the input number.
+
+  :MAC Addresses: Are replaced with addresses in the :code:`00:00:5E:00:53:00` range.
+
+  :Hex Dumps: Are replaced with a hash of the input replicated to the size of input.
+
+  :Email User Names: Are replaced with a random animal name.
+
+  :Email Host Names: Are replaced with a random name under the example.com domain.
+
+  :Words: Are replaced with a random word with a matching case style.
+
+  :Quoted Strings: Are recursively examined for substitution.
+
+  :UUID: Are replaced with a hash of the input.
+
+  :XML Attribute Values: Are recursively examined for substitution.
+
 Reference
 ---------
 

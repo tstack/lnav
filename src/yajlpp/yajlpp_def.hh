@@ -573,16 +573,19 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename... Args>
     struct LastIsVector {
+        using value_type = typename LastIsVector<Args...>::value_type;
         static constexpr bool value = LastIsVector<Args...>::value;
     };
 
     template<typename T, typename U>
     struct LastIsVector<std::vector<U> T::*> {
+        using value_type = U;
         static constexpr bool value = true;
     };
 
     template<typename T, typename U>
     struct LastIsVector<U T::*> {
+        using value_type = void;
         static constexpr bool value = false;
     };
 
@@ -641,8 +644,41 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<std::vector<std::string>, Args...>::value, bool>
+        = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto value_str = std::string((const char*) str, len);
+            auto jph = ypc->ypc_current_handler;
+
+            if (jph->jph_pattern) {
+                if (!jph->jph_pattern->find_in(value_str).ignore_error()) {
+                    jph->report_pattern_error(ypc, value_str);
+                }
+            }
+
+            json_path_handler::get_field(obj, args...)
+                .emplace_back(std::move(value_str));
+
+            return 1;
+        };
+        return *this;
+    }
+
     template<typename... Args,
-             std::enable_if_t<LastIsVector<Args...>::value, bool> = true>
+             std::enable_if_t<LastIsVector<Args...>::value, bool> = true,
+             std::enable_if_t<
+                 !std::is_same<typename LastIsVector<Args...>::value_type,
+                               std::string>::value,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->jph_obj_provider

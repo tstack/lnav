@@ -91,12 +91,15 @@ if HAVE_RE2C
 endif
 
 LNAV_BUILT_FILES = \
+    animals-json.cc \
     ansi-palette-json.cc \
     builtin-scripts.cc \
     builtin-sh-scripts.cc \
     default-config.cc \
     default-formats.cc \
+    diseases-json.cc \
     emojis-json.cc \
+    words-json.cc \
     help-md.cc \
     init-sql.cc \
     time_fmts.cc \
@@ -158,12 +161,15 @@ LDADD = \
 
 dist_noinst_DATA = \
 	alpha-release.sh \
+	animals.json \
 	ansi-palette.json \
+	diseases.json \
 	emojis.json \
 	$(BUILTIN_LNAVSCRIPTS) \
 	$(BUILTIN_SHSCRIPTS) \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
+	words.json \
 	xml-entities.json \
 	xterm-palette.json
 
@@ -295,6 +301,7 @@ noinst_HEADERS = \
 	sysclip.cfg.hh \
 	termios_guard.hh \
 	term_extra.hh \
+	text_anonymizer.hh \
 	text_format.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
@@ -444,6 +451,7 @@ libdiag_a_SOURCES = \
 	statusview_curses.cc \
 	string-extension-functions.cc \
 	styling.cc \
+	text_anonymizer.cc \
 	text_format.cc \
 	textfile_sub_source.cc \
 	timer.cc \
@@ -502,12 +510,15 @@ CLEANFILES = \
 
 DISTCLEANFILES = \
     $(LNAV_BUILT_FILES) \
+    animals-json.h \
     ansi-palette-json.h \
     builtin-scripts.h \
     builtin-sh-scripts.h \
     default-config.h \
     default-formats.h \
+    diseases-json.h \
     emojis-json.h \
+    words-json.h \
     help-md.h \
     init-sql.h \
     time_fmts.h \

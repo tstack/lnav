@@ -82,7 +82,7 @@ public:
 
         return string_fragment::from_byte_range(
             this->md_input.i_string.sf_string,
-            this->md_input.i_next_offset,
+            this->md_input.i_string.sf_begin + this->md_input.i_next_offset,
             this->md_input.i_string.sf_end);
     }
 

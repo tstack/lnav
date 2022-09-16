@@ -102,7 +102,7 @@ function(bin2c)
             DEPENDS bin2c "${FILE_TO_LINK}")
 endfunction(bin2c)
 
-foreach (FILE_TO_LINK ansi-palette.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql)
+foreach (FILE_TO_LINK animals.json ansi-palette.json diseases.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql words.json)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
             OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
@@ -419,6 +419,7 @@ add_library(
         sqlitepp.cc
         state-extension-functions.cc
         styling.cc
+        text_anonymizer.cc
         text_format.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
@@ -535,6 +536,7 @@ add_library(
         sysclip.cfg.hh
         term_extra.hh
         termios_guard.hh
+        text_anonymizer.hh
         text_format.hh
         textfile_highlighters.hh
         textfile_sub_source.hh

@@ -115,3 +115,7 @@ run_cap_test ${lnav_test} -n \
     -c ';SELECT log_body, extract(log_body) from vmw_log' \
     -c ':write-json-to -' \
     ${test_dir}/logfile_vmw_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT anonymize(bro_id_resp_h) FROM bro_http_log' \
+    ${test_dir}/logfile_bro_http.log.0

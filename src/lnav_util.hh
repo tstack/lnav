@@ -104,6 +104,13 @@ public:
         return *this;
     }
 
+    array_t to_array() {
+        array_t retval;
+
+        this->h_context.Final(retval.out(0), retval.out(0));
+        return retval;
+    }
+
     void to_string(auto_buffer& buf)
     {
         array_t bits;
@@ -118,6 +125,14 @@ public:
 
         this->h_context.Final(bits.out(0), bits.out(1));
         return bits.to_string();
+    }
+
+    std::string to_uuid_string()
+    {
+        array_t bits;
+
+        this->h_context.Final(bits.out(0), bits.out(1));
+        return bits.to_uuid_string();
     }
 
 private:

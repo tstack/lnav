@@ -523,6 +523,17 @@ struct string_fragment {
         return scn::string_view{this->begin(), this->end()};
     }
 
+    enum class case_style {
+        lower,
+        upper,
+        camel,
+        mixed,
+    };
+
+    case_style detect_text_case_style() const;
+
+    std::string to_string_with_case_style(case_style style) const;
+
     const char* sf_string;
     int sf_begin;
     int sf_end;

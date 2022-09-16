@@ -34,6 +34,7 @@
 #include "scn/scn.h"
 #include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
+#include "text_anonymizer.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajl/api/yajl_gen.h"
@@ -617,6 +618,14 @@ sql_humanize_file_size(file_ssize_t value)
     return humanize::file_size(value, humanize::alignment::columnar);
 }
 
+std::string
+sql_anonymize(string_fragment frag)
+{
+    static safe::Safe<lnav::text_anonymizer> ta;
+
+    return ta.writeAccess()->next(frag);
+}
+
 int
 string_extension_functions(struct FuncDef** basic_funcs,
                            struct FuncDefAgg** agg_funcs)
@@ -728,6 +737,17 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, "
                         "4, 5, 6, 7, 8]')",
                     })),
+
+        sqlite_func_adapter<decltype(&sql_anonymize), sql_anonymize>::builder(
+            help_text("anonymize",
+                      "Replace identifying information with random values.")
+                .sql_function()
+                .with_parameter({"value", "The text to anonymize"})
+                .with_tags({"string"})
+                .with_example({
+                    "To anonymize an IP address",
+                    "SELECT anonymize('Hello, 192.168.1.2')",
+                })),
 
         sqlite_func_adapter<decltype(&extract), extract>::builder(
             help_text("extract",

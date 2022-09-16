@@ -44,6 +44,7 @@ enum data_token_t {
     DT_MAC_ADDRESS,
     DT_DATE,
     DT_TIME,
+    DT_DATE_TIME,
     DT_IPV6_ADDRESS,
     DT_HEX_DUMP,
     DT_XML_DECL_TAG,
@@ -79,6 +80,7 @@ enum data_token_t {
     DT_IPV4_ADDRESS,
     DT_UUID,
 
+    DT_CREDIT_CARD_NUMBER,
     DT_VERSION_NUMBER,
     DT_OCTAL_NUMBER,
     DT_PERCENTAGE,
@@ -107,7 +109,6 @@ enum data_token_t {
     DNT_MEASUREMENT,
     DNT_VARIABLE_KEY,
     DNT_ROWRANGE,
-    DNT_DATE_TIME,
     DNT_GROUP,
 
     DNT_MAX,
@@ -198,6 +199,8 @@ public:
     }
 
 private:
+    bool is_credit_card(string_fragment frag) const;
+
     std::string ds_line;
     shared_buffer_ref ds_sbr;
     string_fragment ds_input;
