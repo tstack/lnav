@@ -18,7 +18,7 @@ class LnavConan(ConanFile):
     requires = (
         "bzip2/1.0.8",
         "libarchive/3.6.0",
-        "libcurl/7.80.0",
+        "libcurl/7.85.0",
         "ncurses/6.3",
         "pcre2/10.40",
         "readline/8.1.2",

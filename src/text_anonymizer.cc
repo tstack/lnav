@@ -139,7 +139,8 @@ text_anonymizer::next(string_fragment line)
         switch (tok_res->tr_token) {
             case DT_URL: {
                 auto url_str = tok_res->to_string();
-                auto* cu = curl_url();
+                auto_mem<CURLU> cu(curl_url_cleanup);
+                cu = curl_url();
 
                 if (curl_url_set(cu, CURLUPART_URL, url_str.c_str(), 0)
                     != CURLUE_OK)
@@ -232,7 +233,7 @@ text_anonymizer::next(string_fragment line)
 
                         auto url_query
                             = string_fragment::from_c_str(url_part.in());
-                        auto replacer = [this, cu](const std::string& comp) {
+                        auto replacer = [this, &cu](const std::string& comp) {
                             std::string anon_query;
 
                             auto eq_index = comp.find('=');

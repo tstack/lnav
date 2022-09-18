@@ -40,6 +40,74 @@
 
 using namespace std::chrono_literals;
 
+#    if !CURL_AT_LEAST_VERSION(7, 80, 0)
+extern "C"
+{
+const char*
+curl_url_strerror(CURLUcode error)
+{
+    switch (error) {
+        case CURLUE_OK:
+            return "No error";
+
+        case CURLUE_BAD_HANDLE:
+            return "An invalid CURLU pointer was passed as argument";
+
+        case CURLUE_BAD_PARTPOINTER:
+            return "An invalid 'part' argument was passed as argument";
+
+        case CURLUE_MALFORMED_INPUT:
+            return "Malformed input to a URL function";
+
+        case CURLUE_BAD_PORT_NUMBER:
+            return "Port number was not a decimal number between 0 and 65535";
+
+        case CURLUE_UNSUPPORTED_SCHEME:
+            return "Unsupported URL scheme";
+
+        case CURLUE_URLDECODE:
+            return "URL decode error, most likely because of rubbish in the "
+                   "input";
+
+        case CURLUE_OUT_OF_MEMORY:
+            return "A memory function failed";
+
+        case CURLUE_USER_NOT_ALLOWED:
+            return "Credentials was passed in the URL when prohibited";
+
+        case CURLUE_UNKNOWN_PART:
+            return "An unknown part ID was passed to a URL API function";
+
+        case CURLUE_NO_SCHEME:
+            return "No scheme part in the URL";
+
+        case CURLUE_NO_USER:
+            return "No user part in the URL";
+
+        case CURLUE_NO_PASSWORD:
+            return "No password part in the URL";
+
+        case CURLUE_NO_OPTIONS:
+            return "No options part in the URL";
+
+        case CURLUE_NO_HOST:
+            return "No host part in the URL";
+
+        case CURLUE_NO_PORT:
+            return "No port part in the URL";
+
+        case CURLUE_NO_QUERY:
+            return "No query part in the URL";
+
+        case CURLUE_NO_FRAGMENT:
+            return "No fragment part in the URL";
+    }
+
+    return "CURLUcode unknown";
+}
+}
+#    endif
+
 struct curl_request_eq {
     explicit curl_request_eq(const std::string& name) : cre_name(name){};
 
@@ -203,7 +271,8 @@ curl_looper::check_for_finished_requests()
     int msgs_left;
 
     while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left))
-           != nullptr) {
+           != nullptr)
+    {
         if (msg->msg != CURLMSG_DONE) {
             continue;
         }

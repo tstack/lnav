@@ -16,6 +16,11 @@ lnav v0.11.1:
        (This feature is mainly intended to help with providing
         information to lnav support that does not have sensitive
         values.)
+     * Added `parse_url()` and `unparse_url()` SQL functions for
+       parsing URLs into a JSON object and then back again. Note
+       that the implementation relies on libcurl which has some
+       limitations, like not supporting all types of schemes
+       (e.g. mailto:).
 
      Breaking changes:
      * The regexp_capture() table-valued-function now returns NULL

@@ -276,7 +276,7 @@ struct string_fragment {
     {
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
             if (this->sf_string[lpc] == ch) {
-                return lpc;
+                return lpc - this->sf_begin;
             }
         }
 
@@ -411,6 +411,35 @@ struct string_fragment {
             string_fragment{
                 this->sf_string,
                 this->sf_begin + consumed,
+                this->sf_end,
+            });
+    }
+
+    template<typename P>
+    split_result split_when(P&& predicate) const
+    {
+        int consumed = 0;
+        while (consumed < this->length()) {
+            if (predicate(this->data()[consumed])) {
+                break;
+            }
+
+            consumed += 1;
+        }
+
+        if (consumed == 0) {
+            return nonstd::nullopt;
+        }
+
+        return std::make_pair(
+            string_fragment{
+                this->sf_string,
+                this->sf_begin,
+                this->sf_begin + consumed,
+            },
+            string_fragment{
+                this->sf_string,
+                this->sf_begin + consumed + 1,
                 this->sf_end,
             });
     }

@@ -40,6 +40,7 @@
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 #if defined(HAVE_LIBCURL)
 #    include <curl/curl.h>
@@ -618,12 +619,248 @@ sql_humanize_file_size(file_ssize_t value)
     return humanize::file_size(value, humanize::alignment::columnar);
 }
 
-std::string
+static std::string
 sql_anonymize(string_fragment frag)
 {
     static safe::Safe<lnav::text_anonymizer> ta;
 
     return ta.writeAccess()->next(frag);
+}
+
+#if !CURL_AT_LEAST_VERSION(7, 80, 0)
+extern "C"
+{
+const char* curl_url_strerror(CURLUcode error);
+}
+#endif
+
+static json_string
+sql_parse_url(string_fragment url_frag)
+{
+    static auto* CURL_HANDLE = get_curl_easy();
+
+    auto_mem<CURLU> cu(curl_url_cleanup);
+    cu = curl_url();
+
+    auto rc = curl_url_set(cu, CURLUPART_URL, url_frag.data(), 0);
+    if (rc != CURLUE_OK) {
+        throw lnav::console::user_message::error(
+            attr_line_t("invalid URL: ").append_quoted(url_frag.to_string()))
+            .with_reason(curl_url_strerror(rc));
+    }
+
+    auto_mem<char> url_part(curl_free);
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    {
+        yajlpp_map root(gen);
+
+        root.gen("scheme");
+        rc = curl_url_get(cu, CURLUPART_SCHEME, url_part.out(), 0);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("user");
+        rc = curl_url_get(cu, CURLUPART_USER, url_part.out(), CURLU_URLDECODE);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("password");
+        rc = curl_url_get(
+            cu, CURLUPART_PASSWORD, url_part.out(), CURLU_URLDECODE);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("host");
+        rc = curl_url_get(cu, CURLUPART_HOST, url_part.out(), CURLU_URLDECODE);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("port");
+        rc = curl_url_get(cu, CURLUPART_PORT, url_part.out(), 0);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("path");
+        rc = curl_url_get(cu, CURLUPART_PATH, url_part.out(), CURLU_URLDECODE);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+        root.gen("query");
+        rc = curl_url_get(cu, CURLUPART_QUERY, url_part.out(), 0);
+        if (rc == CURLUE_OK) {
+            robin_hood::unordered_set<std::string> seen_keys;
+            yajlpp_map query_map(gen);
+
+            auto query_frag = string_fragment::from_c_str(url_part.in());
+            auto remaining = query_frag;
+
+            while (true) {
+                auto split_res
+                    = remaining.split_when(string_fragment::tag1{'&'});
+
+                if (!split_res) {
+                    break;
+                }
+
+                auto_mem<char> kv_pair(curl_free);
+                auto kv_pair_encoded = split_res->first;
+                int out_len = 0;
+
+                kv_pair = curl_easy_unescape(CURL_HANDLE,
+                                             kv_pair_encoded.data(),
+                                             kv_pair_encoded.length(),
+                                             &out_len);
+                auto kv_pair_frag
+                    = string_fragment::from_bytes(kv_pair.in(), out_len);
+                auto eq_index_opt = kv_pair_frag.find('=');
+                if (eq_index_opt) {
+                    auto key = kv_pair_frag.sub_range(0, eq_index_opt.value());
+                    auto val = kv_pair_frag.substr(eq_index_opt.value() + 1);
+                    auto key_str = key.to_string();
+
+                    if (seen_keys.count(key_str) == 0) {
+                        seen_keys.emplace(key_str);
+                        query_map.gen(key);
+                        query_map.gen(val);
+                    }
+                } else {
+                    auto val_str = split_res->first.to_string();
+
+                    if (seen_keys.count(val_str) == 0) {
+                        seen_keys.insert(val_str);
+                        query_map.gen(split_res->first);
+                        query_map.gen();
+                    }
+                }
+
+                if (split_res->second.empty()) {
+                    break;
+                }
+
+                remaining = split_res->second;
+            }
+        } else {
+            root.gen();
+        }
+        root.gen("fragment");
+        rc = curl_url_get(
+            cu, CURLUPART_FRAGMENT, url_part.out(), CURLU_URLDECODE);
+        if (rc == CURLUE_OK) {
+            root.gen(string_fragment::from_c_str(url_part.in()));
+        } else {
+            root.gen();
+        }
+    }
+
+    return json_string(gen);
+}
+
+struct url_parts {
+    nonstd::optional<std::string> up_scheme;
+    nonstd::optional<std::string> up_username;
+    nonstd::optional<std::string> up_password;
+    nonstd::optional<std::string> up_host;
+    nonstd::optional<std::string> up_port;
+    nonstd::optional<std::string> up_path;
+    std::map<std::string, nonstd::optional<std::string>> up_query;
+    nonstd::optional<std::string> up_fragment;
+};
+
+static const json_path_container url_query_handlers = {
+    yajlpp::pattern_property_handler("(?<param>.+)")
+        .for_field(&url_parts::up_query),
+};
+
+static const typed_json_path_container<url_parts> url_parts_handlers = {
+    yajlpp::property_handler("scheme").for_field(&url_parts::up_scheme),
+    yajlpp::property_handler("username").for_field(&url_parts::up_username),
+    yajlpp::property_handler("password").for_field(&url_parts::up_password),
+    yajlpp::property_handler("host").for_field(&url_parts::up_host),
+    yajlpp::property_handler("port").for_field(&url_parts::up_port),
+    yajlpp::property_handler("path").for_field(&url_parts::up_path),
+    yajlpp::property_handler("query").with_children(url_query_handlers),
+    yajlpp::property_handler("fragment").for_field(&url_parts::up_fragment),
+};
+
+static auto_mem<char>
+sql_unparse_url(string_fragment in)
+{
+    static auto* CURL_HANDLE = get_curl_easy();
+    static intern_string_t SRC = intern_string::lookup("arg");
+
+    auto parse_res = url_parts_handlers.parser_for(SRC).of(in);
+    if (parse_res.isErr()) {
+        throw parse_res.unwrapErr();
+    }
+
+    auto up = parse_res.unwrap();
+    auto_mem<CURLU> cu(curl_url_cleanup);
+    cu = curl_url();
+
+    if (up.up_scheme) {
+        curl_url_set(
+            cu, CURLUPART_SCHEME, up.up_scheme->c_str(), CURLU_URLENCODE);
+    }
+    if (up.up_username) {
+        curl_url_set(
+            cu, CURLUPART_USER, up.up_username->c_str(), CURLU_URLENCODE);
+    }
+    if (up.up_password) {
+        curl_url_set(
+            cu, CURLUPART_PASSWORD, up.up_password->c_str(), CURLU_URLENCODE);
+    }
+    if (up.up_host) {
+        curl_url_set(cu, CURLUPART_HOST, up.up_host->c_str(), CURLU_URLENCODE);
+    }
+    if (up.up_port) {
+        curl_url_set(cu, CURLUPART_PORT, up.up_port->c_str(), 0);
+    }
+    if (up.up_path) {
+        curl_url_set(cu, CURLUPART_PATH, up.up_path->c_str(), CURLU_URLENCODE);
+    }
+    if (!up.up_query.empty()) {
+        for (const auto& pair : up.up_query) {
+            auto_mem<char> key(curl_free);
+            auto_mem<char> value(curl_free);
+            std::string qparam;
+
+            key = curl_easy_escape(
+                CURL_HANDLE, pair.first.c_str(), pair.first.length());
+            if (pair.second) {
+                value = curl_easy_escape(
+                    CURL_HANDLE, pair.second->c_str(), pair.second->length());
+                qparam = fmt::format(FMT_STRING("{}={}"), key.in(), value.in());
+            } else {
+                qparam = key.in();
+            }
+
+            curl_url_set(
+                cu, CURLUPART_QUERY, qparam.c_str(), CURLU_APPENDQUERY);
+        }
+    }
+    if (up.up_fragment) {
+        curl_url_set(
+            cu, CURLUPART_FRAGMENT, up.up_fragment->c_str(), CURLU_URLENCODE);
+    }
+
+    auto_mem<char> retval(curl_free);
+
+    curl_url_get(cu, CURLUPART_URL, retval.out(), 0);
+    return retval;
 }
 
 int
@@ -888,6 +1125,76 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     "To decode the URI-encoded string '%63%75%72%6c'",
                     "SELECT decode('%63%75%72%6c', 'uri')",
                 })),
+
+        sqlite_func_adapter<decltype(&sql_parse_url), sql_parse_url>::builder(
+            help_text("parse_url",
+                      "Parse a URL and return the components in a JSON object. "
+                      "Limitations: not all URL schemes are supported and "
+                      "repeated query parameters are not captured.")
+                .sql_function()
+                .with_parameter(help_text("url", "The URL to parse"))
+                .with_result({
+                    "scheme",
+                    "The URL's scheme",
+                })
+                .with_result({
+                    "username",
+                    "The name of the user specified in the URL",
+                })
+                .with_result({
+                    "password",
+                    "The password specified in the URL",
+                })
+                .with_result({
+                    "host",
+                    "The host name / IP specified in the URL",
+                })
+                .with_result({
+                    "port",
+                    "The port specified in the URL",
+                })
+                .with_result({
+                    "path",
+                    "The path specified in the URL",
+                })
+                .with_result({
+                    "query",
+                    "An object containing the query parameters",
+                })
+                .with_result({
+                    "fragment",
+                    "The fragment specified in the URL",
+                })
+                .with_tags({"string", "url"})
+                .with_example({
+                    "To parse the URL "
+                    "'https://example.com/search?q=hello%20world'",
+                    "SELECT "
+                    "parse_url('https://example.com/search?q=hello%20world')",
+                })
+                .with_example({
+                    "To parse the URL "
+                    "'https://alice@[fe80::14ff:4ee5:1215:2fb2]'",
+                    "SELECT "
+                    "parse_url('https://alice@[fe80::14ff:4ee5:1215:2fb2]')",
+                })),
+
+        sqlite_func_adapter<decltype(&sql_unparse_url), sql_unparse_url>::
+            builder(
+                help_text("unparse_url",
+                          "Convert a JSON object containing the parts of a "
+                          "URL into a URL string")
+                    .sql_function()
+                    .with_parameter(help_text(
+                        "obj", "The JSON object containing the URL parts"))
+                    .with_tags({"string", "url"})
+                    .with_example({
+                        "To unparse the object "
+                        "'{\"scheme\": \"https\", \"host\": \"example.com\"}'",
+                        "SELECT "
+                        "unparse_url('{\"scheme\": \"https\", \"host\": "
+                        "\"example.com\"}')",
+                    })),
 
         {nullptr},
     };
