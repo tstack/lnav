@@ -85,11 +85,9 @@ OS=$(uname -s)
      && \
  make && make install)
 
-(cd pcre-* && \
+(cd pcre2-* && \
  ./configure --prefix=${FAKE_ROOT} \
      --enable-jit \
-     --enable-utf \
-     --enable-unicode-properties \
      && \
  make && make install)
 

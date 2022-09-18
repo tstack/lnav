@@ -30,6 +30,7 @@ missing
 mkinstalldirs
 test-driver
 docs/build
+release/release-NEWS.md
 release/linux-pkg/
 release/osx-build-dir/
 release/osx-pkg/

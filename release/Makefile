@@ -1,5 +1,7 @@
 
-VERSION=0.11.0
+VERSION=0.11.1
+
+VERSION_TAG=v$(VERSION)-test
 
 SRC_VERSION=master
 
@@ -13,14 +15,14 @@ PACKAGE_URLS = \
 	https://www.libarchive.org/downloads/libarchive-3.6.1.tar.gz \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
 	ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.3.tar.gz \
-	https://sourceforge.net/projects/pcre/files/pcre/8.42/pcre-8.42.tar.gz \
+	https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.40/pcre2-10.40.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	https://zlib.net/zlib-1.2.12.tar.gz \
 	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
 	https://www.sqlite.org/2022/sqlite-autoconf-3390200.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.se/download/curl-7.84.0.tar.gz \
+	https://curl.se/download/curl-7.85.0.tar.gz \
 	https://tukaani.org/xz/xz-5.2.5.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs musl
@@ -43,7 +45,7 @@ download-pkgs:
 	mkdir -p $<-pkg/lnav-${VERSION}
 	cp ../README ../NEWS.md $<-pkg/lnav-${VERSION}
 	mv vagrant-static/lnav $<-pkg/lnav-${VERSION}
-	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-$<-64bit.zip lnav-${VERSION}
+	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-x86_64-linux-$<.zip lnav-${VERSION}
 	rm -rf $<-pkg
 
 linux-ospkg: pkger-vm linux-package
@@ -72,14 +74,27 @@ osx-package: clean-outbox osx-build
 	cp osx-build-dir/src/lnav osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
 	cp osx-build-dir/lnav-${VERSION}.tar.bz2 outbox/
-	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
+	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-x86_64-macos.zip lnav-${VERSION}
 	rm -rf osx-pkg
 
-release: osx-package musl-package
+release-NEWS.md: ../NEWS.md
+	sed -n "/^## lnav v${VERSION}/,/^## /p" $< | sed '$$d' > $@
+
+release-tag: release-NEWS.md
+	gh release create ${VERSION_TAG} \
+		-d \
+		-t "lnav v${VERSION}" \
+		--notes-file release-NEWS.md
+
+release: osx-package musl-package release-NEWS.md
+	gh release edit ${VERSION_TAG} \
+		-t "lnav v${VERSION}" \
+		--notes-file release-NEWS.md
+	gh release upload ${VERSION_TAG} outbox/*
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.11.0-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.11.1-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f
