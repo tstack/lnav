@@ -41,7 +41,7 @@ download-pkgs:
 
 %-package: % clean-outbox %-build
 	mkdir -p $<-pkg/lnav-${VERSION}
-	cp ../README ../NEWS $<-pkg/lnav-${VERSION}
+	cp ../README ../NEWS.md $<-pkg/lnav-${VERSION}
 	mv vagrant-static/lnav $<-pkg/lnav-${VERSION}
 	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-$<-64bit.zip lnav-${VERSION}
 	rm -rf $<-pkg
@@ -68,7 +68,7 @@ osx-build:
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
-	cp ../README ../NEWS osx-pkg/lnav-${VERSION}
+	cp ../README ../NEWS.md osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/src/lnav osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
 	cp osx-build-dir/lnav-${VERSION}.tar.bz2 outbox/
