@@ -42,6 +42,11 @@
 
 using namespace lnav::roles::literals;
 
+static const std::set<std::string> SUPPORTED_FLAVORS = {
+    "pcre",
+    "pcre2",
+};
+
 Result<ghc::filesystem::path, lnav::console::user_message>
 regex101::import(const std::string& url,
                  const std::string& name,
@@ -144,16 +149,19 @@ regex101::import(const std::string& url,
 
     auto entry = retrieve_res.get<regex101::client::entry>();
 
-    if (entry.e_flavor != "pcre") {
-        return Err(
-            lnav::console::user_message::error(
-                attr_line_t("invalid regex ")
-                    .append_quoted(lnav::roles::symbol(entry.e_regex))
-                    .append(" from ")
-                    .append_quoted(lnav::roles::symbol(url)))
-                .with_reason(attr_line_t("only the ")
-                                 .append_quoted("pcre"_symbol)
-                                 .append(" flavor of regexes are supported")));
+    if (SUPPORTED_FLAVORS.count(entry.e_flavor) == 0) {
+        return Err(lnav::console::user_message::error(
+                       attr_line_t("invalid regex ")
+                           .append_quoted(lnav::roles::symbol(entry.e_regex))
+                           .append(" from ")
+                           .append_quoted(lnav::roles::symbol(url)))
+                       .with_reason(attr_line_t("unsupported regex flavor: ")
+                                        .append_quoted(
+                                            lnav::roles::symbol(entry.e_flags)))
+                       .with_help(attr_line_t("the supported flavors are: ")
+                                      .join(SUPPORTED_FLAVORS,
+                                            VC_ROLE.value(role_t::VCR_SYMBOL),
+                                            ", ")));
     }
 
     auto regex_res = lnav::pcre2pp::code::from(entry.e_regex);
