@@ -925,8 +925,17 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
-                auto attrs = vc.attrs_for_ident(colname);
+                auto name_for_ident_attrs = colname;
+                auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
+                for (size_t attempt = 0;
+                     chart.attrs_in_use(attrs) && attempt < 3;
+                     attempt++)
+                {
+                    name_for_ident_attrs += " ";
+                    attrs = vc.attrs_for_ident(name_for_ident_attrs);
+                }
                 chart.with_attrs_for_ident(colname, attrs);
+                dls.dls_headers.back().hm_title_attrs = attrs;
             }
         }
         set_vars = true;

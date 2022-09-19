@@ -293,9 +293,9 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
         return retval;
     }
 
-    view_colors& vc = view_colors::singleton();
-    vis_line_t top = lv.get_top();
-    const std::vector<const char*>& cols = this->dos_labels->dls_rows[top];
+    auto& vc = view_colors::singleton();
+    auto top = lv.get_top();
+    const auto& cols = this->dos_labels->dls_rows[top];
     unsigned long width;
     vis_line_t height;
 
@@ -404,8 +404,6 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                           vis_line_t row,
                                           attr_line_t& value_out)
 {
-    view_colors& vc = view_colors::singleton();
-
     if (y == 0) {
         this->list_overlay_count(lv);
         std::string& line = value_out.get_string();
@@ -436,7 +434,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
             text_attrs attrs;
             if (this->dos_labels->dls_headers[lpc].hm_graphable) {
-                attrs = vc.attrs_for_ident(dls->dls_headers[lpc].hm_name)
+                attrs = dls->dls_headers[lpc].hm_title_attrs
                     | text_attrs{A_REVERSE};
             } else {
                 attrs.ta_attrs = A_UNDERLINE;

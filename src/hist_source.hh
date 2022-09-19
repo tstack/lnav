@@ -53,10 +53,8 @@ STRONG_INT_TYPE(int, bucket_type);
 struct stacked_bar_chart_base {
     virtual ~stacked_bar_chart_base() = default;
 
-    struct show_none {
-    };
-    struct show_all {
-    };
+    struct show_none {};
+    struct show_all {};
     struct show_one {
         size_t so_index;
 
@@ -92,6 +90,15 @@ public:
         this->sbc_left = left;
         this->sbc_right = right;
         return *this;
+    }
+
+    bool attrs_in_use(const text_attrs& attrs) const {
+        for (const auto& ident : this->sbc_idents) {
+            if (ident.ci_attrs == attrs) {
+                return true;
+            }
+        }
+        return false;
     }
 
     show_state show_next_ident(direction dir)
@@ -322,29 +329,17 @@ public:
         HT__MAX
     } hist_type_t;
 
-    hist_source2()
-    {
-        this->clear();
-    }
+    hist_source2() { this->clear(); }
 
     ~hist_source2() override = default;
 
     void init();
 
-    void set_time_slice(int64_t slice)
-    {
-        this->hs_time_slice = slice;
-    }
+    void set_time_slice(int64_t slice) { this->hs_time_slice = slice; }
 
-    int64_t get_time_slice() const
-    {
-        return this->hs_time_slice;
-    }
+    int64_t get_time_slice() const { return this->hs_time_slice; }
 
-    size_t text_line_count() override
-    {
-        return this->hs_line_count;
-    }
+    size_t text_line_count() override { return this->hs_line_count; }
 
     size_t text_line_width(textview_curses& curses) override
     {

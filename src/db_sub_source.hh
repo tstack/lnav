@@ -111,6 +111,7 @@ public:
         unsigned int hm_sub_type{0};
         bool hm_graphable{false};
         size_t hm_column_size{0};
+        text_attrs hm_title_attrs;
     };
 
     stacked_bar_chart<std::string> dls_chart;

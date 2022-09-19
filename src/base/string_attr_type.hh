@@ -143,6 +143,13 @@ struct text_attrs {
         };
     }
 
+    bool operator==(const text_attrs& other) const
+    {
+        return this->ta_attrs == other.ta_attrs &&
+            this->ta_fg_color == other.ta_fg_color &&
+            this->ta_bg_color == other.ta_bg_color;
+    }
+
     int32_t ta_attrs{0};
     nonstd::optional<short> ta_fg_color;
     nonstd::optional<short> ta_bg_color;
