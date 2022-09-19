@@ -699,9 +699,12 @@ sql_parse_url(string_fragment url_frag)
         } else {
             root.gen();
         }
-        root.gen("query");
         rc = curl_url_get(cu, CURLUPART_QUERY, url_part.out(), 0);
         if (rc == CURLUE_OK) {
+            root.gen("query");
+            root.gen(string_fragment::from_c_str(url_part.in()));
+
+            root.gen("parameters");
             robin_hood::unordered_set<std::string> seen_keys;
             yajlpp_map query_map(gen);
 
@@ -754,6 +757,9 @@ sql_parse_url(string_fragment url_frag)
                 remaining = split_res->second;
             }
         } else {
+            root.gen("query");
+            root.gen();
+            root.gen("parameters");
             root.gen();
         }
         root.gen("fragment");
@@ -776,13 +782,14 @@ struct url_parts {
     nonstd::optional<std::string> up_host;
     nonstd::optional<std::string> up_port;
     nonstd::optional<std::string> up_path;
-    std::map<std::string, nonstd::optional<std::string>> up_query;
+    nonstd::optional<std::string> up_query;
+    std::map<std::string, nonstd::optional<std::string>> up_parameters;
     nonstd::optional<std::string> up_fragment;
 };
 
-static const json_path_container url_query_handlers = {
+static const json_path_container url_params_handlers = {
     yajlpp::pattern_property_handler("(?<param>.+)")
-        .for_field(&url_parts::up_query),
+        .for_field(&url_parts::up_parameters),
 };
 
 static const typed_json_path_container<url_parts> url_parts_handlers = {
@@ -792,7 +799,8 @@ static const typed_json_path_container<url_parts> url_parts_handlers = {
     yajlpp::property_handler("host").for_field(&url_parts::up_host),
     yajlpp::property_handler("port").for_field(&url_parts::up_port),
     yajlpp::property_handler("path").for_field(&url_parts::up_path),
-    yajlpp::property_handler("query").with_children(url_query_handlers),
+    yajlpp::property_handler("query").for_field(&url_parts::up_query),
+    yajlpp::property_handler("parameters").with_children(url_params_handlers),
     yajlpp::property_handler("fragment").for_field(&url_parts::up_fragment),
 };
 
@@ -832,8 +840,10 @@ sql_unparse_url(string_fragment in)
     if (up.up_path) {
         curl_url_set(cu, CURLUPART_PATH, up.up_path->c_str(), CURLU_URLENCODE);
     }
-    if (!up.up_query.empty()) {
-        for (const auto& pair : up.up_query) {
+    if (up.up_query) {
+        curl_url_set(cu, CURLUPART_QUERY, up.up_query->c_str(), 0);
+    } else if (!up.up_parameters.empty()) {
+        for (const auto& pair : up.up_parameters) {
             auto_mem<char> key(curl_free);
             auto_mem<char> value(curl_free);
             std::string qparam;
@@ -1159,6 +1169,10 @@ string_extension_functions(struct FuncDef** basic_funcs,
                 })
                 .with_result({
                     "query",
+                    "The query string in the URL",
+                })
+                .with_result({
+                    "parameters",
                     "An object containing the query parameters",
                 })
                 .with_result({

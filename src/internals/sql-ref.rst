@@ -2475,14 +2475,14 @@ parse_url(*url*)
     .. code-block::  custsqlite
 
       ;SELECT parse_url('https://example.com/search?q=hello%20world')
-      {"scheme":"https","user":null,"password":null,"host":"example.com","port":null,"path":"/search","query":{"q":"hello world"},"fragment":null}
+      {"scheme":"https","user":null,"password":null,"host":"example.com","port":null,"path":"/search","query":"q=hello%20world","parameters":{"q":"hello world"},"fragment":null}
 
     To parse the URL 'https://alice@[fe80::14ff:4ee5:1215:2fb2]':
 
     .. code-block::  custsqlite
 
       ;SELECT parse_url('https://alice@[fe80::14ff:4ee5:1215:2fb2]')
-      {"scheme":"https","user":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"fragment":null}
+      {"scheme":"https","user":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
