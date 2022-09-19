@@ -103,7 +103,7 @@ struct user_msg_stmt {
 void
 top_status_source::update_user_msg()
 {
-    static user_msg_stmt um_stmt;
+    static thread_local user_msg_stmt um_stmt;
 
     auto& al = this->tss_fields[TSF_USER_MSG].get_value();
     al.clear();
