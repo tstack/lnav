@@ -3227,14 +3227,15 @@ For support questions, email:
 [4mParameter[0m
   [4murl[0m   The URL to parse
 [4mResults[0m
-  [4mscheme[0m     The URL's scheme
-  [4musername[0m   The name of the user specified in the URL
-  [4mpassword[0m   The password specified in the URL
-  [4mhost[0m       The host name / IP specified in the URL
-  [4mport[0m       The port specified in the URL
-  [4mpath[0m       The path specified in the URL
-  [4mquery[0m      An object containing the query parameters
-  [4mfragment[0m   The fragment specified in the URL
+  [4mscheme[0m       The URL's scheme
+  [4musername[0m     The name of the user specified in the URL
+  [4mpassword[0m     The password specified in the URL
+  [4mhost[0m         The host name / IP specified in the URL
+  [4mport[0m         The port specified in the URL
+  [4mpath[0m         The path specified in the URL
+  [4mquery[0m        The query string in the URL
+  [4mparameters[0m   An object containing the query parameters
+  [4mfragment[0m     The fragment specified in the URL
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 

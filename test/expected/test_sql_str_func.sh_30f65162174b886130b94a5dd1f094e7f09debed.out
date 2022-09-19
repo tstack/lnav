@@ -1,2 +1,2 @@
 Row 0:
-  Column unparse_url(parse_url('https://example.com/search?flag&flag2&=def#frag1%20space')): https://example.com/search?flag&flag2#frag1%20space
+  Column unparse_url(parse_url('https://example.com/search?flag&flag2&=def#frag1%20space')): https://example.com/search?flag&flag2&=def#frag1%20space
