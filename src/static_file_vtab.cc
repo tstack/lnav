@@ -52,7 +52,7 @@ CREATE TABLE lnav_static_files (
 );
 )";
 
-struct vtab {
+struct static_file_vtab {
     sqlite3_vtab base;
     sqlite3* db;
 };
@@ -77,10 +77,10 @@ sfvt_create(sqlite3* db,
             sqlite3_vtab** pp_vt,
             char** pzErr)
 {
-    vtab* p_vt;
+    static_file_vtab* p_vt;
 
     /* Allocate the sqlite3_vtab/vtab structure itself */
-    p_vt = (vtab*) sqlite3_malloc(sizeof(*p_vt));
+    p_vt = (static_file_vtab*) sqlite3_malloc(sizeof(*p_vt));
 
     if (p_vt == nullptr) {
         return SQLITE_NOMEM;
@@ -99,7 +99,7 @@ sfvt_create(sqlite3* db,
 static int
 sfvt_destructor(sqlite3_vtab* p_svt)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    static_file_vtab* p_vt = (static_file_vtab*) p_svt;
 
     /* Free the SQLite structure */
     sqlite3_free(p_vt);
@@ -161,7 +161,7 @@ find_static_files(sf_vtab_cursor* p_cur, const ghc::filesystem::path& dir)
 static int
 sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    static_file_vtab* p_vt = (static_file_vtab*) p_svt;
 
     p_vt->base.zErrMsg = NULL;
 

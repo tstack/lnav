@@ -65,7 +65,7 @@ using log_formats_map_t
 static auto intern_lifetime = intern_string::get_table_lifetime();
 static log_formats_map_t LOG_FORMATS;
 
-struct userdata {
+struct loader_userdata {
     yajlpp_parse_context* ud_parse_context{nullptr};
     ghc::filesystem::path ud_format_path;
     std::vector<intern_string_t>* ud_format_names{nullptr};
@@ -73,7 +73,7 @@ struct userdata {
 };
 
 static external_log_format*
-ensure_format(const yajlpp_provider_context& ypc, userdata* ud)
+ensure_format(const yajlpp_provider_context& ypc, loader_userdata* ud)
 {
     const intern_string_t name = ypc.get_substr_i(0);
     std::vector<intern_string_t>* formats = ud->ud_format_names;
@@ -1047,7 +1047,7 @@ static void
 format_error_reporter(const yajlpp_parse_context& ypc,
                       const lnav::console::user_message& msg)
 {
-    struct userdata* ud = (userdata*) ypc.ypc_userdata;
+    struct loader_userdata* ud = (loader_userdata*) ypc.ypc_userdata;
 
     ud->ud_errors->emplace_back(msg);
 }
@@ -1057,7 +1057,7 @@ load_format_file(const ghc::filesystem::path& filename,
                  std::vector<lnav::console::user_message>& errors)
 {
     std::vector<intern_string_t> retval;
-    struct userdata ud;
+    struct loader_userdata ud;
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());
@@ -1156,7 +1156,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 {
     auto default_source = lnav::paths::dotlnav() / "default";
     std::vector<intern_string_t> retval;
-    struct userdata ud;
+    struct loader_userdata ud;
     yajl_handle handle;
 
     write_sample_file();

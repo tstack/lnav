@@ -429,9 +429,11 @@ install_extra_formats()
     }
 }
 
-struct userdata {
-    explicit userdata(std::vector<lnav::console::user_message>& errors)
-        : ud_errors(errors){};
+struct config_userdata {
+    explicit config_userdata(std::vector<lnav::console::user_message>& errors)
+        : ud_errors(errors)
+    {
+    }
 
     std::vector<lnav::console::user_message>& ud_errors;
 };
@@ -440,7 +442,7 @@ static void
 config_error_reporter(const yajlpp_parse_context& ypc,
                       const lnav::console::user_message& msg)
 {
-    auto* ud = (userdata*) ypc.ypc_userdata;
+    auto* ud = (config_userdata*) ypc.ypc_userdata;
 
     ud->ud_errors.emplace_back(msg);
 }
@@ -1334,7 +1336,7 @@ load_config_from(_lnav_config& lconfig,
 {
     yajlpp_parse_context ypc(intern_string::lookup(path.string()),
                              &lnav_config_handlers);
-    struct userdata ud(errors);
+    struct config_userdata ud(errors);
     auto_fd fd;
 
     ypc.ypc_locations = &lnav_config_locations;
@@ -1391,7 +1393,7 @@ load_default_config(struct _lnav_config& config_obj,
     yajlpp_parse_context ypc_builtin(intern_string::lookup(bsf.get_name()),
                                      &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
-    struct userdata ud(errors);
+    struct config_userdata ud(errors);
 
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
     ypc_builtin.ypc_locations = &lnav_config_locations;
