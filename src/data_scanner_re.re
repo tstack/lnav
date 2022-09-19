@@ -58,37 +58,6 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
     }
     static const unsigned char *EMPTY = (const unsigned char *) "";
 
-    if (this->ds_next_offset < this->ds_input.length()) {
-        date_time_scanner dts;
-        struct exttm tm;
-        struct timeval tv;
-        auto dt_end = dts.scan(this->ds_input.data() + this->ds_next_offset,
-                               this->ds_input.length() - this->ds_next_offset,
-                               nullptr,
-                               &tm,
-                               tv);
-        if (dt_end != nullptr &&
-            !(tm.et_flags & ETF_MACHINE_ORIENTED) &&
-            (tm.et_flags & ETF_DAY_SET ||
-            (tm.et_flags & ETF_HOUR_SET && tm.et_flags & ETF_MINUTE_SET))) {
-            cap_all.c_begin = this->ds_next_offset;
-            cap_inner.c_begin = this->ds_next_offset;
-            this->ds_next_offset = dt_end - this->ds_input.data();
-            cap_all.c_end = this->ds_next_offset;
-            cap_inner.c_end = this->ds_next_offset;
-            if (tm.et_flags & ETF_DAY_SET) {
-                if (tm.et_flags & ETF_MINUTE_SET) {
-                    token_out = DT_DATE_TIME;
-                } else {
-                    token_out = DT_DATE;
-                }
-            } else {
-                token_out = DT_TIME;
-            }
-            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
-        }
-    }
-
     struct _YYCURSOR {
         YYCTYPE operator*() const {
             if (this->val < this->lim) {
@@ -209,7 +178,13 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
                RET(DT_HEX_DUMP);
            }
        }
-       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})"T"? {
+       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+           RET(DT_DATE_TIME);
+       }
+       ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+           RET(DT_DATE_TIME);
+       }
+       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4}) {
            RET(DT_DATE);
        }
        IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
