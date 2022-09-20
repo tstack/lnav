@@ -50,7 +50,7 @@
     [35m"fatal"[0m,
     [35m"invalid"[0m,
 
-    nullptr,
+    [1m[36mnullptr[0m,
 };
 
 log_level_t
