@@ -385,12 +385,15 @@ setup_highlights(highlight_map_t& hm)
               .with_role(role_t::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "1.stringd"}]
         = highlighter(xpcre_compile(R"("(?:\\.|[^"])*")"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.strings"}]
         = highlighter(xpcre_compile(R"((?<![A-WY-Za-qstv-z])'(?:\\.|[^'])*')"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.stringb"}]
         = highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "diffp"}]
         = highlighter(xpcre_compile("^\\+.*")).with_role(role_t::VCR_DIFF_ADD);
@@ -403,7 +406,8 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
         = highlighter(
               xpcre_compile(
-                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#.*|\s+#.*|dnl.*)"))
+                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#\s*(?!include|if|ifndef|elif|else|endif|error|pragma|define|undef).*|\s+#.*|dnl.*)"))
+              .with_nestable(false)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]
         = highlighter(
@@ -435,6 +439,14 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
               .with_role(role_t::VCR_SYMBOL);
+    hm[{highlight_source_t::INTERNAL, "cpp"}]
+        = highlighter(
+              xpcre_compile(
+                  R"(^#\s*(?:include|ifdef|ifndef|if|else|elif|error|endif|define|undef|pragma))"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_role(role_t::VCR_KEYWORD);
     hm[{highlight_source_t::INTERNAL, "num"}]
         = highlighter(xpcre_compile(R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
               .with_nestable(false)
