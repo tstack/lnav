@@ -164,6 +164,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_be1d9628fc447b6f17121d9457ea1602afe8f3f3.out \
     $(srcdir)/%reldir%/test_cmds.sh_be3b7c5874b5f4d86cc230bd2f9802c98909e148.err \
     $(srcdir)/%reldir%/test_cmds.sh_be3b7c5874b5f4d86cc230bd2f9802c98909e148.out \
+    $(srcdir)/%reldir%/test_cmds.sh_bf4e7fad67e281beaa11b6e2b03a00b419c7c9b0.err \
+    $(srcdir)/%reldir%/test_cmds.sh_bf4e7fad67e281beaa11b6e2b03a00b419c7c9b0.out \
     $(srcdir)/%reldir%/test_cmds.sh_c01e10f7cae8d36fa79ae03be887cb5477025f6d.err \
     $(srcdir)/%reldir%/test_cmds.sh_c01e10f7cae8d36fa79ae03be887cb5477025f6d.out \
     $(srcdir)/%reldir%/test_cmds.sh_c2b4431dd0cc36c6201d263b727b3305e8cda6b1.err \
@@ -974,6 +976,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.out \
     $(srcdir)/%reldir%/test_sql_yaml_func.sh_41c6abde708a69e74f5b7fde865d88fa75f91e0a.err \
     $(srcdir)/%reldir%/test_sql_yaml_func.sh_41c6abde708a69e74f5b7fde865d88fa75f91e0a.out \
+    $(srcdir)/%reldir%/test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.err \
+    $(srcdir)/%reldir%/test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.out \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.err \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
     $(srcdir)/%reldir%/test_text_file.sh_6a24078983cf1b7a80b6fb65d5186cd125498136.err \

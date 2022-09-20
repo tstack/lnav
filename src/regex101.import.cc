@@ -54,7 +54,7 @@ regex101::import(const std::string& url,
 {
     static const auto USER_URL = lnav::pcre2pp::code::from_const(
         R"(^https://regex101.com/r/(\w+)(?:/(\d+))?)");
-    static thread_local auto URL_MATCH_DATA = USER_URL.create_match_data();
+    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
     static const auto NAME_RE = lnav::pcre2pp::code::from_const(R"(^\w+$)");
 
     if (url.empty()) {
@@ -100,10 +100,8 @@ regex101::import(const std::string& url,
                                .append("^ matched up to here"_comment)));
     }
 
-    auto user_find_res = USER_URL.capture_from(url)
-                             .into(URL_MATCH_DATA)
-                             .matches()
-                             .ignore_error();
+    auto user_find_res
+        = USER_URL.capture_from(url).into(md).matches().ignore_error();
     if (!user_find_res) {
         auto partial_len = USER_URL.match_partial(url);
         return Err(lnav::console::user_message::error(
@@ -118,7 +116,7 @@ regex101::import(const std::string& url,
                                       .append("^ matched up to here"_comment)));
     }
 
-    auto permalink = URL_MATCH_DATA[1]->to_string();
+    auto permalink = md[1]->to_string();
 
     auto format_filename = existing_format
         ? fmt::format(FMT_STRING("{}.regex101-{}.json"), name, permalink)

@@ -106,6 +106,8 @@ public:
 
     int get_count() const { return this->md_capture_end; }
 
+    uint32_t get_capacity() const { return this->md_ovector_count; }
+
 private:
     friend matcher;
     friend code;
@@ -195,14 +197,7 @@ struct capture_builder {
         return *this;
     }
 
-    matcher into(match_data& md) &&
-    {
-        return matcher{
-            this->mb_code,
-            this->mb_input,
-            md,
-        };
-    }
+    matcher into(match_data& md) &&;
 
     template<uint32_t Options = 0, typename F>
     Result<string_fragment, matcher::error> for_each(F func) &&;
@@ -273,6 +268,10 @@ public:
     int name_index(const char* name) const;
 
     std::vector<string_fragment> get_captures() const;
+
+    uint32_t get_match_data_capacity() const {
+        return this->p_match_proto.md_ovector_count;
+    }
 
     match_data create_match_data() const;
 

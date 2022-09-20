@@ -312,7 +312,8 @@ log_format::log_scanf(uint32_t line_number,
     int pat_index = this->last_pattern_index();
 
     while (!done && next_format(fmt, curr_fmt, pat_index)) {
-        auto md = fmt[curr_fmt].pcre->create_match_data();
+        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
         auto match_res = fmt[curr_fmt]
                              .pcre->capture_from(line)
                              .into(md)
@@ -802,6 +803,8 @@ external_log_format::scan(logfile& lf,
     auto line_sf = sbr.to_string_fragment();
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
+        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
         auto* pat = fpat->p_pcre.pp_value.get();
 
@@ -809,7 +812,6 @@ external_log_format::scan(logfile& lf,
             continue;
         }
 
-        auto md = pat->create_match_data();
         auto match_res = pat->capture_from(line_sf)
                              .into(md)
                              .matches(PCRE2_NO_UTF_CHECK)
@@ -907,13 +909,15 @@ external_log_format::scan(logfile& lf,
                     mod_iter->second.mf_mod_format);
 
                 if (mod_elf) {
+                    static thread_local auto mod_md
+                        = lnav::pcre2pp::match_data::unitialized();
+
                     shared_buffer_ref body_ref;
 
                     body_cap->trim();
 
                     int mod_pat_index = mod_elf->last_pattern_index();
                     auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
-                    auto mod_md = mod_pat.p_pcre.pp_value->create_match_data();
                     auto match_res = mod_pat.p_pcre.pp_value
                                          ->capture_from(body_cap.value())
                                          .into(mod_md)
@@ -1014,6 +1018,8 @@ external_log_format::module_scan(string_fragment body_cap,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
+            static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
             auto& fpat = elf->elf_pattern_order[curr_fmt];
             auto& pat = fpat->p_pcre;
 
@@ -1021,7 +1027,6 @@ external_log_format::module_scan(string_fragment body_cap,
                 continue;
             }
 
-            auto md = pat.pp_value->create_match_data();
             auto match_res = pat.pp_value->capture_from(body_cap)
                                  .into(md)
                                  .matches(PCRE2_NO_UTF_CHECK)
@@ -1054,6 +1059,8 @@ external_log_format::annotate(uint64_t line_number,
                               logline_value_vector& values,
                               bool annotate_module) const
 {
+    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
     auto& line = values.lvv_sbr;
     struct line_range lr;
 
@@ -1074,7 +1081,6 @@ external_log_format::annotate(uint64_t line_number,
     auto& pat = *this->elf_pattern_order[pat_index];
 
     sa.reserve(pat.p_pcre.pp_value->get_capture_count());
-    auto md = pat.p_pcre.pp_value->create_match_data();
     auto match_res
         = pat.p_pcre.pp_value->capture_from(line.to_string_fragment())
               .into(md)

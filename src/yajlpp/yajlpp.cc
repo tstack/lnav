@@ -224,7 +224,9 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
             ygc.ygc_depth += 1;
 
             if (this->jph_obj_provider) {
-                auto md = this->jph_regex->create_match_data();
+                static thread_local auto md
+                    = lnav::pcre2pp::match_data::unitialized();
+
                 auto find_res = this->jph_regex->capture_from(full_path)
                                     .into(md)
                                     .matches();
@@ -504,7 +506,9 @@ json_path_handler_base::walk(
 
                 ypc.set_path(full_path).with_obj(root).update_callbacks();
                 if (this->jph_obj_provider) {
-                    auto md = this->jph_regex->create_match_data();
+                    static thread_local auto md
+                        = lnav::pcre2pp::match_data::unitialized();
+
                     std::string full_path = lpath + "/";
 
                     if (!this->jph_regex->capture_from(full_path)
@@ -707,7 +711,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
     auto path_frag = string_fragment::from_byte_range(
         this->ypc_path.data(), 1 + child_start, this->ypc_path.size() - 1);
     for (const auto& jph : handlers->jpc_children) {
-        auto md = jph.jph_regex->create_match_data();
+        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
         if (jph.jph_regex->capture_from(path_frag)
                 .into(md)
                 .matches()
@@ -945,8 +950,8 @@ yajlpp_parse_context::handle_unused_or_delete(void* ctx)
     if (!ypc->ypc_handler_stack.empty()
         && ypc->ypc_handler_stack.back()->jph_obj_deleter)
     {
-        auto& jph = ypc->ypc_handler_stack.back();
-        auto md = jph->jph_regex->create_match_data();
+        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
         auto key_start = ypc->ypc_path_index_stack.back();
         auto path_frag = string_fragment::from_byte_range(
             ypc->ypc_path.data(), key_start + 1, ypc->ypc_path.size() - 1);

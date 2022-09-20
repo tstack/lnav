@@ -51,8 +51,9 @@ ansi_regex()
 size_t
 erase_ansi_escapes(string_fragment input)
 {
+    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
     const auto& regex = ansi_regex();
-    auto md = regex.create_match_data();
 
     auto matcher = regex.capture_from(input).into(md);
     while (true) {
@@ -113,8 +114,8 @@ erase_ansi_escapes(string_fragment input)
 void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
+    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
     const auto& regex = ansi_regex();
-    auto md = regex.create_match_data();
     int64_t origin_offset = 0;
     int last_origin_offset_end = 0;
 

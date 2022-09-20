@@ -55,6 +55,20 @@ quote(const char* unquoted)
     return retval;
 }
 
+matcher
+capture_builder::into(lnav::pcre2pp::match_data& md) &&
+{
+    if (md.get_capacity() < this->mb_code.get_match_data_capacity()) {
+        md = this->mb_code.create_match_data();
+    }
+
+    return matcher{
+        this->mb_code,
+        this->mb_input,
+        md,
+    };
+}
+
 match_data
 code::create_match_data() const
 {

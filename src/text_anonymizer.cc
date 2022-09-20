@@ -467,9 +467,11 @@ text_anonymizer::next(string_fragment line)
                 } else {
                     static const auto ATTR_RE
                         = lnav::pcre2pp::code::from_const(R"([\w\-]+=)");
+                    static thread_local auto md
+                        = lnav::pcre2pp::match_data::unitialized();
+
                     auto remaining = string_fragment::from_str_range(
                         open_tag, space_index, open_tag.size());
-                    auto md = ATTR_RE.create_match_data();
 
                     retval += open_tag.substr(0, space_index + 1);
                     while (!remaining.empty()) {
