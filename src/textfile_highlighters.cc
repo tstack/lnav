@@ -429,6 +429,7 @@ setup_highlights(highlight_map_t& hm)
                             "(?<!\\$)\\$\\((\\w+)\\)|"
                             "(?<!\\$)\\$\\{(\\w+)\\}"
                             ")"))
+              .with_nestable(false)
               .with_role(role_t::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "rust.sym"}]
         = highlighter(xpcre_compile("\\b[A-Z_][A-Z0-9_]+\\b"))
