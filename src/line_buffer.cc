@@ -1193,6 +1193,7 @@ line_buffer::read_range(const file_range fr)
             FMT_STRING("short-read (need: {}; avail: {})"), fr.fr_size, avail));
     }
     retval.share(this->lb_share_manager, line_start, fr.fr_size);
+    retval.get_metadata() = fr.fr_metadata;
 
     return Ok(std::move(retval));
 }

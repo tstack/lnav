@@ -29,6 +29,7 @@
 
 #include "log_search_table.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "column_namer.hh"
 #include "config.h"
 #include "sql_util.hh"
@@ -166,7 +167,9 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     }
 
     // log_debug("%d: doing message", (int) lc.lc_curr_line);
-    lf->read_full_message(lf_iter, this->lst_line_values_cache.lvv_sbr);
+    auto& sbr = this->lst_line_values_cache.lvv_sbr;
+    lf->read_full_message(lf_iter, sbr);
+    sbr.erase_ansi();
     lf->get_format()->annotate(
         cl, this->vi_attrs, this->lst_line_values_cache, false);
     this->lst_content

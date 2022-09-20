@@ -1057,6 +1057,7 @@ external_log_format::annotate(uint64_t line_number,
     auto& line = values.lvv_sbr;
     struct line_range lr;
 
+    line.erase_ansi();
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         values = this->jlf_line_values;
         sa = this->jlf_line_attrs;

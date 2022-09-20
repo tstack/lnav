@@ -29,6 +29,7 @@
 
 #include "log_vtab_impl.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
@@ -298,7 +299,9 @@ struct vtab_cursor {
         if (this->log_msg_line == this->log_cursor.lc_curr_line) {
             return;
         }
-        lf->read_full_message(ll, this->line_values.lvv_sbr);
+        auto& sbr = this->line_values.lvv_sbr;
+        lf->read_full_message(ll, sbr);
+        sbr.erase_ansi();
         this->log_msg_line = this->log_cursor.lc_curr_line;
     }
 
@@ -871,6 +874,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         shared_buffer_ref line;
 
                         lf->read_full_message(ll, line);
+                        line.erase_ansi();
                         sqlite3_result_text(ctx,
                                             line.get_data(),
                                             line.length(),

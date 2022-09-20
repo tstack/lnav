@@ -128,8 +128,10 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
                 lf->get_logline_observer());
             if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
             } else {
-                retval = lf->line_length(
-                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                retval
+                    = lf->message_byte_length(
+                            lf->begin() + lfo->lfo_filter_state.tfs_index[line])
+                          .mlr_length;
             }
         } else {
             retval = rend_iter->second.rf_text_source->text_size_for_line(

@@ -48,6 +48,68 @@ ansi_regex()
     return retval;
 }
 
+size_t
+erase_ansi_escapes(string_fragment input)
+{
+    const auto& regex = ansi_regex();
+    auto md = regex.create_match_data();
+
+    auto matcher = regex.capture_from(input).into(md);
+    while (true) {
+        auto match_res = matcher.matches(PCRE2_NO_UTF_CHECK);
+
+        if (match_res.is<lnav::pcre2pp::matcher::not_found>()) {
+            break;
+        }
+        if (match_res.is<lnav::pcre2pp::matcher::error>()) {
+            log_error("ansi scrub regex failure");
+            break;
+        }
+
+        auto sf = md[0].value();
+        auto bs_index_res = sf.codepoint_to_byte_index(1);
+
+        if (sf.length() >= 3 && bs_index_res.isOk()
+            && sf[bs_index_res.unwrap()] == '\b')
+        {
+            static const auto OVERSTRIKE_RE
+                = lnav::pcre2pp::code::from_const(R"((\X)\x08(\X))");
+
+            size_t fill_index = 0;
+            auto loop_res = OVERSTRIKE_RE.capture_from(sf).for_each(
+                [&fill_index, &sf](lnav::pcre2pp::match_data& over_md) {
+                    auto lhs = over_md[1].value();
+                    if (lhs == "_") {
+                        auto rhs = over_md[2].value();
+                        memmove(sf.writable_data(fill_index),
+                                rhs.data(),
+                                rhs.length());
+                        fill_index += rhs.length();
+                    } else {
+                        memmove(sf.writable_data(fill_index),
+                                lhs.data(),
+                                lhs.length());
+                        fill_index += lhs.length();
+                    }
+                });
+
+            memmove(input.writable_data(sf.sf_begin + fill_index),
+                    md.remaining().data(),
+                    md.remaining().length());
+            input = input.erase(input.sf_string, sf.length() - fill_index);
+        } else {
+            memmove(const_cast<char*>(sf.data()),
+                    md.remaining().data(),
+                    md.remaining().length());
+            input = input.erase(input.sf_string, sf.length());
+        }
+
+        matcher.reload_input(input, sf.sf_begin);
+    }
+
+    return input.length();
+}
+
 void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {

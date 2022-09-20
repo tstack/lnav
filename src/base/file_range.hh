@@ -40,8 +40,14 @@ using file_ssize_t = int64_t;
 
 class file_range {
 public:
+    struct metadata {
+        bool m_valid_utf{true};
+        bool m_has_ansi{false};
+    };
+
     file_off_t fr_offset{0};
     file_ssize_t fr_size{0};
+    metadata fr_metadata;
 
     void clear()
     {
@@ -49,15 +55,9 @@ public:
         this->fr_size = 0;
     }
 
-    ssize_t next_offset() const
-    {
-        return this->fr_offset + this->fr_size;
-    }
+    ssize_t next_offset() const { return this->fr_offset + this->fr_size; }
 
-    bool empty() const
-    {
-        return this->fr_size == 0;
-    }
+    bool empty() const { return this->fr_size == 0; }
 };
 
 struct source_location {

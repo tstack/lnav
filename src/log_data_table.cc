@@ -63,6 +63,7 @@ log_data_table::get_columns_int()
         this->ldt_format_impl->get_columns(cols);
     }
     lf->read_full_message(lf->begin() + cl_copy, line_values.lvv_sbr);
+    line_values.lvv_sbr.erase_ansi();
     format->annotate(cl_copy, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
@@ -134,6 +135,7 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
     logline_value_vector line_values;
 
     lf->read_full_message(lf_iter, line_values.lvv_sbr);
+    line_values.lvv_sbr.erase_ansi();
     lf->get_format()->annotate(cl, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {

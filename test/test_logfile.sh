@@ -685,3 +685,13 @@ EOF
 # 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 # 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 # EOF
+
+export YES_COLOR=1
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT log_time, log_body FROM syslog_log' \
+    ${test_dir}/logfile_ansi.1
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view pretty' \
+    ${test_dir}/logfile_ansi.1

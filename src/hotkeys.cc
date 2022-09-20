@@ -56,7 +56,7 @@ using namespace lnav::roles::literals;
 
 class logline_helper {
 public:
-    logline_helper(logfile_sub_source& lss) : lh_sub_source(lss) {}
+    explicit logline_helper(logfile_sub_source& lss) : lh_sub_source(lss) {}
 
     logline& move_to_msg_start()
     {
@@ -71,7 +71,7 @@ public:
         return (*lf)[cl];
     }
 
-    logline& current_line()
+    logline& current_line() const
     {
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
@@ -84,10 +84,11 @@ public:
         this->lh_string_attrs.clear();
         this->lh_line_values.clear();
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
+        auto lf = this->lh_sub_source.find(cl);
         auto ll = lf->begin() + cl;
         auto format = lf->get_format();
         lf->read_full_message(ll, this->lh_line_values.lvv_sbr);
+        this->lh_line_values.lvv_sbr.erase_ansi();
         format->annotate(
             cl, this->lh_string_attrs, this->lh_line_values, false);
     }
@@ -389,7 +390,8 @@ handle_paging_key(int ch)
                     tc->shift_top(1_vl);
                 }
                 if (lnav_data.ld_last_user_mark[tc] + 1
-                    >= tc->get_inner_height()) {
+                    >= tc->get_inner_height())
+                {
                     break;
                 }
                 lnav_data.ld_last_user_mark[tc] += 1;
@@ -435,7 +437,8 @@ handle_paging_key(int ch)
 
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc)
-                == lnav_data.ld_last_user_mark.end()) {
+                == lnav_data.ld_last_user_mark.end())
+            {
                 alerter::singleton().chime("no lines have been marked");
             } else {
                 int start_line = std::min((int) tc->get_top(),
@@ -479,7 +482,8 @@ handle_paging_key(int ch)
                 while (next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL) {
+                               == log_accel::A_DECEL)
+                    {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -502,7 +506,8 @@ handle_paging_key(int ch)
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
                     if (!lss->find_line(lss->at(next_top))->is_message()) {
                     } else if (lss->get_line_accel_direction(next_top)
-                               == log_accel::A_DECEL) {
+                               == log_accel::A_DECEL)
+                    {
                         --next_top;
                         tc->set_top(next_top);
                         break;
@@ -589,11 +594,11 @@ handle_paging_key(int ch)
 
         case 'o':
         case 'O':
-            if (lss) {
+            if (lss != nullptr) {
                 logline_helper start_helper(*lss);
 
                 start_helper.lh_current_line = tc->get_top();
-                logline& start_line = start_helper.move_to_msg_start();
+                auto& start_line = start_helper.move_to_msg_start();
                 start_helper.annotate();
 
                 struct line_range opid_range = find_string_attr_range(
@@ -615,7 +620,8 @@ handle_paging_key(int ch)
                     while (true) {
                         if (ch == 'o') {
                             if (++next_helper.lh_current_line
-                                >= tc->get_inner_height()) {
+                                >= tc->get_inner_height())
+                            {
                                 break;
                             }
                         } else {
@@ -771,7 +777,8 @@ handle_paging_key(int ch)
                     for (row = 0; row < dls.dls_rows.size(); row++) {
                         if (strcmp(dls.dls_rows[row][log_line_index.value()],
                                    linestr.data())
-                            == 0) {
+                            == 0)
+                        {
                             vis_line_t db_line(row);
 
                             db_tc->set_top(db_line);
@@ -809,7 +816,8 @@ handle_paging_key(int ch)
                         size_t col_len = strlen(col_value);
 
                         if (dts.scan(col_value, col_len, nullptr, &tm, tv)
-                            != nullptr) {
+                            != nullptr)
+                        {
                             lnav_data.ld_log_source.find_from_time(tv) |
                                 [tc](auto vl) {
                                     tc->set_top(vl);
@@ -890,9 +898,9 @@ handle_paging_key(int ch)
 
         case 'r':
         case 'R':
-            if (lss) {
-                auto& last_time = injector::get<const relative_time&,
-                                                last_relative_time_tag>();
+            if (lss != nullptr) {
+                const auto& last_time = injector::get<const relative_time&,
+                                                      last_relative_time_tag>();
 
                 if (last_time.empty()) {
                     lnav_data.ld_rl_view->set_value(

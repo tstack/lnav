@@ -37,6 +37,7 @@
 
 #include <algorithm>
 
+#include "base/ansi_scrubber.hh"
 #include "shared_buffer.hh"
 
 static const bool DEBUG_TRACE = false;
@@ -163,6 +164,7 @@ shared_buffer_ref::copy_ref(const shared_buffer_ref& other)
             const_cast<char*>(this->sb_data), other.sb_data, other.sb_length);
         this->sb_length = other.sb_length;
     }
+    this->sb_metadata = other.sb_metadata;
 }
 
 shared_buffer_ref::narrow_result
@@ -178,4 +180,19 @@ shared_buffer_ref::widen(narrow_result old_data_length)
 {
     this->sb_data = old_data_length.first;
     this->sb_length = old_data_length.second;
+}
+
+void
+shared_buffer_ref::erase_ansi()
+{
+    if (!this->sb_metadata.m_has_ansi) {
+        return;
+    }
+
+    auto* writable_data = this->get_writable_data();
+    auto new_len = erase_ansi_escapes(
+        string_fragment::from_bytes(writable_data, this->sb_length));
+
+    this->sb_length = new_len;
+    this->sb_metadata.m_has_ansi = false;
 }

@@ -122,6 +122,7 @@ eval_with(logfile& lf, logfile::iterator ll)
     shared_buffer_ref raw_sbr;
     logline_value_vector values;
     lf.read_full_message(ll, values.lvv_sbr);
+    values.lvv_sbr.erase_ansi();
     auto format = lf.get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf.begin(), ll);
@@ -275,8 +276,11 @@ eval_with(logfile& lf, logfile::iterator ll)
 
                     string_fragment sf = gen.to_string_fragment();
 
-                    sqlite3_bind_text(
-                        stmt, lpc + 1, sf.data(), sf.length(), SQLITE_TRANSIENT);
+                    sqlite3_bind_text(stmt,
+                                      lpc + 1,
+                                      sf.data(),
+                                      sf.length(),
+                                      SQLITE_TRANSIENT);
                 }
                 continue;
             }

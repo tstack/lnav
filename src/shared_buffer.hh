@@ -41,6 +41,7 @@
 
 #include "base/attr_line.hh"
 #include "base/auto_mem.hh"
+#include "base/file_range.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "scn/util/string_view.h"
@@ -61,6 +62,7 @@ public:
         this->sb_owner = nullptr;
         this->sb_data = nullptr;
         this->sb_length = 0;
+        this->sb_metadata = file_range::metadata{};
 
         this->copy_ref(other);
     }
@@ -108,6 +110,8 @@ public:
         return (this->sb_data <= ptr && ptr < buffer_end);
     }
 
+    file_range::metadata& get_metadata() { return this->sb_metadata; }
+
     char* get_writable_data()
     {
         if (this->take_ownership()) {
@@ -145,6 +149,8 @@ public:
 
     bool subset(shared_buffer_ref& other, off_t offset, size_t len);
 
+    void erase_ansi();
+
     bool take_ownership();
 
     void disown();
@@ -153,6 +159,7 @@ private:
     void copy_ref(const shared_buffer_ref& other);
 
     auto_mem<char*> sb_backtrace;
+    file_range::metadata sb_metadata;
     shared_buffer* sb_owner;
     const char* sb_data;
     size_t sb_length;

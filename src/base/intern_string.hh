@@ -144,6 +144,11 @@ struct string_fragment {
         return (const unsigned char*) &this->sf_string[this->sf_begin];
     }
 
+    char* writable_data(int offset = 0)
+    {
+        return (char*) &this->sf_string[this->sf_begin + offset];
+    }
+
     char front() const { return this->sf_string[this->sf_begin]; }
 
     uint32_t front_codepoint() const

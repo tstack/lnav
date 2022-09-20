@@ -192,6 +192,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
         this->lss_token_file->read_full_message(this->lss_token_line, sbr);
         this->lss_token_value = to_string(sbr);
+        if (sbr.get_metadata().m_has_ansi) {
+            scrub_ansi_string(this->lss_token_value, &this->lss_token_attrs);
+            sbr.get_metadata().m_has_ansi = false;
+        }
     } else {
         this->lss_token_value
             = this->lss_token_file->read_line(this->lss_token_line)
@@ -1407,6 +1411,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
     logline_value_vector values;
     auto& sbr = values.lvv_sbr;
     lf->read_full_message(ll, sbr);
+    sbr.erase_ansi();
     auto format = lf->get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf->cbegin(), ll);
@@ -2061,6 +2066,13 @@ logline_window::logmsg_info::load_msg() const
     auto format = this->li_file->get_format();
     this->li_file->read_full_message(this->li_logline,
                                      this->li_line_values.lvv_sbr);
+    if (this->li_line_values.lvv_sbr.get_metadata().m_has_ansi) {
+        auto* writable_data = this->li_line_values.lvv_sbr.get_writable_data();
+        auto str
+            = std::string{writable_data, this->li_line_values.lvv_sbr.length()};
+        scrub_ansi_string(str, &this->li_string_attrs);
+        this->li_line_values.lvv_sbr.get_metadata().m_has_ansi = false;
+    }
     format->annotate(std::distance(this->li_file->cbegin(), this->li_logline),
                      this->li_string_attrs,
                      this->li_line_values,
@@ -2204,6 +2216,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     auto& sbr = values.lvv_sbr;
 
     lf->read_full_message(msg_start_iter, sbr);
+    sbr.erase_ansi();
     attr_line_t al(to_string(sbr));
     format->annotate(file_line_number, al.get_attrs(), values);
 

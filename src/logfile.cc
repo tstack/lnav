@@ -464,12 +464,15 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 auto last_line = this->lf_index.end();
                 --last_line;
                 auto check_line_off = last_line->get_offset();
-                auto last_length = ssize_t(this->line_length(last_line, false));
+                auto last_length_res
+                    = this->message_byte_length(last_line, false);
                 log_debug("flushing at %d", check_line_off);
                 this->lf_line_buffer.flush_at(check_line_off);
 
-                auto read_result = this->lf_line_buffer.read_range(
-                    {check_line_off, last_length});
+                auto read_result = this->lf_line_buffer.read_range({
+                    check_line_off,
+                    last_length_res.mlr_length,
+                });
 
                 if (read_result.isErr()) {
                     log_info("overwritten file detected, closing -- %s (%s)",
@@ -785,11 +788,13 @@ Result<shared_buffer_ref, std::string>
 logfile::read_line(logfile::iterator ll)
 {
     try {
-        return this->lf_line_buffer.read_range(this->get_file_range(ll, false))
-            .map([&ll, this](auto sbr) {
+        auto get_range_res = this->get_file_range(ll, false);
+        return this->lf_line_buffer.read_range(get_range_res)
+            .map([&ll, &get_range_res, this](auto sbr) {
                 sbr.rtrim(is_line_ending);
-                if (!ll->is_valid_utf()) {
+                if (!get_range_res.fr_metadata.m_valid_utf) {
                     scrub_to_utf8(sbr.get_writable_data(), sbr.length());
+                    sbr.get_metadata().m_valid_utf = true;
                 }
 
                 if (this->lf_format != nullptr) {
@@ -798,7 +803,7 @@ logfile::read_line(logfile::iterator ll)
 
                 return sbr;
             });
-    } catch (line_buffer::error& e) {
+    } catch (const line_buffer::error& e) {
         return Err(std::string(strerror(e.e_err)));
     }
 }
@@ -840,6 +845,7 @@ logfile::read_full_message(logfile::const_iterator ll,
             return;
         }
         msg_out = read_result.unwrap();
+        msg_out.get_metadata() = range_for_line.fr_metadata;
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(*ll, msg_out, true);
         }
@@ -898,19 +904,25 @@ logfile::get_path() const
     return this->lf_filename;
 }
 
-size_t
-logfile::line_length(logfile::const_iterator ll, bool include_continues)
+logfile::message_length_result
+logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
 {
     auto next_line = ll;
+    file_range::metadata meta;
     size_t retval;
 
     if (!include_continues && this->lf_next_line_cache) {
         if (ll->get_offset() == (*this->lf_next_line_cache).first) {
-            return this->lf_next_line_cache->second;
+            return {
+                (file_ssize_t) this->lf_next_line_cache->second,
+                {ll->is_valid_utf(), ll->has_ansi()},
+            };
         }
     }
 
     do {
+        meta.m_has_ansi = meta.m_has_ansi || next_line->has_ansi();
+        meta.m_valid_utf = meta.m_valid_utf && next_line->is_valid_utf();
         ++next_line;
     } while ((next_line != this->end())
              && ((ll->get_offset() == next_line->get_offset())
@@ -932,7 +944,7 @@ logfile::line_length(logfile::const_iterator ll, bool include_continues)
         }
     }
 
-    return retval;
+    return {(file_ssize_t) retval, meta};
 }
 
 Result<shared_buffer_ref, std::string>
