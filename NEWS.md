@@ -31,6 +31,8 @@ Breaking changes:
 Fixes:
 * Reduce the "no patterns have a capture" error to a warning
   so that it doesn't block lnav from starting up.
+* Some ANSI escape sequences will now be removed before testing
+  regexes against a log message.
 
 Cost of Doing Business:
 * Migrated from pcre to pcre2.
