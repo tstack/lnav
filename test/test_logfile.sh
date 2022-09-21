@@ -695,3 +695,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':switch-to-view pretty' \
     ${test_dir}/logfile_ansi.1
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT * FROM lnav_file_metadata' \
+    logfile_syslog.1.gz

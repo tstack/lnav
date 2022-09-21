@@ -34,6 +34,8 @@
 
 #include <chrono>
 
+#include "base/date_time_scanner.hh"
+#include "base/time_util.hh"
 #include "config.h"
 #include "mapbox/variant.hpp"
 #include "relative_time.hh"
@@ -957,6 +959,69 @@ struct json_path_handler : public json_path_handler_base {
             yajlpp_generator gen(handle);
 
             return gen(field);
+        };
+        this->jph_field_getter
+            = [args...](void* root, nonstd::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<LastIs<timeval, Args...>::value, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const unsigned char* str,
+                                     size_t len) {
+            auto obj = ypc->ypc_obj_stack.top();
+            auto jph = ypc->ypc_current_handler;
+
+            date_time_scanner dts;
+            timeval tv{};
+            exttm tm;
+
+            if (dts.scan((char*) str, len, nullptr, &tm, tv) == nullptr) {
+                ypc->report_error(
+                    lnav::console::user_message::error(
+                        attr_line_t("unrecognized timestamp ")
+                            .append_quoted(
+                                string_fragment::from_bytes(str, len)))
+                        .with_snippet(ypc->get_snippet())
+                        .with_help(jph->get_help_text(ypc)));
+            } else {
+                json_path_handler::get_field(obj, args...) = tv;
+            }
+
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+            char buf[64];
+
+            auto buf_len = lnav::strftime_rfc3339(
+                buf, sizeof(buf), field.tv_sec, field.tv_usec, 'T');
+
+            return gen(string_fragment::from_bytes(buf, buf_len));
         };
         this->jph_field_getter
             = [args...](void* root, nonstd::optional<std::string> name) {

@@ -27,3 +27,7 @@ run_cap_test ${lnav_test} -n \
 cp ${test_dir}/UTF-8-test.txt UTF-8-test.md
 run_cap_test ${lnav_test} -n \
     UTF-8-test.md
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT * FROM lnav_file_metadata' \
+    ${test_dir}/textfile_0.md

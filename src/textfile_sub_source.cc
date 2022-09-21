@@ -520,20 +520,62 @@ textfile_sub_source::rescan_files(
 
                 auto read_res = lf->read_file();
                 if (read_res.isOk()) {
-                    auto content = read_res.unwrap();
-                    auto content_sf = string_fragment{content};
-                    std::string frontmatter;
-                    auto front_matter_terminator = content.length() > 8
-                        ? content.find("\n---\n", 4)
-                        : std::string::npos;
+                    static const auto FRONT_MATTER_RE
+                        = lnav::pcre2pp::code::from_const(
+                            R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
+                            PCRE2_MULTILINE | PCRE2_DOTALL);
+                    static thread_local auto md
+                        = FRONT_MATTER_RE.create_match_data();
 
-                    if (startswith(content, "---\n")
-                        && front_matter_terminator != std::string::npos)
-                    {
-                        frontmatter
-                            = content.substr(4, front_matter_terminator - 3);
-                        content_sf
-                            = content_sf.substr(front_matter_terminator + 4);
+                    auto content = read_res.unwrap();
+                    auto content_sf = string_fragment::from_str(content);
+                    std::string frontmatter;
+                    text_format_t frontmatter_format;
+
+                    auto cap_res = FRONT_MATTER_RE.capture_from(content_sf)
+                                       .into(md)
+                                       .matches()
+                                       .ignore_error();
+                    if (cap_res) {
+                        if (md[1]) {
+                            frontmatter_format = text_format_t::TF_YAML;
+                            frontmatter = md[1]->to_string();
+                        } else if (md[2]) {
+                            frontmatter_format = text_format_t::TF_TOML;
+                            frontmatter = md[2]->to_string();
+                        } else {
+                        }
+                        content_sf = cap_res->f_remaining;
+                    } else if (content_sf.startswith("{")) {
+                        yajlpp_parse_context ypc(
+                            intern_string::lookup(lf->get_filename()));
+                        auto_mem<yajl_handle_t> handle(yajl_free);
+
+                        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+                        yajl_config(
+                            handle.in(), yajl_allow_trailing_garbage, 1);
+                        ypc.with_ignore_unused(true)
+                            .with_handle(handle.in())
+                            .with_error_reporter(
+                                [&lf](const auto& ypc, const auto& um) {
+                                    log_error(
+                                        "%s: failed to parse JSON front matter "
+                                        "-- %s",
+                                        lf->get_filename().c_str(),
+                                        um.um_reason.al_string.c_str());
+                                });
+                        if (ypc.parse_doc(content_sf)) {
+                            auto consumed = ypc.ypc_total_consumed;
+                            if (consumed < content_sf.length()
+                                && content_sf[consumed] == '\n')
+                            {
+                                frontmatter_format = text_format_t::TF_JSON;
+                                frontmatter = string_fragment::from_str_range(
+                                                  content, 0, consumed)
+                                                  .to_string();
+                                content_sf = content_sf.substr(consumed);
+                            }
+                        }
                     }
 
                     md2attr_line mdal;
@@ -553,7 +595,7 @@ textfile_sub_source::rescan_files(
 
                         if (!frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
-                                = {text_format_t::TF_YAML, frontmatter};
+                                = {frontmatter_format, frontmatter};
                         }
 
                         lnav::events::publish(

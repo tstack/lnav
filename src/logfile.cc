@@ -51,10 +51,21 @@
 #include "log.watch.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
+
+static const typed_json_path_container<line_buffer::header_data>
+    file_header_handlers = {
+        yajlpp::property_handler("name").for_field(
+            &line_buffer::header_data::hd_name),
+        yajlpp::property_handler("mtime").for_field(
+            &line_buffer::header_data::hd_mtime),
+        yajlpp::property_handler("comment").for_field(
+            &line_buffer::header_data::hd_comment),
+};
 
 Result<std::shared_ptr<logfile>, std::string>
 logfile::open(std::string filename, logfile_open_options& loo)
@@ -119,6 +130,12 @@ logfile::open(std::string filename, logfile_open_options& loo)
     lf->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     lf->lf_indexing = lf->lf_options.loo_is_visible;
+
+    const auto& hdr = lf->lf_line_buffer.get_header_data();
+    if (!hdr.empty()) {
+        lf->lf_embedded_metadata["net.zlib.gzip.header"]
+            = {text_format_t::TF_JSON, file_header_handlers.to_string(hdr)};
+    }
 
     ensure(lf->invariant());
 

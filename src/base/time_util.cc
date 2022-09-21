@@ -35,6 +35,48 @@
 
 #include "config.h"
 
+namespace lnav {
+
+ssize_t
+strftime_rfc3339(
+    char* buffer, size_t buffer_size, lnav::time64_t tim, int millis, char sep)
+{
+    struct tm gmtm;
+    int year, month, index = 0;
+
+    secs2tm(tim, &gmtm);
+    year = gmtm.tm_year + 1900;
+    month = gmtm.tm_mon + 1;
+    buffer[index++] = '0' + ((year / 1000) % 10);
+    buffer[index++] = '0' + ((year / 100) % 10);
+    buffer[index++] = '0' + ((year / 10) % 10);
+    buffer[index++] = '0' + ((year / 1) % 10);
+    buffer[index++] = '-';
+    buffer[index++] = '0' + ((month / 10) % 10);
+    buffer[index++] = '0' + ((month / 1) % 10);
+    buffer[index++] = '-';
+    buffer[index++] = '0' + ((gmtm.tm_mday / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_mday / 1) % 10);
+    buffer[index++] = sep;
+    buffer[index++] = '0' + ((gmtm.tm_hour / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_hour / 1) % 10);
+    buffer[index++] = ':';
+    buffer[index++] = '0' + ((gmtm.tm_min / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_min / 1) % 10);
+    buffer[index++] = ':';
+    buffer[index++] = '0' + ((gmtm.tm_sec / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_sec / 1) % 10);
+    buffer[index++] = '.';
+    buffer[index++] = '0' + ((millis / 100) % 10);
+    buffer[index++] = '0' + ((millis / 10) % 10);
+    buffer[index++] = '0' + ((millis / 1) % 10);
+    buffer[index] = '\0';
+
+    return index;
+}
+
+}
+
 static time_t BAD_DATE = -1;
 
 time_t

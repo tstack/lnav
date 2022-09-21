@@ -530,7 +530,7 @@ public:
     attr_line_t& append_quoted(S s)
     {
         this->al_string.append("\u201c");
-        this->al_string.append(std::move(s));
+        this->append(std::move(s));
         this->al_string.append("\u201d");
 
         return *this;

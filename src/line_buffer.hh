@@ -72,9 +72,22 @@ public:
     static const ssize_t MAX_LINE_BUFFER_SIZE;
     class error : public std::exception {
     public:
-        error(int err) : e_err(err){};
+        explicit error(int err) : e_err(err) {}
 
         int e_err;
+    };
+
+    struct header_data {
+        timeval hd_mtime{};
+        auto_buffer hd_extra{auto_buffer::alloc(0)};
+        std::string hd_name;
+        std::string hd_comment;
+
+        bool empty() const
+        {
+            return this->hd_mtime.tv_sec == 0 && this->hd_extra.empty()
+                && this->hd_name.empty() && this->hd_comment.empty();
+        }
     };
 
 #define GZ_WINSIZE           32768U /*> gzip's max supported dictionary is 15-bits */
@@ -104,7 +117,7 @@ public:
         void close();
         void init_stream();
         void continue_stream();
-        void open(int fd);
+        void open(int fd, header_data& hd);
         int stream_data(void* buf, size_t size);
         void seek(off_t offset);
 
@@ -242,6 +255,8 @@ public:
 
     size_t get_buffer_size() const { return this->lb_buffer.size(); }
 
+    const header_data& get_header_data() const { return this->lb_header; }
+
     void enable_cache();
 
     static void cleanup_cache();
@@ -348,6 +363,8 @@ private:
     stats lb_stats;
 
     nonstd::optional<auto_fd> lb_cached_fd;
+
+    header_data lb_header;
 };
 
 #endif

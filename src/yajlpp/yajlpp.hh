@@ -442,6 +442,7 @@ public:
     yajl_handle ypc_handle{nullptr};
     const unsigned char* ypc_json_text{nullptr};
     size_t ypc_json_text_len{0};
+    size_t ypc_total_consumed{0};
     yajl_callbacks ypc_callbacks;
     yajl_callbacks ypc_alt_callbacks;
     std::vector<char> ypc_path;

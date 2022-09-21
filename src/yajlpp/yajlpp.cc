@@ -1040,6 +1040,7 @@ yajlpp_parse_context::parse_doc(const string_fragment& sf)
 
     auto rc = yajl_parse(this->ypc_handle, this->ypc_json_text, sf.length());
     size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+    this->ypc_total_consumed += consumed;
     this->ypc_line_number += std::count(
         &this->ypc_json_text[0], &this->ypc_json_text[consumed], '\n');
 
