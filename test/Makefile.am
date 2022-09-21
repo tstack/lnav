@@ -347,6 +347,7 @@ dist_noinst_DATA = \
 	multiline.lnav \
 	nested.lnav \
 	mvwattrline_output.0 \
+	textfile_0.md
 	textfile_ansi.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
