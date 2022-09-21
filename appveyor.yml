@@ -8,7 +8,7 @@ environment:
     cygsetup: setup-x86_64.exe
 
 install:
-  - C:\%cygwin%\%cygsetup% -qnNdO -R C:/%cygwin% -s https://cygwin.mirror.constant.com -l C:/%cygwin%/var/cache/setup -P libpcre-devel -P libncurses-devel -P libreadline-devel -P zlib-devel -P libbz2-devel -P libsqlite3-devel
+  - C:\%cygwin%\%cygsetup% -qnNdO -R C:/%cygwin% -s https://mirrors.rit.edu/cygwin/ -l C:/%cygwin%/var/cache/setup -P libpcre-devel -P libncurses-devel -P libreadline-devel -P zlib-devel -P libbz2-devel -P libsqlite3-devel
 
 build_script:
   - C:\%cygwin%\bin\sh -lc "uname -a && gcc --version && cd /cygdrive/c/projects/lnav && ./autogen.sh && ./configure && make && strip src/lnav.exe && ldd src/lnav.exe"
