@@ -372,7 +372,7 @@ void
 load_time_bookmarks()
 {
     logfile_sub_source& lss = lnav_data.ld_log_source;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     logfile_sub_source::iterator file_iter;
@@ -1070,7 +1070,7 @@ save_user_bookmarks(sqlite3* db,
 static void
 save_time_bookmarks()
 {
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<char, sqlite3_free> errmsg;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -1670,7 +1670,7 @@ lnav::session::regex101::insert_entry(const lnav::session::regex101::entry& ei)
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
@@ -1723,7 +1723,7 @@ lnav::session::regex101::get_entries()
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return Err(std::string());
@@ -1766,7 +1766,7 @@ lnav::session::regex101::delete_entry(const std::string& format_name,
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
@@ -1793,7 +1793,7 @@ lnav::session::regex101::get_entry(const std::string& format_name,
     )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return error{std::string()};
