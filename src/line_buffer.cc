@@ -200,6 +200,9 @@ line_buffer::gz_indexed::open(int fd, header_data& hd)
     unsigned char name[1024];
     unsigned char comment[4096];
 
+    name[0] = '\0';
+    comment[0] = '\0';
+
     gz_header gz_hd;
     memset(&gz_hd, 0, sizeof(gz_hd));
     gz_hd.name = name;

@@ -90,23 +90,23 @@ public:
     logline(file_off_t off,
             time_t t,
             uint16_t millis,
-            log_level_t l,
+            log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
-        : ll_offset(off), ll_time(t), ll_millis(millis), ll_opid(opid),
-          ll_sub_offset(0), ll_valid_utf(1), ll_level(l), ll_module_id(mod),
-          ll_expr_mark(0)
+        : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_millis(millis),
+          ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
+          ll_module_id(mod), ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     }
 
     logline(file_off_t off,
             const struct timeval& tv,
-            log_level_t l,
+            log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
-        : ll_offset(off), ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1),
-          ll_level(l), ll_module_id(mod), ll_expr_mark(0)
+        : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
+          ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_expr_mark(0)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));

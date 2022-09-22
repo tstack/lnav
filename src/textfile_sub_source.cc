@@ -528,7 +528,7 @@ textfile_sub_source::rescan_files(
                     auto content = read_res.unwrap();
                     auto content_sf = string_fragment::from_str(content);
                     std::string frontmatter;
-                    text_format_t frontmatter_format;
+                    text_format_t frontmatter_format{text_format_t::TF_UNKNOWN};
 
                     auto cap_res = FRONT_MATTER_RE.capture_from(content_sf)
                                        .into(md)
@@ -541,7 +541,6 @@ textfile_sub_source::rescan_files(
                         } else if (md[2]) {
                             frontmatter_format = text_format_t::TF_TOML;
                             frontmatter = md[2]->to_string();
-                        } else {
                         }
                         content_sf = cap_res->f_remaining;
                     } else if (content_sf.startswith("{")) {
