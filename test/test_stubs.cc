@@ -72,11 +72,6 @@ rebuild_indexes_repeatedly()
 readline_context::command_map_t lnav_commands;
 
 namespace injector {
-template<>
-void
-force_linking(sqlite_db_tag anno)
-{
-}
 
 template<>
 void

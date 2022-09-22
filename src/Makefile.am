@@ -310,6 +310,7 @@ noinst_HEADERS = \
 	time_T.hh \
 	timer.hh \
 	top_status_source.hh \
+	top_status_source.cfg.hh \
 	unique_path.hh \
 	url_loader.hh \
 	view_curses.hh \

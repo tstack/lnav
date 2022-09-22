@@ -52,6 +52,7 @@
 #include "styling.hh"
 #include "sysclip.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
+#include "top_status_source.cfg.hh"
 
 /**
  * Check if an experimental feature should be enabled by
@@ -85,7 +86,7 @@ struct key_map {
 };
 
 struct _lnav_config {
-    std::string lc_ui_clock_format;
+    top_status_source_cfg lc_top_status_cfg;
     bool lc_ui_dim_text;
     bool lc_ui_default_colors{true};
     std::string lc_ui_keymap;

@@ -1334,12 +1334,17 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
         }
     }
 
+    this->lss_marker_stmt_text = std::move(stmt_str);
+    this->lss_marker_stmt = stmt;
+
+    if (this->tss_view == nullptr) {
+        return Ok();
+    }
+
     auto& vis_bm = this->tss_view->get_bookmarks();
     auto& expr_marks_bv = vis_bm[&textview_curses::BM_USER_EXPR];
 
     expr_marks_bv.clear();
-    this->lss_marker_stmt_text = std::move(stmt_str);
-    this->lss_marker_stmt = stmt;
     if (this->lss_index_delegate) {
         this->lss_index_delegate->index_start(*this);
     }

@@ -29,22 +29,31 @@
 
 #include "top_status_source.hh"
 
-#include <sqlite3.h>
-
 #include "base/injector.hh"
-#include "bound_tags.hh"
 #include "config.h"
 #include "lnav.hh"
-#include "lnav_config.hh"
-#include "logfile_sub_source.hh"
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "shlex.hh"
 #include "shlex.resolver.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
+#include "top_status_source.cfg.hh"
 
-top_status_source::top_status_source()
+static const char* MSG_QUERY = R"(
+SELECT message FROM lnav_user_notifications
+  WHERE message IS NOT NULL AND
+        (expiration IS NULL OR expiration > datetime('now')) AND
+        (views IS NULL OR
+         json_contains(views, (SELECT name FROM lnav_top_view)))
+  ORDER BY priority DESC
+  LIMIT 1
+)";
+
+top_status_source::top_status_source(auto_sqlite3& db,
+                                     const top_status_source_cfg& cfg)
+    : tss_config(cfg),
+      tss_user_msgs_stmt(prepare_stmt(db.in(), MSG_QUERY).unwrap())
 {
     this->tss_fields[TSF_TIME].set_width(28);
     this->tss_fields[TSF_TIME].set_role(role_t::VCR_STATUS_INFO);
@@ -62,7 +71,7 @@ top_status_source::update_time(const timeval& current_time)
     buffer[0] = ' ';
     strftime(&buffer[1],
              sizeof(buffer) - 1,
-             lnav_config.lc_ui_clock_format.c_str(),
+             this->tss_config.tssc_clock_format.c_str(),
              localtime(&current_time.tv_sec));
     sf.set_value(buffer);
 }
@@ -76,40 +85,14 @@ top_status_source::update_time()
     this->update_time(tv);
 }
 
-static const char* MSG_QUERY = R"(
-SELECT message FROM lnav_user_notifications
-  WHERE message IS NOT NULL AND
-        (expiration IS NULL OR expiration > datetime('now')) AND
-        (views IS NULL OR
-         json_contains(views, (SELECT name FROM lnav_top_view)))
-  ORDER BY priority DESC
-  LIMIT 1
-)";
-
-struct user_msg_stmt {
-    user_msg_stmt()
-        : ums_stmt(
-            prepare_stmt(injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                                       sqlite_db_tag>()
-                             .in(),
-                         MSG_QUERY)
-                .unwrap())
-    {
-    }
-
-    prepared_stmt ums_stmt;
-};
-
 void
 top_status_source::update_user_msg()
 {
-    static thread_local user_msg_stmt um_stmt;
-
     auto& al = this->tss_fields[TSF_USER_MSG].get_value();
     al.clear();
 
-    um_stmt.ums_stmt.reset();
-    auto fetch_res = um_stmt.ums_stmt.fetch_row<std::string>();
+    this->tss_user_msgs_stmt.reset();
+    auto fetch_res = this->tss_user_msgs_stmt.fetch_row<std::string>();
     fetch_res.match(
         [&al](const std::string& value) {
             shlex lexer(value);

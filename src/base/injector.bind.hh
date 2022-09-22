@@ -90,6 +90,28 @@ struct bind : singleton_storage<T, Annotations...> {
         return true;
     }
 
+    struct lifetime {
+        ~lifetime()
+        {
+            singleton_storage<T, Annotations...>::ss_owner = nullptr;
+            singleton_storage<T, Annotations...>::ss_data = nullptr;
+        }
+    };
+
+    template<typename I = T,
+             std::enable_if_t<has_injectable<I>::value, bool> = true>
+    static lifetime to_scoped_singleton() noexcept
+    {
+        typename I::injectable* i = nullptr;
+        singleton_storage<T, Annotations...>::ss_owner
+            = create_from_injectable<I>(i)();
+        singleton_storage<T, Annotations...>::ss_data
+            = singleton_storage<T, Annotations...>::ss_owner.get();
+        singleton_storage<T, Annotations...>::ss_scope = scope::singleton;
+
+        return {};
+    }
+
     template<typename... Args>
     static bool to_instance(T* (*f)(Args...)) noexcept
     {

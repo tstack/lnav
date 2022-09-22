@@ -85,10 +85,7 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
     if (isendwin()) {
         return;
     }
-    lnav_data.ld_top_source.update_time();
-    for (auto& sc : lnav_data.ld_status) {
-        sc.do_update();
-    }
+    lnav_data.ld_status_refresher();
     if (lf && lnav_data.ld_mode == ln_mode_t::FILES
         && !lnav_data.ld_initial_build)
     {
@@ -437,15 +434,7 @@ rescan_files(bool req)
         if (!done && !(lnav_data.ld_flags & LNF_HEADLESS)) {
             lnav_data.ld_files_view.set_needs_update();
             lnav_data.ld_files_view.do_update();
-            lnav_data.ld_top_source.update_time();
-            lnav_data.ld_status[LNS_TOP].do_update();
-            lnav_data.ld_status[LNS_BOTTOM].do_update();
-            lnav_data.ld_rl_view->do_update();
-            if (handle_winch()) {
-                layout_views();
-                lnav_data.ld_view_stack.do_update();
-            }
-            refresh();
+            lnav_data.ld_status_refresher();
         }
     } while (!done && lnav_data.ld_looping);
     return true;

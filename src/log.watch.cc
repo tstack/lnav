@@ -52,8 +52,7 @@ struct compiled_watch_expr {
 struct expressions : public lnav_config_listener {
     void reload_config(error_reporter& reporter) override
     {
-        auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                                      sqlite_db_tag>();
+        auto& lnav_db = injector::get<auto_sqlite3&>();
 
         if (lnav_db.in() == nullptr) {
             log_warning("db not initialized yet!");
@@ -99,6 +98,10 @@ struct expressions : public lnav_config_listener {
         }
     }
 
+    void unload_config() override {
+        this->e_watch_exprs.clear();
+    }
+
     std::map<std::string, compiled_watch_expr> e_watch_exprs;
 };
 
@@ -114,9 +117,7 @@ eval_with(logfile& lf, logfile::iterator ll)
         return;
     }
 
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     char timestamp_buffer[64] = "";
     shared_buffer_ref raw_sbr;

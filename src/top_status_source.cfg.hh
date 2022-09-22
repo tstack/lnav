@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2022, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,46 +25,13 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_config_fwd.hh
  */
 
-#ifndef lnav_config_fwd_hh
-#define lnav_config_fwd_hh
+#ifndef lnav_top_status_source_cfg_hh
+#define lnav_top_status_source_cfg_hh
 
-#include <functional>
-#include <string>
-
-#include "base/lnav.console.hh"
-
-class lnav_config_listener {
-public:
-    using error_reporter = const std::function<void(
-        const void*, const lnav::console::user_message& msg)>;
-
-    lnav_config_listener()
-    {
-        this->lcl_next = LISTENER_LIST;
-        LISTENER_LIST = this;
-    }
-
-    virtual ~lnav_config_listener() = default;
-
-    virtual void reload_config(error_reporter& reporter) {}
-
-    virtual void unload_config() {}
-
-    static void unload_all() {
-        auto* lcl = LISTENER_LIST;
-        while (lcl != nullptr) {
-            lcl->unload_config();
-            lcl = lcl->lcl_next;
-        }
-    }
-
-    static lnav_config_listener* LISTENER_LIST;
-
-    lnav_config_listener* lcl_next;
+struct top_status_source_cfg {
+    std::string tssc_clock_format;
 };
 
 #endif

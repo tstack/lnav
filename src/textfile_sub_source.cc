@@ -455,9 +455,7 @@ textfile_sub_source::rescan_files(
     textfile_sub_source::scan_callback& callback,
     nonstd::optional<ui_clock::time_point> deadline)
 {
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     file_iterator iter;
     bool retval = false;

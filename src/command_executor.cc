@@ -66,8 +66,6 @@ SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
 int
 sql_progress(const struct log_cursor& lc)
 {
-    static sig_atomic_t sql_counter = 0;
-
     ssize_t total = lnav_data.ld_log_source.text_line_count();
     off_t off = lc.lc_curr_line;
 
@@ -83,42 +81,11 @@ sql_progress(const struct log_cursor& lc)
         return 1;
     }
 
+    static sig_atomic_t sql_counter = 0;
+
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
-        struct timeval current_time = {0, 0};
-        int ch;
-
-        while ((ch = getch()) != ERR) {
-            if (current_time.tv_sec == 0) {
-                gettimeofday(&current_time, nullptr);
-            }
-            lnav_data.ld_user_message_source.clear();
-
-            alerter::singleton().new_input(ch);
-
-            lnav_data.ld_input_dispatcher.new_input(current_time, ch);
-
-            lnav_data.ld_view_stack.top() | [ch](auto tc) {
-                lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
-            };
-
-            if (!lnav_data.ld_looping) {
-                // No reason to keep processing input after the
-                // user has quit.  The view stack will also be
-                // empty, which will cause issues.
-                break;
-            }
-        }
-
         lnav_data.ld_bottom_source.update_loading(off, total);
-        lnav_data.ld_top_source.update_time();
-        lnav_data.ld_status[LNS_TOP].do_update();
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
-        lnav_data.ld_rl_view->do_update();
-        if (handle_winch()) {
-            layout_views();
-            lnav_data.ld_view_stack.do_update();
-        }
-        refresh();
+        lnav_data.ld_status_refresher();
     }
 
     return 0;
@@ -132,9 +99,7 @@ sql_progress_finished()
     }
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
-    lnav_data.ld_top_source.update_time();
-    lnav_data.ld_status[LNS_TOP].do_update();
-    lnav_data.ld_status[LNS_BOTTOM].do_update();
+    lnav_data.ld_status_refresher();
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 

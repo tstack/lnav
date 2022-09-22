@@ -96,6 +96,9 @@ static auto scc = injector::bind<sysclip::config>::to_instance(
 static auto lsc = injector::bind<logfile_sub_source_ns::config>::to_instance(
     +[]() { return &lnav_config.lc_log_source; });
 
+static auto tssc = injector::bind<top_status_source_cfg>::to_instance(
+    +[]() { return &lnav_config.lc_top_status_cfg; });
+
 bool
 check_experimental(const char* feature_name)
 {
@@ -961,7 +964,8 @@ static const struct json_path_container ui_handlers = {
         .with_description("The format for the clock displayed in "
                           "the top-left corner using strftime(3) conversions")
         .with_example("%a %b %d %H:%M:%S %Z")
-        .for_field(&_lnav_config::lc_ui_clock_format),
+        .for_field(&_lnav_config::lc_top_status_cfg,
+                   &top_status_source_cfg::tssc_clock_format),
     yajlpp::property_handler("dim-text")
         .with_synopsis("bool")
         .with_description("Reduce the brightness of text (useful for xterms). "

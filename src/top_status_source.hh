@@ -32,19 +32,30 @@
 
 #include <string>
 
+#include <sqlite3.h>
+
+#include "base/injector.hh"
+#include "bound_tags.hh"
 #include "listview_curses.hh"
+#include "sql_util.hh"
+#include "sqlitepp.client.hh"
 #include "statusview_curses.hh"
+#include "top_status_source.cfg.hh"
 
 class top_status_source : public status_data_source {
 public:
-    typedef enum {
+    enum field_t {
         TSF_TIME,
         TSF_USER_MSG,
 
         TSF__MAX
-    } field_t;
+    };
 
-    top_status_source();
+    explicit top_status_source(auto_sqlite3& db,
+                               const top_status_source_cfg& cfg);
+
+    using injectable
+        = top_status_source(auto_sqlite3& db, const top_status_source_cfg& cfg);
 
     size_t statusview_fields() override { return TSF__MAX; }
 
@@ -60,7 +71,9 @@ public:
     void update_user_msg();
 
 private:
+    const top_status_source_cfg& tss_config;
     status_field tss_fields[TSF__MAX];
+    prepared_stmt tss_user_msgs_stmt;
 };
 
 #endif

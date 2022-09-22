@@ -34,8 +34,6 @@
 
 struct last_relative_time_tag {};
 
-struct sqlite_db_tag {};
-
 struct sql_cmd_map_tag {};
 
 enum {

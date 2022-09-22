@@ -697,5 +697,5 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_ansi.1
 
 run_cap_test ${lnav_test} -n \
-    -c ';SELECT * FROM lnav_file_metadata' \
+    -c ';SELECT basename(filepath),descriptor,mimetype,content FROM lnav_file_metadata' \
     logfile_syslog.1.gz

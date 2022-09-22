@@ -71,7 +71,6 @@
 #include "sql_util.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
-#include "top_status_source.hh"
 #include "view_helpers.hh"
 
 class spectrogram_source;
@@ -184,7 +183,6 @@ struct lnav_data_t {
     ln_mode_t ld_last_config_mode{ln_mode_t::FILTER};
 
     statusview_curses ld_status[LNS__MAX];
-    top_status_source ld_top_source;
     bottom_status_source ld_bottom_source;
     filter_status_source ld_filter_status_source;
     filter_help_status_source ld_filter_help_status_source;
@@ -258,6 +256,8 @@ struct lnav_data_t {
 
     bool ld_initial_build{false};
     bool ld_show_help_view{false};
+
+    lnav::func::scoped_cb ld_status_refresher;
 
     ghc::filesystem::file_time_type ld_last_dot_lnav_time;
 };
