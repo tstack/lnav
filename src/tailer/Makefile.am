@@ -48,7 +48,7 @@ libtailerpp_a_CPPFLAGS = \
 libtailerpp_a_SOURCES = \
     tailerpp.cc
 
-tailerbin.cc: tailer tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
+tailerbin.cc: tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
 	../../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin $(srcdir)/tailer.ape
 
 libtailerservice_a_CPPFLAGS = \
