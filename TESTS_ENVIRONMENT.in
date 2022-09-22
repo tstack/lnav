@@ -123,7 +123,7 @@ run_cap_test() {
            export has_errors="yes"
        fi
     else
-       echo "FAIL! EXPECTED OUT MISSING"
+       echo "FAIL! EXPECTED OUT MISSING -- ${srcdir}/expected/${test_file_base}_${test_hash}.out"
        export has_errors="yes"
     fi
 

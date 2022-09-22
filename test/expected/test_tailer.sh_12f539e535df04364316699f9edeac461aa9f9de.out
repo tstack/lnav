@@ -1,0 +1,8 @@
+preview of file: {test_dir}/remote-log-dir/*
+{test_dir}/remote-log-dir/logfile_access_log.0
+{test_dir}/remote-log-dir/logfile_access_log.1
+
+all done!
+tailer stderr:
+info: load preview request -- 1234
+info: exiting...
