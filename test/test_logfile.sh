@@ -312,7 +312,7 @@ Nov 03 09:23:38 2007 -- 000
 Nov 03 09:47:02 2007 -- 000
 EOF
 
-touch -t 200711030923 ${srcdir}/logfile_syslog.1
+env TZ=UTC touch -t 200711030923 ${srcdir}/logfile_syslog.1
 run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog.1
 
 check_output "Syslog timestamp interpreted incorrectly for year end?" <<EOF
