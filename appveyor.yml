@@ -12,7 +12,7 @@ install:
   - C:\%cygwin%\%cygsetup% -qnNdOX -R C:/%cygwin% -l C:/%cygwin%/var/cache/setup -P libpcre2-devel -P libncurses-devel -P libreadline-devel -P zlib-devel -P libbz2-devel -P libsqlite3-devel -P libcurl-devel -P libarchive-devel
 
 build_script:
-  - C:\%cygwin%\bin\sh -lc "uname -a && gcc --version && cd /cygdrive/c/projects/lnav && ./autogen.sh && ./configure && make -j4 && strip src/lnav.exe && ldd src/lnav.exe"
+  - C:\%cygwin%\bin\sh -lc "uname -a && gcc --version && cd /cygdrive/c/projects/lnav && ./autogen.sh && ./configure && make && strip src/lnav.exe && ldd src/lnav.exe"
 
 artifacts:
   - path: src\lnav.exe
