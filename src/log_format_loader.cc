@@ -62,11 +62,14 @@ static void extract_metadata(string_fragment, struct script_metadata& meta_out);
 using log_formats_map_t
     = std::map<intern_string_t, std::shared_ptr<external_log_format>>;
 
+using namespace lnav::roles::literals;
+
 static auto intern_lifetime = intern_string::get_table_lifetime();
 static log_formats_map_t LOG_FORMATS;
 
 struct loader_userdata {
     yajlpp_parse_context* ud_parse_context{nullptr};
+    std::string ud_file_schema;
     ghc::filesystem::path ud_format_path;
     std::vector<intern_string_t>* ud_format_names{nullptr};
     std::vector<lnav::console::user_message>* ud_errors{nullptr};
@@ -932,11 +935,11 @@ struct json_path_container format_handlers = {
 static int
 read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 {
+    auto* ud = static_cast<loader_userdata*>(ypc->ypc_userdata);
     auto file_id = std::string((const char*) str, len);
 
-    if (find(SUPPORTED_FORMAT_SCHEMAS.begin(),
-             SUPPORTED_FORMAT_SCHEMAS.end(),
-             file_id)
+    ud->ud_file_schema = file_id;
+    if (SUPPORTED_FORMAT_SCHEMAS.find(file_id)
         == SUPPORTED_FORMAT_SCHEMAS.end())
     {
         const auto* handler = ypc->ypc_current_handler;
@@ -959,20 +962,17 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-struct json_path_container root_format_handler
-        = json_path_container{
-                json_path_handler("$schema", read_id)
-                        .with_synopsis("The URI of the schema for this file")
-                        .with_description("Specifies the type of this file"),
+struct json_path_container root_format_handler = json_path_container{
+    json_path_handler("$schema", read_id)
+        .with_synopsis("The URI of the schema for this file")
+        .with_description("Specifies the type of this file"),
 
-                yajlpp::pattern_property_handler(
-                        "(?<format_name>\\w+)")
-                        .with_description(
-                                "The definition of a log file format.")
-                        .with_obj_provider(ensure_format)
-                        .with_children(format_handlers),
-        }
-                .with_schema_id(DEFAULT_FORMAT_SCHEMA);
+    yajlpp::pattern_property_handler("(?<format_name>\\w+)")
+        .with_description("The definition of a log file format.")
+        .with_obj_provider(ensure_format)
+        .with_children(format_handlers),
+}
+    .with_schema_id(DEFAULT_FORMAT_SCHEMA);
 
 static void
 write_sample_file()
@@ -1111,6 +1111,30 @@ load_format_file(const ghc::filesystem::path& filename,
         }
         if (rc == 0) {
             ypc.complete_parse();
+        }
+
+        if (ud.ud_file_schema.empty()) {
+            static const auto SCHEMA_LINE
+                = attr_line_t()
+                      .append(
+                          fmt::format(FMT_STRING("    \"$schema\": \"{}\","),
+                                      *SUPPORTED_FORMAT_SCHEMAS.begin()))
+                      .with_attr_for_all(
+                          VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+
+            errors.emplace_back(
+                lnav::console::user_message::warning(
+                    attr_line_t("format file is missing ")
+                        .append_quoted("$schema"_symbol)
+                        .append(" property"))
+                    .with_snippet(lnav::console::snippet::from(
+                        intern_string::lookup(filename.string()), ""))
+                    .with_note("the schema specifies the supported format "
+                               "version and can be used with editors to "
+                               "automatically validate the file")
+                    .with_help(attr_line_t("add the following property to the "
+                                           "top-level JSON object:\n")
+                                   .append(SCHEMA_LINE)));
         }
     }
 

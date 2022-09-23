@@ -55,6 +55,11 @@
            [1m/bad_regex_log/highlights/foobar/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            A regular expression to highlight in logs of this format.
+[33m⚠ warning[0m: format file is missing “[1m$schema[0m” property
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m
+[36m =[0m   [36mnote[0m: the schema specifies the supported format version and can be used with editors to automatically validate the file
+[36m =[0m   [36mhelp[0m: add the following property to the top-level JSON object:
+         [37m[40m    "$schema": "https://lnav.org/schemas/format-v1.schema.json",[0m
 [1m[31m✘ error[0m: “foo” is not a valid value for option “[1m/bad_sample_log/value/pid/kind[0m”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:24
 [36m | [0m[37m[40m                "kind": "foo"           [0m

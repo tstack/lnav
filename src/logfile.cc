@@ -606,7 +606,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             auto sbr = read_result.unwrap();
             sbr.rtrim(is_line_ending);
 
-            if (li.li_has_ansi) {
+            if (li.li_valid_utf && li.li_has_ansi) {
                 auto tmp_line = sbr.to_string_fragment().to_string();
 
                 scrub_ansi_string(tmp_line, nullptr);

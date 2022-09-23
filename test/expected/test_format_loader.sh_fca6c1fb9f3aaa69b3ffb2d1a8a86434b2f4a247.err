@@ -4,6 +4,11 @@
 [36m | [0m          ar_log": {         "abc"     } }                          
 [36m | [0m                     (right here) ------^                           
 [36m | [0m                                                                    
+[33m⚠ warning[0m: format file is missing “[1m$schema[0m” property
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m
+[36m =[0m   [36mnote[0m: the schema specifies the supported format version and can be used with editors to automatically validate the file
+[36m =[0m   [36mhelp[0m: add the following property to the top-level JSON object:
+         [37m[40m    "$schema": "https://lnav.org/schemas/format-v1.schema.json",[0m
 [1m[31m✘ error[0m: “abc(” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_key_log/level-pointer[0m
