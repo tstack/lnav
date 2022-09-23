@@ -1,7 +1,7 @@
 
 VERSION=0.11.1
 
-VERSION_TAG=v$(VERSION)-test
+VERSION_TAG=v$(VERSION)-beta1
 
 SRC_VERSION=master
 
