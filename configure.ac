@@ -206,7 +206,7 @@ AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LIBARCHIVE_LDFLAGS 
 AS_VAR_SET(static_lib_list,
            ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
 AS_VAR_SET(static_lib_list,
-           ["$static_lib_list libpcre2.a libncursesw.a libbz2.a"])
+           ["$static_lib_list libpcre2-8.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 AS_VAR_SET(static_lib_list,
