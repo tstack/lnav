@@ -49,3 +49,10 @@ $ make install
 
 If you would like to contribute to the development of lnav, visit our page on
 [GitHub](https://github.com/tstack/lnav).
+
+# VSCode Extension
+
+The [lnav VSCode Extension](https://marketplace.visualstudio.com/items?itemName=lnav.lnav)
+can be used to add syntax highlighting to lnav scripts.
+
+![Screenshot of an lnav script](/assets/images/lnav-vscode-extension.png)

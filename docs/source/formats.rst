@@ -389,15 +389,15 @@ with the following contents:
 Scripts
 -------
 
-Format directories may also contain '.sql' and '.lnav' files to help automate
+Format directories may also contain :file:`.sql` and :file:`.lnav` files to help automate
 log file analysis.  The SQL files are executed on startup to create any helper
 tables or views and the '.lnav' script files can be executed using the pipe
-hotkey (|).  For example, **lnav** includes a "partition-by-boot" script that
+hotkey :kbd:`|`.  For example, **lnav** includes a "partition-by-boot" script that
 partitions the log view based on boot messages from the Linux kernel.  A script
 can have a mix of SQL and **lnav** commands, as well as include other scripts.
 The type of statement to execute is determined by the leading character on a
 line: a semi-colon begins a SQL statement; a colon starts an **lnav** command;
-and a pipe (|) denotes another script to be executed.  Lines beginning with a
+and a pipe :code:`|` denotes another script to be executed.  Lines beginning with a
 hash are treated as comments.  The following variables are defined in a script:
 
 .. envvar:: #
@@ -441,6 +441,12 @@ header:
    .. code-block:: lnav
 
       :eval :filter-out ${pattern}
+
+VSCode Extension
+^^^^^^^^^^^^^^^^
+
+The `lnav VSCode Extension <https://marketplace.visualstudio.com/items?itemName=lnav.lnav>`_
+can be installed to add syntax highlighting to lnav scripts.
 
 Installing Formats
 ------------------
