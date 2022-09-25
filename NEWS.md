@@ -33,6 +33,9 @@ Fixes:
   so that it doesn't block lnav from starting up.
 * Some ANSI escape sequences will now be removed before testing
   regexes against a log message.
+* If a line in a JSON-lines log file does not start with a
+  `{`, it will now be shown as-is and will not have the JSON
+  parse error.
 
 Cost of Doing Business:
 * Migrated from pcre to pcre2.
