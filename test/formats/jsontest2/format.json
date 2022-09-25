@@ -3,7 +3,7 @@
     "json_log2": {
         "title": "Test JSON Log with integer levels",
         "json": true,
-        "file-pattern": "logfile_json2\\.json",
+        "file-pattern": "logfile_.*json2\\.json",
         "description": "Test config",
         "line-format": [
             {
@@ -15,26 +15,34 @@
                 "timestamp-format": "abc %S def"
             },
             " ",
-            { "field" : "lvl", "min-width": 5 },
+            {
+                "field": "lvl",
+                "min-width": 5
+            },
             " ",
-            { "field" : "cl", "max-width": 5},
+            {
+                "field": "cl",
+                "max-width": 5
+            },
             " ",
-            { "field" : "msg" }
+            {
+                "field": "msg"
+            }
         ],
-        "level-field" : "lvl",
-        "level" : {
-            "info" : 0,
-            "error" : 10
+        "level-field": "lvl",
+        "level": {
+            "info": 0,
+            "error": 10
         },
         "timestamp-field": "ts",
-        "body-field" : "msg",
-        "value" : {
-            "user" : {
-                "kind" : "string",
-                "identifier" : true
+        "body-field": "msg",
+        "value": {
+            "user": {
+                "kind": "string",
+                "identifier": true
             },
-            "cl" : {
-                "kind" : "string"
+            "cl": {
+                "kind": "string"
             }
         }
     }

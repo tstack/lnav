@@ -62,6 +62,12 @@ struct string_fragment {
         return string_fragment{str, 0, str != nullptr ? (int) strlen(str) : 0};
     }
 
+    static string_fragment from_c_str(const unsigned char* str)
+    {
+        return string_fragment{
+            str, 0, str != nullptr ? (int) strlen((char*) str) : 0};
+    }
+
     template<typename T, std::size_t N>
     static string_fragment from_const(const T (&str)[N])
     {
@@ -275,6 +281,18 @@ struct string_fragment {
     {
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
+    }
+
+    size_t count(char ch) const {
+        size_t retval = 0;
+
+        for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
+            if (this->sf_string[lpc] == ch) {
+                retval += 1;
+            }
+        }
+
+        return retval;
     }
 
     nonstd::optional<size_t> find(char ch) const

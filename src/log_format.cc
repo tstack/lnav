@@ -708,8 +708,21 @@ external_log_format::scan(logfile& lf,
                           scan_batch_context& sbc)
 {
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-        yajlpp_parse_context& ypc = *(this->jlf_parse_context);
         logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
+        auto line_frag = sbr.to_string_fragment();
+
+        if (!line_frag.startswith("{")) {
+            if (!this->lf_specialized) {
+                return log_format::SCAN_NO_MATCH;
+            }
+
+            ll.set_time(dst.back().get_timeval());
+            ll.set_level(LEVEL_INVALID);
+            dst.emplace_back(ll);
+            return log_format::SCAN_MATCH;
+        }
+
+        auto& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr, &sbc);
 
@@ -750,10 +763,10 @@ external_log_format::scan(logfile& lf,
                     ll.set_ignore(true);
                     dst.emplace_back(ll);
                     return log_format::SCAN_MATCH;
-                } else {
-                    log_debug("no match! %.*s", sbr.length(), line_data);
-                    return log_format::SCAN_NO_MATCH;
                 }
+
+                log_debug("no match! %.*s", sbr.length(), line_data);
+                return log_format::SCAN_NO_MATCH;
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -772,11 +785,11 @@ external_log_format::scan(logfile& lf,
             msg = yajl_get_error(
                 handle, 1, (const unsigned char*) sbr.get_data(), sbr.length());
             if (msg != nullptr) {
+                auto msg_frag = string_fragment::from_c_str(msg);
                 log_debug("Unable to parse line at offset %d: %s",
                           li.li_file_range.fr_offset,
                           msg);
-                line_count
-                    = std::count(msg, msg + strlen((char*) msg), '\n') + 1;
+                line_count = msg_frag.count('\n') + 1;
                 yajl_free_error(handle, msg);
             }
             if (!this->lf_specialized) {
@@ -785,7 +798,7 @@ external_log_format::scan(logfile& lf,
             for (int lpc = 0; lpc < line_count; lpc++) {
                 log_level_t level = LEVEL_INVALID;
 
-                ll.set_time(dst.back().get_time());
+                ll.set_time(dst.back().get_timeval());
                 if (lpc > 0) {
                     level = (log_level_t) (level | LEVEL_CONTINUED);
                 }
@@ -1018,7 +1031,8 @@ external_log_format::module_scan(string_fragment body_cap,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+            static thread_local auto md
+                = lnav::pcre2pp::match_data::unitialized();
 
             auto& fpat = elf->elf_pattern_order[curr_fmt];
             auto& pat = fpat->p_pcre;
@@ -1389,7 +1403,7 @@ external_log_format::get_subline(const logline& ll,
     if (this->jlf_cached_offset != ll.get_offset()
         || this->jlf_cached_full != full_message)
     {
-        yajlpp_parse_context& ypc = *(this->jlf_parse_context);
+        auto& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr, nullptr);
 
@@ -1398,6 +1412,26 @@ external_log_format::get_subline(const logline& ll,
         this->jlf_line_values.clear();
         this->jlf_line_offsets.clear();
         this->jlf_line_attrs.clear();
+
+        auto line_frag = sbr.to_string_fragment();
+
+        if (!line_frag.startswith("{")) {
+            this->jlf_cached_line.resize(line_frag.length());
+            memcpy(this->jlf_cached_line.data(),
+                   line_frag.data(),
+                   line_frag.length());
+            this->jlf_line_values.clear();
+            sbr.share(this->jlf_share_manager,
+                      &this->jlf_cached_line[0],
+                      this->jlf_cached_line.size());
+            this->jlf_line_values.lvv_sbr = sbr;
+            this->jlf_line_attrs.emplace_back(
+                line_range{0, -1},
+                SA_INVALID.value(fmt::format(
+                    FMT_STRING("line at offset {} is not a JSON-line"),
+                    ll.get_offset())));
+            return;
+        }
 
         yajl_reset(handle);
         ypc.set_static_handler(json_log_rewrite_handlers.jpc_children[0]);

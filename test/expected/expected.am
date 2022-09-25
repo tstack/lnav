@@ -272,6 +272,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_84a71e94dc34661a70bb9015b67ba00e93e9cfb5.out \
     $(srcdir)/%reldir%/test_json_format.sh_85d03b1b41a7f819af135d2521a8f2c59418e907.err \
     $(srcdir)/%reldir%/test_json_format.sh_85d03b1b41a7f819af135d2521a8f2c59418e907.out \
+    $(srcdir)/%reldir%/test_json_format.sh_8f2ebcd319afc7966ef11e31f9dd646bf6f001dd.err \
+    $(srcdir)/%reldir%/test_json_format.sh_8f2ebcd319afc7966ef11e31f9dd646bf6f001dd.out \
     $(srcdir)/%reldir%/test_json_format.sh_952297a90e312d2184fe3e4df795ddc731b096c9.err \
     $(srcdir)/%reldir%/test_json_format.sh_952297a90e312d2184fe3e4df795ddc731b096c9.out \
     $(srcdir)/%reldir%/test_json_format.sh_989e52d167582648b73c5d025cc0e814c642b3c8.err \

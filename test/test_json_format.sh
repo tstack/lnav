@@ -131,3 +131,7 @@ run_cap_test ${lnav_test} -n \
     -d /tmp/lnav.err \
     -I ${test_dir} \
     ${test_dir}/logfile_invalid_json2.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_mixed_json2.json

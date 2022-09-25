@@ -304,6 +304,7 @@ dist_noinst_DATA = \
 	logfile_haproxy.0 \
 	logfile_invalid_json.json \
 	logfile_invalid_json2.json \
+	logfile_mixed_json2.json \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \
