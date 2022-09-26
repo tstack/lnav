@@ -50,6 +50,8 @@ main(int argc, char* argv[])
 
         auto new_len = erase_ansi_escapes(string_fragment::from_const(input));
 
+        printf("result '%s'\n", input);
+
         assert(new_len == 13);
     }
 

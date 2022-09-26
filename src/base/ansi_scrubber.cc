@@ -54,6 +54,8 @@ erase_ansi_escapes(string_fragment input)
     static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     const auto& regex = ansi_regex();
+    nonstd::optional<int> move_start;
+    size_t fill_index = 0;
 
     auto matcher = regex.capture_from(input).into(md);
     while (true) {
@@ -70,45 +72,48 @@ erase_ansi_escapes(string_fragment input)
         auto sf = md[0].value();
         auto bs_index_res = sf.codepoint_to_byte_index(1);
 
+        if (move_start) {
+            auto move_len = sf.sf_begin - move_start.value();
+            memmove(input.writable_data(fill_index),
+                    input.data() + move_start.value(),
+                    move_len);
+            fill_index += move_len;
+        } else {
+            fill_index = sf.sf_begin;
+        }
+
         if (sf.length() >= 3 && bs_index_res.isOk()
             && sf[bs_index_res.unwrap()] == '\b')
         {
             static const auto OVERSTRIKE_RE
                 = lnav::pcre2pp::code::from_const(R"((\X)\x08(\X))");
 
-            size_t fill_index = 0;
             auto loop_res = OVERSTRIKE_RE.capture_from(sf).for_each(
-                [&fill_index, &sf](lnav::pcre2pp::match_data& over_md) {
+                [&fill_index, &input](lnav::pcre2pp::match_data& over_md) {
                     auto lhs = over_md[1].value();
                     if (lhs == "_") {
                         auto rhs = over_md[2].value();
-                        memmove(sf.writable_data(fill_index),
+                        memmove(input.writable_data(fill_index),
                                 rhs.data(),
                                 rhs.length());
                         fill_index += rhs.length();
                     } else {
-                        memmove(sf.writable_data(fill_index),
+                        memmove(input.writable_data(fill_index),
                                 lhs.data(),
                                 lhs.length());
                         fill_index += lhs.length();
                     }
                 });
-
-            memmove(input.writable_data(sf.sf_begin + fill_index),
-                    md.remaining().data(),
-                    md.remaining().length());
-            input = input.erase(input.sf_string, sf.length() - fill_index);
-        } else {
-            memmove(const_cast<char*>(sf.data()),
-                    md.remaining().data(),
-                    md.remaining().length());
-            input = input.erase(input.sf_string, sf.length());
         }
-
-        matcher.reload_input(input, sf.sf_begin);
+        move_start = md.remaining().sf_begin;
     }
 
-    return input.length();
+    memmove(input.writable_data(fill_index),
+            md.remaining().data(),
+            md.remaining().length());
+    fill_index += md.remaining().length();
+
+    return fill_index;
 }
 
 void
