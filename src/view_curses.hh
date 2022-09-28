@@ -297,7 +297,6 @@ private:
 
     role_attrs to_attrs(const lnav_theme& lt,
                         const positioned_property<style_config>& sc,
-                        const positioned_property<style_config>& fallback_sc,
                         lnav_config_listener::error_reporter& reporter);
 
     role_attrs vc_level_attrs[LEVEL__MAX];
