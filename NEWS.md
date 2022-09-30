@@ -22,6 +22,7 @@ Features:
   that the implementation relies on libcurl which has some
   limitations, like not supporting all types of schemes
   (e.g. `mailto:`).
+* Added a keymap for Swedish keyboards.
 
 Breaking changes:
 * The `regexp_capture()` table-valued-function now returns NULL

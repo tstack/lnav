@@ -91,6 +91,7 @@ The builtin keymaps are:
 
   :de: `German <https://github.com/tstack/lnav/blob/master/src/keymaps/de-keymap.json>`_
   :fr: `French <https://github.com/tstack/lnav/blob/master/src/keymaps/fr-keymap.json>`_
+  :sv: `Swedish <https://github.com/tstack/lnav/blob/master/src/keymaps/sv-keymap.json>`_
   :uk: `United Kingdom <https://github.com/tstack/lnav/blob/master/src/keymaps/uk-keymap.json>`_
   :us: `United States <https://github.com/tstack/lnav/blob/master/src/keymaps/us-keymap.json>`_
 
