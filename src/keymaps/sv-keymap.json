@@ -9,6 +9,9 @@
                 "xc2xa4": {
                     "command": ":goto last 40 minutes after the hour"
                 },
+                "xe2x82xac": {
+                    "command": ":goto last 40 minutes after the hour"
+                },
                 "x26": {
                     "command": ":goto last hour"
                 },
