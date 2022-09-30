@@ -1,0 +1,27 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "ui": {
+        "keymap-defs": {
+            "sv": {
+                "x22": {
+                    "command": ":goto last 20 minutes after the hour"
+                },
+                "xc2xa4": {
+                    "command": ":goto last 40 minutes after the hour"
+                },
+                "xe2x82xac": {
+                    "command": ":goto last 40 minutes after the hour"
+                },
+                "x26": {
+                    "command": ":goto last hour"
+                },
+                "x3d": {
+                    "command": ":goto last day"
+                },
+                "x2b": {
+                    "command": ";UPDATE lnav_views SET paused = 1 - paused"
+                }
+            }
+        }
+    }
+}
