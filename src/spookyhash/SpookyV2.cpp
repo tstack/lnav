@@ -54,18 +54,18 @@ void SpookyHash::Short(
         // handle all complete sets of 32 bytes
         for (; u.p64 < end; u.p64 += 4)
         {
-            c += u.p64[0];
-            d += u.p64[1];
+            c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
+            d += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[1]);
             ShortMix(a,b,c,d);
-            a += u.p64[2];
-            b += u.p64[3];
+            a += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[2]);
+            b += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[3]);
         }
         
         //Handle the case of 16+ remaining bytes.
         if (remainder >= 16)
         {
-            c += u.p64[0];
-            d += u.p64[1];
+            c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
+            d += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[1]);
             ShortMix(a,b,c,d);
             u.p64 += 2;
             remainder -= 16;
