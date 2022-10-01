@@ -859,11 +859,11 @@ struct Result {
     template<typename U = T>
     typename std::enable_if<
         !std::is_same<U, void>::value,
-        U
+        T
     >::type
     unwrapOr(const U& defaultValue) const {
         if (isOk()) {
-            return storage().template get<U>();
+            return storage().template get<T>();
         }
         return defaultValue;
     }
