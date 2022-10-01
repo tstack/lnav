@@ -155,18 +155,30 @@ public:
         uint64 &s4, uint64 &s5, uint64 &s6, uint64 &s7,
         uint64 &s8, uint64 &s9, uint64 &s10,uint64 &s11)
     {
-      s0 += data[0];    s2 ^= s10;    s11 ^= s0;    s0 = Rot64(s0,11);    s11 += s1;
-      s1 += data[1];    s3 ^= s11;    s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
-      s2 += data[2];    s4 ^= s0;    s1 ^= s2;    s2 = Rot64(s2,43);    s1 += s3;
-      s3 += data[3];    s5 ^= s1;    s2 ^= s3;    s3 = Rot64(s3,31);    s2 += s4;
-      s4 += data[4];    s6 ^= s2;    s3 ^= s4;    s4 = Rot64(s4,17);    s3 += s5;
-      s5 += data[5];    s7 ^= s3;    s4 ^= s5;    s5 = Rot64(s5,28);    s4 += s6;
-      s6 += data[6];    s8 ^= s4;    s5 ^= s6;    s6 = Rot64(s6,39);    s5 += s7;
-      s7 += data[7];    s9 ^= s5;    s6 ^= s7;    s7 = Rot64(s7,57);    s6 += s8;
-      s8 += data[8];    s10 ^= s6;    s7 ^= s8;    s8 = Rot64(s8,55);    s7 += s9;
-      s9 += data[9];    s11 ^= s7;    s8 ^= s9;    s9 = Rot64(s9,54);    s8 += s10;
-      s10 += data[10];    s0 ^= s8;    s9 ^= s10;    s10 = Rot64(s10,22);    s9 += s11;
-      s11 += data[11];    s1 ^= s9;    s10 ^= s11;    s11 = Rot64(s11,46);    s10 += s0;
+      s0 += SPOOKYHASH_LITTLE_ENDIAN_64(data[0]);
+      s2 ^= s10;    s11 ^= s0;    s0 = Rot64(s0,11);    s11 += s1;
+      s1 += SPOOKYHASH_LITTLE_ENDIAN_64(data[1]);
+      s3 ^= s11;    s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
+      s2 += SPOOKYHASH_LITTLE_ENDIAN_64(data[2]);
+      s4 ^= s0;    s1 ^= s2;    s2 = Rot64(s2,43);    s1 += s3;
+      s3 += SPOOKYHASH_LITTLE_ENDIAN_64(data[3]);
+      s5 ^= s1;    s2 ^= s3;    s3 = Rot64(s3,31);    s2 += s4;
+      s4 += SPOOKYHASH_LITTLE_ENDIAN_64(data[4]);
+      s6 ^= s2;    s3 ^= s4;    s4 = Rot64(s4,17);    s3 += s5;
+      s5 += SPOOKYHASH_LITTLE_ENDIAN_64(data[5]);
+      s7 ^= s3;    s4 ^= s5;    s5 = Rot64(s5,28);    s4 += s6;
+      s6 += SPOOKYHASH_LITTLE_ENDIAN_64(data[6]);
+      s8 ^= s4;    s5 ^= s6;    s6 = Rot64(s6,39);    s5 += s7;
+      s7 += SPOOKYHASH_LITTLE_ENDIAN_64(data[7]);
+      s9 ^= s5;    s6 ^= s7;    s7 = Rot64(s7,57);    s6 += s8;
+      s8 += SPOOKYHASH_LITTLE_ENDIAN_64(data[8]);
+      s10 ^= s6;    s7 ^= s8;    s8 = Rot64(s8,55);    s7 += s9;
+      s9 += SPOOKYHASH_LITTLE_ENDIAN_64(data[9]);
+      s11 ^= s7;    s8 ^= s9;    s9 = Rot64(s9,54);    s8 += s10;
+      s10 += SPOOKYHASH_LITTLE_ENDIAN_64(data[10]);
+      s0 ^= s8;    s9 ^= s10;    s10 = Rot64(s10,22);    s9 += s11;
+      s11 += SPOOKYHASH_LITTLE_ENDIAN_64(data[11]);
+      s1 ^= s9;    s10 ^= s11;    s11 = Rot64(s11,46);    s10 += s0;
     }
 
     //
@@ -210,9 +222,18 @@ public:
         uint64 &h4, uint64 &h5, uint64 &h6, uint64 &h7, 
         uint64 &h8, uint64 &h9, uint64 &h10,uint64 &h11)
     {
-        h0 += data[0];   h1 += data[1];   h2 += data[2];   h3 += data[3];
-        h4 += data[4];   h5 += data[5];   h6 += data[6];   h7 += data[7];
-        h8 += data[8];   h9 += data[9];   h10 += data[10]; h11 += data[11];
+        h0 += SPOOKYHASH_LITTLE_ENDIAN_64(data[0]);
+        h1 += SPOOKYHASH_LITTLE_ENDIAN_64(data[1]);
+        h2 += SPOOKYHASH_LITTLE_ENDIAN_64(data[2]);
+        h3 += SPOOKYHASH_LITTLE_ENDIAN_64(data[3]);
+        h4 += SPOOKYHASH_LITTLE_ENDIAN_64(data[4]);
+        h5 += SPOOKYHASH_LITTLE_ENDIAN_64(data[5]);
+        h6 += SPOOKYHASH_LITTLE_ENDIAN_64(data[6]);
+        h7 += SPOOKYHASH_LITTLE_ENDIAN_64(data[7]);
+        h8 += SPOOKYHASH_LITTLE_ENDIAN_64(data[8]);
+        h9 += SPOOKYHASH_LITTLE_ENDIAN_64(data[9]);
+        h10 += SPOOKYHASH_LITTLE_ENDIAN_64(data[10]);
+        h11 += SPOOKYHASH_LITTLE_ENDIAN_64(data[11]);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
