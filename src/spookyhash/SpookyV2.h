@@ -45,6 +45,25 @@
   typedef  uint8_t   uint8;
 #endif
 
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define SPOOKYHASH_LITTLE_ENDIAN_64(b)   ((uint64_t)b)
+#define SPOOKYHASH_LITTLE_ENDIAN_32(b)   ((uint32_t)b)
+#define SPOOKYHASH_LITTLE_ENDIAN_16(b)   ((uint16_t)b)
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if __GNUC__ * 100 + __GNUC_MINOR__ >= 403 || defined(__clang__)
+#define SPOOKYHASH_LITTLE_ENDIAN_64(b)   __builtin_bswap64(b)
+#define SPOOKYHASH_LITTLE_ENDIAN_32(b)   __builtin_bswap32(b)
+#define SPOOKYHASH_LITTLE_ENDIAN_16(b)   __builtin_bswap16(b)
+#else
+#warning Using bulk byte swap routines. Expect performance issues.
+#define SPOOKYHASH_LITTLE_ENDIAN_64(b)   ((((b) & 0xFF00000000000000ull) >> 56) | (((b) & 0x00FF000000000000ull) >> 40) | (((b) & 0x0000FF0000000000ull) >> 24) | (((b) & 0x000000FF00000000ull) >> 8) | (((b) & 0x00000000FF000000ull) << 8) | (((b) & 0x0000000000FF0000ull) << 24ull) | (((b) & 0x000000000000FF00ull) << 40) | (((b) & 0x00000000000000FFull) << 56))
+#define SPOOKYHASH_LITTLE_ENDIAN_32(b)   ((((b) & 0xFF000000) >> 24) | (((b) & 0x00FF0000) >> 8) | (((b) & 0x0000FF00) << 8) | (((b) & 0x000000FF) << 24))
+#define SPOOKYHASH_LITTLE_ENDIAN_16(b)   ((((b) & 0xFF00) >> 8) | (((b) & 0x00FF) << 8))
+#endif
+#else
+#error Unknow endianness
+#endif
+
 
 class SpookyHash
 {
@@ -136,18 +155,30 @@ public:
         uint64 &s4, uint64 &s5, uint64 &s6, uint64 &s7,
         uint64 &s8, uint64 &s9, uint64 &s10,uint64 &s11)
     {
-      s0 += data[0];    s2 ^= s10;    s11 ^= s0;    s0 = Rot64(s0,11);    s11 += s1;
-      s1 += data[1];    s3 ^= s11;    s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
-      s2 += data[2];    s4 ^= s0;    s1 ^= s2;    s2 = Rot64(s2,43);    s1 += s3;
-      s3 += data[3];    s5 ^= s1;    s2 ^= s3;    s3 = Rot64(s3,31);    s2 += s4;
-      s4 += data[4];    s6 ^= s2;    s3 ^= s4;    s4 = Rot64(s4,17);    s3 += s5;
-      s5 += data[5];    s7 ^= s3;    s4 ^= s5;    s5 = Rot64(s5,28);    s4 += s6;
-      s6 += data[6];    s8 ^= s4;    s5 ^= s6;    s6 = Rot64(s6,39);    s5 += s7;
-      s7 += data[7];    s9 ^= s5;    s6 ^= s7;    s7 = Rot64(s7,57);    s6 += s8;
-      s8 += data[8];    s10 ^= s6;    s7 ^= s8;    s8 = Rot64(s8,55);    s7 += s9;
-      s9 += data[9];    s11 ^= s7;    s8 ^= s9;    s9 = Rot64(s9,54);    s8 += s10;
-      s10 += data[10];    s0 ^= s8;    s9 ^= s10;    s10 = Rot64(s10,22);    s9 += s11;
-      s11 += data[11];    s1 ^= s9;    s10 ^= s11;    s11 = Rot64(s11,46);    s10 += s0;
+      s0 += SPOOKYHASH_LITTLE_ENDIAN_64(data[0]);
+      s2 ^= s10;    s11 ^= s0;    s0 = Rot64(s0,11);    s11 += s1;
+      s1 += SPOOKYHASH_LITTLE_ENDIAN_64(data[1]);
+      s3 ^= s11;    s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
+      s2 += SPOOKYHASH_LITTLE_ENDIAN_64(data[2]);
+      s4 ^= s0;    s1 ^= s2;    s2 = Rot64(s2,43);    s1 += s3;
+      s3 += SPOOKYHASH_LITTLE_ENDIAN_64(data[3]);
+      s5 ^= s1;    s2 ^= s3;    s3 = Rot64(s3,31);    s2 += s4;
+      s4 += SPOOKYHASH_LITTLE_ENDIAN_64(data[4]);
+      s6 ^= s2;    s3 ^= s4;    s4 = Rot64(s4,17);    s3 += s5;
+      s5 += SPOOKYHASH_LITTLE_ENDIAN_64(data[5]);
+      s7 ^= s3;    s4 ^= s5;    s5 = Rot64(s5,28);    s4 += s6;
+      s6 += SPOOKYHASH_LITTLE_ENDIAN_64(data[6]);
+      s8 ^= s4;    s5 ^= s6;    s6 = Rot64(s6,39);    s5 += s7;
+      s7 += SPOOKYHASH_LITTLE_ENDIAN_64(data[7]);
+      s9 ^= s5;    s6 ^= s7;    s7 = Rot64(s7,57);    s6 += s8;
+      s8 += SPOOKYHASH_LITTLE_ENDIAN_64(data[8]);
+      s10 ^= s6;    s7 ^= s8;    s8 = Rot64(s8,55);    s7 += s9;
+      s9 += SPOOKYHASH_LITTLE_ENDIAN_64(data[9]);
+      s11 ^= s7;    s8 ^= s9;    s9 = Rot64(s9,54);    s8 += s10;
+      s10 += SPOOKYHASH_LITTLE_ENDIAN_64(data[10]);
+      s0 ^= s8;    s9 ^= s10;    s10 = Rot64(s10,22);    s9 += s11;
+      s11 += SPOOKYHASH_LITTLE_ENDIAN_64(data[11]);
+      s1 ^= s9;    s10 ^= s11;    s11 = Rot64(s11,46);    s10 += s0;
     }
 
     //
@@ -191,9 +222,18 @@ public:
         uint64 &h4, uint64 &h5, uint64 &h6, uint64 &h7, 
         uint64 &h8, uint64 &h9, uint64 &h10,uint64 &h11)
     {
-        h0 += data[0];   h1 += data[1];   h2 += data[2];   h3 += data[3];
-        h4 += data[4];   h5 += data[5];   h6 += data[6];   h7 += data[7];
-        h8 += data[8];   h9 += data[9];   h10 += data[10]; h11 += data[11];
+        h0 += SPOOKYHASH_LITTLE_ENDIAN_64(data[0]);
+        h1 += SPOOKYHASH_LITTLE_ENDIAN_64(data[1]);
+        h2 += SPOOKYHASH_LITTLE_ENDIAN_64(data[2]);
+        h3 += SPOOKYHASH_LITTLE_ENDIAN_64(data[3]);
+        h4 += SPOOKYHASH_LITTLE_ENDIAN_64(data[4]);
+        h5 += SPOOKYHASH_LITTLE_ENDIAN_64(data[5]);
+        h6 += SPOOKYHASH_LITTLE_ENDIAN_64(data[6]);
+        h7 += SPOOKYHASH_LITTLE_ENDIAN_64(data[7]);
+        h8 += SPOOKYHASH_LITTLE_ENDIAN_64(data[8]);
+        h9 += SPOOKYHASH_LITTLE_ENDIAN_64(data[9]);
+        h10 += SPOOKYHASH_LITTLE_ENDIAN_64(data[10]);
+        h11 += SPOOKYHASH_LITTLE_ENDIAN_64(data[11]);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
         EndPartial(h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
