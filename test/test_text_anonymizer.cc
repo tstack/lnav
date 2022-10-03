@@ -109,7 +109,7 @@ TEST_CASE("hex-dump")
     lnav::text_anonymizer ta;
 
     CHECK(ta.next(string_fragment::from_const("key f2:09:1a:a2"))
-          == "key 2d:20:0d:cc");
+          == "key 68:48:d3:93");
 }
 
 TEST_CASE("cc")
