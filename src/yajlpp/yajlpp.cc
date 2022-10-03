@@ -541,7 +541,7 @@ nonstd::optional<int>
 json_path_handler_base::to_enum_value(const string_fragment& sf) const
 {
     for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
-        const enum_value_t& ev = this->jph_enum_values[lpc];
+        const auto& ev = this->jph_enum_values[lpc];
 
         if (sf == ev.first) {
             return ev.second;

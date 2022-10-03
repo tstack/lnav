@@ -498,6 +498,12 @@ public:
         return intern_string_t::case_lt(lhs->get_name(), rhs->get_name());
     }
 
+    enum class subsecond_unit {
+        milli,
+        micro,
+        nano,
+    };
+
     std::string lf_description;
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
@@ -505,6 +511,8 @@ public:
     date_time_scanner lf_time_scanner;
     std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
+    intern_string_t lf_subsecond_field;
+    nonstd::optional<subsecond_unit> lf_subsecond_unit;
     intern_string_t lf_time_field;
     std::vector<const char*> lf_timestamp_format;
     unsigned int lf_timestamp_flags{0};

@@ -553,11 +553,21 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename... Args>
     struct LastIsEnum {
+        using value_type = typename LastIsEnum<Args...>::value_type;
         static constexpr bool value = LastIsEnum<Args...>::value;
     };
 
     template<typename T, typename U>
     struct LastIsEnum<U T::*> {
+        using value_type = U;
+
+        static constexpr bool value = std::is_enum<U>::value;
+    };
+
+    template<typename T, typename U>
+    struct LastIsEnum<nonstd::optional<U> T::*> {
+        using value_type = U;
+
         static constexpr bool value = std::is_enum<U>::value;
     };
 
@@ -1414,8 +1424,7 @@ struct json_path_handler : public json_path_handler_base {
 
             if (res) {
                 json_path_handler::get_field(obj, args...)
-                    = (decltype(json_path_handler::get_field(
-                        obj, args...))) res.value();
+                    = (typename LastIsEnum<Args...>::value_type) res.value();
             } else {
                 handler->report_enum_error(ypc,
                                            std::string((const char*) str, len));
@@ -1438,13 +1447,17 @@ struct json_path_handler : public json_path_handler_base {
                 }
             }
 
+            if (!is_field_set(field)) {
+                return yajl_gen_status_ok;
+            }
+
             if (ygc.ygc_depth) {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
             yajlpp_generator gen(handle);
 
-            return gen(jph.to_enum_string((int) field));
+            return gen(jph.to_enum_string(field));
         };
         this->jph_field_getter
             = [args...](void* root, nonstd::optional<std::string> name) {

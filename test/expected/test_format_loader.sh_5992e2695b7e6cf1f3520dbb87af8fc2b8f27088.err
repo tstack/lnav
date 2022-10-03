@@ -3,7 +3,7 @@
 [36m --> [0m[1m/invalid_props_log/tags/badtag3/pattern[0m
 [36m | [0m[37m[40minvalid[0m[1m[7m[32m[40m([0m[37m[40mabc                             [0m
 [36m | [0m[37m[40m           [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:35
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:36
 [36m | [0m[37m[40m                "pattern": "invalid(abc"[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/tags/badtag3/pattern[0m [4m<regex>[0m
@@ -16,7 +16,7 @@
 [36m --> [0m[1m/invalid_props_log/search-table/bad_table_regex/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40mdef                                 [0m
 [36m | [0m[37m[40m       [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m    [0m
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:40
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:41
 [36m | [0m[37m[40m                "pattern": "abc(def"    [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_props_log/search-table/bad_table_regex/pattern[0m [4m<regex>[0m
@@ -139,6 +139,9 @@
 [1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag3[0m”
  [1m[31mreason[0m: tag definitions must have a non-empty pattern
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[1m[31m✘ error[0m: “[1minvalid_props_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1msubsecond-unit[0m” must be set when “[1msubsecond-field[0m” is used
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
 [1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
@@ -146,10 +149,10 @@
            [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
 [1m[31m✘ error[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
  [1m[31mreason[0m: Unknown color: 'not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:23
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
 [1m[31m✘ error[0m: “also not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/background-color[0m”
  [1m[31mreason[0m: Unknown color: 'also not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:24
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:25
 [1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
  [1m[31mreason[0m: no regexes specified
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4

@@ -419,6 +419,14 @@ static struct json_path_container pattern_handlers = {
         .for_field(&external_log_format::pattern::p_module_format),
 };
 
+static const json_path_handler_base::enum_value_t SUBSECOND_UNIT_ENUM[] = {
+    {"milli", log_format::subsecond_unit::milli},
+    {"micro", log_format::subsecond_unit::micro},
+    {"nano", log_format::subsecond_unit::nano},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
     {"left", external_log_format::json_format_element::align_t::LEFT},
     {"right", external_log_format::json_format_element::align_t::RIGHT},
@@ -839,7 +847,7 @@ struct json_path_container format_handlers = {
     json_path_handler("mime-types#", read_format_field)
         .with_description("A list of mime-types this format should be used for")
         .with_enum_values(MIME_TYPE_ENUM),
-    json_path_handler("level-field", read_format_field)
+    json_path_handler("level-field")
         .with_description(
             "The name of the level field in the log message pattern")
         .for_field(&external_log_format::elf_level_field),
@@ -847,17 +855,25 @@ struct json_path_container format_handlers = {
         .with_description("A regular-expression that matches the JSON-pointer "
                           "of the level property")
         .for_field(&external_log_format::elf_level_pointer),
-    json_path_handler("timestamp-field", read_format_field)
+    json_path_handler("timestamp-field")
         .with_description(
             "The name of the timestamp field in the log message pattern")
         .for_field(&log_format::lf_timestamp_field),
-    json_path_handler("time-field", read_format_field)
+    json_path_handler("subsecond-field")
+        .with_description("The path to the property in a JSON-lines log "
+                          "message that contains the sub-second time value")
+        .for_field(&log_format::lf_subsecond_field),
+    json_path_handler("subsecond-units")
+        .with_description("The units of the subsecond-field property value")
+        .with_enum_values(SUBSECOND_UNIT_ENUM)
+        .for_field(&log_format::lf_subsecond_unit),
+    json_path_handler("time-field")
         .with_description(
             "The name of the time field in the log message pattern.  This "
             "field should only be specified if the timestamp field only "
             "contains a date.")
         .for_field(&log_format::lf_time_field),
-    json_path_handler("body-field", read_format_field)
+    json_path_handler("body-field")
         .with_description(
             "The name of the body field in the log message pattern")
         .for_field(&external_log_format::elf_body_field),

@@ -480,6 +480,24 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
             tv.tv_sec = tm2sec(&ltm);
         }
         jlu->jlu_base_line->set_time(tv);
+    } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
+        uint64_t millis = 0;
+        switch (jlu->jlu_format->lf_subsecond_unit.value()) {
+            case log_format::subsecond_unit::milli:
+                millis = val;
+                break;
+            case log_format::subsecond_unit::micro:
+                millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::microseconds(val))
+                             .count();
+                break;
+            case log_format::subsecond_unit::nano:
+                millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::nanoseconds(val))
+                             .count();
+                break;
+        }
+        jlu->jlu_base_line->set_millis(millis);
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         if (jlu->jlu_format->elf_level_pairs.empty()) {
             char level_buf[128];
@@ -2038,6 +2056,23 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .append(" is not a valid log format"))
                 .with_reason("log message samples must be included in a format "
                              "definition")
+                .with_snippets(this->get_snippets()));
+    }
+
+    if (!this->lf_subsecond_field.empty()
+        && !this->lf_subsecond_unit.has_value())
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t()
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string()))
+                    .append(" is not a valid log format"))
+                .with_reason(attr_line_t()
+                                 .append_quoted("subsecond-unit"_symbol)
+                                 .append(" must be set when ")
+                                 .append_quoted("subsecond-field"_symbol)
+                                 .append(" is used"))
                 .with_snippets(this->get_snippets()));
     }
 

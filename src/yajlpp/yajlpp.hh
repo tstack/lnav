@@ -50,6 +50,7 @@
 #include "base/lnav.console.hh"
 #include "base/lnav.console.into.hh"
 #include "base/lnav_log.hh"
+#include "base/opt_util.hh"
 #include "json_ptr.hh"
 #include "optional.hpp"
 #include "pcrepp/pcre2pp.hh"
@@ -209,6 +210,20 @@ struct json_path_handler_base {
 
     nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
     const char* to_enum_string(int value) const;
+
+    template<typename T>
+    std::enable_if_t<!detail::is_optional<T>::value, const char*>
+    to_enum_string(T value) const
+    {
+        return this->to_enum_string((int) value);
+    }
+
+    template<typename T>
+    std::enable_if_t<detail::is_optional<T>::value, const char*> to_enum_string(
+        T value) const
+    {
+        return this->to_enum_string((int) value.value());
+    }
 
     yajl_gen_status gen(yajlpp_gen_context& ygc, yajl_gen handle) const;
     yajl_gen_status gen_schema(yajlpp_gen_context& ygc) const;

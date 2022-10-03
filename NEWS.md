@@ -22,6 +22,9 @@ Features:
   that the implementation relies on libcurl which has some
   limitations, like not supporting all types of schemes
   (e.g. `mailto:`).
+* Added the `subsecond-field` and `subsecond-units` log
+  format properties to allow for specifying a separate
+  field for the sub-second portion of a timestamp.
 * Added a keymap for Swedish keyboards.
 
 Breaking changes:

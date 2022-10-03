@@ -309,6 +309,7 @@ dist_noinst_DATA = \
 	logfile_json.json \
 	logfile_json2.json \
 	logfile_json3.json \
+	logfile_json_subsec.json \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
 	logfile_multiline.0 \
@@ -370,6 +371,7 @@ dist_noinst_DATA = \
 	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
 	formats/jsontest3/format.json \
+	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/scripts/redirecting.lnav \

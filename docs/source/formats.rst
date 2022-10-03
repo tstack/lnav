@@ -202,6 +202,16 @@ should be another object with the following fields:
     to divide the timestamp by to get the number of seconds and fractional
     seconds.
 
+  :subsecond-field: (v0.11.1+) The path to the property in a JSON-lines log
+    message that contains the sub-second time value
+
+  :subsecond-units: (v0.11.1+) The units of the subsecond-field property value.
+    The following values are supported:
+
+    :milli: for milliseconds
+    :micro: for microseconds
+    :nano: for nanoseconds
+
   :ordered-by-time: (v0.8.3+) Indicates that the order of messages in the file
     is time-based.  Files that are not naturally ordered by time will be sorted
     in order to display them in the correct order.  Note that this sorting can
