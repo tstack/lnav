@@ -95,10 +95,9 @@ public:
         return *this;
     }
 
-    template<typename T,
-             typename = std::enable_if<std::is_arithmetic<T>::value>>
-    hasher& update(T value)
+    hasher& update(int64_t value)
     {
+        value = SPOOKYHASH_LITTLE_ENDIAN_64(value);
         this->h_context.Update(&value, sizeof(value));
 
         return *this;
