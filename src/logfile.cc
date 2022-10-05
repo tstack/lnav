@@ -153,8 +153,6 @@ logfile::~logfile() {}
 bool
 logfile::exists() const
 {
-    struct stat st;
-
     if (!this->lf_actual_path) {
         return true;
     }
@@ -163,13 +161,15 @@ logfile::exists() const
         return true;
     }
 
-    if (lnav::filesystem::statp(this->lf_actual_path.value(), &st) == -1) {
+    auto stat_res = lnav::filesystem::stat_file(this->lf_actual_path.value());
+    if (stat_res.isErr()) {
         log_error("%s: stat failed -- %s",
                   this->lf_actual_path.value().c_str(),
-                  strerror(errno));
+                  stat_res.unwrapErr().c_str());
         return false;
     }
 
+    auto st = stat_res.unwrap();
     return this->lf_stat.st_dev == st.st_dev
         && this->lf_stat.st_ino == st.st_ino
         && this->lf_stat.st_size <= st.st_size;

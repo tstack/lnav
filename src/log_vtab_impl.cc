@@ -1890,12 +1890,12 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     return SQLITE_OK;
 }
 
-static struct json_path_container tags_handler = {
+static const struct json_path_container tags_handler = {
     json_path_handler("#")
         .with_synopsis("tag")
         .with_description("A tag for the log line")
         .with_pattern(R"(^#[^\s]+$)")
-        .FOR_FIELD(bookmark_metadata, bm_tags),
+        .for_field(&bookmark_metadata::bm_tags),
 };
 
 static int

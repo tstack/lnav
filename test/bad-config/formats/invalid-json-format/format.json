@@ -1,0 +1,17 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "bad_json_log": {
+        "json": true,
+        "line-format": [
+            {
+                "field": ""
+            },
+            {
+                "field": "__timestamp__",
+                "timestamp-format": ""
+            }
+        ],
+        "value": {
+        }
+    }
+}

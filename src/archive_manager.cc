@@ -232,7 +232,7 @@ extract(const std::string& filename, const extract_cb& cb)
     }
 
     auto arc_lock = lnav::filesystem::file_lock(tmp_path);
-    auto lock_guard = lnav::filesystem::file_lock::guard(arc_lock);
+    auto lock_guard = lnav::filesystem::file_lock::guard(&arc_lock);
     auto done_path = tmp_path;
 
     done_path += ".done";

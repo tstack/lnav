@@ -862,7 +862,7 @@ read_commands(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-static struct json_path_container view_def_handlers = {
+static const struct json_path_container view_def_handlers = {
     json_path_handler("top_line", read_top_line),
     json_path_handler("search", read_current_search),
     json_path_handler("word_wrap", read_word_wrap),
@@ -870,18 +870,18 @@ static struct json_path_container view_def_handlers = {
     json_path_handler("commands#", read_commands),
 };
 
-static struct json_path_container view_handlers = {
+static const struct json_path_container view_handlers = {
     yajlpp::pattern_property_handler("([^/]+)").with_children(
         view_def_handlers),
 };
 
-static struct json_path_container file_state_handlers = {
+static const struct json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
         .with_description("Indicates whether the file is visible or not")
         .for_field(&file_state::fs_is_visible),
 };
 
-static struct json_path_container file_states_handlers = {
+static const struct json_path_container file_states_handlers = {
     yajlpp::pattern_property_handler(R"((?<filename>[^/]+))")
         .with_description("Map of file names to file state objects")
         .with_obj_provider<file_state, void>([](const auto& ypc, auto* root) {
@@ -891,7 +891,7 @@ static struct json_path_container file_states_handlers = {
         .with_children(file_state_handlers),
 };
 
-static struct json_path_container view_info_handlers = {
+static const struct json_path_container view_info_handlers = {
     yajlpp::property_handler("save-time")
         .for_field(&session_data_t::sd_save_time),
     yajlpp::property_handler("time-offset")

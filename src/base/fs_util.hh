@@ -82,33 +82,36 @@ class file_lock {
 public:
     class guard {
     public:
-        explicit guard(file_lock& arc_lock) : g_lock(arc_lock)
+        explicit guard(file_lock* arc_lock) : g_lock(arc_lock)
         {
-            this->g_lock.lock();
-        };
+            this->g_lock->lock();
+        }
 
-        ~guard() { this->g_lock.unlock(); };
+        guard(guard&& other) noexcept
+            : g_lock(std::exchange(other.g_lock, nullptr))
+        {
+        }
+
+        ~guard()
+        {
+            if (this->g_lock != nullptr) {
+                this->g_lock->unlock();
+            }
+        }
+
+        guard(const guard&) = delete;
+        guard& operator=(const guard&) = delete;
+        guard& operator=(guard&&) = delete;
 
     private:
-        file_lock& g_lock;
+        file_lock* g_lock;
     };
 
     void lock() const { lockf(this->lh_fd, F_LOCK, 0); }
 
     void unlock() const { lockf(this->lh_fd, F_ULOCK, 0); }
 
-    explicit file_lock(const ghc::filesystem::path& archive_path)
-    {
-        auto lock_path = archive_path;
-
-        lock_path += ".lck";
-        auto open_res = lnav::filesystem::create_file(
-            lock_path, O_RDWR | O_CLOEXEC, 0600);
-        if (open_res.isErr()) {
-            throw std::runtime_error(open_res.unwrapErr());
-        }
-        this->lh_fd = open_res.unwrap();
-    }
+    explicit file_lock(const ghc::filesystem::path& archive_path);
 
     auto_fd lh_fd;
 };

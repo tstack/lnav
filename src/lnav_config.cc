@@ -338,11 +338,12 @@ update_installs_from_git()
 
     if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
-            char* git_dir = dirname(gl->gl_pathv[lpc]);
+            auto git_dir
+                = ghc::filesystem::path(gl->gl_pathv[lpc]).parent_path();
 
-            printf("Updating formats in %s\n", git_dir);
-            auto pull_cmd
-                = fmt::format(FMT_STRING("cd '{}' && git pull"), git_dir);
+            printf("Updating formats in %s\n", git_dir.c_str());
+            auto pull_cmd = fmt::format(FMT_STRING("cd '{}' && git pull"),
+                                        git_dir.string());
             int ret = system(pull_cmd.c_str());
             if (ret == -1) {
                 std::cerr << "Failed to spawn command "
@@ -519,7 +520,7 @@ static const struct json_path_container global_var_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
-        .FOR_FIELD(_lnav_config, lc_global_vars),
+        .for_field(&_lnav_config::lc_global_vars),
 };
 
 static const struct json_path_container style_config_handlers =
@@ -868,7 +869,7 @@ static const struct json_path_container highlighter_handlers = {
     yajlpp::property_handler("pattern")
         .with_synopsis("regular expression")
         .with_description("The regular expression to highlight")
-        .FOR_FIELD(highlighter_config, hc_regex),
+        .for_field(&highlighter_config::hc_regex),
 
     yajlpp::property_handler("style")
         .with_description(
@@ -906,7 +907,7 @@ static const struct json_path_container theme_vars_handlers = {
                     paths_out.emplace_back(iter.first);
                 }
             })
-        .FOR_FIELD(lnav_theme, lt_vars),
+        .for_field(&lnav_theme::lt_vars),
 };
 
 static const struct json_path_container theme_def_handlers = {

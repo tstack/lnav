@@ -383,7 +383,7 @@ json_path_handler_base::gen_schema(yajlpp_gen_context& ygc) const
             schema.gen("examples");
 
             yajlpp_array example_array(ygc.ygc_handle);
-            for (auto& ex : this->jph_examples) {
+            for (const auto& ex : this->jph_examples) {
                 example_array.gen(ex);
             }
         }
@@ -1107,7 +1107,7 @@ yajlpp_parse_context::reset(const struct json_path_container* handlers)
 }
 
 void
-yajlpp_parse_context::set_static_handler(json_path_handler_base& jph)
+yajlpp_parse_context::set_static_handler(const json_path_handler_base& jph)
 {
     this->ypc_path.clear();
     this->ypc_path.push_back('/');
@@ -1311,6 +1311,40 @@ yajlpp_parse_context::get_snippet() const
 }
 
 void
+json_path_handler_base::validate_string(yajlpp_parse_context& ypc,
+                                        string_fragment sf) const
+{
+    if (this->jph_pattern) {
+        if (!this->jph_pattern->find_in(sf).ignore_error()) {
+            this->report_pattern_error(&ypc, sf.to_string());
+        }
+    }
+    if (sf.empty() && this->jph_min_length > 0) {
+        ypc.report_error(lnav::console::user_message::error(
+                             attr_line_t("invalid value for option ")
+                                 .append_quoted(lnav::roles::symbol(
+                                     ypc.get_full_path().to_string())))
+                             .with_reason("empty values are not allowed")
+                             .with_snippet(ypc.get_snippet())
+                             .with_help(this->get_help_text(&ypc)));
+    } else if (sf.length() < this->jph_min_length) {
+        ypc.report_error(
+            lnav::console::user_message::error(
+                attr_line_t()
+                    .append_quoted(sf)
+                    .append(" is not a valid value for option ")
+                    .append_quoted(
+                        lnav::roles::symbol(ypc.get_full_path().to_string())))
+                .with_reason(attr_line_t("value must be at least ")
+                                 .append(lnav::roles::number(
+                                     fmt::to_string(this->jph_min_length)))
+                                 .append(" characters long"))
+                .with_snippet(ypc.get_snippet())
+                .with_help(this->get_help_text(&ypc)));
+    }
+}
+
+void
 json_path_handler_base::report_pattern_error(yajlpp_parse_context* ypc,
                                              const std::string& value_str) const
 {
@@ -1378,8 +1412,6 @@ void
 json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
                                                long long value) const
 {
-    const auto* jph = ypc->ypc_current_handler;
-
     ypc->report_error(
         lnav::console::user_message::error(
             attr_line_t()
@@ -1389,9 +1421,9 @@ json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
                     lnav::roles::symbol(ypc->get_full_path().to_string())))
             .with_reason(attr_line_t("value must be greater than or equal to ")
                              .append(lnav::roles::number(
-                                 fmt::to_string(jph->jph_min_value))))
+                                 fmt::to_string(this->jph_min_value))))
             .with_snippet(ypc->get_snippet())
-            .with_help(jph->get_help_text(ypc)));
+            .with_help(this->get_help_text(ypc)));
 }
 
 void
@@ -1465,7 +1497,7 @@ json_path_container::gen_properties(yajlpp_gen_context& ygc) const
         {
             yajlpp_map properties(ygc.ygc_handle);
 
-            for (auto& child_handler : this->jpc_children) {
+            for (const auto& child_handler : this->jpc_children) {
                 if (child_handler.jph_is_pattern_property) {
                     continue;
                 }
@@ -1529,5 +1561,5 @@ yajlpp_gen::to_string_fragment()
 
     yajl_gen_get_buf(this->yg_handle.in(), &buf, &len);
 
-    return string_fragment((const char*) buf, 0, len);
+    return string_fragment::from_bytes(buf, len);
 }

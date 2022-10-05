@@ -1359,7 +1359,7 @@ line_buffer::enable_cache()
         "%d:cache file path: %s", this->lb_fd.get(), cached_file_path.c_str());
 
     auto fl = lnav::filesystem::file_lock(cached_file_path);
-    auto guard = lnav::filesystem::file_lock::guard(fl);
+    auto guard = lnav::filesystem::file_lock::guard(&fl);
 
     if (ghc::filesystem::exists(cached_done_path)) {
         log_info("%d:using existing cache file");

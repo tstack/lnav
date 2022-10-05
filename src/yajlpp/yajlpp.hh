@@ -282,9 +282,12 @@ struct json_path_handler_base {
     std::function<int(yajlpp_parse_context*)> jph_null_cb;
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;
     std::function<int(yajlpp_parse_context*, long long)> jph_integer_cb;
+    std::function<int(yajlpp_parse_context*, double)> jph_double_cb;
     std::function<int(
         yajlpp_parse_context*, const unsigned char* str, size_t len)>
         jph_str_cb;
+
+    void validate_string(yajlpp_parse_context& ypc, string_fragment sf) const;
 
     void report_pattern_error(yajlpp_parse_context* ypc,
                               const std::string& value_str) const;
@@ -350,7 +353,7 @@ public:
 
     void reset(const struct json_path_container* handlers);
 
-    void set_static_handler(struct json_path_handler_base& jph);
+    void set_static_handler(const struct json_path_handler_base& jph);
 
     template<typename T>
     yajlpp_parse_context& with_obj(T& obj)

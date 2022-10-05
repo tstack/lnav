@@ -226,6 +226,7 @@ dist_noinst_DATA = \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.err \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.out \
 	ansi-colors.0.in \
+	bad-config/formats/invalid-json-format/format.json \
 	bad-config/formats/invalid-properties/format.json \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \

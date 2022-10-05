@@ -595,7 +595,7 @@ json_array_end(void* ctx)
     return 1;
 }
 
-static struct json_path_container json_log_handlers = {
+static const struct json_path_container json_log_handlers = {
     yajlpp::pattern_property_handler("\\w+")
         .add_cb(read_json_null)
         .add_cb(read_json_bool)
@@ -671,7 +671,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
     return 1;
 }
 
-static struct json_path_container json_log_rewrite_handlers = {
+static const struct json_path_container json_log_rewrite_handlers = {
     yajlpp::pattern_property_handler("\\w+")
         .add_cb(rewrite_json_null)
         .add_cb(rewrite_json_bool)

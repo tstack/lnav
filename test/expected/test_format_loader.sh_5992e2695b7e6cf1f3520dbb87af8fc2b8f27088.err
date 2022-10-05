@@ -1,3 +1,11 @@
+[1m[31m✘ error[0m: invalid value for option “[1m/bad_json_log/line-format#/timestamp-format[0m”
+ [1m[31mreason[0m: empty values are not allowed
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-json-format/format.json[0m:11
+[36m | [0m[37m[40m                "timestamp-format": ""  [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/bad_json_log/line-format#/timestamp-format[0m [4m<string>[0m
+         [1mDescription[0m
+           The strftime(3) format for this field
 [1m[31m✘ error[0m: “invalid(abc” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_props_log/tags/badtag3/pattern[0m
@@ -78,6 +86,9 @@
            [1m/$schema[0m [4mThe URI of the schema for this file[0m
          [1mDescription[0m
            Specifies the type of this file
+[1m[31m✘ error[0m: invalid line format element “[1m/bad_json_log/line-format/0/field[0m”
+ [1m[31mreason[0m: “” is not a defined value
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-json-format/format.json[0m:7
 [1m[31m✘ error[0m: invalid pattern: “[1mincomplete-match[0m”
  [1m[31mreason[0m: pattern does not match entire message
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:20
