@@ -150,7 +150,7 @@ public:
         if (this->rt_previous) {
             return true;
         }
-        for (auto rtf : this->rt_field) {
+        for (const auto& rtf : this->rt_field) {
             if (rtf.value < 0) {
                 return true;
             }
@@ -179,7 +179,7 @@ public:
         if (!this->rt_included_days.empty()) {
             return false;
         }
-        for (auto rtf : this->rt_field) {
+        for (const auto& rtf : this->rt_field) {
             if (rtf.is_set) {
                 return false;
             }

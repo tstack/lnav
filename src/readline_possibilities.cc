@@ -427,7 +427,7 @@ add_config_possibilities()
             if (named_caps.empty()) {
                 rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             }
-            for (const auto named_cap : named_caps) {
+            for (const auto& named_cap : named_caps) {
                 if (visited.count(named_cap.get_name().to_string()) == 0) {
                     rc->clear_possibilities(ln_mode_t::COMMAND,
                                             named_cap.get_name().to_string());

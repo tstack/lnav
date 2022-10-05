@@ -116,13 +116,12 @@ filter_status_source::statusview_fields()
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
                                               role_t::VCR_STATUS_HOTKEY);
-        this->tss_fields[TSF_TITLE].set_role(
-            role_t::VCR_STATUS_DISABLED_TITLE);
-        this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            role_t::VCR_STATUS, role_t::VCR_STATUS);
+        this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_DISABLED_TITLE);
+        this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(role_t::VCR_STATUS,
+                                                            role_t::VCR_STATUS);
     } else {
-        this->tss_fields[TSF_FILES_TITLE].set_value(
-            " " ANSI_ROLE("F") "iles ", role_t::VCR_STATUS_HOTKEY);
+        this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
+                                                    role_t::VCR_STATUS_HOTKEY);
         if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
             this->tss_fields[TSF_FILES_TITLE].set_role(
                 role_t::VCR_STATUS_DISABLED_TITLE);
@@ -142,9 +141,8 @@ filter_status_source::statusview_fields()
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE,
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL);
-        this->tss_fields[TSF_TITLE].set_value(
-            " " ANSI_ROLE("T") "ext Filters ",
-            role_t::VCR_STATUS_TITLE_HOTKEY);
+        this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
+                                              role_t::VCR_STATUS_TITLE_HOTKEY);
         this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
@@ -194,9 +192,13 @@ filter_status_source::statusview_value_for_field(int field)
 void
 filter_status_source::update_filtered(text_sub_source* tss)
 {
-    status_field& sf = this->tss_fields[TSF_FILTERED];
+    if (tss == nullptr) {
+        return;
+    }
 
-    if (tss == nullptr || tss->get_filtered_count() == 0) {
+    auto& sf = this->tss_fields[TSF_FILTERED];
+
+    if (tss->get_filtered_count() == 0) {
         if (tss->tss_apply_filters) {
             sf.clear();
         } else {
@@ -205,8 +207,8 @@ filter_status_source::update_filtered(text_sub_source* tss)
                 ":toggle-filtering" ANSI_NORM);
         }
     } else {
-        ui_periodic_timer& timer = ui_periodic_timer::singleton();
-        attr_line_t& al = sf.get_value();
+        auto& timer = ui_periodic_timer::singleton();
+        auto& al = sf.get_value();
 
         if (tss->get_filtered_count() == this->bss_last_filtered_count) {
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
@@ -215,8 +217,7 @@ filter_status_source::update_filtered(text_sub_source* tss)
                                          VC_STYLE.value(text_attrs{A_BOLD})));
             }
         } else {
-            this->tss_fields[TSF_FILTERED].set_role(
-                role_t::VCR_ALERT_STATUS);
+            this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_ALERT_STATUS);
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
         }
@@ -286,7 +287,8 @@ filter_help_status_source::statusview_fields()
                                            : "Enable Filtering");
             }
         } else if (lnav_data.ld_mode == ln_mode_t::FILES
-                   && lnav_data.ld_session_loaded) {
+                   && lnav_data.ld_session_loaded)
+        {
             auto& lv = lnav_data.ld_files_view;
             auto sel = files_model::from_selection(lv.get_selection());
 

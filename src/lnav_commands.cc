@@ -164,10 +164,10 @@ combined_user_marks(vis_bookmarks& vb)
     const auto& bv_expr = vb[&textview_curses::BM_USER_EXPR];
     bookmark_vector<vis_line_t> retval;
 
-    for (const auto row : bv) {
+    for (const auto& row : bv) {
         retval.insert_once(row);
     }
-    for (const auto row : bv_expr) {
+    for (const auto& row : bv_expr) {
         retval.insert_once(row);
     }
     return retval;

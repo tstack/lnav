@@ -37,7 +37,7 @@ namespace snippets {
 
 void regex_highlighter(attr_line_t& al, int x, line_range sub);
 
-}
+}  // namespace snippets
 }  // namespace lnav
 
 #endif

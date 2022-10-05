@@ -106,7 +106,7 @@ CREATE TABLE regexp_capture (
                 this->c_match_index += 1;
             }
 
-            if (this->c_pattern == nullptr || !this->c_matched) {
+            if (!this->c_matched) {
                 return SQLITE_OK;
             }
 
@@ -329,7 +329,7 @@ CREATE TABLE regexp_capture_into_json (
             this->c_matched = match_res.has_value();
             this->c_match_index += 1;
 
-            if (this->c_pattern == nullptr || !this->c_matched) {
+            if (!this->c_matched) {
                 return SQLITE_OK;
             }
 

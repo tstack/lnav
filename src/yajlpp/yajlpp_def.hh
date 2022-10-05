@@ -1382,6 +1382,7 @@ pattern_property_handler(const T (&path)[N])
 {
     return {lnav::pcre2pp::code::from_const(path).to_shared()};
 }
+
 }  // namespace yajlpp
 
 #endif

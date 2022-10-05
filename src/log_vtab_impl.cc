@@ -1199,7 +1199,7 @@ log_cursor::string_constraint::string_constraint(unsigned char op,
     : sc_op(op), sc_value(std::move(value))
 {
     if (op == SQLITE_INDEX_CONSTRAINT_REGEXP) {
-        auto compile_res = lnav::pcre2pp::code::from(value);
+        auto compile_res = lnav::pcre2pp::code::from(this->sc_value);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
