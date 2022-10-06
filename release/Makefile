@@ -70,6 +70,7 @@ osx-build:
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
+	git pull --rebase
 	cp ../README ../NEWS.md osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/src/lnav osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
