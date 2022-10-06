@@ -1,7 +1,7 @@
 
 VERSION=0.11.1
 
-VERSION_TAG=v$(VERSION)-beta1
+VERSION_TAG=v$(VERSION)-rc1
 
 SRC_VERSION=master
 
@@ -19,7 +19,7 @@ PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	https://zlib.net/zlib-1.2.12.tar.gz \
 	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
-	https://www.sqlite.org/2022/sqlite-autoconf-3390200.tar.gz \
+	https://www.sqlite.org/2022/sqlite-autoconf-3390400.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
 	https://curl.se/download/curl-7.85.0.tar.gz \
