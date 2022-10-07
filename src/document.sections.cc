@@ -251,7 +251,6 @@ public:
     metadata walk()
     {
         metadata_builder mb;
-        data_token_t dt = DT_INVALID;
         size_t garbage_count = 0;
 
         while (garbage_count < 1000) {
@@ -260,6 +259,7 @@ public:
                 break;
             }
 
+            auto dt = tokenize_res->tr_token;
             element el(tokenize_res->tr_token, tokenize_res->tr_capture);
 
             switch (dt) {

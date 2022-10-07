@@ -45,7 +45,7 @@ detect_text_format(string_fragment sf,
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
     static const auto MAN_MATCHERS = lnav::pcre2pp::code::from_const(
-        R"(^[A-Z]+\(\d\)\s+)", PCRE2_MULTILINE);
+        R"(^[A-Za-z][A-Za-z\-_\+0-9]+\(\d\)\s+)", PCRE2_MULTILINE);
 
     // XXX This is a pretty crude way of detecting format...
     static const auto PYTHON_MATCHERS = lnav::pcre2pp::code::from_const(
