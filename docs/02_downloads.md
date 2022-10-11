@@ -11,7 +11,7 @@ The following options are available for installing **lnav**:
 ## Linux
 
 <!-- markdown-link-check-disable-next-line -->
-Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-musl-64bit.zip).
+Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-x86_64-linux-musl.zip).
 
 Install from the [Snap Store](https://snapcraft.io/lnav):
 
@@ -22,7 +22,7 @@ $ sudo snap install lnav
 ## MacOS
 
 <!-- markdown-link-check-disable-next-line -->
-Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-os-x.zip)
+Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-x86_64-macos.zip)
 
 Install using [Homebrew](https://formulae.brew.sh/formula/lnav):
 
