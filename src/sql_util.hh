@@ -82,11 +82,15 @@ void dump_sqlite_schema(sqlite3* db, std::string& schema_out);
 
 void attach_sqlite_db(sqlite3* db, const std::string& filename);
 
-ssize_t sql_strftime(char* buffer,
-                     size_t buffer_size,
-                     lnav::time64_t tim,
-                     int millis,
-                     char sep = ' ');
+inline ssize_t
+sql_strftime(char* buffer,
+             size_t buffer_size,
+             lnav::time64_t tim,
+             int millis,
+             char sep = ' ')
+{
+    return lnav::strftime_rfc3339(buffer, buffer_size, tim, millis, sep);
+}
 
 inline ssize_t
 sql_strftime(char* buffer,

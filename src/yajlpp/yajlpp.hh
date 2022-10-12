@@ -48,10 +48,12 @@
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
+#include "base/lnav.console.into.hh"
 #include "base/lnav_log.hh"
+#include "base/opt_util.hh"
 #include "json_ptr.hh"
 #include "optional.hpp"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "relative_time.hh"
 #include "yajl/api/yajl_gen.h"
 #include "yajl/api/yajl_parse.h"
@@ -88,38 +90,75 @@ struct positioned_property {
     }
 };
 
+template<typename T, typename... Types>
+struct factory_container : public positioned_property<std::shared_ptr<T>> {
+    template<Types... DefaultArgs>
+    struct with_default_args : public positioned_property<std::shared_ptr<T>> {
+        template<typename... Args>
+        static Result<with_default_args, lnav::console::user_message> from(
+            intern_string_t src, source_location loc, Args... args)
+        {
+            auto from_res = T::from(args..., DefaultArgs...);
+
+            if (from_res.isOk()) {
+                with_default_args retval;
+
+                retval.pp_path = src;
+                retval.pp_location = loc;
+                retval.pp_value = from_res.unwrap().to_shared();
+                return Ok(retval);
+            }
+
+            return Err(
+                lnav::console::to_user_message(src, from_res.unwrapErr()));
+        }
+    };
+
+    template<typename... Args>
+    static Result<factory_container, lnav::console::user_message> from(
+        intern_string_t src, source_location loc, Args... args)
+    {
+        auto from_res = T::from(args...);
+
+        if (from_res.isOk()) {
+            factory_container retval;
+
+            retval.pp_path = src;
+            retval.pp_location = loc;
+            retval.pp_value = from_res.unwrap().to_shared();
+            return Ok(retval);
+        }
+
+        return Err(lnav::console::to_user_message(src, from_res.unwrapErr()));
+    }
+};
+
 class yajlpp_gen_context;
 class yajlpp_parse_context;
 
 struct yajlpp_provider_context {
-    pcre_extractor ypc_extractor;
+    lnav::pcre2pp::match_data* ypc_extractor;
     size_t ypc_index{0};
     yajlpp_parse_context* ypc_parse_context;
 
     static constexpr size_t nindex = static_cast<size_t>(-1);
 
     template<typename T>
-    intern_string_t get_substr_i(T name) const
+    intern_string_t get_substr_i(T&& name) const
     {
-        pcre_context::iterator cap = this->ypc_extractor.pe_context[name];
-        char path[cap->length() + 1];
-        size_t len = json_ptr::decode(
-            path,
-            this->ypc_extractor.pe_input.get_substr_start(cap),
-            cap->length());
+        auto cap = (*this->ypc_extractor)[std::forward<T>(name)].value();
+        char path[cap.length() + 1];
+        size_t len = json_ptr::decode(path, cap.data(), cap.length());
 
         return intern_string::lookup(path, len);
     }
 
     template<typename T>
-    std::string get_substr(T name) const
+    std::string get_substr(T&& name) const
     {
-        pcre_context::iterator cap = this->ypc_extractor.pe_context[name];
-        char path[cap->length() + 1];
-        size_t len = json_ptr::decode(
-            path,
-            this->ypc_extractor.pe_input.get_substr_start(cap),
-            cap->length());
+        auto cap = (*this->ypc_extractor)[std::forward<T>(name)].value();
+        char path[cap.length() + 1];
+        size_t len = json_ptr::decode(path, cap.data(), cap.length());
 
         return {path, len};
     }
@@ -158,19 +197,33 @@ struct json_path_handler_base {
 
     static const enum_value_t ENUM_TERMINATOR;
 
-    json_path_handler_base(const std::string& property);
+    explicit json_path_handler_base(const std::string& property);
 
-    explicit json_path_handler_base(const pcrepp& property);
+    explicit json_path_handler_base(
+        const std::shared_ptr<const lnav::pcre2pp::code>& property_re);
 
-    json_path_handler_base(std::string property, const pcrepp& property_re);
-
-    json_path_handler_base(std::string property,
-                           const std::shared_ptr<pcrepp>& property_re);
+    json_path_handler_base(
+        std::string property,
+        const std::shared_ptr<const lnav::pcre2pp::code>& property_re);
 
     bool is_array() const { return this->jph_is_array; }
 
     nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
     const char* to_enum_string(int value) const;
+
+    template<typename T>
+    std::enable_if_t<!detail::is_optional<T>::value, const char*>
+    to_enum_string(T value) const
+    {
+        return this->to_enum_string((int) value);
+    }
+
+    template<typename T>
+    std::enable_if_t<detail::is_optional<T>::value, const char*> to_enum_string(
+        T value) const
+    {
+        return this->to_enum_string((int) value.value());
+    }
 
     yajl_gen_status gen(yajlpp_gen_context& ygc, yajl_gen handle) const;
     yajl_gen_status gen_schema(yajlpp_gen_context& ygc) const;
@@ -194,7 +247,7 @@ struct json_path_handler_base {
     std::vector<schema_type_t> get_types() const;
 
     std::string jph_property;
-    std::shared_ptr<pcrepp> jph_regex;
+    std::shared_ptr<const lnav::pcre2pp::code> jph_regex;
     yajl_callbacks jph_callbacks{};
     std::function<yajl_gen_status(
         yajlpp_gen_context&, const json_path_handler_base&, yajl_gen)>
@@ -214,7 +267,7 @@ struct json_path_handler_base {
     const char* jph_synopsis{""};
     const char* jph_description{""};
     const json_path_container* jph_children{nullptr};
-    std::shared_ptr<pcrepp> jph_pattern;
+    std::shared_ptr<const lnav::pcre2pp::code> jph_pattern;
     const char* jph_pattern_re{nullptr};
     std::function<void(const string_fragment&)> jph_string_validator;
     size_t jph_min_length{0};
@@ -226,11 +279,15 @@ struct json_path_handler_base {
     bool jph_is_pattern_property{false};
     std::vector<std::string> jph_examples;
 
+    std::function<int(yajlpp_parse_context*)> jph_null_cb;
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;
     std::function<int(yajlpp_parse_context*, long long)> jph_integer_cb;
+    std::function<int(yajlpp_parse_context*, double)> jph_double_cb;
     std::function<int(
         yajlpp_parse_context*, const unsigned char* str, size_t len)>
         jph_str_cb;
+
+    void validate_string(yajlpp_parse_context& ypc, string_fragment sf) const;
 
     void report_pattern_error(yajlpp_parse_context* ypc,
                               const std::string& value_str) const;
@@ -241,9 +298,9 @@ struct json_path_handler_base {
                                const relative_time::parse_error& pe) const;
     void report_enum_error(yajlpp_parse_context* ypc,
                            const std::string& value_str) const;
-    void report_regex_value_error(yajlpp_parse_context* ypc,
-                                  const std::string& value_str,
-                                  const pcrepp::compile_error& ce) const;
+    void report_error(yajlpp_parse_context* ypc,
+                      const std::string& value_str,
+                      lnav::console::user_message um) const;
 
     attr_line_t get_help_text(const std::string& full_path) const;
     attr_line_t get_help_text(yajlpp_parse_context* ypc) const;
@@ -296,7 +353,7 @@ public:
 
     void reset(const struct json_path_container* handlers);
 
-    void set_static_handler(struct json_path_handler_base& jph);
+    void set_static_handler(const struct json_path_handler_base& jph);
 
     template<typename T>
     yajlpp_parse_context& with_obj(T& obj)
@@ -403,6 +460,7 @@ public:
     yajl_handle ypc_handle{nullptr};
     const unsigned char* ypc_json_text{nullptr};
     size_t ypc_json_text_len{0};
+    size_t ypc_total_consumed{0};
     yajl_callbacks ypc_callbacks;
     yajl_callbacks ypc_alt_callbacks;
     std::vector<char> ypc_path;
@@ -410,7 +468,6 @@ public:
     std::vector<size_t> ypc_array_index;
     std::vector<const json_path_handler_base*> ypc_handler_stack;
     size_t ypc_array_handler_count{0};
-    pcre_context_static<30> ypc_pcre_context;
     bool ypc_ignore_unused{false};
     const struct json_path_container* ypc_sibling_handlers{nullptr};
     const struct json_path_handler_base* ypc_current_handler{nullptr};

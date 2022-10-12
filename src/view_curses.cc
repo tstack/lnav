@@ -588,11 +588,9 @@ attr_for_colors(nonstd::optional<short> fg, nonstd::optional<short> bg)
 view_colors::role_attrs
 view_colors::to_attrs(const lnav_theme& lt,
                       const positioned_property<style_config>& pp_sc,
-                      const positioned_property<style_config>& pp_fallback_sc,
                       lnav_config_listener::error_reporter& reporter)
 {
     const auto& sc = pp_sc.pp_value;
-    const auto& fallback_sc = pp_fallback_sc.pp_value;
     std::string fg1, bg1, fg_color, bg_color;
     intern_string_t role_class;
 
@@ -607,9 +605,6 @@ view_colors::to_attrs(const lnav_theme& lt,
     }
 
     fg1 = sc.sc_color;
-    if (fg1.empty()) {
-        fg1 = fallback_sc.sc_color;
-    }
     bg1 = sc.sc_background_color;
     shlex(fg1).eval(fg_color, lt.lt_vars);
     shlex(bg1).eval(bg_color, lt.lt_vars);
@@ -658,7 +653,7 @@ view_colors::init_roles(const lnav_theme& lt,
 
     /* Setup the mappings from roles to actual colors. */
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TEXT)]
-        = this->to_attrs(lt, lt.lt_style_text, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_text, reporter);
 
     for (int ansi_fg = 0; ansi_fg < 8; ansi_fg++) {
         for (int ansi_bg = 0; ansi_bg < 8; ansi_bg++) {
@@ -724,44 +719,36 @@ view_colors::init_roles(const lnav_theme& lt,
         .ra_class_name
         = intern_string::lookup("-lnav_styles_search");
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_IDENTIFIER)]
-        = this->to_attrs(
-            lt, lt.lt_style_identifier, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_identifier, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_OK)]
-        = this->to_attrs(lt, lt.lt_style_ok, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_ok, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INFO)]
-        = this->to_attrs(lt, lt.lt_style_info, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_info, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ERROR)]
-        = this->to_attrs(lt, lt.lt_style_error, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_error, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_WARNING)]
-        = this->to_attrs(lt, lt.lt_style_warning, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_warning, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ALT_ROW)]
-        = this->to_attrs(lt, lt.lt_style_alt_text, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_alt_text, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_HIDDEN)]
-        = this->to_attrs(lt, lt.lt_style_hidden, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_hidden, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ADJUSTED_TIME)]
-        = this->to_attrs(
-            lt, lt.lt_style_adjusted_time, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_adjusted_time, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SKEWED_TIME)]
-        = this->to_attrs(
-            lt, lt.lt_style_skewed_time, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_skewed_time, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_OFFSET_TIME)]
-        = this->to_attrs(
-            lt, lt.lt_style_offset_time, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_offset_time, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INVALID_MSG)]
-        = this->to_attrs(
-            lt, lt.lt_style_invalid_msg, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_invalid_msg, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS)]
-        = this->to_attrs(lt, lt.lt_style_status, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_WARN_STATUS)]
-        = this->to_attrs(
-            lt, lt.lt_style_warn_status, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_warn_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ALERT_STATUS)]
-        = this->to_attrs(
-            lt, lt.lt_style_alert_status, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_alert_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ACTIVE_STATUS)]
-        = this->to_attrs(
-            lt, lt.lt_style_active_status, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_active_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ACTIVE_STATUS2)]
         = role_attrs{
             this->vc_role_attrs[lnav::enums::to_underlying(
@@ -778,72 +765,55 @@ view_colors::init_roles(const lnav_theme& lt,
         .ra_reverse.ta_attrs
         |= A_BOLD;
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS_TITLE)]
-        = this->to_attrs(
-            lt, lt.lt_style_status_title, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status_title, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS_SUBTITLE)]
-        = this->to_attrs(
-            lt, lt.lt_style_status_subtitle, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status_subtitle, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS_INFO)]
-        = this->to_attrs(
-            lt, lt.lt_style_status_info, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status_info, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STATUS_HOTKEY)]
-        = this->to_attrs(
-            lt, lt.lt_style_status_hotkey, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status_hotkey, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(
         role_t::VCR_STATUS_TITLE_HOTKEY)]
-        = this->to_attrs(
-            lt, lt.lt_style_status_title_hotkey, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_status_title_hotkey, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(
         role_t::VCR_STATUS_DISABLED_TITLE)]
-        = this->to_attrs(lt,
-                         lt.lt_style_status_disabled_title,
-                         lt.lt_style_status,
-                         reporter);
+        = this->to_attrs(lt, lt.lt_style_status_disabled_title, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H1)]
-        = this->to_attrs(lt, lt.lt_style_header[0], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[0], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H2)]
-        = this->to_attrs(lt, lt.lt_style_header[1], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[1], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H3)]
-        = this->to_attrs(lt, lt.lt_style_header[2], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[2], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H4)]
-        = this->to_attrs(lt, lt.lt_style_header[3], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[3], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H5)]
-        = this->to_attrs(lt, lt.lt_style_header[4], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[4], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_H6)]
-        = this->to_attrs(lt, lt.lt_style_header[5], lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_header[5], reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_HR)]
-        = this->to_attrs(lt, lt.lt_style_hr, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_hr, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_HYPERLINK)]
-        = this->to_attrs(lt, lt.lt_style_hyperlink, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_hyperlink, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_LIST_GLYPH)]
-        = this->to_attrs(
-            lt, lt.lt_style_list_glyph, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_list_glyph, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_BREADCRUMB)]
-        = this->to_attrs(
-            lt, lt.lt_style_breadcrumb, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_breadcrumb, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TABLE_BORDER)]
-        = this->to_attrs(
-            lt, lt.lt_style_table_border, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_table_border, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TABLE_HEADER)]
-        = this->to_attrs(
-            lt, lt.lt_style_table_header, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_table_header, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_QUOTE_BORDER)]
-        = this->to_attrs(
-            lt, lt.lt_style_quote_border, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_quote_border, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_QUOTED_TEXT)]
-        = this->to_attrs(
-            lt, lt.lt_style_quoted_text, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_quoted_text, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FOOTNOTE_BORDER)]
-        = this->to_attrs(
-            lt, lt.lt_style_footnote_border, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_footnote_border, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FOOTNOTE_TEXT)]
-        = this->to_attrs(
-            lt, lt.lt_style_footnote_text, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_footnote_text, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SNIPPET_BORDER)]
-        = this->to_attrs(
-            lt, lt.lt_style_snippet_border, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_snippet_border, reporter);
 
     {
         positioned_property<style_config> stitch_sc;
@@ -854,7 +824,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status_title.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_TITLE_TO_SUB)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
     {
         positioned_property<style_config> stitch_sc;
@@ -865,7 +835,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status_subtitle.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_SUB_TO_TITLE)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
 
     {
@@ -877,7 +847,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status_subtitle.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_SUB_TO_NORMAL)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
     {
         positioned_property<style_config> stitch_sc;
@@ -888,7 +858,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_SUB)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
 
     {
@@ -900,7 +870,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status_title.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
     {
         positioned_property<style_config> stitch_sc;
@@ -911,33 +881,24 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE)]
-            = this->to_attrs(lt, stitch_sc, lt.lt_style_status, reporter);
+            = this->to_attrs(lt, stitch_sc, reporter);
     }
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INACTIVE_STATUS)]
-        = this->to_attrs(
-            lt, lt.lt_style_inactive_status, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_inactive_status, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(
         role_t::VCR_INACTIVE_ALERT_STATUS)]
-        = this->to_attrs(lt,
-                         lt.lt_style_inactive_alert_status,
-                         lt.lt_style_alert_status,
-                         reporter);
+        = this->to_attrs(lt, lt.lt_style_inactive_alert_status, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_POPUP)]
-        = this->to_attrs(lt, lt.lt_style_popup, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_popup, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FOCUSED)]
-        = this->to_attrs(
-            lt, lt.lt_style_focused, lt.lt_style_focused, reporter);
+        = this->to_attrs(lt, lt.lt_style_focused, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(
         role_t::VCR_DISABLED_FOCUSED)]
-        = this->to_attrs(lt,
-                         lt.lt_style_disabled_focused,
-                         lt.lt_style_disabled_focused,
-                         reporter);
+        = this->to_attrs(lt, lt.lt_style_disabled_focused, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SCROLLBAR)]
-        = this->to_attrs(
-            lt, lt.lt_style_scrollbar, lt.lt_style_status, reporter);
+        = this->to_attrs(lt, lt.lt_style_scrollbar, reporter);
     {
         positioned_property<style_config> bar_sc;
 
@@ -946,7 +907,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_scrollbar.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_SCROLLBAR_ERROR)]
-            = this->to_attrs(lt, bar_sc, lt.lt_style_alert_status, reporter);
+            = this->to_attrs(lt, bar_sc, reporter);
     }
     {
         positioned_property<style_config> bar_sc;
@@ -956,57 +917,48 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_scrollbar.pp_value.sc_background_color;
         this->vc_role_attrs[lnav::enums::to_underlying(
             role_t::VCR_SCROLLBAR_WARNING)]
-            = this->to_attrs(lt, bar_sc, lt.lt_style_warn_status, reporter);
+            = this->to_attrs(lt, bar_sc, reporter);
     }
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_QUOTED_CODE)]
-        = this->to_attrs(
-            lt, lt.lt_style_quoted_code, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_quoted_code, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_CODE_BORDER)]
-        = this->to_attrs(
-            lt, lt.lt_style_code_border, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_code_border, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_KEYWORD)]
-        = this->to_attrs(lt, lt.lt_style_keyword, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_keyword, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_STRING)]
-        = this->to_attrs(lt, lt.lt_style_string, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_string, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_COMMENT)]
-        = this->to_attrs(lt, lt.lt_style_comment, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_comment, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_DOC_DIRECTIVE)]
-        = this->to_attrs(
-            lt, lt.lt_style_doc_directive, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_doc_directive, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_VARIABLE)]
-        = this->to_attrs(lt, lt.lt_style_variable, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_variable, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SYMBOL)]
-        = this->to_attrs(lt, lt.lt_style_symbol, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_symbol, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_NUMBER)]
-        = this->to_attrs(lt, lt.lt_style_number, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_number, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_SPECIAL)]
-        = this->to_attrs(
-            lt, lt.lt_style_re_special, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_re_special, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_REPEAT)]
-        = this->to_attrs(lt, lt.lt_style_re_repeat, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_re_repeat, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FILE)]
-        = this->to_attrs(lt, lt.lt_style_file, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_file, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_DIFF_DELETE)]
-        = this->to_attrs(
-            lt, lt.lt_style_diff_delete, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_diff_delete, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_DIFF_ADD)]
-        = this->to_attrs(lt, lt.lt_style_diff_add, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_diff_add, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_DIFF_SECTION)]
-        = this->to_attrs(
-            lt, lt.lt_style_diff_section, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_diff_section, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_LOW_THRESHOLD)]
-        = this->to_attrs(
-            lt, lt.lt_style_low_threshold, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_low_threshold, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_MED_THRESHOLD)]
-        = this->to_attrs(
-            lt, lt.lt_style_med_threshold, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_med_threshold, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_HIGH_THRESHOLD)]
-        = this->to_attrs(
-            lt, lt.lt_style_high_threshold, lt.lt_style_text, reporter);
+        = this->to_attrs(lt, lt.lt_style_high_threshold, reporter);
 
     for (auto level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
          level < LEVEL__MAX;
@@ -1018,8 +970,8 @@ view_colors::init_roles(const lnav_theme& lt,
             this->vc_level_attrs[level]
                 = role_attrs{text_attrs{}, text_attrs{}};
         } else {
-            this->vc_level_attrs[level] = this->to_attrs(
-                lt, level_iter->second, lt.lt_style_text, reporter);
+            this->vc_level_attrs[level]
+                = this->to_attrs(lt, level_iter->second, reporter);
         }
     }
 

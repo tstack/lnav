@@ -131,13 +131,6 @@ private:
 };
 /* XXX END */
 
-static int32_t
-read_le32(const unsigned char* data)
-{
-    return ((data[0] << 0) | (data[1] << 8) | (data[2] << 16)
-            | (data[3] << 24));
-}
-
 #define Z_BUFSIZE      65536U
 #define SYNCPOINT_SIZE (1024 * 1024)
 line_buffer::gz_indexed::gz_indexed()
@@ -198,11 +191,69 @@ line_buffer::gz_indexed::continue_stream()
 }
 
 void
-line_buffer::gz_indexed::open(int fd)
+line_buffer::gz_indexed::open(int fd, header_data& hd)
 {
     this->close();
     this->init_stream();
     this->gz_fd = fd;
+
+    unsigned char name[1024];
+    unsigned char comment[4096];
+
+    name[0] = '\0';
+    comment[0] = '\0';
+
+    gz_header gz_hd;
+    memset(&gz_hd, 0, sizeof(gz_hd));
+    gz_hd.name = name;
+    gz_hd.name_max = sizeof(name);
+    gz_hd.comment = comment;
+    gz_hd.comm_max = sizeof(comment);
+
+    Bytef inbuf[8192];
+    Bytef outbuf[8192];
+    this->strm.next_out = outbuf;
+    this->strm.total_out = 0;
+    this->strm.avail_out = sizeof(outbuf);
+    this->strm.next_in = inbuf;
+    this->strm.total_in = 0;
+
+    if (inflateGetHeader(&this->strm, &gz_hd) == Z_OK) {
+        auto rc = pread(fd, inbuf, sizeof(inbuf), 0);
+        if (rc >= 0) {
+            this->strm.avail_in = rc;
+
+            inflate(&this->strm, Z_BLOCK);
+            inflateEnd(&this->strm);
+
+            this->strm.next_out = Z_NULL;
+            this->strm.next_in = Z_NULL;
+            this->strm.next_in = Z_NULL;
+            this->strm.total_in = 0;
+            this->strm.avail_in = 0;
+            this->init_stream();
+
+            switch (gz_hd.done) {
+                case 0:
+                    log_debug("%d: no gzip header data", fd);
+                    break;
+                case 1:
+                    hd.hd_mtime.tv_sec = gz_hd.time;
+                    hd.hd_name = std::string((char*) name);
+                    hd.hd_comment = std::string((char*) comment);
+                    break;
+                default:
+                    log_error("%d: failed to read gzip header data", fd);
+                    break;
+            }
+        } else {
+            log_error("%d: failed to read gzip header from file: %s",
+                      fd,
+                      strerror(errno));
+        }
+    } else {
+        log_error("%d: unable to get gzip header", fd);
+    }
 }
 
 int
@@ -365,10 +416,9 @@ line_buffer::set_fd(auto_fd& fd)
                         close(gzfd);
                         throw error(errno);
                     }
-                    this->lb_gz_file.writeAccess()->open(gzfd);
+                    this->lb_gz_file.writeAccess()->open(gzfd, this->lb_header);
                     this->lb_compressed = true;
-                    this->lb_file_time
-                        = read_le32((const unsigned char*) &gz_id[4]);
+                    this->lb_file_time = this->lb_header.hd_mtime.tv_sec;
                     if (this->lb_file_time < 0) {
                         this->lb_file_time = 0;
                     }
@@ -651,21 +701,22 @@ line_buffer::load_next_buffer()
 
             auto before = line_start - this->lb_alt_buffer->begin();
             auto remaining = this->lb_alt_buffer.value().size() - before;
-            auto utf8_end = is_utf8((unsigned char*) line_start,
-                                    remaining,
-                                    &msg,
-                                    &faulty_bytes,
-                                    '\n');
+            auto utf_scan_res = is_utf8((unsigned char*) line_start,
+                                        remaining,
+                                        &msg,
+                                        &faulty_bytes,
+                                        '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(line_start, '\n', remaining);
-                utf8_end = lf - line_start;
+                utf_scan_res.usr_end = lf - line_start;
                 valid_utf = false;
             }
-            if (utf8_end >= 0) {
-                lf = line_start + utf8_end;
+            if (utf_scan_res.usr_end >= 0) {
+                lf = line_start + utf_scan_res.usr_end;
             }
             this->lb_alt_line_starts.emplace_back(before);
             this->lb_alt_line_is_utf.emplace_back(valid_utf);
+            this->lb_alt_line_has_ansi.emplace_back(utf_scan_res.usr_has_ansi);
 
             if (lf != nullptr) {
                 line_start = lf + 1;
@@ -727,6 +778,8 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_alt_line_starts.clear();
         this->lb_line_is_utf = std::move(this->lb_alt_line_is_utf);
         this->lb_alt_line_is_utf.clear();
+        this->lb_line_has_ansi = std::move(this->lb_alt_line_has_ansi);
+        this->lb_alt_line_has_ansi.clear();
         this->lb_stats.s_used_preloads += 1;
     }
     if (this->in_range(start) && this->in_range(start + max_length - 1)) {
@@ -1045,17 +1098,20 @@ line_buffer::load_next_line(file_range prev_line)
             const char* msg;
             int faulty_bytes;
 
-            utf8_end = is_utf8((unsigned char*) line_start,
-                               retval.li_file_range.fr_size,
-                               &msg,
-                               &faulty_bytes,
-                               '\n');
+            auto scan_res = is_utf8((unsigned char*) line_start,
+                                    retval.li_file_range.fr_size,
+                                    &msg,
+                                    &faulty_bytes,
+                                    '\n');
             if (msg != nullptr) {
                 lf = (char*) memchr(
                     line_start, '\n', retval.li_file_range.fr_size);
                 utf8_end = lf - line_start;
                 retval.li_valid_utf = false;
+            } else {
+                utf8_end = scan_res.usr_end;
             }
+            retval.li_has_ansi = scan_res.usr_has_ansi;
         }
 
         if (utf8_end >= 0) {
@@ -1187,6 +1243,7 @@ line_buffer::read_range(const file_range fr)
             FMT_STRING("short-read (need: {}; avail: {})"), fr.fr_size, avail));
     }
     retval.share(this->lb_share_manager, line_start, fr.fr_size);
+    retval.get_metadata() = fr.fr_metadata;
 
     return Ok(std::move(retval));
 }
@@ -1302,7 +1359,7 @@ line_buffer::enable_cache()
         "%d:cache file path: %s", this->lb_fd.get(), cached_file_path.c_str());
 
     auto fl = lnav::filesystem::file_lock(cached_file_path);
-    auto guard = lnav::filesystem::file_lock::guard(fl);
+    auto guard = lnav::filesystem::file_lock::guard(&fl);
 
     if (ghc::filesystem::exists(cached_done_path)) {
         log_info("%d:using existing cache file");

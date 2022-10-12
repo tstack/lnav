@@ -7,16 +7,19 @@
                 "pattern": "^(?<timestamp>\\d+) (?<body>.*)$"
             },
             "non_epoch": {
-                "pattern": "^(?<timestamp>\\d+-\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+) (?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d+) (?<body>.*)$"
             }
         },
-        "timestamp-format" : [
+        "timestamp-format": [
             "%i",
             "%Y-%m-%d %H:%M:%S.%f"
         ],
         "sample": [
             {
                 "line": "1428634687123 Hello, World!"
+            },
+            {
+                "line": "2022-09-10 19:57:36.123456 Hello, World"
             }
         ]
     }

@@ -77,6 +77,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_line_attrs.clear();
         this->ldh_line_values.clear();
         this->ldh_file->read_full_message(ll, this->ldh_line_values.lvv_sbr);
+        this->ldh_line_values.lvv_sbr.erase_ansi();
         format->annotate(this->ldh_line_index, sa, this->ldh_line_values);
 
         body = find_string_attr_range(sa, &SA_BODY);
@@ -85,7 +86,8 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
             body.lr_end = this->ldh_line_values.lvv_sbr.length();
         }
         this->ldh_scanner = std::make_unique<data_scanner>(
-            this->ldh_line_values.lvv_sbr, body.lr_start, body.lr_end);
+            this->ldh_line_values.lvv_sbr.to_string_fragment().sub_range(
+                body.lr_start, body.lr_end));
         this->ldh_parser
             = std::make_unique<data_parser>(this->ldh_scanner.get());
         this->ldh_msg_format.clear();
@@ -128,7 +130,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                         pugi::xpath_query query("//*");
                         auto node_set = doc.select_nodes(query);
 
-                        for (auto& xpath_node : node_set) {
+                        for (const auto& xpath_node : node_set) {
                             auto node_path = lnav::pugixml::get_actual_path(
                                 xpath_node.node());
                             for (auto& attr : xpath_node.node().attributes()) {
@@ -174,10 +176,8 @@ log_data_helper::get_line_bounds(size_t& line_index_out,
 
     line_end_index_out = 0;
     do {
-        const char* line_end;
-
         line_index_out = line_end_index_out;
-        line_end = (const char*) memchr(
+        const auto* line_end = (const char*) memchr(
             this->ldh_line_values.lvv_sbr.get_data() + line_index_out + 1,
             '\n',
             this->ldh_line_values.lvv_sbr.length() - line_index_out - 1);

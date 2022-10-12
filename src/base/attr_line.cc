@@ -37,7 +37,7 @@
 #include "auto_mem.hh"
 #include "config.h"
 #include "lnav_log.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 
 attr_line_t&
 attr_line_t::with_ansi_string(const char* str, ...)
@@ -91,18 +91,19 @@ using chunk = mapbox::util::variant<word, space, corrupt, eof>;
 chunk
 consume(const string_fragment text)
 {
-    static const pcrepp WORD_RE(R"((*UTF)^[^\p{Z}\p{So}\p{C}]+)");
-    static const pcrepp SPACE_RE(R"((*UTF)^\s)");
+    static const auto WORD_RE
+        = lnav::pcre2pp::code::from_const(R"((*UTF)^[^\p{Z}\p{So}\p{C}]+)");
+    static const auto SPACE_RE
+        = lnav::pcre2pp::code::from_const(R"((*UTF)^\s)");
 
     if (text.empty()) {
         return eof{text};
     }
 
-    pcre_input pi(text);
-    pcre_context_static<30> pc;
-
-    if (WORD_RE.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
-        auto split_res = text.split_n(pc.all()->length()).value();
+    auto word_find_res
+        = WORD_RE.find_in(text, PCRE2_NO_UTF_CHECK).ignore_error();
+    if (word_find_res) {
+        auto split_res = text.split_n(word_find_res->f_all.length()).value();
 
         return word{split_res.first, split_res.second};
     }
@@ -113,8 +114,10 @@ consume(const string_fragment text)
         return space{split_res.first, split_res.second};
     }
 
-    if (SPACE_RE.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
-        auto split_res = text.split_n(pc.all()->length()).value();
+    auto space_find_res
+        = SPACE_RE.find_in(text, PCRE2_NO_UTF_CHECK).ignore_error();
+    if (space_find_res) {
+        auto split_res = text.split_n(space_find_res->f_all.length()).value();
 
         return space{split_res.first, split_res.second};
     }
@@ -183,8 +186,6 @@ attr_line_t::insert(size_t index,
     if (tws == nullptr) {
         return *this;
     }
-
-    static const pcrepp SPACE_RE(R"(\s?)");
 
     auto starting_line_index = this->al_string.rfind('\n', index);
     if (starting_line_index == std::string::npos) {

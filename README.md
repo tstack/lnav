@@ -129,7 +129,7 @@ The following alternatives are also available:
 The following software packages are required to build lnav:
 
 - gcc/clang  - A C++14-compatible compiler.
-- libpcre    - The Perl Compatible Regular Expression (PCRE) library.
+- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.
 - sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
 - ncurses    - The ncurses text UI library.
 - readline   - The readline line editing library.

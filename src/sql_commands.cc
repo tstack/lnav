@@ -45,9 +45,7 @@ sql_cmd_dump(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
 {
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
     static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
     std::string retval;
@@ -90,9 +88,7 @@ sql_cmd_read(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
 {
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
     static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
     std::string retval;

@@ -1,4 +1,4 @@
-             Jun  2 00:34:32 Tim-Stacks-iMac kernel[0]: vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400.
+             Jun  2 00:34:32 Tim-Stacks-iMac kernel[0]: vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400
  key  43:48                                             ^---^                                                           vmnet
 quot  49:49                                                  ^                                                          
  val  49:49                                                  ^                                                          
@@ -13,7 +13,7 @@ wspc  86:87                                                                     
  hex  87:105                                                                                        ^----------------^  0xffffff802644f400
  val  69:105                                                                      ^----------------------------------^  created userIf at 0xffffff802644f400
 pair  50:105                                                   ^-----------------------------------------------------^  VNetUserIf_Create: created userIf at 0xffffff802644f400
-msg         :vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400.
+msg         :vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400
 format      :vmnet:# VNetUserIf_Create: #
 {
     "vmnet": "",

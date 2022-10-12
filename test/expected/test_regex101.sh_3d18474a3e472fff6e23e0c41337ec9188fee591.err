@@ -1,14 +1,34 @@
+[1m[31m✘ error[0m: invalid value “[1m/unit_test_log/value/jobserver[0m”
+ [1m[31mreason[0m: no patterns have a capture named “jobserver”
+[36m =[0m [36mnote[0m: the following captures are available:
+           
+[36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
+[1m[31m✘ error[0m: invalid value “[1m/unit_test_log/value/processid[0m”
+ [1m[31mreason[0m: no patterns have a capture named “processid”
+[36m =[0m [36mnote[0m: the following captures are available:
+           
+[36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
+[1m[31m✘ error[0m: invalid value “[1m/unit_test_log/value/timestamp[0m”
+ [1m[31mreason[0m: no patterns have a capture named “timestamp”
+[36m =[0m [36mnote[0m: the following captures are available:
+           
+[36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
+[1m[31m✘ error[0m: invalid value “[1m/unit_test_log/value/workqueue[0m”
+ [1m[31mreason[0m: no patterns have a capture named “workqueue”
+[36m =[0m [36mnote[0m: the following captures are available:
+           
+[36m =[0m [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
 [1m[31m✘ error[0m: invalid sample log message: "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
  [1m[31mreason[0m: sample does not match any patterns
 [36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:26
 [36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
-            [03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}
+            [37m[40m[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}[0m
 [36m =[0m [36mnote[0m: [1mstd[0m = “”
          
 [1m[31m✘ error[0m: invalid sample log message: "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
  [1m[31mreason[0m: sample does not match any patterns
 [36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:30
 [36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
-            [03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}
+            [37m[40m[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {"ELAPSED":"0.011","LEVEL":"info","MESSAGE":"finished in 0.011\n","PREFIX":"YFgyWQriCmsAAofJAAAAHg","ROUTINGKEY":"EXAMPLE1366.Example.Events._Publish"}[0m
 [36m =[0m [36mnote[0m: [1mstd[0m = “”
          

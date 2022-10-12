@@ -175,9 +175,7 @@ replace_home_dir(std::string path)
 Result<void, lnav::console::user_message>
 export_to(FILE* file)
 {
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     static const char* BOOKMARK_QUERY = R"(
 SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_line_hash

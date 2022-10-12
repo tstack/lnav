@@ -269,7 +269,7 @@ tailer::looper::complete_path(const network::path& path)
 static std::vector<std::string>
 create_ssh_args_from_config(const std::string& dest)
 {
-    auto& cfg = injector::get<const tailer::config&>();
+    const auto& cfg = injector::get<const tailer::config&>();
     std::vector<std::string> retval;
 
     retval.emplace_back(cfg.c_ssh_cmd);

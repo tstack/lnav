@@ -175,15 +175,15 @@ textview_curses::reload_config(error_reporter& reporter)
                 continue;
             }
 
-            auto regex = pcrepp::shared_from_str(hl_pair.second.hc_regex);
+            auto regex = lnav::pcre2pp::code::from(hl_pair.second.hc_regex);
 
             if (regex.isErr()) {
+                const static intern_string_t PATTERN_SRC
+                    = intern_string::lookup("pattern");
+
                 auto ce = regex.unwrapErr();
                 reporter(&hl_pair.second.hc_regex,
-                         lnav::console::user_message::error(fmt::format(
-                             FMT_STRING("invalid highlight regex: {} at {}"),
-                             ce.ce_msg,
-                             ce.ce_offset)));
+                         lnav::console::to_user_message(PATTERN_SRC, ce));
                 continue;
             }
 
@@ -228,7 +228,7 @@ textview_curses::reload_config(error_reporter& reporter)
                 attrs.ta_attrs |= A_UNDERLINE;
             }
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
-                = highlighter(regex.unwrap())
+                = highlighter(regex.unwrap().to_shared())
                       .with_attrs(attrs)
                       .with_color(fg, bg)
                       .with_nestable(false);
@@ -557,7 +557,7 @@ void
 textview_curses::execute_search(const std::string& regex_orig)
 {
     std::string regex = regex_orig;
-    std::shared_ptr<pcrepp> code;
+    std::shared_ptr<lnav::pcre2pp::code> code;
 
     if ((this->tc_search_child == nullptr)
         || (regex != this->tc_current_search))
@@ -571,27 +571,26 @@ textview_curses::execute_search(const std::string& regex_orig)
 
         if (regex.empty()) {
         } else {
-            auto compile_res
-                = pcrepp::shared_from_str(regex, PCRE_CASELESS | PCRE_UTF8);
+            auto compile_res = lnav::pcre2pp::code::from(regex, PCRE2_CASELESS);
 
             if (compile_res.isErr()) {
                 auto ce = compile_res.unwrapErr();
-                regex = pcrepp::quote(regex);
+                regex = lnav::pcre2pp::quote(regex);
 
                 log_info("invalid search regex (%s), using quoted: %s",
-                         ce.ce_msg,
+                         ce.get_message().c_str(),
                          regex.c_str());
 
                 auto compile_quote_res
-                    = pcrepp::shared_from_str(regex, PCRE_CASELESS | PCRE_UTF8);
+                    = lnav::pcre2pp::code::from(regex, PCRE2_CASELESS);
                 if (compile_quote_res.isErr()) {
                     log_error("Unable to compile quoted regex: %s",
                               regex.c_str());
                 } else {
-                    code = compile_quote_res.unwrap();
+                    code = compile_quote_res.unwrap().to_shared();
                 }
             } else {
-                code = compile_res.unwrap();
+                code = compile_res.unwrap().to_shared();
             }
         }
 
@@ -604,7 +603,7 @@ textview_curses::execute_search(const std::string& regex_orig)
             hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
             auto gp = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
-                code->p_code, *this);
+                code, *this);
 
             gp->set_sink(this);
             auto top = this->get_top();
@@ -626,7 +625,7 @@ textview_curses::execute_search(const std::string& regex_orig)
                 this->tc_sub_source->get_grepper() | [this, code](auto pair) {
                     auto sgp
                         = injector::get<std::shared_ptr<grep_proc<vis_line_t>>>(
-                            code->p_code, *pair.first);
+                            code, *pair.first);
 
                     sgp->set_sink(pair.second);
                     sgp->queue_request(0_vl);
@@ -661,15 +660,15 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
         this->listview_value_for_rows(*this, start, rows);
 
         const auto& str = rows[0].get_string();
-        pcre_context_static<60> pc;
-        pcre_input pi(str);
-        while (hl_iter->second.h_regex->match(pc, pi)) {
-            if (pc.all()->c_begin < off_start) {
-                prev_hit = std::max(prev_hit, pc.all()->c_begin);
-            } else if (pc.all()->c_begin > off_start) {
-                next_hit = std::min(next_hit, pc.all()->c_begin);
-            }
-        }
+        hl_iter->second.h_regex->capture_from(str).for_each(
+            [&](lnav::pcre2pp::match_data& md) {
+                auto cap = md[0].value();
+                if (cap.sf_begin < off_start) {
+                    prev_hit = std::max(prev_hit, cap.sf_begin);
+                } else if (cap.sf_begin > off_start) {
+                    next_hit = std::min(next_hit, cap.sf_begin);
+                }
+            });
     }
 
     if (prev_hit == -1 && next_hit == INT_MAX) {
@@ -1127,8 +1126,7 @@ logfile_filter_state::content_line_to_vis_line(uint32_t line)
 std::string
 text_anchors::to_anchor_string(const std::string& raw)
 {
-    static const pcrepp ANCHOR_RE(R"([^\w]+)");
+    static const auto ANCHOR_RE = lnav::pcre2pp::code::from_const(R"([^\w]+)");
 
-    return fmt::format(FMT_STRING("#{}"),
-                       ANCHOR_RE.replace(tolower(raw).c_str(), "-"));
+    return fmt::format(FMT_STRING("#{}"), ANCHOR_RE.replace(tolower(raw), "-"));
 }

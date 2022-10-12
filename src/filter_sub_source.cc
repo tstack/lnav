@@ -86,6 +86,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             auto* tss = top_view->get_sub_source();
 
             tss->toggle_apply_filters();
+            top_view->reload_data();
             break;
         }
         case ' ': {
@@ -102,6 +103,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             fs.set_filter_enabled(tf, !tf->is_enabled());
             tss->text_filters_changed();
             lv.reload_data();
+            top_view->reload_data();
             return true;
         }
         case 't': {
@@ -123,6 +125,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 
             tss->text_filters_changed();
             lv.reload_data();
+            top_view->reload_data();
             return true;
         }
         case 'D': {
@@ -139,6 +142,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             fs.delete_filter(tf->get_id());
             lv.reload_data();
             tss->text_filters_changed();
+            top_view->reload_data();
             return true;
         }
         case 'i': {
@@ -425,15 +429,15 @@ filter_sub_source::rl_change(readline_curses* rc)
             break;
         case filter_lang_t::REGEX: {
             auto regex_res
-                = pcrepp::shared_from_str(new_value, PCRE_CASELESS | PCRE_UTF8);
+                = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
 
             if (regex_res.isErr()) {
                 auto pe = regex_res.unwrapErr();
                 lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                    "error: %s", pe.ce_msg);
+                    "error: %s", pe.get_message().c_str());
             } else {
                 auto& hm = top_view->get_highlights();
-                highlighter hl(regex_res.unwrap());
+                highlighter hl(regex_res.unwrap().to_shared());
                 auto role = tf->get_type() == text_filter::EXCLUDE
                     ? role_t::VCR_DIFF_DELETE
                     : role_t::VCR_DIFF_ADD;
@@ -508,21 +512,12 @@ filter_sub_source::rl_perform(readline_curses* rc)
         switch (tf->get_lang()) {
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {
-                auto compile_res = pcrepp::shared_from_str(
-                    new_value, PCRE_CASELESS | PCRE_UTF8);
+                auto compile_res
+                    = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
 
                 if (compile_res.isErr()) {
                     auto ce = compile_res.unwrapErr();
-                    auto um = lnav::console::user_message::error(
-                                  "invalid regular expression")
-                                  .with_reason(ce.ce_msg)
-                                  .with_snippet(lnav::console::snippet::from(
-                                      INPUT_SRC, new_value));
-                    um.um_snippets.back()
-                        .s_content.append("\n")
-                        .append(ce.ce_offset, ' ')
-                        .append("^ "_comment)
-                        .append(lnav::roles::comment(ce.ce_msg));
+                    auto um = lnav::console::to_user_message(INPUT_SRC, ce);
                     lnav_data.ld_exec_context.ec_error_callback_stack.back()(
                         um);
                     this->rl_abort(rc);
@@ -530,11 +525,11 @@ filter_sub_source::rl_perform(readline_curses* rc)
                     tf->lf_deleted = true;
                     tss->text_filters_changed();
 
-                    auto pf
-                        = std::make_shared<pcre_filter>(tf->get_type(),
-                                                        new_value,
-                                                        tf->get_index(),
-                                                        compile_res.unwrap());
+                    auto pf = std::make_shared<pcre_filter>(
+                        tf->get_type(),
+                        new_value,
+                        tf->get_index(),
+                        compile_res.unwrap().to_shared());
 
                     *iter = pf;
                     tss->text_filters_changed();
@@ -585,6 +580,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
     this->fss_editor->set_visible(false);
+    top_view->reload_data();
     this->tss_view->reload_data();
 }
 

@@ -94,7 +94,7 @@ like so:
        "$schema": "https://lnav.org/schemas/format-v1.schema.json"
    }
 
-Each format to be defined in the file should a separate field in the top-level
+Each format to be defined in the file should be a separate field in the top-level
 object.  The field name should be the symbolic name of the format.  This value
 will also be used as the SQL table name for the log.  The value for each field
 should be another object with the following fields:
@@ -111,11 +111,19 @@ should be another object with the following fields:
   .. _format_regex:
 
   :regex: This object contains sub-objects that describe the message formats
-    to match in a plain log file.  Log files that contain JSON messages should
-    not specify this field.
+    to match in a plain-text log file.  Each :code:`regex` MUST only match one
+    type of log message.  It must not match log messages that are matched by
+    other regexes in this format.  This uniqueness requirement is necessary
+    because **lnav** will "lock-on" to a regex and use it to match against
+    the next line in a file. So, if the regexes do not uniquely match each
+    type of log message, messages can be matched by the wrong regex.  The
+    "lock-on" behavior is needed to avoid the performance hit of having to
+    try too many different regexes.
+
+    .. note:: Log files that contain JSON messages should not specify this field.
 
     :pattern: The regular expression that should be used to match log messages.
-      The `PCRE <http://www.pcre.org>`_ library is used by **lnav** to do all
+      The `PCRE2 <http://www.pcre.org>`_ library is used by **lnav** to do all
       regular expression matching.
 
     :module-format: If true, this regex will only be used to parse message
@@ -193,6 +201,16 @@ should be another object with the following fields:
   :timestamp-divisor: For JSON logs with numeric timestamps, this value is used
     to divide the timestamp by to get the number of seconds and fractional
     seconds.
+
+  :subsecond-field: (v0.11.1+) The path to the property in a JSON-lines log
+    message that contains the sub-second time value
+
+  :subsecond-units: (v0.11.1+) The units of the subsecond-field property value.
+    The following values are supported:
+
+    :milli: for milliseconds
+    :micro: for microseconds
+    :nano: for nanoseconds
 
   :ordered-by-time: (v0.8.3+) Indicates that the order of messages in the file
     is time-based.  Files that are not naturally ordered by time will be sorted
@@ -381,15 +399,15 @@ with the following contents:
 Scripts
 -------
 
-Format directories may also contain '.sql' and '.lnav' files to help automate
+Format directories may also contain :file:`.sql` and :file:`.lnav` files to help automate
 log file analysis.  The SQL files are executed on startup to create any helper
 tables or views and the '.lnav' script files can be executed using the pipe
-hotkey (|).  For example, **lnav** includes a "partition-by-boot" script that
+hotkey :kbd:`|`.  For example, **lnav** includes a "partition-by-boot" script that
 partitions the log view based on boot messages from the Linux kernel.  A script
 can have a mix of SQL and **lnav** commands, as well as include other scripts.
 The type of statement to execute is determined by the leading character on a
 line: a semi-colon begins a SQL statement; a colon starts an **lnav** command;
-and a pipe (|) denotes another script to be executed.  Lines beginning with a
+and a pipe :code:`|` denotes another script to be executed.  Lines beginning with a
 hash are treated as comments.  The following variables are defined in a script:
 
 .. envvar:: #
@@ -433,6 +451,12 @@ header:
    .. code-block:: lnav
 
       :eval :filter-out ${pattern}
+
+VSCode Extension
+^^^^^^^^^^^^^^^^
+
+The `lnav VSCode Extension <https://marketplace.visualstudio.com/items?itemName=lnav.lnav>`_
+can be installed to add syntax highlighting to lnav scripts.
 
 Installing Formats
 ------------------

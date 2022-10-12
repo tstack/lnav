@@ -372,7 +372,7 @@ void
 load_time_bookmarks()
 {
     logfile_sub_source& lss = lnav_data.ld_log_source;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     logfile_sub_source::iterator file_iter;
@@ -862,7 +862,7 @@ read_commands(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     return 1;
 }
 
-static struct json_path_container view_def_handlers = {
+static const struct json_path_container view_def_handlers = {
     json_path_handler("top_line", read_top_line),
     json_path_handler("search", read_current_search),
     json_path_handler("word_wrap", read_word_wrap),
@@ -870,18 +870,18 @@ static struct json_path_container view_def_handlers = {
     json_path_handler("commands#", read_commands),
 };
 
-static struct json_path_container view_handlers = {
+static const struct json_path_container view_handlers = {
     yajlpp::pattern_property_handler("([^/]+)").with_children(
         view_def_handlers),
 };
 
-static struct json_path_container file_state_handlers = {
+static const struct json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
         .with_description("Indicates whether the file is visible or not")
         .for_field(&file_state::fs_is_visible),
 };
 
-static struct json_path_container file_states_handlers = {
+static const struct json_path_container file_states_handlers = {
     yajlpp::pattern_property_handler(R"((?<filename>[^/]+))")
         .with_description("Map of file names to file state objects")
         .with_obj_provider<file_state, void>([](const auto& ypc, auto* root) {
@@ -891,7 +891,7 @@ static struct json_path_container file_states_handlers = {
         .with_children(file_state_handlers),
 };
 
-static struct json_path_container view_info_handlers = {
+static const struct json_path_container view_info_handlers = {
     yajlpp::property_handler("save-time")
         .for_field(&session_data_t::sd_save_time),
     yajlpp::property_handler("time-offset")
@@ -1070,7 +1070,7 @@ save_user_bookmarks(sqlite3* db,
 static void
 save_time_bookmarks()
 {
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<char, sqlite3_free> errmsg;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -1670,7 +1670,7 @@ lnav::session::regex101::insert_entry(const lnav::session::regex101::entry& ei)
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
@@ -1723,7 +1723,7 @@ lnav::session::regex101::get_entries()
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return Err(std::string());
@@ -1766,7 +1766,7 @@ lnav::session::regex101::delete_entry(const std::string& format_name,
 )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
@@ -1793,7 +1793,7 @@ lnav::session::regex101::get_entry(const std::string& format_name,
     )";
 
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
-    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    auto_sqlite3 db;
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return error{std::string()};

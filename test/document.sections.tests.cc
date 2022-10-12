@@ -125,6 +125,7 @@ DESCRIPTION
 
     auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
 
+    CHECK(meta.m_sections_root->hn_named_children.size() == 3);
     meta.m_sections_tree.visit_all([](const auto& intv) {
         auto ser = intv.value.match(
             [](const std::string& name) { return name; },

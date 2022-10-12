@@ -56,19 +56,13 @@
 #include <thread>
 #include <vector>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-
-#ifdef HAVE_PCRE_H
-#    include <pcre.h>
-#elif HAVE_PCRE_PCRE_H
-#    include <pcre/pcre.h>
-#else
-#    error "pcre.h not found?"
-#endif
 
 #if defined HAVE_NCURSESW_CURSES_H
 #    include <ncursesw/curses.h>
@@ -215,14 +209,14 @@ void
 log_host_info()
 {
     char cwd[MAXPATHLEN];
-    const char* jittarget;
+    char jittarget[128];
     struct utsname un;
     struct rusage ru;
-    int pcre_jit;
+    uint32_t pcre_jit;
 
     uname(&un);
-    pcre_config(PCRE_CONFIG_JIT, &pcre_jit);
-    pcre_config(PCRE_CONFIG_JITTARGET, &jittarget);
+    pcre2_config(PCRE2_CONFIG_JIT, &pcre_jit);
+    pcre2_config(PCRE2_CONFIG_JITTARGET, jittarget);
 
     log_info("uname:");
     log_info("  sysname=%s", un.sysname);

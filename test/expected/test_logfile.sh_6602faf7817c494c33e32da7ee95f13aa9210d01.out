@@ -1,0 +1,10 @@
+[32mSep 19 [0m[33m09:24:04[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: ti[33md:1d1f[0m - Mux ID not found in mapping dictionary
+[32mSep 19 [0m[33m09:24:04[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: ti[33md:1d1f[0m - Can't handle dis[41mconnect[0m with invalid ecid
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mMobileDeviceUpdater[0m[34m[[0m[34m17530[0m[34m][0m: Entered:_AMMuxedDeviceDis[41mconnect[0med, mux-devi[33mce:1003[0m
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: Entered:_AMMuxedDeviceDis[41mconnect[0med, mux-devi[33mce:1003[0m
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mMobileDeviceUpdater[0m[34m[[0m[34m17530[0m[34m][0m: Entered:__thr_AMMuxedDeviceDis[41mconnect[0med, mux-devi[33mce:1003[0m
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: Entered:__thr_AMMuxedDeviceDis[41mconnect[0med, mux-devi[33mce:1003[0m
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mMobileDeviceUpdater[0m[34m[[0m[34m17530[0m[34m][0m: ti[33md:191f[0m - Mux ID not found in mapping dictionary
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: ti[33md:1d1f[0m - Mux ID not found in mapping dictionary
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mMobileDeviceUpdater[0m[34m[[0m[34m17530[0m[34m][0m: ti[33md:191f[0m - Can't handle dis[41mconnect[0m with invalid ecid
+[32mSep 19 [0m[33m09:24:20[0m[31m [0m[31mTims-MacBook-Air[0m[31m [0m[31mAMPDeviceDiscoveryAgent[0m[34m[[0m[34m17600[0m[34m][0m: ti[33md:1d1f[0m - Can't handle dis[41mconnect[0m with invalid ecid

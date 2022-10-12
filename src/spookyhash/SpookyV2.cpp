@@ -54,18 +54,18 @@ void SpookyHash::Short(
         // handle all complete sets of 32 bytes
         for (; u.p64 < end; u.p64 += 4)
         {
-            c += u.p64[0];
-            d += u.p64[1];
+            c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
+            d += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[1]);
             ShortMix(a,b,c,d);
-            a += u.p64[2];
-            b += u.p64[3];
+            a += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[2]);
+            b += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[3]);
         }
         
         //Handle the case of 16+ remaining bytes.
         if (remainder >= 16)
         {
-            c += u.p64[0];
-            d += u.p64[1];
+            c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
+            d += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[1]);
             ShortMix(a,b,c,d);
             u.p64 += 2;
             remainder -= 16;
@@ -83,8 +83,8 @@ void SpookyHash::Short(
     case 13:
         d += ((uint64)u.p8[12]) << 32;
     case 12:
-        d += u.p32[2];
-        c += u.p64[0];
+        d += SPOOKYHASH_LITTLE_ENDIAN_32(u.p32[2]);
+        c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
         break;
     case 11:
         d += ((uint64)u.p8[10]) << 16;
@@ -93,7 +93,7 @@ void SpookyHash::Short(
     case 9:
         d += (uint64)u.p8[8];
     case 8:
-        c += u.p64[0];
+        c += SPOOKYHASH_LITTLE_ENDIAN_64(u.p64[0]);
         break;
     case 7:
         c += ((uint64)u.p8[6]) << 48;
@@ -102,7 +102,7 @@ void SpookyHash::Short(
     case 5:
         c += ((uint64)u.p8[4]) << 32;
     case 4:
-        c += u.p32[0];
+        c += SPOOKYHASH_LITTLE_ENDIAN_32(u.p32[0]);
         break;
     case 3:
         c += ((uint64)u.p8[2]) << 16;

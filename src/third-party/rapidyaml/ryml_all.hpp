@@ -363,7 +363,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 // (end https://github.com/biojppm/c4core/src/c4/platform.hpp)
 
 
-
+#if 0
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/cpu.hpp
@@ -505,7 +505,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 
 
 // (end https://github.com/biojppm/c4core/src/c4/cpu.hpp)
-
+#endif
 
 
 //********************************************************************************
@@ -1618,9 +1618,9 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/cpu.hpp
 //#include "c4/cpu.hpp"
-#if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
-#error "amalgamate: file c4/cpu.hpp must have been included at this point"
-#endif /* C4_CPU_HPP_ */
+//#if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
+//#error "amalgamate: file c4/cpu.hpp must have been included at this point"
+//#endif /* C4_CPU_HPP_ */
 
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/compiler.hpp

@@ -43,6 +43,8 @@
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void* mem);
 
+using auto_sqlite3 = auto_mem<sqlite3, sqlite_close_wrapper>;
+
 namespace sqlitepp {
 
 inline auto_mem<char>

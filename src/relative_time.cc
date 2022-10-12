@@ -33,55 +33,172 @@
 
 #include "base/time_util.hh"
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "scn/scn.h"
 
 using namespace std::chrono_literals;
 
 static const struct {
     const char* name;
-    pcrepp pcre;
+    lnav::pcre2pp::code pcre;
 } MATCHERS[relative_time::RTT__MAX] = {
-    {"ws", pcrepp("\\A\\s+\\b")},
-    {"am", pcrepp("\\Aam|a\\.m\\.\\b")},
-    {"pm", pcrepp("\\Apm|p\\.m\\.\\b")},
-    {"a", pcrepp("\\Aa\\b")},
-    {"an", pcrepp("\\Aan\\b")},
-    {"at", pcrepp("\\Aat\\b")},
-    {"time", pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{3,6}))?)?")},
-    {"num", pcrepp("\\A((?:-|\\+)?\\d+)")},
+    {
+        "ws",
+        lnav::pcre2pp::code::from_const("\\A\\s+\\b"),
+    },
+    {
+        "am",
+        lnav::pcre2pp::code::from_const("\\Aam|a\\.m\\.\\b"),
+    },
+    {
+        "pm",
+        lnav::pcre2pp::code::from_const("\\Apm|p\\.m\\.\\b"),
+    },
+    {
+        "a",
+        lnav::pcre2pp::code::from_const("\\Aa\\b"),
+    },
+    {
+        "an",
+        lnav::pcre2pp::code::from_const("\\Aan\\b"),
+    },
+    {
+        "at",
+        lnav::pcre2pp::code::from_const("\\Aat\\b"),
+    },
+    {
+        "time",
+        lnav::pcre2pp::code::from_const(
+            "\\A(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{3,6}))?)?"),
+    },
+    {
+        "num",
+        lnav::pcre2pp::code::from_const("\\A((?:-|\\+)?\\d+)"),
+    },
 
-    {"sun", pcrepp("\\Asun(days?)?\\b")},
-    {"mon", pcrepp("\\Amon(days?)?\\b")},
-    {"tue", pcrepp("\\Atue(s(days?)?)?\\b")},
-    {"wed", pcrepp("\\Awed(nesdays?)?\\b")},
-    {"thu", pcrepp("\\Athu(rsdays?)?\\b")},
-    {"fri", pcrepp("\\Afri(days?)?\\b")},
-    {"sat", pcrepp("\\Asat(urdays?)?\\b")},
+    {
+        "sun",
+        lnav::pcre2pp::code::from_const("\\Asun(days?)?\\b"),
+    },
+    {
+        "mon",
+        lnav::pcre2pp::code::from_const("\\Amon(days?)?\\b"),
+    },
+    {
+        "tue",
+        lnav::pcre2pp::code::from_const("\\Atue(s(days?)?)?\\b"),
+    },
+    {
+        "wed",
+        lnav::pcre2pp::code::from_const("\\Awed(nesdays?)?\\b"),
+    },
+    {
+        "thu",
+        lnav::pcre2pp::code::from_const("\\Athu(rsdays?)?\\b"),
+    },
+    {
+        "fri",
+        lnav::pcre2pp::code::from_const("\\Afri(days?)?\\b"),
+    },
+    {
+        "sat",
+        lnav::pcre2pp::code::from_const("\\Asat(urdays?)?\\b"),
+    },
 
-    {"us", pcrepp("\\A(?:micros(?:econds?)?|us(?![a-zA-Z]))")},
-    {"ms", pcrepp("\\A(?:millis(?:econds?)?|ms(?![a-zA-Z]))")},
-    {"sec", pcrepp("\\As(?:ec(?:onds?)?)?(?![a-zA-Z])")},
-    {"min", pcrepp("\\Am(?:in(?:utes?)?)?(?![a-zA-Z])")},
-    {"h", pcrepp("\\Ah(?:ours?)?(?![a-zA-Z])")},
-    {"day", pcrepp("\\Ad(?:ays?)?(?![a-zA-Z])")},
-    {"week", pcrepp("\\Aw(?:eeks?)?(?![a-zA-Z])")},
-    {"mon", pcrepp("\\Amon(?:ths?)?(?![a-zA-Z])")},
-    {"year", pcrepp("\\Ay(?:ears?)?(?![a-zA-Z])")},
-    {"today", pcrepp("\\Atoday\\b")},
-    {"yest", pcrepp("\\Ayesterday\\b")},
-    {"tomo", pcrepp("\\Atomorrow\\b")},
-    {"noon", pcrepp("\\Anoon\\b")},
-    {"and", pcrepp("\\Aand\\b")},
-    {"the", pcrepp("\\Athe\\b")},
-    {"ago", pcrepp("\\Aago\\b")},
-    {"lter", pcrepp("\\Alater\\b")},
-    {"bfor", pcrepp("\\Abefore\\b")},
-    {"aft", pcrepp("\\Aafter\\b")},
-    {"now", pcrepp("\\Anow\\b")},
-    {"here", pcrepp("\\Ahere\\b")},
-    {"next", pcrepp("\\Anext\\b")},
-    {"previous", pcrepp("\\A(?:previous\\b|last\\b)")},
+    {
+        "us",
+        lnav::pcre2pp::code::from_const(
+            "\\A(?:micros(?:econds?)?|us(?![a-zA-Z]))"),
+    },
+    {
+        "ms",
+        lnav::pcre2pp::code::from_const(
+            "\\A(?:millis(?:econds?)?|ms(?![a-zA-Z]))"),
+    },
+    {
+        "sec",
+        lnav::pcre2pp::code::from_const("\\As(?:ec(?:onds?)?)?(?![a-zA-Z])"),
+    },
+    {
+        "min",
+        lnav::pcre2pp::code::from_const("\\Am(?:in(?:utes?)?)?(?![a-zA-Z])"),
+    },
+    {
+        "h",
+        lnav::pcre2pp::code::from_const("\\Ah(?:ours?)?(?![a-zA-Z])"),
+    },
+    {
+        "day",
+        lnav::pcre2pp::code::from_const("\\Ad(?:ays?)?(?![a-zA-Z])"),
+    },
+    {
+        "week",
+        lnav::pcre2pp::code::from_const("\\Aw(?:eeks?)?(?![a-zA-Z])"),
+    },
+    {
+        "mon",
+        lnav::pcre2pp::code::from_const("\\Amon(?:ths?)?(?![a-zA-Z])"),
+    },
+    {
+        "year",
+        lnav::pcre2pp::code::from_const("\\Ay(?:ears?)?(?![a-zA-Z])"),
+    },
+    {
+        "today",
+        lnav::pcre2pp::code::from_const("\\Atoday\\b"),
+    },
+    {
+        "yest",
+        lnav::pcre2pp::code::from_const("\\Ayesterday\\b"),
+    },
+    {
+        "tomo",
+        lnav::pcre2pp::code::from_const("\\Atomorrow\\b"),
+    },
+    {
+        "noon",
+        lnav::pcre2pp::code::from_const("\\Anoon\\b"),
+    },
+    {
+        "and",
+        lnav::pcre2pp::code::from_const("\\Aand\\b"),
+    },
+    {
+        "the",
+        lnav::pcre2pp::code::from_const("\\Athe\\b"),
+    },
+    {
+        "ago",
+        lnav::pcre2pp::code::from_const("\\Aago\\b"),
+    },
+    {
+        "lter",
+        lnav::pcre2pp::code::from_const("\\Alater\\b"),
+    },
+    {
+        "bfor",
+        lnav::pcre2pp::code::from_const("\\Abefore\\b"),
+    },
+    {
+        "aft",
+        lnav::pcre2pp::code::from_const("\\Aafter\\b"),
+    },
+    {
+        "now",
+        lnav::pcre2pp::code::from_const("\\Anow\\b"),
+    },
+    {
+        "here",
+        lnav::pcre2pp::code::from_const("\\Ahere\\b"),
+    },
+    {
+        "next",
+        lnav::pcre2pp::code::from_const("\\Anext\\b"),
+    },
+    {
+        "previous",
+        lnav::pcre2pp::code::from_const("\\A(?:previous\\b|last\\b)"),
+    },
 };
 
 static int64_t TIME_SCALES[] = {
@@ -102,10 +219,8 @@ const char relative_time::FIELD_CHARS[] = {
 };
 
 Result<relative_time, relative_time::parse_error>
-relative_time::from_str(const char* str, size_t len)
+relative_time::from_str(string_fragment str)
 {
-    pcre_input pi(str, 0, len);
-    pcre_context_static<30> pc;
     int64_t number = 0;
     bool number_set = false, number_was_set = false;
     bool next_set = false;
@@ -118,10 +233,11 @@ relative_time::from_str(const char* str, size_t len)
     pe_out.pe_column = 0;
     pe_out.pe_msg.clear();
 
+    auto remaining = str;
     while (true) {
         rt_field_type curr_field_type = RTF__MAX;
 
-        if (pi.pi_next_offset >= pi.pi_length) {
+        if (remaining.empty()) {
             if (number_set) {
                 if (number > 1970 && number < 2050) {
                     retval.rt_field[RTF_YEARS] = number - 1900;
@@ -178,12 +294,20 @@ relative_time::from_str(const char* str, size_t len)
 
         bool found = false;
         for (int lpc = 0; lpc < RTT__MAX && !found; lpc++) {
+            static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
             token_t token = (token_t) lpc;
-            if (!MATCHERS[lpc].pcre.match(pc, pi, PCRE_ANCHORED)) {
+            auto match_res = MATCHERS[lpc]
+                                 .pcre.capture_from(remaining)
+                                 .into(md)
+                                 .matches()
+                                 .ignore_error();
+            if (!match_res) {
                 continue;
             }
 
-            pe_out.pe_column = pc.all()->c_begin;
+            remaining = match_res->f_remaining;
+            pe_out.pe_column = match_res->f_all.sf_begin;
             found = true;
             if (RTT_MICROS <= token && token <= RTT_YEARS) {
                 if (!number_set) {
@@ -333,15 +457,15 @@ relative_time::from_str(const char* str, size_t len)
                 case RTT_AT:
                     break;
                 case RTT_TIME: {
-                    const auto hstr = pi.get_substr(pc[0]);
-                    const auto mstr = pi.get_substr(pc[1]);
+                    const auto hstr = md[1]->to_string();
+                    const auto mstr = md[2]->to_string();
                     retval.rt_field[RTF_HOURS] = atoi(hstr.c_str());
                     retval.rt_field[RTF_MINUTES] = atoi(mstr.c_str());
-                    if (pc[2]->is_valid()) {
-                        const auto sstr = pi.get_substr(pc[2]);
+                    if (md[3]) {
+                        const auto sstr = md[3]->to_string();
                         retval.rt_field[RTF_SECONDS] = atoi(sstr.c_str());
-                        if (pc[3]->is_valid()) {
-                            const auto substr = pi.get_substr(pc[3]);
+                        if (md[4]) {
+                            const auto substr = md[4]->to_string();
 
                             switch (substr.length()) {
                                 case 3:
@@ -373,12 +497,11 @@ relative_time::from_str(const char* str, size_t len)
                     }
 
                     auto num_scan_res
-                        = scn::scan_value<int64_t>(pi.to_string_view(pc[0]));
+                        = scn::scan_value<int64_t>(md[0]->to_string_view());
 
                     if (!num_scan_res) {
-                        pe_out.pe_msg
-                            = fmt::format(FMT_STRING("Invalid number: {}"),
-                                          pi.get_substr(pc[0]));
+                        pe_out.pe_msg = fmt::format(
+                            FMT_STRING("Invalid number: {}"), md[0].value());
                         return Err(pe_out);
                     }
                     number = num_scan_res.value();

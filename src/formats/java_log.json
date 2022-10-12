@@ -30,7 +30,7 @@
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\d+\\[(?<thread>[^\\]]+)\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+-\\s+(?<body>.*)$"
             },
             "vmw3": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[^\\|]+)\\s*\\|\\s*(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[^\\|]+)\\s*\\|\\s+(?!\\d+\\s*\\|)(?<body>.*)$"
             },
             "vmw-sso": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+[\\w\\-]+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s\\]]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"

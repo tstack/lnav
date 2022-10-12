@@ -34,7 +34,10 @@
 #include "config.h"
 #include "fmt/color.h"
 #include "itertools.hh"
+#include "lnav.console.into.hh"
 #include "log_level_enum.hh"
+#include "pcrepp/pcre2pp.hh"
+#include "snippet_highlighters.hh"
 #include "view_curses.hh"
 
 using namespace lnav::roles::literals;
@@ -460,6 +463,31 @@ print(FILE* file, const user_message& um)
         al.erase(al.length() - 1);
     }
     println(file, al);
+}
+
+user_message
+to_user_message(intern_string_t src, const lnav::pcre2pp::compile_error& ce)
+{
+    attr_line_t pcre_error_content{ce.ce_pattern};
+
+    lnav::snippets::regex_highlighter(pcre_error_content,
+                                      pcre_error_content.length(),
+                                      line_range{
+                                          0,
+                                          (int) pcre_error_content.length(),
+                                      });
+    pcre_error_content.append("\n")
+        .append(ce.ce_offset, ' ')
+        .append(lnav::roles::error("^ "))
+        .append(lnav::roles::error(ce.get_message()))
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+
+    return user_message::error(
+               attr_line_t()
+                   .append_quoted(ce.ce_pattern)
+                   .append(" is not a valid regular expression"))
+        .with_reason(ce.get_message())
+        .with_snippet(lnav::console::snippet::from(src, pcre_error_content));
 }
 
 }  // namespace console

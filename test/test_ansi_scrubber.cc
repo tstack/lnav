@@ -46,15 +46,32 @@ int
 main(int argc, char* argv[])
 {
     {
+        char input[] = "Hello, \x1b[33;mWorld\x1b[0;m!";
+
+        auto new_len = erase_ansi_escapes(string_fragment::from_const(input));
+
+        printf("result '%s'\n", input);
+
+        assert(new_len == 13);
+    }
+
+    {
         std::string boldish
             = "\u2022\b\u2022\u2023\b\u2023 h\bhe\bel\blo\bo _\ba_\bb_\bc a\b_ "
               "b";
+        auto boldish2 = boldish;
         string_attrs_t sa;
 
         sa.clear();
         scrub_ansi_string(boldish, &sa);
         printf("boldish %s\n", boldish.c_str());
         assert(boldish == "\u2022\u2023 helo abc a b");
+
+        auto new_len = erase_ansi_escapes(boldish2);
+        boldish2.resize(new_len);
+        printf("boldish2 %s\n", boldish2.c_str());
+        assert(boldish2 == "\u2022\u2023 helo abc a b");
+
         for (const auto& attr : sa) {
             printf("attr %d:%d %s\n",
                    attr.sa_range.lr_start,

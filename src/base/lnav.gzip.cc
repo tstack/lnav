@@ -87,6 +87,7 @@ uncompress(const std::string& src, const void* buffer, size_t size)
     int err;
 
     strm.next_in = (Bytef*) buffer;
+    strm.msg = Z_NULL;
     strm.avail_in = size;
     strm.total_in = 0;
     strm.total_out = 0;

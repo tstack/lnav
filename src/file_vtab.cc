@@ -210,6 +210,7 @@ CREATE TABLE lnav_file (
                 loo.loo_include_in_session = true;
                 this->lf_collection.fc_file_names[path] = std::move(loo);
                 lf->set_filename(path);
+                this->lf_collection.regenerate_unique_file_names();
 
                 init_session();
                 load_session();

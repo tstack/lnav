@@ -32,7 +32,7 @@
 
 #include <string>
 
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
 
 enum data_token_t {
@@ -44,6 +44,7 @@ enum data_token_t {
     DT_MAC_ADDRESS,
     DT_DATE,
     DT_TIME,
+    DT_DATE_TIME,
     DT_IPV6_ADDRESS,
     DT_HEX_DUMP,
     DT_XML_DECL_TAG,
@@ -79,6 +80,7 @@ enum data_token_t {
     DT_IPV4_ADDRESS,
     DT_UUID,
 
+    DT_CREDIT_CARD_NUMBER,
     DT_VERSION_NUMBER,
     DT_OCTAL_NUMBER,
     DT_PERCENTAGE,
@@ -93,6 +95,7 @@ enum data_token_t {
     DT_WHITE,
     DT_DOT,
     DT_ESCAPED_CHAR,
+    DT_CSI,
 
     DT_GARBAGE,
 
@@ -106,7 +109,6 @@ enum data_token_t {
     DNT_MEASUREMENT,
     DNT_VARIABLE_KEY,
     DNT_ROWRANGE,
-    DNT_DATE_TIME,
     DNT_GROUP,
 
     DNT_MAX,
@@ -118,47 +120,92 @@ class data_scanner {
 public:
     static const char* token2name(data_token_t token);
 
-    data_scanner(const std::string& line,
-                 size_t off = 0,
-                 size_t len = (size_t) -1)
-        : ds_line(line), ds_pcre_input(ds_line.c_str(), off, len)
+    struct capture_t {
+        capture_t()
+        { /* We don't initialize anything since it's a perf hit. */
+        }
+
+        capture_t(int begin, int end) : c_begin(begin), c_end(end)
+        {
+            assert(begin <= end);
+        }
+
+        int c_begin;
+        int c_end;
+
+        void ltrim(const char* str);
+
+        bool contains(int pos) const
+        {
+            return this->c_begin <= pos && pos < this->c_end;
+        }
+
+        bool is_valid() const { return this->c_begin != -1; }
+
+        int length() const { return this->c_end - this->c_begin; }
+
+        bool empty() const { return this->c_begin == this->c_end; }
+    };
+
+    data_scanner(const std::string& line, size_t off = 0)
+        : ds_line(line), ds_input(this->ds_line), ds_init_offset(off),
+          ds_next_offset(off)
     {
-        if (!line.empty() && line[line.length() - 1] == '.') {
-            this->ds_pcre_input.pi_length -= 1;
+        if (!line.empty() && line.back() == '.') {
+            this->ds_input.sf_end -= 1;
         }
     }
 
-    explicit data_scanner(string_fragment sf) : ds_pcre_input(sf)
+    explicit data_scanner(string_fragment sf) : ds_input(sf)
     {
-        if (!sf.empty() && sf[sf.length() - 1] == '.') {
-            this->ds_pcre_input.pi_length -= 1;
+        if (!sf.empty() && sf.back() == '.') {
+            this->ds_input.sf_end -= 1;
         }
     }
 
-    data_scanner(shared_buffer_ref& line,
-                 size_t off = 0,
-                 size_t len = (size_t) -1)
-        : ds_sbr(line),
-          ds_pcre_input(
-              line.get_data(), off, len == (size_t) -1 ? line.length() : len)
+    explicit data_scanner(shared_buffer_ref& line, size_t off, size_t end)
+        : ds_sbr(line), ds_input(line.to_string_fragment().sub_range(0, end)),
+          ds_init_offset(off), ds_next_offset(off)
     {
-        require(len == (size_t) -1 || len <= line.length());
-        if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
-            this->ds_pcre_input.pi_length -= 1;
+        if (!this->ds_input.empty() && this->ds_input.back() == '.') {
+            this->ds_input.sf_end -= 1;
         }
     }
 
-    bool tokenize(pcre_context& pc, data_token_t& token_out);
-    bool tokenize2(pcre_context& pc, data_token_t& token_out);
+    struct tokenize_result {
+        data_token_t tr_token{DT_INVALID};
+        capture_t tr_capture;
+        capture_t tr_inner_capture;
+        const char* tr_data{nullptr};
 
-    pcre_input& get_input() { return this->ds_pcre_input; }
+        std::string to_string() const
+        {
+            return {&this->tr_data[this->tr_capture.c_begin],
+                    (size_t) this->tr_capture.length()};
+        }
+    };
 
-    void reset() { this->ds_pcre_input.reset_next_offset(); }
+    nonstd::optional<tokenize_result> tokenize2();
+
+    void reset() { this->ds_next_offset = this->ds_init_offset; }
+
+    int get_init_offset() const { return this->ds_init_offset; }
+
+    string_fragment get_input() const { return this->ds_input; }
+
+    string_fragment to_string_fragment(capture_t cap) const
+    {
+        return this->ds_input.sub_range(cap.c_begin, cap.c_end);
+    }
 
 private:
+    bool is_credit_card(string_fragment frag) const;
+
     std::string ds_line;
     shared_buffer_ref ds_sbr;
-    pcre_input ds_pcre_input;
+    string_fragment ds_input;
+    int ds_init_offset{0};
+    int ds_next_offset{0};
 };
 
 #endif

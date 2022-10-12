@@ -3,7 +3,7 @@
     "json_log3": {
         "title": "Test JSON Log Format",
         "description": "Test JSON Log Format",
-        "file-pattern": "logfile_json3\\.json",
+        "file-pattern": "logfile_.*json3\\.json",
         "json": true,
         "hide-extra": true,
         "convert-to-local-time": true,

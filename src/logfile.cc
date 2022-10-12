@@ -42,6 +42,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#include "base/ansi_scrubber.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/string_util.hh"
@@ -50,10 +51,21 @@
 #include "log.watch.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
+
+static const typed_json_path_container<line_buffer::header_data>
+    file_header_handlers = {
+        yajlpp::property_handler("name").for_field(
+            &line_buffer::header_data::hd_name),
+        yajlpp::property_handler("mtime").for_field(
+            &line_buffer::header_data::hd_mtime),
+        yajlpp::property_handler("comment").for_field(
+            &line_buffer::header_data::hd_comment),
+};
 
 Result<std::shared_ptr<logfile>, std::string>
 logfile::open(std::string filename, logfile_open_options& loo)
@@ -119,6 +131,12 @@ logfile::open(std::string filename, logfile_open_options& loo)
 
     lf->lf_indexing = lf->lf_options.loo_is_visible;
 
+    const auto& hdr = lf->lf_line_buffer.get_header_data();
+    if (!hdr.empty()) {
+        lf->lf_embedded_metadata["net.zlib.gzip.header"]
+            = {text_format_t::TF_JSON, file_header_handlers.to_string(hdr)};
+    }
+
     ensure(lf->invariant());
 
     return Ok(lf);
@@ -135,8 +153,6 @@ logfile::~logfile() {}
 bool
 logfile::exists() const
 {
-    struct stat st;
-
     if (!this->lf_actual_path) {
         return true;
     }
@@ -145,13 +161,15 @@ logfile::exists() const
         return true;
     }
 
-    if (lnav::filesystem::statp(this->lf_actual_path.value(), &st) == -1) {
+    auto stat_res = lnav::filesystem::stat_file(this->lf_actual_path.value());
+    if (stat_res.isErr()) {
         log_error("%s: stat failed -- %s",
                   this->lf_actual_path.value().c_str(),
-                  strerror(errno));
+                  stat_res.unwrapErr().c_str());
         return false;
     }
 
+    auto st = stat_res.unwrap();
     return this->lf_stat.st_dev == st.st_dev
         && this->lf_stat.st_ino == st.st_ino
         && this->lf_stat.st_size <= st.st_size;
@@ -309,6 +327,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         case log_format::SCAN_MATCH: {
             if (!this->lf_index.empty()) {
                 this->lf_index.back().set_valid_utf(li.li_valid_utf);
+                this->lf_index.back().set_has_ansi(li.li_has_ansi);
             }
             if (prescan_size > 0 && this->lf_index.size() >= prescan_size
                 && prescan_time != this->lf_index[prescan_size - 1].get_time())
@@ -369,6 +388,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                         last_mod,
                                         last_opid);
             this->lf_index.back().set_valid_utf(li.li_valid_utf);
+            this->lf_index.back().set_has_ansi(li.li_has_ansi);
             break;
         }
         case log_format::SCAN_INCOMPLETE:
@@ -461,12 +481,15 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 auto last_line = this->lf_index.end();
                 --last_line;
                 auto check_line_off = last_line->get_offset();
-                auto last_length = ssize_t(this->line_length(last_line, false));
+                auto last_length_res
+                    = this->message_byte_length(last_line, false);
                 log_debug("flushing at %d", check_line_off);
                 this->lf_line_buffer.flush_at(check_line_off);
 
-                auto read_result = this->lf_line_buffer.read_range(
-                    {check_line_off, last_length});
+                auto read_result = this->lf_line_buffer.read_range({
+                    check_line_off,
+                    last_length_res.mlr_length,
+                });
 
                 if (read_result.isErr()) {
                     log_info("overwritten file detected, closing -- %s (%s)",
@@ -563,6 +586,12 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);
             }
+            if (!li.li_valid_utf
+                && this->lf_text_format != text_format_t::TF_MARKDOWN
+                && this->lf_text_format != text_format_t::TF_LOG)
+            {
+                this->lf_text_format = text_format_t::TF_BINARY;
+            }
 
             auto read_result
                 = this->lf_line_buffer.read_range(li.li_file_range);
@@ -576,6 +605,17 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 
             auto sbr = read_result.unwrap();
             sbr.rtrim(is_line_ending);
+
+            if (li.li_valid_utf && li.li_has_ansi) {
+                auto tmp_line = sbr.to_string_fragment().to_string();
+
+                scrub_ansi_string(tmp_line, nullptr);
+                memcpy(sbr.get_writable_data(),
+                       tmp_line.c_str(),
+                       tmp_line.length());
+                sbr.narrow(0, tmp_line.length());
+            }
+
             this->lf_longest_line
                 = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = li.li_partial;
@@ -634,9 +674,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                             continue;
                         }
 
-                        pcre_context_static<30> pc;
-                        pcre_input pi(sf);
-                        if (td->ftd_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK))
+                        if (td->ftd_pattern.pp_value
+                                ->find_in(sf, PCRE2_NO_UTF_CHECK)
+                                .ignore_error()
+                                .has_value())
                         {
                             curr_ll->set_mark(true);
                             while (curr_ll->is_continued()) {
@@ -764,11 +805,13 @@ Result<shared_buffer_ref, std::string>
 logfile::read_line(logfile::iterator ll)
 {
     try {
-        return this->lf_line_buffer.read_range(this->get_file_range(ll, false))
-            .map([&ll, this](auto sbr) {
+        auto get_range_res = this->get_file_range(ll, false);
+        return this->lf_line_buffer.read_range(get_range_res)
+            .map([&ll, &get_range_res, this](auto sbr) {
                 sbr.rtrim(is_line_ending);
-                if (!ll->is_valid_utf()) {
+                if (!get_range_res.fr_metadata.m_valid_utf) {
                     scrub_to_utf8(sbr.get_writable_data(), sbr.length());
+                    sbr.get_metadata().m_valid_utf = true;
                 }
 
                 if (this->lf_format != nullptr) {
@@ -777,7 +820,7 @@ logfile::read_line(logfile::iterator ll)
 
                 return sbr;
             });
-    } catch (line_buffer::error& e) {
+    } catch (const line_buffer::error& e) {
         return Err(std::string(strerror(e.e_err)));
     }
 }
@@ -819,6 +862,7 @@ logfile::read_full_message(logfile::const_iterator ll,
             return;
         }
         msg_out = read_result.unwrap();
+        msg_out.get_metadata() = range_for_line.fr_metadata;
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(*ll, msg_out, true);
         }
@@ -877,19 +921,25 @@ logfile::get_path() const
     return this->lf_filename;
 }
 
-size_t
-logfile::line_length(logfile::const_iterator ll, bool include_continues)
+logfile::message_length_result
+logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
 {
     auto next_line = ll;
+    file_range::metadata meta;
     size_t retval;
 
     if (!include_continues && this->lf_next_line_cache) {
         if (ll->get_offset() == (*this->lf_next_line_cache).first) {
-            return this->lf_next_line_cache->second;
+            return {
+                (file_ssize_t) this->lf_next_line_cache->second,
+                {ll->is_valid_utf(), ll->has_ansi()},
+            };
         }
     }
 
     do {
+        meta.m_has_ansi = meta.m_has_ansi || next_line->has_ansi();
+        meta.m_valid_utf = meta.m_valid_utf && next_line->is_valid_utf();
         ++next_line;
     } while ((next_line != this->end())
              && ((ll->get_offset() == next_line->get_offset())
@@ -911,7 +961,7 @@ logfile::line_length(logfile::const_iterator ll, bool include_continues)
         }
     }
 
-    return retval;
+    return {(file_ssize_t) retval, meta};
 }
 
 Result<shared_buffer_ref, std::string>

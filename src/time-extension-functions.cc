@@ -50,14 +50,15 @@ timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
         std::string c_slice_str;
         relative_time c_rel_time;
     } cache;
-    const auto slice_in = string_fragment(slice_in_opt.value_or("15m"));
+    const auto slice_in
+        = string_fragment::from_c_str(slice_in_opt.value_or("15m"));
 
     if (slice_in.empty()) {
         throw sqlite_func_error("no time slice value given");
     }
 
     if (slice_in != cache.c_slice_str.c_str()) {
-        auto parse_res = relative_time::from_str(slice_in.data());
+        auto parse_res = relative_time::from_str(slice_in);
         if (parse_res.isErr()) {
             throw sqlite_func_error(
                 "unable to parse time slice value: {} -- {}",
@@ -145,22 +146,26 @@ timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
 }
 
 static nonstd::optional<double>
-sql_timediff(const char* time1, const char* time2)
+sql_timediff(string_fragment time1, string_fragment time2)
 {
     struct timeval tv1, tv2, retval;
     date_time_scanner dts1, dts2;
-    auto parse_res1 = relative_time::from_str(time1, -1);
+    auto parse_res1 = relative_time::from_str(time1);
 
     if (parse_res1.isOk()) {
         tv1 = parse_res1.unwrap().adjust_now().to_timeval();
-    } else if (!dts1.convert_to_timeval(time1, -1, nullptr, tv1)) {
+    } else if (!dts1.convert_to_timeval(
+                   time1.data(), time1.length(), nullptr, tv1))
+    {
         return nonstd::nullopt;
     }
 
-    auto parse_res2 = relative_time::from_str(time2, -1);
+    auto parse_res2 = relative_time::from_str(time2);
     if (parse_res2.isOk()) {
         tv2 = parse_res2.unwrap().adjust_now().to_timeval();
-    } else if (!dts2.convert_to_timeval(time2, -1, nullptr, tv2)) {
+    } else if (!dts2.convert_to_timeval(
+                   time2.data(), time2.length(), nullptr, tv2))
+    {
         return nonstd::nullopt;
     }
 

@@ -55,16 +55,21 @@ void force_linking(Annotation anno);
 template<class...>
 using void_t = void;
 
-template<class, class = void>
-struct has_injectable : std::false_type {
+template<typename T, typename... Annotations>
+struct with_annotations {
+    T value;
 };
 
+template<class, class = void>
+struct has_injectable : std::false_type {};
+
 template<class T>
-struct has_injectable<T, void_t<typename T::injectable>> : std::true_type {
-};
+struct has_injectable<T, void_t<typename T::injectable>> : std::true_type {};
 
 template<typename T, typename... Annotations>
 struct singleton_storage {
+    static scope get_scope() { return ss_scope; }
+
     static T* get()
     {
         static int _[] = {0, (force_linking(Annotations{}), 0)...};
@@ -158,20 +163,16 @@ get()
 }
 
 template<class T>
-struct is_shared_ptr : std::false_type {
-};
+struct is_shared_ptr : std::false_type {};
 
 template<class T>
-struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {
-};
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 
 template<class T>
-struct is_vector : std::false_type {
-};
+struct is_vector : std::false_type {};
 
 template<class T>
-struct is_vector<std::vector<T>> : std::true_type {
-};
+struct is_vector<std::vector<T>> : std::true_type {};
 
 template<typename I, typename R, typename... IArgs, typename... Args>
 std::function<std::shared_ptr<I>()> create_from_injectable(R (*)(IArgs...),
@@ -179,22 +180,28 @@ std::function<std::shared_ptr<I>()> create_from_injectable(R (*)(IArgs...),
 
 template<typename T,
          typename... Args,
-         std::enable_if_t<has_injectable<typename T::element_type>::value,
-                          bool> = true,
+         std::enable_if_t<has_injectable<typename T::element_type>::value, bool>
+         = true,
          std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
 T
 get(Args&... args)
 {
     typename T::element_type::injectable* i = nullptr;
 
+    if (singleton_storage<typename T::element_type>::get_scope()
+        == scope::singleton)
+    {
+        return singleton_storage<typename T::element_type>::get_owner();
+    }
     return create_from_injectable<typename T::element_type>(i, args...)();
 }
 
-template<typename T,
-         typename... Annotations,
-         std::enable_if_t<!has_injectable<typename T::element_type>::value,
-                          bool> = true,
-         std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
+template<
+    typename T,
+    typename... Annotations,
+    std::enable_if_t<!has_injectable<typename T::element_type>::value, bool>
+    = true,
+    std::enable_if_t<is_shared_ptr<T>::value, bool> = true>
 T
 get()
 {

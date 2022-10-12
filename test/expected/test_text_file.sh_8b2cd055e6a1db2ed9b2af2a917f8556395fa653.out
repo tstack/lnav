@@ -1,0 +1,2 @@
+[1m[4m                  filepath                   [0m[1m[4m              descriptor                [0m[1m[4m    mimetype     [0m[1m[4m                   content                    [0m
+[1m{test_dir}/textfile_0.md[0m[1m [0m[1mnet.daringfireball.markdown.frontmatter[0m[1m [0m[1mapplication/json[0m[1m [0m[1m{␊   "comment": "This is JSON front-matter"␊} [0m

@@ -312,7 +312,7 @@ Nov 03 09:23:38 2007 -- 000
 Nov 03 09:47:02 2007 -- 000
 EOF
 
-touch -t 200711030923 ${srcdir}/logfile_syslog.1
+env TZ=UTC touch -t 200711030923 ${srcdir}/logfile_syslog.1
 run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog.1
 
 check_output "Syslog timestamp interpreted incorrectly for year end?" <<EOF
@@ -685,3 +685,17 @@ EOF
 # 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 # 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 # EOF
+
+export YES_COLOR=1
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT log_time, log_body FROM syslog_log' \
+    ${test_dir}/logfile_ansi.1
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view pretty' \
+    ${test_dir}/logfile_ansi.1
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT basename(filepath),descriptor,mimetype,content FROM lnav_file_metadata' \
+    logfile_syslog.1.gz

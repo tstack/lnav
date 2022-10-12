@@ -1,0 +1,2 @@
+regexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;') 
+{"col_0":"abc","col_1":"def"}                       

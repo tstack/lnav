@@ -744,7 +744,7 @@ sql_json_group_array_final(sqlite3_context* context)
         = (json_agg_context*) sqlite3_aggregate_context(context, 0);
 
     if (jac == nullptr) {
-        sqlite3_result_text(context, "{}", -1, SQLITE_STATIC);
+        sqlite3_result_text(context, "[]", -1, SQLITE_STATIC);
     } else {
         const unsigned char* buf;
         size_t len;

@@ -37,19 +37,19 @@
 #include "shlex.hh"
 
 bool
-shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
+shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
 {
     while (this->s_index < this->s_len) {
         switch (this->s_str[this->s_index]) {
             case '\\':
-                cap_out.c_begin = this->s_index;
+                cap_out.sf_begin = this->s_index;
                 if (this->s_index + 1 < this->s_len) {
                     token_out = shlex_token_t::ST_ESCAPE;
                     this->s_index += 2;
-                    cap_out.c_end = this->s_index;
+                    cap_out.sf_end = this->s_index;
                 } else {
                     this->s_index += 1;
-                    cap_out.c_end = this->s_index;
+                    cap_out.sf_end = this->s_index;
                     token_out = shlex_token_t::ST_ERROR;
                 }
                 return true;
@@ -57,16 +57,16 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
                 if (!this->s_ignore_quotes) {
                     switch (this->s_state) {
                         case state_t::STATE_NORMAL:
-                            cap_out.c_begin = this->s_index;
+                            cap_out.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.c_end = this->s_index;
+                            cap_out.sf_end = this->s_index;
                             token_out = shlex_token_t::ST_DOUBLE_QUOTE_START;
                             this->s_state = state_t::STATE_IN_DOUBLE_QUOTE;
                             return true;
                         case state_t::STATE_IN_DOUBLE_QUOTE:
-                            cap_out.c_begin = this->s_index;
+                            cap_out.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.c_end = this->s_index;
+                            cap_out.sf_end = this->s_index;
                             token_out = shlex_token_t::ST_DOUBLE_QUOTE_END;
                             this->s_state = state_t::STATE_NORMAL;
                             return true;
@@ -79,16 +79,16 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
                 if (!this->s_ignore_quotes) {
                     switch (this->s_state) {
                         case state_t::STATE_NORMAL:
-                            cap_out.c_begin = this->s_index;
+                            cap_out.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.c_end = this->s_index;
+                            cap_out.sf_end = this->s_index;
                             token_out = shlex_token_t::ST_SINGLE_QUOTE_START;
                             this->s_state = state_t::STATE_IN_SINGLE_QUOTE;
                             return true;
                         case state_t::STATE_IN_SINGLE_QUOTE:
-                            cap_out.c_begin = this->s_index;
+                            cap_out.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.c_end = this->s_index;
+                            cap_out.sf_end = this->s_index;
                             token_out = shlex_token_t::ST_SINGLE_QUOTE_END;
                             this->s_state = state_t::STATE_NORMAL;
                             return true;
@@ -110,7 +110,7 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
             case '~':
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
-                        cap_out.c_begin = this->s_index;
+                        cap_out.sf_begin = this->s_index;
                         this->s_index += 1;
                         while (this->s_index < this->s_len
                                && (isalnum(this->s_str[this->s_index])
@@ -119,7 +119,7 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
                         {
                             this->s_index += 1;
                         }
-                        cap_out.c_end = this->s_index;
+                        cap_out.sf_end = this->s_index;
                         token_out = shlex_token_t::ST_TILDE;
                         return true;
                     default:
@@ -130,11 +130,11 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
             case '\t':
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
-                        cap_out.c_begin = this->s_index;
+                        cap_out.sf_begin = this->s_index;
                         while (isspace(this->s_str[this->s_index])) {
                             this->s_index += 1;
                         }
-                        cap_out.c_end = this->s_index;
+                        cap_out.sf_end = this->s_index;
                         token_out = shlex_token_t::ST_WHITESPACE;
                         return true;
                     default:
@@ -152,13 +152,12 @@ shlex::tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out)
 }
 
 void
-shlex::scan_variable_ref(pcre_context::capture_t& cap_out,
-                         shlex_token_t& token_out)
+shlex::scan_variable_ref(string_fragment& cap_out, shlex_token_t& token_out)
 {
-    cap_out.c_begin = this->s_index;
+    cap_out.sf_begin = this->s_index;
     this->s_index += 1;
     if (this->s_index >= this->s_len) {
-        cap_out.c_end = this->s_index;
+        cap_out.sf_end = this->s_index;
         token_out = shlex_token_t::ST_ERROR;
         return;
     }
@@ -189,32 +188,31 @@ shlex::scan_variable_ref(pcre_context::capture_t& cap_out,
         }
     }
 
-    cap_out.c_end = this->s_index;
+    cap_out.sf_end = this->s_index;
     if (token_out == shlex_token_t::ST_QUOTED_VARIABLE_REF
         && this->s_str[this->s_index - 1] != '}')
     {
-        cap_out.c_begin += 1;
-        cap_out.c_end = cap_out.c_begin + 1;
+        cap_out.sf_begin += 1;
+        cap_out.sf_end = cap_out.sf_begin + 1;
         token_out = shlex_token_t::ST_ERROR;
     }
 }
 
 void
-shlex::resolve_home_dir(std::string& result,
-                        const pcre_context::capture_t cap) const
+shlex::resolve_home_dir(std::string& result, string_fragment cap) const
 {
     if (cap.length() == 1) {
         result.append(getenv_opt("HOME").value_or("~"));
     } else {
         auto username = (char*) alloca(cap.length());
 
-        memcpy(username, &this->s_str[cap.c_begin + 1], cap.length() - 1);
+        memcpy(username, &this->s_str[cap.sf_begin + 1], cap.length() - 1);
         username[cap.length() - 1] = '\0';
         auto pw = getpwnam(username);
         if (pw != nullptr) {
             result.append(pw->pw_dir);
         } else {
-            result.append(&this->s_str[cap.c_begin], cap.length());
+            result.append(&this->s_str[cap.sf_begin], cap.length());
         }
     }
 }

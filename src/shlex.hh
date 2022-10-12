@@ -38,8 +38,8 @@
 
 #include <pwd.h>
 
+#include "base/intern_string.hh"
 #include "base/opt_util.hh"
-#include "pcrepp/pcrepp.hh"
 #include "shlex.resolver.hh"
 
 enum class shlex_token_t {
@@ -73,32 +73,32 @@ public:
         return *this;
     }
 
-    bool tokenize(pcre_context::capture_t& cap_out, shlex_token_t& token_out);
+    bool tokenize(string_fragment& cap_out, shlex_token_t& token_out);
 
     template<typename Resolver = scoped_resolver>
     bool eval(std::string& result, const Resolver& vars)
     {
         result.clear();
 
-        pcre_context::capture_t cap;
+        string_fragment cap;
         shlex_token_t token;
         int last_index = 0;
 
         while (this->tokenize(cap, token)) {
-            result.append(&this->s_str[last_index], cap.c_begin - last_index);
+            result.append(&this->s_str[last_index], cap.sf_begin - last_index);
             switch (token) {
                 case shlex_token_t::ST_ERROR:
                     return false;
                 case shlex_token_t::ST_ESCAPE:
-                    result.append(1, this->s_str[cap.c_begin + 1]);
+                    result.append(1, this->s_str[cap.sf_begin + 1]);
                     break;
                 case shlex_token_t::ST_WHITESPACE:
-                    result.append(&this->s_str[cap.c_begin], cap.length());
+                    result.append(&this->s_str[cap.sf_begin], cap.length());
                     break;
                 case shlex_token_t::ST_VARIABLE_REF:
                 case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
+                    std::string var_name(&this->s_str[cap.sf_begin + 1 + extra],
                                          cap.length() - 1 - extra * 2);
                     auto local_var = vars.find(var_name);
                     const char* var_value = getenv(var_name.c_str());
@@ -124,7 +124,7 @@ public:
                 default:
                     break;
             }
-            last_index = cap.c_end;
+            last_index = cap.sf_end;
         }
 
         result.append(&this->s_str[last_index], this->s_len - last_index);
@@ -137,7 +137,7 @@ public:
     {
         result.clear();
 
-        pcre_context::capture_t cap;
+        string_fragment cap;
         shlex_token_t token;
         int last_index = 0;
         bool start_new = true;
@@ -151,12 +151,12 @@ public:
                 start_new = false;
             }
             result.back().append(&this->s_str[last_index],
-                                 cap.c_begin - last_index);
+                                 cap.sf_begin - last_index);
             switch (token) {
                 case shlex_token_t::ST_ERROR:
                     return false;
                 case shlex_token_t::ST_ESCAPE:
-                    result.back().append(1, this->s_str[cap.c_begin + 1]);
+                    result.back().append(1, this->s_str[cap.sf_begin + 1]);
                     break;
                 case shlex_token_t::ST_WHITESPACE:
                     start_new = true;
@@ -164,7 +164,7 @@ public:
                 case shlex_token_t::ST_VARIABLE_REF:
                 case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                     int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra],
+                    std::string var_name(&this->s_str[cap.sf_begin + 1 + extra],
                                          cap.length() - 1 - extra * 2);
                     auto local_var = vars.find(var_name);
                     const char* var_value = getenv(var_name.c_str());
@@ -182,7 +182,7 @@ public:
                 default:
                     break;
             }
-            last_index = cap.c_end;
+            last_index = cap.sf_end;
         }
 
         if (last_index < this->s_len) {
@@ -202,11 +202,9 @@ public:
         this->s_state = state_t::STATE_NORMAL;
     }
 
-    void scan_variable_ref(pcre_context::capture_t& cap_out,
-                           shlex_token_t& token_out);
+    void scan_variable_ref(string_fragment& cap_out, shlex_token_t& token_out);
 
-    void resolve_home_dir(std::string& result,
-                          const pcre_context::capture_t cap) const;
+    void resolve_home_dir(std::string& result, string_fragment cap) const;
 
     enum class state_t {
         STATE_NORMAL,

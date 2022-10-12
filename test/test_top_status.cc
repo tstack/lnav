@@ -51,7 +51,15 @@ main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
 
-    top_status_source tss;
+    auto_sqlite3 db;
+
+    if (sqlite3_open(":memory:", db.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to create sqlite memory database\n");
+        exit(EXIT_FAILURE);
+    }
+
+    top_status_source_cfg cfg;
+    top_status_source tss(db, cfg);
 
     setenv("HOME", "/", 1);
 
@@ -72,7 +80,7 @@ main(int argc, char* argv[])
         tss.update_time();
         assert(val.get_string() != sf.get_value().get_string());
 
-        lnav_config.lc_ui_clock_format = "abc";
+        cfg.tssc_clock_format = "abc";
         tss.update_time();
         val = sf.get_value();
         assert(val.get_string() == " abc");

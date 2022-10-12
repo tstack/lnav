@@ -1,0 +1,27 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "subsec_json_log": {
+        "title": "JSON Log with subsecond field",
+        "json": true,
+        "file-pattern": "logfile_json_subsec\\.json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "timestamp-field": "instant/epochSecond",
+        "subsecond-field": "instant/nanoOfSecond",
+        "subsecond-units": "nano",
+        "body-field": "msg",
+        "value": {
+            "instant": {
+                "kind": "json",
+                "hidden": true
+            }
+        }
+    }
+}

@@ -230,8 +230,7 @@ static auto bound_active_files = injector::bind<file_collection>::to_instance(
     +[]() { return &lnav_data.ld_active_files; });
 
 static auto bound_sqlite_db
-    = injector::bind<auto_mem<sqlite3, sqlite_close_wrapper>,
-                     sqlite_db_tag>::to_instance(&lnav_data.ld_db);
+    = injector::bind<auto_sqlite3>::to_instance(&lnav_data.ld_db);
 
 static auto bound_lnav_flags
     = injector::bind<unsigned long, lnav_flags_tag>::to_instance(
@@ -261,12 +260,6 @@ namespace injector {
 template<>
 void
 force_linking(last_relative_time_tag anno)
-{
-}
-
-template<>
-void
-force_linking(sqlite_db_tag anno)
 {
 }
 
@@ -595,6 +588,10 @@ make it easier to navigate through files quickly.
         .append("dir"_variable)
         .append("     ")
         .append("An additional configuration directory.\n")
+        .append("  ")
+        .append("-W"_symbol)
+        .append("         ")
+        .append("Print warnings related to lnav's configuration.\n")
         .append("  ")
         .append("-u"_symbol)
         .append("         ")
@@ -1001,6 +998,55 @@ wait_for_pipers()
     }
 }
 
+struct refresh_status_bars {
+    refresh_status_bars(std::shared_ptr<top_status_source> top_source)
+        : rsb_top_source(std::move(top_source))
+    {
+    }
+
+    using injectable
+        = refresh_status_bars(std::shared_ptr<top_status_source> top_source);
+
+    void doit() const
+    {
+        struct timeval current_time {};
+        int ch;
+
+        gettimeofday(&current_time, nullptr);
+        while ((ch = getch()) != ERR) {
+            lnav_data.ld_user_message_source.clear();
+
+            alerter::singleton().new_input(ch);
+
+            lnav_data.ld_input_dispatcher.new_input(current_time, ch);
+
+            lnav_data.ld_view_stack.top() | [ch](auto tc) {
+                lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
+            };
+
+            if (!lnav_data.ld_looping) {
+                // No reason to keep processing input after the
+                // user has quit.  The view stack will also be
+                // empty, which will cause issues.
+                break;
+            }
+        }
+
+        this->rsb_top_source->update_time(current_time);
+        for (auto& sc : lnav_data.ld_status) {
+            sc.do_update();
+        }
+        lnav_data.ld_rl_view->do_update();
+        if (handle_winch()) {
+            layout_views();
+            lnav_data.ld_view_stack.do_update();
+        }
+        refresh();
+    }
+
+    std::shared_ptr<top_status_source> rsb_top_source;
+};
+
 static void
 looper()
 {
@@ -1336,10 +1382,15 @@ looper()
         lnav_data.ld_spectro_source->ss_exec_context
             = &lnav_data.ld_exec_context;
 
+        auto top_status_lifetime
+            = injector::bind<top_status_source>::to_scoped_singleton();
+
+        auto top_source = injector::get<std::shared_ptr<top_status_source>>();
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_TOP].set_default_role(
             role_t::VCR_INACTIVE_STATUS);
-        lnav_data.ld_status[LNS_TOP].set_data_source(&lnav_data.ld_top_source);
+        lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
         for (auto& stat_bar : lnav_data.ld_status) {
             stat_bar.set_window(lnav_data.ld_window);
@@ -1377,7 +1428,7 @@ looper()
         };
 
         {
-            input_dispatcher& id = lnav_data.ld_input_dispatcher;
+            auto& id = lnav_data.ld_input_dispatcher;
 
             id.id_escape_matcher = match_escape_seq;
             id.id_escape_handler = handle_keyseq;
@@ -1408,7 +1459,15 @@ looper()
             };
         }
 
-        ui_periodic_timer& timer = ui_periodic_timer::singleton();
+        auto refresher_lifetime
+            = injector::bind<refresh_status_bars>::to_scoped_singleton();
+
+        auto refresher = injector::get<std::shared_ptr<refresh_status_bars>>();
+
+        auto refresh_guard = lnav_data.ld_status_refresher.install(
+            [refresher]() { refresher->doit(); });
+
+        auto& timer = ui_periodic_timer::singleton();
         struct timeval current_time;
 
         static sig_atomic_t index_counter;
@@ -1446,7 +1505,7 @@ looper()
 
             gettimeofday(&current_time, nullptr);
 
-            lnav_data.ld_top_source.update_time(current_time);
+            top_source->update_time(current_time);
             lnav_data.ld_preview_view.set_needs_update();
 
             layout_views();
@@ -1558,7 +1617,7 @@ looper()
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 echo_views_stmt.execute();
-                lnav_data.ld_top_source.update_user_msg();
+                top_source->update_user_msg();
                 for (auto& sc : lnav_data.ld_status) {
                     sc.do_update();
                 }
@@ -1946,9 +2005,19 @@ wait_for_children()
     } while (lnav_data.ld_looping);
 }
 
+struct mode_flags_t {
+    bool mf_check_configs{false};
+    bool mf_install{false};
+    bool mf_update_formats{false};
+    bool mf_no_default{false};
+    bool mf_print_warnings{false};
+};
+
 static int
-print_user_msgs(std::vector<lnav::console::user_message> error_list)
+print_user_msgs(std::vector<lnav::console::user_message> error_list,
+                mode_flags_t mf)
 {
+    size_t warning_count = 0;
     int retval = EXIT_SUCCESS;
 
     for (auto& iter : error_list) {
@@ -1958,6 +2027,13 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list)
             case lnav::console::user_message::level::raw:
             case lnav::console::user_message::level::ok:
                 out_file = stdout;
+                break;
+            case lnav::console::user_message::level::warning:
+                warning_count += 1;
+                if (!mf.mf_print_warnings) {
+                    continue;
+                }
+                out_file = stderr;
                 break;
             default:
                 out_file = stderr;
@@ -1970,15 +2046,28 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list)
         }
     }
 
+    if (warning_count > 0 && !mf.mf_print_warnings
+        && !(lnav_data.ld_flags & LNF_HEADLESS)
+        && (std::chrono::system_clock::now() - lnav_data.ld_last_dot_lnav_time
+            > 24h))
+    {
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::warning(
+                attr_line_t()
+                    .append(lnav::roles::number(fmt::to_string(warning_count)))
+                    .append(" issues were detected when checking lnav's "
+                            "configuration"))
+                .with_help(
+                    attr_line_t("pass ")
+                        .append(lnav::roles::symbol("-W"))
+                        .append(" on the command line to display the issues\n")
+                        .append("(this message will only be displayed once a "
+                                "day)")));
+    }
+
     return retval;
 }
-
-struct mode_flags_t {
-    bool mf_check_configs{false};
-    bool mf_install{false};
-    bool mf_update_formats{false};
-    bool mf_no_default{false};
-};
 
 enum class verbosity_t : int {
     quiet,
@@ -2040,6 +2129,11 @@ main(int argc, char* argv[])
     stable_sort(lnav_data.ld_db_key_names.begin(),
                 lnav_data.ld_db_key_names.end());
 
+    auto dot_lnav_path = lnav::paths::dotlnav();
+    std::error_code last_write_ec;
+    lnav_data.ld_last_dot_lnav_time
+        = ghc::filesystem::last_write_time(dot_lnav_path, last_write_ec);
+
     ensure_dotlnav();
 
     log_install_handlers();
@@ -2086,28 +2180,50 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         lnav_data.ld_vtab_manager = nullptr;
 
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         std::vector<std::string> tables_to_drop;
-        bool done = false;
+        {
+            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+            bool done = false;
 
-        sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
-        do {
-            auto ret = sqlite3_step(stmt.in());
+            sqlite3_prepare_v2(
+                lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
+            do {
+                auto ret = sqlite3_step(stmt.in());
 
-            switch (ret) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
-                case SQLITE_ROW:
-                    tables_to_drop.emplace_back(
-                        fmt::format(FMT_STRING("DROP TABLE {}"),
-                                    reinterpret_cast<const char*>(
-                                        sqlite3_column_text(stmt.in(), 0))));
-                    break;
-            }
-        } while (!done);
+                switch (ret) {
+                    case SQLITE_OK:
+                    case SQLITE_DONE:
+                        done = true;
+                        break;
+                    case SQLITE_ROW:
+                        tables_to_drop.emplace_back(fmt::format(
+                            FMT_STRING("DROP TABLE {}"),
+                            reinterpret_cast<const char*>(
+                                sqlite3_column_text(stmt.in(), 0))));
+                        break;
+                }
+            } while (!done);
+        }
+
+        // XXX
+        lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+        lnav_data.ld_log_source.set_sql_filter("", nullptr);
+        lnav_data.ld_log_source.set_sql_marker("", nullptr);
+        lnav_config_listener::unload_all();
+
+        {
+            sqlite3_stmt* stmt_iter = nullptr;
+
+            do {
+                stmt_iter = sqlite3_next_stmt(lnav_data.ld_db.in(), stmt_iter);
+                if (stmt_iter != nullptr) {
+                    const auto* stmt_sql = sqlite3_sql(stmt_iter);
+
+                    log_warning("unfinalized SQL statement: %s", stmt_sql);
+                    ensure(false);
+                }
+            } while (stmt_iter != nullptr);
+        }
 
         for (auto& drop_stmt : tables_to_drop) {
             sqlite3_exec(lnav_data.ld_db.in(),
@@ -2116,8 +2232,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                          nullptr,
                          nullptr);
         }
-
+#if defined(HAVE_SQLITE3_DROP_MODULES)
         sqlite3_drop_modules(lnav_data.ld_db.in(), nullptr);
+#endif
 
         lnav_data.ld_db.reset();
     });
@@ -2175,6 +2292,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             "-R", lnav_data.ld_active_files.fc_rotated, "rotated");
         auto* recurse_flag = app.add_flag(
             "-r", lnav_data.ld_active_files.fc_recursive, "recurse");
+        app.add_flag("-W", mode_flags.mf_print_warnings);
         auto* headless_flag = app.add_flag(
             "-n",
             [](size_t count) { lnav_data.ld_flags |= LNF_HEADLESS; },
@@ -2187,7 +2305,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 perror("Read key from STDIN");
             }
         };
-        app.add_flag("-W", wait_cb);
+        app.add_flag("-S", wait_cb);
 
         auto cmd_appender
             = [](std::string cmd) { lnav_data.ld_commands.emplace_back(cmd); };
@@ -2272,7 +2390,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return EXIT_SUCCESS;
     } catch (const CLI::ParseError& e) {
         if (!arg_errors.empty()) {
-            print_user_msgs(arg_errors);
+            print_user_msgs(arg_errors, mode_flags);
             return e.get_exit_code();
         }
 
@@ -2311,8 +2429,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     load_config(lnav_data.ld_config_paths, config_errors);
     if (!config_errors.empty()) {
-        print_user_msgs(config_errors);
-        return EXIT_FAILURE;
+        if (print_user_msgs(config_errors, mode_flags) != EXIT_SUCCESS) {
+            return EXIT_FAILURE;
+        }
     }
     add_global_vars(ec);
 
@@ -2419,8 +2538,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto format_list = load_format_file(src_path, loader_errors);
 
                 if (!loader_errors.empty()) {
-                    print_user_msgs(loader_errors);
-                    return EXIT_FAILURE;
+                    if (print_user_msgs(loader_errors, mode_flags)
+                        != EXIT_SUCCESS)
+                    {
+                        return EXIT_FAILURE;
+                    }
                 }
                 if (format_list.empty()) {
                     lnav::console::print(
@@ -2610,16 +2732,17 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {
-        print_user_msgs(loader_errors);
-        if (mmode_ops == nullptr) {
-            return EXIT_FAILURE;
+        if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
+            if (mmode_ops == nullptr) {
+                return EXIT_FAILURE;
+            }
         }
     }
 
     if (mmode_ops) {
         auto perform_res = lnav::management::perform(mmode_ops);
 
-        return print_user_msgs(perform_res);
+        return print_user_msgs(perform_res, mode_flags);
     }
 
     if (!mode_flags.mf_check_configs && !lnav_data.ld_show_help_view) {
@@ -2939,6 +3062,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         isc::supervisor root_superv(injector::get<isc::service_list>());
 
         try {
+            char pcre2_version[128];
+
+            pcre2_config(PCRE2_CONFIG_VERSION, pcre2_version);
             log_info("startup: %s", VCS_PACKAGE_STRING);
             log_host_info();
             log_info("Libraries:");
@@ -2952,7 +3078,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
 #endif
             log_info("  ncurses=%s", NCURSES_VERSION);
-            log_info("  pcre=%s", pcre_version());
+            log_info("  pcre2=%s", pcre2_version);
             log_info("  readline=%s", rl_library_version);
             log_info("  sqlite=%s", sqlite3_version);
             log_info("  zlib=%s", zlibVersion());

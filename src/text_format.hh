@@ -42,6 +42,7 @@
 
 enum class text_format_t {
     TF_UNKNOWN,
+    TF_BINARY,
     TF_C_LIKE,
     TF_JAVA,
     TF_JSON,
@@ -53,6 +54,7 @@ enum class text_format_t {
     TF_SQL,
     TF_XML,
     TF_YAML,
+    TF_TOML,
 };
 
 namespace fmt {
@@ -64,6 +66,9 @@ struct formatter<text_format_t> : formatter<string_view> {
         string_view name = "unknown";
         switch (tf) {
             case text_format_t::TF_UNKNOWN:
+                name = "text/plain";
+                break;
+            case text_format_t::TF_BINARY:
                 name = "application/octet-stream";
                 break;
             case text_format_t::TF_LOG:
@@ -98,6 +103,9 @@ struct formatter<text_format_t> : formatter<string_view> {
                 break;
             case text_format_t::TF_YAML:
                 name = "application/yaml";
+                break;
+            case text_format_t::TF_TOML:
+                name = "application/toml";
                 break;
         }
         return formatter<string_view>::format(name, ctx);

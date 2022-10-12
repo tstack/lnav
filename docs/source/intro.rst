@@ -1,4 +1,3 @@
-
 Introduction
 ============
 
@@ -18,8 +17,7 @@ Dependencies
 When compiling from source, the following dependencies are required:
 
 * `NCurses <http://www.gnu.org/s/ncurses/>`_
-* `PCRE <http://www.pcre.org>`_ -- Versions greater than 8.20 give better
-  performance since the PCRE JIT will be leveraged.
+* `PCRE2 <http://www.pcre.org>`_
 * `SQLite <http://www.sqlite.org>`_
 * `ZLib <http://wwww.zlib.net>`_
 * `Bzip2 <http://www.bzip.org>`_
@@ -93,6 +91,7 @@ The builtin keymaps are:
 
   :de: `German <https://github.com/tstack/lnav/blob/master/src/keymaps/de-keymap.json>`_
   :fr: `French <https://github.com/tstack/lnav/blob/master/src/keymaps/fr-keymap.json>`_
+  :sv: `Swedish <https://github.com/tstack/lnav/blob/master/src/keymaps/sv-keymap.json>`_
   :uk: `United Kingdom <https://github.com/tstack/lnav/blob/master/src/keymaps/uk-keymap.json>`_
   :us: `United States <https://github.com/tstack/lnav/blob/master/src/keymaps/us-keymap.json>`_
 

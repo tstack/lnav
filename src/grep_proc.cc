@@ -48,7 +48,7 @@
 #include "vis_line.hh"
 
 template<typename LineType>
-grep_proc<LineType>::grep_proc(pcre* code,
+grep_proc<LineType>::grep_proc(std::shared_ptr<lnav::pcre2pp::code> code,
                                grep_proc_source<LineType>& gps,
                                std::shared_ptr<pollable_supervisor> ps)
     : pollable(ps, pollable::category::background), gp_pcre(code),
@@ -189,40 +189,30 @@ grep_proc<LineType>::child_loop()
             line_value.clear();
             done = !this->gp_source.grep_value_for_line(line, line_value);
             if (!done) {
-                pcre_context_static<128> pc;
-                pcre_input pi(line_value);
-
-                while (this->gp_pcre.match(pc, pi)) {
-                    pcre_context::iterator pc_iter;
-                    pcre_context::capture_t* m;
-
-                    if (pi.pi_offset == 0) {
-                        fprintf(stdout, "%d\n", (int) line);
-                    }
-                    m = pc.all();
-                    fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
-                    for (pc_iter = pc.begin(); pc_iter != pc.end(); pc_iter++) {
-                        if (!pc_iter->is_valid()) {
-                            continue;
+                this->gp_pcre->capture_from(line_value)
+                    .for_each([&](lnav::pcre2pp::match_data& md) {
+                        if (md.leading().sf_begin == 0) {
+                            fprintf(stdout, "%d\n", (int) line);
                         }
                         fprintf(stdout,
-                                "(%d:%d)",
-                                pc_iter->c_begin,
-                                pc_iter->c_end);
+                                "[%d:%d]\n",
+                                md[0]->sf_begin,
+                                md[0]->sf_end);
+                        for (int lpc = 1; lpc < md.get_count(); lpc++) {
+                            if (!md[lpc]) {
+                                continue;
+                            }
+                            fprintf(stdout,
+                                    "(%d:%d)",
+                                    md[lpc]->sf_begin,
+                                    md[lpc]->sf_end);
 
-                        /* If the capture was conditional, pcre will return a -1
-                         * here.
-                         */
-                        if (pc_iter->c_begin >= 0) {
-                            fwrite(pi.get_substr_start(pc_iter),
-                                   1,
-                                   pc_iter->length(),
-                                   stdout);
+                            fwrite(
+                                md[lpc]->data(), 1, md[lpc]->length(), stdout);
+                            fputc('\n', stdout);
                         }
-                        fputc('\n', stdout);
-                    }
-                    fprintf(stdout, "/\n");
-                }
+                        fprintf(stdout, "/\n");
+                    });
             }
 
             if (((line + 1) % 10000) == 0) {

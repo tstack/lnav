@@ -128,16 +128,19 @@ add_text_possibilities(readline_curses* rlc,
     static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
     static const std::regex re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
 
-    pcre_context_static<30> pc;
     data_scanner ds(str);
-    data_token_t dt;
 
-    while (ds.tokenize2(pc, dt)) {
-        if (pc[0]->length() < 4) {
+    while (true) {
+        auto tok_res = ds.tokenize2();
+
+        if (!tok_res) {
+            break;
+        }
+        if (tok_res->tr_capture.length() < 4) {
             continue;
         }
 
-        switch (dt) {
+        switch (tok_res->tr_token) {
             case DT_DATE:
             case DT_TIME:
             case DT_WHITE:
@@ -148,7 +151,7 @@ add_text_possibilities(readline_curses* rlc,
 
         switch (tq) {
             case text_quoting::sql: {
-                auto token_value = ds.get_input().get_substr(pc.all());
+                auto token_value = tok_res->to_string();
                 auto_mem<char, sqlite3_free> quoted_token;
 
                 quoted_token = sqlite3_mprintf("%Q", token_value.c_str());
@@ -156,12 +159,9 @@ add_text_possibilities(readline_curses* rlc,
                 break;
             }
             default: {
-                std::string token_value, token_value_no_dot;
-
-                token_value_no_dot = token_value
-                    = ds.get_input().get_substr(pc.all());
-                token_value
-                    = std::regex_replace(token_value, re_escape, R"(\\\1)");
+                auto token_value_no_dot = tok_res->to_string();
+                auto token_value = std::regex_replace(
+                    token_value_no_dot, re_escape, R"(\\\1)");
                 token_value_no_dot = std::regex_replace(
                     token_value_no_dot, re_escape_no_dot, R"(\\\1)");
                 rlc->add_possibility(context, type, token_value);
@@ -172,10 +172,15 @@ add_text_possibilities(readline_curses* rlc,
             }
         }
 
-        switch (dt) {
+        switch (tok_res->tr_token) {
             case DT_QUOTED_STRING:
                 add_text_possibilities(
-                    rlc, context, type, ds.get_input().get_substr(pc[0]), tq);
+                    rlc,
+                    context,
+                    type,
+                    ds.to_string_fragment(tok_res->tr_inner_capture)
+                        .to_string(),
+                    tq);
                 break;
             default:
                 break;
@@ -253,6 +258,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
         logline_value_vector values;
 
         lf->read_full_message(ll, values.lvv_sbr);
+        values.lvv_sbr.erase_ansi();
         format->annotate(cl, sa, values);
         for (auto& lv : values.lvv_values) {
             if (!lv.lv_meta.lvm_struct_name.empty()) {
@@ -416,22 +422,21 @@ add_config_possibilities()
                              const std::string& path,
                              void* mem) {
         if (jph.jph_children) {
-            if (!jph.jph_regex->p_named_count) {
+            const auto named_caps = jph.jph_regex->get_named_captures();
+
+            if (named_caps.empty()) {
                 rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             }
-            for (auto named_iter = jph.jph_regex->named_begin();
-                 named_iter != jph.jph_regex->named_end();
-                 ++named_iter)
-            {
-                if (visited.count(named_iter->pnc_name) == 0) {
+            for (const auto& named_cap : named_caps) {
+                if (visited.count(named_cap.get_name().to_string()) == 0) {
                     rc->clear_possibilities(ln_mode_t::COMMAND,
-                                            named_iter->pnc_name);
-                    visited.insert(named_iter->pnc_name);
+                                            named_cap.get_name().to_string());
+                    visited.insert(named_cap.get_name().to_string());
                 }
 
                 ghc::filesystem::path path_obj(path);
                 rc->add_possibility(ln_mode_t::COMMAND,
-                                    named_iter->pnc_name,
+                                    named_cap.get_name().to_string(),
                                     path_obj.parent_path().filename().string());
             }
         } else {

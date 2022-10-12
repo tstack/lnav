@@ -8,6 +8,7 @@
             }
         },
         "timestamp-field": "ts",
+        "subsecond-field": "ts-sub",
         "sample": [
             {
                 "line": "1428634687123: 1234 abc"

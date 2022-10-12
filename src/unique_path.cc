@@ -50,7 +50,7 @@ unique_path_generator::generate()
     while (!this->upg_unique_paths.empty()) {
         std::vector<std::shared_ptr<unique_path_source>> collisions;
 
-        for (auto pair : this->upg_unique_paths) {
+        for (const auto& pair : this->upg_unique_paths) {
             if (pair.second.size() == 1) {
                 if (loop_count > 0) {
                     std::shared_ptr<unique_path_source> src = pair.second[0];

@@ -8,7 +8,7 @@
                 "pattern": "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<section>\\w+): (?<body>.*)$"
             },
             "default": {
-                "pattern": "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<body>.*)$"
+                "pattern": "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?!\\w+:)(?<body>.*)$"
             }
         },
         "level": {

@@ -833,7 +833,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mcurrent-time[0m
+[4m:[0m[1m[4mcurre[0m[1m[4mnt-time[0m
 ══════════════════════════════════════════════════════════════════════
   Print the current time in human-readable form and seconds since the
   epoch
@@ -1565,11 +1565,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-table-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-table-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in a tabular format
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the table contents
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1586,11 +1587,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-csv-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-csv-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in CSV format
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the row contents
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1606,11 +1608,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-json-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-json-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in JSON format
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the JSON values
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1626,11 +1629,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-jsonlines-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-jsonlines-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in JSON Lines format
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the JSON values
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1646,7 +1650,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-raw-to[0m[4m [[0m[4m--view={log,db}[0m[4m] [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-raw-to[0m[4m [[0m[4m--view={log,db}[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   In the log view, write the original log file content of the marked
   messages to the file.  In the DB view, the contents of the cells are
@@ -1654,6 +1658,7 @@ For support questions, email:
 [4mParameters[0m
   [4m--view={log,db}[0m   The view to use as the source of
                     data
+  [4m--anonymize[0m       Anonymize the lines
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
@@ -1671,12 +1676,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-screen-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-screen-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write the displayed text or SQL results to the given file without
   any formatting
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the lines
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1693,11 +1699,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-table-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-table-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in a tabular format
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the table contents
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1714,11 +1721,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Overwrite the given file with any marked lines in the current view
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the lines
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
@@ -1733,12 +1741,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-view-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-view-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write the text in the top view to the given file without any
   formatting
-[4mParameter[0m
-  [4mpath[0m   The path to the file to write
+[4mParameters[0m
+  [4m--anonymize[0m   Anonymize the lines
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
@@ -1839,6 +1848,27 @@ For support questions, email:
 [4mExample[0m
 #1 To get the hyperbolic arccosine of 1.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m([0m[1m[37m[40m1.2[0m[37m[40m)                                 [0m
+   
+
+
+[1m[4manonymize[0m[4m([0m[4mvalue[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Replace identifying information with random values.
+[4mParameter[0m
+  [4mvalue[0m   The text to anonymize
+[4mSee Also[0m
+  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+[4mExample[0m
+#1 To anonymize an IP address:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40manonymize[0m[37m[40m([0m[35m[40m'Hello, 192.168.1.2'[0m[37m[40m)            [0m
    
 
 
@@ -2018,14 +2048,15 @@ For support questions, email:
 [4mParameter[0m
   [4mX[0m   The unicode code point values
 [4mSee Also[0m
-  [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get a string with the code points 0x48 and 0x49:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40mx48[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40mx49[0m[37m[40m)                           [0m
@@ -2043,14 +2074,15 @@ For support questions, email:
   [4mstart[0m      The one-based index within the haystack to
              start the search
 [4mSee Also[0m
-  [1mchar()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To search for the string 'abc' within 'abcabc' and starting at position 2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcharindex[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'abcabc'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)              [0m
@@ -2156,14 +2188,15 @@ For support questions, email:
   [4malgorithm[0m   One of the following encoding algorithms:
               base64, hex, uri
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To decode the URI-encoded string '%63%75%72%6c':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdecode[0m[37m[40m([0m[35m[40m'%63%75%72%6c'[0m[37m[40m, [0m[35m[40m'uri'[0m[37m[40m)              [0m
@@ -2241,14 +2274,15 @@ For support questions, email:
   [4malgorithm[0m   One of the following encoding algorithms:
               base64, hex, uri
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mendswith()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To base64-encode 'Hello, World!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mencode[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m, [0m[35m[40m'base64'[0m[37m[40m)          [0m
@@ -2270,14 +2304,15 @@ For support questions, email:
   [4mstr[0m      The string to test
   [4msuffix[0m   The suffix to check in the string
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mextract()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mextract()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'notbad.jpg' ends with '.jpg':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[35m[40m'notbad.jpg'[0m[37m[40m, [0m[35m[40m'.jpg'[0m[37m[40m)             [0m
@@ -2310,14 +2345,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to parse
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mgroup_concat()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To extract key/value pairs from a string:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mextract[0m[37m[40m([0m[35m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m) [0m
@@ -2425,14 +2461,14 @@ For support questions, email:
   [4mX[0m     The value to concatenate.
   [4msep[0m   The separator to place between the values.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
   [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
   [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
   [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To concatenate the values of the column 'ex_procname' from the table
    'lnav_example_log':
@@ -2455,14 +2491,14 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to hash
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
   [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
   [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
   [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To produce a hash of all of the values of 'column1':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'abc'[0m[37m[40m), ([0m[35m[40m'123'[0m[37m[40m))[0m
@@ -2475,14 +2511,15 @@ For support questions, email:
 [4mParameter[0m
   [4mb[0m   The blob to decompress
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 
 [1m[4mgzip[0m[4m([0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2490,14 +2527,15 @@ For support questions, email:
 [4mParameter[0m
   [4mvalue[0m   The value to compress
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 
 [1m[4mhex[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2518,15 +2556,16 @@ For support questions, email:
 [4mParameter[0m
   [4msecs[0m   The duration in seconds
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, [1mencode()[0m, 
-  [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, 
-  [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, 
+  [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
+  [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mjulianday()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To format a duration:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m15[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m60[0m[37m[40m)                 [0m
@@ -2543,14 +2582,14 @@ For support questions, email:
 [4mParameter[0m
   [4mvalue[0m   The file size to format
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
   [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
   [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To format an amount:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m)       [0m
@@ -2580,14 +2619,15 @@ For support questions, email:
   [4mhaystack[0m   The string to search within
   [4mneedle[0m     The string to look for in the haystack
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mleftstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To test get the position of 'b' in the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40minstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'b'[0m[37m[40m)                          [0m
@@ -2805,14 +2845,15 @@ For support questions, email:
   [4mN[0m     The number of characters from the left side of the
         string to return.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To get the first character of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                          [0m
@@ -2830,14 +2871,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to determine the length of
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To get the length of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlength[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m)                              [0m
@@ -2950,14 +2992,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The logfmt message to parse
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, 
-  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To extract key/value pairs from a log message:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlogfmt2json[0m[37m[40m([0m[35m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m)[0m
@@ -2971,14 +3014,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to convert.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To lowercase the string 'AbC':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlower[0m[37m[40m([0m[35m[40m'AbC'[0m[37m[40m)                               [0m
@@ -2993,14 +3037,15 @@ For support questions, email:
   [4mstr[0m     The string to trim characters from the left side
   [4mchars[0m   The characters to trim.  Defaults to spaces.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the leading space characters from the string '   abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[35m[40m'   abc'[0m[37m[40m)                            [0m
@@ -3101,14 +3146,15 @@ For support questions, email:
   [4mstr[0m   The string to pad
   [4mlen[0m   The minimum desired length of the output string
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
@@ -3127,14 +3173,15 @@ For support questions, email:
   [4mstr[0m   The string to pad
   [4mlen[0m   The minimum desired length of the output string
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadr()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m)                             [0m
@@ -3153,14 +3200,15 @@ For support questions, email:
   [4mstr[0m   The string to pad
   [4mlen[0m   The minimum desired length of the output string
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
@@ -3168,6 +3216,43 @@ For support questions, email:
 
 #2 To pad the string 'abcdef' to a length of four characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abcdef'[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'ghi'[0m[37m[40m                 [0m
+   
+
+
+[1m[4mparse_url[0m[4m([0m[4murl[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Parse a URL and return the components in a JSON object. Limitations:
+  not all URL schemes are supported and repeated query parameters are
+  not captured.
+[4mParameter[0m
+  [4murl[0m   The URL to parse
+[4mResults[0m
+  [4mscheme[0m       The URL's scheme
+  [4musername[0m     The name of the user specified in the URL
+  [4mpassword[0m     The password specified in the URL
+  [4mhost[0m         The host name / IP specified in the URL
+  [4mport[0m         The port specified in the URL
+  [4mpath[0m         The path specified in the URL
+  [4mquery[0m        The query string in the URL
+  [4mparameters[0m   An object containing the query parameters
+  [4mfragment[0m     The fragment specified in the URL
+[4mSee Also[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
+[4mExamples[0m
+#1 To parse the URL 'https://example.com/search?q=hello%20world':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mparse_url[0m[37m[40m([0m[35m[40m'https://example.com/search?q=hello%20world'[0m[37m[40m)[0m
+   
+
+#2 To parse the URL 'https://alice@[fe80::14ff:4ee5:1215:2fb2]':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mparse_url[0m[37m[40m([0m[35m[40m'https://alice@[fe80::14ff:4ee5:1215:2fb2]'[0m[37m[40m)[0m
    
 
 
@@ -3219,14 +3304,15 @@ For support questions, email:
   [4mX[0m        The argument to substitute at a given position in
            the format.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To substitute 'World' into the string 'Hello, %s!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'Hello, %s!'[0m[37m[40m, [0m[35m[40m'World'[0m[37m[40m)              [0m
@@ -3247,14 +3333,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to capitalize.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To capitalize the words in the string 'hello, world!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mproper[0m[37m[40m([0m[35m[40m'hello, world!'[0m[37m[40m)                    [0m
@@ -3370,14 +3457,15 @@ For support questions, email:
                   string.
   [4mcontent[0m         The captured value from the string.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
@@ -3403,14 +3491,14 @@ For support questions, email:
                 string.
   [4mcontent[0m       The captured values from the string.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
@@ -3425,14 +3513,15 @@ For support questions, email:
   [4mre[0m    The regular expression to use
   [4mstr[0m   The string to test against the regular expression
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_replace()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_replace()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To capture the digits from the string '123':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[35m[40m'(\d+)'[0m[37m[40m, [0m[35m[40m'123'[0m[37m[40m)               [0m
@@ -3459,14 +3548,15 @@ For support questions, email:
          groups with a backslash followed by the number of the group,
          starting with 1.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_match()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_match()[0m, [1mreplace()[0m, 
+  [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m, [0m[35m[40m'^(\w+)'[0m[37m[40m, [0m[35m[40m'Goodbye'[0m[37m[40m)[0m
@@ -3487,14 +3577,15 @@ For support questions, email:
   [4mreplacement[0m   The string to replace any occurrences of
                 the old string with.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the string 'x' with 'z' in 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mreplace[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'x'[0m[37m[40m, [0m[35m[40m'z'[0m[37m[40m)                   [0m
@@ -3512,14 +3603,15 @@ For support questions, email:
   [4mstr[0m   The string to replicate.
   [4mN[0m     The number of times to replicate the string.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To repeat the string 'abc' three times:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreplicate[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                        [0m
@@ -3532,14 +3624,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to reverse.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To reverse the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mreverse[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m)                             [0m
@@ -3554,14 +3647,15 @@ For support questions, email:
   [4mN[0m     The number of characters from the right side of the
         string to return.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the last character of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrightstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                         [0m
@@ -3621,14 +3715,15 @@ For support questions, email:
   [4mstr[0m     The string to trim characters from the right side
   [4mchars[0m   The characters to trim.  Defaults to spaces.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the space characters from the end of the string 'abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrtrim[0m[37m[40m([0m[35m[40m'abc   '[0m[37m[40m)                            [0m
@@ -3675,14 +3770,15 @@ For support questions, email:
           non-aggregate version defaults to 100.  The aggregate
           version uses the largest value in the inputs.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the unicode block element for the value 32 in the range of 0-128:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[1m[37m[40m32[0m[37m[40m, [0m[1m[37m[40m128[0m[37m[40m)                         [0m
@@ -3699,14 +3795,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to hash
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To produce a hash for the string 'Hello, World!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mspooky_hash[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m)               [0m
@@ -3780,14 +3877,15 @@ For support questions, email:
   [4mstr[0m      The string to test
   [4mprefix[0m   The prefix to check in the string
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstrfilter()[0m, [1msubstr()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To test if the string 'foobar' starts with 'foo':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstartswith[0m[37m[40m([0m[35m[40m'foobar'[0m[37m[40m, [0m[35m[40m'foo'[0m[37m[40m)                [0m
@@ -3806,14 +3904,15 @@ For support questions, email:
   [4msource[0m    The string to filter
   [4minclude[0m   The characters to include in the result
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the 'b', 'c', and 'd' characters from the string 'abcabc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrfilter[0m[37m[40m([0m[35m[40m'abcabc'[0m[37m[40m, [0m[35m[40m'bcd'[0m[37m[40m)                 [0m
@@ -3863,14 +3962,15 @@ For support questions, email:
           the value is negative, then the characters before the start
           are returned.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the substring starting at the second character until the end of the string
    'abc':
@@ -4012,14 +4112,15 @@ For support questions, email:
           right sides.
   [4mchars[0m   The characters to trim.  Defaults to spaces.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1municode()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim spaces from the start and end of the string '    abc   ':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtrim[0m[37m[40m([0m[35m[40m'    abc   '[0m[37m[40m)                         [0m
@@ -4054,14 +4155,15 @@ For support questions, email:
 [4mParameter[0m
   [4mX[0m   The string to examine.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the unicode code point for the first character of 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40municode[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m)                             [0m
@@ -4075,6 +4177,28 @@ For support questions, email:
   [4mvalue[0m   The boolean value to return
 
 
+[1m[4munparse_url[0m[4m([0m[4mobj[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Convert a JSON object containing the parts of a URL into a URL
+  string
+[4mParameter[0m
+  [4mobj[0m   The JSON object containing the URL parts
+[4mSee Also[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
+[4mExample[0m
+#1 To unparse the object '{"scheme": "https", "host": "example.com"}':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40munparse_url[0m[37m[40m([0m[35m[40m'{"scheme": "https", "host": "example.com"}'[0m[37m[40m)[0m
+   
+
+
 [1m[4mupper[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a copy of the given string with all ASCII characters
@@ -4082,14 +4206,15 @@ For support questions, email:
 [4mParameter[0m
   [4mstr[0m   The string to convert.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mxpath()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To uppercase the string 'aBc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mupper[0m[37m[40m([0m[35m[40m'aBc'[0m[37m[40m)                               [0m
@@ -4111,14 +4236,15 @@ For support questions, email:
   [4mnode_attr[0m   The node's attributes stored in JSON object.
   [4mnode_text[0m   The node's text value.
 [4mSee Also[0m
-  [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
   [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
   [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, [1mupper()[0m
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtrim()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m
 [4mExamples[0m
 #1 To select the XML nodes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m

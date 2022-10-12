@@ -27,230 +27,178 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include "data_scanner.hh"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+
+void
+data_scanner::capture_t::ltrim(const char* str)
+{
+    while (this->c_begin < this->c_end && isspace(str[this->c_begin])) {
+        this->c_begin += 1;
+    }
+}
 
 static struct {
     const char* name;
-    pcrepp pcre;
 } MATCHERS[DT_TERMINAL_MAX] = {
     {
         "quot",
-        pcrepp("\\A(?:(?:u|r)?\"((?:\\\\.|[^\"])+)\"|"
-               "(?:u|r)?'((?:\\\\.|[^'])+)')"),
     },
     {
         "url",
-        pcrepp("\\A([\\w]+://[^\\s'\"\\[\\](){}]+[/a-zA-Z0-9\\-=&])"),
     },
     {
         "path",
-        pcrepp("\\A((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),
     },
     {
         "mac",
-        pcrepp(
-            "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})(?!:)"),
     },
     {
         "date",
-        pcrepp("\\A("
-               "\\d{4}/\\d{1,2}/\\d{1,2}|"
-               "\\d{4}-\\d{1,2}-\\d{1,2}|"
-               "\\d{2}/\\w{3}/\\d{4}"
-               ")T?"),
     },
     {
         "time",
-        pcrepp("\\A([\\s\\d]\\d:\\d\\d(?:(?!:\\d)|:\\d\\d(?:[\\.,]\\d{3,6})?Z?)"
-               ")\\b"),
+    },
+    {
+        "dt",
     },
     /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
     {
         "ipv6",
-        pcrepp("\\A(::|[:\\da-fA-F\\.]+[a-fA-F\\d](?:%\\w+)?)"),
     },
     {
         "hexd",
-        pcrepp("\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F])+)"),
     },
 
     {
         "xmld",
-        pcrepp("\\A(<!\\??[\\w:]+\\s*(?:[\\w:]+(?:\\s*=\\s*"
-               "(?:\"((?:\\\\.|[^\"])+)\"|'((?:\\\\.|[^'])+)'|[^>]+)"
-               "))*\\s*>)"),
     },
     {
         "xmlt",
-        pcrepp("\\A(<\\??[\\w:]+\\s*(?:[\\w:]+(?:\\s*=\\s*"
-               "(?:\"((?:\\\\.|[^\"])+)\"|'((?:\\\\.|[^'])+)'|[^>]+)"
-               "))*\\s*(?:/|\\?)>)"),
     },
     {
         "xmlo",
-        pcrepp("\\A(<[\\w:]+\\s*(?:[\\w:]+(?:\\s*=\\s*"
-               "(?:\"((?:\\\\.|[^\"])+)\"|'((?:\\\\.|[^'])+)'|[^>]+)"
-               "))*\\s*>)"),
     },
 
     {
         "xmlc",
-        pcrepp("\\A(</[\\w:]+\\s*>)"),
     },
 
     {
         "h1",
-        pcrepp("\\A([A-Z \\-])"),
     },
     {
         "h2",
-        pcrepp("\\A([A-Z \\-])"),
     },
     {
         "h3",
-        pcrepp("\\A([A-Z \\-])"),
     },
 
     {
         "coln",
-        pcrepp("\\A(:)"),
     },
     {
         "eq",
-        pcrepp("\\A(=)"),
     },
     {
         "comm",
-        pcrepp("\\A(,)"),
     },
     {
         "semi",
-        pcrepp("\\A(;)"),
     },
 
     {
         "empt",
-        pcrepp("\\A(\\(\\)|\\{\\}|\\[\\])"),
     },
 
     {
-        "lcurly",
-        pcrepp("\\A({)"),
+        "lcur",
     },
     {
-        "rcurly",
-        pcrepp("\\A(})"),
+        "rcur",
     },
 
     {
-        "lsquare",
-        pcrepp("\\A(\\[)"),
+        "lsqu",
     },
     {
-        "rsquare",
-        pcrepp("\\A(\\])"),
+        "rsqu",
     },
 
     {
-        "lparen",
-        pcrepp("\\A(\\()"),
+        "lpar",
     },
     {
-        "rparen",
-        pcrepp("\\A(\\))"),
+        "rpar",
     },
 
     {
-        "langle",
-        pcrepp("\\A(\\<)"),
+        "lang",
     },
     {
-        "rangle",
-        pcrepp("\\A(\\>)"),
+        "rang",
     },
 
     {
         "ipv4",
-        pcrepp("\\A("
-               "(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}"
-               "(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![\\d]))"),
     },
 
     {
         "uuid",
-        pcrepp("\\A([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"),
     },
 
     {
+        "cc",
+    },
+    {
         "vers",
-        pcrepp("\\A("
-               "[0-9]+(?:\\.[0-9]+\\w*){2,}(?:-\\w+)?|"
-               "[0-9]+(?:\\.[0-9]+\\w*)+(?<!\\d[eE])-\\w+?"
-               ")\\b"),
     },
     {
         "oct",
-        pcrepp("\\A(-?0[0-7]+\\b)"),
     },
     {
         "pcnt",
-        pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"),
     },
     {
         "num",
-        pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?([eE][\\-+][0-9]+)?)"
-               "\\b(?![\\._\\-][a-zA-Z])"),
     },
     {
         "hex",
-        pcrepp("\\A(-?(?:0x|[0-9])[0-9a-fA-F]+)"
-               "\\b(?![\\._\\-][a-zA-Z])"),
     },
 
     {
         "mail",
-        pcrepp("\\A([a-zA-Z0-9\\._%+-]+@[a-zA-Z0-9\\.-]+\\.[a-zA-Z]+)\\b"),
     },
-    {"cnst", pcrepp("\\A(true|True|TRUE|false|False|FALSE|None|null)\\b")},
+    {
+        "cnst",
+    },
     {
         "word",
-        pcrepp("\\A([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|[\\.\\!,\\?]"
-               "\\s|$))"),
     },
     {
         "sym",
-        pcrepp(
-            "\\A([^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+"
-            "(?:::[^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]"
-            "+)*)"),
     },
     {
         "line",
-        pcrepp("\\A(\r?\n|\r|;)"),
     },
     {
         "wspc",
-        pcrepp("\\A([ \\r\\t\\n]+)"),
     },
     {
         "dot",
-        pcrepp("\\A(\\.)"),
     },
     {
         "escc",
-        pcrepp("\\A(\\\\\\.)"),
+    },
+    {
+        "csi",
     },
 
     {
         "gbg",
-        pcrepp("\\A(.)"),
     },
 };
 
@@ -263,7 +211,6 @@ const char* DNT_NAMES[DNT_MAX - DNT_KEY] = {
     "meas",
     "var",
     "rang",
-    "dt",
     "grp",
 };
 
@@ -272,11 +219,47 @@ data_scanner::token2name(data_token_t token)
 {
     if (token < 0) {
         return "inv";
-    } else if (token < DT_TERMINAL_MAX) {
-        return MATCHERS[token].name;
-    } else if (token == DT_ANY) {
-        return "any";
-    } else {
-        return DNT_NAMES[token - DNT_KEY];
     }
+    if (token < DT_TERMINAL_MAX) {
+        return MATCHERS[token].name;
+    }
+    if (token == DT_ANY) {
+        return "any";
+    }
+    return DNT_NAMES[token - DNT_KEY];
+}
+
+bool
+data_scanner::is_credit_card(string_fragment cc) const
+{
+    auto cc_no_spaces = cc.to_string();
+    auto new_end = std::remove_if(cc_no_spaces.begin(),
+                                  cc_no_spaces.end(),
+                                  [](auto ch) { return ch == ' '; });
+    cc_no_spaces.erase(new_end, cc_no_spaces.end());
+    int len = cc_no_spaces.size();
+    int double_even_sum = 0;
+
+    // Step 1: double every second digit, starting from right.
+    // if results in 2 digit number, add the digits to obtain single digit
+    // number. sum all answers to obtain 'double_even_sum'
+
+    for (int lpc = len - 2; lpc >= 0; lpc = lpc - 2) {
+        int dbl = ((cc_no_spaces[lpc] - '0') * 2);
+        if (dbl > 9) {
+            dbl = (dbl / 10) + (dbl % 10);
+        }
+        double_even_sum += dbl;
+    }
+
+    // Step 2: add every odd placed digit from right to double_even_sum's value
+
+    for (int lpc = len - 1; lpc >= 0; lpc = lpc - 2) {
+        double_even_sum += (cc_no_spaces[lpc] - 48);
+    }
+
+    // Step 3: check if final 'double_even_sum' is multiple of 10
+    // if yes, it is valid.
+
+    return double_even_sum % 10 == 0;
 }

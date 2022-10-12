@@ -29,6 +29,7 @@
 
 #include "log_search_table.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "column_namer.hh"
 #include "config.h"
 #include "sql_util.hh"
@@ -36,8 +37,10 @@
 const static std::string MATCH_INDEX = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
 
-log_search_table::log_search_table(pcrepp pattern, intern_string_t table_name)
-    : log_vtab_impl(table_name), lst_regex(std::move(pattern))
+log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
+                                   intern_string_t table_name)
+    : log_vtab_impl(table_name), lst_regex(code),
+      lst_match_data(this->lst_regex->create_match_data())
 {
 }
 
@@ -65,20 +68,18 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
     this->lst_column_metas.emplace_back(
         match_index_name, value_kind_t::VALUE_INTEGER, cols.size());
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
-    for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
+    cn.add_column(string_fragment::from_const("__all__"));
+    auto captures = this->lst_regex->get_captures();
+    for (int lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
         std::string collator;
-        std::string colname;
         int sqlite_type = SQLITE3_TEXT;
 
-        colname = cn.add_column(string_fragment::from_c_str(
-                                    this->lst_regex.name_for_capture(lpc)))
-                      .to_string();
-        if (this->lst_regex.captures().size()
-            == (size_t) this->lst_regex.get_capture_count())
-        {
-            auto iter = this->lst_regex.cap_begin() + lpc;
-            auto cap_re = this->lst_regex.get_pattern().substr(iter->c_begin,
-                                                               iter->length());
+        auto colname
+            = cn.add_column(string_fragment::from_c_str(
+                                this->lst_regex->get_name_for_capture(lpc + 1)))
+                  .to_string();
+        if (captures.size() == (size_t) this->lst_regex->get_capture_count()) {
+            auto cap_re = captures[lpc].to_string();
             sqlite_type = guess_type_from_pcre(cap_re, collator);
             switch (sqlite_type) {
                 case SQLITE_FLOAT:
@@ -119,18 +120,24 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     this->lst_line_values_cache.lvv_values.clear();
 
     if (this->lst_match_index >= 0) {
-        if (this->lst_regex.match(
-                this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
-        {
+        auto match_res = this->lst_regex->capture_from(this->lst_content)
+                             .at(this->lst_remaining)
+                             .into(this->lst_match_data)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+
+        if (match_res) {
 #if 0
             log_debug("matched within line: %d",
                       this->lst_match_context.get_count());
 #endif
+            this->lst_remaining = match_res->f_remaining;
             this->lst_match_index += 1;
             return true;
         }
 
         // log_debug("done matching message");
+        this->lst_remaining.clear();
         this->lst_match_index = -1;
         return false;
     }
@@ -160,20 +167,25 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     }
 
     // log_debug("%d: doing message", (int) lc.lc_curr_line);
-    lf->read_full_message(lf_iter, this->lst_line_values_cache.lvv_sbr);
+    auto& sbr = this->lst_line_values_cache.lvv_sbr;
+    lf->read_full_message(lf_iter, sbr);
+    sbr.erase_ansi();
     lf->get_format()->annotate(
         cl, this->vi_attrs, this->lst_line_values_cache, false);
-    this->lst_input.reset(this->lst_line_values_cache.lvv_sbr.get_data(),
-                          0,
-                          this->lst_line_values_cache.lvv_sbr.length());
+    this->lst_content
+        = this->lst_line_values_cache.lvv_sbr.to_string_fragment();
 
-    if (!this->lst_regex.match(
-            this->lst_match_context, this->lst_input, PCRE_NO_UTF8_CHECK))
-    {
+    auto match_res = this->lst_regex->capture_from(this->lst_content)
+                         .into(this->lst_match_data)
+                         .matches(PCRE2_NO_UTF_CHECK)
+                         .ignore_error();
+
+    if (!match_res) {
         this->lst_mismatch_bitmap.set_bit(lc.lc_curr_line);
         return false;
     }
 
+    this->lst_remaining = match_res->f_remaining;
     this->lst_match_index = 0;
 
     return true;
@@ -191,13 +203,13 @@ log_search_table::extract(logfile* lf,
     values.lvv_values.emplace_back(
         this->lst_column_metas[this->lst_format_column_count],
         this->lst_match_index);
-    for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
-        const auto* cap = this->lst_match_context[lpc];
-        if (cap->is_valid()) {
+    for (int lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
+        const auto cap = this->lst_match_data[lpc + 1];
+        if (cap) {
             values.lvv_values.emplace_back(
                 this->lst_column_metas[this->lst_format_column_count + 1 + lpc],
                 line,
-                line_range{cap->c_begin, cap->c_end});
+                to_line_range(cap.value()));
         } else {
             values.lvv_values.emplace_back(
                 this->lst_column_metas[this->lst_format_column_count + 1

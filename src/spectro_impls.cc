@@ -301,6 +301,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
 
         values.clear();
         lf->read_full_message(ll, values.lvv_sbr);
+        values.lvv_sbr.erase_ansi();
         sa.clear();
         format->annotate(cl, sa, values, false);
 

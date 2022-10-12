@@ -1,4 +1,4 @@
-AC_INIT([lnav],[0.11.0],[lnav@googlegroups.com],[lnav],[http://lnav.org])
+AC_INIT([lnav],[0.11.1],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -184,7 +184,7 @@ AS_VAR_IF([ax_cv_curses],[yes],[],
 )
 
 AX_PATH_LIB_ARCHIVE
-AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
+AX_CHECK_PCRE2([8], [], [AC_MSG_ERROR([pcre2 is required to build])])
 AX_PATH_LIB_READLINE
 
 AX_CODE_COVERAGE
@@ -206,7 +206,7 @@ AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LIBARCHIVE_LDFLAGS 
 AS_VAR_SET(static_lib_list,
            ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
 AS_VAR_SET(static_lib_list,
-           ["$static_lib_list libpcre.a libncursesw.a libbz2.a"])
+           ["$static_lib_list libpcre2-8.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 AS_VAR_SET(static_lib_list,

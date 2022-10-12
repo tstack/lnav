@@ -39,7 +39,7 @@ log_data_table::log_data_table(logfile_sub_source& lss,
     : log_vtab_impl(table_name), ldt_log_source(lss),
       ldt_template_line(template_line)
 {
-    std::shared_ptr<logfile> lf = lss.find(template_line);
+    auto lf = lss.find(template_line);
     auto format = lf->get_format();
 
     this->vi_supports_indexes = false;
@@ -53,7 +53,7 @@ log_data_table::get_columns_int()
     auto& cols = this->ldt_cols;
     auto& metas = this->ldt_value_metas;
     content_line_t cl_copy = this->ldt_template_line;
-    std::shared_ptr<logfile> lf = this->ldt_log_source.find(cl_copy);
+    auto lf = this->ldt_log_source.find(cl_copy);
     struct line_range body;
     string_attrs_t sa;
     logline_value_vector line_values;
@@ -63,6 +63,7 @@ log_data_table::get_columns_int()
         this->ldt_format_impl->get_columns(cols);
     }
     lf->read_full_message(lf->begin() + cl_copy, line_values.lvv_sbr);
+    line_values.lvv_sbr.erase_ansi();
     format->annotate(cl_copy, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
@@ -134,6 +135,7 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
     logline_value_vector line_values;
 
     lf->read_full_message(lf_iter, line_values.lvv_sbr);
+    line_values.lvv_sbr.erase_ansi();
     lf->get_format()->annotate(cl, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {

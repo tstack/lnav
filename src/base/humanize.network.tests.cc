@@ -36,17 +36,19 @@
 TEST_CASE("humanize::network::path")
 {
     {
-        auto rp_opt = humanize::network::path::from_str("foobar");
+        auto rp_opt = humanize::network::path::from_str(
+            string_fragment::from_const("foobar"));
         CHECK(!rp_opt);
     }
     {
-        auto rp_opt = humanize::network::path::from_str("dean@foobar/bar");
+        auto rp_opt = humanize::network::path::from_str(
+            string_fragment::from_const("dean@foobar/bar"));
         CHECK(!rp_opt);
     }
 
     {
         auto rp_opt = humanize::network::path::from_str(
-            "dean@host1.example.com:/var/log");
+            string_fragment::from_const("dean@host1.example.com:/var/log"));
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;
@@ -58,8 +60,9 @@ TEST_CASE("humanize::network::path")
     }
 
     {
-        auto rp_opt = humanize::network::path::from_str(
-            "dean@[fe80::184f:c67:baf1:fe02%en0]:/var/log");
+        auto rp_opt
+            = humanize::network::path::from_str(string_fragment::from_const(
+                "dean@[fe80::184f:c67:baf1:fe02%en0]:/var/log"));
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;
@@ -74,8 +77,9 @@ TEST_CASE("humanize::network::path")
     }
 
     {
-        auto rp_opt = humanize::network::path::from_str(
-            "[fe80::184f:c67:baf1:fe02%en0]:/var/log");
+        auto rp_opt
+            = humanize::network::path::from_str(string_fragment::from_const(
+                "[fe80::184f:c67:baf1:fe02%en0]:/var/log"));
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;
@@ -89,8 +93,8 @@ TEST_CASE("humanize::network::path")
     }
 
     {
-        auto rp_opt
-            = humanize::network::path::from_str("host1.example.com:/var/log");
+        auto rp_opt = humanize::network::path::from_str(
+            string_fragment::from_const("host1.example.com:/var/log"));
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;
@@ -101,7 +105,8 @@ TEST_CASE("humanize::network::path")
     }
 
     {
-        auto rp_opt = humanize::network::path::from_str("host1.example.com:");
+        auto rp_opt = humanize::network::path::from_str(
+            string_fragment::from_const("host1.example.com:"));
         CHECK(rp_opt.has_value());
 
         auto rp = *rp_opt;

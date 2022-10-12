@@ -1486,6 +1486,9 @@ public:
         has_value_ = false;
     }
 
+    template<typename F>
+    auto map(F func) -> optional<decltype(func(this->value()))>;
+
 private:
     void this_type_does_not_support_comparisons() const {}
 
@@ -1746,6 +1749,17 @@ optional<T> make_optional( T const & value )
 }
 
 #endif // optional_CPP11_OR_GREATER
+
+template<typename T>
+template<typename F>
+auto optional<T>::map(F func) -> optional<decltype(func(this->value()))>
+{
+    if (this->has_value()) {
+        return make_optional(func(this->value()));
+    }
+
+    return nullopt;
+}
 
 } // namespace optional_lite
 

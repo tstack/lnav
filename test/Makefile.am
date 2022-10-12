@@ -76,6 +76,7 @@ check_PROGRAMS = \
 	test_log_accel \
 	test_ncurses_unicode \
 	test_reltime \
+	test_text_anonymizer \
 	test_top_status
 
 AM_LDFLAGS = \
@@ -135,6 +136,8 @@ test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 
 test_log_accel_SOURCES = test_log_accel.cc
+
+test_text_anonymizer_SOURCES = test_text_anonymizer.cc
 
 test_top_status_SOURCES = test_top_status.cc
 
@@ -220,7 +223,10 @@ include expected/expected.am
 
 dist_noinst_DATA = \
     $(EXPECTED_FILES) \
+    expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.err \
+    expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.out \
 	ansi-colors.0.in \
+	bad-config/formats/invalid-json-format/format.json \
 	bad-config/formats/invalid-properties/format.json \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \
@@ -275,6 +281,7 @@ dist_noinst_DATA = \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_ansi.0 \
+	logfile_ansi.1 \
 	logfile_bad_access_log.0 \
 	logfile_bad_syslog.0 \
 	logfile_block.1 \
@@ -298,10 +305,12 @@ dist_noinst_DATA = \
 	logfile_haproxy.0 \
 	logfile_invalid_json.json \
 	logfile_invalid_json2.json \
+	logfile_mixed_json2.json \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \
 	logfile_json3.json \
+	logfile_json_subsec.json \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
 	logfile_multiline.0 \
@@ -343,6 +352,7 @@ dist_noinst_DATA = \
 	multiline.lnav \
 	nested.lnav \
 	mvwattrline_output.0 \
+	textfile_0.md \
 	textfile_ansi.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
@@ -362,6 +372,7 @@ dist_noinst_DATA = \
 	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
 	formats/jsontest3/format.json \
+	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/scripts/redirecting.lnav \
@@ -416,6 +427,7 @@ TESTS = \
 	test_sql_views_vtab.sh \
 	test_sql_xml_func.sh \
 	test_sql_yaml_func.sh \
+	test_text_anonymizer \
 	test_text_file.sh \
 	test_tui.sh \
 	test_data_parser.sh \

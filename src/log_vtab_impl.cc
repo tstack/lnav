@@ -29,6 +29,7 @@
 
 #include "log_vtab_impl.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
@@ -284,7 +285,7 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
     return true;
 }
 
-struct vtab {
+struct log_vtab {
     sqlite3_vtab base;
     sqlite3* db;
     textview_curses* tc{nullptr};
@@ -298,7 +299,9 @@ struct vtab_cursor {
         if (this->log_msg_line == this->log_cursor.lc_curr_line) {
             return;
         }
-        lf->read_full_message(ll, this->line_values.lvv_sbr);
+        auto& sbr = this->line_values.lvv_sbr;
+        lf->read_full_message(ll, sbr);
+        sbr.erase_ansi();
         this->log_msg_line = this->log_cursor.lc_curr_line;
     }
 
@@ -321,7 +324,7 @@ vt_create(sqlite3* db,
     auto* vm = (log_vtab_manager*) pAux;
     int rc = SQLITE_OK;
     /* Allocate the sqlite3_vtab/vtab structure itself */
-    auto p_vt = std::make_unique<vtab>();
+    auto p_vt = std::make_unique<log_vtab>();
 
     p_vt->db = db;
 
@@ -346,7 +349,7 @@ vt_create(sqlite3* db,
 static int
 vt_destructor(sqlite3_vtab* p_svt)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    log_vtab* p_vt = (log_vtab*) p_svt;
 
     delete p_vt;
 
@@ -381,7 +384,7 @@ static int vt_next(sqlite3_vtab_cursor* cur);
 static int
 vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    log_vtab* p_vt = (log_vtab*) p_svt;
 
     p_vt->base.zErrMsg = nullptr;
 
@@ -428,7 +431,7 @@ vt_eof(sqlite3_vtab_cursor* cur)
 }
 
 static void
-populate_indexed_columns(vtab_cursor* vc, vtab* vt)
+populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 {
     if (vc->log_cursor.is_eof() || vc->log_cursor.lc_indexed_columns.empty()) {
         return;
@@ -487,7 +490,7 @@ static int
 vt_next(sqlite3_vtab_cursor* cur)
 {
     auto* vc = (vtab_cursor*) cur;
-    auto* vt = (vtab*) cur->pVtab;
+    auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
     vc->line_values.clear();
@@ -539,7 +542,7 @@ static int
 vt_next_no_rowid(sqlite3_vtab_cursor* cur)
 {
     auto* vc = (vtab_cursor*) cur;
-    auto* vt = (vtab*) cur->pVtab;
+    auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
     vc->line_values.lvv_values.clear();
@@ -595,7 +598,7 @@ static int
 vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 {
     auto* vc = (vtab_cursor*) cur;
-    auto* vt = (vtab*) cur->pVtab;
+    auto* vt = (log_vtab*) cur->pVtab;
 
 #ifdef DEBUG_INDEXING
     log_debug("vt_column(%s, %d:%d)",
@@ -871,6 +874,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         shared_buffer_ref line;
 
                         lf->read_full_message(ll, line);
+                        line.erase_ansi();
                         sqlite3_result_text(ctx,
                                             line.get_data(),
                                             line.length(),
@@ -1195,13 +1199,15 @@ log_cursor::string_constraint::string_constraint(unsigned char op,
     : sc_op(op), sc_value(std::move(value))
 {
     if (op == SQLITE_INDEX_CONSTRAINT_REGEXP) {
-        try {
-            this->sc_pattern
-                = std::make_shared<pcrepp>(this->sc_value, PCRE_UTF8);
-        } catch (const pcrepp::error& err) {
+        auto compile_res = lnav::pcre2pp::code::from(this->sc_value);
+
+        if (compile_res.isErr()) {
+            auto ce = compile_res.unwrapErr();
             log_error("unable to compile regexp constraint: %s -- %s",
                       this->sc_value.c_str(),
-                      err.e_msg.c_str());
+                      ce.get_message().c_str());
+        } else {
+            this->sc_pattern = compile_res.unwrap().to_shared();
         }
     }
 }
@@ -1230,10 +1236,9 @@ log_cursor::string_constraint::matches(const std::string& sf) const
             return sqlite3_strglob(this->sc_value.c_str(), sf.data()) == 0;
         case SQLITE_INDEX_CONSTRAINT_REGEXP: {
             if (this->sc_pattern != nullptr) {
-                pcre_context_static<30> pc;
-                pcre_input pi(sf);
-
-                return this->sc_pattern->match(pc, pi, PCRE_NO_UTF8_CHECK);
+                return this->sc_pattern->find_in(sf, PCRE2_NO_UTF_CHECK)
+                    .ignore_error()
+                    .has_value();
             }
             // return true here so that the regexp is actually run and fails
             return true;
@@ -1270,7 +1275,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
           sqlite3_value** argv)
 {
     auto* p_cur = (vtab_cursor*) p_vtc;
-    auto* vt = (vtab*) p_vtc->pVtab;
+    auto* vt = (log_vtab*) p_vtc->pVtab;
     sqlite3_index_info::sqlite3_index_constraint* index = nullptr;
 
     if (idxStr) {
@@ -1706,7 +1711,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     std::vector<sqlite3_index_info::sqlite3_index_constraint> indexes;
     std::vector<std::string> index_desc;
     int argvInUse = 0;
-    auto* vt = (vtab*) tab;
+    auto* vt = (log_vtab*) tab;
 
     log_info("vt_best_index(%s, nConstraint=%d)",
              vt->vi->get_name().get(),
@@ -1885,12 +1890,12 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     return SQLITE_OK;
 }
 
-static struct json_path_container tags_handler = {
+static const struct json_path_container tags_handler = {
     json_path_handler("#")
         .with_synopsis("tag")
         .with_description("A tag for the log line")
         .with_pattern(R"(^#[^\s]+$)")
-        .FOR_FIELD(bookmark_metadata, bm_tags),
+        .for_field(&bookmark_metadata::bm_tags),
 };
 
 static int
@@ -1899,7 +1904,7 @@ vt_update(sqlite3_vtab* tab,
           sqlite3_value** argv,
           sqlite_int64* rowid_out)
 {
-    vtab* vt = (vtab*) tab;
+    auto* vt = (log_vtab*) tab;
     int retval = SQLITE_READONLY;
 
     if (argc > 1 && sqlite3_value_type(argv[0]) != SQLITE_NULL

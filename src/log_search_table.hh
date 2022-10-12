@@ -36,14 +36,13 @@
 #include <vector>
 
 #include "log_vtab_impl.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
 
 class log_search_table : public log_vtab_impl {
 public:
-    static int pattern_options() { return PCRE_CASELESS | PCRE_MULTILINE; }
-
-    log_search_table(pcrepp pattern, intern_string_t table_name);
+    log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
+                     intern_string_t table_name);
 
     void get_primary_keys(std::vector<std::string>& keys_out) const override;
 
@@ -65,13 +64,14 @@ public:
                  uint64_t line_number,
                  logline_value_vector& values) override;
 
-    pcrepp lst_regex;
+    std::shared_ptr<lnav::pcre2pp::code> lst_regex;
+    lnav::pcre2pp::match_data lst_match_data;
+    string_fragment lst_content;
+    string_fragment lst_remaining;
     log_format* lst_format{nullptr};
     mutable size_t lst_format_column_count{0};
     std::string lst_log_path_glob;
     nonstd::optional<log_level_t> lst_log_level;
-    pcre_input lst_input{""};
-    pcre_context_static<128> lst_match_context;
     mutable std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_match_index{-1};
     mutable std::vector<vtab_column> lst_cols;

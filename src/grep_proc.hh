@@ -46,7 +46,7 @@
 #include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "pollable.hh"
 #include "strong_int.hh"
 
@@ -180,7 +180,7 @@ public:
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.
      */
-    grep_proc(pcre* code,
+    grep_proc(std::shared_ptr<lnav::pcre2pp::code> code,
               grep_proc_source<LineType>& gps,
               std::shared_ptr<pollable_supervisor> ps);
 
@@ -274,7 +274,7 @@ protected:
     virtual void handle_match(
         int line, std::string& line_value, int off, int* matches, int count);
 
-    pcrepp gp_pcre;
+    std::shared_ptr<lnav::pcre2pp::code> gp_pcre;
     grep_proc_source<LineType>& gp_source; /*< The data source delegate. */
 
     auto_fd gp_err_pipe; /*< Standard error from the child. */

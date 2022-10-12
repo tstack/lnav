@@ -68,11 +68,11 @@ output those messages still in a non-binary representation:
 If using systemd v236 or newer, the output fields can be limited to
 the ones actually recognized by [37m[40m lnav [0m for increased efficiency:
 
- ▌[37m[40m$ journalctl -o json [0m[4m[37m[40m--output-fields[0m[37m[40m=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav    [0m
+ ▌[37m[40m$ journalctl -o json --output-fields=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav    [0m
 
 If your system has been running for a long time, for increased
 efficiency you may want to limit the number of log lines fed into [37m[40m lnav[0m
-, e.g. via [37m[40m journalctl [0m's [37m[40m -n [0m or [37m[40m [0m[4m[37m[40m--since[0m[37m[40m=... [0m options.
+, e.g. via [37m[40m journalctl [0m's [37m[40m -n [0m or [37m[40m --since=... [0m options.
 
 In case of a persistent journal, you may want to limit the number of
 log lines fed into [37m[40m lnav [0m via [37m[40m journalctl [0m's [37m[40m -b [0m option.
@@ -113,8 +113,8 @@ The following alternatives are also available:
 The following software packages are required to build lnav:
 
  [33m•[0m gcc/clang  - A C++14-compatible compiler.
- [33m•[0m libpcre    - The Perl Compatible Regular Expression
-   (PCRE) library.
+ [33m•[0m libpcre2   - The Perl Compatible Regular Expression v2
+   (PCRE2) library.
  [33m•[0m sqlite     - The SQLite database engine.  Version 3.9.0
    or higher is required.
  [33m•[0m ncurses    - The ncurses text UI library.

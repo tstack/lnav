@@ -1,0 +1,2 @@
+Row 0:
+  Column parse_url('https://example.com/search?flag'): {"scheme":"https","user":null,"password":null,"host":"example.com","port":null,"path":"/search","query":"flag","parameters":{"flag":null},"fragment":null}

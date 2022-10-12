@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "pcrepp/pcre2pp.hh"
 #include "xxHash/xxhash.h"
 
 const static int TABLE_SIZE = 4095;
@@ -243,4 +244,60 @@ string_fragment::utf8_length() const
     }
 
     return Ok(retval);
+}
+
+string_fragment::case_style
+string_fragment::detect_text_case_style() const
+{
+    static const auto LOWER_RE
+        = lnav::pcre2pp::code::from_const(R"(^[^A-Z]+$)");
+    static const auto UPPER_RE
+        = lnav::pcre2pp::code::from_const(R"(^[^a-z]+$)");
+    static const auto CAMEL_RE
+        = lnav::pcre2pp::code::from_const(R"(^(?:[A-Z][a-z0-9]+)+$)");
+
+    if (LOWER_RE.find_in(*this).ignore_error().has_value()) {
+        return case_style::lower;
+    }
+    if (UPPER_RE.find_in(*this).ignore_error().has_value()) {
+        return case_style::upper;
+    }
+    if (CAMEL_RE.find_in(*this).ignore_error().has_value()) {
+        return case_style::camel;
+    }
+
+    return case_style::mixed;
+}
+
+std::string
+string_fragment::to_string_with_case_style(case_style style) const
+{
+    std::string retval;
+
+    switch (style) {
+        case case_style::lower: {
+            for (auto ch : *this) {
+                retval.append(1, std::tolower(ch));
+            }
+            break;
+        }
+        case case_style::upper: {
+            for (auto ch : *this) {
+                retval.append(1, std::toupper(ch));
+            }
+            break;
+        }
+        case case_style::camel: {
+            retval = this->to_string();
+            if (!this->empty()) {
+                retval[0] = toupper(retval[0]);
+            }
+            break;
+        }
+        case case_style::mixed: {
+            return this->to_string();
+        }
+    }
+
+    return retval;
 }

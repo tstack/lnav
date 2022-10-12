@@ -264,13 +264,22 @@ public:
         return retval;
     }
 
-    size_t line_length(const_iterator ll, bool include_continues = true);
+    struct message_length_result {
+        file_ssize_t mlr_length;
+        file_range::metadata mlr_metadata;
+    };
+
+    message_length_result message_byte_length(const_iterator ll,
+                                              bool include_continues = true);
 
     file_range get_file_range(const_iterator ll, bool include_continues = true)
     {
+        auto mlr = this->message_byte_length(ll, include_continues);
+
         return {
             ll->get_offset(),
-            (file_ssize_t) this->line_length(ll, include_continues),
+            mlr.mlr_length,
+            mlr.mlr_metadata,
         };
     }
 

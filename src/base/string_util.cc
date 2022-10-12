@@ -45,14 +45,14 @@ scrub_to_utf8(char* buffer, size_t length)
     int faulty_bytes;
 
     while (true) {
-        ssize_t utf8_end
+        auto scan_res
             = is_utf8((unsigned char*) buffer, length, &msg, &faulty_bytes);
 
         if (msg == nullptr) {
             break;
         }
         for (int lpc = 0; lpc < faulty_bytes; lpc++) {
-            buffer[utf8_end + lpc] = '?';
+            buffer[scan_res.usr_end + lpc] = '?';
         }
     }
 }

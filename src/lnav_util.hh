@@ -95,29 +95,43 @@ public:
         return *this;
     }
 
-    template<typename T,
-             typename = std::enable_if<std::is_arithmetic<T>::value>>
-    hasher& update(T value)
+    hasher& update(int64_t value)
     {
+        value = SPOOKYHASH_LITTLE_ENDIAN_64(value);
         this->h_context.Update(&value, sizeof(value));
 
         return *this;
     }
 
+    array_t to_array()
+    {
+        uint64_t h1;
+        uint64_t h2;
+        array_t retval;
+
+        this->h_context.Final(&h1, &h2);
+        *retval.out(0) = SPOOKYHASH_LITTLE_ENDIAN_64(h1);
+        *retval.out(1) = SPOOKYHASH_LITTLE_ENDIAN_64(h2);
+        return retval;
+    }
+
     void to_string(auto_buffer& buf)
     {
-        array_t bits;
+        array_t bits = this->to_array();
 
-        this->h_context.Final(bits.out(0), bits.out(1));
         bits.to_string(std::back_inserter(buf));
     }
 
     std::string to_string()
     {
-        array_t bits;
-
-        this->h_context.Final(bits.out(0), bits.out(1));
+        array_t bits = this->to_array();
         return bits.to_string();
+    }
+
+    std::string to_uuid_string()
+    {
+        array_t bits = this->to_array();
+        return bits.to_uuid_string();
     }
 
 private:
@@ -200,10 +214,7 @@ template<typename A>
 struct final_action {  // slightly simplified
     A act;
     final_action(A a) : act{a} {}
-    ~final_action()
-    {
-        act();
-    }
+    ~final_action() { act(); }
 };
 
 template<typename A>

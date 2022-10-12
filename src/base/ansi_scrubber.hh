@@ -64,6 +64,8 @@
  */
 void scrub_ansi_string(std::string& str, string_attrs_t* sa);
 
+size_t erase_ansi_escapes(string_fragment input);
+
 /**
  * Populate a variable map with strings that contain escape sequences that
  * might be useful to script writers.

@@ -40,6 +40,7 @@
 
 #include <inttypes.h>
 
+#include "base/intern_string.hh"
 #include "base/result.h"
 #include "ptimec.hh"
 
@@ -109,13 +110,7 @@ public:
         std::string pe_msg;
     };
 
-    static Result<relative_time, parse_error> from_str(const char* str,
-                                                       size_t len);
-
-    static Result<relative_time, parse_error> from_str(const std::string& str)
-    {
-        return from_str(str.c_str(), str.length());
-    }
+    static Result<relative_time, parse_error> from_str(string_fragment str);
 
     static relative_time from_timeval(const struct timeval& tv);
 
@@ -155,7 +150,7 @@ public:
         if (this->rt_previous) {
             return true;
         }
-        for (auto rtf : this->rt_field) {
+        for (const auto& rtf : this->rt_field) {
             if (rtf.value < 0) {
                 return true;
             }
@@ -184,7 +179,7 @@ public:
         if (!this->rt_included_days.empty()) {
             return false;
         }
-        for (auto rtf : this->rt_field) {
+        for (const auto& rtf : this->rt_field) {
             if (rtf.is_set) {
                 return false;
             }

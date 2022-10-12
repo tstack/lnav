@@ -4,24 +4,24 @@
 [36m | [0m          ar_log": {         "abc"     } }                          
 [36m | [0m                     (right here) ------^                           
 [36m | [0m                                                                    
-[1m[31m✘ error[0m: “abc(” is not a valid regular expression for property “[1m/invalid_key_log/level-pointer[0m”
- [1m[31mreason[0m: missing )
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:4
-[36m | [0m[37m[40m        "level-pointer": "abc(",        [0m
+[1m[31m✘ error[0m: “abc(” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_key_log/level-pointer[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
-[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing )[0m[37m[40m                         [0m
+[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m       [0m
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:4
+[36m | [0m[37m[40m        "level-pointer": "abc(",        [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_key_log/level-pointer[0m 
          [1mDescription[0m
            A regular-expression that matches the JSON-pointer of the level property
-[1m[31m✘ error[0m: “def[ghi” is not a valid regular expression for property “[1m/invalid_key_log/file-pattern[0m”
+[1m[31m✘ error[0m: “def[ghi” is not a valid regular expression
  [1m[31mreason[0m: missing terminating ] for character class
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:5
-[36m | [0m[37m[40m        "file-pattern": "def[ghi",      [0m
 [36m --> [0m[1m/invalid_key_log/file-pattern[0m
 [36m | [0m[37m[40mdef[0m[1m[7m[32m[40m[[0m[37m[40mghi                                           [0m
 [36m | [0m[37m[40m       [0m[1m[31m[40m^ [0m[1m[31m[40mmissing terminating ] for character class[0m
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:5
+[36m | [0m[37m[40m        "file-pattern": "def[ghi",      [0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/invalid_key_log/file-pattern[0m 
          [1mDescription[0m

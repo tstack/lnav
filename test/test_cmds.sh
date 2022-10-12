@@ -58,6 +58,14 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     "${test_dir}/logfile_access_log.0"
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":write-view-to --anonymize -" \
+    "${test_dir}/logfile_access_log.0"
+
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":write-view-to --anonymize -" \
+    "${test_dir}/logfile_pretty.0"
+
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr timeslice(:log_time_msecs, 'bad') is not null" \
     "${test_dir}/logfile_multiline.0"
 
@@ -174,7 +182,8 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ':goto 2022-06-16Tabc'
+    -c ':goto 2022-06-16Tabc' \
+    ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 1" \

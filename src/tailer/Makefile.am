@@ -48,7 +48,7 @@ libtailerpp_a_CPPFLAGS = \
 libtailerpp_a_SOURCES = \
     tailerpp.cc
 
-tailerbin.cc: tailer tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
+tailerbin.cc: tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
 	../../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin $(srcdir)/tailer.ape
 
 libtailerservice_a_CPPFLAGS = \
@@ -57,10 +57,6 @@ libtailerservice_a_CPPFLAGS = \
     -I$(srcdir)/../fmtlib \
     -I$(srcdir)/../third-party \
 	-I$(top_srcdir)/src/third-party/scnlib/include
-
-libtailerservice_a_LIBADD = \
-    libtailercommon.a \
-    libtailerpp.a
 
 libtailerservice_a_SOURCES = \
     tailerbin.cc \
@@ -96,13 +92,16 @@ TESTS = \
     test_tailer.sh
 
 DISTCLEANFILES = \
+	*.cmd \
 	*.dat \
+	*.out \
 	*.err \
 	*.db \
 	*.dpt \
 	*.diff \
 	*.index \
 	*.tmp \
+	*.outbak \
 	*.errbak \
 	*.tmpbak \
     tailerbin.h \

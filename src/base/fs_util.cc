@@ -166,5 +166,18 @@ stat_file(const ghc::filesystem::path& path)
                            strerror(errno)));
 }
 
+file_lock::file_lock(const ghc::filesystem::path& archive_path)
+{
+    auto lock_path = archive_path;
+
+    lock_path += ".lck";
+    auto open_res
+        = lnav::filesystem::create_file(lock_path, O_RDWR | O_CLOEXEC, 0600);
+    if (open_res.isErr()) {
+        throw std::runtime_error(open_res.unwrapErr());
+    }
+    this->lh_fd = open_res.unwrap();
+}
+
 }  // namespace filesystem
 }  // namespace lnav

@@ -72,10 +72,14 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            auto read_result = lf->read_line(
-                lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
-            if (read_result.isOk()) {
-                value_out = to_string(read_result.unwrap());
+            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+                value_out.clear();
+            } else {
+                auto read_result = lf->read_line(
+                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                if (read_result.isOk()) {
+                    value_out = to_string(read_result.unwrap());
+                }
             }
         } else {
             rend_iter->second.rf_text_source->text_value_for_line(
@@ -122,8 +126,13 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            retval = lf->line_length(lf->begin()
-                                     + lfo->lfo_filter_state.tfs_index[line]);
+            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            } else {
+                retval
+                    = lf->message_byte_length(
+                            lf->begin() + lfo->lfo_filter_state.tfs_index[line])
+                          .mlr_length;
+            }
         } else {
             retval = rend_iter->second.rf_text_source->text_size_for_line(
                 tc, line, flags);
@@ -288,7 +297,7 @@ textfile_sub_source::text_crumbs_for_line(
     auto lf = this->current_file();
     crumbs.emplace_back(
         lf->get_unique_path(),
-        attr_line_t().append(lnav::roles::identifier(lf->get_unique_path())),
+        attr_line_t().append(lf->get_unique_path()),
         [this]() {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
@@ -325,6 +334,9 @@ textfile_sub_source::text_crumbs_for_line(
     if (meta_iter != this->tss_doc_metadata.end()) {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+        if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            return;
+        }
         auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
         auto ll_next_iter = ll_iter + 1;
         auto end_offset = (ll_next_iter == lf->end())
@@ -443,9 +455,7 @@ textfile_sub_source::rescan_files(
     textfile_sub_source::scan_callback& callback,
     nonstd::optional<ui_clock::time_point> deadline)
 {
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     file_iterator iter;
     bool retval = false;
@@ -508,20 +518,61 @@ textfile_sub_source::rescan_files(
 
                 auto read_res = lf->read_file();
                 if (read_res.isOk()) {
-                    auto content = read_res.unwrap();
-                    auto content_sf = string_fragment{content};
-                    std::string frontmatter;
-                    auto front_matter_terminator = content.length() > 8
-                        ? content.find("\n---\n", 4)
-                        : std::string::npos;
+                    static const auto FRONT_MATTER_RE
+                        = lnav::pcre2pp::code::from_const(
+                            R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
+                            PCRE2_MULTILINE | PCRE2_DOTALL);
+                    static thread_local auto md
+                        = FRONT_MATTER_RE.create_match_data();
 
-                    if (startswith(content, "---\n")
-                        && front_matter_terminator != std::string::npos)
-                    {
-                        frontmatter
-                            = content.substr(4, front_matter_terminator - 3);
-                        content_sf
-                            = content_sf.substr(front_matter_terminator + 4);
+                    auto content = read_res.unwrap();
+                    auto content_sf = string_fragment::from_str(content);
+                    std::string frontmatter;
+                    text_format_t frontmatter_format{text_format_t::TF_UNKNOWN};
+
+                    auto cap_res = FRONT_MATTER_RE.capture_from(content_sf)
+                                       .into(md)
+                                       .matches()
+                                       .ignore_error();
+                    if (cap_res) {
+                        if (md[1]) {
+                            frontmatter_format = text_format_t::TF_YAML;
+                            frontmatter = md[1]->to_string();
+                        } else if (md[2]) {
+                            frontmatter_format = text_format_t::TF_TOML;
+                            frontmatter = md[2]->to_string();
+                        }
+                        content_sf = cap_res->f_remaining;
+                    } else if (content_sf.startswith("{")) {
+                        yajlpp_parse_context ypc(
+                            intern_string::lookup(lf->get_filename()));
+                        auto_mem<yajl_handle_t> handle(yajl_free);
+
+                        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+                        yajl_config(
+                            handle.in(), yajl_allow_trailing_garbage, 1);
+                        ypc.with_ignore_unused(true)
+                            .with_handle(handle.in())
+                            .with_error_reporter(
+                                [&lf](const auto& ypc, const auto& um) {
+                                    log_error(
+                                        "%s: failed to parse JSON front matter "
+                                        "-- %s",
+                                        lf->get_filename().c_str(),
+                                        um.um_reason.al_string.c_str());
+                                });
+                        if (ypc.parse_doc(content_sf)) {
+                            auto consumed = ypc.ypc_total_consumed;
+                            if (consumed < content_sf.length()
+                                && content_sf[consumed] == '\n')
+                            {
+                                frontmatter_format = text_format_t::TF_JSON;
+                                frontmatter = string_fragment::from_str_range(
+                                                  content, 0, consumed)
+                                                  .to_string();
+                                content_sf = content_sf.substr(consumed);
+                            }
+                        }
                     }
 
                     md2attr_line mdal;
@@ -541,7 +592,7 @@ textfile_sub_source::rescan_files(
 
                         if (!frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
-                                = {text_format_t::TF_YAML, frontmatter};
+                                = {frontmatter_format, frontmatter};
                         }
 
                         lnav::events::publish(
@@ -570,7 +621,9 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
-            if (!retval && lf->is_indexing()) {
+            if (!retval && lf->is_indexing()
+                && lf->get_text_format() != text_format_t::TF_BINARY)
+            {
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
                 if (ms_iter != this->tss_doc_metadata.end()) {
@@ -764,6 +817,9 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
+        return retval;
+    }
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto ll_next_iter = ll_iter + 1;
     auto end_offset = (ll_next_iter == lf->end())

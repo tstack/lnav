@@ -46,6 +46,7 @@ add_library(
         isc.hh
         itertools.hh
         lnav.console.hh
+        lnav.console.into.hh
         log_level_enum.hh
         lrucache.hpp
         math_util.hh
@@ -63,7 +64,7 @@ add_library(
 
 target_include_directories(base PUBLIC . .. ../third-party
         ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(base cppfmt cppscnlib pcre::libpcre ncurses::libcurses pthread)
+target_link_libraries(base cppfmt cppscnlib pcrepp ncurses::libcurses pthread)
 
 add_executable(
         test_base

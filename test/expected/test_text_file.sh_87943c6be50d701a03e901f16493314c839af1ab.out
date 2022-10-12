@@ -27,11 +27,11 @@
  * [1mSOFTWARE[0m, [1mEVEN[0m [1mIF[0m [1mADVISED[0m [1mOF[0m [1mTHE[0m [1mPOSSIBILITY[0m [1mOF[0m [1mSUCH[0m [1mDAMAGE[0m.
  */
 
-[32m#include [0m[32m"log_level.hh"[0m
+[1m[36m#include[0m [35m"log_level.hh"[0m
 
-[32m#include <[0m[32mctype.h[0m[32m>[0m
+[1m[36m#include[0m <ctype.h>
 
-[32m#include [0m[32m"config.h"[0m
+[1m[36m#include[0m [35m"config.h"[0m
 
 [1m[36mconst[0m [1m[36mchar[0m* level_names[[1mLEVEL__MAX[0m + [1m1[0m] = {
     [35m"unknown"[0m,
@@ -50,7 +50,7 @@
     [35m"fatal"[0m,
     [35m"invalid"[0m,
 
-    nullptr,
+    [1m[36mnullptr[0m,
 };
 
 log_level_t

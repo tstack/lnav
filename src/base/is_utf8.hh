@@ -33,10 +33,16 @@
 
 #include "optional.hpp"
 
-ssize_t is_utf8(const unsigned char* str,
-                size_t len,
-                const char** message,
-                int* faulty_bytes,
-                nonstd::optional<unsigned char> terminator = nonstd::nullopt);
+struct utf8_scan_result {
+    ssize_t usr_end{0};
+    bool usr_has_ansi{false};
+};
+
+utf8_scan_result is_utf8(const unsigned char* str,
+                         size_t len,
+                         const char** message,
+                         int* faulty_bytes,
+                         nonstd::optional<unsigned char> terminator
+                         = nonstd::nullopt);
 
 #endif /* _IS_UTF8_H */

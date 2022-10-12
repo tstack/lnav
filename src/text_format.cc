@@ -32,7 +32,7 @@
 #include "text_format.hh"
 
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"
 
 text_format_t
@@ -44,56 +44,57 @@ detect_text_format(string_fragment sf,
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
-    static const pcrepp MAN_MATCHERS
-        = pcrepp(R"(^[A-Z]+\(\d\)\s+)", PCRE_MULTILINE);
+    static const auto MAN_MATCHERS = lnav::pcre2pp::code::from_const(
+        R"(^[A-Za-z][A-Za-z\-_\+0-9]+\(\d\)\s+)", PCRE2_MULTILINE);
 
     // XXX This is a pretty crude way of detecting format...
-    static const pcrepp PYTHON_MATCHERS = pcrepp(
+    static const auto PYTHON_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "^\\s*def\\s+\\w+\\([^)]*\\):[^\\n]*$|"
         "^\\s*try:[^\\n]*$"
         ")",
-        PCRE_MULTILINE);
+        PCRE2_MULTILINE);
 
-    static const pcrepp RUST_MATCHERS = pcrepp(R"(
+    static const auto RUST_MATCHERS
+        = lnav::pcre2pp::code::from_const(R"(
 (?:
 ^\s*use\s+[\w+:\{\}]+;$|
 ^\s*(?:pub)?\s+(?:const|enum|fn)\s+\w+.*$|
 ^\s*impl\s+\w+.*$
 )
 )",
-                                               PCRE_MULTILINE);
+                                          PCRE2_MULTILINE);
 
-    static const pcrepp JAVA_MATCHERS = pcrepp(
+    static const auto JAVA_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "^package\\s+|"
         "^import\\s+|"
         "^\\s*(?:public)?\\s*class\\s*(\\w+\\s+)*\\s*{"
         ")",
-        PCRE_MULTILINE);
+        PCRE2_MULTILINE);
 
-    static const pcrepp C_LIKE_MATCHERS = pcrepp(
+    static const auto C_LIKE_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "^#\\s*include\\s+|"
         "^#\\s*define\\s+|"
         "^\\s*if\\s+\\([^)]+\\)[^\\n]*$|"
         "^\\s*(?:\\w+\\s+)*class \\w+ {"
         ")",
-        PCRE_MULTILINE);
+        PCRE2_MULTILINE);
 
-    static const pcrepp SQL_MATCHERS = pcrepp(
+    static const auto SQL_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "select\\s+.+\\s+from\\s+|"
         "insert\\s+into\\s+.+\\s+values"
         ")",
-        PCRE_MULTILINE | PCRE_CASELESS);
+        PCRE2_MULTILINE | PCRE2_CASELESS);
 
-    static const pcrepp XML_MATCHERS = pcrepp(
+    static const auto XML_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         R"(<\?xml(\s+\w+\s*=\s*"[^"]*")*\?>|)"
         R"(</?\w+(\s+\w+\s*=\s*"[^"]*")*\s*>)"
         ")",
-        PCRE_MULTILINE | PCRE_CASELESS);
+        PCRE2_MULTILINE | PCRE2_CASELESS);
 
     text_format_t retval = text_format_t::TF_UNKNOWN;
 
@@ -110,45 +111,40 @@ detect_text_format(string_fragment sf,
         }
     }
 
-    pcre_input pi(sf);
-    pcre_context_static<30> pc;
-
     {
         auto_mem<yajl_handle_t> jhandle(yajl_free);
 
         jhandle = yajl_alloc(nullptr, nullptr, nullptr);
-        if (yajl_parse(jhandle, (unsigned char*) sf.data(), sf.length())
-            == yajl_status_ok)
-        {
+        if (yajl_parse(jhandle, sf.udata(), sf.length()) == yajl_status_ok) {
             return text_format_t::TF_JSON;
         }
     }
 
-    if (MAN_MATCHERS.match(pc, pi)) {
+    if (MAN_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_MAN;
     }
 
-    if (PYTHON_MATCHERS.match(pc, pi)) {
+    if (PYTHON_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_PYTHON;
     }
 
-    if (RUST_MATCHERS.match(pc, pi)) {
+    if (RUST_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_RUST;
     }
 
-    if (JAVA_MATCHERS.match(pc, pi)) {
+    if (JAVA_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_JAVA;
     }
 
-    if (C_LIKE_MATCHERS.match(pc, pi)) {
+    if (C_LIKE_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_C_LIKE;
     }
 
-    if (SQL_MATCHERS.match(pc, pi)) {
+    if (SQL_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_SQL;
     }
 
-    if (XML_MATCHERS.match(pc, pi)) {
+    if (XML_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_XML;
     }
 

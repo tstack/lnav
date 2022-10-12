@@ -75,7 +75,7 @@ struct available_scripts {
 void find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
                          available_scripts& scripts);
 
-extern struct json_path_container format_handlers;
-extern struct json_path_container root_format_handler;
+extern const struct json_path_container format_handlers;
+extern const struct json_path_container root_format_handler;
 
 #endif

@@ -68,6 +68,9 @@ run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+)', 'foo=abc
 
 run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+\.\w+)', 'foo=abc; 123.456') as result"
 
+run_cap_test ${lnav_test} -nN \
+   -c ";SELECT regexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;')"
+
 run_cap_test ./drive_sql "select extract('foo=1') as result"
 
 run_cap_test ./drive_sql "select extract('foo=1; bar=2') as result"
@@ -108,7 +111,60 @@ run_cap_test ./drive_sql "SELECT encode(null, 'base64')"
 
 run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
 
+run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'
+SELECT parse_url('https://bad@[fe::')
+EOF
+
+run_cap_test env TEST_COMMENT=unsupported_url ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com:100000')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url1 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url2 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url3 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/search?flag')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url4 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/search?flag&flag2')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url5 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/search?flag&flag2&=def')
+EOF
+
+run_cap_test env TEST_COMMENT=parse_url6 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/sea%26rch?flag&flag2&=def#frag1%20space')
+EOF
+
+
+run_cap_test env TEST_COMMENT=unparse_url3 ./drive_sql <<'EOF'
+SELECT unparse_url(parse_url('https://example.com/search?flag'))
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url4 ./drive_sql <<'EOF'
+SELECT unparse_url(parse_url('https://example.com/search?flag&flag2'))
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url5 ./drive_sql <<'EOF'
+SELECT unparse_url(parse_url('https://example.com/search?flag&flag2&=def'))
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url6 ./drive_sql <<'EOF'
+SELECT unparse_url(parse_url('https://example.com/search?flag&flag2&=def#frag1%20space'))
+EOF
+
 run_cap_test ${lnav_test} -n \
     -c ';SELECT log_body, extract(log_body) from vmw_log' \
     -c ':write-json-to -' \
     ${test_dir}/logfile_vmw_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT anonymize(bro_id_resp_h) FROM bro_http_log' \
+    ${test_dir}/logfile_bro_http.log.0

@@ -1,8 +1,10 @@
-[1m[31m✘ error[0m: invalid regular expression
- [1m[31mreason[0m: missing )
+[1m[31m✘ error[0m: “bad(” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
+[36m --> [0m[1mpattern[0m
+[36m | [0m[37m[40mbad[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
+[36m | [0m[37m[40m    [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m       [0m
 [36m --> [0m[1mcommand-option[0m:1
-[36m | [0m[37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m search_test1 bad[0m[1m[32m[40m([0m[37m[40m          [0m
-[36m | [0m[37m[40m                                     [0m[32m[40m^ [0m[32m[40mmissing )[0m
+[36m | [0m[37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m search_test1 bad[0m[1m[32m[40m([0m[37m[40m  [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mcreate-search-table[0m[4m [0m[4mtable-name[0m[4m [[0m[4mpattern[0m[4m][0m
          ══════════════════════════════════════════════════════════════════════
            Create an SQL table based on a regex search

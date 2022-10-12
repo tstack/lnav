@@ -140,7 +140,7 @@ patterns and execute internal commands, such as converting a
 unix-timestamp into a human-readable date.  The following key-presses
 will activate a corresponding prompt:
 
-* :kbd:`/` - The search prompt.  You can enter a PCRE-flavored regular
+* :kbd:`/` - The search prompt.  You can enter a PCRE2-flavored regular
   expression to search for in the current view.
 * :kbd:`:` - The command prompt.  Commands are used to perform common
   operations.

@@ -35,25 +35,26 @@
 void
 pretty_printer::append_to(attr_line_t& al)
 {
-    auto& pi = this->pp_scanner->get_input();
-    pcre_context_static<30> pc;
-    data_token_t dt;
-
-    this->pp_scanner->reset();
-    if (pi.pi_offset > 0) {
-        pcre_context::capture_t leading_cap = {
+    if (this->pp_scanner->get_init_offset() > 0) {
+        data_scanner::capture_t leading_cap = {
             0,
-            static_cast<int>(pi.pi_offset),
+            this->pp_scanner->get_init_offset(),
         };
 
         // this->pp_stream << pi.get_substr(&leading_cap);
         this->pp_values.emplace_back(DT_WORD, leading_cap);
     }
 
-    while (this->pp_scanner->tokenize2(pc, dt)) {
-        element el(dt, pc);
+    this->pp_scanner->reset();
+    while (true) {
+        auto tok_res = this->pp_scanner->tokenize2();
+        if (!tok_res) {
+            break;
+        }
 
-        switch (dt) {
+        element el(tok_res->tr_token, tok_res->tr_capture);
+
+        switch (el.e_token) {
             case DT_XML_DECL_TAG:
             case DT_XML_EMPTY_TAG:
                 if (this->pp_is_xml && this->pp_line_length > 0) {
@@ -71,7 +72,7 @@ pretty_printer::append_to(attr_line_t& al)
                     this->pp_interval_state.back().is_start
                         = this->pp_stream.tellp();
                     this->pp_interval_state.back().is_name
-                        = pi.get_substr(&el.e_capture);
+                        = tok_res->to_string();
                     this->descend();
                 } else {
                     this->pp_values.emplace_back(el);
@@ -118,7 +119,8 @@ pretty_printer::append_to(attr_line_t& al)
                 break;
             case DT_WHITE:
                 if (this->pp_values.empty() && this->pp_depth == 0
-                    && this->pp_line_length == 0) {
+                    && this->pp_line_length == 0)
+                {
                     this->pp_leading_indent = el.e_capture.length();
                     continue;
                 }
@@ -181,16 +183,17 @@ pretty_printer::write_element(const pretty_printer::element& el)
         }
         return;
     }
-    auto& pi = this->pp_scanner->get_input();
     if (this->pp_line_length == 0) {
         this->append_indent();
     }
     ssize_t start_size = this->pp_stream.tellp();
     if (el.e_token == DT_QUOTED_STRING) {
         auto_mem<char> unquoted_str((char*) malloc(el.e_capture.length() + 1));
-        const char* start = pi.get_substr_start(&el.e_capture);
-        unquote(unquoted_str.in(), start, el.e_capture.length());
-        data_scanner ds(unquoted_str.in());
+        const char* start
+            = this->pp_scanner->to_string_fragment(el.e_capture).data();
+        auto unq_len = unquote(unquoted_str.in(), start, el.e_capture.length());
+        data_scanner ds(
+            string_fragment::from_bytes(unquoted_str.in(), unq_len));
         string_attrs_t sa;
         pretty_printer str_pp(
             &ds, sa, this->pp_leading_indent + this->pp_depth * 4);
@@ -214,10 +217,11 @@ pretty_printer::write_element(const pretty_printer::element& el)
             this->pp_stream << start[el.e_capture.length() - 1]
                             << start[el.e_capture.length() - 1];
         } else {
-            this->pp_stream << pi.get_substr(&el.e_capture);
+            this->pp_stream
+                << this->pp_scanner->to_string_fragment(el.e_capture);
         }
     } else {
-        this->pp_stream << pi.get_substr(&el.e_capture);
+        this->pp_stream << this->pp_scanner->to_string_fragment(el.e_capture);
         int shift_amount
             = start_size - el.e_capture.c_begin - this->pp_shift_accum;
         shift_string_attrs(this->pp_attrs, el.e_capture.c_begin, shift_amount);
@@ -247,8 +251,7 @@ pretty_printer::append_indent()
 bool
 pretty_printer::flush_values(bool start_on_depth)
 {
-    nonstd::optional<pcre_context::capture_t> last_key;
-    auto& pi = this->pp_scanner->get_input();
+    nonstd::optional<data_scanner::capture_t> last_key;
     bool retval = false;
 
     while (!this->pp_values.empty()) {
@@ -266,7 +269,9 @@ pretty_printer::flush_values(bool start_on_depth)
                 case DT_EQUALS:
                     if (last_key) {
                         this->pp_interval_state.back().is_name
-                            = pi.get_substr(&last_key.value());
+                            = this->pp_scanner
+                                  ->to_string_fragment(last_key.value())
+                                  .to_string();
                         if (!this->pp_interval_state.back().is_name.empty()) {
                             this->pp_interval_state.back().is_start
                                 = static_cast<ssize_t>(this->pp_stream.tellp());
@@ -278,7 +283,8 @@ pretty_printer::flush_values(bool start_on_depth)
                     break;
             }
             if (start_on_depth
-                && (el.e_token == DT_LSQUARE || el.e_token == DT_LCURLY)) {
+                && (el.e_token == DT_LSQUARE || el.e_token == DT_LCURLY))
+            {
                 if (this->pp_line_length > 0) {
                     this->pp_stream << std::endl;
                 }

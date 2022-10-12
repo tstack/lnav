@@ -4,7 +4,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps
 
 class LnavConan(ConanFile):
     name = "lnav"
-    version = "0.11.0"
+    version = "0.11.1"
     homepage = "https://lnav.org"
     url = "https://github.com/tstack/lnav.git"
     license = "BSD-2-Clause"
@@ -18,9 +18,9 @@ class LnavConan(ConanFile):
     requires = (
         "bzip2/1.0.8",
         "libarchive/3.6.0",
-        "libcurl/7.80.0",
+        "libcurl/7.85.0",
         "ncurses/6.3",
-        "pcre/8.45",
+        "pcre2/10.40",
         "readline/8.1.2",
         "sqlite3/3.38.0",
         "zlib/1.2.12",
@@ -32,7 +32,8 @@ class LnavConan(ConanFile):
         "libarchive:with_lzo": True,
         "libarchive:with_lzma": True,
         "libarchive:with_zstd": True,
-        "pcre:with_jit": True,
+        "pcre2:support_jit": True,
+        "pcre2:build_pcre2_8": True,
         "sqlite3:enable_json1": True,
         "sqlite3:enable_soundex": True,
         "readline:with_library": "curses",

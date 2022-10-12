@@ -114,33 +114,33 @@ highlighter::annotate(attr_line_t& al, int start) const
         return;
     }
 
-    pcre_context_static<60> pc;
-    pcre_input pi(sf);
-
-    while (this->h_regex->match(pc, pi)) {
-        if (pc.get_count() == 1) {
-            line_range lr{start + pc.all()->c_begin, start + pc.all()->c_end};
-
-            this->annotate_capture(al, lr);
-        } else {
-            for (int lpc = 0; lpc < pc.get_count() - 1; lpc++) {
-                line_range lr{start + pc[lpc]->c_begin, start + pc[lpc]->c_end};
-                const auto* name = this->h_regex->name_for_capture(lpc);
-
-                if (name != nullptr && name[0]) {
-                    auto ident_attrs = vc.attrs_for_ident(name);
-
-                    ident_attrs.ta_attrs |= this->h_attrs.ta_attrs;
-                    if (this->h_role != role_t::VCR_NONE) {
-                        auto role_attrs = vc.attrs_for_role(this->h_role);
-
-                        ident_attrs.ta_attrs |= role_attrs.ta_attrs;
+    this->h_regex->capture_from(sf).for_each(
+        [&](lnav::pcre2pp::match_data& md) {
+            if (md.get_count() == 1) {
+                this->annotate_capture(al, to_line_range(md[0].value()));
+            } else {
+                for (int lpc = 1; lpc < md.get_count(); lpc++) {
+                    if (!md[lpc]) {
+                        continue;
                     }
-                    sa.emplace_back(lr, VC_STYLE.value(ident_attrs));
-                } else {
-                    this->annotate_capture(al, lr);
+
+                    const auto* name = this->h_regex->get_name_for_capture(lpc);
+                    auto lr = to_line_range(md[lpc].value());
+
+                    if (name != nullptr && name[0]) {
+                        auto ident_attrs = vc.attrs_for_ident(name);
+
+                        ident_attrs.ta_attrs |= this->h_attrs.ta_attrs;
+                        if (this->h_role != role_t::VCR_NONE) {
+                            auto role_attrs = vc.attrs_for_role(this->h_role);
+
+                            ident_attrs.ta_attrs |= role_attrs.ta_attrs;
+                        }
+                        sa.emplace_back(lr, VC_STYLE.value(ident_attrs));
+                    } else {
+                        this->annotate_capture(al, lr);
+                    }
                 }
             }
-        }
-    }
+        });
 }

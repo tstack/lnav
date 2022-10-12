@@ -64,6 +64,11 @@ add_executable(test_top_status test_top_status.cc test_stubs.cc)
 target_link_libraries(test_top_status diag logfmt)
 add_test(NAME test_top_status COMMAND test_top_status)
 
+add_executable(test_text_anonymizer test_text_anonymizer.cc test_stubs.cc)
+target_include_directories(test_text_anonymizer PUBLIC ../src/third-party/doctest-root)
+target_link_libraries(test_text_anonymizer diag)
+add_test(NAME test_text_anonymizer COMMAND test_text_anonymizer)
+
 add_executable(drive_view_colors drive_view_colors.cc test_stubs.cc)
 target_link_libraries(drive_view_colors diag)
 

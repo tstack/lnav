@@ -52,6 +52,16 @@ public:
 
     virtual void reload_config(error_reporter& reporter) {}
 
+    virtual void unload_config() {}
+
+    static void unload_all() {
+        auto* lcl = LISTENER_LIST;
+        while (lcl != nullptr) {
+            lcl->unload_config();
+            lcl = lcl->lcl_next;
+        }
+    }
+
     static lnav_config_listener* LISTENER_LIST;
 
     lnav_config_listener* lcl_next;

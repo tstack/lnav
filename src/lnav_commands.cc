@@ -64,6 +64,7 @@
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_search_table.hh"
+#include "log_search_table_fwd.hh"
 #include "readline_callbacks.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
@@ -78,6 +79,7 @@
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
+#include "text_anonymizer.hh"
 #include "url_loader.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp/json_op.hh"
@@ -162,10 +164,10 @@ combined_user_marks(vis_bookmarks& vb)
     const auto& bv_expr = vb[&textview_curses::BM_USER_EXPR];
     bookmark_vector<vis_line_t> retval;
 
-    for (const auto row : bv) {
+    for (const auto& row : bv) {
         retval.insert_once(row);
     }
-    for (const auto row : bv_expr) {
+    for (const auto& row : bv_expr) {
         retval.insert_once(row);
     }
     return retval;
@@ -870,9 +872,9 @@ yajl_writer(void* context, const char* str, size_t len)
 }
 
 static void
-json_write_row(yajl_gen handle, int row)
+json_write_row(yajl_gen handle, int row, lnav::text_anonymizer& ta, bool anonymize)
 {
-    db_label_source& dls = lnav_data.ld_db_row_source;
+    auto& dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
 
     for (size_t col = 0; col < dls.dls_headers.size(); col++) {
@@ -883,7 +885,7 @@ json_write_row(yajl_gen handle, int row)
             continue;
         }
 
-        db_label_source::header_meta& hm = dls.dls_headers[col];
+        auto& hm = dls.dls_headers[col];
 
         switch (hm.hm_column_type) {
             case SQLITE_FLOAT:
@@ -951,12 +953,12 @@ json_write_row(yajl_gen handle, int row)
                         break;
                     }
                     default:
-                        obj_map.gen(dls.dls_rows[row][col]);
+                        obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(dls.dls_rows[row][col])) : dls.dls_rows[row][col]);
                         break;
                 }
                 break;
             default:
-                obj_map.gen(dls.dls_rows[row][col]);
+                obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(dls.dls_rows[row][col])) : dls.dls_rows[row][col]);
                 break;
         }
     }
@@ -971,6 +973,7 @@ com_save_to(exec_context& ec,
     const char* mode = "";
     std::string fn, retval;
     bool to_term = false;
+    bool anonymize = false;
     int (*closer)(FILE*) = fclose;
 
     if (args.empty()) {
@@ -985,6 +988,12 @@ com_save_to(exec_context& ec,
 
     if (!lexer.split(split_args, ec.create_resolver())) {
         return ec.make_error("unable to parse arguments");
+    }
+
+    auto anon_iter = std::find(split_args.begin(), split_args.end(), "--anonymize");
+    if (anon_iter != split_args.end()) {
+        split_args.erase(anon_iter);
+        anonymize = true;
     }
 
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -1016,6 +1025,7 @@ com_save_to(exec_context& ec,
 
     auto& dls = lnav_data.ld_db_row_source;
     bookmark_vector<vis_line_t> all_user_marks;
+    lnav::text_anonymizer ta;
 
     if (args[0] == "write-csv-to" || args[0] == "write-json-to"
         || args[0] == "write-jsonlines-to" || args[0] == "write-cols-to"
@@ -1110,7 +1120,7 @@ com_save_to(exec_context& ec,
                 if (!first) {
                     fprintf(outfile, ",");
                 }
-                csv_write_string(outfile, *iter);
+                csv_write_string(outfile, anonymize ? ta.next(string_fragment::from_c_str(*iter)) : *iter);
                 first = false;
             }
             fprintf(outfile, "\n");
@@ -1163,16 +1173,18 @@ com_save_to(exec_context& ec,
 
                 fprintf(outfile, "\u2502");
 
-                auto cell = dls.dls_rows[row][col];
-                auto cell_byte_len = strlen(cell);
-                auto cell_length = utf8_string_length(cell, cell_byte_len)
-                                       .unwrapOr(cell_byte_len);
-                auto padding = hdr.hm_column_size - cell_length;
+                auto cell = std::string(dls.dls_rows[row][col]);
+                if (anonymize) {
+                    cell = ta.next(cell);
+                }
+                auto cell_length = utf8_string_length(cell)
+                                       .unwrapOr(cell.size());
+                auto padding = anonymize ? 1 : hdr.hm_column_size - cell_length;
 
                 if (hdr.hm_column_type != SQLITE3_TEXT) {
                     fprintf(outfile, "%s", std::string(padding, ' ').c_str());
                 }
-                fprintf(outfile, "%s", cell);
+                fprintf(outfile, "%s", cell.c_str());
                 if (hdr.hm_column_type == SQLITE3_TEXT) {
                     fprintf(outfile, "%s", std::string(padding, ' ').c_str());
                 }
@@ -1209,7 +1221,7 @@ com_save_to(exec_context& ec,
                     break;
                 }
 
-                json_write_row(gen, row);
+                json_write_row(gen, row, ta, anonymize);
                 line_count += 1;
             }
         }
@@ -1224,7 +1236,7 @@ com_save_to(exec_context& ec,
                 break;
             }
 
-            json_write_row(gen, row);
+            json_write_row(gen, row, ta, anonymize);
             yajl_gen_reset(gen, "\n");
             line_count += 1;
         }
@@ -1248,7 +1260,7 @@ com_save_to(exec_context& ec,
 
         auto* los = tc->get_overlay_source();
         tc->listview_value_for_rows(*tc, top, rows);
-        for (const auto& al : rows) {
+        for (auto& al : rows) {
             while (los != nullptr
                    && los->list_value_for_overlay(
                        *tc, y, tc->get_inner_height(), top, ov_al))
@@ -1257,6 +1269,10 @@ com_save_to(exec_context& ec,
                 ++y;
             }
             wrapped_count += vis_line_t((al.length() - 1) / (dim.second - 2));
+            if (anonymize) {
+                al.al_attrs.clear();
+                al.al_string = ta.next(al.al_string);
+            }
             write_line_to(outfile, al);
 
             line_count += 1;
@@ -1294,7 +1310,11 @@ com_save_to(exec_context& ec,
                 }
 
                 for (auto& iter : *row_iter) {
-                    fputs(iter, outfile);
+                    if (anonymize) {
+                        fputs(ta.next(string_fragment::from_c_str(iter)).c_str(), outfile);
+                    } else {
+                        fputs(iter, outfile);
+                    }
                 }
                 fprintf(outfile, "\n");
 
@@ -1337,7 +1357,13 @@ com_save_to(exec_context& ec,
                     continue;
                 }
                 auto sbr = read_res.unwrap();
-                fprintf(outfile, "%.*s\n", (int) sbr.length(), sbr.get_data());
+                if (anonymize) {
+                    auto msg = ta.next(sbr.to_string_fragment().to_string());
+                    fprintf(outfile, "%s\n", msg.c_str());
+                } else {
+                    fprintf(
+                        outfile, "%.*s\n", (int) sbr.length(), sbr.get_data());
+                }
 
                 line_count += 1;
             }
@@ -1356,6 +1382,9 @@ com_save_to(exec_context& ec,
             std::string line;
 
             tss->text_value_for_line(*tc, lpc, line, text_sub_source::RF_RAW);
+            if (anonymize) {
+                line = ta.next(line);
+            }
             fprintf(outfile, "%s\n", line.c_str());
 
             line_count += 1;
@@ -1375,6 +1404,10 @@ com_save_to(exec_context& ec,
                 break;
             }
             tc->listview_value_for_rows(*tc, *iter, rows);
+            if (anonymize) {
+                rows[0].al_attrs.clear();
+                rows[0].al_string = ta.next(rows[0].al_string);
+            }
             write_line_to(outfile, rows[0]);
 
             auto y = 1_vl;
@@ -1669,6 +1702,8 @@ com_highlight(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("filter");
     } else if (args.size() > 1) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+
         auto* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
         auto re_frag = remaining_args_frag(cmdline, args);
@@ -1678,22 +1713,14 @@ com_highlight(exec_context& ec,
         }
 
         auto compile_res
-            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(ce.ce_msg)
-                          .with_snippets(ec.ec_source);
-            um.um_snippets.back()
-                .s_content.append("\n")
-                .append(re_frag.sf_begin + ce.ce_offset, ' ')
-                .append("^ "_comment)
-                .append(lnav::roles::comment(ce.ce_msg));
+            auto um = lnav::console::to_user_message(PATTERN_SRC, ce);
             return Err(um);
         }
-        highlighter hl(compile_res.unwrap());
+        highlighter hl(compile_res.unwrap().to_shared());
         auto hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
 
         if (ec.ec_dry_run) {
@@ -1799,6 +1826,8 @@ com_filter(exec_context& ec,
         return ec.make_error("{} view does not support filtering",
                              lnav_view_strings[tc - lnav_data.ld_views]);
     } else if (args.size() > 1) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+
         auto* tss = tc->get_sub_source();
         auto& fs = tss->get_filters();
         auto re_frag = remaining_args_frag(cmdline, args);
@@ -1814,19 +1843,11 @@ com_filter(exec_context& ec,
         }
 
         auto compile_res
-            = pcrepp::shared_from_str(args[1], PCRE_CASELESS | PCRE_UTF8);
+            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(ce.ce_msg)
-                          .with_snippets(ec.ec_source);
-            um.um_snippets.back()
-                .s_content.append("\n")
-                .append(re_frag.sf_begin + ce.ce_offset, ' ')
-                .append("^ "_comment)
-                .append(lnav::roles::comment(ce.ce_msg));
+            auto um = lnav::console::to_user_message(PATTERN_SRC, ce);
             return Err(um);
         }
         if (ec.ec_dry_run) {
@@ -1837,7 +1858,7 @@ com_filter(exec_context& ec,
                 retval = "";
             } else {
                 auto& hm = tc->get_highlights();
-                highlighter hl(compile_res.unwrap());
+                highlighter hl(compile_res.unwrap().to_shared());
                 auto role = (args[0] == "filter-out") ? role_t::VCR_DIFF_DELETE
                                                       : role_t::VCR_DIFF_ADD;
                 hl.with_role(role);
@@ -1861,7 +1882,7 @@ com_filter(exec_context& ec,
                 return ec.make_error("too many filters");
             }
             auto pf = std::make_shared<pcre_filter>(
-                lt, args[1], *filter_index, compile_res.unwrap());
+                lt, args[1], *filter_index, compile_res.unwrap().to_shared());
 
             log_debug("%s [%d] %s",
                       args[0].c_str(),
@@ -2227,6 +2248,7 @@ com_create_search_table(exec_context& ec,
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
+        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
         string_fragment regex_frag;
         std::string regex;
 
@@ -2237,28 +2259,19 @@ com_create_search_table(exec_context& ec,
             regex = lnav_data.ld_views[LNV_LOG].get_current_search();
         }
 
-        auto re_res = pcrepp::shared_from_str(
-            regex, log_search_table::pattern_options());
+        auto compile_res = lnav::pcre2pp::code::from(
+            regex, log_search_table_ns::PATTERN_OPTIONS);
 
-        if (re_res.isErr()) {
-            auto re_err = re_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "invalid regular expression")
-                          .with_reason(re_err.ce_msg)
-                          .with_snippets(ec.ec_source);
-            if (args.size() >= 3) {
-                um.um_snippets.back()
-                    .s_content.append("\n")
-                    .append(regex_frag.sf_begin + re_err.ce_offset, ' ')
-                    .append("^ "_comment)
-                    .append(lnav::roles::comment(re_err.ce_msg));
-            }
+        if (compile_res.isErr()) {
+            auto re_err = compile_res.unwrapErr();
+            auto um = lnav::console::to_user_message(PATTERN_SRC, re_err)
+                .with_snippets(ec.ec_source);
             return Err(um);
         }
 
-        auto re = re_res.unwrap();
+        auto re = compile_res.unwrap().to_shared();
         auto tab_name = intern_string::lookup(args[1]);
-        auto lst = std::make_shared<log_search_table>(*re, tab_name);
+        auto lst = std::make_shared<log_search_table>(re, tab_name);
         if (ec.ec_dry_run) {
             auto* tc = &lnav_data.ld_views[LNV_LOG];
             auto& hm = tc->get_highlights();
@@ -4726,7 +4739,7 @@ search_files_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_mode = ln_mode_t::SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        auto path = pcrepp::quote(lf->get_unique_path());
+        auto path = lnav::pcre2pp::quote(lf->get_unique_path());
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::SEARCH_FILES, "*", path);
     }
@@ -5181,6 +5194,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-to")
          .with_summary("Overwrite the given file with any marked lines in the "
                        "current view")
+         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})
          .with_example(
@@ -5191,6 +5205,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":write-csv-to")
          .with_summary("Write SQL results to the given file in CSV format")
+         .with_parameter(help_text("--anonymize", "Anonymize the row contents").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as CSV to /tmp/table.csv",
@@ -5200,6 +5215,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":write-json-to")
          .with_summary("Write SQL results to the given file in JSON format")
+         .with_parameter(help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as JSON to /tmp/table.json",
@@ -5210,6 +5226,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-jsonlines-to")
          .with_summary(
              "Write SQL results to the given file in JSON Lines format")
+         .with_parameter(help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as JSON Lines to /tmp/table.json",
@@ -5220,6 +5237,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-table-to")
          .with_summary(
              "Write SQL results to the given file in a tabular format")
+         .with_parameter(help_text("--anonymize", "Anonymize the table contents").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as text to /tmp/table.txt",
@@ -5235,6 +5253,7 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(help_text("--view={log,db}",
                                    "The view to use as the source of data")
                              .optional())
+         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example(
@@ -5246,6 +5265,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-view-to")
          .with_summary("Write the text in the top view to the given file "
                        "without any formatting")
+         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example(
@@ -5256,6 +5276,7 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-screen-to")
          .with_summary("Write the displayed text or SQL results to the given "
                        "file without any formatting")
+         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write only the displayed text to /tmp/table.txt",

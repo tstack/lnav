@@ -185,7 +185,7 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
 
         # we didn't find curl-config, so let's see if the user-supplied
         # link line (or failing that, "-lcurl") is enough.
-        LIBCURL=${LIBCURL-"$_libcurl_ldflags -lcurl"}
+        # LIBCURL=${LIBCURL-"$_libcurl_ldflags -lcurl"}
 
         AC_CACHE_CHECK([whether libcurl is usable],
            [libcurl_cv_lib_curl_usable],
@@ -193,7 +193,7 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
            _libcurl_save_cppflags=$CPPFLAGS
            CPPFLAGS="$LIBCURL_CPPFLAGS $CPPFLAGS"
            _libcurl_save_libs=$LIBS
-           LIBS="$LIBCURL $LIBS"
+           LIBS="$_libcurl_ldflags $LIBCURL $LIBS"
 
            AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <curl/curl.h>]],[[
 /* Try and use a few common options to force a failure if we are
@@ -224,6 +224,7 @@ if (x) {;}
            CPPFLAGS="$CPPFLAGS $LIBCURL_CPPFLAGS"
            _libcurl_save_libs=$LIBS
            LIBS="$LIBS $LIBCURL"
+           LDFLAGS="$_libcurl_ldflags $LDFLAGS"
 
            AC_CHECK_FUNC(curl_free,,
               AC_DEFINE(curl_free,free,

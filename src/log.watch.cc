@@ -52,8 +52,7 @@ struct compiled_watch_expr {
 struct expressions : public lnav_config_listener {
     void reload_config(error_reporter& reporter) override
     {
-        auto& lnav_db = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                                      sqlite_db_tag>();
+        auto& lnav_db = injector::get<auto_sqlite3&>();
 
         if (lnav_db.in() == nullptr) {
             log_warning("db not initialized yet!");
@@ -99,6 +98,10 @@ struct expressions : public lnav_config_listener {
         }
     }
 
+    void unload_config() override {
+        this->e_watch_exprs.clear();
+    }
+
     std::map<std::string, compiled_watch_expr> e_watch_exprs;
 };
 
@@ -114,14 +117,13 @@ eval_with(logfile& lf, logfile::iterator ll)
         return;
     }
 
-    static auto& lnav_db
-        = injector::get<auto_mem<sqlite3, sqlite_close_wrapper>&,
-                        sqlite_db_tag>();
+    static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     char timestamp_buffer[64] = "";
     shared_buffer_ref raw_sbr;
     logline_value_vector values;
     lf.read_full_message(ll, values.lvv_sbr);
+    values.lvv_sbr.erase_ansi();
     auto format = lf.get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf.begin(), ll);
@@ -275,8 +277,11 @@ eval_with(logfile& lf, logfile::iterator ll)
 
                     string_fragment sf = gen.to_string_fragment();
 
-                    sqlite3_bind_text(
-                        stmt, lpc + 1, sf.data(), sf.length(), SQLITE_TRANSIENT);
+                    sqlite3_bind_text(stmt,
+                                      lpc + 1,
+                                      sf.data(),
+                                      sf.length(),
+                                      SQLITE_TRANSIENT);
                 }
                 continue;
             }

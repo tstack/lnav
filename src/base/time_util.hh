@@ -42,7 +42,13 @@ namespace lnav {
 
 using time64_t = uint64_t;
 
-}
+ssize_t strftime_rfc3339(char* buffer,
+                         size_t buffer_size,
+                         lnav::time64_t tim,
+                         int millis,
+                         char sep = ' ');
+
+}  // namespace lnav
 
 struct tm* secs2tm(lnav::time64_t tim, struct tm* res);
 /**
@@ -103,10 +109,7 @@ struct exttm {
     unsigned int et_flags{0};
     long et_gmtoff{0};
 
-    exttm()
-    {
-        memset(&this->et_tm, 0, sizeof(this->et_tm));
-    }
+    exttm() { memset(&this->et_tm, 0, sizeof(this->et_tm)); }
 
     bool operator==(const exttm& other) const
     {
@@ -139,6 +142,12 @@ inline bool
 operator!=(const struct timeval& left, const struct timeval& right)
 {
     return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec;
+}
+
+inline bool
+operator==(const struct timeval& left, const struct timeval& right)
+{
+    return left.tv_sec == right.tv_sec || left.tv_usec == right.tv_usec;
 }
 
 inline struct timeval

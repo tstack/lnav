@@ -32,6 +32,7 @@
 #ifndef intern_string_hh
 #define intern_string_hh
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -48,9 +49,23 @@
 struct string_fragment {
     using iterator = const char*;
 
+    static string_fragment invalid()
+    {
+        string_fragment retval;
+
+        retval.invalidate();
+        return retval;
+    }
+
     static string_fragment from_c_str(const char* str)
     {
-        return string_fragment{str, 0, (int) strlen(str)};
+        return string_fragment{str, 0, str != nullptr ? (int) strlen(str) : 0};
+    }
+
+    static string_fragment from_c_str(const unsigned char* str)
+    {
+        return string_fragment{
+            str, 0, str != nullptr ? (int) strlen((char*) str) : 0};
     }
 
     template<typename T, std::size_t N>
@@ -129,6 +144,16 @@ struct string_fragment {
     Result<ssize_t, const char*> utf8_length() const;
 
     const char* data() const { return &this->sf_string[this->sf_begin]; }
+
+    const unsigned char* udata() const
+    {
+        return (const unsigned char*) &this->sf_string[this->sf_begin];
+    }
+
+    char* writable_data(int offset = 0)
+    {
+        return (char*) &this->sf_string[this->sf_begin + offset];
+    }
 
     char front() const { return this->sf_string[this->sf_begin]; }
 
@@ -252,11 +277,29 @@ struct string_fragment {
             this->sf_string, this->sf_begin + begin, this->sf_end};
     }
 
+    string_fragment sub_range(int begin, int end) const
+    {
+        return string_fragment{
+            this->sf_string, this->sf_begin + begin, this->sf_begin + end};
+    }
+
+    size_t count(char ch) const {
+        size_t retval = 0;
+
+        for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
+            if (this->sf_string[lpc] == ch) {
+                retval += 1;
+            }
+        }
+
+        return retval;
+    }
+
     nonstd::optional<size_t> find(char ch) const
     {
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
             if (this->sf_string[lpc] == ch) {
-                return lpc;
+                return lpc - this->sf_begin;
             }
         }
 
@@ -395,6 +438,35 @@ struct string_fragment {
             });
     }
 
+    template<typename P>
+    split_result split_when(P&& predicate) const
+    {
+        int consumed = 0;
+        while (consumed < this->length()) {
+            if (predicate(this->data()[consumed])) {
+                break;
+            }
+
+            consumed += 1;
+        }
+
+        if (consumed == 0) {
+            return nonstd::nullopt;
+        }
+
+        return std::make_pair(
+            string_fragment{
+                this->sf_string,
+                this->sf_begin,
+                this->sf_begin + consumed,
+            },
+            string_fragment{
+                this->sf_string,
+                this->sf_begin + consumed + 1,
+                this->sf_end,
+            });
+    }
+
     split_result split_n(int amount) const;
 
     std::vector<string_fragment> split_lines() const;
@@ -503,6 +575,17 @@ struct string_fragment {
         return scn::string_view{this->begin(), this->end()};
     }
 
+    enum class case_style {
+        lower,
+        upper,
+        camel,
+        mixed,
+    };
+
+    case_style detect_text_case_style() const;
+
+    std::string to_string_with_case_style(case_style style) const;
+
     const char* sf_string;
     int sf_begin;
     int sf_end;
@@ -521,10 +604,23 @@ operator<(const char* left, const string_fragment& right)
     return rc < 0;
 }
 
+inline void
+operator+=(std::string& left, const string_fragment& right)
+{
+    left.append(right.data(), right.length());
+}
+
 inline bool
 operator<(const string_fragment& left, const char* right)
 {
     return strncmp(left.data(), right, left.length()) < 0;
+}
+
+inline std::ostream&
+operator<<(std::ostream& os, const string_fragment& sf)
+{
+    os.write(sf.data(), sf.length());
+    return os;
 }
 
 class intern_string {

@@ -32,6 +32,8 @@
 #ifndef lnav_log_format_fwd_hh
 #define lnav_log_format_fwd_hh
 
+#include <utility>
+
 #include <sys/types.h>
 
 #include "ArenaAlloc/arenaalloc.h"
@@ -39,9 +41,10 @@
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "ptimec.hh"
 #include "robin_hood/robin_hood.h"
+#include "yajlpp/yajlpp.hh"
 
 class log_format;
 
@@ -87,23 +90,23 @@ public:
     logline(file_off_t off,
             time_t t,
             uint16_t millis,
-            log_level_t l,
+            log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
-        : ll_offset(off), ll_time(t), ll_millis(millis), ll_opid(opid),
-          ll_sub_offset(0), ll_valid_utf(1), ll_level(l), ll_module_id(mod),
-          ll_expr_mark(0)
+        : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_millis(millis),
+          ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
+          ll_module_id(mod), ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     }
 
     logline(file_off_t off,
             const struct timeval& tv,
-            log_level_t l,
+            log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
-        : ll_offset(off), ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1),
-          ll_level(l), ll_module_id(mod), ll_expr_mark(0)
+        : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
+          ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_expr_mark(0)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -190,6 +193,10 @@ public:
     void set_valid_utf(bool v) { this->ll_valid_utf = v; }
 
     bool is_valid_utf() const { return this->ll_valid_utf; }
+
+    void set_has_ansi(bool v) { this->ll_has_ansi = v; }
+
+    bool has_ansi() const { return this->ll_has_ansi; }
 
     /** @param l The logging level. */
     void set_level(log_level_t l) { this->ll_level = l; };
@@ -290,7 +297,8 @@ public:
     }
 
 private:
-    file_off_t ll_offset;
+    file_off_t ll_offset : 63;
+    uint8_t ll_has_ansi : 1;
     time_t ll_time;
     unsigned int ll_millis : 10;
     unsigned int ll_opid : 6;
@@ -303,7 +311,7 @@ private:
 };
 
 struct format_tag_def {
-    format_tag_def(std::string name) : ftd_name(name) {}
+    explicit format_tag_def(std::string name) : ftd_name(std::move(name)) {}
 
     struct path_restriction {
         std::string p_glob;
@@ -314,7 +322,8 @@ struct format_tag_def {
     std::string ftd_name;
     std::string ftd_description;
     std::vector<path_restriction> ftd_paths;
-    std::shared_ptr<pcrepp_with_options<PCRE_DOTALL>> ftd_pattern;
+    factory_container<lnav::pcre2pp::code, int>::with_default_args<PCRE2_DOTALL>
+        ftd_pattern;
     log_level_t ftd_level{LEVEL_UNKNOWN};
 };
 

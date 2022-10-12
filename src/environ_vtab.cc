@@ -46,7 +46,7 @@ CREATE TABLE environ (
 );
 )";
 
-struct vtab {
+struct env_vtab {
     sqlite3_vtab base;
     sqlite3* db;
 };
@@ -66,10 +66,10 @@ vt_create(sqlite3* db,
           sqlite3_vtab** pp_vt,
           char** pzErr)
 {
-    vtab* p_vt;
+    env_vtab* p_vt;
 
     /* Allocate the sqlite3_vtab/vtab structure itself */
-    p_vt = (vtab*) sqlite3_malloc(sizeof(*p_vt));
+    p_vt = (env_vtab*) sqlite3_malloc(sizeof(*p_vt));
 
     if (p_vt == NULL) {
         return SQLITE_NOMEM;
@@ -88,7 +88,7 @@ vt_create(sqlite3* db,
 static int
 vt_destructor(sqlite3_vtab* p_svt)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    env_vtab* p_vt = (env_vtab*) p_svt;
 
     /* Free the SQLite structure */
     sqlite3_free(p_vt);
@@ -124,7 +124,7 @@ static int vt_next(sqlite3_vtab_cursor* cur);
 static int
 vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
-    vtab* p_vt = (vtab*) p_svt;
+    env_vtab* p_vt = (env_vtab*) p_svt;
 
     p_vt->base.zErrMsg = NULL;
 
@@ -228,7 +228,7 @@ vt_update(sqlite3_vtab* tab,
 {
     const char* name
         = (argc > 2 ? (const char*) sqlite3_value_text(argv[2]) : nullptr);
-    vtab* p_vt = (vtab*) tab;
+    env_vtab* p_vt = (env_vtab*) tab;
     int retval = SQLITE_ERROR;
 
     if (argc != 1

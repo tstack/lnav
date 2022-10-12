@@ -61,7 +61,7 @@ parts:
       - build-essential
       - libarchive-dev
       - libcurl4-gnutls-dev
-      - libpcre3-dev
+      - libpcre2-dev
       - libsqlite3-dev
       - libncursesw6
       - libreadline-dev
@@ -73,7 +73,7 @@ parts:
       - git-core
       - libcurl4
       - libncursesw6
-      - libpcre3
+      - libpcre2-8-0
       - libgpm2
       - libarchive13
       - libicu66

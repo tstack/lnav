@@ -16,6 +16,7 @@ Makefile
 Makefile.in
 TESTS_ENVIRONMENT
 aclocal.m4
+aminclude_static.am
 ar-lib
 autom4te.cache
 compile
@@ -30,6 +31,7 @@ missing
 mkinstalldirs
 test-driver
 docs/build
+release/release-NEWS.md
 release/linux-pkg/
 release/osx-build-dir/
 release/osx-pkg/

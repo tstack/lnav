@@ -88,10 +88,7 @@ public:
                     int start,
                     int end){};
 
-    void grep_end(grep_proc<vis_line_t>& gp)
-    {
-        this->ms_finished = true;
-    };
+    void grep_end(grep_proc<vis_line_t>& gp) { this->ms_finished = true; };
 
     bool ms_finished;
 };
@@ -116,13 +113,10 @@ looper(grep_proc<vis_line_t>& gp)
 int
 main(int argc, char* argv[])
 {
-    int eoff, retval = EXIT_SUCCESS;
-    const char* errptr;
-    pcre* code;
+    int retval = EXIT_SUCCESS;
 
-    code = pcre_compile("foobar", PCRE_CASELESS, &errptr, &eoff, NULL);
-    pcre_refcount(code, 1);
-    assert(code != NULL);
+    auto code
+        = lnav::pcre2pp::code::from_const("foobar", PCRE2_CASELESS).to_shared();
 
     auto psuperv = std::make_shared<pollable_supervisor>();
     {
@@ -151,8 +145,6 @@ main(int argc, char* argv[])
         assert(wait(&status) == -1);
         assert(errno == ECHILD);
     }
-
-    free(code);
 
     return retval;
 }

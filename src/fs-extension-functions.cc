@@ -79,7 +79,8 @@ sql_dirname(const char* path_in)
 
     text_end = strlen(path_in) - 1;
     while (text_end >= 0
-           && (path_in[text_end] == '/' || path_in[text_end] == '\\')) {
+           && (path_in[text_end] == '/' || path_in[text_end] == '\\'))
+    {
         text_end -= 1;
     }
 
@@ -249,7 +250,8 @@ fs_extension_functions(struct FuncDef** basic_funcs,
          * TODO: add other functions like normpath, ...
          */
 
-        {nullptr}};
+        {nullptr},
+    };
 
     *basic_funcs = fs_funcs;
     *agg_funcs = nullptr;

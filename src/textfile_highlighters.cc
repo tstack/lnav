@@ -33,21 +33,11 @@
 
 #include "config.h"
 
-static std::shared_ptr<pcrepp>
-xpcre_compile(const char* pattern, int options = 0)
+template<typename T, std::size_t N>
+static std::shared_ptr<lnav::pcre2pp::code>
+xpcre_compile(const T (&pattern)[N], int options = 0)
 {
-    auto compile_res = pcrepp::shared_from_str(pattern, options);
-
-    if (compile_res.isErr()) {
-        auto ce = compile_res.unwrapErr();
-
-        fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
-        fprintf(stderr, "internal error: %s\n", ce.ce_msg);
-
-        exit(1);
-    }
-
-    return compile_res.unwrap();
+    return lnav::pcre2pp::code::from_const(pattern, options).to_shared();
 }
 
 void
@@ -174,8 +164,10 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bchar\\b|"
                                     "\\bclass\\b|"
                                     "\\bconst\\b|"
+                                    "\\bconstexpr\\b|"
                                     "\\bconst_cast\\b|"
                                     "\\bcontinue\\b|"
+                                    "\\bdecltype\\b|"
                                     "\\bdefault\\b|"
                                     "\\bdelete\\b|"
                                     "\\bdo\\b|"
@@ -183,6 +175,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bdynamic_cast\\b|"
                                     "\\belse\\b|"
                                     "\\benum\\b|"
+                                    "\\bexplicit\\b|"
                                     "\\bextends\\b|"
                                     "\\bextern\\b|"
                                     "\\bfalse\\b|"
@@ -204,6 +197,8 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bnamespace\\b|"
                                     "\\bnative\\b|"
                                     "\\bnew\\b|"
+                                    "\\bnoexcept\\b|"
+                                    "\\bnullptr\\b|"
                                     "\\boperator\\b|"
                                     "\\bpackage\\b|"
                                     "\\bprivate\\b|"
@@ -224,6 +219,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bsynchronized\\b|"
                                     "\\btemplate\\b|"
                                     "\\bthis\\b|"
+                                    "\\bthread_local\\b|"
                                     "\\bthrow\\b|"
                                     "\\bthrows\\b|"
                                     "\\btransient\\b|"
@@ -231,6 +227,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\btrue\\b|"
                                     "\\btypedef\\b|"
                                     "\\btypeid\\b|"
+                                    "\\btypename\\b|"
                                     "\\bunion\\b|"
                                     "\\bunsigned\\b|"
                                     "\\busing\\b|"
@@ -382,7 +379,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bWITH\\b|"
                                     "\\bWITHOUT\\b"
                                     ")",
-                                    PCRE_CASELESS))
+                                    PCRE2_CASELESS))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_SQL)
               .with_role(role_t::VCR_KEYWORD);
@@ -395,12 +392,15 @@ setup_highlights(highlight_map_t& hm)
               .with_role(role_t::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "1.stringd"}]
         = highlighter(xpcre_compile(R"("(?:\\.|[^"])*")"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.strings"}]
         = highlighter(xpcre_compile(R"((?<![A-WY-Za-qstv-z])'(?:\\.|[^'])*')"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.stringb"}]
         = highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"))
+              .with_nestable(false)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "diffp"}]
         = highlighter(xpcre_compile("^\\+.*")).with_role(role_t::VCR_DIFF_ADD);
@@ -413,7 +413,8 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
         = highlighter(
               xpcre_compile(
-                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#.*|\s+#.*|dnl.*)"))
+                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#\s*(?!include|if|ifndef|elif|else|endif|error|pragma|define|undef).*|\s+#.*|dnl.*)"))
+              .with_nestable(false)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]
         = highlighter(
@@ -428,6 +429,7 @@ setup_highlights(highlight_map_t& hm)
                             "(?<!\\$)\\$\\((\\w+)\\)|"
                             "(?<!\\$)\\$\\{(\\w+)\\}"
                             ")"))
+              .with_nestable(false)
               .with_role(role_t::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "rust.sym"}]
         = highlighter(xpcre_compile("\\b[A-Z_][A-Z0-9_]+\\b"))
@@ -445,6 +447,14 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
               .with_role(role_t::VCR_SYMBOL);
+    hm[{highlight_source_t::INTERNAL, "cpp"}]
+        = highlighter(
+              xpcre_compile(
+                  R"(^#\s*(?:include|ifdef|ifndef|if|else|elif|error|endif|define|undef|pragma))"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_role(role_t::VCR_KEYWORD);
     hm[{highlight_source_t::INTERNAL, "num"}]
         = highlighter(xpcre_compile(R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
               .with_nestable(false)

@@ -10,7 +10,7 @@ RUN set -eux; \
 	rm -rf /var/lib/{apt,dpkg,cache,log}/; \
 	echo "Installed base utils!"
 
-ADD https://github.com/tstack/lnav/releases/download/v0.11.0-beta2/lnav-0.11.0-musl-64bit.zip /
+ADD https://github.com/tstack/lnav/releases/download/v0.11.0/lnav-0.11.0-musl-64bit.zip /
 RUN unzip lnav-0.11.0-musl-64bit.zip
 
 COPY docs/tutorials tutorials

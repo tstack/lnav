@@ -1,0 +1,2 @@
+[1m[4mbasename(filepath)  [0m[1m[4m     descriptor      [0m[1m[4m    mimetype     [0m[1m[4m                                 content                                   [0m
+[1mlogfile_syslog.1.gz[0m[1m [0m[1mnet.zlib.gzip.header[0m[1m [0m[1mapplication/json[0m[1m [0m[1m{"name":"logfile_syslog.1","mtime":"2007-11-03T09:23:00.000","comment":""} [0m

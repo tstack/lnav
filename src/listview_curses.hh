@@ -244,7 +244,7 @@ public:
     auto map_top_row(F func) ->
         typename std::result_of<F(const attr_line_t&)>::type
     {
-        if (this->get_inner_height() == 0) {
+        if (this->lv_top >= this->get_inner_height()) {
             return nonstd::nullopt;
         }
 

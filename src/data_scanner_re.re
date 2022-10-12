@@ -31,29 +31,33 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "base/date_time_scanner.hh"
 #include "config.h"
 #include "data_scanner.hh"
 
-bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
+nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
 {
+    data_token_t token_out = DT_INVALID;
+    capture_t cap_all;
+    capture_t cap_inner;
 #   define YYCTYPE unsigned char
 #   define CAPTURE(tok) { \
         if (YYCURSOR.val == EMPTY) { \
-            pi.pi_next_offset = pi.pi_length; \
+            this->ds_next_offset = this->ds_input.length(); \
         } else { \
-            pi.pi_next_offset = YYCURSOR.val - (const unsigned char *) pi.get_string(); \
+            this->ds_next_offset = YYCURSOR.val - this->ds_input.udata(); \
         } \
-        cap[0].c_end = pi.pi_next_offset; \
-        cap[1].c_end = pi.pi_next_offset; \
+        cap_all.c_end = this->ds_next_offset; \
+        cap_inner.c_end = this->ds_next_offset; \
         token_out = tok; \
     }
 
 #   define RET(tok) { \
         CAPTURE(tok); \
-        return true; \
+        return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()}; \
     }
     static const unsigned char *EMPTY = (const unsigned char *) "";
-    pcre_input &pi = this->ds_pcre_input;
+
     struct _YYCURSOR {
         YYCTYPE operator*() const {
             if (this->val < this->lim) {
@@ -91,22 +95,20 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         const YYCTYPE *val{nullptr};
         const YYCTYPE *lim{nullptr};
     } YYCURSOR;
-    YYCURSOR = (const unsigned char *) pi.get_string() + pi.pi_next_offset;
+    YYCURSOR = (const unsigned char *) this->ds_input.udata() + this->ds_next_offset;
     _YYCURSOR yyt1;
     _YYCURSOR yyt2;
     _YYCURSOR yyt3;
     _YYCURSOR yyt4;
-    const YYCTYPE *YYLIMIT = (const unsigned char *) pi.get_string() + pi.pi_length;
+    const YYCTYPE *YYLIMIT = (const unsigned char *) this->ds_input.end();
     const YYCTYPE *YYMARKER = YYCURSOR;
-    pcre_context::capture_t *cap = pc.all();
 
     YYCURSOR.lim = YYLIMIT;
 
-    pc.set_count(2);
-    cap[0].c_begin = pi.pi_next_offset;
-    cap[0].c_end = pi.pi_next_offset;
-    cap[1].c_begin = pi.pi_next_offset;
-    cap[1].c_end = pi.pi_next_offset;
+    cap_all.c_begin = this->ds_next_offset;
+    cap_all.c_end = this->ds_next_offset;
+    cap_inner.c_begin = this->ds_next_offset;
+    cap_inner.c_end = this->ds_next_offset;
 
     /*!re2c
        re2c:yyfill:enable = 0;
@@ -114,6 +116,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
+       ESC = "\x1b";
        NUM = [0-9];
        ALPHANUM = [a-zA-Z0-9_];
        EOF = "\x00";
@@ -135,47 +138,53 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
                   (IPV6SEG":"){1,4}":"IPV4ADDR
                   );
 
-       EOF { return false; }
+       EOF { return nonstd::nullopt; }
 
-       ("u"|"r")?'"'('\\'.|[^\x00"\\]|'""')*'"' {
+       ("u"|"r")?'"'('\\'.|[^\x00\x1b"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
-           switch (pi.get_string()[cap[1].c_begin]) {
+           switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
            case 'r':
-               cap[1].c_begin += 1;
+               cap_inner.c_begin += 1;
                break;
            }
-           cap[1].c_begin += 1;
-           cap[1].c_end -= 1;
-           return true;
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00'\\])*"'"/[^sS] {
+       ("u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
-           switch (pi.get_string()[cap[1].c_begin]) {
+           switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
            case 'r':
-               cap[1].c_begin += 1;
+               cap_inner.c_begin += 1;
                break;
            }
-           cap[1].c_begin += 1;
-           cap[1].c_end -= 1;
-           return true;
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       [a-zA-Z0-9]+":/""/"?[^\x00\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       [a-zA-Z0-9]+":/""/"?[^\x00\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
-       [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
-           if ((YYCURSOR - (const unsigned char *) pi.get_string()) == 17) {
+       [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {
+           if ((YYCURSOR.val - (this->ds_input.udata() + this->ds_next_offset)) == 17) {
                RET(DT_MAC_ADDRESS);
            } else {
                RET(DT_HEX_DUMP);
            }
        }
-       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})"T"? {
+       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+           RET(DT_DATE_TIME);
+       }
+       ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+           RET(DT_DATE_TIME);
+       }
+       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4}) {
            RET(DT_DATE);
        }
        IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
@@ -200,6 +209,10 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            RET(DT_H1);
        }
 
+       ESC"["[0-9=;?]*[a-zA-Z] {
+           RET(DT_CSI);
+       }
+
        ":" { RET(DT_COLON); }
        "=" { RET(DT_EQUALS); }
        "," { RET(DT_COMMA); }
@@ -220,6 +233,19 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        [0-9a-fA-F]{8}("-"[0-9a-fA-F]{4}){3}"-"[0-9a-fA-F]{12} { RET(DT_UUID); }
 
+       (NUM{4}" "NUM{4}" "NUM{4}" "NUM{4}|NUM{16})/[^0-9] {
+           CAPTURE(DT_CREDIT_CARD_NUMBER);
+           if (!this->is_credit_card(this->to_string_fragment(cap_all))) {
+               if (cap_all.length() > 16) {
+                   cap_all.c_end = cap_all.c_begin + 4;
+                   cap_inner.c_end = cap_inner.c_begin + 4;
+               }
+               this->ds_next_offset = cap_all.c_end;
+               token_out = DT_NUMBER;
+           }
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
        [0-9]"."[0-9]+'e'[\-\+][0-9]+ { RET(DT_NUMBER); }
 
        [0-9]+("."[0-9]+[a-zA-Z0-9_]*){2,}("-"[a-zA-Z0-9_]+)?|[0-9]+("."[0-9]+[a-zA-Z0-9_]*)+"-"[a-zA-Z0-9_]+ {
@@ -237,7 +263,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       [^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 

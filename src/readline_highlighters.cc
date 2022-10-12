@@ -35,7 +35,7 @@
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "config.h"
-#include "pcrepp/pcrepp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
@@ -145,19 +145,23 @@ readline_regex_highlighter(attr_line_t& al, int x)
 void
 readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
-    static const pcrepp RE_PREFIXES(
+    static const auto RE_PREFIXES = lnav::pcre2pp::code::from_const(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
-    static const pcrepp SH_PREFIXES(
+    static const auto SH_PREFIXES = lnav::pcre2pp::code::from_const(
         "^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
-    static const pcrepp SQL_PREFIXES("^:(filter-expr|mark-expr)");
-    static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
-    static const pcrepp COLOR_PREFIXES("^:(config)");
-    static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{3}))");
+    static const auto SQL_PREFIXES
+        = lnav::pcre2pp::code::from_const("^:(filter-expr|mark-expr)");
+    static const auto IDENT_PREFIXES
+        = lnav::pcre2pp::code::from_const("^:(tag|untag|delete-tags)");
+    static const auto COLOR_PREFIXES
+        = lnav::pcre2pp::code::from_const("^:(config)");
+    static const auto COLOR_RE = lnav::pcre2pp::code::from_const(
+        "(#(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{3}))");
 
     attr_line_builder alb(al);
     const auto& line = al.get_string();
-    pcre_context_static<30> pc;
-    pcre_input pi(&line[sub.lr_start], 0, sub.length());
+    auto in_frag
+        = string_fragment::from_str_range(line, sub.lr_start, sub.lr_end);
     size_t ws_index;
 
     ws_index = line.find(' ', sub.lr_start);
@@ -166,43 +170,37 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
         alb.overlay_attr(line_range(sub.lr_start + 1, ws_index),
                          VC_ROLE.value(role_t::VCR_KEYWORD));
 
-        if (RE_PREFIXES.match(pc, pi)) {
+        if (RE_PREFIXES.find_in(in_frag).ignore_error()) {
             lnav::snippets::regex_highlighter(
                 al, x, line_range{(int) ws_index, sub.lr_end});
         }
-        pi.reset(&line[sub.lr_start], 0, sub.length());
-        if (SH_PREFIXES.match(pc, pi)) {
+        if (SH_PREFIXES.find_in(in_frag).ignore_error()) {
             readline_shlex_highlighter_int(
                 al, x, line_range{(int) ws_index, sub.lr_end});
         }
-        pi.reset(&line[sub.lr_start], 0, sub.length());
-        if (SQL_PREFIXES.match(pc, pi)) {
+        if (SQL_PREFIXES.find_in(in_frag).ignore_error()) {
             readline_sqlite_highlighter_int(
                 al, x, line_range{(int) ws_index, sub.lr_end});
         }
     }
-    pi.reset(&line[sub.lr_start], 0, sub.length());
-    if (COLOR_PREFIXES.match(pc, pi)) {
-        pi.reset(&line[sub.lr_start], 0, sub.length());
-        if (COLOR_RE.match(pc, pi)) {
-            auto* cap = pc[0];
-            auto hash_color = pi.get_substr(cap);
-
-            styling::color_unit::from_str(hash_color)
-                .then([&](const auto& rgb_fg) {
-                    auto color = view_colors::singleton().match_color(rgb_fg);
-                    alb.template overlay_attr(
-                        line_range{sub.lr_start + cap->c_begin,
-                                   sub.lr_start + cap->c_begin + 1},
-                        VC_STYLE.value(text_attrs{
-                            A_BOLD,
-                            color,
-                        }));
-                });
-        }
+    if (COLOR_PREFIXES.find_in(in_frag).ignore_error()) {
+        COLOR_RE.capture_from(in_frag).for_each(
+            [&alb](lnav::pcre2pp::match_data& md) {
+                styling::color_unit::from_str(md[0].value())
+                    .then([&](const auto& rgb_fg) {
+                        auto color
+                            = view_colors::singleton().match_color(rgb_fg);
+                        alb.template overlay_attr(to_line_range(md[0].value()),
+                                                  VC_STYLE.value(text_attrs{
+                                                      A_BOLD,
+                                                      color,
+                                                  }));
+                    });
+            });
     }
-    pi.reset(&line[sub.lr_start], 0, sub.length());
-    if (IDENT_PREFIXES.match(pc, pi) && ws_index != std::string::npos) {
+    if (IDENT_PREFIXES.find_in(in_frag).ignore_error()
+        && ws_index != std::string::npos)
+    {
         size_t start = ws_index, last;
 
         do {
@@ -308,7 +306,7 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     attr_line_builder alb(al);
     const auto& str = al.get_string();
-    pcre_context::capture_t cap;
+    string_fragment cap;
     shlex_token_t token;
     nonstd::optional<int> quote_start;
     shlex lexer(string_fragment{al.al_string.data(), sub.lr_start, sub.lr_end});
@@ -316,49 +314,50 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
     while (lexer.tokenize(cap, token)) {
         switch (token) {
             case shlex_token_t::ST_ERROR:
-                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
-                                            sub.lr_start + cap.c_end),
+                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
+                                            sub.lr_start + cap.sf_end),
                                  VC_STYLE.value(text_attrs{A_REVERSE}));
-                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
-                                            sub.lr_start + cap.c_end),
+                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
+                                            sub.lr_start + cap.sf_end),
                                  VC_ROLE.value(role_t::VCR_ERROR));
                 break;
             case shlex_token_t::ST_TILDE:
             case shlex_token_t::ST_ESCAPE:
-                alb.overlay_attr(line_range(sub.lr_start + cap.c_begin,
-                                            sub.lr_start + cap.c_end),
+                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
+                                            sub.lr_start + cap.sf_end),
                                  VC_ROLE.value(role_t::VCR_SYMBOL));
                 break;
             case shlex_token_t::ST_DOUBLE_QUOTE_START:
             case shlex_token_t::ST_SINGLE_QUOTE_START:
-                quote_start = sub.lr_start + cap.c_begin;
+                quote_start = sub.lr_start + cap.sf_begin;
                 break;
             case shlex_token_t::ST_DOUBLE_QUOTE_END:
             case shlex_token_t::ST_SINGLE_QUOTE_END:
                 alb.overlay_attr(
-                    line_range(quote_start.value(), sub.lr_start + cap.c_end),
+                    line_range(quote_start.value(), sub.lr_start + cap.sf_end),
                     VC_ROLE.value(role_t::VCR_STRING));
                 quote_start = nonstd::nullopt;
                 break;
             case shlex_token_t::ST_VARIABLE_REF:
             case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
                 int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                auto ident = str.substr(sub.lr_start + cap.c_begin + 1 + extra,
+                auto ident = str.substr(sub.lr_start + cap.sf_begin + 1 + extra,
                                         cap.length() - 1 - extra * 2);
                 alb.overlay_attr(
-                    line_range(sub.lr_start + cap.c_begin,
-                               sub.lr_start + cap.c_begin + 1 + extra),
+                    line_range(sub.lr_start + cap.sf_begin,
+                               sub.lr_start + cap.sf_begin + 1 + extra),
                     VC_ROLE.value(role_t::VCR_SYMBOL));
                 alb.overlay_attr(
-                    line_range(sub.lr_start + cap.c_begin + 1 + extra,
-                               sub.lr_start + cap.c_end - extra),
-                    VC_ROLE.value(x == sub.lr_start + cap.c_end
-                                          || cap.contains(x)
-                                      ? role_t::VCR_SYMBOL
-                                      : role_t::VCR_IDENTIFIER));
+                    line_range(sub.lr_start + cap.sf_begin + 1 + extra,
+                               sub.lr_start + cap.sf_end - extra),
+                    VC_ROLE.value(
+                        x == sub.lr_start + cap.sf_end
+                                || (cap.sf_begin <= x && x < cap.sf_end)
+                            ? role_t::VCR_SYMBOL
+                            : role_t::VCR_IDENTIFIER));
                 if (extra) {
                     alb.overlay_attr_for_char(
-                        sub.lr_start + cap.c_end - 1,
+                        sub.lr_start + cap.sf_end - 1,
                         VC_ROLE.value(role_t::VCR_SYMBOL));
                 }
                 break;
@@ -412,7 +411,7 @@ readline_lnav_highlighter_int(attr_line_t& al, int x, line_range sub)
 void
 readline_lnav_highlighter(attr_line_t& al, int x)
 {
-    static const pcrepp COMMENT_RE{R"(^\s*#)"};
+    static const auto COMMENT_RE = lnav::pcre2pp::code::from_const(R"(^\s*#)");
 
     attr_line_builder alb(al);
     size_t start = 0, lf_pos;
@@ -426,10 +425,11 @@ readline_lnav_highlighter(attr_line_t& al, int x)
             continue;
         }
 
-        pcre_input pi(&al.al_string[line.lr_start], 0, line.length());
-        pcre_context_static<30> pc;
+        auto line_frag = string_fragment::from_str_range(
+            al.al_string, line.lr_start, line.lr_end);
 
-        if (COMMENT_RE.match(pc, pi)) {
+        auto find_res = COMMENT_RE.find_in(line_frag).ignore_error();
+        if (find_res.has_value()) {
             if (section_start) {
                 readline_lnav_highlighter_int(al,
                                               x,
@@ -439,10 +439,8 @@ readline_lnav_highlighter(attr_line_t& al, int x)
                                               });
                 section_start = nonstd::nullopt;
             }
-            const auto* cap = pc.all();
-            alb.overlay_attr(
-                line_range{line.lr_start + cap->c_begin, (int) lf_pos},
-                VC_ROLE.value(role_t::VCR_COMMENT));
+            alb.overlay_attr(line_range{find_res->f_all.sf_begin, line.lr_end},
+                             VC_ROLE.value(role_t::VCR_COMMENT));
         } else {
             switch (al.al_string[line.lr_start]) {
                 case ':':
