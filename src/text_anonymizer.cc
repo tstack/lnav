@@ -29,12 +29,9 @@
 
 #include "text_anonymizer.hh"
 
-#if defined(__FreeBSD__)
-#include <netinet/in.h>
-#endif
-
 #include <arpa/inet.h>
 #include <curl/curl.h>
+#include <netinet/in.h>
 
 #include "animals-json.h"
 #include "config.h"
