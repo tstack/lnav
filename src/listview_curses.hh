@@ -550,7 +550,7 @@ protected:
     bool lv_show_bottom_border{false};
     list_gutter_source* lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
     bool lv_word_wrap{false};
-    bool lv_selectable{false};
+    bool lv_selectable{true};
     vis_line_t lv_selection{0};
 
     struct timeval lv_mouse_time {
