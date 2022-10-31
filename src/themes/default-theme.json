@@ -51,6 +51,10 @@
                         "color": "Silver",
                         "background-color": "Teal"
                     },
+                    "scrollbar": {
+                        "color": "Black",
+                        "background-color": "Silver"
+                    },
                     "focused": {
                         "color": "Black",
                         "background-color": "Silver"

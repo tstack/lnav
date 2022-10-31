@@ -60,6 +60,10 @@
                         "color": "$black",
                         "background-color": "Grey37"
                     },
+                    "scrollbar": {
+                        "color": "$black",
+                        "background-color": "$white"
+                    },
                     "h1": {
                         "underline": true
                     },
