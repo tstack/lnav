@@ -963,7 +963,15 @@ handle_paging_key(int ch)
             lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
             break;
 
+        case KEY_CTRL_X:
+            for (int i = 0; i < LNV__MAX; ++i) {
+                lnav_data.ld_views[i].set_selectable(!lnav_data.ld_views[i].is_selectable());
+            }
+            tc->reload_data();
+            break;
+
         default:
+            log_debug("key sequence %x", ch);
             return false;
     }
     return true;

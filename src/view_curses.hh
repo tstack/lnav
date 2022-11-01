@@ -76,6 +76,7 @@
 #define KEY_CTRL_P 16
 #define KEY_CTRL_R 18
 #define KEY_CTRL_W 23
+#define KEY_CTRL_X 24
 
 class view_curses;
 
