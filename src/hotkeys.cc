@@ -338,7 +338,12 @@ handle_paging_key(int ch)
         case 'F':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 bm[&logfile_sub_source::BM_FILES].prev(tc->get_top()) |
-                    [&tc](auto vl) { tc->set_top(vl); };
+                    [&tc](auto vl) {
+                        // setting the selection for movement to previous file
+                        // marker instead of the top will move the cursor, too,
+                        // if needed.
+                        tc->set_selection(vl);
+                    };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 
