@@ -192,7 +192,7 @@ listview_curses::do_update()
 
     if (this->vc_needs_update) {
         view_colors& vc = view_colors::singleton();
-        vis_line_t height, row;
+        vis_line_t height, row, start_row;
         attr_line_t overlay_line;
         struct line_range lr;
         unsigned long width, wrap_width;
@@ -212,6 +212,7 @@ listview_curses::do_update()
 
         size_t row_count = this->get_inner_height();
         row = this->lv_top;
+        start_row = row;
         bottom = y + height;
         std::vector<attr_line_t> rows(
             std::min((size_t) height, row_count - (int) this->lv_top));
@@ -263,6 +264,8 @@ listview_curses::do_update()
                 ++y;
             }
         }
+
+        this->lv_displayed_rows = row - start_row;
 
         if (this->lv_show_scrollbar) {
             double progress = 1.0;
@@ -565,9 +568,10 @@ void
 listview_curses::scroll_selection_into_view()
 {
     unsigned long width;
-    vis_line_t height;
+    vis_line_t height, _visible_lines_height;
 
-    this->get_dimensions(height, width);
+    this->get_dimensions(_visible_lines_height, width);
+    height = this->lv_displayed_rows;
     if (height <= 0) {
         return;
     }
