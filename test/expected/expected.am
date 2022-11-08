@@ -36,6 +36,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_1e1c8492b295913ce5afcd104cde0ec4ca1dcdac.out \
     $(srcdir)/%reldir%/test_cmds.sh_1f53f5b16c7c5aa695ed2e6427d822a1b940fcf4.err \
     $(srcdir)/%reldir%/test_cmds.sh_1f53f5b16c7c5aa695ed2e6427d822a1b940fcf4.out \
+    $(srcdir)/%reldir%/test_cmds.sh_2186d5eb6e84d6a23712334d5088c044fe089db0.err \
+    $(srcdir)/%reldir%/test_cmds.sh_2186d5eb6e84d6a23712334d5088c044fe089db0.out \
     $(srcdir)/%reldir%/test_cmds.sh_22577861cb0921a7e7f3d1af6485938f4930ba7b.err \
     $(srcdir)/%reldir%/test_cmds.sh_22577861cb0921a7e7f3d1af6485938f4930ba7b.out \
     $(srcdir)/%reldir%/test_cmds.sh_2339d09953b6937981d8a448000c3fdc2837f8c4.err \

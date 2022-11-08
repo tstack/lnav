@@ -482,9 +482,10 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     auto attr_guard
                         = alb.with_attr(VC_ROLE.value(role_t::VCR_COMMENT));
 
-                    alb.append("^").append(unmatched_size - 2, '-');
+                    alb.append("^");
                     if (unmatched_size > 1) {
-                        alb.append("^");
+                        alb.append(unmatched_size - 2, '-')
+                            .append("^");
                     }
                     alb.append(" unrecognized input");
                 }
