@@ -56,7 +56,7 @@ listview_curses::reload_data()
         }
         if (this->lv_selectable) {
             if (this->get_inner_height() == 0) {
-                this->lv_selection = 0_vl;
+                this->set_selection(0_vl);
             } else if (this->lv_selection >= this->get_inner_height()) {
                 this->set_selection(this->get_inner_height() - 1_vl);
             } else {
