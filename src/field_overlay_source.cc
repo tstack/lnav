@@ -546,7 +546,7 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                              vis_line_t row,
                                              attr_line_t& value_out)
 {
-    if (y == 0) {
+    if (y <= 0) {
         this->build_field_lines(lv);
         return false;
     }

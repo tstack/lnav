@@ -552,7 +552,8 @@ protected:
     bool lv_word_wrap{false};
     bool lv_selectable{true};
     vis_line_t lv_selection{0};
-    vis_line_t lv_displayed_rows{0};
+    vis_line_t lv_displayed_rows{0}; /*< Number of actually displayed rows,
+                                        excluding wrapped and empty lines. */
 
     struct timeval lv_mouse_time {
         0, 0

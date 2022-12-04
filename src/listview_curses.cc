@@ -217,13 +217,14 @@ listview_curses::do_update()
         std::vector<attr_line_t> rows(
             std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
+        vis_line_t selected_in_view = this->get_selection() - this->get_top();
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
                 && this->lv_overlay_source->list_value_for_overlay(
                     *this,
-                    y - this->lv_y,
+                    y - selected_in_view - this->lv_y,
                     bottom - this->lv_y,
                     row,
                     overlay_line))
