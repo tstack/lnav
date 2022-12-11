@@ -965,7 +965,13 @@ handle_paging_key(int ch)
 
         case KEY_CTRL_X:
             for (int i = 0; i < LNV__MAX; ++i) {
-                lnav_data.ld_views[i].set_selectable(!lnav_data.ld_views[i].is_selectable());
+                // set selection to current top, so we don't jump to 0.
+                vis_line_t current_top = lnav_data.ld_views[i].get_top();
+
+                lnav_data.ld_views[i].set_selectable(
+                    !lnav_data.ld_views[i].is_selectable());
+
+                lnav_data.ld_views[i].set_selection(current_top);
             }
             tc->reload_data();
             break;
