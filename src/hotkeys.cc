@@ -964,7 +964,7 @@ handle_paging_key(int ch)
             break;
 
         case KEY_CTRL_X:
-            for (int i = 0; i < LNV__MAX; ++i) {
+            for (auto i : {LNV_LOG, LNV_TEXT}) {
                 // set selection to current top, so we don't jump to 0.
                 auto& view = lnav_data.ld_views[i];
                 bool selectable = view.is_selectable();
