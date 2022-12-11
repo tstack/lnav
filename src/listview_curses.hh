@@ -550,7 +550,7 @@ protected:
     bool lv_show_bottom_border{false};
     list_gutter_source* lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
     bool lv_word_wrap{false};
-    bool lv_selectable{true};
+    bool lv_selectable{false};
     vis_line_t lv_selection{0};
     vis_line_t lv_displayed_rows{0}; /*< Number of actually displayed rows,
                                         excluding wrapped and empty lines. */
