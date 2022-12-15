@@ -621,6 +621,28 @@
                     },
                     "additionalProperties": false
                 },
+                "movement": {
+                    "description": "Log file cursor movement mode settings",
+                    "title": "/ui/movement",
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "title": "/ui/movement/mode",
+                            "description": "The mode of cursor movement to use.",
+                            "type": "string",
+                            "enum": [
+                                "top",
+                                "cursor",
+                                ""
+                            ],
+                            "examples": [
+                                "top",
+                                "cursor"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "keymap-defs": {
                     "description": "Keymap definitions.",
                     "title": "/ui/keymap-defs",

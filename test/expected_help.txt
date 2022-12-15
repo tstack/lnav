@@ -349,6 +349,9 @@ Display options
  x              Toggle the hiding of log message fields. The 
                 hidden fields will be replaced with three bullets 
                 and highlighted in yellow.
+ CTRL-X         Toggle the cursor mode. Allows moving the selected 
+                line instead of keeping it fixed at the top of the 
+                current screen.
  F2             Toggle mouse support.
 
 Query

@@ -508,6 +508,20 @@ static const struct json_path_container keymap_defs_handlers = {
         .with_children(keymap_def_handlers),
 };
 
+static const json_path_handler_base::enum_value_t _movement_values[] = {
+    {"top", config_movement_mode::TOP},
+    {"cursor", config_movement_mode::CURSOR}};
+
+static const struct json_path_container movement_handlers = {
+    yajlpp::property_handler("mode")
+        .with_synopsis("mode_name")
+        .with_enum_values(_movement_values)
+        .with_example("top")
+        .with_example("cursor")
+        .with_description("The mode of cursor movement to use.")
+        .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
+};
+
 static const struct json_path_container global_var_handlers = {
     yajlpp::pattern_property_handler("(?<var_name>\\w+)")
         .with_synopsis("<name>")
@@ -992,6 +1006,9 @@ static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("theme-defs")
         .with_description("Theme definitions.")
         .with_children(theme_defs_handlers),
+    yajlpp::property_handler("movement")
+        .with_description("Log file cursor movement mode settings")
+        .with_children(movement_handlers),
     yajlpp::property_handler("keymap-defs")
         .with_description("Keymap definitions.")
         .with_children(keymap_defs_handlers),

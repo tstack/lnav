@@ -57,7 +57,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         return;
     }
 
-    content_line_t cl = lss.at(lv.get_top());
+    content_line_t cl = lss.at(lv.get_selection());
     std::shared_ptr<logfile> file = lss.find(cl);
     auto ll = file->begin() + cl;
     auto format = file->get_format();
@@ -72,13 +72,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         display = display || this->fos_contexts.top().c_show;
     }
 
-    this->build_meta_line(lv, this->fos_lines, lv.get_top());
+    this->build_meta_line(lv, this->fos_lines, lv.get_selection());
 
     if (!display) {
         return;
     }
 
-    if (!this->fos_log_helper.parse_line(lv.get_top())) {
+    if (!this->fos_log_helper.parse_line(lv.get_selection())) {
         return;
     }
 
@@ -546,7 +546,7 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                              vis_line_t row,
                                              attr_line_t& value_out)
 {
-    if (y == 0) {
+    if (y <= 0) {
         this->build_field_lines(lv);
         return false;
     }

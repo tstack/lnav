@@ -56,7 +56,7 @@ listview_curses::reload_data()
         }
         if (this->lv_selectable) {
             if (this->get_inner_height() == 0) {
-                this->lv_selection = 0_vl;
+                this->set_selection(0_vl);
             } else if (this->lv_selection >= this->get_inner_height()) {
                 this->set_selection(this->get_inner_height() - 1_vl);
             } else {
@@ -192,7 +192,7 @@ listview_curses::do_update()
 
     if (this->vc_needs_update) {
         view_colors& vc = view_colors::singleton();
-        vis_line_t height, row;
+        vis_line_t height, row, start_row;
         attr_line_t overlay_line;
         struct line_range lr;
         unsigned long width, wrap_width;
@@ -212,17 +212,19 @@ listview_curses::do_update()
 
         size_t row_count = this->get_inner_height();
         row = this->lv_top;
+        start_row = row;
         bottom = y + height;
         std::vector<attr_line_t> rows(
             std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
+        vis_line_t selected_in_view = this->get_selection() - this->get_top();
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
                 && this->lv_overlay_source->list_value_for_overlay(
                     *this,
-                    y - this->lv_y,
+                    y - selected_in_view - this->lv_y,
                     bottom - this->lv_y,
                     row,
                     overlay_line))
@@ -263,6 +265,8 @@ listview_curses::do_update()
                 ++y;
             }
         }
+
+        this->lv_displayed_rows = row - start_row;
 
         if (this->lv_show_scrollbar) {
             double progress = 1.0;
@@ -565,9 +569,10 @@ void
 listview_curses::scroll_selection_into_view()
 {
     unsigned long width;
-    vis_line_t height;
+    vis_line_t height, _visible_lines_height;
 
-    this->get_dimensions(height, width);
+    this->get_dimensions(_visible_lines_height, width);
+    height = this->lv_displayed_rows;
     if (height <= 0) {
         return;
     }
