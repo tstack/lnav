@@ -963,33 +963,6 @@ handle_paging_key(int ch)
             lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
             break;
 
-        case KEY_CTRL_X:
-            for (auto i : {LNV_LOG, LNV_TEXT}) {
-                // set selection to current top, so we don't jump to 0.
-                auto& view = lnav_data.ld_views[i];
-                bool selectable = view.is_selectable();
-                vis_line_t top = view.get_top();
-                vis_line_t bottom = view.get_bottom();
-
-                // First, toggle modes, otherwise get_selection() returns top
-                view.set_selectable(!selectable);
-
-                if (!selectable) {
-                    vis_line_t selection = view.get_selection();
-
-                    if (selection < top)
-                    {
-                        view.set_selection(top);
-                    }
-                    else if (selection > bottom)
-                    {
-                        view.set_selection(bottom);
-                    }
-                }
-            }
-            tc->reload_data();
-            break;
-
         default:
             log_debug("key sequence %x", ch);
             return false;

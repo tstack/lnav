@@ -124,19 +124,21 @@ The **lnav_views** table allows you to SELECT and UPDATE information related
 to **lnav**'s "views" (e.g. log, text, ...).  The following columns are
 available in this table:
 
-  :name: The name of the view.
-  :top: The line number at the top of the view.  This value can be UPDATEd to
-    move the view to the given line.
-  :left: The left-most column number to display.  This value can be UPDATEd to
-    move the view left or right.
-  :height: The number of lines that are displayed on the screen.
-  :inner_height: The number of lines of content being displayed.
-  :top_time: The timestamp of the top line in the view or NULL if the view is
-    not time-based.  This value can be UPDATEd to move the view to the given
-    time.
-  :paused: Indicates if the view is paused and will not load new data.
-  :search: The search string for this view.  This value can be UPDATEd to
-    initiate a text search in this view.
+:name: The name of the view.
+:top: The line number at the top of the view.  This value can be UPDATEd to
+  move the view to the given line.
+:left: The left-most column number to display.  This value can be UPDATEd to
+  move the view left or right.
+:height: The number of lines that are displayed on the screen.
+:inner_height: The number of lines of content being displayed.
+:top_time: The timestamp of the top line in the view or NULL if the view is
+  not time-based.  This value can be UPDATEd to move the view to the given
+  time.
+:paused: Indicates if the view is paused and will not load new data.
+:search: The search string for this view.  This value can be UPDATEd to
+  initiate a text search in this view.
+:filtering: Indicates if the view is applying filters.
+:movement: The movement mode, either 'top' or 'cursor'.
 
 lnav_views_echo
 ---------------

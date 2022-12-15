@@ -197,7 +197,11 @@ public:
     }
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; }
 
-    void set_selectable(bool sel) { this->lv_selectable = sel; }
+    void set_selectable(bool sel)
+    {
+        this->lv_selectable = sel;
+        this->vc_needs_update = true;
+    }
 
     bool is_selectable() const { return this->lv_selectable; }
 
@@ -552,8 +556,6 @@ protected:
     bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{0};
-    vis_line_t lv_displayed_rows{0}; /*< Number of actually displayed rows,
-                                        excluding wrapped and empty lines. */
 
     struct timeval lv_mouse_time {
         0, 0

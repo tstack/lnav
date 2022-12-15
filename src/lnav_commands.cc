@@ -380,7 +380,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         auto parse_res = relative_time::from_str(all_args);
 
         if (ttt != nullptr && tc->get_inner_height() > 0_vl) {
-            auto top_time_opt = ttt->time_for_row(tc->get_top());
+            auto top_time_opt = ttt->time_for_row(tc->get_selection());
 
             if (top_time_opt) {
                 auto top_time_tv = top_time_opt.value();
@@ -392,9 +392,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
 
         if (dst_vl) {
-
-        }
-        else if (parse_res.isOk()) {
+        } else if (parse_res.isOk()) {
             if (ttt == nullptr) {
                 return ec.make_error(
                     "relative time values only work in a time-indexed view");
@@ -402,13 +400,13 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (tc->get_inner_height() == 0_vl) {
                 return ec.make_error("view is empty");
             }
-            auto tv_opt = ttt->time_for_row(tc->get_top());
+            auto tv_opt = ttt->time_for_row(tc->get_selection());
             if (!tv_opt) {
                 return ec.make_error("cannot get time for the top row");
             }
             tv = tv_opt.value();
 
-            vis_line_t vl = tc->get_top(), new_vl;
+            vis_line_t vl = tc->get_selection(), new_vl;
             bool done = false;
             auto rt = parse_res.unwrap();
 
@@ -442,10 +440,13 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
         } else if ((scan_end = dts.scan(
                         all_args.c_str(), all_args.size(), nullptr, &tm, tv))
-                   != nullptr ||
-                   (scan_end = dts.scan(
-                        all_args.c_str(), all_args.size(), INTERACTIVE_FMTS, &tm, tv))
-                   != nullptr)
+                       != nullptr
+                   || (scan_end = dts.scan(all_args.c_str(),
+                                           all_args.size(),
+                                           INTERACTIVE_FMTS,
+                                           &tm,
+                                           tv))
+                       != nullptr)
         {
             if (ttt == nullptr) {
                 return ec.make_error(
@@ -484,8 +485,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
                     alb.append("^");
                     if (unmatched_size > 1) {
-                        alb.append(unmatched_size - 2, '-')
-                            .append("^");
+                        alb.append(unmatched_size - 2, '-').append("^");
                     }
                     alb.append(" unrecognized input");
                 }
@@ -504,8 +504,9 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (!(tm.et_flags & ETF_SECOND_SET)) {
                 tm.et_tm.tm_sec = 0;
             }
-            if (!(tm.et_flags & ETF_MICROS_SET) &&
-                !(tm.et_flags & ETF_MILLIS_SET)) {
+            if (!(tm.et_flags & ETF_MICROS_SET)
+                && !(tm.et_flags & ETF_MILLIS_SET))
+            {
                 tm.et_nsec = 0;
             }
             tv.tv_sec = tm2sec(&tm.et_tm);
@@ -875,7 +876,10 @@ yajl_writer(void* context, const char* str, size_t len)
 }
 
 static void
-json_write_row(yajl_gen handle, int row, lnav::text_anonymizer& ta, bool anonymize)
+json_write_row(yajl_gen handle,
+               int row,
+               lnav::text_anonymizer& ta,
+               bool anonymize)
 {
     auto& dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
@@ -956,12 +960,17 @@ json_write_row(yajl_gen handle, int row, lnav::text_anonymizer& ta, bool anonymi
                         break;
                     }
                     default:
-                        obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(dls.dls_rows[row][col])) : dls.dls_rows[row][col]);
+                        obj_map.gen(anonymize
+                                        ? ta.next(string_fragment::from_c_str(
+                                            dls.dls_rows[row][col]))
+                                        : dls.dls_rows[row][col]);
                         break;
                 }
                 break;
             default:
-                obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(dls.dls_rows[row][col])) : dls.dls_rows[row][col]);
+                obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(
+                                dls.dls_rows[row][col]))
+                                      : dls.dls_rows[row][col]);
                 break;
         }
     }
@@ -993,7 +1002,8 @@ com_save_to(exec_context& ec,
         return ec.make_error("unable to parse arguments");
     }
 
-    auto anon_iter = std::find(split_args.begin(), split_args.end(), "--anonymize");
+    auto anon_iter
+        = std::find(split_args.begin(), split_args.end(), "--anonymize");
     if (anon_iter != split_args.end()) {
         split_args.erase(anon_iter);
         anonymize = true;
@@ -1123,7 +1133,10 @@ com_save_to(exec_context& ec,
                 if (!first) {
                     fprintf(outfile, ",");
                 }
-                csv_write_string(outfile, anonymize ? ta.next(string_fragment::from_c_str(*iter)) : *iter);
+                csv_write_string(
+                    outfile,
+                    anonymize ? ta.next(string_fragment::from_c_str(*iter))
+                              : *iter);
                 first = false;
             }
             fprintf(outfile, "\n");
@@ -1180,8 +1193,8 @@ com_save_to(exec_context& ec,
                 if (anonymize) {
                     cell = ta.next(cell);
                 }
-                auto cell_length = utf8_string_length(cell)
-                                       .unwrapOr(cell.size());
+                auto cell_length
+                    = utf8_string_length(cell).unwrapOr(cell.size());
                 auto padding = anonymize ? 1 : hdr.hm_column_size - cell_length;
 
                 if (hdr.hm_column_type != SQLITE3_TEXT) {
@@ -1314,7 +1327,9 @@ com_save_to(exec_context& ec,
 
                 for (auto& iter : *row_iter) {
                     if (anonymize) {
-                        fputs(ta.next(string_fragment::from_c_str(iter)).c_str(), outfile);
+                        fputs(
+                            ta.next(string_fragment::from_c_str(iter)).c_str(),
+                            outfile);
                     } else {
                         fputs(iter, outfile);
                     }
@@ -1705,7 +1720,8 @@ com_highlight(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("filter");
     } else if (args.size() > 1) {
-        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+        const static intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
 
         auto* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
@@ -1715,8 +1731,7 @@ com_highlight(exec_context& ec,
             return ec.make_error("highlight already exists -- {}", args[1]);
         }
 
-        auto compile_res
-            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
+        auto compile_res = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
@@ -1829,7 +1844,8 @@ com_filter(exec_context& ec,
         return ec.make_error("{} view does not support filtering",
                              lnav_view_strings[tc - lnav_data.ld_views]);
     } else if (args.size() > 1) {
-        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+        const static intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
 
         auto* tss = tc->get_sub_source();
         auto& fs = tss->get_filters();
@@ -1845,8 +1861,7 @@ com_filter(exec_context& ec,
                 "filters with a pipe symbol (e.g. foo|bar)");
         }
 
-        auto compile_res
-            = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
+        auto compile_res = lnav::pcre2pp::code::from(args[1], PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
             auto ce = compile_res.unwrapErr();
@@ -2161,7 +2176,7 @@ com_create_logline_table(exec_context& ec,
         if (log_view.get_inner_height() == 0) {
             return ec.make_error("no log data available");
         } else {
-            vis_line_t vl = log_view.get_top();
+            vis_line_t vl = log_view.get_selection();
             content_line_t cl = lnav_data.ld_log_source.at_base(vl);
             auto ldt = std::make_shared<log_data_table>(
                 lnav_data.ld_log_source,
@@ -2251,7 +2266,8 @@ com_create_search_table(exec_context& ec,
 
     if (args.empty()) {
     } else if (args.size() >= 2) {
-        const static intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+        const static intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
         string_fragment regex_frag;
         std::string regex;
 
@@ -2268,7 +2284,7 @@ com_create_search_table(exec_context& ec,
         if (compile_res.isErr()) {
             auto re_err = compile_res.unwrapErr();
             auto um = lnav::console::to_user_message(PATTERN_SRC, re_err)
-                .with_snippets(ec.ec_source);
+                          .with_snippets(ec.ec_source);
             return Err(um);
         }
 
@@ -2470,8 +2486,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto colon_index = fn.rfind(':');
             auto hash_index = fn.rfind('#');
             if (colon_index != std::string::npos) {
-                auto top_range = scn::string_view{
-                    &fn[colon_index + 1], &(*fn.cend())};
+                auto top_range
+                    = scn::string_view{&fn[colon_index + 1], &(*fn.cend())};
                 auto scan_res = scn::scan_value<int>(top_range);
 
                 if (scan_res) {
@@ -2751,7 +2767,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return ec.make_error("no log files loaded");
             } else {
                 logfile_sub_source& lss = lnav_data.ld_log_source;
-                vis_line_t vl = tc->get_top();
+                vis_line_t vl = tc->get_selection();
                 content_line_t cl = lss.at(vl);
                 std::shared_ptr<logfile> lf = lss.find(cl);
 
@@ -2820,7 +2836,7 @@ com_file_visibility(exec_context& ec,
                 return ec.make_error("no log files loaded");
             }
             auto& lss = lnav_data.ld_log_source;
-            auto vl = tc->get_top();
+            auto vl = tc->get_selection();
             auto cl = lss.at(vl);
             lf = lss.find(cl);
         } else {
@@ -2970,12 +2986,13 @@ com_comment(exec_context& ec,
 
         args[1] = trim(remaining_args(cmdline, args));
         auto unquoted = auto_buffer::alloc(args[1].size() + 1);
-        auto unquoted_len = unquote_content(unquoted.in(), args[1].c_str(), args[1].size(), 0);
+        auto unquoted_len = unquote_content(
+            unquoted.in(), args[1].c_str(), args[1].size(), 0);
         unquoted.resize(unquoted_len + 1);
 
-        tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
+        tc->set_user_mark(&textview_curses::BM_META, tc->get_selection(), true);
 
-        auto& line_meta = lss.get_bookmark_metadata(tc->get_top());
+        auto& line_meta = lss.get_bookmark_metadata(tc->get_selection());
 
         line_meta.bm_comment = unquoted.in();
         lss.set_line_meta_changed();
@@ -3000,7 +3017,7 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
     }
     auto& lss = lnav_data.ld_log_source;
 
-    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
+    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
 
     if (line_meta_opt && !line_meta_opt.value()->bm_comment.empty()) {
         auto trimmed_comment = trim(line_meta_opt.value()->bm_comment);
@@ -3033,15 +3050,15 @@ com_clear_comment(exec_context& ec,
         }
         auto& lss = lnav_data.ld_log_source;
 
-        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
+        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
         if (line_meta_opt) {
             bookmark_metadata& line_meta = *(line_meta_opt.value());
 
             line_meta.bm_comment.clear();
             if (line_meta.empty()) {
-                lss.erase_bookmark_metadata(tc->get_top());
+                lss.erase_bookmark_metadata(tc->get_selection());
                 tc->set_user_mark(
-                    &textview_curses::BM_META, tc->get_top(), false);
+                    &textview_curses::BM_META, tc->get_selection(), false);
             }
 
             lss.set_line_meta_changed();
@@ -3075,8 +3092,8 @@ com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
         auto& lss = lnav_data.ld_log_source;
 
-        tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
-        auto& line_meta = lss.get_bookmark_metadata(tc->get_top());
+        tc->set_user_mark(&textview_curses::BM_META, tc->get_selection(), true);
+        auto& line_meta = lss.get_bookmark_metadata(tc->get_selection());
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
             std::string tag = args[lpc];
 
@@ -3119,7 +3136,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
         auto& lss = lnav_data.ld_log_source;
 
-        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_top());
+        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
         if (line_meta_opt) {
             bookmark_metadata& line_meta = *(line_meta_opt.value());
 
@@ -3133,7 +3150,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
             if (line_meta.empty()) {
                 tc->set_user_mark(
-                    &textview_curses::BM_META, tc->get_top(), false);
+                    &textview_curses::BM_META, tc->get_selection(), false);
             }
         }
         tc->search_new_data();
@@ -3240,9 +3257,10 @@ com_partition_name(exec_context& ec,
 
             args[1] = trim(remaining_args(cmdline, args));
 
-            tc.set_user_mark(&textview_curses::BM_META, tc.get_top(), true);
+            tc.set_user_mark(
+                &textview_curses::BM_META, tc.get_selection(), true);
 
-            auto& line_meta = lss.get_bookmark_metadata(tc.get_top());
+            auto& line_meta = lss.get_bookmark_metadata(tc.get_selection());
 
             line_meta.bm_name = args[1];
             retval = "info: name set for partition";
@@ -3269,10 +3287,10 @@ com_clear_partition(exec_context& ec,
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_META];
         nonstd::optional<vis_line_t> part_start;
 
-        if (binary_search(bv.begin(), bv.end(), tc.get_top())) {
-            part_start = tc.get_top();
+        if (binary_search(bv.begin(), bv.end(), tc.get_selection())) {
+            part_start = tc.get_selection();
         } else {
-            part_start = bv.prev(tc.get_top());
+            part_start = bv.prev(tc.get_selection());
         }
         if (!part_start) {
             return ec.make_error("top line is not in a partition");
@@ -3852,7 +3870,7 @@ com_toggle_field(exec_context& ec,
                 } else if (tc->get_inner_height() == 0) {
                     return ec.make_error("no log messages to hide");
                 } else {
-                    content_line_t cl = lss.at(tc->get_top());
+                    content_line_t cl = lss.at(tc->get_selection());
                     std::shared_ptr<logfile> lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
@@ -3949,7 +3967,7 @@ com_hide_line(exec_context& ec,
                     vis_line_t vl;
                     logline* ll;
 
-                    vl = tc->get_top();
+                    vl = tc->get_selection();
                     cl = lnav_data.ld_log_source.at(vl);
                     ll = lnav_data.ld_log_source.find_line(cl);
                     ll->to_exttm(tm);
@@ -4244,9 +4262,8 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return execute_file(ec, expanded_cmd.substr(1));
             case '/': {
                 auto search_cmd = expanded_cmd.substr(1);
-                lnav_data.ld_view_stack.top() | [&search_cmd](auto tc) {
-                    tc->execute_search(search_cmd);
-                };
+                lnav_data.ld_view_stack.top() |
+                    [&search_cmd](auto tc) { tc->execute_search(search_cmd); };
                 break;
             }
             default:
@@ -4554,19 +4571,19 @@ command_prompt(std::vector<std::string>& args)
 
         logfile_sub_source& lss = lnav_data.ld_log_source;
         textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
-        content_line_t cl = lss.at(log_view.get_top());
+        content_line_t cl = lss.at(log_view.get_selection());
         std::shared_ptr<logfile> lf = lss.find(cl);
         auto ll = lf->begin() + cl;
         log_data_helper ldh(lss);
 
-        lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+        lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
 
         lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::COMMAND,
                                                   "numeric-colname");
         lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::COMMAND,
                                                   "colname");
 
-        ldh.parse_line(log_view.get_top(), true);
+        ldh.parse_line(log_view.get_selection(), true);
 
         if (tc == &lnav_data.ld_views[LNV_DB]) {
             db_label_source& dls = lnav_data.ld_db_row_source;
@@ -4656,9 +4673,10 @@ command_prompt(std::vector<std::string>& args)
     add_file_possibilities();
     add_recent_netlocs_possibilities();
 
-    auto *ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+    auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
     if (ta != nullptr) {
-        rlc->add_possibility(ln_mode_t::COMMAND, "move-args", ta->get_anchors());
+        rlc->add_possibility(
+            ln_mode_t::COMMAND, "move-args", ta->get_anchors());
     }
 
     if (tc == &lnav_data.ld_views[LNV_LOG]) {
@@ -4679,7 +4697,7 @@ script_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_mode = ln_mode_t::EXEC;
 
-    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::EXEC, "__command");
     find_format_scripts(lnav_data.ld_config_paths, scripts);
     for (const auto& iter : scripts.as_scripts) {
@@ -4779,7 +4797,7 @@ sql_prompt(std::vector<std::string>& args)
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
 
-    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
 
     lnav_data.ld_mode = ln_mode_t::SQL;
     setup_logline_table(lnav_data.ld_exec_context);
@@ -4803,7 +4821,7 @@ static void
 user_prompt(std::vector<std::string>& args)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
-    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
 
     lnav_data.ld_mode = ln_mode_t::USER;
     setup_logline_table(lnav_data.ld_exec_context);
@@ -5197,7 +5215,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-to")
          .with_summary("Overwrite the given file with any marked lines in the "
                        "current view")
-         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})
          .with_example(
@@ -5208,7 +5227,8 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":write-csv-to")
          .with_summary("Write SQL results to the given file in CSV format")
-         .with_parameter(help_text("--anonymize", "Anonymize the row contents").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the row contents").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as CSV to /tmp/table.csv",
@@ -5218,7 +5238,8 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":write-json-to")
          .with_summary("Write SQL results to the given file in JSON format")
-         .with_parameter(help_text("--anonymize", "Anonymize the JSON values").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as JSON to /tmp/table.json",
@@ -5229,7 +5250,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-jsonlines-to")
          .with_summary(
              "Write SQL results to the given file in JSON Lines format")
-         .with_parameter(help_text("--anonymize", "Anonymize the JSON values").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as JSON Lines to /tmp/table.json",
@@ -5240,7 +5262,9 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-table-to")
          .with_summary(
              "Write SQL results to the given file in a tabular format")
-         .with_parameter(help_text("--anonymize", "Anonymize the table contents").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the table contents")
+                 .optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write SQL results as text to /tmp/table.txt",
@@ -5256,7 +5280,8 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(help_text("--view={log,db}",
                                    "The view to use as the source of data")
                              .optional())
-         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example(
@@ -5268,7 +5293,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-view-to")
          .with_summary("Write the text in the top view to the given file "
                        "without any formatting")
-         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example(
@@ -5279,7 +5305,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":write-screen-to")
          .with_summary("Write the displayed text or SQL results to the given "
                        "file without any formatting")
-         .with_parameter(help_text("--anonymize", "Anonymize the lines").optional())
+         .with_parameter(
+             help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
          .with_example({"To write only the displayed text to /tmp/table.txt",

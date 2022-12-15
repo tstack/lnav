@@ -69,6 +69,9 @@
                 "x12": {
                     "command": ":reset-session"
                 },
+                "x18": {
+                    "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1)"
+                },
                 "x3d": {
                     "command": ";UPDATE lnav_views SET paused = 1 - paused"
                 },
