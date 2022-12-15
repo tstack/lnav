@@ -510,7 +510,10 @@ static const struct json_path_container keymap_defs_handlers = {
 
 static const json_path_handler_base::enum_value_t _movement_values[] = {
     {"top", config_movement_mode::TOP},
-    {"cursor", config_movement_mode::CURSOR}};
+    {"cursor", config_movement_mode::CURSOR},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
 
 static const struct json_path_container movement_handlers = {
     yajlpp::property_handler("mode")

@@ -383,6 +383,9 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  x              Toggle the hiding of log message fields. The
                 hidden fields will be replaced with three bullets
                 and highlighted in yellow.
+ CTRL-X         Toggle the cursor mode. Allows moving the selected
+                line instead of keeping it fixed at the top of the
+                current screen.
  F2             Toggle mouse support.
 
 [4mQuery[0m

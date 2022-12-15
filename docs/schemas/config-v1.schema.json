@@ -632,8 +632,7 @@
                             "type": "string",
                             "enum": [
                                 "top",
-                                "cursor",
-                                ""
+                                "cursor"
                             ],
                             "examples": [
                                 "top",
