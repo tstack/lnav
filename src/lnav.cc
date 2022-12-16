@@ -2099,7 +2099,7 @@ main(int argc, char* argv[])
     verbosity_t verbosity = verbosity_t::standard;
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
-        setenv("LANG", "en_US.utf-8", 1);
+        setenv("LANG", "en_US.UTF-8", 1);
     }
 
     (void) signal(SIGPIPE, SIG_IGN);

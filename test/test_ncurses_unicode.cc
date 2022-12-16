@@ -22,7 +22,7 @@
 int
 main(int argc, char* argv[])
 {
-    setenv("LANG", "en_US.utf-8", 1);
+    setenv("LANG", "en_US.UTF-8", 1);
     setlocale(LC_ALL, "");
 
     WINDOW* stdscr = initscr();
