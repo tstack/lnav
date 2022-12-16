@@ -35,6 +35,12 @@
                         "color": "Yellow",
                         "bold": true
                     },
+                    "cursor-line": {
+                        "color": "Cyan",
+                        "background-color": "Red",
+                        "bold": true,
+                        "underline": true
+                    },
                     "adjusted-time": {
                         "color": "Maroon"
                     },

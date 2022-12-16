@@ -72,7 +72,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         display = display || this->fos_contexts.top().c_show;
     }
 
-    this->build_meta_line(lv, this->fos_lines, lv.get_selection());
+    this->build_meta_line(lv, this->fos_lines, lv.get_top());
 
     if (!display) {
         return;
@@ -546,7 +546,7 @@ field_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                              vis_line_t row,
                                              attr_line_t& value_out)
 {
-    if (y <= 0) {
+    if (y == 0) {
         this->build_field_lines(lv);
         return false;
     }

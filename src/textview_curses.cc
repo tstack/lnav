@@ -458,11 +458,11 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         format_name = format_attr_opt.value().get();
     }
 
-    if (this->is_selectable() && row == this->get_selection()) {
-        sa.emplace_back(
-            line_range{orig_line.lr_start, -1},
-            VC_STYLE.value(text_attrs{
-                A_BOLD | A_DIM | A_UNDERLINE, COLOR_CYAN, COLOR_RED}));
+    if (this->is_selectable() && row == this->get_selection()
+        && this->tc_cursor_role)
+    {
+        sa.emplace_back(line_range{orig_line.lr_start, -1},
+                        VC_ROLE.value(this->tc_cursor_role.value()));
     }
 
     for (auto& tc_highlight : this->tc_highlights) {

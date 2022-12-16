@@ -54,6 +54,7 @@ enum class role_t : int32_t {
     VCR_WARNING, /*< A warning message. */
     VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
     VCR_HIDDEN,
+    VCR_CURSOR_LINE,
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,
@@ -145,9 +146,9 @@ struct text_attrs {
 
     bool operator==(const text_attrs& other) const
     {
-        return this->ta_attrs == other.ta_attrs &&
-            this->ta_fg_color == other.ta_fg_color &&
-            this->ta_bg_color == other.ta_bg_color;
+        return this->ta_attrs == other.ta_attrs
+            && this->ta_fg_color == other.ta_fg_color
+            && this->ta_bg_color == other.ta_bg_color;
     }
 
     int32_t ta_attrs{0};

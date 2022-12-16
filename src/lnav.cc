@@ -1337,6 +1337,7 @@ looper()
                 vis_line_t(-(rlc->get_height() + 3)));
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
+            lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
             lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         }
 
