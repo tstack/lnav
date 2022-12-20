@@ -1,3 +1,11 @@
+## lnav v0.11.2
+
+Features:
+* A "cursor" mode has been added to the main view that can
+  be toggled by pressing CTRL-X.  While in cursor mode, any
+  operations that would normally work on the "top" line now
+  operate on the selected line instead.
+
 ## lnav v0.11.1
 
 Features:

@@ -207,8 +207,6 @@ public:
 
     void set_selection(vis_line_t sel);
 
-    void scroll_selection_into_view();
-
     void shift_selection(int offset);
 
     vis_line_t get_selection() const

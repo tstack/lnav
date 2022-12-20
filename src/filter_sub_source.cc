@@ -646,7 +646,6 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
     this->fss_match_view.set_x(rc->get_left() + rc->get_match_start());
     this->fss_match_view.set_width(width + 3);
     this->fss_match_view.set_needs_update();
-    this->fss_match_view.scroll_selection_into_view();
     this->fss_match_view.reload_data();
 }
 

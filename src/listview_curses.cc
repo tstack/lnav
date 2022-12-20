@@ -190,16 +190,36 @@ listview_curses::do_update()
         return;
     }
 
-    if (this->vc_needs_update) {
-        view_colors& vc = view_colors::singleton();
-        vis_line_t height, row, start_row;
+    vis_line_t height;
+    unsigned long width;
+
+    this->get_dimensions(height, width);
+
+    if (this->lv_selectable) {
+        if (this->lv_selection < 0_vl) {
+            this->set_top(0_vl);
+        } else if (this->lv_selection
+                   >= (this->lv_top + height - this->lv_tail_space - 1_vl))
+        {
+            this->set_top(
+                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
+        } else if (this->lv_selection < this->lv_top) {
+            this->set_top(this->lv_selection, true);
+        }
+    }
+
+    while (this->vc_needs_update) {
+        auto& vc = view_colors::singleton();
+        vis_line_t row;
         attr_line_t overlay_line;
         struct line_range lr;
-        unsigned long width, wrap_width;
+        unsigned long wrap_width;
         int y = this->lv_y, bottom;
         auto role_attrs = vc.attrs_for_role(this->vc_default_role);
 
-        this->get_dimensions(height, width);
+        if (height <= 0) {
+            return;
+        }
 
         if (this->vc_width > 0) {
             width = std::min((unsigned long) this->vc_width, width);
@@ -211,20 +231,19 @@ listview_curses::do_update()
         }
 
         size_t row_count = this->get_inner_height();
+        size_t blank_rows = 0;
         row = this->lv_top;
-        start_row = row;
         bottom = y + height;
         std::vector<attr_line_t> rows(
             std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
-        vis_line_t selected_in_view = this->get_selection() - this->get_top();
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
                 && this->lv_overlay_source->list_value_for_overlay(
                     *this,
-                    y - selected_in_view - this->lv_y,
+                    y - this->lv_y,
                     bottom - this->lv_y,
                     row,
                     overlay_line))
@@ -263,7 +282,16 @@ listview_curses::do_update()
                           nullptr);
                 mvwhline(this->lv_window, y, this->lv_x, ' ', width);
                 ++y;
+                blank_rows += 1;
             }
+        }
+
+        if (this->lv_selectable && this->lv_selection >= 0
+            && (row > this->lv_tail_space) && (blank_rows < this->lv_tail_space)
+            && ((row - this->lv_tail_space) < this->lv_selection))
+        {
+            this->shift_top(this->lv_selection - row + this->lv_tail_space);
+            continue;
         }
 
         if (this->lv_show_scrollbar) {
@@ -367,7 +395,6 @@ listview_curses::shift_selection(int offset)
 
     if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
         this->set_selection(new_selection);
-        this->scroll_selection_into_view();
     }
 }
 
@@ -564,28 +591,6 @@ listview_curses::rows_available(vis_line_t line,
 }
 
 void
-listview_curses::scroll_selection_into_view()
-{
-    unsigned long width;
-    vis_line_t height;
-
-    this->get_dimensions(height, width);
-    if (height <= 0) {
-        return;
-    }
-    if (this->lv_selection < 0_vl) {
-        this->set_top(0_vl);
-    } else if (this->lv_selection
-               >= (this->lv_top + height - this->lv_tail_space - 1_vl))
-    {
-        this->set_top(this->lv_selection - height + 1_vl + this->lv_tail_space,
-                      true);
-    } else if (this->lv_selection < this->lv_top) {
-        this->set_top(this->lv_selection, true);
-    }
-}
-
-void
 listview_curses::set_selection(vis_line_t sel)
 {
     if (this->lv_selectable) {
@@ -623,7 +628,6 @@ listview_curses::set_selection(vis_line_t sel)
             }
             if (found) {
                 this->lv_selection = sel;
-                this->scroll_selection_into_view();
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
                 this->invoke_scroll();
