@@ -739,6 +739,20 @@ clear_last_user_mark(listview_curses* lv)
     }
 }
 
+static void
+update_view_position(listview_curses* lv)
+{
+    lnav_data.ld_view_stack.top() | [lv](auto* top_lv) {
+        if (lv != top_lv) {
+            return;
+        }
+
+        lnav_data.ld_bottom_source.update_line_number(lv);
+        lnav_data.ld_bottom_source.update_percent(lv);
+        lnav_data.ld_bottom_source.update_marks(lv);
+    };
+}
+
 class lnav_behavior : public mouse_behavior {
 public:
     void mouse_event(int button, bool release, int x, int y) override
@@ -1304,12 +1318,7 @@ looper()
         lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         sb.push_back(clear_last_user_mark);
-        sb.push_back(bind_mem(&bottom_status_source::update_line_number,
-                              &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_percent,
-                              &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_marks,
-                              &lnav_data.ld_bottom_source));
+        sb.push_back(update_view_position);
         vsb.push_back(
             bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
         vsb.push_back([](listview_curses* lv) {

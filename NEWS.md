@@ -5,6 +5,8 @@ Features:
   be toggled by pressing CTRL-X.  While in cursor mode, any
   operations that would normally work on the "top" line now
   operate on the selected line instead.
+* Added CTRL-D and CTRL-U hotkeys to move down/up by half
+  a page.
 
 ## lnav v0.11.1
 
