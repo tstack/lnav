@@ -226,7 +226,9 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  G/End       Move to the end of the file. If the view is
              already at the end, it will move to the last line.
  SPACE/PgDn  Move down a page.
+ CTRL+d      Move down by half a page.
  b/PgUp      Move up a page.
+ CTRL+u      Move up by half a page.
  j/↓         Move down a line.
  k/↑         Move up a line.
  h/←         Move to the left. In the log view, moving left

@@ -24,10 +24,18 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`PgDn`
      -
      - Down a page
+   * - :kbd:`Ctrl` + :kbd:`d`
+     -
+     -
+     - Down by half a page
    * - :kbd:`b`
      - :kbd:`Backspace`
      - :kbd:`PgUp`
      - Up a page
+   * - :kbd:`Ctrl` + :kbd:`u`
+     -
+     -
+     - Up by half a page
    * - :kbd:`j`
      - :kbd:`↓`
      -
