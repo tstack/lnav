@@ -137,7 +137,23 @@ ensure_dotlnav()
         log_perror(mkdir(full_path.c_str(), 0755));
     }
 
-    lnav_log_crash_dir = strdup(path.c_str());
+    auto crash_dir_path = path / "crash";
+    lnav_log_crash_dir = strdup(crash_dir_path.c_str());
+
+    {
+        static_root_mem<glob_t, globfree> gl;
+        auto crash_glob = path / "crash-*";
+
+        if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+            std::error_code ec;
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                auto crash_file = ghc::filesystem::path(gl->gl_pathv[lpc]);
+
+                ghc::filesystem::rename(
+                    crash_file, crash_dir_path / crash_file.filename(), ec);
+            }
+        }
+    }
 
     {
         static_root_mem<glob_t, globfree> gl;
