@@ -3301,6 +3301,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             if (!ghc::filesystem::exists(stdin_tmp_path)
                 || verbosity == verbosity_t::quiet || !stdin_size
+                || stdin_size.value() == 0
                 || stdin_size.value() > MAX_STDIN_CAPTURE_SIZE)
             {
                 std::error_code rm_err_code;
