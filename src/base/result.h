@@ -14,6 +14,7 @@
 #include <exception>
 #include <functional>
 #include <type_traits>
+#include <stdlib.h>
 
 namespace types {
     template<typename T>

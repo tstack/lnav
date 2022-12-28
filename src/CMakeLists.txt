@@ -77,6 +77,7 @@ set(TIME_FORMATS
         "%Y%m%d.%H%M%S"
         "%H:%M:%S"
         "%H:%M:%S.%f"
+        "%H:%M:%S.%N"
         "%M:%S"
         "%m/%d %H:%M:%S"
         "%Y-%m-%d"
@@ -90,7 +91,7 @@ set(GEN_SRCS "")
 add_custom_command(OUTPUT time_fmts.cc COMMAND ptimec ${TIME_FORMATS} >
         time_fmts.cc)
 
-add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_rt.cc time_fmts.cc)
+add_library(lnavdt STATIC ptimec.hh ptimec_rt.cc time_fmts.cc)
 target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR})
 
 function(bin2c)
@@ -332,7 +333,6 @@ target_link_libraries(lnavfileio cppfmt spookyhash pcrepp base BZip2::BZip2 ZLIB
 add_library(
         diag STATIC
         ${GEN_SRCS}
-        config.h.in
         all_logs_vtab.cc
         archive_manager.cc
         document.sections.cc
@@ -629,5 +629,9 @@ endif ()
 
 add_executable(lnav ${lnav_SRCS})
 target_link_libraries(lnav diag)
+
+if (lnav_STATIC_BUILD)
+    target_link_libraries(lnav -static-libstdc++ -static-libgcc)
+endif ()
 
 install(TARGETS lnav DESTINATION bin)
