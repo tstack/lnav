@@ -16,8 +16,6 @@ include(cmake/variables.cmake)
 
 find_package(PkgConfig REQUIRED)
 
-find_package(pcre QUIET)
-
 find_package(pcre2 QUIET)
 
 if (NOT pcre2_FOUND)
