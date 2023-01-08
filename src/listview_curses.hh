@@ -197,10 +197,11 @@ public:
     }
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; }
 
-    void set_selectable(bool sel)
+    listview_curses& set_selectable(bool sel)
     {
         this->lv_selectable = sel;
         this->vc_needs_update = true;
+        return *this;
     }
 
     bool is_selectable() const { return this->lv_selectable; }
@@ -339,13 +340,13 @@ public:
      */
     vis_line_t shift_top(vis_line_t offset, bool suppress_flash = false)
     {
-        if (offset < 0 && this->lv_top == 0) {
+        if (offset < 0 && (!this->lv_selectable && this->lv_top == 0)) {
             if (suppress_flash == false) {
                 alerter::singleton().chime(
                     "the top of the view has been reached");
             }
         } else {
-            this->set_top(std::max(0_vl, this->lv_top + offset),
+            this->set_top(std::max(0_vl, (this->lv_top + offset)),
                           suppress_flash);
         }
 
@@ -518,6 +519,23 @@ public:
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
 
+    /**
+     * Sets the limit (from the top) the selection will 'lock in' to when
+     * reached
+     *
+     * Setting the limit to a negative value will disable the limit.
+     * Setting the limit to 0 will essentially enable 'top' mode, but with a
+     * visible cursor.
+     *
+     * @param limit the limit to set
+     */
+    listview_curses& set_selection_limit(int limit)
+    {
+        this->lv_selection_limit = vis_line_t{limit};
+        return *this;
+    }
+    int get_selection_limit() { return this->lv_selection_limit; }
+
 protected:
     void delegate_scroll_out()
     {
@@ -546,6 +564,7 @@ protected:
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     unsigned int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
+    vis_line_t lv_selection_limit{5}; /*< The abs/rel height of the view. */
     int lv_history_position{0};
     bool lv_overlay_needs_update{true};
     bool lv_show_scrollbar{true}; /*< Draw the scrollbar in the view. */

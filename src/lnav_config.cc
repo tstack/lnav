@@ -539,6 +539,18 @@ static const struct json_path_container movement_handlers = {
         .with_example("cursor")
         .with_description("The mode of cursor movement to use.")
         .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
+    yajlpp::property_handler("snap-in-offset")
+        .with_synopsis("offset")
+        .with_description(
+            "Offset in lines from the top line the cursor snaps in to. "
+            "A negative value disables 'snapping' to a line, a value of 0 is "
+            "effectively the same as 'top' mode, but with a visible cursor. "
+            "Note: The limit should be set to a number less then the number of "
+            "lines that is likely to be displayed on the screen at once. If "
+            "The value is larger than the number of displayed lines, the limit "
+            "will not have any effect.")
+        .for_field<>(&_lnav_config::lc_ui_movement,
+                     &movement_config::snap_in_line),
 };
 
 static const struct json_path_container global_var_handlers = {

@@ -512,6 +512,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
+        auto previous_top = this->lv_top;
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
@@ -528,6 +529,14 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
                         this->set_selection(bot - this->lv_tail_space);
                     }
+                }
+                // selection was "snapped in" before changing top
+                if (this->lv_selection_limit >= 0
+                    && this->lv_selection
+                        >= previous_top + this->lv_selection_limit)
+                {
+                    this->set_selection(this->lv_top
+                                        + this->lv_selection_limit);
                 }
             }
         }
@@ -628,6 +637,13 @@ listview_curses::set_selection(vis_line_t sel)
             }
             if (found) {
                 this->lv_selection = sel;
+
+                if (this->lv_selection_limit >= 0_vl
+                    && sel > this->lv_selection_limit
+                    && sel != this->get_top() + this->lv_selection_limit)
+                {
+                    this->set_top(sel - this->lv_selection_limit);
+                }
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
                 this->invoke_scroll();
