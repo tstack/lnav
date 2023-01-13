@@ -189,6 +189,7 @@ CREATE TABLE lnav_views (
     paused INTEGER,         -- Indicates if the view is paused and will not load new data.
     search TEXT,            -- The text to search for in the view.
     filtering INTEGER,      -- Indicates if the view is applying filters.
+    movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
     top_meta TEXT           -- A JSON object that contains metadata related to the top line in the view.
 );
 )";
@@ -277,6 +278,13 @@ CREATE TABLE lnav_views (
                 break;
             }
             case 10: {
+                sqlite3_result_text(ctx,
+                                    tc.is_selectable() ? "cursor" : "top",
+                                    -1,
+                                    SQLITE_STATIC);
+                break;
+            }
+            case 11: {
                 static const size_t MAX_POSSIBILITIES = 128;
 
                 auto* tss = tc.get_sub_source();
@@ -363,6 +371,7 @@ CREATE TABLE lnav_views (
                    bool is_paused,
                    const char* search,
                    bool do_filtering,
+                   string_fragment movement,
                    const char* top_meta)
     {
         auto& tc = lnav_data.ld_views[index];
@@ -434,10 +443,26 @@ CREATE TABLE lnav_views (
                 }
             }
         }
+        if (movement == "top") {
+            tc.set_selectable(false);
+        } else if (movement == "cursor") {
+            // First, toggle modes, otherwise get_selection() returns top
+            tc.set_selectable(true);
+
+            auto cur_sel = tc.get_selection();
+            auto cur_top = tc.get_top();
+            auto cur_bot = tc.get_bottom();
+
+            if (cur_sel < cur_top) {
+                tc.set_selection(cur_top);
+            } else if (cur_sel > cur_bot) {
+                tc.set_selection(cur_bot);
+            }
+        }
         tc.set_left(left);
         tc.set_paused(is_paused);
         tc.execute_search(search);
-        auto tss = tc.get_sub_source();
+        auto* tss = tc.get_sub_source();
         if (tss != nullptr && tss->tss_supports_filtering
             && tss->tss_apply_filters != do_filtering)
         {

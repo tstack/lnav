@@ -15,6 +15,7 @@ th p {
 
 .wy-nav-content {
     max-width: 900px;
+    overflow-x: auto;
 }
 
 table.query-results p {
@@ -32,7 +33,7 @@ DL DT {
     border: 0 !important;
     background: inherit !important;
     border-bottom: 1px solid #c3c0ee !important;
-    display: block !important;
+    /* display: block !important; */
 }
 
 kbd {

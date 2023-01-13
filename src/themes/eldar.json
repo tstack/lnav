@@ -44,6 +44,12 @@
                         "color": "$yellow",
                         "bold": true
                     },
+                    "cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "$red",
+                        "bold": true,
+                        "underline": true
+                    },
                     "adjusted-time": {
                         "color": "$magenta"
                     },
@@ -59,6 +65,10 @@
                     "popup": {
                         "color": "$black",
                         "background-color": "Grey37"
+                    },
+                    "scrollbar": {
+                        "color": "$black",
+                        "background-color": "$white"
                     },
                     "h1": {
                         "underline": true

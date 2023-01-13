@@ -24,10 +24,18 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`PgDn`
      -
      - Down a page
+   * - :kbd:`Ctrl` + :kbd:`d`
+     -
+     -
+     - Down by half a page
    * - :kbd:`b`
      - :kbd:`Backspace`
      - :kbd:`PgUp`
      - Up a page
+   * - :kbd:`Ctrl` + :kbd:`u`
+     -
+     -
+     - Up by half a page
    * - :kbd:`j`
      - :kbd:`↓`
      -
@@ -246,6 +254,9 @@ Display
    * - :kbd:`x`
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.
+   * - :kbd:`Ctrl` + :kbd:`x`
+     - Toggle the cursor mode. Allows moving the selected line instead of
+       keeping it fixed at the top of the current screen.
    * - :kbd:`=`
      - Pause/unpause loading of new file data.
 

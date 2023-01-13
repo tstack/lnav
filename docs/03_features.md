@@ -19,9 +19,11 @@ left-hand side help to show which file a message belongs to.
 ## Automatic Log Format Detection
 
 The log message format is automatically determined by lnav while scanning your
-files.   The following formats are built in by default:
+files.  The following are some of the [formats that are built in by default](https://docs.lnav.org/en/latest/formats.html):
 
 * Common Web Access Log format
+* W3C Extended Log File Format
+* logfmt
 * CUPS page_log
 * Syslog
 * Glog
@@ -31,6 +33,10 @@ files.   The following formats are built in by default:
 * "Generic" - Any message that starts with a timestamp
 * Strace
 * sudo
+
+If your log file format is JSON-lines or can be matched by a PCRE regular
+expression, you can define your own format in a
+[JSON file](https://docs.lnav.org/en/latest/formats.html#defining-a-new-format).
 
 GZIP'ed and BZIP2'ed files are also detected automatically and decompressed on-the-fly.
 

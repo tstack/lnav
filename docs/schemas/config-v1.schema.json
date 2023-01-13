@@ -284,6 +284,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/hidden",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "cursor-line": {
+                                            "description": "Styling for the cursor line in the main view",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/cursor-line",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "adjusted-time": {
                                             "description": "Styling for timestamps that have been adjusted",
                                             "title": "/ui/theme-defs/<theme_name>/styles/adjusted-time",
@@ -617,6 +622,27 @@
                                 }
                             },
                             "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "movement": {
+                    "description": "Log file cursor movement mode settings",
+                    "title": "/ui/movement",
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "title": "/ui/movement/mode",
+                            "description": "The mode of cursor movement to use.",
+                            "type": "string",
+                            "enum": [
+                                "top",
+                                "cursor"
+                            ],
+                            "examples": [
+                                "top",
+                                "cursor"
+                            ]
                         }
                     },
                     "additionalProperties": false

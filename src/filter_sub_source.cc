@@ -236,8 +236,10 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 : text_quoting::regex;
             add_view_text_possibilities(
                 this->fss_editor.get(), tf->get_lang(), "*", top_view, tq);
-            add_filter_expr_possibilities(
-                this->fss_editor.get(), filter_lang_t::SQL, "*");
+            if (top_view == &lnav_data.ld_views[LNV_LOG]) {
+                add_filter_expr_possibilities(
+                    this->fss_editor.get(), filter_lang_t::SQL, "*");
+            }
             this->fss_editor->set_window(lv.get_window());
             this->fss_editor->set_visible(true);
             this->fss_editor->set_y(
@@ -646,7 +648,6 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
     this->fss_match_view.set_x(rc->get_left() + rc->get_match_start());
     this->fss_match_view.set_width(width + 3);
     this->fss_match_view.set_needs_update();
-    this->fss_match_view.scroll_selection_into_view();
     this->fss_match_view.reload_data();
 }
 

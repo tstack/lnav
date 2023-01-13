@@ -237,7 +237,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
         ":log_raw_text",
     };
 
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = &lnav_data.ld_views[LNV_LOG];
     auto& lss = lnav_data.ld_log_source;
     auto bottom = tc->get_bottom();
 

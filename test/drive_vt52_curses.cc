@@ -67,7 +67,7 @@ main(int argc, char* argv[])
     int lpc, c, fd, retval = EXIT_SUCCESS;
     vt52_curses vt;
 
-    setenv("LANG", "en_US.utf-8", 1);
+    setenv("LANG", "en_US.UTF-8", 1);
     setlocale(LC_ALL, "");
     fd = open("/tmp/lnav.err", O_WRONLY | O_CREAT | O_APPEND, 0666);
     dup2(fd, STDERR_FILENO);

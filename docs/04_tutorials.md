@@ -11,7 +11,7 @@ without having to install anything.  They are running on a shared
 The tutorials are implemented using features in **lnav** and not
 built in to the code itself.  The tutorial text is
 [markdown](https://docs.lnav.org/en/latest/ui.html#markdown),
-the logic is written [SQL](https://docs.lnav.org/en/latest/sqlext.html),
+the logic is written in [SQL](https://docs.lnav.org/en/latest/sqlext.html),
 and the reactions are triggered through
 [events](https://docs.lnav.org/en/latest/events.html).
 

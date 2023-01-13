@@ -35,6 +35,12 @@
                         "color": "Yellow",
                         "bold": true
                     },
+                    "cursor-line": {
+                        "color": "Cyan",
+                        "background-color": "Red",
+                        "bold": true,
+                        "underline": true
+                    },
                     "adjusted-time": {
                         "color": "Maroon"
                     },
@@ -50,6 +56,10 @@
                     "popup": {
                         "color": "Silver",
                         "background-color": "Teal"
+                    },
+                    "scrollbar": {
+                        "color": "Black",
+                        "background-color": "Silver"
                     },
                     "focused": {
                         "color": "Black",

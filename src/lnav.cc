@@ -739,6 +739,20 @@ clear_last_user_mark(listview_curses* lv)
     }
 }
 
+static void
+update_view_position(listview_curses* lv)
+{
+    lnav_data.ld_view_stack.top() | [lv](auto* top_lv) {
+        if (lv != top_lv) {
+            return;
+        }
+
+        lnav_data.ld_bottom_source.update_line_number(lv);
+        lnav_data.ld_bottom_source.update_percent(lv);
+        lnav_data.ld_bottom_source.update_marks(lv);
+    };
+}
+
 class lnav_behavior : public mouse_behavior {
 public:
     void mouse_event(int button, bool release, int x, int y) override
@@ -1304,12 +1318,7 @@ looper()
         lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         sb.push_back(clear_last_user_mark);
-        sb.push_back(bind_mem(&bottom_status_source::update_line_number,
-                              &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_percent,
-                              &lnav_data.ld_bottom_source));
-        sb.push_back(bind_mem(&bottom_status_source::update_marks,
-                              &lnav_data.ld_bottom_source));
+        sb.push_back(update_view_position);
         vsb.push_back(
             bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
         vsb.push_back([](listview_curses* lv) {
@@ -1337,6 +1346,7 @@ looper()
                 vis_line_t(-(rlc->get_height() + 3)));
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
+            lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
             lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         }
 
@@ -2098,7 +2108,7 @@ main(int argc, char* argv[])
     verbosity_t verbosity = verbosity_t::standard;
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
-        setenv("LANG", "en_US.utf-8", 1);
+        setenv("LANG", "en_US.UTF-8", 1);
     }
 
     (void) signal(SIGPIPE, SIG_IGN);
@@ -2613,6 +2623,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
+    bool selectable
+        = (lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR);
+
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
@@ -2648,8 +2661,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }))
         .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(2_vl)
-        .set_overlay_source(log_fos);
-    lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);
+        .set_overlay_source(log_fos)
+        .set_selectable(selectable);
+    lnav_data.ld_views[LNV_TEXT]
+        .set_sub_source(&lnav_data.ld_text_source)
+        .set_selectable(selectable);
     lnav_data.ld_views[LNV_HISTOGRAM].set_sub_source(
         &lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
@@ -3285,6 +3301,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             if (!ghc::filesystem::exists(stdin_tmp_path)
                 || verbosity == verbosity_t::quiet || !stdin_size
+                || stdin_size.value() == 0
                 || stdin_size.value() > MAX_STDIN_CAPTURE_SIZE)
             {
                 std::error_code rm_err_code;

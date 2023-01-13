@@ -66,7 +66,7 @@ bottom_status_source::update_line_number(listview_curses* lc)
     if (lc->get_inner_height() == 0) {
         sf.set_value(" L0");
     } else {
-        sf.set_value(" L%'d", (int) lc->get_top());
+        sf.set_value(" L%'d", (int) lc->get_selection());
     }
 
     this->bss_line_error.set_value(

@@ -140,8 +140,10 @@ then
     # If both library and header were found, action-if-found
     #
     m4_ifblank([$2],[
-                CPPFLAGS="$CPPFLAGS -I${PCRE2_HOME}/include"
-                LDFLAGS="$LDFLAGS -L${PCRE2_HOME}/lib"
+                if test -n "${PCRE2_HOME}"; then
+                  CPPFLAGS="$CPPFLAGS -I${PCRE2_HOME}/include"
+                  LDFLAGS="$LDFLAGS -L${PCRE2_HOME}/lib"
+                fi
                 LIBS="-lpcre2-8 $LIBS"
                 AC_DEFINE([HAVE_PCRE2], [1],
                           [Define to 1 if you have `PCRE2' library (-lpcre2-$1)])

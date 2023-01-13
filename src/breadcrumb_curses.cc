@@ -175,7 +175,6 @@ breadcrumb_curses::reload_data()
     this->bc_match_view.set_needs_update();
     this->bc_match_view.set_selection(
         vis_line_t(selected_value.value_or(-1_vl)));
-    this->bc_match_view.scroll_selection_into_view();
     this->bc_match_view.reload_data();
     this->set_needs_update();
 }
@@ -257,7 +256,8 @@ breadcrumb_curses::handle_key(int ch)
                 this->focus();
                 this->reload_data();
                 if (this->bc_selected_crumb.value()
-                    < this->bc_focused_crumbs.size() - 1) {
+                    < this->bc_focused_crumbs.size() - 1)
+                {
                     this->bc_selected_crumb
                         = this->bc_selected_crumb.value() + 1;
                     retval = true;
@@ -333,13 +333,15 @@ breadcrumb_curses::perform_selection(
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     auto match_sel = this->bc_match_view.get_selection();
     if (match_sel >= 0
-        && match_sel < vis_line_t(this->bc_similar_values.size())) {
+        && match_sel < vis_line_t(this->bc_similar_values.size()))
+    {
         const auto& new_value = this->bc_similar_values[match_sel].p_key;
 
         switch (behavior) {
             case perform_behavior_t::if_different:
                 if (breadcrumb::crumb::key_t{new_value}
-                    == selected_crumb_ref.c_key) {
+                    == selected_crumb_ref.c_key)
+                {
                     return;
                 }
                 break;
@@ -418,7 +420,8 @@ breadcrumb_curses::search_overlay_source::list_value_for_overlay(
                     size_t index;
 
                     if (sscanf(parent->bc_current_search.c_str(), "%zu", &index)
-                        == 1) {
+                        == 1)
+                    {
                         if (index < 0
                             || (index
                                 >= (sel_opt

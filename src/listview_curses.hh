@@ -197,13 +197,15 @@ public:
     }
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; }
 
-    void set_selectable(bool sel) { this->lv_selectable = sel; }
+    void set_selectable(bool sel)
+    {
+        this->lv_selectable = sel;
+        this->vc_needs_update = true;
+    }
 
     bool is_selectable() const { return this->lv_selectable; }
 
     void set_selection(vis_line_t sel);
-
-    void scroll_selection_into_view();
 
     void shift_selection(int offset);
 

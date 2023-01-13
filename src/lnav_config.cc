@@ -137,7 +137,23 @@ ensure_dotlnav()
         log_perror(mkdir(full_path.c_str(), 0755));
     }
 
-    lnav_log_crash_dir = strdup(path.c_str());
+    auto crash_dir_path = path / "crash";
+    lnav_log_crash_dir = strdup(crash_dir_path.c_str());
+
+    {
+        static_root_mem<glob_t, globfree> gl;
+        auto crash_glob = path / "crash-*";
+
+        if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+            std::error_code ec;
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                auto crash_file = ghc::filesystem::path(gl->gl_pathv[lpc]);
+
+                ghc::filesystem::rename(
+                    crash_file, crash_dir_path / crash_file.filename(), ec);
+            }
+        }
+    }
 
     {
         static_root_mem<glob_t, globfree> gl;
@@ -508,6 +524,23 @@ static const struct json_path_container keymap_defs_handlers = {
         .with_children(keymap_def_handlers),
 };
 
+static const json_path_handler_base::enum_value_t _movement_values[] = {
+    {"top", config_movement_mode::TOP},
+    {"cursor", config_movement_mode::CURSOR},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const struct json_path_container movement_handlers = {
+    yajlpp::property_handler("mode")
+        .with_synopsis("mode_name")
+        .with_enum_values(_movement_values)
+        .with_example("top")
+        .with_example("cursor")
+        .with_description("The mode of cursor movement to use.")
+        .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
+};
+
 static const struct json_path_container global_var_handlers = {
     yajlpp::pattern_property_handler("(?<var_name>\\w+)")
         .with_synopsis("<name>")
@@ -585,6 +618,10 @@ static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("hidden")
         .with_description("Styling for hidden fields in logs")
         .for_child(&lnav_theme::lt_style_hidden)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("cursor-line")
+        .with_description("Styling for the cursor line in the main view")
+        .for_child(&lnav_theme::lt_style_cursor_line)
         .with_children(style_config_handlers),
     yajlpp::property_handler("adjusted-time")
         .with_description("Styling for timestamps that have been adjusted")
@@ -992,6 +1029,9 @@ static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("theme-defs")
         .with_description("Theme definitions.")
         .with_children(theme_defs_handlers),
+    yajlpp::property_handler("movement")
+        .with_description("Log file cursor movement mode settings")
+        .with_children(movement_handlers),
     yajlpp::property_handler("keymap-defs")
         .with_description("Keymap definitions.")
         .with_children(keymap_defs_handlers),

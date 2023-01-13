@@ -45,6 +45,12 @@
                         "color": "$yellow",
                         "bold": true
                     },
+                    "cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "$red",
+                        "bold": true,
+                        "underline": true
+                    },
                     "adjusted-time": {
                         "color": "$magenta"
                     },

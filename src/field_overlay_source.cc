@@ -57,7 +57,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         return;
     }
 
-    content_line_t cl = lss.at(lv.get_top());
+    content_line_t cl = lss.at(lv.get_selection());
     std::shared_ptr<logfile> file = lss.find(cl);
     auto ll = file->begin() + cl;
     auto format = file->get_format();
@@ -78,7 +78,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         return;
     }
 
-    if (!this->fos_log_helper.parse_line(lv.get_top())) {
+    if (!this->fos_log_helper.parse_line(lv.get_selection())) {
         return;
     }
 
