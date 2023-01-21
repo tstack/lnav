@@ -32,6 +32,7 @@
 #ifndef lnav_log_hh
 #define lnav_log_hh
 
+#include <cstdint>
 #include <string>
 
 #include <stdio.h>
