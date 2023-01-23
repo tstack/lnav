@@ -394,6 +394,21 @@ with the following contents:
         }
     }
 
+
+This example overrides the default `syslog_log <https://github.com/tstack/lnav/blob/master/src/formats/syslog_log.json>`_
+error detection regex to **not** match the :code:`errors=` string.
+
+.. code-block:: json
+
+  {
+    "syslog_log": {
+        "level": {
+            "error": "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?(?!=))(?:(?![a-zA-Z]))|failed|failure)"
+        }
+    }
+  }
+
+
 .. _scripts:
 
 Scripts
