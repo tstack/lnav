@@ -46,13 +46,13 @@ Defining a New Format
 ---------------------
 
 New log formats can be defined by placing JSON configuration files in
-subdirectories of the :file:`~/.lnav/formats/` directory.  The directories and
-files can be named anything you like, but the files must have the '.json' suffix.  A
-sample file containing the builtin configuration will be written to this
-directory when **lnav** starts up.  You can consult that file when writing your
-own formats or if you need to modify existing ones.  Format directories can
-also contain '.sql' and '.lnav' script files that can be used automate log file
-analysis.
+subdirectories of the :file:`/etc/lnav/formats` and :file:`~/.lnav/formats/`
+directories. The directories and files can be named anything you like, but the
+files must have the '.json' suffix.  A sample file containing the builtin
+configuration will be written to this directory when **lnav** starts up.
+You can consult that file when writing your own formats or if you need to
+modify existing ones.  Format directories can also contain '.sql' and '.lnav'
+script files that can be used automate log file analysis.
 
 Creating a Format Using Regex101.com (v0.11.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
