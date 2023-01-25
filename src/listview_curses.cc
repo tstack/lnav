@@ -513,11 +513,18 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
         }
     } else if (this->lv_top != top) {
         auto previous_top = this->lv_top;
+        bool snapped = (this->lv_selection_limit >= 0
+                        && this->lv_selection
+                            >= previous_top + this->lv_selection_limit);
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
-                this->set_selection(top);
+                if (snapped) {
+                    this->set_selection(top);
+                } else {
+                    this->set_selection(top + this->lv_selection_limit);
+                }
             } else {
                 auto bot = this->get_bottom();
                 unsigned long width;
@@ -531,12 +538,10 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     }
                 }
                 // selection was "snapped in" before changing top
-                if (this->lv_selection_limit >= 0
-                    && this->lv_selection
-                        >= previous_top + this->lv_selection_limit)
+                if (this->lv_selection_limit >= 0 && snapped)
                 {
-                    this->set_selection(this->lv_top
-                                        + this->lv_selection_limit);
+                    auto diff = this->get_top() - previous_top;
+                    this->shift_selection(diff);
                 }
             }
         }
@@ -640,9 +645,11 @@ listview_curses::set_selection(vis_line_t sel)
 
                 if (this->lv_selection_limit >= 0_vl
                     && sel > this->lv_selection_limit
-                    && sel != this->get_top() + this->lv_selection_limit)
+                    && sel < this->get_top() + this->lv_selection_limit)
                 {
-                    this->set_top(sel - this->lv_selection_limit);
+                    this->lv_selection
+                        = std::min(this->lv_top + this->lv_selection_limit,
+                                   this->get_bottom());
                 }
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
