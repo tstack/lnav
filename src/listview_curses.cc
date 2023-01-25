@@ -108,7 +108,10 @@ listview_curses::handle_key(int ch)
         case '\r':
         case 'j':
         case KEY_DOWN:
-            if (this->is_selectable()) {
+            if (this->is_selectable()
+                && (this->lv_selection_limit < 0
+                    || this->lv_selection < this->lv_selection_limit))
+            {
                 this->shift_selection(1);
             } else {
                 this->shift_top(1_vl);
@@ -117,7 +120,14 @@ listview_curses::handle_key(int ch)
 
         case 'k':
         case KEY_UP:
-            if (this->is_selectable()) {
+            if (this->is_selectable()  // selectable and
+                && (this->lv_selection_limit < 0
+                    || this->lv_top
+                        == 0  // .. top is in view
+                              //|| this->lv_selection  // .. or selection is
+                              //    > this->lv_top + this->lv_selection_limit //
+                    ))
+            {
                 this->shift_selection(-1);
             } else {
                 this->shift_top(-1_vl);
@@ -126,10 +136,14 @@ listview_curses::handle_key(int ch)
 
         case 'b':
         case KEY_BACKSPACE:
-        case KEY_PPAGE:
+        case KEY_PPAGE: {
+            if (this->is_selectable() && this->lv_top == 0) {
+                this->set_selection(0_vl);
+            }
             this->shift_top(
                 -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
             break;
+        }
 
         case ' ':
         case KEY_NPAGE:
