@@ -193,6 +193,12 @@ On color displays, the log messages will be highlighted as follows:
   time" is the original textual timestamp.  The "received time" is the time
   of an earlier message that is larger than this log message's time.
 
+The source file name for each message can be displayed by scrolling left.
+Scrolling left once will show the shortened version of the file name relative
+to the other files that are loaded.  In the shortened version, the unique
+portion of the file name will be in square brackets.  Scrolling left a second
+time will show the full path.
+
 The breadcrumb bar will show the following crumbs:
 
 * the timestamp for the top line;

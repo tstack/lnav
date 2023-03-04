@@ -48,7 +48,7 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`←`
      -
      - Left half a page.  In the log view, pressing left while at the start of
-       the message text will reveal the source file name for each line.
+       the message text will reveal the shortened source file name for each line.
        Pressing again will reveal the full path.
    * - :kbd:`Shift` + :kbd:`h`
      - :kbd:`Shift` + :kbd:`←`
