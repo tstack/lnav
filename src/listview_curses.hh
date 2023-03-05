@@ -544,6 +544,8 @@ protected:
         }
     }
 
+    void set_selection_internal(vis_line_t sel);
+
     enum class lv_mode_t {
         NONE,
         DOWN,

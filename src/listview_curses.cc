@@ -56,14 +56,14 @@ listview_curses::reload_data()
         }
         if (this->lv_selectable) {
             if (this->get_inner_height() == 0) {
-                this->set_selection(0_vl);
+                this->set_selection_internal(0_vl);
             } else if (this->lv_selection >= this->get_inner_height()) {
-                this->set_selection(this->get_inner_height() - 1_vl);
+                this->set_selection_internal(this->get_inner_height() - 1_vl);
             } else {
                 auto curr_sel = this->lv_selection;
 
                 this->lv_selection = -1_vl;
-                this->set_selection(curr_sel);
+                this->set_selection_internal(curr_sel);
             }
         }
     }
@@ -138,7 +138,7 @@ listview_curses::handle_key(int ch)
         case KEY_BACKSPACE:
         case KEY_PPAGE: {
             if (this->is_selectable() && this->lv_top == 0) {
-                this->set_selection(0_vl);
+                this->set_selection_internal(0_vl);
             }
             this->shift_top(
                 -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
@@ -153,7 +153,7 @@ listview_curses::handle_key(int ch)
         case 'g':
         case KEY_HOME:
             if (this->is_selectable()) {
-                this->set_selection(0_vl);
+                this->set_selection_internal(0_vl);
             } else {
                 this->set_top(0_vl);
             }
@@ -165,10 +165,10 @@ listview_curses::handle_key(int ch)
             vis_line_t tail_bottom(this->get_top_for_last_row());
 
             if (this->is_selectable() && this->lv_selection_limit < 0) {
-                this->set_selection(last_line);
+                this->set_selection_internal(last_line);
             } else if (this->is_selectable()) {
                 this->set_top(last_line - this->lv_selection_limit);
-                this->set_selection(last_line);
+                this->set_selection_internal(last_line);
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
             } else if (tail_bottom <= this->get_top()) {
@@ -411,7 +411,7 @@ listview_curses::shift_selection(int offset)
     vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
 
     if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
-        this->set_selection(new_selection);
+        this->set_selection_internal(new_selection);
     }
 }
 
@@ -538,9 +538,10 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
                 if (snapped) {
-                    this->set_selection(top);
+                    this->set_selection_internal(top);
                 } else {
-                    this->set_selection(top + this->lv_selection_limit);
+                    this->set_selection_internal(top
+                                                 + this->lv_selection_limit);
                 }
             } else {
                 auto bot = this->get_bottom();
@@ -551,7 +552,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
 
                 if (bot != -1_vl && (bot - top) >= (height - 1)) {
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
-                        this->set_selection(bot - this->lv_tail_space);
+                        this->set_selection_internal(bot - this->lv_tail_space);
                     }
                 }
                 // selection was "snapped in" before changing top
@@ -623,6 +624,17 @@ listview_curses::rows_available(vis_line_t line,
 
 void
 listview_curses::set_selection(vis_line_t sel)
+{
+    if (this->lv_selectable && this->lv_selection_limit > 0_vl
+        && sel > (this->lv_top + this->lv_selection_limit))
+    {
+        this->set_top(sel - this->lv_selection_limit);
+    }
+    this->set_selection_internal(sel);
+}
+
+void
+listview_curses::set_selection_internal(vis_line_t sel)
 {
     if (this->lv_selectable) {
         if (this->lv_selection == sel) {
