@@ -164,7 +164,10 @@ listview_curses::handle_key(int ch)
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());
 
-            if (this->is_selectable()) {
+            if (this->is_selectable() && this->lv_selection_limit < 0) {
+                this->set_selection(last_line);
+            } else if (this->is_selectable()) {
+                this->set_top(last_line - this->lv_selection_limit);
                 this->set_selection(last_line);
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
