@@ -537,8 +537,13 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
         auto previous_top = this->lv_top;
         bool snapped = (this->lv_selection_limit >= 0
+                        && this->lv_selection_limit < height
                         && this->lv_selection
                             >= previous_top + this->lv_selection_limit);
         this->lv_top = top;
@@ -553,10 +558,6 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 }
             } else {
                 auto bot = this->get_bottom();
-                unsigned long width;
-                vis_line_t height;
-
-                this->get_dimensions(height, width);
 
                 if (bot != -1_vl && (bot - top) >= (height - 1)) {
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
@@ -564,7 +565,9 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     }
                 }
                 // selection was "snapped in" before changing top
-                if (this->lv_selection_limit >= 0 && snapped)
+                if (this->lv_selection_limit >= 0 && snapped
+                    && this->lv_selection_limit
+                        < (height - this->lv_tail_space))
                 {
                     auto diff = this->get_top() - previous_top;
                     this->shift_selection(diff);
@@ -633,7 +636,12 @@ listview_curses::rows_available(vis_line_t line,
 void
 listview_curses::set_selection(vis_line_t sel)
 {
+    unsigned long width;
+    vis_line_t height;
+
+    this->get_dimensions(height, width);
     if (this->lv_selectable && this->lv_selection_limit > 0_vl
+        && this->lv_selection_limit < height
         && sel > (this->lv_top + this->lv_selection_limit))
     {
         this->set_top(sel - this->lv_selection_limit);
@@ -655,6 +663,10 @@ listview_curses::set_selection_internal(vis_line_t sel)
             this->invoke_scroll();
             return;
         }
+
+        unsigned long width;
+        vis_line_t height;
+        this->get_dimensions(height, width);
 
         auto inner_height = this->get_inner_height();
         if (sel >= 0_vl && sel < inner_height) {
@@ -681,6 +693,7 @@ listview_curses::set_selection_internal(vis_line_t sel)
                 this->lv_selection = sel;
 
                 if (this->lv_selection_limit >= 0_vl
+                    && this->lv_selection_limit < height
                     && sel > this->lv_selection_limit
                     && sel < this->get_top() + this->lv_selection_limit)
                 {
