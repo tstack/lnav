@@ -107,16 +107,24 @@ listview_curses::handle_key(int ch)
 
         case '\r':
         case 'j':
-        case KEY_DOWN:
+        case KEY_DOWN: {
+            vis_line_t height;
+            unsigned long width;
+
+            this->get_dimensions(height, width);
+
             if (this->is_selectable()
                 && (this->lv_selection_limit < 0
-                    || this->lv_selection < this->lv_selection_limit))
+                    || this->lv_selection < this->lv_selection_limit
+                    // case: selection reaches tail space
+                    || (this->lv_selection >= (this->lv_top + height
+                                               - this->lv_tail_space - 1_vl))))
             {
                 this->shift_selection(1);
             } else {
                 this->shift_top(1_vl);
             }
-            break;
+        } break;
 
         case 'k':
         case KEY_UP:
