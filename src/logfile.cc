@@ -610,7 +610,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 auto tmp_line = sbr.to_string_fragment().to_string();
 
                 scrub_ansi_string(tmp_line, nullptr);
-                memcpy(sbr.get_writable_data(),
+                memcpy(sbr.get_writable_data(tmp_line.length()),
                        tmp_line.c_str(),
                        tmp_line.length());
                 sbr.narrow(0, tmp_line.length());

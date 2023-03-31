@@ -354,6 +354,7 @@ dist_noinst_DATA = \
 	mvwattrline_output.0 \
 	textfile_0.md \
 	textfile_ansi.0 \
+	textfile_ansi_expanding.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
 	textfile_quoted_json.0 \

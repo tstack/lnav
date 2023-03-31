@@ -1,0 +1,10 @@
+[32m * [39;49;00mPackage:    sys-libs/glibc-2.36-r7:2.2
+[32m * [39;49;00mRepository: gentoo
+[32m * [39;49;00mMaintainer: toolchain@gentoo.org
+[32m * [39;49;00mUSE:        abi_x86_64 amd64 caps elibc_glibc kernel_linux multiarch ssp static-libs test userland_GNU
+[32m * [39;49;00mFEATURES:   network-sandbox preserve-libs sandbox test userpriv usersandbox
+ [32m*[0m Checking whether python3_11 is suitable ...
+ [32m*[0m   >=dev-lang/python-3.11.1-r1:3.11 ...
+[A[230C [34;01m[ [32;01mok[34;01m ][0m
+ [32m*[0m Using python3.11 to build (via PYTHON_COMPAT iteration)
+>>> Unpacking source...
