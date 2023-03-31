@@ -688,6 +688,8 @@ EOF
 
 export YES_COLOR=1
 
+touch -t 202211030923 logfile_ansi.1
+
 run_cap_test ${lnav_test} -n \
     -c ';SELECT log_time, log_body FROM syslog_log' \
     ${test_dir}/logfile_ansi.1
