@@ -374,6 +374,10 @@ public:
 
     void json_append_to_cache(const char* value, ssize_t len)
     {
+        if (len <= 0) {
+            return;
+        }
+
         size_t old_size = this->jlf_cached_line.size();
         if (len == -1) {
             len = strlen(value);
@@ -384,6 +388,9 @@ public:
 
     void json_append_to_cache(ssize_t len)
     {
+        if (len <= 0) {
+            return;
+        }
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
