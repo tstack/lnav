@@ -2,6 +2,8 @@
 
 export YES_COLOR=1
 
+touch -t 202211030923 ${test_dir}/logfile_syslog.3
+
 run_cap_test ${lnav_test} -n \
    -c ";SELECT * FROM syslog_log, regexp_capture_into_json(log_body, '"'"'"(?<value>[^"'"'"]+)')" \
    -c ":write-csv-to -" \
