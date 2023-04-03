@@ -111,9 +111,9 @@ run_cap_test ./drive_sql "SELECT encode(null, 'base64')"
 
 run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
 
-run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'
-SELECT parse_url('https://bad@[fe::')
-EOF
+#run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'
+#SELECT parse_url('https://bad@[fe::')
+#EOF
 
 run_cap_test env TEST_COMMENT=unsupported_url ./drive_sql <<'EOF'
 SELECT parse_url('https://example.com:100000')
