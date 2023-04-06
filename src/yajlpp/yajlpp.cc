@@ -716,7 +716,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         if (jph.jph_regex->capture_from(path_frag)
                 .into(md)
                 .matches()
-                .ignore_error())
+                .ignore_error()
+            && (md.remaining().empty() || md.remaining().startswith("/")))
         {
             auto cap = md[0].value();
 

@@ -95,9 +95,10 @@ like so:
    }
 
 Each format to be defined in the file should be a separate field in the top-level
-object.  The field name should be the symbolic name of the format.  This value
-will also be used as the SQL table name for the log.  The value for each field
-should be another object with the following fields:
+object.  The field name should be the symbolic name of the format and consist
+only of alphanumeric characters and underscores.  This value will also be used
+as the SQL table name for the log.  The value for each field should be another
+object with the following fields:
 
 :title: The short and human-readable name for the format.
 :description: A longer description of the format.

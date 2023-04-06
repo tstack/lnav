@@ -529,12 +529,11 @@ static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[] = {
 };
 
 static const struct json_path_container scaling_factor_handlers = {
-    yajlpp::pattern_property_handler("op")
+    yajlpp::property_handler("op")
         .with_enum_values(SCALE_OP_ENUM)
         .for_field(&scaling_factor::sf_op),
 
-    yajlpp::pattern_property_handler("value").for_field(
-        &scaling_factor::sf_value),
+    yajlpp::property_handler("value").for_field(&scaling_factor::sf_value),
 };
 
 static const struct json_path_container scale_handlers = {

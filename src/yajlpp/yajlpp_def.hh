@@ -1380,7 +1380,7 @@ template<typename T, std::size_t N>
 inline json_path_handler
 pattern_property_handler(const T (&path)[N])
 {
-    return {lnav::pcre2pp::code::from_const(path).to_shared()};
+    return {lnav::pcre2pp::code::from_const(path, PCRE2_ANCHORED).to_shared()};
 }
 
 }  // namespace yajlpp

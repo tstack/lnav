@@ -6,6 +6,24 @@
            [1m/bad_json_log/line-format#/timestamp-format[0m [4m<string>[0m
          [1mDescription[0m
            The strftime(3) format for this field
+[33m⚠ warning[0m: unexpected value for property “[1m/bad-name-log/title[0m”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-name/format.json[0m:4
+[36m | [0m[37m[40m        "title": "bad-format",          [0m
+[36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
+           [1m$schema[0m [4mThe URI of the schema for this file[0m
+           [1m(\w+)[0m[1m/[0m
+[33m⚠ warning[0m: unexpected value for property “[1m/bad-name-log/description[0m”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-name/format.json[0m:5
+[36m | [0m[37m[40m        "description": "Log format with a name that has invalid characters",[0m
+[36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
+           [1m$schema[0m [4mThe URI of the schema for this file[0m
+           [1m(\w+)[0m[1m/[0m
+[33m⚠ warning[0m: unexpected value for property “[1m/bad-name-log/json[0m”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-name/format.json[0m:6
+[36m | [0m[37m[40m        "json": true                    [0m
+[36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
+           [1m$schema[0m [4mThe URI of the schema for this file[0m
+           [1m(\w+)[0m[1m/[0m
 [1m[31m✘ error[0m: “invalid(abc” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_props_log/tags/badtag3/pattern[0m
