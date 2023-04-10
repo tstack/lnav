@@ -11,7 +11,7 @@ jobs:
   coverage:
     runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 #    - name: Update apt
 #      run: sudo apt-get update
 #    - name: Install packages
@@ -51,7 +51,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
@@ -79,7 +79,7 @@ jobs:
       - name: make distcheck
         run: make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           # Artifact name
           name: lnav-tot-linux-64bit.zip
@@ -99,7 +99,7 @@ jobs:
         shell: msys2 {0}
     steps:
     - name: '🧰 Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: '${{ matrix.icon }} Setup MSYS2'
@@ -164,7 +164,7 @@ jobs:
         export PREFIX=$PWD/lnav
         $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
     - name: '⬆️ Upload a Build Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: lnav-${{ github.ref_name }}-windows-amd64.zip
         path: lnav-${{ github.ref_name }}-windows-amd64.zip
