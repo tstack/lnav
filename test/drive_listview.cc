@@ -53,15 +53,15 @@ public:
                                  vector<attr_line_t>& rows)
     {
         for (auto& value_out : rows) {
-            if (row == 0) {
-                value_out = "Hello";
-            } else if (row == 1) {
-                value_out = "World!";
-            } else if (row < this->ms_rows) {
-                char buffer[32];
+            value_out = (lv.is_selectable() && row == lv.get_selection()) ? "+"
+                                                                          : "";
 
-                snprintf(buffer, sizeof(buffer), "%d", (int) row);
-                value_out = string(buffer);
+            if (row == 0) {
+                value_out.al_string += "Hello";
+            } else if (row == 1) {
+                value_out.al_string += "World!";
+            } else if (row < this->ms_rows) {
+                value_out.al_string += std::to_string(static_cast<int>(row));
             } else {
                 assert(0);
             }
