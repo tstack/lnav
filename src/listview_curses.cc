@@ -114,8 +114,8 @@ listview_curses::handle_key(int ch)
             this->get_dimensions(height, width);
 
             if (this->is_selectable()
-                && (this->lv_selection_limit < 0
-                    || this->lv_selection < this->lv_selection_limit
+                && (this->lv_snap_to_top_offset < 0
+                    || this->lv_selection < this->lv_snap_to_top_offset
                     // case: selection reaches tail space
                     || (this->lv_selection >= (this->lv_top + height
                                                - this->lv_tail_space - 1_vl))))
@@ -129,11 +129,11 @@ listview_curses::handle_key(int ch)
         case 'k':
         case KEY_UP:
             if (this->is_selectable()  // selectable and
-                && (this->lv_selection_limit < 0
+                && (this->lv_snap_to_top_offset < 0
                     || this->lv_top
                         == 0  // .. top is in view
                               //|| this->lv_selection  // .. or selection is
-                              //    > this->lv_top + this->lv_selection_limit //
+                              //    > this->lv_top + this->lv_snap_to_top_offset
                     ))
             {
                 this->shift_selection(-1);
@@ -172,10 +172,10 @@ listview_curses::handle_key(int ch)
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());
 
-            if (this->is_selectable() && this->lv_selection_limit < 0) {
+            if (this->is_selectable() && this->lv_snap_to_top_offset < 0) {
                 this->set_selection_internal(last_line);
             } else if (this->is_selectable()) {
-                this->set_top(last_line - this->lv_selection_limit);
+                this->set_top(last_line - this->lv_snap_to_top_offset);
                 this->set_selection_internal(last_line);
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
@@ -542,10 +542,10 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
 
         this->get_dimensions(height, width);
         auto previous_top = this->lv_top;
-        bool snapped = (this->lv_selection_limit >= 0
-                        && this->lv_selection_limit < height
+        bool snapped = (this->lv_snap_to_top_offset >= 0
+                        && this->lv_snap_to_top_offset < height
                         && this->lv_selection
-                            >= previous_top + this->lv_selection_limit);
+                            >= previous_top + this->lv_snap_to_top_offset);
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
@@ -554,7 +554,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     this->set_selection_internal(top);
                 } else {
                     this->set_selection_internal(top
-                                                 + this->lv_selection_limit);
+                                                 + this->lv_snap_to_top_offset);
                 }
             } else {
                 auto bot = this->get_bottom();
@@ -565,8 +565,8 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     }
                 }
                 // selection was "snapped in" before changing top
-                if (this->lv_selection_limit >= 0 && snapped
-                    && this->lv_selection_limit
+                if (this->lv_snap_to_top_offset >= 0 && snapped
+                    && this->lv_snap_to_top_offset
                         < (height - this->lv_tail_space))
                 {
                     auto diff = this->get_top() - previous_top;
@@ -640,11 +640,11 @@ listview_curses::set_selection(vis_line_t sel)
     vis_line_t height;
 
     this->get_dimensions(height, width);
-    if (this->lv_selectable && this->lv_selection_limit > 0_vl
-        && this->lv_selection_limit < height
-        && sel > (this->lv_top + this->lv_selection_limit))
+    if (this->lv_selectable && this->lv_snap_to_top_offset > 0_vl
+        && this->lv_snap_to_top_offset < height
+        && sel > (this->lv_top + this->lv_snap_to_top_offset))
     {
-        this->set_top(sel - this->lv_selection_limit);
+        this->set_top(sel - this->lv_snap_to_top_offset);
     }
     this->set_selection_internal(sel);
 }
@@ -692,13 +692,13 @@ listview_curses::set_selection_internal(vis_line_t sel)
             if (found) {
                 this->lv_selection = sel;
 
-                if (this->lv_selection_limit >= 0_vl
-                    && this->lv_selection_limit < height
-                    && sel > this->lv_selection_limit
-                    && sel < this->get_top() + this->lv_selection_limit)
+                if (this->lv_snap_to_top_offset >= 0_vl
+                    && this->lv_snap_to_top_offset < height
+                    && sel > this->lv_snap_to_top_offset
+                    && sel < this->get_top() + this->lv_snap_to_top_offset)
                 {
                     this->lv_selection
-                        = std::min(this->lv_top + this->lv_selection_limit,
+                        = std::min(this->lv_top + this->lv_snap_to_top_offset,
                                    this->get_bottom());
                 }
                 this->lv_source->listview_selection_changed(*this);

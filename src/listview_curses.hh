@@ -520,21 +520,20 @@ public:
     virtual void invoke_scroll() { this->lv_scroll(this); }
 
     /**
-     * Sets the limit (from the top) the selection will 'lock in' to when
-     * reached
+     * Sets the line offset from top to snap the selection to when reached.
      *
-     * Setting the limit to a negative value will disable the limit.
-     * Setting the limit to 0 will essentially enable 'top' mode, but with a
-     * visible cursor.
+     * Setting the snap-to offset to a negative value will disable snapping
+     * Setting the snap-to offset to 0 will essentially enable 'top' mode, but
+     * with a visible cursor.
      *
      * @param limit the limit to set
      */
-    listview_curses& set_selection_limit(int limit)
+    listview_curses& set_snap_to_offset(int limit)
     {
-        this->lv_selection_limit = vis_line_t{limit};
+        this->lv_snap_to_top_offset = vis_line_t{limit};
         return *this;
     }
-    int get_selection_limit() { return this->lv_selection_limit; }
+    int get_selection_limit() { return this->lv_snap_to_top_offset; }
 
 protected:
     void delegate_scroll_out()
@@ -566,7 +565,7 @@ protected:
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     unsigned int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
-    vis_line_t lv_selection_limit{5}; /*< The abs/rel height of the view. */
+    vis_line_t lv_snap_to_top_offset{5}; /*< The snap-to line offset from top */
     int lv_history_position{0};
     bool lv_overlay_needs_update{true};
     bool lv_show_scrollbar{true}; /*< Draw the scrollbar in the view. */

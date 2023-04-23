@@ -644,8 +644,8 @@
                                 "cursor"
                             ]
                         },
-                        "snap-in-offset": {
-                            "title": "/ui/movement/snap-in-offset",
+                        "snap-to-offset": {
+                            "title": "/ui/movement/snap-to-offset",
                             "description": "Offset in lines from the top line the cursor snaps in to. A negative value disables 'snapping' to a line, a value of 0 is effectively the same as 'top' mode, but with a visible cursor. Note: The limit should be set to a number less then the number of lines that is likely to be displayed on the screen at once. If The value is larger than the number of displayed lines, the limit will not have any effect.",
                             "type": "integer"
                         }

@@ -2663,11 +2663,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_tail_space(2_vl)
         .set_overlay_source(log_fos)
         .set_selectable(selectable)
-        .set_selection_limit(lnav_config.lc_ui_movement.snap_in_line);
+        .set_snap_to_offset(lnav_config.lc_ui_movement.snap_to_offset);
     lnav_data.ld_views[LNV_TEXT]
         .set_sub_source(&lnav_data.ld_text_source)
         .set_selectable(selectable)
-        .set_selection_limit(lnav_config.lc_ui_movement.snap_in_line);
+        .set_snap_to_offset(lnav_config.lc_ui_movement.snap_to_offset);
     lnav_data.ld_views[LNV_HISTOGRAM].set_sub_source(
         &lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);

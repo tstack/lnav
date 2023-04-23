@@ -190,7 +190,7 @@ CREATE TABLE lnav_views (
     search TEXT,            -- The text to search for in the view.
     filtering INTEGER,      -- Indicates if the view is applying filters.
     movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
-    snap_in_line INTEGER,   -- The limit in "lines from top" for the cursor movement
+    snap_to_offset INTEGER,   -- The limit in "lines from top" for the cursor movement
     top_meta TEXT           -- A JSON object that contains metadata related to the top line in the view.
 );
 )";
@@ -377,7 +377,7 @@ CREATE TABLE lnav_views (
                    const char* search,
                    bool do_filtering,
                    string_fragment movement,
-                   int64_t snap_in_line,
+                   int64_t snap_to_offset,
                    const char* top_meta)
     {
         auto& tc = lnav_data.ld_views[index];
@@ -451,7 +451,7 @@ CREATE TABLE lnav_views (
         }
         if (movement == "top") {
             tc.set_selectable(false);
-            tc.set_selection_limit(-1);
+            tc.set_snap_to_offset(-1);
         } else if (movement == "cursor") {
             // First, toggle modes, otherwise get_selection() returns top
             tc.set_selectable(true);
@@ -466,7 +466,7 @@ CREATE TABLE lnav_views (
                 tc.set_selection(cur_bot);
             }
 
-            tc.set_selection_limit(snap_in_line);
+            tc.set_snap_to_offset(snap_to_offset);
         }
         tc.set_left(left);
         tc.set_paused(is_paused);

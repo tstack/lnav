@@ -92,7 +92,7 @@ enum class config_movement_mode : unsigned int {
 
 struct movement_config {
     config_movement_mode mode;
-    int snap_in_line{-1};
+    int snap_to_offset{-1};
 };
 
 struct _lnav_config {
