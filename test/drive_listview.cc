@@ -121,7 +121,7 @@ main(int argc, char* argv[])
                 break;
             }
             case 't':
-                lv.set_top(vis_line_t(atoi(optarg)));
+                lv.set_selection(vis_line_t(atoi(optarg)));
                 break;
             case 'l':
                 lv.set_left(atoi(optarg));
