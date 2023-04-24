@@ -155,6 +155,9 @@ textview_curses::reload_config(error_reporter& reporter)
         iter = this->tc_highlights.erase(iter);
     }
 
+    set_selectable(lnav_config.lc_ui_movement.mode
+                   == config_movement_mode::CURSOR);
+
     std::map<std::string, std::string> vars;
     auto curr_theme_iter
         = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
