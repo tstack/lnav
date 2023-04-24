@@ -565,9 +565,12 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     }
                 }
                 // selection was "snapped in" before changing top
-                if (this->lv_snap_to_top_offset >= 0 && snapped
-                    && this->lv_snap_to_top_offset
-                        < (height - this->lv_tail_space))
+                if (snapped
+                    && ((this->lv_snap_to_top_offset >= 0
+                         && previous_top > this->get_top())
+                        || (this->lv_snap_to_top_offset > 0
+                            && this->lv_snap_to_top_offset
+                                < (height - this->lv_tail_space))))
                 {
                     auto diff = this->get_top() - previous_top;
                     this->shift_selection(diff);
@@ -692,14 +695,16 @@ listview_curses::set_selection_internal(vis_line_t sel)
             if (found) {
                 this->lv_selection = sel;
 
-                if (this->lv_snap_to_top_offset >= 0_vl
+                if (this->lv_snap_to_top_offset > 0_vl  // not == 0!
                     && this->lv_snap_to_top_offset < height
                     && sel > this->lv_snap_to_top_offset
-                    && sel < this->get_top() + this->lv_snap_to_top_offset)
+                    && sel < (this->get_top() + this->lv_snap_to_top_offset))
                 {
                     this->lv_selection
                         = std::min(this->lv_top + this->lv_snap_to_top_offset,
                                    this->get_bottom());
+                } else if (this->lv_snap_to_top_offset == 0_vl) {
+                    this->lv_top = this->lv_selection;
                 }
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
