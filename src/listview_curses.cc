@@ -666,6 +666,7 @@ listview_curses::set_selection_internal(vis_line_t sel)
             this->invoke_scroll();
             return;
         }
+        log_debug("set_selection_internal(): sel: %d", sel);
 
         unsigned long width;
         vis_line_t height;
