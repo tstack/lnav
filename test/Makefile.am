@@ -277,6 +277,13 @@ dist_noinst_DATA = \
 	listview_output.4 \
 	listview_output.5 \
 	listview_output.6 \
+	listview_output_cursor.0 \
+	listview_output_cursor.1 \
+	listview_output_cursor.2 \
+	listview_output_cursor.3 \
+	listview_output_cursor.4 \
+	listview_output_cursor.5 \
+	listview_output_cursor.6 \
 	log.clog \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
