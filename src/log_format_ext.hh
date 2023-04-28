@@ -412,6 +412,7 @@ public:
     logline_value_vector jlf_line_values;
 
     off_t jlf_cached_offset{-1};
+    line_range jlf_cached_sub_range;
     bool jlf_cached_full{false};
     std::vector<off_t> jlf_line_offsets;
     std::vector<char> jlf_cached_line;

@@ -9,7 +9,7 @@
         ],
         "regex": {
             "std": {
-                "pattern": "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: (?:.*)|channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))?(?: (?<msg>.*))?(?: <eom>))(?<body>.*)$"
+                "pattern": "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3,6}): (?:Server-Properties: (?:.*)|channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))?(?: (?<msg>.*))?(?: <eom>))(?<body>.*)$"
             }
         },
         "value": {

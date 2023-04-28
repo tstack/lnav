@@ -261,6 +261,20 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             {
                 adjusted_time = this->lss_token_line->get_timeval();
                 fmt = "%Y-%m-%d %H:%M:%S.%f";
+                if (format->lf_timestamp_flags & ETF_MICROS_SET) {
+                    struct timeval actual_tv;
+                    struct exttm tm;
+                    if (format->lf_date_time.scan(
+                            this->lss_token_value.data() + time_range.lr_start,
+                            time_range.length(),
+                            format->get_timestamp_formats(),
+                            &tm,
+                            actual_tv,
+                            false))
+                    {
+                        adjusted_time.tv_usec = actual_tv.tv_usec;
+                    }
+                }
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                 adjusted_tm.et_nsec
                     = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -413,13 +427,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             continue;
         }
 
-        line_range ident_range = line_value.lv_origin;
-        if (this->lss_token_flags & RF_FULL) {
-            ident_range = line_value.origin_in_full_msg(
-                this->lss_token_value.c_str(), this->lss_token_value.length());
-        }
-
-        value_out.emplace_back(ident_range,
+        value_out.emplace_back(line_value.lv_origin,
                                VC_ROLE.value(role_t::VCR_IDENTIFIER));
     }
 

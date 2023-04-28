@@ -371,9 +371,9 @@ EOF
 run_test ${lnav_test} -n ${srcdir}/logfile_tcf.1
 
 check_output "timestamps with no dates are not rewritten?" <<EOF
-TCF 2014-04-06 09:59:47.191000: Server-Properties: {"Name":"TCF Protocol Logger","OSName":"Linux 3.2.0-60-generic","UserName":"xavier","AgentID":"1fde3dd1-d4be-4f79-8090-6f8d212f03bf","TransportName":"TCP","Proxy":"","ValueAdd":"1","Port":"1534"}
-TCF 2014-04-06 10:30:11.474000: 0: ---> C 2 RunControl getChildren null <eom>
-TCF 2014-04-06 11:01:11.475000: 0: <--- R 2  ["P1"] <eom>
+TCF 2014-04-06 09:59:47.191234: Server-Properties: {"Name":"TCF Protocol Logger","OSName":"Linux 3.2.0-60-generic","UserName":"xavier","AgentID":"1fde3dd1-d4be-4f79-8090-6f8d212f03bf","TransportName":"TCP","Proxy":"","ValueAdd":"1","Port":"1534"}
+TCF 2014-04-06 10:30:11.474442: 0: ---> C 2 RunControl getChildren null <eom>
+TCF 2014-04-06 11:01:11.475557: 0: <--- R 2  ["P1"] <eom>
 EOF
 
 

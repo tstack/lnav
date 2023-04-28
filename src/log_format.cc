@@ -1097,8 +1097,25 @@ external_log_format::annotate(uint64_t line_number,
 
     line.erase_ansi();
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
-        values = this->jlf_line_values;
-        sa = this->jlf_line_attrs;
+        if (this->jlf_cached_full) {
+            values = this->jlf_line_values;
+            sa = this->jlf_line_attrs;
+        } else {
+            values.lvv_sbr = this->jlf_line_values.lvv_sbr;
+            for (const auto& llv : this->jlf_line_values.lvv_values) {
+                if (this->jlf_cached_sub_range.contains(llv.lv_origin)) {
+                    values.lvv_values.emplace_back(llv);
+                    values.lvv_values.back().lv_origin.shift(
+                        this->jlf_cached_sub_range.lr_start,
+                        -this->jlf_cached_sub_range.lr_start);
+                }
+            }
+            for (const auto& attr : this->jlf_line_attrs) {
+                if (this->jlf_cached_sub_range.contains(attr.sa_range)) {
+                    sa.emplace_back(attr);
+                }
+            }
+        }
         return;
     }
 
@@ -1273,21 +1290,18 @@ external_log_format::rewrite(exec_context& ec,
         } else {
             field_value = exec_res.unwrapErr().to_attr_line().get_string();
         }
-        auto adj_origin
-            = iter->origin_in_full_msg(value_out.c_str(), value_out.length());
-
-        value_out.erase(adj_origin.lr_start, adj_origin.length());
+        value_out.erase(iter->lv_origin.lr_start, iter->lv_origin.length());
 
         int32_t shift_amount
-            = ((int32_t) field_value.length()) - adj_origin.length();
-        value_out.insert(adj_origin.lr_start, field_value);
+            = ((int32_t) field_value.length()) - iter->lv_origin.length();
+        value_out.insert(iter->lv_origin.lr_start, field_value);
         for (shift_iter = values.lvv_values.begin();
              shift_iter != values.lvv_values.end();
              ++shift_iter)
         {
-            shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
+            shift_iter->lv_origin.shift(iter->lv_origin.lr_start, shift_amount);
         }
-        shift_string_attrs(sa, adj_origin.lr_start, shift_amount);
+        shift_string_attrs(sa, iter->lv_origin.lr_start, shift_amount);
     }
 }
 
@@ -1528,8 +1542,6 @@ external_log_format::get_subline(const logline& ll,
 
                             lr.lr_start = this->jlf_cached_line.size();
 
-                            lv_iter->lv_meta.lvm_hidden
-                                = lv_iter->lv_meta.lvm_user_hidden;
                             if ((int) str.size() > jfe.jfe_max_width) {
                                 switch (jfe.jfe_overflow) {
                                     case json_format_element::overflow_t::
@@ -1595,7 +1607,7 @@ external_log_format::get_subline(const logline& ll,
                                     lr, logline::L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
-                            used_values[distance(
+                            used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)]
                                 = true;
@@ -1699,7 +1711,7 @@ external_log_format::get_subline(const logline& ll,
                     = intern_string::lookup("body", -1);
                 auto& lv = this->jlf_line_values.lvv_values[lpc];
 
-                if (lv.lv_meta.lvm_hidden || used_values[lpc]
+                if (lv.lv_meta.is_hidden() || used_values[lpc]
                     || body_name == lv.lv_meta.lvm_name)
                 {
                     continue;
@@ -1709,7 +1721,8 @@ external_log_format::get_subline(const logline& ll,
                 size_t curr_pos = 0, nl_pos, line_len = -1;
 
                 lv.lv_sub_offset = sub_offset;
-                lv.lv_origin.lr_start = 2 + lv.lv_meta.lvm_name.size() + 2;
+                lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
+                    + lv.lv_meta.lvm_name.size() + 2;
                 do {
                     nl_pos = str.find('\n', curr_pos);
                     if (nl_pos != std::string::npos) {
@@ -1770,6 +1783,8 @@ external_log_format::get_subline(const logline& ll,
                   this->jlf_cached_line.data() + this_off,
                   next_off - this_off);
     }
+    this->jlf_cached_sub_range.lr_start = this_off;
+    this->jlf_cached_sub_range.lr_end = next_off;
     this->jlf_line_values.lvv_sbr = sbr;
 }
 
@@ -2837,7 +2852,7 @@ external_log_format::value_line_count(const intern_string_t ist,
         return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
     }
 
-    if (iter->second->vd_meta.lvm_hidden) {
+    if (iter->second->vd_meta.is_hidden()) {
         return 0;
     }
 
