@@ -12,7 +12,8 @@
             },
             "] ",
             {
-                "field": "lvl"
+                "field": "lvl",
+                "auto-width": true
             },
             " ",
             {

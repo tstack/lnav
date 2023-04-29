@@ -71,7 +71,6 @@ public:
         bool vd_foreign_key{false};
         intern_string_t vd_unit_field;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
-        ssize_t vd_values_index{-1};
         bool vd_internal{false};
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
@@ -186,18 +185,15 @@ public:
     const logline_value_stats* stats_for_value(
         const intern_string_t& name) const
     {
-        const logline_value_stats* retval = nullptr;
-
-        for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
-            value_def& vd = *this->elf_numeric_value_defs[lpc];
-
-            if (vd.vd_meta.lvm_name == name) {
-                retval = &this->lf_value_stats[lpc];
-                break;
-            }
+        auto iter = this->elf_value_defs.find(name);
+        if (iter != this->elf_value_defs.end()
+            && iter->second->vd_meta.lvm_values_index)
+        {
+            return &this->lf_value_stats[iter->second->vd_meta.lvm_values_index
+                                             .value()];
         }
 
-        return retval;
+        return nullptr;
     }
 
     void get_subline(const logline& ll,
@@ -232,6 +228,7 @@ public:
 
     struct json_format_element {
         enum class align_t {
+            NONE,
             LEFT,
             RIGHT,
         };
@@ -253,8 +250,9 @@ public:
         positioned_property<intern_string_t> jfe_value;
         std::string jfe_default_value{"-"};
         long long jfe_min_width{0};
+        bool jfe_auto_width{false};
         long long jfe_max_width{LLONG_MAX};
-        align_t jfe_align{align_t::LEFT};
+        align_t jfe_align{align_t::NONE};
         overflow_t jfe_overflow{overflow_t::ABBREV};
         transform_t jfe_text_transform{transform_t::NONE};
         std::string jfe_ts_format;
@@ -286,8 +284,9 @@ public:
 
     long value_line_count(const intern_string_t ist,
                           bool top_level,
+                          nonstd::optional<double> val = nonstd::nullopt,
                           const unsigned char* str = nullptr,
-                          ssize_t len = -1) const;
+                          ssize_t len = -1);
 
     bool has_value_def(const intern_string_t ist) const
     {
@@ -397,6 +396,7 @@ public:
     }
 
     void json_append(const json_format_element& jfe,
+                     const value_def* vd,
                      const char* value,
                      ssize_t len);
 

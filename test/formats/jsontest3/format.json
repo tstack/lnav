@@ -25,6 +25,11 @@
             },
             " ",
             {
+                "field": "response/size",
+                "auto-width": true
+            },
+            " ",
+            {
                 "field": "request/uri"
             }
         ],
@@ -51,7 +56,11 @@
                 "hidden": true
             },
             "response/status": {
-                "kind": "string"
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "response/size": {
+                "kind": "integer"
             },
             "details1": {
                 "hidden": true

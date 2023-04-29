@@ -1,29 +1,29 @@
 
-[2013-09-06T20:00:48.124] TRACE trace test
+[2013-09-06T20:00:48.124] TRACE    trace test
 
-[2013-09-06T20:00:49.124] INFO Starting up service
+[2013-09-06T20:00:49.124] INFO     Starting up service
 
-[2013-09-06T22:00:49.124] INFO Shutting down service
+[2013-09-06T22:00:49.124] INFO     Shutting down service
   user: steve@example.com
 
-[2013-09-06T22:00:59.124] DEBUG5 Details...
+[2013-09-06T22:00:59.124] DEBUG5   Details...
 
-[2013-09-06T22:00:59.124] DEBUG4 Details...
+[2013-09-06T22:00:59.124] DEBUG4   Details...
 
-[2013-09-06T22:00:59.124] DEBUG3 Details...
+[2013-09-06T22:00:59.124] DEBUG3   Details...
 
-[2013-09-06T22:00:59.124] DEBUG2 Details...
+[2013-09-06T22:00:59.124] DEBUG2   Details...
 
-[2013-09-06T22:00:59.124] DEBUG Details...
+[2013-09-06T22:00:59.124] DEBUG    Details...
 
-[2013-09-06T22:01:49.124] STATS 1 beat per second
+[2013-09-06T22:01:49.124] STATS    1 beat per second
 
-[33m[2013-09-06T22:01:49.124] WARNING not looking good[0m
+[33m[2013-09-06T22:01:49.124] WARNING  not looking good[0m
 
-[31m[2013-09-06T22:01:49.124] ERROR looking bad[0m
+[31m[2013-09-06T22:01:49.124] ERROR    looking bad[0m
 
 [31m[2013-09-06T22:01:49.124] CRITICAL sooo bad[0m
 
-[31m[2013-09-06T22:01:49.124] FATAL shoot[0m
+[31m[2013-09-06T22:01:49.124] FATAL    shoot[0m
 [31m  obj: { "field1" : "hi", "field2": 2 }[0m
 [31m  arr: ["hi", {"sub1": true}][0m

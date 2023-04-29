@@ -480,6 +480,11 @@ static const struct json_path_container line_format_handlers = {
         .with_description("The minimum width of the field")
         .for_field(&external_log_format::json_format_element::jfe_min_width),
 
+    yajlpp::property_handler("auto-width")
+        .with_description("Automatically detect the necessary width of the "
+                          "field based on the observed values")
+        .for_field(&external_log_format::json_format_element::jfe_auto_width),
+
     yajlpp::property_handler("max-width")
         .with_min_value(0)
         .with_synopsis("<size>")

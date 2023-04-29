@@ -7,6 +7,15 @@ Features:
   operate on the selected line instead.
 * Added CTRL-D and CTRL-U hotkeys to move down/up by half
   a page.
+* Added an `auto-width` flag to the elements of the
+  `line-format` array that indicates that the width of the
+  field should automatically be determined by the observed
+  values.
+* Number fields used in a `line-format` now default to
+  being right-aligned.
+
+Bug Fixes:
+* Hidden values in JSON logs are now hidden by default.
 
 ## lnav v0.11.1
 

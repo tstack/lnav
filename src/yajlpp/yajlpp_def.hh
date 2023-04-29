@@ -80,6 +80,17 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename P>
+    json_path_handler(P path,
+                      int (*number_func)(yajlpp_parse_context*,
+                                         const char* numberVal,
+                                         size_t numberLen))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_number
+            = (int (*)(void*, const char*, size_t)) number_func;
+    }
+
+    template<typename P>
     json_path_handler(P path) : json_path_handler_base(path)
     {
     }
@@ -122,6 +133,15 @@ struct json_path_handler : public json_path_handler_base {
     json_path_handler& add_cb(int (*double_func)(yajlpp_parse_context*, double))
     {
         this->jph_callbacks.yajl_double = (int (*)(void*, double)) double_func;
+        return *this;
+    }
+
+    json_path_handler& add_cb(int (*number_func)(yajlpp_parse_context*,
+                                                 const char*,
+                                                 size_t))
+    {
+        this->jph_callbacks.yajl_number
+            = (int (*)(void*, const char*, size_t)) number_func;
         return *this;
     }
 

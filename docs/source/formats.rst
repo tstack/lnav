@@ -138,7 +138,7 @@ object with the following fields:
   converted from the raw JSON encoding into this format.  Each element
   is either an object that defines which fields should be inserted into
   the final message string and or a string constant that should be
-  inserted.  For example, the following configuration will tranform each
+  inserted.  For example, the following configuration will transform each
   log message object into a string that contains the timestamp, followed
   by a space, and then the message body:
 
@@ -164,6 +164,8 @@ object with the following fields:
   :max-width: The maximum width for the field.  If the value for the field
     in a given log message is longer, the overflow algorithm will be applied
     to try and shorten the field. (v0.8.2+)
+  :auto-width: Flag that indicates that the width of the field should
+    automatically be set to the widest value seen. (v0.11.2)
   :align: Specifies the alignment for the field, either "left" or "right".
     If "left", padding to meet the minimum-width will be added on the right.
     If "right", padding will be added on the left. (v0.8.2+)

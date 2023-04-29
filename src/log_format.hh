@@ -129,6 +129,7 @@ struct logline_value_meta {
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
     int lvm_column{-1};
+    nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
     bool lvm_hidden{false};
     bool lvm_user_hidden{false};
@@ -258,6 +259,7 @@ struct logline_value_stats {
 
     void clear()
     {
+        this->lvs_width = 0;
         this->lvs_count = 0;
         this->lvs_total = 0;
         this->lvs_min_value = std::numeric_limits<double>::max();
@@ -268,6 +270,7 @@ struct logline_value_stats {
 
     void add_value(double value);
 
+    int64_t lvs_width;
     int64_t lvs_count;
     double lvs_total;
     double lvs_min_value;
