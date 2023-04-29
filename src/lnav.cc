@@ -2623,9 +2623,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    bool selectable
-        = (lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR);
-
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
@@ -2661,11 +2658,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }))
         .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(2_vl)
-        .set_overlay_source(log_fos)
-        .set_selectable(selectable);
-    lnav_data.ld_views[LNV_TEXT]
-        .set_sub_source(&lnav_data.ld_text_source)
-        .set_selectable(selectable);
+        .set_overlay_source(log_fos);
+    auto sel_reload_delegate = [](textview_curses& tc) {
+        tc.set_selectable(lnav_config.lc_ui_movement.mode
+                          == config_movement_mode::CURSOR);
+    };
+    lnav_data.ld_views[LNV_LOG].tc_reload_config_delegate = sel_reload_delegate;
+    lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);
+    lnav_data.ld_views[LNV_LOG].tc_reload_config_delegate = sel_reload_delegate;
     lnav_data.ld_views[LNV_HISTOGRAM].set_sub_source(
         &lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);

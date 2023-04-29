@@ -701,8 +701,10 @@ public:
     }
 
     std::function<void(textview_curses&)> tc_state_event_handler;
+    std::function<void(textview_curses&)> tc_reload_config_delegate;
 
     nonstd::optional<role_t> tc_cursor_role;
+
 protected:
     class grep_highlighter {
     public:

@@ -234,6 +234,10 @@ textview_curses::reload_config(error_reporter& reporter)
                       .with_nestable(false);
         }
     }
+
+    if (this->tc_reload_config_delegate) {
+        this->tc_reload_config_delegate(*this);
+    }
 }
 
 void
