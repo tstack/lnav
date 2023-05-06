@@ -25,6 +25,10 @@
             }
         },
         "level-field": "level",
+        "level": {
+            "info": "info",
+            "debug": "debug"
+        },
         "sample": [
             {
                 "line": "abc: foo"

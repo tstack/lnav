@@ -258,6 +258,11 @@ object with the following fields:
   of exact numbers, you can supply a pattern and the number found in the log
   will be converted to a string for pattern-matching.
 
+  .. note:: The regular expression is not anchored to the start of the
+     string by default, so an expression like :code:`1` will match
+     :code:`-1`.  If you want to exactly match :code:`1`, you would
+     use :code:`^1$` as the expression.
+
 :multiline: If false, **lnav** will consider any log lines that do not
   match one of the message patterns to be in error when checking files with
   the '-C' option.  This flag will not affect normal viewing operation.

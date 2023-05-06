@@ -2281,19 +2281,75 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .append("\n")
                     .append("captured level = ")
                     .append_quoted(level_cap->to_string());
-                errors.emplace_back(
-                    lnav::console::user_message::error(
-                        attr_line_t("invalid sample log message: ")
-                            .append(lnav::to_json(elf_sample.s_line.pp_value)))
-                        .with_reason(attr_line_t()
-                                         .append_quoted(lnav::roles::symbol(
-                                             level_names[level]))
-                                         .append(" does not match the expected "
-                                                 "level of ")
-                                         .append_quoted(lnav::roles::symbol(
-                                             level_names[elf_sample.s_level])))
-                        .with_snippet(elf_sample.s_line.to_snippet())
-                        .with_note(note_al));
+                if (level_cap && !this->elf_level_patterns.empty()) {
+                    static thread_local auto md
+                        = lnav::pcre2pp::match_data::unitialized();
+
+                    note_al.append("\nlevel regular expression match results:");
+                    for (const auto& level_pattern : this->elf_level_patterns) {
+                        attr_line_t regex_al = level_pattern.second.lp_pcre
+                                                   .pp_value->get_pattern();
+                        lnav::snippets::regex_highlighter(
+                            regex_al,
+                            -1,
+                            line_range{0, (int) regex_al.length()});
+                        note_al.append("\n  ")
+                            .append(
+                                lnav::roles::symbol(level_pattern.second.lp_pcre
+                                                        .pp_path.to_string()))
+                            .append(" = ")
+                            .append(regex_al)
+                            .append("\n    ");
+                        auto match_res = level_pattern.second.lp_pcre.pp_value
+                                             ->capture_from(level_cap.value())
+                                             .into(md)
+                                             .matches(PCRE2_NO_UTF_CHECK)
+                                             .ignore_error();
+                        if (!match_res) {
+                            note_al.append(lnav::roles::warning("no match"));
+                            continue;
+                        }
+
+                        note_al.append(level_cap.value())
+                            .append("\n    ")
+                            .append(md.leading().length(), ' ')
+                            .append("^"_snippet_border);
+                        if (match_res->f_all.length() > 2) {
+                            note_al.append(
+                                lnav::roles::snippet_border(std::string(
+                                    match_res->f_all.length() - 2, '-')));
+                        }
+                        if (match_res->f_all.length() > 1) {
+                            note_al.append("^"_snippet_border);
+                        }
+                    }
+                }
+                auto um
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid sample log message: ")
+                              .append(
+                                  lnav::to_json(elf_sample.s_line.pp_value)))
+                          .with_reason(
+                              attr_line_t()
+                                  .append_quoted(
+                                      lnav::roles::symbol(level_names[level]))
+                                  .append(" does not match the expected "
+                                          "level of ")
+                                  .append_quoted(lnav::roles::symbol(
+                                      level_names[elf_sample.s_level])))
+                          .with_snippet(elf_sample.s_line.to_snippet())
+                          .with_note(note_al);
+                if (!this->elf_level_patterns.empty()) {
+                    um.with_help(
+                        attr_line_t("Level regexes are not anchored to the "
+                                    "start/end of the string.  Prepend ")
+                            .append_quoted("^"_symbol)
+                            .append(" to the expression to match from the "
+                                    "start of the string and append ")
+                            .append_quoted("$"_symbol)
+                            .append(" to match up to the end of the string."));
+                }
+                errors.emplace_back(um);
             }
 
             {
