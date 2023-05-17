@@ -2816,7 +2816,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         auto colon_index = file_path.rfind(':');
         if (colon_index != std::string::npos) {
-            file_path_without_trailer = file_path.substr(0, colon_index);
             auto top_range = scn::string_view{&file_path[colon_index + 1],
                                               &(*file_path.cend())};
             auto scan_res = scn::scan_value<int>(top_range);
