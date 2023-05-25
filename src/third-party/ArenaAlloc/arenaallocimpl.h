@@ -13,6 +13,8 @@
 #include <stdio.h>
 #endif
 
+#include <stdint.h>
+
 namespace ArenaAlloc
 {
 
@@ -108,7 +110,9 @@ namespace ArenaAlloc
       value |= value >> 4;
       value |= value >> 8;
       value |= value >> 16;
+#if SIZE_MAX > UINT32_MAX
       value |= value >> 32;
+#endif
 
       return value + 1;            
     }
