@@ -95,7 +95,7 @@ public:
 
     bool matches(const logfile& lf,
                  logfile::const_iterator ll,
-                 shared_buffer_ref& line) override
+                 const shared_buffer_ref& line) override
     {
         return this->pf_pcre->find_in(line.to_string_fragment())
             .ignore_error()
@@ -126,7 +126,7 @@ public:
 
     bool matches(const logfile& lf,
                  logfile::const_iterator ll,
-                 shared_buffer_ref& line) override;
+                 const shared_buffer_ref& line) override;
 
     std::string to_command() const override;
 

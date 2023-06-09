@@ -701,3 +701,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT basename(filepath),descriptor,mimetype,content FROM lnav_file_metadata' \
     logfile_syslog.1.gz
+
+run_cap_test ${lnav_test} -n \
+    -c ':filter-in Air Mob' \
+    ${test_dir}/logfile_ansi.1

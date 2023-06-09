@@ -43,7 +43,6 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "k_merge_tree.h"
-#include "lnav.events.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "md2attr_line.hh"
@@ -221,9 +220,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
               (char*) this->lss_token_value.c_str(),
               this->lss_token_value.size());
     format->annotate(line, this->lss_token_attrs, this->lss_token_values);
-    if (this->lss_token_line->get_sub_offset() != 0) {
-        this->lss_token_attrs.clear();
-    }
     if (flags & RF_REWRITE) {
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
@@ -1892,7 +1888,7 @@ log_location_history::loc_history_forward(vis_line_t current_top)
 bool
 sql_filter::matches(const logfile& lf,
                     logfile::const_iterator ll,
-                    shared_buffer_ref& line)
+                    const shared_buffer_ref& line)
 {
     if (!ll->is_message()) {
         return false;

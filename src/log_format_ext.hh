@@ -282,11 +282,18 @@ public:
         bool hd_blink{false};
     };
 
-    long value_line_count(const intern_string_t ist,
-                          bool top_level,
-                          nonstd::optional<double> val = nonstd::nullopt,
-                          const unsigned char* str = nullptr,
-                          ssize_t len = -1);
+    struct value_line_count_result {
+        size_t vlcr_count{1};
+        bool vlcr_has_ansi{false};
+        bool vlcr_valid_utf{true};
+    };
+
+    value_line_count_result value_line_count(const intern_string_t ist,
+                                             bool top_level,
+                                             nonstd::optional<double> val
+                                             = nonstd::nullopt,
+                                             const unsigned char* str = nullptr,
+                                             ssize_t len = -1);
 
     bool has_value_def(const intern_string_t ist) const
     {

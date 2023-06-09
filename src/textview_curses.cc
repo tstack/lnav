@@ -79,7 +79,7 @@ text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
 void
 text_filter::add_line(logfile_filter_state& lfs,
                       logfile::const_iterator ll,
-                      shared_buffer_ref& line)
+                      const shared_buffer_ref& line)
 {
     bool match_state = this->matches(*lfs.tfs_logfile, ll, line);
 
@@ -442,7 +442,6 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
 
     scrub_ansi_string(str, &sa);
-
     struct line_range body, orig_line;
 
     body = find_string_attr_range(sa, &SA_BODY);
@@ -862,7 +861,7 @@ template class bookmark_vector<vis_line_t>;
 bool
 empty_filter::matches(const logfile& lf,
                       logfile::const_iterator ll,
-                      shared_buffer_ref& line)
+                      const shared_buffer_ref& line)
 {
     return false;
 }

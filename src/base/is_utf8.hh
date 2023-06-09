@@ -31,17 +31,28 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "intern_string.hh"
 #include "optional.hpp"
 
 struct utf8_scan_result {
-    ssize_t usr_end{0};
+    const char* usr_message{nullptr};
+    size_t usr_faulty_bytes{0};
+    ssize_t usr_valid_end{0};
+    nonstd::optional<ssize_t> usr_term;
     bool usr_has_ansi{false};
+
+    const char* term_ptr(const string_fragment& frag) const
+    {
+        if (this->usr_term) {
+            return &frag[this->usr_term.value()];
+        } else {
+            return nullptr;
+        }
+    }
+    bool is_valid() const { return this->usr_message == nullptr; }
 };
 
-utf8_scan_result is_utf8(const unsigned char* str,
-                         size_t len,
-                         const char** message,
-                         int* faulty_bytes,
+utf8_scan_result is_utf8(string_fragment frag,
                          nonstd::optional<unsigned char> terminator
                          = nonstd::nullopt);
 

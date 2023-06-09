@@ -292,8 +292,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_d7362cffc8335c2fe6b6527315de59bd6f5dcc7f.out \
     $(srcdir)/%reldir%/test_json_format.sh_dfff27a651650a04d93de9a06ab5480e94ce3a79.err \
     $(srcdir)/%reldir%/test_json_format.sh_dfff27a651650a04d93de9a06ab5480e94ce3a79.out \
+    $(srcdir)/%reldir%/test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.err \
+    $(srcdir)/%reldir%/test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.out \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.err \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.out \
+    $(srcdir)/%reldir%/test_logfile.sh_05d1505168bf34b89fc0d1a39f1409cfe798119e.err \
+    $(srcdir)/%reldir%/test_logfile.sh_05d1505168bf34b89fc0d1a39f1409cfe798119e.out \
     $(srcdir)/%reldir%/test_logfile.sh_08d731a04c877a34819b35de185e30a74c9fd497.err \
     $(srcdir)/%reldir%/test_logfile.sh_08d731a04c877a34819b35de185e30a74c9fd497.out \
     $(srcdir)/%reldir%/test_logfile.sh_09bd16e044302f6b121092534708594bdad11b5a.err \
@@ -992,8 +996,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
     $(srcdir)/%reldir%/test_text_file.sh_6a24078983cf1b7a80b6fb65d5186cd125498136.err \
     $(srcdir)/%reldir%/test_text_file.sh_6a24078983cf1b7a80b6fb65d5186cd125498136.out \
-    $(srcdir)/%reldir%/test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.out \
     $(srcdir)/%reldir%/test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.err \
+    $(srcdir)/%reldir%/test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.out \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.err \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.out \
     $(srcdir)/%reldir%/test_text_file.sh_8b2cd055e6a1db2ed9b2af2a917f8556395fa653.err \

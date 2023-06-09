@@ -109,6 +109,8 @@ shared_buffer_ref::shared_buffer_ref(shared_buffer_ref&& other) noexcept
         other.sb_data = nullptr;
         other.sb_length = 0;
     }
+    this->sb_metadata = other.sb_metadata;
+    other.sb_metadata = {};
 }
 
 bool
@@ -148,6 +150,7 @@ shared_buffer_ref::disown()
     this->sb_owner = nullptr;
     this->sb_data = nullptr;
     this->sb_length = 0;
+    this->sb_metadata = {};
 }
 
 void

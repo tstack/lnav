@@ -119,13 +119,13 @@ public:
 
     void add_line(logfile_filter_state& lfs,
                   logfile_const_iterator ll,
-                  shared_buffer_ref& line);
+                  const shared_buffer_ref& line);
 
     void end_of_message(logfile_filter_state& lfs);
 
     virtual bool matches(const logfile& lf,
                          logfile_const_iterator ll,
-                         shared_buffer_ref& line)
+                         const shared_buffer_ref& line)
         = 0;
 
     virtual std::string to_command() const = 0;
@@ -151,7 +151,7 @@ public:
 
     bool matches(const logfile& lf,
                  logfile_const_iterator ll,
-                 shared_buffer_ref& line) override;
+                 const shared_buffer_ref& line) override;
 
     std::string to_command() const override;
 };

@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "base/is_utf8.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
@@ -418,10 +419,27 @@ struct json_log_userdata {
     {
     }
 
+    void add_sub_lines_for(const intern_string_t ist,
+                           bool top_level,
+                           nonstd::optional<double> val = nonstd::nullopt,
+                           const unsigned char* str = nullptr,
+                           ssize_t len = -1)
+    {
+        auto res
+            = this->jlu_format->value_line_count(ist, top_level, val, str, len);
+        this->jlu_has_ansi |= res.vlcr_has_ansi;
+        if (!res.vlcr_valid_utf) {
+            this->jlu_valid_utf = false;
+        }
+        this->jlu_sub_line_count += res.vlcr_count;
+    }
+
     external_log_format* jlu_format{nullptr};
     const logline* jlu_line{nullptr};
     logline* jlu_base_line{nullptr};
     int jlu_sub_line_count{1};
+    bool jlu_has_ansi{false};
+    bool jlu_valid_utf{true};
     yajl_handle jlu_handle{nullptr};
     const char* jlu_line_value{nullptr};
     size_t jlu_line_size{0};
@@ -440,8 +458,7 @@ read_json_null(yajlpp_parse_context* ypc)
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
+    jlu->add_sub_lines_for(field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -452,8 +469,7 @@ read_json_bool(yajlpp_parse_context* ypc, int val)
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
+    jlu->add_sub_lines_for(field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -524,42 +540,11 @@ read_json_number(yajlpp_parse_context* ypc,
         }
     }
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name,
-                                             ypc->is_level(1),
-                                             val,
-                                             (const unsigned char*) numberVal,
-                                             numberLen);
-
-    return 1;
-}
-
-static int
-read_json_double(yajlpp_parse_context* ypc, double val)
-{
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
-
-    if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        double divisor = jlu->jlu_format->elf_timestamp_divisor;
-        struct timeval tv;
-
-        tv.tv_sec = val / divisor;
-        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
-        if (jlu->jlu_format->lf_date_time.dts_local_time) {
-            struct tm ltm;
-            localtime_r(&tv.tv_sec, &ltm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-            ltm.tm_zone = nullptr;
-#endif
-            ltm.tm_isdst = 0;
-            tv.tv_sec = tm2sec(&ltm);
-        }
-        jlu->jlu_base_line->set_time(tv);
-    }
-
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1), val);
+    jlu->add_sub_lines_for(field_name,
+                           ypc->is_level(1),
+                           val,
+                           (const unsigned char*) numberVal,
+                           numberLen);
 
     return 1;
 }
@@ -573,8 +558,7 @@ json_array_start(void* ctx)
     if (ypc->ypc_path_index_stack.size() == 2) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
 
-        jlu->jlu_sub_line_count
-            += jlu->jlu_format->value_line_count(field_name, true);
+        jlu->add_sub_lines_for(field_name, true);
         jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
     }
 
@@ -798,6 +782,8 @@ external_log_format::scan(logfile& lf,
                     ll.set_level((log_level_t) (ll.get_level_and_flags()
                                                 | LEVEL_CONTINUED));
                 }
+                ll.set_has_ansi(jlu.jlu_has_ansi);
+                ll.set_valid_utf(jlu.jlu_valid_utf);
                 dst.emplace_back(ll);
             }
         } else {
@@ -1366,7 +1352,7 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         jlu->jlu_base_line->set_opid(opid);
     }
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+    jlu->add_sub_lines_for(
         field_name, ypc->is_level(1), nonstd::nullopt, str, len);
 
     return 1;
@@ -1758,7 +1744,11 @@ external_log_format::get_subline(const logline& ll,
                 lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
                     + lv.lv_meta.lvm_name.size() + 2;
                 do {
-                    nl_pos = str.find('\n', curr_pos);
+                    auto frag = string_fragment::from_str_range(
+                        str, curr_pos, str.size());
+                    auto utf_scan_res = is_utf8(frag, '\n');
+
+                    nl_pos = utf_scan_res.usr_term.value_or(std::string::npos);
                     if (nl_pos != std::string::npos) {
                         line_len = nl_pos - curr_pos;
                     } else {
@@ -1817,6 +1807,8 @@ external_log_format::get_subline(const logline& ll,
                   this->jlf_cached_line.data() + this_off,
                   next_off - this_off);
     }
+    sbr.get_metadata().m_valid_utf = ll.is_valid_utf();
+    sbr.get_metadata().m_has_ansi = ll.has_ansi();
     this->jlf_cached_sub_range.lr_start = this_off;
     this->jlf_cached_sub_range.lr_end = next_off;
     this->jlf_line_values.lvv_sbr = sbr;
@@ -2944,19 +2936,38 @@ external_log_format::match_mime_type(const file_format_t ff) const
     return this->elf_mime_types.count(ff) == 1;
 }
 
-long
+auto
 external_log_format::value_line_count(const intern_string_t ist,
                                       bool top_level,
                                       nonstd::optional<double> val,
                                       const unsigned char* str,
-                                      ssize_t len)
+                                      ssize_t len) -> value_line_count_result
 {
     const auto iter = this->elf_value_defs.find(ist);
-    long line_count
-        = (str != nullptr) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
+    value_line_count_result retval;
+    if (str != nullptr) {
+        while (len > 0) {
+            auto frag = string_fragment::from_bytes(str, len);
+            auto utf_res = is_utf8(frag, '\n');
+            if (!utf_res.is_valid()) {
+                retval.vlcr_valid_utf = false;
+            }
+            retval.vlcr_has_ansi |= utf_res.usr_has_ansi;
+            if (!utf_res.usr_term) {
+                break;
+            }
+            retval.vlcr_count += 1;
+            str += utf_res.usr_term.value() + 1;
+            len -= utf_res.usr_term.value() + 1;
+        }
+    }
 
     if (iter == this->elf_value_defs.end()) {
-        return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
+        if (this->jlf_hide_extra || !top_level) {
+            retval.vlcr_count = 0;
+        }
+
+        return retval;
     }
 
     if (iter->second->vd_meta.lvm_values_index) {
@@ -2970,7 +2981,8 @@ external_log_format::value_line_count(const intern_string_t ist,
         }
     }
     if (iter->second->vd_meta.is_hidden()) {
-        return 0;
+        retval.vlcr_count = 0;
+        return retval;
     }
 
     if (std::find_if(this->jlf_line_format.begin(),
@@ -2978,10 +2990,10 @@ external_log_format::value_line_count(const intern_string_t ist,
                      json_field_cmp(json_log_field::VARIABLE, ist))
         != this->jlf_line_format.end())
     {
-        return line_count - 1;
+        retval.vlcr_count -= 1;
     }
 
-    return line_count;
+    return retval;
 }
 
 log_level_t

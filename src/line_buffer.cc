@@ -691,31 +691,16 @@ line_buffer::load_next_buffer()
     // log_debug("END preload read");
 
     if (start > this->lb_last_line_offset) {
-        auto* line_start = this->lb_alt_buffer.value().begin();
+        const auto* line_start = this->lb_alt_buffer.value().begin();
 
         do {
-            const char* msg = nullptr;
-            int faulty_bytes = 0;
-            bool valid_utf = true;
-            char* lf = nullptr;
-
             auto before = line_start - this->lb_alt_buffer->begin();
             auto remaining = this->lb_alt_buffer.value().size() - before;
-            auto utf_scan_res = is_utf8((unsigned char*) line_start,
-                                        remaining,
-                                        &msg,
-                                        &faulty_bytes,
-                                        '\n');
-            if (msg != nullptr) {
-                lf = (char*) memchr(line_start, '\n', remaining);
-                utf_scan_res.usr_end = lf - line_start;
-                valid_utf = false;
-            }
-            if (utf_scan_res.usr_end >= 0) {
-                lf = line_start + utf_scan_res.usr_end;
-            }
+            auto frag = string_fragment::from_bytes(line_start, remaining);
+            auto utf_scan_res = is_utf8(frag, '\n');
+            auto lf = utf_scan_res.term_ptr(frag);
             this->lb_alt_line_starts.emplace_back(before);
-            this->lb_alt_line_is_utf.emplace_back(valid_utf);
+            this->lb_alt_line_is_utf.emplace_back(utf_scan_res.is_valid());
             this->lb_alt_line_has_ansi.emplace_back(utf_scan_res.usr_has_ansi);
 
             if (lf != nullptr) {
@@ -1095,22 +1080,11 @@ line_buffer::load_next_line(file_range prev_line)
         }
 
         if (!found_in_cache) {
-            const char* msg;
-            int faulty_bytes;
-
-            auto scan_res = is_utf8((unsigned char*) line_start,
-                                    retval.li_file_range.fr_size,
-                                    &msg,
-                                    &faulty_bytes,
-                                    '\n');
-            if (msg != nullptr) {
-                lf = (char*) memchr(
-                    line_start, '\n', retval.li_file_range.fr_size);
-                utf8_end = lf - line_start;
-                retval.li_valid_utf = false;
-            } else {
-                utf8_end = scan_res.usr_end;
-            }
+            auto frag = string_fragment::from_bytes(
+                line_start, retval.li_file_range.fr_size);
+            auto scan_res = is_utf8(frag, '\n');
+            utf8_end = scan_res.usr_term.value_or(-1);
+            retval.li_valid_utf = scan_res.is_valid();
             retval.li_has_ansi = scan_res.usr_has_ansi;
         }
 
@@ -1205,6 +1179,9 @@ line_buffer::load_next_line(file_range prev_line)
               retval.li_file_range.fr_offset,
               (int) retval.li_partial);
 #endif
+
+    retval.li_file_range.fr_metadata.m_has_ansi = retval.li_has_ansi;
+    retval.li_file_range.fr_metadata.m_valid_utf = retval.li_valid_utf;
     return Ok(retval);
 }
 

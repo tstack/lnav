@@ -12,6 +12,11 @@ run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json.json
 
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':filter-in up service' \
+    ${test_dir}/logfile_json.json
+
 # json log format is not working"
 run_cap_test ${lnav_test} -n -I ${test_dir} \
     -c ':switch-to-view pretty' \

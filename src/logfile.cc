@@ -326,8 +326,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     switch (found) {
         case log_format::SCAN_MATCH: {
             if (!this->lf_index.empty()) {
-                this->lf_index.back().set_valid_utf(li.li_valid_utf);
-                this->lf_index.back().set_has_ansi(li.li_has_ansi);
+                auto& last_line = this->lf_index.back();
+
+                last_line.set_valid_utf(last_line.is_valid_utf()
+                                        && li.li_valid_utf);
+                last_line.set_has_ansi(last_line.has_ansi() || li.li_has_ansi);
             }
             if (prescan_size > 0 && this->lf_index.size() >= prescan_size
                 && prescan_time != this->lf_index[prescan_size - 1].get_time())
@@ -607,13 +610,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             sbr.rtrim(is_line_ending);
 
             if (li.li_valid_utf && li.li_has_ansi) {
-                auto tmp_line = sbr.to_string_fragment().to_string();
-
-                scrub_ansi_string(tmp_line, nullptr);
-                memcpy(sbr.get_writable_data(tmp_line.length()),
-                       tmp_line.c_str(),
-                       tmp_line.length());
-                sbr.narrow(0, tmp_line.length());
+                sbr.erase_ansi();
             }
 
             this->lf_longest_line
