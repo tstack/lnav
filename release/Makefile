@@ -1,5 +1,5 @@
 
-VERSION=0.11.1
+VERSION=0.11.2
 
 VERSION_TAG=v$(VERSION)
 
@@ -12,18 +12,18 @@ clean-outbox: outbox
 	rm -f outbox/*
 
 PACKAGE_URLS = \
-	https://www.libarchive.org/downloads/libarchive-3.6.1.tar.gz \
+	https://www.libarchive.org/downloads/libarchive-3.6.2.tar.gz \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
-	ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.3.tar.gz \
-	https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.40/pcre2-10.40.tar.gz \
+	ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz \
+	https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
-	https://zlib.net/zlib-1.2.12.tar.gz \
+	https://zlib.net/zlib-1.2.13.tar.gz \
 	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
-	https://www.sqlite.org/2022/sqlite-autoconf-3390400.tar.gz \
+	https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
-	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.se/download/curl-7.85.0.tar.gz \
-	https://tukaani.org/xz/xz-5.2.5.tar.gz
+	https://www.libssh2.org/download/libssh2-1.11.0.tar.gz \
+	https://curl.se/download/curl-8.1.2.tar.gz \
+	https://tukaani.org/xz/xz-5.4.3.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs musl
 
@@ -95,7 +95,7 @@ release: osx-package musl-package release-NEWS.md
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.11.1-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.11.2-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f

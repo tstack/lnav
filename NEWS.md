@@ -16,6 +16,7 @@ Features:
 
 Bug Fixes:
 * Hidden values in JSON logs are now hidden by default.
+* Text with ANSI-escapes is now filtered properly.
 
 ## lnav v0.11.1
 

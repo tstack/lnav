@@ -5,7 +5,7 @@ include(cmake/prelude.cmake)
 set(CMAKE_CXX_STANDARD 14)
 project(
         lnav
-        VERSION 0.11.1
+        VERSION 0.11.2
         DESCRIPTION "An advanced log file viewer for the small-scale."
         HOMEPAGE_URL "https://lnav.org/"
         LANGUAGES CXX C
