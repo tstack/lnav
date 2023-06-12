@@ -79,25 +79,20 @@ xterm-256color\
 "
 
 RUN cd /extract && for pkg in /*.tar.gz; do tar xvfz "$pkg"; done
-RUN cd /extract/make-4.2.1 && ./configure --prefix=/fake.root && make && make install
-RUN cd /extract/readline-* && ./configure --prefix=/fake.root && make && make install
-RUN cd /extract/bzip2-1.0.8 && make install PREFIX=/fake.root
-RUN cd /extract/sqlite-* && \
- ./configure --disable-editline --prefix=/fake.root \
-     CFLAGS="${SQLITE_CFLAGS}" \
-     && \
- make && make install
+RUN cd /extract/make-4.2.1 && ./configure --prefix=/fake.root && make -j2 && make install && make clean
+RUN cd /extract/readline-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
+RUN cd /extract/bzip2-1.0.8 && make install PREFIX=/fake.root && make clean
 
 RUN cd /extract/sqlite-* && \
  ./configure --disable-editline --prefix=/fake.root \
      CFLAGS="${SQLITE_CFLAGS}" \
      && \
- make && make install
+ make -j2 && make install && make clean
 
 RUN cd /extract/openssl-* && \
  ./config --prefix=/fake.root -fPIC && \
- make && \
- make install
+ make -j2 && \
+ make install && make clean
 
 RUN cd /extract/ncurses-* && \
  ./configure --prefix=/fake.root \
@@ -109,15 +104,15 @@ RUN cd /extract/ncurses-* && \
      --enable-termcap \
      --with-fallbacks=$NCURSES_FALLBACKS \
      && \
- make && make install
+ make -j2 && make install && make clean
 
 RUN cd /extract/pcre2-* && \
  ./configure --prefix=/fake.root \
      --enable-jit \
      && \
- make && make install
+ make -j2 && make install && make clean
 
-RUN cd /extract/zlib-* && ./configure --prefix=/fake.root && make && make install
+RUN cd /extract/zlib-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
 
 RUN cd /extract/libssh2-* && \
  ./configure --prefix=/fake.root \
@@ -125,8 +120,8 @@ RUN cd /extract/libssh2-* && \
      --with-libz-prefix=/fake.root \
      "CPPFLAGS=-I/fake.root/include" \
      "LDFLAGS=-ldl -L/fake.root/lib" && \
- make && \
- make install
+ make -j2 && \
+ make install && make clean
 
 RUN cd /extract/curl-* && \
  ./configure --prefix=/fake.root \
@@ -134,8 +129,8 @@ RUN cd /extract/curl-* && \
      --with-ssl=/fake.root \
      --with-zlib=/fake.root \
      "LDFLAGS=-ldl" && \
- make && \
- make install
+ make -j2 && \
+ make install && make clean
 
 RUN cd /extract/xz-* && \
  ./configure --prefix=/fake.root \
@@ -143,8 +138,8 @@ RUN cd /extract/xz-* && \
      "LDFLAGS=-L/fake.root/lib" \
      "CPPFLAGS=-I/fake.root/include" \
       && \
- make && \
- make install
+ make -j2 && \
+ make install && make clean
 
 RUN cd /extract/libarchive-* && \
  ./configure --prefix=/fake.root \
@@ -152,8 +147,8 @@ RUN cd /extract/libarchive-* && \
      "LDFLAGS=-L/fake.root/lib" \
      "CPPFLAGS=-I/fake.root/include" \
       && \
- make && \
- make install
+ make -j2 && \
+ make install && make clean
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

@@ -15,4 +15,4 @@ cd lbuild
     LIBS="-L/fake.root/lib -lexecinfo -lssh2 -llzma -lssl -lcrypto -lz" \
     --enable-static \
     PATH="/fake.root/bin:${PATH}"
-make -j4
+make -j2

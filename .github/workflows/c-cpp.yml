@@ -4,6 +4,8 @@ on:
   push:
     branches: [ master ]
     tags: ['*']
+    paths-ignore:
+      - docs
   pull_request:
     branches: [ master ]
 
