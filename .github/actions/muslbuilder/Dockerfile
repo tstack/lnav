@@ -117,7 +117,7 @@ RUN cd /extract/pcre2-* && \
      && \
  make && make install
 
-RUN cd /extract/zlib-1.2.12 && ./configure --prefix=/fake.root && make && make install
+RUN cd /extract/zlib-* && ./configure --prefix=/fake.root && make && make install
 
 RUN cd /extract/libssh2-* && \
  ./configure --prefix=/fake.root \
