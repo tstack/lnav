@@ -1,4 +1,4 @@
-FROM alpine:3.17
+FROM alpine:3.16
 
 LABEL com.github.actions.name="C++ MUSL Builder Slim"
 LABEL com.github.actions.description="Provides a C++ MUSL environment"
