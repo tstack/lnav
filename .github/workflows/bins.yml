@@ -13,4 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: make
-        uses: ./.github/actions/muslbuilder
+        uses: addnab/docker-run-action@v3
+        with:
+          image: tstack/lnav-build:1
