@@ -33,7 +33,7 @@ RUN apk update && apk add --no-cache \
 
 ADD https://www.libarchive.org/downloads/libarchive-3.6.2.tar.gz /
 ADD https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz /
-ADD ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz /
+ADD https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz /
 ADD https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz /
 ADD https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz /
 ADD https://zlib.net/zlib-1.2.13.tar.gz /
