@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -Eeuxo pipefail
 cd $GITHUB_WORKSPACE
