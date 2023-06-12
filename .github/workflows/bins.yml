@@ -16,3 +16,4 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: tstack/lnav-build:1
+          run: /entrypoint.sh
