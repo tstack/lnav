@@ -3,7 +3,7 @@
 set -Eeuxo pipefail
 
 cd $GITHUB_WORKSPACE
-../autogen.sh
+./autogen.sh
 mkdir lbuild
 cd lbuild
 ../configure \
