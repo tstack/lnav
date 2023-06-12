@@ -3,9 +3,9 @@
 set -Eeuxo pipefail
 
 cd $GITHUB_WORKSPACE
+../autogen.sh
 mkdir lbuild
 cd lbuild
-../autogen.sh
 ../configure \
     --with-libarchive=/fake.root \
     CFLAGS='-static -g1 -gz=zlib -no-pie -O2' \
