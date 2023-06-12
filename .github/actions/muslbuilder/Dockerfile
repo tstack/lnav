@@ -78,28 +78,28 @@ xterm,\
 xterm-256color\
 "
 
-RUN for pkg in /*.tar.gz; do tar xvfz "$pkg"; done
+RUN cd /extract && for pkg in /*.tar.gz; do tar xvfz "$pkg"; done
 RUN cd /extract/make-4.2.1 && ./configure --prefix=/fake.root && make && make install
 RUN cd /extract/readline-* && ./configure --prefix=/fake.root && make && make install
-RUN cd bzip2-1.0.8 && make install PREFIX=/fake.root
-RUN cd sqlite-* && \
+RUN cd /extract/bzip2-1.0.8 && make install PREFIX=/fake.root
+RUN cd /extract/sqlite-* && \
  ./configure --disable-editline --prefix=/fake.root \
      CFLAGS="${SQLITE_CFLAGS}" \
      && \
  make && make install
 
-RUN cd sqlite-* && \
+RUN cd /extract/sqlite-* && \
  ./configure --disable-editline --prefix=/fake.root \
      CFLAGS="${SQLITE_CFLAGS}" \
      && \
  make && make install
 
-RUN cd openssl-* && \
+RUN cd /extract/openssl-* && \
  ./config --prefix=/fake.root -fPIC && \
  make && \
  make install
 
-RUN cd ncurses-* && \
+RUN cd /extract/ncurses-* && \
  ./configure --prefix=/fake.root \
      --enable-ext-mouse \
      --enable-sigwinch \
@@ -111,15 +111,15 @@ RUN cd ncurses-* && \
      && \
  make && make install
 
-RUN cd pcre2-* && \
+RUN cd /extract/pcre2-* && \
  ./configure --prefix=/fake.root \
      --enable-jit \
      && \
  make && make install
 
-RUN cd zlib-1.2.12 && ./configure --prefix=/fake.root && make && make install
+RUN cd /extract/zlib-1.2.12 && ./configure --prefix=/fake.root && make && make install
 
-RUN cd libssh2-* && \
+RUN cd /extract/libssh2-* && \
  ./configure --prefix=/fake.root \
      --with-libssl-prefix=/fake.root \
      --with-libz-prefix=/fake.root \
@@ -128,7 +128,7 @@ RUN cd libssh2-* && \
  make && \
  make install
 
-RUN cd curl-* && \
+RUN cd /extract/curl-* && \
  ./configure --prefix=/fake.root \
      --with-libssh2=/fake.root \
      --with-ssl=/fake.root \
@@ -137,7 +137,7 @@ RUN cd curl-* && \
  make && \
  make install
 
-RUN cd xz-* && \
+RUN cd /extract/xz-* && \
  ./configure --prefix=/fake.root \
      --disable-shared \
      "LDFLAGS=-L/fake.root/lib" \
@@ -146,7 +146,7 @@ RUN cd xz-* && \
  make && \
  make install
 
-RUN cd libarchive-* && \
+RUN cd /extract/libarchive-* && \
  ./configure --prefix=/fake.root \
      --disable-shared \
      "LDFLAGS=-L/fake.root/lib" \
