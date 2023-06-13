@@ -512,12 +512,15 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
+        auto old_top = this->lv_top;
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
-                this->set_selection(top);
+                auto sel_diff = this->lv_selection - old_top;
+                this->set_selection(top + sel_diff);
             } else {
+                auto sel_diff = this->lv_selection - old_top;
                 auto bot = this->get_bottom();
                 unsigned long width;
                 vis_line_t height;
@@ -526,7 +529,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
 
                 if (bot != -1_vl && (bot - top) >= (height - 1)) {
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
-                        this->set_selection(bot - this->lv_tail_space);
+                        this->set_selection(top + sel_diff);
                     }
                 }
             }

@@ -190,7 +190,8 @@ CREATE TABLE lnav_views (
     search TEXT,            -- The text to search for in the view.
     filtering INTEGER,      -- Indicates if the view is applying filters.
     movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
-    top_meta TEXT           -- A JSON object that contains metadata related to the top line in the view.
+    top_meta TEXT,          -- A JSON object that contains metadata related to the top line in the view.
+    selection INTEGER       -- The number of the line that is focused for selection.
 );
 )";
 
@@ -340,6 +341,9 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
+            case 12:
+                sqlite3_result_int(ctx, (int) tc.get_selection());
+                break;
         }
 
         return SQLITE_OK;
@@ -372,7 +376,8 @@ CREATE TABLE lnav_views (
                    const char* search,
                    bool do_filtering,
                    string_fragment movement,
-                   const char* top_meta)
+                   const char* top_meta,
+                   int64_t selection)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source
@@ -398,6 +403,9 @@ CREATE TABLE lnav_views (
                 tab->zErrMsg = sqlite3_mprintf("Invalid time: %s", top_time);
                 return SQLITE_ERROR;
             }
+        }
+        if (tc.is_selectable() && tc.get_selection() != selection) {
+            tc.set_selection(vis_line_t(selection));
         }
         if (top_meta != nullptr) {
             static const intern_string_t SQL_SRC
