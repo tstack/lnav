@@ -259,7 +259,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                 .with_reason(prep_mark_res.unwrapErr()));
     }
 
-    fmt::print(file, FMT_STRING(HEADER), sqlitepp::quote(PACKAGE_VERSION));
+    fmt::print(file, FMT_STRING(HEADER), sqlitepp::quote(PACKAGE_VERSION).in());
 
     std::map<std::string, std::vector<std::string>> file_containers;
     std::set<std::string> raw_files;
@@ -296,7 +296,7 @@ SELECT content_id, format, time_offset FROM lnav_file
         fmt::print(file,
                    FMT_STRING(LOG_DIR_INSERT),
                    container_index,
-                   sqlitepp::quote(container_pair.first));
+                   sqlitepp::quote(container_pair.first).in());
         for (const auto& file_path_str : container_pair.second) {
             fmt::print(file,
                        FMT_STRING(":open $LOG_DIR_{}/{}\n"),
@@ -325,11 +325,11 @@ SELECT content_id, format, time_offset FROM lnav_file
                                       "log_format = {} AND "
                                       "log_line_hash = {}\n"),
                            lmss.lmss_mark ? "1" : "0",
-                           sqlitepp::quote(lmss.lmss_comment),
-                           sqlitepp::quote(lmss.lmss_tags),
+                           sqlitepp::quote(lmss.lmss_comment).in(),
+                           sqlitepp::quote(lmss.lmss_tags).in(),
                            lmss.lmss_time_msecs,
-                           sqlitepp::quote(lmss.lmss_format),
-                           sqlitepp::quote(lmss.lmss_hash));
+                           sqlitepp::quote(lmss.lmss_format).in(),
+                           sqlitepp::quote(lmss.lmss_hash).in());
                 return false;
             });
 
@@ -362,11 +362,11 @@ SELECT content_id, format, time_offset FROM lnav_file
                     FMT_STRING(";REPLACE INTO lnav_view_filters "
                                "(view_name, enabled, type, language, pattern) "
                                "VALUES ({}, {}, {}, {}, {})\n"),
-                    sqlitepp::quote(lfss.lfss_name),
+                    sqlitepp::quote(lfss.lfss_name).in(),
                     lfss.lfss_enabled ? 1 : 0,
-                    sqlitepp::quote(lfss.lfss_type),
-                    sqlitepp::quote(lfss.lfss_language),
-                    sqlitepp::quote(lfss.lfss_pattern));
+                    sqlitepp::quote(lfss.lfss_type).in(),
+                    sqlitepp::quote(lfss.lfss_language).in(),
+                    sqlitepp::quote(lfss.lfss_pattern).in());
                 return false;
             });
 
@@ -395,8 +395,8 @@ SELECT content_id, format, time_offset FROM lnav_file
                                   "SET time_offset = {} "
                                   "WHERE content_id = {} AND format = {}\n"),
                        lfss.lfss_time_offset,
-                       sqlitepp::quote(lfss.lfss_content_id),
-                       sqlitepp::quote(lfss.lfss_format));
+                       sqlitepp::quote(lfss.lfss_content_id).in(),
+                       sqlitepp::quote(lfss.lfss_format).in());
             return false;
         });
 

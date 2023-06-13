@@ -14,8 +14,8 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 
 template <typename Char, typename InputIt>
-inline counting_iterator copy_str(InputIt begin, InputIt end,
-                                  counting_iterator it) {
+FMT_CONSTEXPR inline counting_iterator copy_str(InputIt begin, InputIt end,
+                                                counting_iterator it) {
   return it + (end - begin);
 }
 
@@ -331,38 +331,34 @@ template <typename T, typename Char> struct parse_specs_result {
   int next_arg_id;
 };
 
-constexpr int manual_indexing_id = -1;
+enum { manual_indexing_id = -1 };
 
 template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
                                                   size_t pos, int next_arg_id) {
   str.remove_prefix(pos);
-  auto ctx = compile_parse_context<Char>(str, max_value<int>(), nullptr, {},
-                                         next_arg_id);
+  auto ctx =
+      compile_parse_context<Char>(str, max_value<int>(), nullptr, next_arg_id);
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
-  return {f, pos + fmt::detail::to_unsigned(end - str.data()) + 1,
+  return {f, pos + fmt::detail::to_unsigned(end - str.data()),
           next_arg_id == 0 ? manual_indexing_id : ctx.next_arg_id()};
 }
 
 template <typename Char> struct arg_id_handler {
   arg_ref<Char> arg_id;
 
-  constexpr int operator()() {
+  constexpr int on_auto() {
     FMT_ASSERT(false, "handler cannot be used with automatic indexing");
     return 0;
   }
-  constexpr int operator()(int id) {
+  constexpr int on_index(int id) {
     arg_id = arg_ref<Char>(id);
     return 0;
   }
-  constexpr int operator()(basic_string_view<Char> id) {
+  constexpr int on_name(basic_string_view<Char> id) {
     arg_id = arg_ref<Char>(id);
     return 0;
-  }
-
-  constexpr void on_error(const char* message) {
-    FMT_THROW(format_error(message));
   }
 };
 
@@ -397,13 +393,20 @@ constexpr auto parse_replacement_field_then_tail(S format_str) {
     return parse_tail<Args, END_POS + 1, NEXT_ID>(
         field<char_type, typename field_type<T>::type, ARG_INDEX>(),
         format_str);
-  } else if constexpr (c == ':') {
+  } else if constexpr (c != ':') {
+    FMT_THROW(format_error("expected ':'"));
+  } else {
     constexpr auto result = parse_specs<typename field_type<T>::type>(
         str, END_POS + 1, NEXT_ID == manual_indexing_id ? 0 : NEXT_ID);
-    return parse_tail<Args, result.end, result.next_arg_id>(
-        spec_field<char_type, typename field_type<T>::type, ARG_INDEX>{
-            result.fmt},
-        format_str);
+    if constexpr (result.end >= str.size() || str[result.end] != '}') {
+      FMT_THROW(format_error("expected '}'"));
+      return 0;
+    } else {
+      return parse_tail<Args, result.end + 1, result.next_arg_id>(
+          spec_field<char_type, typename field_type<T>::type, ARG_INDEX>{
+              result.fmt},
+          format_str);
+    }
   }
 }
 
@@ -494,7 +497,7 @@ constexpr auto compile(S format_str) {
 #endif  // defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 }  // namespace detail
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 #if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 
@@ -568,7 +571,8 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-size_t formatted_size(const S& format_str, const Args&... args) {
+FMT_CONSTEXPR20 size_t formatted_size(const S& format_str,
+                                      const Args&... args) {
   return fmt::format_to(detail::counting_iterator(), format_str, args...)
       .count();
 }
@@ -597,7 +601,7 @@ template <detail_exported::fixed_string Str> constexpr auto operator""_cf() {
 }  // namespace literals
 #endif
 
-FMT_MODULE_EXPORT_END
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_COMPILE_H_

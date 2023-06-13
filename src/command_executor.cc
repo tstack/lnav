@@ -567,7 +567,7 @@ execute_file_contents(exec_context& ec,
                 break;
             default:
                 if (multiline) {
-                    cmdline = fmt::format("{}{}", cmdline.value(), line);
+                    cmdline = fmt::format("{}{}", cmdline.value(), line.in());
                 } else {
                     retval = TRY(execute_from_file(
                         ec, path, line_number, fmt::format(":{}", line.in())));
