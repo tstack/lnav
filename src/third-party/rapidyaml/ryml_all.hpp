@@ -1751,7 +1751,7 @@ __inline__ static void trap_instruction(void)
 	 * Same problem and workaround as Thumb mode */
 }
 #elif defined(__aarch64__) && defined(__APPLE__)
-	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_DEBUGTRAP
+	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_TRAP
 #elif defined(__aarch64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
 __attribute__((always_inline))

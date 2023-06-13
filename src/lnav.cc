@@ -218,7 +218,7 @@ static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
     "st_gid",
 };
 
-const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
+const static file_ssize_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
 
 static auto bound_pollable_supervisor
     = injector::bind<pollable_supervisor>::to_singleton();

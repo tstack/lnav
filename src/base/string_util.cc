@@ -48,7 +48,7 @@ scrub_to_utf8(char* buffer, size_t length)
         if (scan_res.is_valid()) {
             break;
         }
-        for (int lpc = 0; lpc < scan_res.usr_faulty_bytes; lpc++) {
+        for (size_t lpc = 0; lpc < scan_res.usr_faulty_bytes; lpc++) {
             buffer[scan_res.usr_valid_end + lpc] = '?';
         }
     }

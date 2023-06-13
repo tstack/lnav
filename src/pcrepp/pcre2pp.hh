@@ -104,7 +104,7 @@ public:
     template<typename T, std::size_t N>
     nonstd::optional<string_fragment> operator[](const T (&name)[N]) const;
 
-    int get_count() const { return this->md_capture_end; }
+    size_t get_count() const { return this->md_capture_end; }
 
     uint32_t get_capacity() const { return this->md_ovector_count; }
 
@@ -126,7 +126,7 @@ private:
     input md_input;
     PCRE2_SIZE* md_ovector{nullptr};
     uint32_t md_ovector_count{0};
-    int md_capture_end{0};
+    size_t md_capture_end{0};
 };
 
 class matcher {
@@ -269,7 +269,8 @@ public:
 
     std::vector<string_fragment> get_captures() const;
 
-    uint32_t get_match_data_capacity() const {
+    uint32_t get_match_data_capacity() const
+    {
         return this->p_match_proto.md_ovector_count;
     }
 
