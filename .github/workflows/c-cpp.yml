@@ -3,7 +3,6 @@ name: ci-build
 on:
   push:
     branches: [ master ]
-    tags: ['*']
     paths-ignore:
       - docs
   pull_request:

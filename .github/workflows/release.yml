@@ -1,0 +1,69 @@
+
+name: release
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  create-release:
+    name: create-release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      lnav_version_number: ${{ env.LNAV_VERSION_NUMBER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Make release notes
+        run: make -C release release-NEWS.md
+      - name: Get the release version from the tag
+        shell: bash
+        run: |
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "LNAV_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "LNAV_VERSION_NUMBER=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "version is: ${{ env.LNAV_VERSION }}"
+      - name: Create GitHub release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.LNAV_VERSION }}
+          release_name: ${{ env.LNAV_VERSION }}
+          body_path: release/release-NEWS.md
+          draft: true
+
+  build-release:
+    name: build-release
+    needs: ['create-release']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: autogen
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure --disable-static
+      - name: make dist
+        run: make dist dist-bzip2
+      - name: Upload tgz archive
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: lnav-${{ needs.create-release.outputs.rg_version }}.tar.gz
+          asset_name: lnav-${{ needs.create-release.outputs.rg_version }}.tar.gz
+          asset_content_type: application/octet-stream
+      - name: Upload tbz2 archive
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: lnav-${{ needs.create-release.outputs.rg_version }}.tar.bz2
+          asset_name: lnav-${{ needs.create-release.outputs.rg_version }}.tar.bz2
+          asset_content_type: application/octet-stream
