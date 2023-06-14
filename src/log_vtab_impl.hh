@@ -237,7 +237,7 @@ public:
     struct column_index {
         robin_hood::unordered_map<std::string, std::vector<vis_line_t>>
             ci_value_to_lines;
-        int32_t ci_index_generation{0};
+        uint32_t ci_index_generation{0};
         vis_line_t ci_max_line{0};
     };
 

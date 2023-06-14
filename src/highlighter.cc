@@ -119,7 +119,7 @@ highlighter::annotate(attr_line_t& al, int start) const
             if (md.get_count() == 1) {
                 this->annotate_capture(al, to_line_range(md[0].value()));
             } else {
-                for (int lpc = 1; lpc < md.get_count(); lpc++) {
+                for (size_t lpc = 1; lpc < md.get_count(); lpc++) {
                     if (!md[lpc]) {
                         continue;
                     }

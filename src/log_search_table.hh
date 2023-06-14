@@ -77,7 +77,7 @@ public:
     mutable std::vector<vtab_column> lst_cols;
     logline_value_vector lst_line_values_cache;
     auto_buffer lst_mismatch_bitmap{auto_buffer::alloc_bitmap(0)};
-    int32_t lst_index_generation{0};
+    uint32_t lst_index_generation{0};
 };
 
 #endif

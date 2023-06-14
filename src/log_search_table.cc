@@ -70,7 +70,7 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
     cn.add_column(string_fragment::from_const("__all__"));
     auto captures = this->lst_regex->get_captures();
-    for (int lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
+    for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
         std::string collator;
         int sqlite_type = SQLITE3_TEXT;
 
@@ -203,7 +203,7 @@ log_search_table::extract(logfile* lf,
     values.lvv_values.emplace_back(
         this->lst_column_metas[this->lst_format_column_count],
         this->lst_match_index);
-    for (int lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
+    for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
         const auto cap = this->lst_match_data[lpc + 1];
         if (cap) {
             values.lvv_values.emplace_back(

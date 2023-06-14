@@ -359,7 +359,8 @@ CREATE TABLE regexp_capture_into_json (
                 {
                     yajlpp_map root_map(gen);
 
-                    for (int lpc = 1; lpc < vc.c_match_data.get_count(); lpc++)
+                    for (size_t lpc = 1; lpc < vc.c_match_data.get_count();
+                         lpc++)
                     {
                         const auto& colname = vc.c_namer->cn_names[lpc];
                         const auto cap = vc.c_match_data[lpc];
@@ -521,7 +522,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_namer
         = std::make_unique<column_namer>(column_namer::language::JSON);
     pCur->c_namer->add_column(string_fragment::from_const("__all__"));
-    for (int lpc = 1; lpc <= pCur->c_pattern->get_capture_count(); lpc++) {
+    for (size_t lpc = 1; lpc <= pCur->c_pattern->get_capture_count(); lpc++) {
         pCur->c_namer->add_column(string_fragment::from_c_str(
             pCur->c_pattern->get_name_for_capture(lpc)));
     }
