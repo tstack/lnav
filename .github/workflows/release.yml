@@ -43,6 +43,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Update apt
+        run: sudo apt-get update
+      - name: Install packages
+        run: >-
+          sudo apt-get install -y
+          make
+          automake
+          autoconf
+          g++
+          libpcre2-dev
+          libpcre3-dev
+          libncurses-dev
+          libsqlite3-dev
+          libbz2-dev
+          libcurl4-openssl-dev
+          libreadline-dev
+          zlib1g-dev
       - name: autogen
         run: ./autogen.sh
       - name: configure
