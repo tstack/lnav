@@ -33,11 +33,11 @@ jobs:
       - name: Build musl package
         if: ${{ inputs.lnav_version_number != '' }}
         run: >-
-          mkdir ${{ env.LNAV_BASENAME }}
-          cd ${{ env.LNAV_BASENAME }}
-          cp ../NEWS.md ../README .
-          cp ../lbuild/src/lnav .
-          cd ..
+          mkdir ${{ env.LNAV_BASENAME }} &&
+          cd ${{ env.LNAV_BASENAME }} &&
+          cp ../NEWS.md ../README . &&
+          cp ../lbuild/src/lnav . &&
+          cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3
