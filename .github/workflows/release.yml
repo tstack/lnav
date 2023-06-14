@@ -36,6 +36,15 @@ jobs:
           body_path: release/release-NEWS.md
           draft: true
 
+  build-musl:
+    name: build-musl
+    needs: ['create-release']
+    uses: ./.github/workflows/bins.yml
+    secrets: inherit
+    with:
+      lnav_version_number: ${{ needs.create-release.outputs.lnav_version_number }}
+      upload_url: ${{ needs.create-release.outputs.upload_url }}
+
   build-release:
     name: build-release
     needs: ['create-release']
