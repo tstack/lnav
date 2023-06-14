@@ -10,5 +10,7 @@ EXTRA_DIST = \
 CLEANFILES = \
 	bin2c$(BUILD_EXEEXT)
 
+dist-hook: bin2c$(BUILD_EXEEXT)
+
 distclean-local:
 	$(RM_V)rm -rf *.dSYM
