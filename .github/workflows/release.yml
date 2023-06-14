@@ -65,7 +65,10 @@ jobs:
       - name: configure
         run: ./configure --disable-static
       - name: make dist
-        run: make dist dist-bzip2
+        run: >-
+          make dist dist-bzip2 &&
+          mv lnav-*.tar.gz lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.gz &&
+          mv lnav-*.tar.bz2 lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.bz2
       - name: Upload tgz archive
         uses: actions/upload-release-asset@v1.0.2
         env:
