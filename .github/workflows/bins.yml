@@ -24,7 +24,7 @@ jobs:
       image: tstack/lnav-build:1
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
-      LNAV_ZIPNAME: ${{ env.LNAV_BASENAME }}-x86_64-linux-musl.zip
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-linux-musl.zip
     steps:
       - name: checkout
         uses: actions/checkout@v3
