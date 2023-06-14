@@ -72,8 +72,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: lnav-${{ needs.create-release.outputs.rg_version }}.tar.gz
-          asset_name: lnav-${{ needs.create-release.outputs.rg_version }}.tar.gz
+          asset_path: lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.gz
+          asset_name: lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.gz
           asset_content_type: application/octet-stream
       - name: Upload tbz2 archive
         uses: actions/upload-release-asset@v1.0.2
@@ -81,6 +81,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: lnav-${{ needs.create-release.outputs.rg_version }}.tar.bz2
-          asset_name: lnav-${{ needs.create-release.outputs.rg_version }}.tar.bz2
+          asset_path: lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.bz2
+          asset_name: lnav-${{ needs.create-release.outputs.lnav_version_number }}.tar.bz2
           asset_content_type: application/octet-stream
