@@ -52,7 +52,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          upload_url: ${{ inputs.upload_url }}
           asset_path: ${{ env.LNAV_ZIPNAME }}
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
