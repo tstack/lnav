@@ -18,7 +18,7 @@ on:
         type: string
 
 jobs:
-  build:
+  build-musl:
     runs-on: ubuntu-latest
     container:
       image: tstack/lnav-build:1
@@ -47,6 +47,59 @@ jobs:
           # A file, directory or wildcard pattern that describes what to upload
           path: lbuild/src/lnav
       - name: Upload musl-binary archive
+        uses: actions/upload-release-asset@v1.0.2
+        if: ${{ inputs.upload_url != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ${{ env.LNAV_ZIPNAME }}
+          asset_name: ${{ env.LNAV_ZIPNAME }}
+          asset_content_type: application/octet-stream
+
+  build-macos:
+    runs-on: macos-12
+    env:
+      LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-macos.zip
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install packages
+        run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl
+      - name: autogen
+        run: ./autogen.sh
+      - name: configure
+        run: >-
+          ./configure --enable-static
+            --with-libcurl=/opt/homebrew/opt/curl/
+            --with-pcre2=/opt/homebrew/opt/pcre2
+            --with-sqlite3=/opt/homebrew/opt/sqlite3
+            'CXXFLAGS=-I/opt/homebrew/opt/ncurses/include -g2 -O2'
+            'CFLAGS=-O2 -g2'
+            'LDFLAGS=-L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/xz/lib -L/opt/homebrew/opt/zstd/lib/'
+            --with-readline=/opt/homebrew/opt/readline
+            --with-libarchive=/opt/homebrew/opt/libarchive
+            'LIBS=-llzma -liconv'
+      - name: make
+        run: make -j2
+      - name: Build macos package
+        if: ${{ inputs.lnav_version_number != '' }}
+        run: >-
+          mkdir ${{ env.LNAV_BASENAME }} &&
+          cd ${{ env.LNAV_BASENAME }} &&
+          cp ../NEWS.md ../README . &&
+          cp ../lbuild/src/lnav . &&
+          cd .. &&
+          zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          # Artifact name
+          name: lnav-macos-64bit.zip
+          # A file, directory or wildcard pattern that describes what to upload
+          path: lbuild/src/lnav
+      - name: Upload macos archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
         env:
