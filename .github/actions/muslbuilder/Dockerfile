@@ -17,6 +17,7 @@ RUN apk update && apk add --no-cache \
     gcc \
     g++ \
     lz4 \
+    lz4-dev \
     lz4-static \
     zip \
     zstd \
@@ -83,9 +84,31 @@ xterm-256color\
 "
 
 RUN cd /extract && for pkg in /*.tar.gz; do tar xvfz "$pkg"; done
+
+RUN cd /extract/bzip2-1.0.8 && make install PREFIX=/fake.root && make clean
+
+RUN cd /extract/zlib-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
+
+RUN cd /extract/xz-* && \
+ ./configure --prefix=/fake.root \
+     --disable-shared \
+     "LDFLAGS=-L/fake.root/lib" \
+     "CPPFLAGS=-I/fake.root/include" \
+      && \
+ make -j2 && \
+ make install && make clean
+
+RUN cd /extract/libarchive-* && \
+ ./configure --prefix=/fake.root \
+     --disable-shared \
+     "LDFLAGS=-L/fake.root/lib" \
+     "CPPFLAGS=-I/fake.root/include" \
+      && \
+ make -j2 && \
+ make install && make clean
+
 RUN cd /extract/make-4.2.1 && ./configure --prefix=/fake.root && make -j2 && make install && make clean
 RUN cd /extract/readline-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
-RUN cd /extract/bzip2-1.0.8 && make install PREFIX=/fake.root && make clean
 
 RUN cd /extract/sqlite-* && \
  ./configure --disable-editline --prefix=/fake.root \
@@ -116,8 +139,6 @@ RUN cd /extract/pcre2-* && \
      && \
  make -j2 && make install && make clean
 
-RUN cd /extract/zlib-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
-
 RUN cd /extract/libssh2-* && \
  ./configure --prefix=/fake.root \
      --with-libssl-prefix=/fake.root \
@@ -133,24 +154,6 @@ RUN cd /extract/curl-* && \
      --with-ssl=/fake.root \
      --with-zlib=/fake.root \
      "LDFLAGS=-ldl" && \
- make -j2 && \
- make install && make clean
-
-RUN cd /extract/xz-* && \
- ./configure --prefix=/fake.root \
-     --disable-shared \
-     "LDFLAGS=-L/fake.root/lib" \
-     "CPPFLAGS=-I/fake.root/include" \
-      && \
- make -j2 && \
- make install && make clean
-
-RUN cd /extract/libarchive-* && \
- ./configure --prefix=/fake.root \
-     --disable-shared \
-     "LDFLAGS=-L/fake.root/lib" \
-     "CPPFLAGS=-I/fake.root/include" \
-      && \
  make -j2 && \
  make install && make clean
 
