@@ -71,15 +71,15 @@ jobs:
         run: ./autogen.sh
       - name: configure
         run: >-
-          ./configure --enable-static
-            --with-libcurl=/opt/homebrew/opt/curl/
-            --with-pcre2=/opt/homebrew/opt/pcre2
-            --with-sqlite3=/opt/homebrew/opt/sqlite3
-            'CXXFLAGS=-I/opt/homebrew/opt/ncurses/include -g2 -O2'
-            'CFLAGS=-O2 -g2'
-            'LDFLAGS=-L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/xz/lib -L/opt/homebrew/opt/zstd/lib/'
-            --with-readline=/opt/homebrew/opt/readline
-            --with-libarchive=/opt/homebrew/opt/libarchive
+          ./configure --enable-static \
+            --with-libcurl=/opt/homebrew/opt/curl/ \
+            --with-pcre2=/opt/homebrew/opt/pcre2 \
+            --with-sqlite3=/opt/homebrew/opt/sqlite3 \
+            'CXXFLAGS=-I/opt/homebrew/opt/ncurses/include -g2 -O2' \
+            'CFLAGS=-O2 -g2' \
+            'LDFLAGS=-L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/xz/lib -L/opt/homebrew/opt/zstd/lib/' \
+            --with-readline=/opt/homebrew/opt/readline \
+            --with-libarchive=/opt/homebrew/opt/libarchive \
             'LIBS=-llzma -liconv'
       - name: make
         run: make -j2
