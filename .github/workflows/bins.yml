@@ -72,6 +72,7 @@ jobs:
       - name: configure
         run: >-
           ./configure --enable-static \
+            --with-libcurl=/usr \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
             'CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2' \
