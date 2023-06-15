@@ -89,16 +89,17 @@ jobs:
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
           cp ../NEWS.md ../README . &&
-          cp ../lbuild/src/lnav . &&
+          cp ../src/lnav . &&
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
-      - name: Upload a Build Artifact
+      - name: Upload config.log artifact
         uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
           # Artifact name
-          name: lnav-macos-64bit.zip
+          name: config-log.zip
           # A file, directory or wildcard pattern that describes what to upload
-          path: lbuild/src/lnav
+          path: config.log
       - name: Upload macos archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
