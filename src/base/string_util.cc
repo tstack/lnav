@@ -49,7 +49,7 @@ scrub_to_utf8(char* buffer, size_t length)
             break;
         }
         for (size_t lpc = 0; lpc < scan_res.usr_faulty_bytes; lpc++) {
-            buffer[scan_res.usr_valid_end + lpc] = '?';
+            buffer[scan_res.usr_valid_frag.sf_end + lpc] = '?';
         }
     }
 }

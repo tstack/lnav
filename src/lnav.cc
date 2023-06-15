@@ -454,7 +454,13 @@ append_default_files()
 static void
 sigint(int sig)
 {
+    static size_t counter = 0;
+
     lnav_data.ld_looping = false;
+    counter += 1;
+    if (counter >= 3) {
+        abort();
+    }
 }
 
 static void

@@ -72,7 +72,10 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
         }
 
         if (terminator && ustr[i] == terminator.value()) {
-            retval.usr_term = i;
+            if (retval.usr_message == nullptr) {
+                retval.usr_valid_frag = str.sub_range(0, i);
+            }
+            retval.usr_remaining = str.substr(i + 1);
             break;
         }
 
@@ -81,7 +84,7 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
             continue;
         }
 
-        retval.usr_valid_end = i;
+        retval.usr_valid_frag = str.sub_range(0, i);
         if (ustr[i] <= 0x7F) /* 00..7F */ {
             i += 1;
         } else if (ustr[i] >= 0xC2 && ustr[i] <= 0xDF) /* C2..DF 80..BF */ {
@@ -302,6 +305,9 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
             retval.usr_faulty_bytes = 1;
             continue;
         }
+    }
+    if (retval.usr_message == nullptr) {
+        retval.usr_valid_frag = str.sub_range(0, i);
     }
     return retval;
 }

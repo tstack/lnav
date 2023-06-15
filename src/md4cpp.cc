@@ -268,7 +268,7 @@ parse(const string_fragment& sf, event_handler& eh)
     if (!scan_res.is_valid()) {
         return Err(
             fmt::format(FMT_STRING("file has invalid UTF-8 at offset {}: {}"),
-                        scan_res.usr_valid_end,
+                        scan_res.usr_valid_frag.sf_end,
                         scan_res.usr_message));
     }
 

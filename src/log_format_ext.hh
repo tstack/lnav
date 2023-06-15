@@ -392,6 +392,11 @@ public:
         memcpy(&(this->jlf_cached_line[old_size]), value, len);
     }
 
+    void json_append_to_cache(const string_fragment& sf)
+    {
+        this->json_append_to_cache(sf.data(), sf.length());
+    }
+
     void json_append_to_cache(ssize_t len)
     {
         if (len <= 0) {

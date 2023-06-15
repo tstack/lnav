@@ -1738,32 +1738,27 @@ external_log_format::get_subline(const logline& ll,
                 }
 
                 const std::string str = lv.to_string();
-                size_t curr_pos = 0, nl_pos, line_len = -1;
 
                 lv.lv_sub_offset = sub_offset;
                 lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
                     + lv.lv_meta.lvm_name.size() + 2;
-                do {
-                    auto frag = string_fragment::from_str_range(
-                        str, curr_pos, str.size());
+                auto frag = string_fragment::from_str(str);
+                while (true) {
                     auto utf_scan_res = is_utf8(frag, '\n');
 
-                    nl_pos = utf_scan_res.usr_term.value_or(std::string::npos);
-                    if (nl_pos != std::string::npos) {
-                        line_len = nl_pos - curr_pos;
-                    } else {
-                        line_len = str.size() - curr_pos;
-                    }
                     this->json_append_to_cache("  ", 2);
-                    this->json_append_to_cache(lv.lv_meta.lvm_name.get(),
-                                               lv.lv_meta.lvm_name.size());
+                    this->json_append_to_cache(
+                        lv.lv_meta.lvm_name.to_string_fragment());
                     this->json_append_to_cache(": ", 2);
-                    this->json_append_to_cache(&str.c_str()[curr_pos],
-                                               line_len);
+                    this->json_append_to_cache(utf_scan_res.usr_valid_frag);
                     this->json_append_to_cache("\n", 1);
-                    curr_pos = nl_pos + 1;
                     sub_offset += 1;
-                } while (nl_pos != std::string::npos && nl_pos < str.size());
+                    if (utf_scan_res.usr_remaining) {
+                        frag = utf_scan_res.usr_remaining.value();
+                    } else {
+                        break;
+                    }
+                }
             }
         }
 
@@ -2946,19 +2941,18 @@ external_log_format::value_line_count(const intern_string_t ist,
     const auto iter = this->elf_value_defs.find(ist);
     value_line_count_result retval;
     if (str != nullptr) {
-        while (len > 0) {
-            auto frag = string_fragment::from_bytes(str, len);
+        auto frag = string_fragment::from_bytes(str, len);
+        while (!frag.empty()) {
             auto utf_res = is_utf8(frag, '\n');
             if (!utf_res.is_valid()) {
                 retval.vlcr_valid_utf = false;
             }
             retval.vlcr_has_ansi |= utf_res.usr_has_ansi;
-            if (!utf_res.usr_term) {
+            if (!utf_res.usr_remaining) {
                 break;
             }
+            frag = utf_res.usr_remaining.value();
             retval.vlcr_count += 1;
-            str += utf_res.usr_term.value() + 1;
-            len -= utf_res.usr_term.value() + 1;
         }
     }
 
