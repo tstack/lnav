@@ -75,12 +75,12 @@ jobs:
             --with-libcurl=/usr \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
-            'CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2' \
+            "CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2" \
             'CFLAGS=-O2 -g2' \
-            'LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/' \
+            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/" \
             --with-readline=$(brew --prefix readline) \
             --with-libarchive=$(brew --prefix libarchive) \
-            'LIBS=-llzma -lzstd -lbrotlidec-static -liconv -llz4'
+            "LIBS=-llzma -lzstd -lbrotlidec-static -liconv -llz4"
       - name: make
         run: make -j2
       - name: Build macos package

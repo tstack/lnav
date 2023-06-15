@@ -16,7 +16,11 @@ RUN apk update && apk add --no-cache \
     musl-dev \
     gcc \
     g++ \
+    lz4 \
+    lz4-static \
     zip \
+    zstd \
+    zstd-static \
     perl \
     autoconf \
     automake \

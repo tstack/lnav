@@ -36,8 +36,8 @@ jobs:
           body_path: release/release-NEWS.md
           draft: true
 
-  build-musl:
-    name: build-musl
+  build-binaries:
+    name: build-binaries
     needs: ['create-release']
     uses: ./.github/workflows/bins.yml
     secrets: inherit
