@@ -382,15 +382,15 @@ handle_paging_key(int ch)
                 || !tc->is_line_visible(
                     vis_line_t(lnav_data.ld_last_user_mark[tc])))
             {
-                lnav_data.ld_select_start[tc] = tc->get_top();
-                lnav_data.ld_last_user_mark[tc] = tc->get_top();
+                lnav_data.ld_select_start[tc] = tc->get_selection();
+                lnav_data.ld_last_user_mark[tc] = tc->get_selection();
             } else {
                 vis_line_t height;
                 unsigned long width;
 
                 tc->get_dimensions(height, width);
                 if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2)
-                    && tc->get_top() + height < tc->get_inner_height())
+                    && tc->get_selection() + height < tc->get_inner_height())
                 {
                     tc->shift_top(1_vl);
                 }
@@ -403,6 +403,11 @@ handle_paging_key(int ch)
             }
             tc->toggle_user_mark(&textview_curses::BM_USER,
                                  vis_line_t(lnav_data.ld_last_user_mark[tc]));
+            if (tc->is_selectable()
+                && tc->get_selection() + 1_vl < tc->get_inner_height())
+            {
+                tc->set_selection(tc->get_selection() + 1_vl);
+            }
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(
@@ -417,14 +422,14 @@ handle_paging_key(int ch)
                 || !tc->is_line_visible(
                     vis_line_t(lnav_data.ld_last_user_mark[tc])))
             {
-                new_mark = tc->get_top();
+                new_mark = tc->get_selection();
             } else {
                 new_mark = lnav_data.ld_last_user_mark[tc];
             }
 
             tc->toggle_user_mark(&textview_curses::BM_USER,
                                  vis_line_t(new_mark));
-            if (new_mark == tc->get_top()) {
+            if (new_mark == tc->get_selection() && tc->get_top() > 0_vl) {
                 tc->shift_top(-1_vl);
             }
             if (new_mark > 0) {
@@ -433,12 +438,16 @@ handle_paging_key(int ch)
                 lnav_data.ld_last_user_mark[tc] = new_mark;
                 alerter::singleton().chime("no more lines to mark");
             }
-            lnav_data.ld_select_start[tc] = tc->get_top();
+            lnav_data.ld_select_start[tc] = tc->get_selection();
+            if (tc->is_selectable() && tc->get_selection() > 0_vl) {
+                tc->set_selection(tc->get_selection() - 1_vl);
+            }
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(
                 HELP_MSG_1(c, "to copy marked lines to the clipboard"));
-        } break;
+            break;
+        }
 
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc)
@@ -446,9 +455,9 @@ handle_paging_key(int ch)
             {
                 alerter::singleton().chime("no lines have been marked");
             } else {
-                int start_line = std::min((int) tc->get_top(),
+                int start_line = std::min((int) tc->get_selection(),
                                           lnav_data.ld_last_user_mark[tc] + 1);
-                int end_line = std::max((int) tc->get_top(),
+                int end_line = std::max((int) tc->get_selection(),
                                         lnav_data.ld_last_user_mark[tc] - 1);
 
                 tc->toggle_user_mark(&textview_curses::BM_USER,
@@ -477,7 +486,7 @@ handle_paging_key(int ch)
 
         case 's':
             if (lss) {
-                vis_line_t next_top = vis_line_t(tc->get_top() + 2);
+                auto next_top = tc->get_selection() + 2_vl;
 
                 if (!lss->is_time_offset_enabled()) {
                     lnav_data.ld_rl_view->set_alt_value(
@@ -490,7 +499,7 @@ handle_paging_key(int ch)
                                == log_accel::A_DECEL)
                     {
                         --next_top;
-                        tc->set_top(next_top);
+                        tc->set_selection(next_top);
                         break;
                     }
 
@@ -501,7 +510,7 @@ handle_paging_key(int ch)
 
         case 'S':
             if (lss) {
-                vis_line_t next_top = tc->get_top();
+                auto next_top = tc->get_selection();
 
                 if (!lss->is_time_offset_enabled()) {
                     lnav_data.ld_rl_view->set_alt_value(
@@ -514,7 +523,7 @@ handle_paging_key(int ch)
                                == log_accel::A_DECEL)
                     {
                         --next_top;
-                        tc->set_top(next_top);
+                        tc->set_selection(next_top);
                         break;
                     }
 
@@ -602,7 +611,7 @@ handle_paging_key(int ch)
             if (lss != nullptr) {
                 logline_helper start_helper(*lss);
 
-                start_helper.lh_current_line = tc->get_top();
+                start_helper.lh_current_line = tc->get_selection();
                 auto& start_line = start_helper.move_to_msg_start();
                 start_helper.annotate();
 
@@ -663,7 +672,7 @@ handle_paging_key(int ch)
                     }
                     if (found) {
                         lnav_data.ld_rl_view->set_value("");
-                        tc->set_top(next_helper.lh_current_line);
+                        tc->set_selection(next_helper.lh_current_line);
                     } else {
                         const auto opid_str
                             = start_helper.to_string(opid_range);
