@@ -1032,13 +1032,17 @@ vis_line_t
 search_forward_from(textview_curses* tc)
 {
     vis_line_t height, retval = tc->get_selection();
-    auto& krh = lnav_data.ld_key_repeat_history;
-    unsigned long width;
 
-    tc->get_dimensions(height, width);
+    if (!tc->is_selectable()) {
+        auto& krh = lnav_data.ld_key_repeat_history;
+        unsigned long width;
 
-    if (krh.krh_count > 1 && retval > (krh.krh_start_line + (1.5 * height))) {
-        retval += vis_line_t(0.90 * height);
+        tc->get_dimensions(height, width);
+
+        if (krh.krh_count > 1 && retval > (krh.krh_start_line + (1.5 * height)))
+        {
+            retval += vis_line_t(0.90 * height);
+        }
     }
 
     return retval;
