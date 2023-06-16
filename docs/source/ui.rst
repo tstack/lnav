@@ -254,6 +254,19 @@ the result of a pretty-printer run on that text.  For example, if a log
 message contained an XML message on a single line, the pretty-printer would
 break the XML across multiple lines with appropriate indentation.
 
+.. figure:: lnav-pretty-view-before.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of a log message with a flat JSON object.
+
+.. figure:: lnav-pretty-view-after.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the same log message in the PRETTY view.  The JSON object
+   is now indented for easier reading.
+
 SCHEMA
 ^^^^^^
 
