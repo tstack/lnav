@@ -127,8 +127,14 @@ listview_curses::handle_key(int ch)
         case 'b':
         case KEY_BACKSPACE:
         case KEY_PPAGE:
-            this->shift_top(
-                -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+            if (this->lv_top == 0_vl && this->lv_selectable
+                && this->lv_selection != 0_vl)
+            {
+                this->set_selection(0_vl);
+            } else {
+                this->shift_top(
+                    -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+            }
             break;
 
         case ' ':
