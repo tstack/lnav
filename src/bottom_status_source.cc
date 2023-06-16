@@ -133,10 +133,9 @@ bottom_status_source::update_marks(listview_curses* lc)
         bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_SEARCH];
 
         if (!bv.empty() || !tc->get_current_search().empty()) {
-            bookmark_vector<vis_line_t>::iterator lb;
-
-            lb = std::lower_bound(bv.begin(), bv.end(), tc->get_top());
-            if (lb != bv.end() && *lb == tc->get_top()) {
+            auto vl = tc->get_selection();
+            auto lb = std::lower_bound(bv.begin(), bv.end(), vl);
+            if (lb != bv.end() && *lb == vl) {
                 sf.set_value("  Hit %'d of %'d for ",
                              std::distance(bv.begin(), lb) + 1,
                              tc->get_match_count());

@@ -508,6 +508,8 @@ public:
         return *this;
     }
 
+    vis_line_t get_tail_space() const { return this->lv_tail_space; }
+
     void log_state()
     {
         log_debug("listview_curses=%p", this);

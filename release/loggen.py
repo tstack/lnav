@@ -220,6 +220,6 @@ while COUNTER < 5000:
                     fp.write(next(gen))
                 # if random.uniform(0.0, 1.0) < 0.010:
                 #    fp.truncate(0)
-            # time.sleep(random.uniform(0.01, 0.02))
+            time.sleep(random.uniform(0.01, 0.02))
             # if random.uniform(0.0, 1.0) < 0.001:
             #    os.remove(fname)

@@ -95,7 +95,6 @@ bool moveto_cluster(nonstd::optional<vis_line_t> (
                         bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
                     const bookmark_type_t* bt,
                     vis_line_t top);
-void previous_cluster(const bookmark_type_t* bt, textview_curses* tc);
 vis_line_t search_forward_from(textview_curses* tc);
 textview_curses* get_textview_for_mode(ln_mode_t mode);
 

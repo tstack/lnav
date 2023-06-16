@@ -73,10 +73,10 @@
                     "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_top_view)"
                 },
                 "x04": {
-                    "command": ";UPDATE lnav_views SET top = top + (height / 2) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_views SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)"
                 },
                 "x15": {
-                    "command": ";UPDATE lnav_views SET top = top - (height / 2) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_views SET top = top - (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top - (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)"
                 },
                 "x3d": {
                     "command": ";UPDATE lnav_views SET paused = 1 - paused"

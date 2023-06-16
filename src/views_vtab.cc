@@ -459,7 +459,7 @@ CREATE TABLE lnav_views (
 
             auto cur_sel = tc.get_selection();
             auto cur_top = tc.get_top();
-            auto cur_bot = tc.get_bottom();
+            auto cur_bot = tc.get_bottom() - tc.get_tail_space();
 
             if (cur_sel < cur_top) {
                 tc.set_selection(cur_top);

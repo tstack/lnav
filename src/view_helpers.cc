@@ -970,7 +970,7 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         int diff = new_top.value() - last_top;
 
         hit_count += 1;
-        if (!top_is_marked || diff > 1) {
+        if (tc->is_selectable() || !top_is_marked || diff > 1) {
             return new_top;
         }
         if (hit_count > 1 && std::abs(new_top.value() - top) >= tc_height) {
@@ -1009,8 +1009,7 @@ moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     auto new_top = next_cluster(f, bt, top);
 
     if (!new_top) {
-        new_top = next_cluster(
-            f, bt, tc->is_selectable() ? tc->get_selection() : tc->get_top());
+        new_top = next_cluster(f, bt, tc->get_selection());
     }
     if (new_top != -1) {
         tc->get_sub_source()->get_location_history() |
@@ -1029,48 +1028,10 @@ moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     return false;
 }
 
-void
-previous_cluster(const bookmark_type_t* bt, textview_curses* tc)
-{
-    key_repeat_history& krh = lnav_data.ld_key_repeat_history;
-    vis_line_t height, initial_top;
-    unsigned long width;
-
-    if (tc->is_selectable()) {
-        initial_top = tc->get_selection();
-    } else {
-        initial_top = tc->get_top();
-    }
-    auto new_top
-        = next_cluster(&bookmark_vector<vis_line_t>::prev, bt, initial_top);
-
-    tc->get_dimensions(height, width);
-    if (krh.krh_count > 1 && initial_top < (krh.krh_start_line - (1.5 * height))
-        && (!new_top || ((initial_top - new_top.value()) < height)))
-    {
-        bookmark_vector<vis_line_t>& bv = tc->get_bookmarks()[bt];
-        new_top = bv.next(std::max(0_vl, initial_top - height));
-    }
-
-    if (new_top) {
-        tc->get_sub_source()->get_location_history() |
-            [new_top](auto lh) { lh->loc_history_append(new_top.value()); };
-
-        if (tc->is_selectable()) {
-            tc->set_selection(new_top.value());
-        } else {
-            tc->set_top(new_top.value());
-        }
-    } else {
-        alerter::singleton().chime("no previous bookmark");
-    }
-}
-
 vis_line_t
 search_forward_from(textview_curses* tc)
 {
-    vis_line_t height,
-        retval = tc->is_selectable() ? tc->get_selection() : tc->get_top();
+    vis_line_t height, retval = tc->get_selection();
     auto& krh = lnav_data.ld_key_repeat_history;
     unsigned long width;
 
