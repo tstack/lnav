@@ -188,15 +188,26 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     logfile_sub_source& lss = lnav_data.ld_log_source;
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
     textview_curses& text_view = lnav_data.ld_views[LNV_TEXT];
-    vis_line_t old_bottoms[LNV__MAX];
     bool scroll_downs[LNV__MAX];
     size_t retval = 0;
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-        old_bottoms[lpc] = lnav_data.ld_views[lpc].get_top_for_last_row();
-        scroll_downs[lpc]
-            = (lnav_data.ld_views[lpc].get_top() >= old_bottoms[lpc])
-            && !(lnav_data.ld_flags & LNF_HEADLESS);
+        auto& view = lnav_data.ld_views[lpc];
+
+        if (view.is_selectable()) {
+            auto inner_height = view.get_inner_height();
+
+            if (inner_height > 0_vl) {
+                scroll_downs[lpc]
+                    = (view.get_selection() == inner_height - 1_vl)
+                    && !(lnav_data.ld_flags & LNF_HEADLESS);
+            } else {
+                scroll_downs[lpc] = !(lnav_data.ld_flags & LNF_HEADLESS);
+            }
+        } else {
+            scroll_downs[lpc] = (view.get_top() >= view.get_top_for_last_row())
+                && !(lnav_data.ld_flags & LNF_HEADLESS);
+        }
     }
 
     {
@@ -213,7 +224,6 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 
             if (tss->current_file() != cb.front_file) {
                 tss->to_front(cb.front_file);
-                old_bottoms[LNV_TEXT] = -1_vl;
             }
 
             nonstd::optional<vis_line_t> new_top_opt;
@@ -323,12 +333,20 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-        textview_curses& scroll_view = lnav_data.ld_views[lpc];
+        auto& scroll_view = lnav_data.ld_views[lpc];
 
         if (scroll_downs[lpc]
             && scroll_view.get_top_for_last_row() > scroll_view.get_top())
         {
-            scroll_view.set_top(scroll_view.get_top_for_last_row());
+            if (scroll_view.is_selectable()) {
+                auto inner_height = scroll_view.get_inner_height();
+
+                if (inner_height > 0_vl) {
+                    scroll_view.set_selection(inner_height - 1_vl);
+                }
+            } else {
+                scroll_view.set_top(scroll_view.get_top_for_last_row());
+            }
         }
     }
 
