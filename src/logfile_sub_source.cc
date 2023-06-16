@@ -391,7 +391,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     lr.lr_start = time_offset_end;
     lr.lr_end = -1;
 
-    value_out.emplace_back(lr, VC_STYLE.value(attrs));
+    if (!attrs.empty()) {
+        value_out.emplace_back(lr, VC_STYLE.value(attrs));
+    }
 
     if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
         for (auto& token_attr : this->lss_token_attrs) {
