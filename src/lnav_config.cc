@@ -352,7 +352,7 @@ update_installs_from_git()
     auto git_formats = lnav::paths::dotlnav() / "formats/*/.git";
     bool found = false, retval = true;
 
-    if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+    if (glob(git_formats.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             auto git_dir
                 = ghc::filesystem::path(gl->gl_pathv[lpc]).parent_path();
