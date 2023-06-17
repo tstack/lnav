@@ -700,8 +700,17 @@ public:
         listview_curses::invoke_scroll();
     }
 
+    textview_curses& set_reload_config_delegate(
+        std::function<void(textview_curses&)> func)
+    {
+        this->tc_reload_config_delegate = std::move(func);
+        if (this->tc_reload_config_delegate) {
+            this->tc_reload_config_delegate(*this);
+        }
+        return *this;
+    }
+
     std::function<void(textview_curses&)> tc_state_event_handler;
-    std::function<void(textview_curses&)> tc_reload_config_delegate;
 
     nonstd::optional<role_t> tc_cursor_role;
 
@@ -761,6 +770,7 @@ protected:
     std::string tc_previous_search;
     std::shared_ptr<grep_highlighter> tc_search_child;
     std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
+    std::function<void(textview_curses&)> tc_reload_config_delegate;
 };
 
 #endif

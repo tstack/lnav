@@ -3,8 +3,8 @@
 Features:
 * A "cursor" mode has been added to the main view that can
   be toggled by pressing CTRL-X.  While in cursor mode, any
-  operations that would normally work on the "top" line now
-  operate on the selected line instead.
+  operations that would normally work on the "top" line will
+  now operate on the focused line instead.
 * Added CTRL-D and CTRL-U hotkeys to move down/up by half
   a page.
 * Added an `auto-width` flag to the elements of the

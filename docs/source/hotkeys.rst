@@ -255,7 +255,7 @@ Display
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.
    * - :kbd:`Ctrl` + :kbd:`x`
-     - Toggle the cursor mode. Allows moving the selected line instead of
+     - Toggle the cursor mode. Allows moving the focused line instead of
        keeping it fixed at the top of the current screen.
    * - :kbd:`=`
      - Pause/unpause loading of new file data.

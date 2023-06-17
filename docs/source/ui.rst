@@ -24,6 +24,16 @@ pressing :kbd:`q`.  You can switch forward to the new view by pressing
 :kbd:`Shift` + :kbd:`q` and :kbd:`Shift` + :kbd:`a` will synchronize the top
 times in the views.
 
+**lnav** provides many operations to work with the log/text data in the
+main view.  For example, you can add comments and tags to log messages.
+By default, the top line is used as the reference point to edit the
+comment or tags.  Alternatively, you can press :kbd:`Ctrl` + :kbd:`x`
+to switch to "cursor" mode where the "focused" line is highlighted and
+most operations now work with that line.  When in "cursor" mode, the
+:kbd:`↑` and :kbd:`↓` keys now move the focused line instead of scrolling
+the view.  Jumping to bookmarks, like errors, will also move the focused
+line instead of moving the next error to the top of the view.
+
 The right side of the display has a proportionally sized 'scrollbar' that
 shows:
 

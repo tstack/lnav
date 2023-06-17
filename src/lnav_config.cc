@@ -533,7 +533,7 @@ static const json_path_handler_base::enum_value_t _movement_values[] = {
 
 static const struct json_path_container movement_handlers = {
     yajlpp::property_handler("mode")
-        .with_synopsis("mode_name")
+        .with_synopsis("top|cursor")
         .with_enum_values(_movement_values)
         .with_example("top")
         .with_example("cursor")
