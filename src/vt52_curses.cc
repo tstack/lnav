@@ -304,10 +304,11 @@ vt52_curses::map_output(const char* output, int len)
 void
 vt52_curses::do_update()
 {
+    auto actual_width = this->get_actual_width();
     view_curses::mvwattrline(this->vc_window,
                              this->get_actual_y(),
                              this->vc_left,
                              this->vc_line,
-                             line_range{0, (int) this->vc_width});
+                             line_range{0, (int) actual_width});
     wmove(this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
 }

@@ -696,6 +696,12 @@ readline_curses::start()
         throw error(errno);
     }
 
+    if (this->vc_width > 0) {
+        ws.ws_col = this->vc_width;
+    } else if (this->vc_width < 0) {
+        ws.ws_col -= this->vc_left;
+        ws.ws_col += this->vc_width;
+    }
     if (openpty(this->rc_pty[RCF_MASTER].out(),
                 this->rc_pty[RCF_SLAVE].out(),
                 nullptr,
@@ -1394,11 +1400,12 @@ readline_curses::do_update()
         return;
     }
 
+    auto actual_width = this->get_actual_width();
     if (this->rc_active_context == -1) {
         int alt_start = -1;
         struct line_range lr(0, 0);
         attr_line_t alt_al;
-        view_colors& vc = view_colors::singleton();
+        auto& vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
         auto attrs = vc.attrs_for_role(role_t::VCR_TEXT);
@@ -1406,7 +1413,7 @@ readline_curses::do_update()
                   attrs.ta_attrs,
                   vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
                   nullptr);
-        whline(this->vc_window, ' ', this->vc_width);
+        whline(this->vc_window, ' ', actual_width);
 
         if (time(nullptr) > this->rc_value_expiration) {
             this->rc_value.clear();
@@ -1446,7 +1453,7 @@ readline_curses::do_update()
                                  this->get_actual_y(),
                                  this->vc_left,
                                  al,
-                                 line_range{0, (int) this->vc_width});
+                                 line_range{0, (int) actual_width});
 
         wmove(
             this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
@@ -1505,4 +1512,24 @@ readline_curses::update_poll_set(std::vector<struct pollfd>& pollfds)
         pollfds.push_back(
             (struct pollfd){this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
     }
+}
+
+void
+readline_curses::window_change()
+{
+    struct winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+        throw error(errno);
+    }
+    if (this->vc_width > 0) {
+        ws.ws_col = this->vc_width;
+    } else if (this->vc_width < 0) {
+        ws.ws_col -= this->vc_left;
+        ws.ws_col += this->vc_width;
+    }
+    if (ioctl(this->rc_pty[RCF_MASTER], TIOCSWINSZ, &ws) == -1) {
+        throw error(errno);
+    }
+    kill(this->rc_child, SIGWINCH);
 }

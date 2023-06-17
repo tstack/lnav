@@ -110,25 +110,13 @@ public:
 
     void set_change_action(const action& va) { this->rc_change = va; }
 
-    void set_perform_action(const action& va)
-    {
-        this->rc_perform = va;
-    }
+    void set_perform_action(const action& va) { this->rc_perform = va; }
 
-    void set_alt_perform_action(const action& va)
-    {
-        this->rc_alt_perform = va;
-    }
+    void set_alt_perform_action(const action& va) { this->rc_alt_perform = va; }
 
-    void set_timeout_action(const action& va)
-    {
-        this->rc_timeout = va;
-    }
+    void set_timeout_action(const action& va) { this->rc_timeout = va; }
 
-    void set_abort_action(const action& va)
-    {
-        this->rc_abort = va;
-    }
+    void set_abort_action(const action& va) { this->rc_abort = va; }
 
     void set_display_match_action(const action& va)
     {
@@ -198,17 +186,7 @@ public:
 
     void do_update() override;
 
-    void window_change()
-    {
-        struct winsize ws;
-
-        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
-            throw error(errno);
-        }
-        if (ioctl(this->rc_pty[RCF_MASTER], TIOCSWINSZ, &ws) == -1) {
-            throw error(errno);
-        }
-    }
+    void window_change();
 
     void line_ready(const char* line);
 
@@ -303,10 +281,7 @@ public:
 
     std::string get_match_string() const;
 
-    int get_max_match_length() const
-    {
-        return this->rc_max_match_length;
-    }
+    int get_max_match_length() const { return this->rc_max_match_length; }
 
     bool consume_ready_for_input()
     {
@@ -321,9 +296,7 @@ public:
         return this->rc_remote_complete_path;
     }
 
-    void set_save_history(bool value) {
-        this->rc_save_history = value;
-    }
+    void set_save_history(bool value) { this->rc_save_history = value; }
 
 private:
     enum {
