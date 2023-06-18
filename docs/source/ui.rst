@@ -226,6 +226,10 @@ TEXT
 
 The text view displays files for which lnav could not detect any log messages.
 
+Press :kbd:`t` to switch to the text view.  While in the text view, you can
+press :kbd:`f` or :kbd:`Shift` + :kbd:`F` to switch to the next / previous
+text file.
+
 Markdown
 """"""""
 
@@ -237,24 +241,27 @@ DB
 
 The DB view shows the results of queries done through the SQLite interface.
 You can execute a query by pressing :kbd:`;` and then entering a SQL statement.
-You can switch to the SQL view by pressing :kbd:`v`.
+
+Press :kbd:`v` to switch to the database result view.
 
 HELP
 ^^^^
 
-The help view displays the builtin help text.  Press :kbd:`?` to switch to the
-help view at any time.  While in the help view, the breadcrumb bar can be used
-to navigate to different sections of the document.
+The help view displays the builtin help text.  While in the help view, the
+breadcrumb bar can be used to navigate to different sections of the document.
+
+Press :kbd:`?` to switch to the help view.
 
 HIST
 ^^^^
 
 The histogram view displays a stacked bar chart of messages over time
-classified by their log level and whether they've been bookmarked.  Press
-:kbd:`i` to switch back and forth to the histogram view.  You can also press
-:kbd:`Shift`+:kbd:`i` to toggle the histogram view while synchronizing the top
-time.  While in the histogram view, pressing :kbd:`z`/:kbd:`Shift`+:kbd:`z`
-will zoom in/out.
+classified by their log level and whether they've been bookmarked.
+
+Press :kbd:`i` to switch back and forth to the histogram view.  You
+can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
+while synchronizing the top time.  While in the histogram view,
+pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
 
 PRETTY
 ^^^^^^
@@ -277,10 +284,15 @@ break the XML across multiple lines with appropriate indentation.
    Screenshot of the same log message in the PRETTY view.  The JSON object
    is now indented for easier reading.
 
+Press :kbd:`Shift` + :kbd:`P` to switch to the pretty-print view.
+
 SCHEMA
 ^^^^^^
 
 The schema view displays the current schema of the builtin SQLite database.
+
+Press :kbd:`;` to enter the SQL prompt and then enter :code:`.schema` to
+open the schema view.
 
 SPECTRO
 ^^^^^^^
