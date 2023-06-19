@@ -11,8 +11,27 @@ navigate through your logs using a variety of :ref:`hotkeys<hotkeys>`.
 for doing things like applying filters, tagging messages, and more.  You can
 then analyze your log messages using the :ref:`sql-ext`.
 
+Development
+-----------
+
+Development of lnav is hosted on `GitHub <https://github.com/tstack/lnav/>`_.
+
+`Issues <https://github.com/tstack/lnav/issues>`_ should be used for bugs
+and feature requests.
+
+`Discussions <https://github.com/tstack/lnav/discussions>`_ should be used
+for asking questions and sharing tips.
+
+Downloads
+---------
+
+Binaries and source code for lnav can be downloaded from the
+`releases page <https://github.com/tstack/lnav/releases>`_.
+
+When building from source, follow the steps below.
+
 Dependencies
-------------
+^^^^^^^^^^^^
 
 When compiling from source, the following dependencies are required:
 
@@ -26,7 +45,7 @@ When compiling from source, the following dependencies are required:
 * `libarchive <https://libarchive.org>`_
 
 Installation
-------------
+^^^^^^^^^^^^
 
 Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
 packages for your operating system.  To compile from source, use the following
