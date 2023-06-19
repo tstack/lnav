@@ -192,6 +192,9 @@ duration::to_string() const
                  amount,
                  curr_interval->symbol);
         retval.insert(0, segment);
+        if (remaining > 0 && amount < 10 && curr_interval->symbol[0]) {
+            retval.insert(0, "0");
+        }
     }
 
     if (neg) {
