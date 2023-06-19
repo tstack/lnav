@@ -850,6 +850,9 @@ logfile::read_full_message(logfile::const_iterator ll,
     msg_out.disown();
     auto range_for_line = this->get_file_range(ll);
     try {
+        if (range_for_line.fr_size > line_buffer::MAX_LINE_BUFFER_SIZE) {
+            range_for_line.fr_size = line_buffer::MAX_LINE_BUFFER_SIZE;
+        }
         auto read_result = this->lf_line_buffer.read_range(range_for_line);
 
         if (read_result.isErr()) {

@@ -1081,7 +1081,7 @@ line_buffer::load_next_line(file_range prev_line)
                 line_start, retval.li_file_range.fr_size);
             auto scan_res = is_utf8(frag, '\n');
             lf = scan_res.remaining_ptr(frag);
-            if (lf) {
+            if (lf != nullptr) {
                 lf -= 1;
             }
             retval.li_valid_utf = scan_res.is_valid();
