@@ -276,7 +276,8 @@ main(int argc, char* argv[])
 
                 fclose(out);
 
-                sprintf(cmd, "diff -u %s %s", argv[lpc], TMP_NAME);
+                snprintf(
+                    cmd, sizeof(cmd), "diff -u %s %s", argv[lpc], TMP_NAME);
                 rc = system(cmd);
                 if (rc != 0) {
                     if (prompt) {
