@@ -283,14 +283,18 @@ public:
                 case DT_XML_CLOSE_TAG: {
                     auto term = this->flush_values();
                     if (this->sw_depth > 0) {
-                        this->sw_depth -= 1;
-                        this->append_child_node(term);
+                        if (term) {
+                            this->append_child_node(term);
+                        }
                         this->sw_interval_state.pop_back();
                         this->sw_hier_stage
                             = std::move(this->sw_hier_nodes.back());
                         this->sw_hier_nodes.pop_back();
                     }
                     this->append_child_node(el.e_capture);
+                    if (this->sw_depth > 0) {
+                        this->sw_depth -= 1;
+                    }
                     this->flush_values();
                     break;
                 }

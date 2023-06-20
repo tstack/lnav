@@ -57,6 +57,14 @@ TEST_CASE("split_lines")
     }
 
     {
+        auto sf = string_fragment::from_str_range(in1, 7, -1);
+        auto split = sf.split_lines();
+
+        CHECK(1 == split.size());
+        CHECK("World!" == split[0].to_string());
+    }
+
+    {
         auto sf = string_fragment(in2);
         auto split = sf.split_lines();
 

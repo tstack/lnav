@@ -2275,10 +2275,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
 
     auto sf = sbr.to_string_fragment();
     auto body_opt = get_string_attr(al.get_attrs(), SA_BODY);
-    auto sf_lines = sf.split_lines();
+    auto nl_pos_opt = sf.find('\n');
     auto msg_line_number = std::distance(msg_start_iter, line_pair.second);
     auto line_from_top = line - msg_line_number;
-    if (sf_lines.size() > 1 && body_opt) {
+    if (body_opt && nl_pos_opt) {
         if (this->lss_token_meta_line != file_line_number
             || this->lss_token_meta_size != sf.length())
         {
@@ -2289,11 +2289,14 @@ logfile_sub_source::text_crumbs_for_line(int line,
         }
 
         const auto initial_size = crumbs.size();
+        auto sf_body
+            = sf.sub_range(body_opt->saw_string_attr->sa_range.lr_start,
+                           body_opt->saw_string_attr->sa_range.lr_end);
         file_off_t line_offset = 0;
         file_off_t line_end_offset = sf.length();
         size_t line_number = 0;
 
-        for (const auto& sf_line : sf_lines) {
+        for (const auto& sf_line : sf_body.split_lines()) {
             if (line_number >= msg_line_number) {
                 line_end_offset = line_offset + sf_line.length();
                 break;

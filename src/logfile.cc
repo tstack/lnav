@@ -227,16 +227,18 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         const auto& root_formats = log_format::get_root_formats();
         nonstd::optional<std::pair<log_format*, log_format::scan_match>>
             best_match;
+        size_t scan_count = 0;
 
         /*
          * Try each scanner until we get a match.  Fortunately, the formats
          * tend to be sufficiently different that there are few ambiguities...
          */
-        log_info("logfile[%s]: scanning line %d (offset: %d; size: %d)",
-                 this->lf_filename.c_str(),
-                 this->lf_index.size(),
-                 li.li_file_range.fr_offset,
-                 li.li_file_range.fr_size);
+        log_trace("logfile[%s]: scanning line %d (offset: %d; size: %d)",
+                  this->lf_filename.c_str(),
+                  this->lf_index.size(),
+                  li.li_file_range.fr_offset,
+                  li.li_file_range.fr_size);
+        size_t prev_index_size = this->lf_index.size();
         for (const auto& curr : root_formats) {
             if (this->lf_index.size()
                 >= curr->lf_max_unrecognized_lines.value_or(
@@ -268,13 +270,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 continue;
             }
 
+            scan_count += 1;
             curr->clear();
             this->set_format_base_time(curr.get());
-            std::vector<logline> scan_backup = this->lf_index;
             auto scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc);
 
             scan_res.match(
-                [this, &curr, &best_match, &scan_backup](
+                [this, &curr, &best_match, &prev_index_size](
                     const log_format::scan_match& sm) {
                     if (!best_match
                         || sm.sm_quality > best_match->second.sm_quality)
@@ -283,27 +285,41 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             "  scan with format (%s) matched with quality (%d)",
                             curr->get_name().c_str(),
                             sm.sm_quality);
+                        if (best_match) {
+                            auto last = this->lf_index.begin();
+                            std::advance(last, prev_index_size);
+                            this->lf_index.erase(this->lf_index.begin(), last);
+                        }
                         best_match = std::make_pair(curr.get(), sm);
+                        prev_index_size = this->lf_index.size();
                     } else {
                         log_info(
                             "  scan with format (%s) matched, but "
                             "is low quality (%d)",
                             curr->get_name().c_str(),
                             sm.sm_quality);
-                        this->lf_index = std::move(scan_backup);
+                        while (this->lf_index.size() > prev_index_size) {
+                            this->lf_index.pop_back();
+                        }
                     }
                 },
                 [curr](const log_format::scan_incomplete& si) {
-                    log_info(
+                    log_trace(
                         "  scan with format (%s) is incomplete, "
                         "more data required",
                         curr->get_name().c_str());
                 },
                 [curr](const log_format::scan_no_match& snm) {
-                    log_info("  scan with format (%s) does not match -- %s",
-                             curr->get_name().c_str(),
-                             snm.snm_reason);
+                    log_trace("  scan with format (%s) does not match -- %s",
+                              curr->get_name().c_str(),
+                              snm.snm_reason);
                 });
+        }
+
+        if (!scan_count) {
+            log_info("%s: no formats available to scan, no longer detecting",
+                     this->lf_filename.c_str());
+            this->lf_options.loo_detect_format = false;
         }
 
         if (best_match) {

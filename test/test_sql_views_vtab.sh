@@ -171,3 +171,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_meta = json_object('anchor', '#build') WHERE name = 'text'" \
     ${top_srcdir}/README.md
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 5" \
+    -c ";SELECT top_meta FROM lnav_top_view" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_xml_msg.0
