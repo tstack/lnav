@@ -1191,7 +1191,7 @@ lnav_crumb_source()
 
     auto* tss = top_view->get_sub_source();
     if (tss != nullptr) {
-        tss->text_crumbs_for_line(top_view->get_top(), retval);
+        tss->text_crumbs_for_line(top_view->get_selection(), retval);
     }
 
     return retval;

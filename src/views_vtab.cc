@@ -385,6 +385,9 @@ CREATE TABLE lnav_views (
 
         if (tc.get_top() != top_row) {
             tc.set_top(vis_line_t(top_row));
+            if (!tc.is_selectable()) {
+                selection = top_row;
+            }
         } else if (top_time != nullptr && time_source != nullptr) {
             date_time_scanner dts;
             struct timeval tv;
@@ -397,6 +400,9 @@ CREATE TABLE lnav_views (
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
                             [&tc](auto row) { tc.set_top(row); };
+                        if (!tc.is_selectable()) {
+                            selection = tc.get_top();
+                        }
                     }
                 }
             } else {
@@ -404,7 +410,7 @@ CREATE TABLE lnav_views (
                 return SQLITE_ERROR;
             }
         }
-        if (tc.is_selectable() && tc.get_selection() != selection) {
+        if (tc.get_selection() != selection) {
             tc.set_selection(vis_line_t(selection));
         }
         if (top_meta != nullptr) {
@@ -442,7 +448,7 @@ CREATE TABLE lnav_views (
                     auto curr_anchor = ta->anchor_for_row(tc.get_top());
 
                     if (!curr_anchor || curr_anchor.value() != req_anchor) {
-                        tc.set_top(req_anchor_top.value());
+                        tc.set_selection(req_anchor_top.value());
                     }
                 } else {
                     tab->zErrMsg = sqlite3_mprintf(

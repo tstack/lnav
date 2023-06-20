@@ -703,7 +703,7 @@ textfile_sub_source::set_top_from_off(file_off_t off)
             std::distance(lf->cbegin(), new_top_iter));
 
         if (new_top_opt) {
-            this->tss_view->set_top(vis_line_t(new_top_opt.value()));
+            this->tss_view->set_selection(vis_line_t(new_top_opt.value()));
         }
     };
 }

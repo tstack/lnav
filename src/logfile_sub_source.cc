@@ -2181,7 +2181,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& format_name) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
+     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
      WHERE name = 'log'
 )";
 
@@ -2213,7 +2213,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& uniq_path) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
+     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
      WHERE name = 'log'
 )";
 
@@ -2263,7 +2263,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
             },
             [ec = this->lss_exec_context](const auto& opid) {
                 static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-                         SET top = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
+                         SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
                          WHERE name = 'log'
                     )";
 
@@ -2335,7 +2335,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 return parent_node->find_line_number(index);
                             })
                             | [this, line_from_top](auto line_number) {
-                                  this->tss_view->set_top(
+                                  this->tss_view->set_selection(
                                       vis_line_t(line_from_top + line_number));
                               };
                     });
@@ -2381,7 +2381,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                               return curr_node->find_line_number(index);
                           })
                           | [this, line_from_top](size_t line_number) {
-                                this->tss_view->set_top(
+                                this->tss_view->set_selection(
                                     vis_line_t(line_from_top + line_number));
                             };
                   };
