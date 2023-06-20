@@ -2227,8 +2227,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
     auto& sbr = values.lvv_sbr;
 
     lf->read_full_message(msg_start_iter, sbr);
-    sbr.erase_ansi();
     attr_line_t al(to_string(sbr));
+    if (sbr.get_metadata().m_has_ansi) {
+        // bleh
+        scrub_ansi_string(al.get_string(), &al.al_attrs);
+        sbr.erase_ansi();
+    }
     format->annotate(file_line_number, al.get_attrs(), values);
 
     auto opid_opt = get_string_attr(al.get_attrs(), logline::L_OPID);
