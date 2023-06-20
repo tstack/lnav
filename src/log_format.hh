@@ -354,11 +354,18 @@ public:
         return false;
     }
 
-    enum scan_result_t {
-        SCAN_MATCH,
-        SCAN_NO_MATCH,
-        SCAN_INCOMPLETE,
+    struct scan_match {
+        uint32_t sm_quality;
     };
+
+    struct scan_no_match {
+        const char* snm_reason{nullptr};
+    };
+
+    struct scan_incomplete {};
+
+    using scan_result_t
+        = mapbox::util::variant<scan_match, scan_no_match, scan_incomplete>;
 
     /**
      * Scan a log line to see if it matches this log format.

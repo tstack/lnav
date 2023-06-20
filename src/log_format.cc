@@ -432,6 +432,7 @@ struct json_log_userdata {
             this->jlu_valid_utf = false;
         }
         this->jlu_sub_line_count += res.vlcr_count;
+        this->jlu_quality += res.vlcr_line_format_count;
     }
 
     external_log_format* jlu_format{nullptr};
@@ -444,6 +445,7 @@ struct json_log_userdata {
     const char* jlu_line_value{nullptr};
     size_t jlu_line_size{0};
     size_t jlu_sub_start{0};
+    uint32_t jlu_quality{0};
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
 };
@@ -719,13 +721,13 @@ external_log_format::scan(logfile& lf,
 
         if (!line_frag.startswith("{")) {
             if (!this->lf_specialized) {
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{"line is not a JSON object"};
             }
 
             ll.set_time(dst.back().get_timeval());
             ll.set_level(LEVEL_INVALID);
             dst.emplace_back(ll);
-            return log_format::SCAN_MATCH;
+            return log_format::scan_match{0};
         }
 
         auto& ypc = *(this->jlf_parse_context);
@@ -733,7 +735,7 @@ external_log_format::scan(logfile& lf,
         json_log_userdata jlu(sbr, &sbc);
 
         if (!this->lf_specialized && dst.size() >= 3) {
-            return log_format::SCAN_NO_MATCH;
+            return log_format::scan_no_match{"file is not JSON-lines"};
         }
 
         if (li.li_partial) {
@@ -743,7 +745,7 @@ external_log_format::scan(logfile& lf,
                 ll.set_level(LEVEL_INVALID);
                 dst.emplace_back(ll);
             }
-            return log_format::SCAN_INCOMPLETE;
+            return log_format::scan_incomplete{};
         }
 
         const auto* line_data = (const unsigned char*) sbr.get_data();
@@ -768,11 +770,11 @@ external_log_format::scan(logfile& lf,
                 if (this->lf_specialized) {
                     ll.set_ignore(true);
                     dst.emplace_back(ll);
-                    return log_format::SCAN_MATCH;
+                    return log_format::scan_match{0};
                 }
 
-                log_debug("no match! %.*s", sbr.length(), line_data);
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{
+                    "JSON message does not have expected timestamp property"};
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -801,7 +803,7 @@ external_log_format::scan(logfile& lf,
                 yajl_free_error(handle, msg);
             }
             if (!this->lf_specialized) {
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{"JSON parsing failed"};
             }
             for (int lpc = 0; lpc < line_count; lpc++) {
                 log_level_t level = LEVEL_INVALID;
@@ -816,7 +818,7 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{jlu.jlu_quality};
     }
 
     int curr_fmt = -1, orig_lock = this->last_pattern_index();
@@ -1027,7 +1029,7 @@ external_log_format::scan(logfile& lf,
             }
             this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
         }
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{0};
     }
 
     if (this->lf_specialized && !this->lf_multiline) {
@@ -1038,10 +1040,10 @@ external_log_format::scan(logfile& lf,
                          last_line.get_timeval(),
                          log_level_t::LEVEL_INVALID);
 
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{0};
     }
 
-    return log_format::SCAN_NO_MATCH;
+    return log_format::scan_no_match{"no patterns matched"};
 }
 
 uint8_t
@@ -2974,17 +2976,18 @@ external_log_format::value_line_count(const intern_string_t ist,
             lvs.add_value(val.value());
         }
     }
-    if (iter->second->vd_meta.is_hidden()) {
-        retval.vlcr_count = 0;
-        return retval;
-    }
 
     if (std::find_if(this->jlf_line_format.begin(),
                      this->jlf_line_format.end(),
                      json_field_cmp(json_log_field::VARIABLE, ist))
         != this->jlf_line_format.end())
     {
+        retval.vlcr_line_format_count += 1;
         retval.vlcr_count -= 1;
+    }
+
+    if (iter->second->vd_meta.is_hidden()) {
+        retval.vlcr_count = 0;
     }
 
     return retval;

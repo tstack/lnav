@@ -284,6 +284,7 @@ public:
 
     struct value_line_count_result {
         size_t vlcr_count{1};
+        size_t vlcr_line_format_count{0};
         bool vlcr_has_ansi{false};
         bool vlcr_valid_utf{true};
     };

@@ -172,8 +172,9 @@ main(int argc, char* argv[])
                         line_info li = {{13}};
 
                         (*iter)->clear();
-                        if ((*iter)->scan(*lf, index, li, sbr, sbc)
-                            == log_format::SCAN_MATCH)
+                        if ((*iter)
+                                ->scan(*lf, index, li, sbr, sbc)
+                                .is<log_format::scan_match>())
                         {
                             format = (*iter)->specialized();
                             found = true;
