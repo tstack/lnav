@@ -652,6 +652,17 @@ textfile_sub_source::rescan_files(
                                 lnav::document::discover_structure(
                                     content, line_range{0, -1}),
                             };
+                    } else {
+                        log_error(
+                            "%s: unable to read file for meta discover -- %s",
+                            lf->get_filename().c_str(),
+                            read_res.unwrapErr().c_str());
+                        this->tss_doc_metadata[lf->get_filename()]
+                            = metadata_state{
+                                st.st_mtime,
+                                static_cast<file_ssize_t>(st.st_size),
+                                {},
+                            };
                     }
                 }
             }
