@@ -511,6 +511,16 @@ static const struct json_path_container line_format_handlers = {
         .with_enum_values(TRANSFORM_ENUM)
         .for_field(
             &external_log_format::json_format_element::jfe_text_transform),
+
+    yajlpp::property_handler("prefix")
+        .with_synopsis("<str>")
+        .with_description("Text to prepend to the value")
+        .for_field(&external_log_format::json_format_element::jfe_prefix),
+
+    yajlpp::property_handler("suffix")
+        .with_synopsis("<str>")
+        .with_description("Text to append to the value")
+        .for_field(&external_log_format::json_format_element::jfe_suffix),
 };
 
 static const json_path_handler_base::enum_value_t KIND_ENUM[] = {

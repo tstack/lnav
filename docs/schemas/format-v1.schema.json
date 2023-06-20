@@ -512,6 +512,16 @@
                                     "lowercase",
                                     "capitalize"
                                 ]
+                            },
+                            "prefix": {
+                                "title": "/<format_name>/line-format/prefix",
+                                "description": "Text to prepend to the value",
+                                "type": "string"
+                            },
+                            "suffix": {
+                                "title": "/<format_name>/line-format/suffix",
+                                "description": "Text to append to the value",
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false

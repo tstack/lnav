@@ -1551,6 +1551,9 @@ external_log_format::get_subline(const logline& ll,
                             auto str = lv_iter->to_string();
                             size_t nl_pos = str.find('\n');
 
+                            if (!jfe.jfe_prefix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_prefix);
+                            }
                             lr.lr_start = this->jlf_cached_line.size();
 
                             if ((int) str.size() > jfe.jfe_max_width) {
@@ -1631,6 +1634,10 @@ external_log_format::get_subline(const logline& ll,
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)]
                                 = true;
+
+                            if (!jfe.jfe_suffix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_suffix);
+                            }
                         } else if (jfe.jfe_value.pp_value == ts_field) {
                             struct line_range lr;
                             ssize_t ts_len;
@@ -1670,13 +1677,25 @@ external_log_format::get_subline(const logline& ll,
                                    || jfe.jfe_value.pp_value
                                        == this->elf_level_field)
                         {
+                            const auto* level_name = ll.get_level_name();
+                            auto level_len = strlen(level_name);
                             this->json_append(
-                                jfe, nullptr, ll.get_level_name(), -1);
-                        } else {
+                                jfe, nullptr, level_name, level_len);
+                            if (jfe.jfe_auto_width) {
+                                this->json_append_to_cache(MAX_LEVEL_NAME_LEN
+                                                           - level_len);
+                            }
+                        } else if (!jfe.jfe_default_value.empty()) {
+                            if (!jfe.jfe_prefix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_prefix);
+                            }
                             this->json_append(jfe,
                                               nullptr,
                                               jfe.jfe_default_value.c_str(),
                                               jfe.jfe_default_value.size());
+                            if (!jfe.jfe_suffix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_suffix);
+                            }
                         }
 
                         switch (jfe.jfe_text_transform) {

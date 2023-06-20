@@ -38,6 +38,8 @@
 
 extern const char* level_names[LEVEL__MAX + 1];
 
+constexpr size_t MAX_LEVEL_NAME_LEN = 8;
+
 log_level_t string2level(const char* levelstr,
                          ssize_t len = -1,
                          bool exact = false);

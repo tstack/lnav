@@ -185,6 +185,10 @@ object with the following fields:
     in the current log message.  The built-in default is "-".
   :text-transform: Transform the text in the field.  Supported options are:
     none, uppercase, lowercase, capitalize
+  :prefix: Text to prepend to the value.  If the value is empty, this prefix
+    will not be added.
+  :suffix: Text to append to the value.  If the value is empty, this suffix
+    will not be added.
 
 :timestamp-field: The name of the field that contains the log message
   timestamp.  Defaults to "timestamp".

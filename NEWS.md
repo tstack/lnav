@@ -11,8 +11,12 @@ Features:
   `line-format` array that indicates that the width of the
   field should automatically be determined by the observed
   values.
-* Number fields used in a `line-format` now default to
-  being right-aligned.
+* Added bunyan log format from Tobias Gruetzmacher.
+* Number fields used in a JSON log format `line-format`
+  array now default to being right-aligned.  Also, added
+  `prefix` and `suffix` to `line-format` elements so a
+  string can optionally be prepended/appended if the value
+  is not empty.
 
 Bug Fixes:
 * Hidden values in JSON logs are now hidden by default.

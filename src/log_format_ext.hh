@@ -256,6 +256,8 @@ public:
         overflow_t jfe_overflow{overflow_t::ABBREV};
         transform_t jfe_text_transform{transform_t::NONE};
         std::string jfe_ts_format;
+        std::string jfe_prefix;
+        std::string jfe_suffix;
     };
 
     struct json_field_cmp {

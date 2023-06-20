@@ -144,3 +144,6 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json_subsec.json
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_bunyan.0
