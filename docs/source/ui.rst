@@ -50,7 +50,7 @@ The top status bar shows the current time and messages stored in the
 :ref:`table_lnav_user_notifications` table.
 
 Below the top status bar is the breadcrumb bar that displays the semantic
-location of the top line in the main view.  For example, within a
+location of the focused line in the main view.  For example, within a
 pretty-printed JSON document, it will show the path to property at the top
 of the view.  The actual content of the bar depends on the current view and
 will be updated as you navigate around the main view.  The bar can also be
@@ -134,7 +134,7 @@ Bottom Status Bar
 
 The second to last line is the bottom status bar, which shows the following:
 
-* the line number of the top line, starting from zero;
+* the line number of the focused line, starting from zero;
 * the location within the view, as a percentage;
 * the current search hit, the total number of hits, and the search term;
 * the loading indicator.
@@ -211,10 +211,10 @@ time will show the full path.
 
 The breadcrumb bar will show the following crumbs:
 
-* the timestamp for the top line;
-* the log format for the top line;
-* the name of the file the top line was pulled from;
-* the "operation ID" of the top log message, if it is supported by the log
+* the timestamp for the focused line;
+* the log format for the focused line;
+* the name of the file the focused line was pulled from;
+* the "operation ID" of the focused log message, if it is supported by the log
   format.
 
 These crumbs are interactive and can be used to navigate to different parts
@@ -235,6 +235,12 @@ Markdown
 
 Files with an :code:`.md` (or :code:`.markdown`) extension will be treated as
 Markdown files and rendered separately.
+
+  .. figure:: lnav-markdown-example.png
+     :align: center
+
+     Viewing the **lnav** :file:`README.md` file.
+
 
 DB
 ^^

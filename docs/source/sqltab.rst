@@ -134,11 +134,15 @@ available in this table:
 :top_time: The timestamp of the top line in the view or NULL if the view is
   not time-based.  This value can be UPDATEd to move the view to the given
   time.
+:top_file: The file the top line in the view is from.
 :paused: Indicates if the view is paused and will not load new data.
 :search: The search string for this view.  This value can be UPDATEd to
   initiate a text search in this view.
 :filtering: Indicates if the view is applying filters.
 :movement: The movement mode, either 'top' or 'cursor'.
+:top_meta: A JSON object that contains metadata related to the top line
+  in the view.
+:selection: The number of the line that is focused for selection.
 
 lnav_views_echo
 ---------------

@@ -1,4 +1,3 @@
-
 .. _faq:
 
 Frequently Asked Questions
@@ -7,10 +6,18 @@ Frequently Asked Questions
 Q: How can I copy & paste without decorations?
 ----------------------------------------------
 
-:Answer: There are a few ways to do this:
+:Answer: There are a couple ways to do this:
 
   * Use the :ref:`bookmark<hotkeys_bookmarks>` hotkeys to mark lines and then
-    press :kbd:`c` to copy to the local system keyboard.
+    press :kbd:`c` to copy to the local system keyboard.  The system clipboard
+    is accessed using commands like :code:`pbcopy` and :code:`xclip`.  See the
+    :ref:`tuning` section for more details.
+
+    If a system clipboard is not available,
+    the `OSC 52 <https://www.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/>`_
+    terminal escape sequence will be tried.  If your terminal supports this
+    escape sequence, the selected text will be copied to the clipboard, even
+    if you are on an SSH connection.
 
   * Press :kbd:`CTRL` + :kbd:`l` to temporarily switch to "lo-fi"
     mode where the contents of the current view are printed to the terminal.

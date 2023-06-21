@@ -550,5 +550,10 @@ log file for the "Format order" message:
 
     lnav -d /tmp/lnav.log
 
+For JSON-lines log files, the log message must have the timestamp property
+specified in the format in order to match.  If multiple formats match a
+message, the format that has the most matching :code:`line-format` elements
+will win.
+
 .. [#] The maximum number of lines to check can be configured.  See the
        :ref:`tuning` section for more details.

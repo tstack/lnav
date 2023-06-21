@@ -1,4 +1,3 @@
-
 .. _sql-ext:
 
 SQLite Interface
@@ -140,19 +139,20 @@ Commands
 
 A SQL command is an internal macro implemented by lnav.
 
-* .schema - Open the schema view.  This view contains a dump of the schema
-  for the internal tables and any tables in attached databases.
-* .msgformats - Executes a canned query that groups and counts log messages by
-  the format of their message bodies.  This command can be useful for quickly
-  finding out the types of messages that are most common in a log file.
+* :code:`.schema` - Open the schema view.  This view contains a dump of the
+  schema for the internal tables and any tables in attached databases.
+* :code:`.msgformats` - Executes a canned query that groups and counts log
+  messages by the format of their message bodies.  This command can be useful
+  for quickly finding out the types of messages that are most common in a log
+  file.
 
 Variables
 ---------
 
 The following variables are available in SQL statements:
 
-* $LINES - The number of lines in the terminal window.
-* $COLS - The number of columns in the terminal window.
+* :code:`$LINES` - The number of lines in the terminal window.
+* :code:`$COLS` - The number of columns in the terminal window.
 
 Environment
 -----------

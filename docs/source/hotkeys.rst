@@ -187,7 +187,7 @@ Bookmarks
    * - Keypress
      - Command
    * - :kbd:`m`
-     - Mark/unmark the top line
+     - Mark/unmark the top line or focused line when in cursor mode
    * - :kbd:`Shift` + :kbd:`m`
      - Mark/unmark the range of lines from the last marked to the top
    * - :kbd:`Shift` + :kbd:`j`
