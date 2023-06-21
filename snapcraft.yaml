@@ -15,10 +15,17 @@ environment:
   GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
   GIT_EXEC_PATH: $SNAP/usr/lib/git-core
 
+plugs:
+  etc-lnav:
+    interface: system-files
+    read:
+      - /etc/lnav
+
 apps:
   lnav:
     command: usr/bin/lnav
     plugs:
+      - etc-lnav
       - home            # optional, allows to read log files from home directory
       - log-observe     # required, provide access to system logs in /var/log
       - network         # required, lnav uses sendto() with UNIX domain socket
