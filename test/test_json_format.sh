@@ -147,3 +147,6 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_bunyan.0
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_cloudflare.json

@@ -1,0 +1,236 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "cloudflare_json_log": {
+        "title": "Cloudflare Access Log",
+        "description": "Cloudflare Enterprise detailed logs of metadata",
+        "url": "https://developers.cloudflare.com/logs/",
+        "json": true,
+        "hide-extra": true,
+        "ordered-by-time": false,
+        "level-field": "CacheCacheStatus",
+        "level": {
+            "info": "hit",
+            "warning": "miss"
+        },
+        "line-format": [
+            {
+                "field": "ClientIP",
+                "auto-width": true
+            },
+            " ",
+            {
+                "prefix": "[",
+                "field": "__timestamp__",
+                "suffix": "]"
+            },
+            " \"",
+            {
+                "field": "ClientRequestMethod"
+            },
+            " ",
+            {
+                "field": "ClientRequestURI"
+            },
+            " ",
+            {
+                "field": "ClientRequestProtocol"
+            },
+            "\" ",
+            {
+                "field": "EdgeResponseStatus"
+            },
+            " ",
+            {
+                "field": "EdgeResponseBytes"
+            },
+            " ",
+            {
+                "field": "ClientRequestReferer"
+            },
+            " ",
+            {
+                "field": "ClientRequestUserAgent"
+            }
+        ],
+        "timestamp-field": "EdgeStartTimestamp",
+        "opid-field": "ClientIP",
+        "value": {
+            "ClientIP": {
+                "kind": "string",
+                "identifier": true
+            },
+            "ClientRequestMethod": {
+                "kind": "string"
+            },
+            "ClientRequestURI": {
+                "kind": "string",
+                "identifier": true
+            },
+            "EdgeEndTimestamp": {
+                "kind": "string",
+                "hidden": true
+            },
+            "EdgeResponseBytes": {
+                "kind": "integer"
+            },
+            "EdgeResponseStatus": {
+                "kind": "integer"
+            },
+            "EdgeStartTimestamp": {
+                "kind": "string"
+            },
+            "RayID": {
+                "kind": "string",
+                "identifier": true,
+                "foreign-key": true,
+                "hidden": true
+            },
+            "CacheCacheStatus": {
+                "kind": "string",
+                "hidden": true
+            },
+            "CacheTieredFill": {
+                "kind": "json",
+                "hidden": true
+            },
+            "CacheResponseBytes": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "CacheResponseStatus": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "FirewallMatchesActions": {
+                "kind": "json",
+                "hidden": true
+            },
+            "FirewallMatchesRuleIDs": {
+                "kind": "json",
+                "hidden": true
+            },
+            "FirewallMatchesSources": {
+                "kind": "json",
+                "hidden": true
+            },
+            "OriginResponseBytes": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginResponseDurationMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginResponseHTTPExpires": {
+                "kind": "string",
+                "hidden": true
+            },
+            "OriginResponseHTTPLastModified": {
+                "kind": "string",
+                "hidden": true
+            },
+            "OriginResponseHeaderReceiveDurationMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginResponseStatus": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginResponseTime": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginDNSResponseTimeMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginIP": {
+                "kind": "string",
+                "hidden": true
+            },
+            "OriginRequestHeaderSendDurationMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginSSLProtocol": {
+                "kind": "string",
+                "hidden": true
+            },
+            "OriginTCPHandshakeDurationMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "OriginTLSHandshakeDurationMs": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "WAFAction": {
+                "kind": "string",
+                "hidden": true
+            },
+            "WAFFlags": {
+                "kind": "string",
+                "hidden": true
+            },
+            "WAFMatchedVar": {
+                "kind": "string",
+                "hidden": true
+            },
+            "WAFProfile": {
+                "kind": "string",
+                "hidden": true
+            },
+            "WAFRuleID": {
+                "kind": "string",
+                "hidden": true
+            },
+            "WAFRuleMessage": {
+                "kind": "string",
+                "hidden": true
+            },
+            "ClientASN": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "ClientCountry": {
+                "kind": "string",
+                "hidden": true
+            },
+            "ClientDeviceType": {
+                "kind": "string",
+                "hidden": true
+            },
+            "ClientIPClass": {
+                "kind": "string",
+                "hidden": true
+            },
+            "ClientRequestBytes": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "ClientRequestPath": {
+                "kind": "integer",
+                "identifier": true,
+                "hidden": true
+            },
+            "ClientRequestProtocol": {
+                "kind": "string"
+            },
+            "ClientRequestUserAgent": {
+                "kind": "string"
+            },
+            "ClientRequestReferer": {
+                "kind": "string"
+            },
+            "ClientRequestScheme": {
+                "kind": "string",
+                "hidden": true
+            },
+            "ClientRequestSource": {
+                "kind": "string",
+                "hidden": true
+            }
+        }
+    }
+}

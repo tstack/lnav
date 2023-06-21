@@ -298,6 +298,7 @@ dist_noinst_DATA = \
 	logfile_bro_http.log.0 \
 	logfile_bunyan.0 \
 	logfile_crlf.0 \
+	logfile_cloudflare.json \
 	logfile_cxx.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \

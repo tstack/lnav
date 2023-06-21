@@ -12,6 +12,7 @@ Features:
   field should automatically be determined by the observed
   values.
 * Added bunyan log format from Tobias Gruetzmacher.
+* Added cloudlare log format from @minusf.
 * Number fields used in a JSON log format `line-format`
   array now default to being right-aligned.  Also, added
   `prefix` and `suffix` to `line-format` elements so a
