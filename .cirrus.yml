@@ -3,3 +3,5 @@ freebsd_instance:
 task:
   install_script: pkg install -y wget git m4 bash autoconf automake sqlite3 gmake curl libarchive pcre2 bzip2
   build_script: ./autogen.sh && ./configure && gmake -j3
+  binaries_artifacts:
+    path: "src/lnav"
