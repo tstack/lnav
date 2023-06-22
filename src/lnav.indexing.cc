@@ -290,8 +290,6 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
             scroll_downs[LNV_LOG] = false;
         }
 
-        log_view.reload_data();
-
         {
             std::unordered_map<std::string, std::list<std::shared_ptr<logfile>>>
                 id_to_files;

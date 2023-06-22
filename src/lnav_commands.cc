@@ -3847,7 +3847,7 @@ com_toggle_field(exec_context& ec,
             // TODO: highlight the fields to be hidden.
             retval = "";
         } else {
-            logfile_sub_source& lss = lnav_data.ld_log_source;
+            auto& lss = lnav_data.ld_log_source;
             bool hide = args[0] == "hide-fields";
             std::vector<std::string> found_fields, missing_fields;
 
@@ -3870,8 +3870,8 @@ com_toggle_field(exec_context& ec,
                 } else if (tc->get_inner_height() == 0) {
                     return ec.make_error("no log messages to hide");
                 } else {
-                    content_line_t cl = lss.at(tc->get_selection());
-                    std::shared_ptr<logfile> lf = lss.find(cl);
+                    auto cl = lss.at(tc->get_selection());
+                    auto lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
                 }

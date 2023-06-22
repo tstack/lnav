@@ -1526,9 +1526,16 @@ save_session_with_id(const std::string& session_id)
                                     continue;
                                 }
 
-                                cmd_array.gen("hide-fields "
-                                              + elf->get_name().to_string()
-                                              + "." + vd.first.to_string());
+                                if (vd.second->vd_meta.lvm_user_hidden.value())
+                                {
+                                    cmd_array.gen("hide-fields "
+                                                  + elf->get_name().to_string()
+                                                  + "." + vd.first.to_string());
+                                } else if (vd.second->vd_meta.lvm_hidden) {
+                                    cmd_array.gen("show-fields "
+                                                  + elf->get_name().to_string()
+                                                  + "." + vd.first.to_string());
+                                }
                             }
                         }
 
@@ -1654,8 +1661,15 @@ reset_session()
             continue;
         }
 
+        bool changed = false;
         for (const auto& vd : elf->elf_value_defs) {
-            vd.second->vd_meta.lvm_user_hidden = false;
+            if (vd.second->vd_meta.lvm_user_hidden) {
+                vd.second->vd_meta.lvm_user_hidden = nonstd::nullopt;
+                changed = true;
+            }
+        }
+        if (changed) {
+            elf->elf_value_defs_state->vds_generation += 1;
         }
     }
 }

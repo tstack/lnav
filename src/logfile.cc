@@ -455,6 +455,16 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         return rebuild_result_t::NO_NEW_LINES;
     }
 
+    if (this->lf_format != nullptr && this->lf_format->format_changed()) {
+        log_info("%s: format has changed, rebuilding",
+                 this->lf_filename.c_str());
+        this->lf_index.clear();
+        this->lf_index_size = 0;
+        this->lf_partial_line = false;
+        this->lf_longest_line = 0;
+        this->lf_sort_needed = true;
+    }
+
     auto retval = rebuild_result_t::NO_NEW_LINES;
     struct stat st;
 
@@ -555,8 +565,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             this->lf_logline_observer->logline_restart(*this, rollback_size);
         }
 
-        bool sort_needed = this->lf_sort_needed;
-        this->lf_sort_needed = false;
+        bool sort_needed = std::exchange(this->lf_sort_needed, false);
         size_t limit = SIZE_MAX;
 
         if (deadline) {

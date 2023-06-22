@@ -118,7 +118,13 @@ struct logline_value_meta {
     {
     }
 
-    bool is_hidden() const { return this->lvm_hidden || this->lvm_user_hidden; }
+    bool is_hidden() const
+    {
+        if (this->lvm_user_hidden) {
+            return this->lvm_user_hidden.value();
+        }
+        return this->lvm_hidden;
+    }
 
     logline_value_meta& with_struct_name(intern_string_t name)
     {
@@ -132,7 +138,7 @@ struct logline_value_meta {
     nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
     bool lvm_hidden{false};
-    bool lvm_user_hidden{false};
+    nonstd::optional<bool> lvm_user_hidden;
     bool lvm_from_module{false};
     intern_string_t lvm_struct_name;
     nonstd::optional<log_format*> lvm_format;
@@ -478,6 +484,8 @@ public:
     {
         return {};
     }
+
+    virtual bool format_changed() { return false; }
 
     struct pattern_for_lines {
         pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);

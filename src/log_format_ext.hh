@@ -137,29 +137,30 @@ public:
         this->jlf_line_offsets.reserve(128);
     }
 
-    const intern_string_t get_name() const { return this->elf_name; }
+    const intern_string_t get_name() const override { return this->elf_name; }
 
-    bool match_name(const std::string& filename);
+    bool match_name(const std::string& filename) override;
 
-    bool match_mime_type(const file_format_t ff) const;
+    bool match_mime_type(const file_format_t ff) const override;
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& offset,
                        shared_buffer_ref& sbr,
-                       scan_batch_context& sbc);
+                       scan_batch_context& sbc) override;
 
-    bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const;
+    bool scan_for_partial(shared_buffer_ref& sbr,
+                          size_t& len_out) const override;
 
     void annotate(uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
-                  bool annotate_module = true) const;
+                  bool annotate_module = true) const override;
 
     void rewrite(exec_context& ec,
                  shared_buffer_ref& line,
                  string_attrs_t& sa,
-                 std::string& value_out);
+                 std::string& value_out) override;
 
     void build(std::vector<lnav::console::user_message>& errors);
 
@@ -168,41 +169,21 @@ public:
 
     bool match_samples(const std::vector<sample>& samples) const;
 
-    bool hide_field(const intern_string_t field_name, bool val)
-    {
-        auto vd_iter = this->elf_value_defs.find(field_name);
+    bool hide_field(const intern_string_t field_name, bool val) override;
 
-        if (vd_iter == this->elf_value_defs.end()) {
-            return false;
-        }
-
-        vd_iter->second->vd_meta.lvm_user_hidden = val;
-        return true;
-    }
-
-    std::shared_ptr<log_format> specialized(int fmt_lock);
+    std::shared_ptr<log_format> specialized(int fmt_lock) override;
 
     const logline_value_stats* stats_for_value(
-        const intern_string_t& name) const
-    {
-        auto iter = this->elf_value_defs.find(name);
-        if (iter != this->elf_value_defs.end()
-            && iter->second->vd_meta.lvm_values_index)
-        {
-            return &this->lf_value_stats[iter->second->vd_meta.lvm_values_index
-                                             .value()];
-        }
-
-        return nullptr;
-    }
+        const intern_string_t& name) const override;
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message);
+                     bool full_message) override;
 
-    std::shared_ptr<log_vtab_impl> get_vtab_impl() const;
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override;
 
-    const std::vector<std::string>* get_actions(const logline_value& lv) const
+    const std::vector<std::string>* get_actions(
+        const logline_value& lv) const override
     {
         const std::vector<std::string>* retval = nullptr;
 
@@ -214,12 +195,14 @@ public:
         return retval;
     }
 
-    std::set<std::string> get_source_path() const
+    bool format_changed() override;
+
+    std::set<std::string> get_source_path() const override
     {
         return this->elf_source_path;
     }
 
-    std::vector<logline_value_meta> get_value_metadata() const;
+    std::vector<logline_value_meta> get_value_metadata() const override;
 
     enum class json_log_field {
         CONSTANT,
@@ -305,7 +288,7 @@ public:
         return iter != this->elf_value_defs.end();
     }
 
-    std::string get_pattern_path(uint64_t line_number) const
+    std::string get_pattern_path(uint64_t line_number) const override
     {
         if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "structured";
@@ -314,17 +297,9 @@ public:
         return this->elf_pattern_order[pat_index]->p_config_path;
     }
 
-    intern_string_t get_pattern_name(uint64_t line_number) const;
+    intern_string_t get_pattern_name(uint64_t line_number) const override;
 
-    std::string get_pattern_regex(uint64_t line_number) const
-    {
-        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
-            return "";
-        }
-        int pat_index = this->pattern_index_for_line(line_number);
-        return this->elf_pattern_order[pat_index]
-            ->p_pcre.pp_value->get_pattern();
-    }
+    std::string get_pattern_regex(uint64_t line_number) const override;
 
     log_level_t convert_level(string_fragment str,
                               scan_batch_context* sbc) const;
@@ -345,6 +320,15 @@ public:
     std::vector<sample> elf_samples;
     std::unordered_map<const intern_string_t, std::shared_ptr<value_def>>
         elf_value_defs;
+
+    struct value_defs_state {
+        size_t vds_generation{0};
+    };
+
+    std::shared_ptr<value_defs_state> elf_value_defs_state{
+        std::make_shared<value_defs_state>()};
+    value_defs_state elf_specialized_value_defs_state;
+
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     int elf_column_count{0};

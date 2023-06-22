@@ -2926,6 +2926,7 @@ external_log_format::specialized(int fmt_lock)
 
     this->lf_value_stats.clear();
     this->lf_value_stats.resize(this->elf_value_defs.size());
+    this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
 
     return retval;
 }
@@ -3248,6 +3249,72 @@ external_log_format::get_value_metadata() const
     }
 
     return retval;
+}
+
+const logline_value_stats*
+external_log_format::stats_for_value(const intern_string_t& name) const
+{
+    auto iter = this->elf_value_defs.find(name);
+    if (iter != this->elf_value_defs.end()
+        && iter->second->vd_meta.lvm_values_index)
+    {
+        return &this->lf_value_stats[iter->second->vd_meta.lvm_values_index
+                                         .value()];
+    }
+
+    return nullptr;
+}
+
+std::string
+external_log_format::get_pattern_regex(uint64_t line_number) const
+{
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+        return "";
+    }
+    int pat_index = this->pattern_index_for_line(line_number);
+    return this->elf_pattern_order[pat_index]->p_pcre.pp_value->get_pattern();
+}
+
+bool
+external_log_format::hide_field(const intern_string_t field_name, bool val)
+{
+    auto vd_iter = this->elf_value_defs.find(field_name);
+
+    if (vd_iter == this->elf_value_defs.end()) {
+        return false;
+    }
+
+    vd_iter->second->vd_meta.lvm_user_hidden = val;
+    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+        bool found = false;
+
+        for (const auto& jfe : this->jlf_line_format) {
+            if (jfe.jfe_value.pp_value == field_name) {
+                found = true;
+            }
+        }
+        if (!found) {
+            log_info("format field %s.%s changed, rebuilding",
+                     this->elf_name.get(),
+                     field_name.get());
+            this->elf_value_defs_state->vds_generation += 1;
+        }
+    }
+    return true;
+}
+
+bool
+external_log_format::format_changed()
+{
+    if (this->elf_specialized_value_defs_state.vds_generation
+        != this->elf_value_defs_state->vds_generation)
+    {
+        this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
+        this->jlf_cached_offset = -1;
+        return true;
+    }
+
+    return false;
 }
 
 bool

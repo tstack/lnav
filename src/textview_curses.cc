@@ -825,7 +825,7 @@ void
 text_time_translator::scroll_invoked(textview_curses* tc)
 {
     if (tc->get_inner_height() > 0) {
-        this->time_for_row(tc->get_top()) |
+        this->time_for_row(tc->get_selection()) |
             [this](auto new_top_time) { this->ttt_top_time = new_top_time; };
     }
 }
@@ -836,22 +836,23 @@ text_time_translator::data_reloaded(textview_curses* tc)
     if (tc->get_inner_height() == 0) {
         return;
     }
-    if (tc->get_top() > tc->get_inner_height()) {
+    if (tc->get_selection() > tc->get_inner_height()) {
         if (this->ttt_top_time.tv_sec != 0) {
             this->row_for_time(this->ttt_top_time) |
-                [tc](auto new_top) { tc->set_top(new_top); };
+                [tc](auto new_top) { tc->set_selection(new_top); };
         }
         return;
     }
-    this->time_for_row(tc->get_top()) | [this, tc](auto top_time) {
+    this->time_for_row(tc->get_selection()) | [this, tc](auto top_time) {
         if (top_time != this->ttt_top_time) {
             if (this->ttt_top_time.tv_sec != 0) {
                 this->row_for_time(this->ttt_top_time) |
-                    [tc](auto new_top) { tc->set_top(new_top); };
+                    [tc](auto new_top) { tc->set_selection(new_top); };
             }
-            this->time_for_row(tc->get_top()) | [this](auto new_top_time) {
-                this->ttt_top_time = new_top_time;
-            };
+            this->time_for_row(tc->get_selection()) |
+                [this](auto new_top_time) {
+                    this->ttt_top_time = new_top_time;
+                };
         }
     };
 }

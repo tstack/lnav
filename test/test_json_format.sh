@@ -150,3 +150,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_cloudflare.json
+
+run_cap_test ${lnav_test} -n \
+    -c ':show-fields RayID' \
+    ${test_dir}/logfile_cloudflare.json

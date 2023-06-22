@@ -1039,14 +1039,17 @@ logfile_sub_source::rebuild_index(
         case rebuild_result::rr_full_rebuild:
             log_debug("redoing search");
             this->lss_index_generation += 1;
+            this->tss_view->reload_data();
             this->tss_view->redo_search();
             break;
         case rebuild_result::rr_partial_rebuild:
             log_debug("redoing search from: %d", (int) search_start);
             this->lss_index_generation += 1;
+            this->tss_view->reload_data();
             this->tss_view->search_new_data(search_start);
             break;
         case rebuild_result::rr_appended_lines:
+            this->tss_view->reload_data();
             this->tss_view->search_new_data();
             break;
     }
