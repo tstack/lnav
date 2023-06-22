@@ -801,6 +801,23 @@ read_top_line(yajlpp_parse_context* ypc, long long value)
 }
 
 static int
+read_focused_line(yajlpp_parse_context* ypc, long long value)
+{
+    const char** view_name;
+    int view_index;
+
+    view_name = find(lnav_view_strings,
+                     lnav_view_strings + LNV__MAX,
+                     ypc->get_path_fragment(-2));
+    view_index = view_name - lnav_view_strings;
+    if (view_index < LNV__MAX) {
+        session_data.sd_view_states[view_index].vs_selection = value;
+    }
+
+    return 1;
+}
+
+static int
 read_word_wrap(yajlpp_parse_context* ypc, int value)
 {
     const char** view_name;
@@ -864,6 +881,7 @@ read_commands(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
 
 static const struct json_path_container view_def_handlers = {
     json_path_handler("top_line", read_top_line),
+    json_path_handler("focused_line", read_focused_line),
     json_path_handler("search", read_current_search),
     json_path_handler("word_wrap", read_word_wrap),
     json_path_handler("filtering", read_filtering),
@@ -1466,6 +1484,14 @@ save_session_with_id(const std::string& session_id)
                         view_map.gen(-1LL);
                     } else {
                         view_map.gen((long long) tc.get_top());
+                    }
+
+                    if (tc.is_selectable() && tc.get_selection() >= 0_vl
+                        && tc.get_inner_height() > 0_vl
+                        && tc.get_selection() != tc.get_inner_height() - 1)
+                    {
+                        view_map.gen("focused_line");
+                        view_map.gen((long long) tc.get_selection());
                     }
 
                     view_map.gen("search");

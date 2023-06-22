@@ -1918,6 +1918,7 @@ looper()
                         || lnav_data.ld_text_source.text_line_count() > 0
                         || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
+                    log_debug("restoring view states");
                     for (size_t view_index = 0; view_index < LNV__MAX;
                          view_index++)
                     {
@@ -1925,12 +1926,19 @@ looper()
                             = session_data.sd_view_states[view_index];
                         auto& tview = lnav_data.ld_views[view_index];
 
-                        if (vs.vs_top > 0 && tview.get_top() == 0_vl) {
+                        if (vs.vs_top >= 0
+                            && (view_index == LNV_LOG
+                                || tview.get_top() == 0_vl))
+                        {
                             log_info("restoring %s view top: %d",
                                      lnav_view_strings[view_index],
                                      vs.vs_top);
                             lnav_data.ld_views[view_index].set_top(
                                 vis_line_t(vs.vs_top));
+                            if (vs.vs_selection) {
+                                lnav_data.ld_views[view_index].set_selection(
+                                    vis_line_t(vs.vs_selection.value()));
+                            }
                         }
                     }
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
