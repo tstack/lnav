@@ -4812,6 +4812,7 @@ sql_prompt(std::vector<std::string>& args)
 
     auto* fos = (field_overlay_source*) log_view.get_overlay_source();
     fos->fos_contexts.top().c_show = true;
+    tc->set_sync_selection_and_top(true);
     tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");

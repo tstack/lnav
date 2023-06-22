@@ -217,6 +217,14 @@ public:
         return this->lv_top;
     }
 
+    void set_sync_selection_and_top(bool value)
+    {
+        this->lv_sync_selection_and_top = value;
+        if (value) {
+            this->set_top(this->get_selection());
+        }
+    }
+
     listview_curses& set_word_wrap(bool ww)
     {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
@@ -556,6 +564,7 @@ protected:
     bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{0};
+    bool lv_sync_selection_and_top{false};
 
     struct timeval lv_mouse_time {
         0, 0

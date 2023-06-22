@@ -2666,8 +2666,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_tail_space(2_vl)
         .set_overlay_source(log_fos);
     auto sel_reload_delegate = [](textview_curses& tc) {
-        tc.set_selectable(lnav_config.lc_ui_movement.mode
-                          == config_movement_mode::CURSOR);
+        if (lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR) {
+            tc.set_selectable(true);
+        }
     };
     lnav_data.ld_views[LNV_LOG].set_reload_config_delegate(sel_reload_delegate);
     lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);

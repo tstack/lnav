@@ -637,6 +637,9 @@ listview_curses::set_selection(vis_line_t sel)
             }
             if (found) {
                 this->lv_selection = sel;
+                if (this->lv_sync_selection_and_top) {
+                    this->lv_top = sel;
+                }
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
                 this->invoke_scroll();

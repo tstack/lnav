@@ -299,6 +299,7 @@ rl_change(readline_curses* rc)
                             top_ctx.c_prefix = "";
                             top_ctx.c_show = false;
                         }
+                        tc->set_sync_selection_and_top(top_ctx.c_show);
                     }
                 }
             }
@@ -897,5 +898,7 @@ rl_blur(readline_curses* rc)
                    .get_overlay_source();
 
     fos->fos_contexts.pop();
+    lnav_data.ld_views[LNV_LOG].set_sync_selection_and_top(
+        fos->fos_contexts.top().c_show);
     lnav_data.ld_preview_generation += 1;
 }
