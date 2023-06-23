@@ -19,6 +19,10 @@ Features:
   string can optionally be prepended/appended if the value
   is not empty.
 
+Changes:
+* For JSON-lines logs, line-feeds at the end of a value are
+  automatically stripped.
+
 Bug Fixes:
 * Hidden values in JSON logs are now hidden by default.
 * Text with ANSI-escapes is now filtered properly.

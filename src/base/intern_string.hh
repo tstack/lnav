@@ -170,6 +170,13 @@ struct string_fragment {
 
     char back() const { return this->sf_string[this->sf_end - 1]; }
 
+    void pop_back()
+    {
+        if (!this->empty()) {
+            this->sf_end -= 1;
+        }
+    }
+
     iterator begin() const { return &this->sf_string[this->sf_begin]; }
 
     iterator end() const { return &this->sf_string[this->sf_end]; }

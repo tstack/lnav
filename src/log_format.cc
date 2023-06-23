@@ -1549,6 +1549,9 @@ external_log_format::get_subline(const logline& ll,
                             logline_value_cmp(&jfe.jfe_value.pp_value));
                         if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                             auto str = lv_iter->to_string();
+                            while (endswith(str, "\n")) {
+                                str.pop_back();
+                            }
                             size_t nl_pos = str.find('\n');
 
                             if (!jfe.jfe_prefix.empty()) {
@@ -1758,7 +1761,10 @@ external_log_format::get_subline(const logline& ll,
                     continue;
                 }
 
-                const std::string str = lv.to_string();
+                auto str = lv.to_string();
+                while (endswith(str, "\n")) {
+                    str.pop_back();
+                }
 
                 lv.lv_sub_offset = sub_offset;
                 lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
@@ -2964,6 +2970,9 @@ external_log_format::value_line_count(const intern_string_t ist,
     value_line_count_result retval;
     if (str != nullptr) {
         auto frag = string_fragment::from_bytes(str, len);
+        while (frag.endswith("\n")) {
+            frag.pop_back();
+        }
         while (!frag.empty()) {
             auto utf_res = is_utf8(frag, '\n');
             if (!utf_res.is_valid()) {

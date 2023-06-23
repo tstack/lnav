@@ -146,6 +146,8 @@ object with the following fields:
 
       [ { "field": "ts" }, " ", { "field": "msg" } ]
 
+  .. note:: Line-feeds at the end of a value are automatically stripped.
+
   :field: The name or `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_
     of the message field that should be inserted at this point in the
     message.  The special :code:`__timestamp__` field name can be used to
