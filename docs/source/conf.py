@@ -230,6 +230,7 @@ lexers['custsqlite'] = CustSqliteLexer(startinline=True)
 extensions = [
     'sphinx.ext.coverage',
     "sphinx_rtd_theme",
+    'sphinx_copybutton',
     'sphinx-jsonschema',
     'sphinx-prompt',
     '_ext.lnavlexer',
