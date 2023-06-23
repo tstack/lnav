@@ -204,6 +204,8 @@ listview_curses::do_update()
     if (this->lv_selectable) {
         if (this->lv_selection < 0_vl) {
             this->set_top(0_vl);
+        } else if (this->lv_sync_selection_and_top) {
+            this->set_top(this->lv_selection);
         } else if (this->lv_selection
                    >= (this->lv_top + height - this->lv_tail_space - 1_vl))
         {
