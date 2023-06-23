@@ -140,6 +140,20 @@ and
 To create or customize a theme, consult the :ref:`themes` section.
 
 
+Cursor Mode (v0.11.2+)
+^^^^^^^^^^^^^^^^^^^^^^
+
+The default mode for scrolling in **lnav** is to move the contents of the
+main view when the arrow keys are pressed.  Any interactions, such as
+jumping to a search hit, are then focused on the top line in the view.
+Alternatively, you can enable "cursor" mode where there is a cursor line
+in the view that is moved by the arrow keys and other interactions.  You
+can enable cursor mode with the following command:
+
+.. code-block:: lnav
+
+   :config /ui/movement/mode cursor
+
 Log Formats
 ^^^^^^^^^^^
 
