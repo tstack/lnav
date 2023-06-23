@@ -324,7 +324,7 @@ handle_paging_key(int ch)
         case 'f':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 bm[&logfile_sub_source::BM_FILES].next(tc->get_selection()) |
-                    [&tc](auto vl) { tc->set_top(vl); };
+                    [&tc](auto vl) { tc->set_selection(vl); };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 

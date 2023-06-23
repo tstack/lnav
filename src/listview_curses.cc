@@ -207,10 +207,29 @@ listview_curses::do_update()
         } else if (this->lv_selection
                    >= (this->lv_top + height - this->lv_tail_space - 1_vl))
         {
-            this->set_top(
-                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
-        } else if (this->lv_selection < this->lv_top) {
-            this->set_top(this->lv_selection, true);
+            auto diff = this->lv_selection
+                - (this->lv_top + height - this->lv_tail_space - 1_vl);
+
+            if (diff < (height / 8_vl)) {
+                // for small differences between the bottom and the selection,
+                // just move a little bit.
+                this->set_top(
+                    this->lv_selection - height + 1_vl + this->lv_tail_space,
+                    true);
+            } else {
+                // for large differences, put the focus in the middle
+                this->set_top(this->lv_selection - height / 2_vl, true);
+            }
+        } else if (this->lv_selection <= this->lv_top) {
+            auto diff = this->lv_top - this->lv_selection;
+
+            if (this->lv_selection > 0 && diff < (height / 8_vl)) {
+                this->set_top(this->lv_selection - 1_vl);
+            } else if (this->lv_selection < height) {
+                this->set_top(0_vl);
+            } else {
+                this->set_top(this->lv_selection - height / 2_vl, true);
+            }
         }
     }
 

@@ -676,10 +676,14 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         }
                         if (first_hit) {
                             auto first_hit_vl = first_hit.value();
-                            if (first_hit_vl > 0_vl) {
-                                --first_hit_vl;
+                            if (tc->is_selectable()) {
+                                tc->set_selection(first_hit_vl);
+                            } else {
+                                if (first_hit_vl > 0_vl) {
+                                    --first_hit_vl;
+                                }
+                                tc->set_top(first_hit_vl);
                             }
-                            tc->set_top(first_hit_vl);
                         }
 
                         return true;
