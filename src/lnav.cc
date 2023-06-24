@@ -321,7 +321,7 @@ setup_logline_table(exec_context& ec)
 
     if (log_view.get_inner_height()) {
         static intern_string_t logline = intern_string::lookup("logline");
-        vis_line_t vl = log_view.get_top();
+        vis_line_t vl = log_view.get_selection();
         content_line_t cl = lnav_data.ld_log_source.at_base(vl);
 
         lnav_data.ld_vtab_manager->unregister_vtab(logline);

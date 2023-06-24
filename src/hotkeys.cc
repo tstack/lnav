@@ -803,7 +803,7 @@ handle_paging_key(int ch)
                         {
                             vis_line_t db_line(row);
 
-                            db_tc->set_top(db_line);
+                            db_tc->set_selection(db_line);
                             db_tc->set_needs_update();
                             break;
                         }
@@ -826,7 +826,7 @@ handle_paging_key(int ch)
                                &line_number)
                         && line_number < tc->listview_rows(*tc))
                     {
-                        tc->set_top(vis_line_t(line_number));
+                        tc->set_selection(vis_line_t(line_number));
                         tc->set_needs_update();
                     }
                 } else {
@@ -842,7 +842,7 @@ handle_paging_key(int ch)
                         {
                             lnav_data.ld_log_source.find_from_time(tv) |
                                 [tc](auto vl) {
-                                    tc->set_top(vl);
+                                    tc->set_selection(vl);
                                     tc->set_needs_update();
                                 };
                             break;

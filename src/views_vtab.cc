@@ -457,9 +457,9 @@ CREATE TABLE lnav_views (
                 }
             }
         }
-        if (movement == "top") {
+        if (movement == "top" && tc.is_selectable()) {
             tc.set_selectable(false);
-        } else if (movement == "cursor") {
+        } else if (movement == "cursor" && !tc.is_selectable()) {
             // First, toggle modes, otherwise get_selection() returns top
             tc.set_selectable(true);
 

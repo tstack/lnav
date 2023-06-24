@@ -44,6 +44,52 @@ list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 
 void
+listview_curses::update_top_from_selection()
+{
+    if (!this->lv_selectable) {
+        return;
+    }
+
+    vis_line_t height;
+    unsigned long width;
+
+    this->get_dimensions(height, width);
+
+    if (this->lv_selection < 0_vl) {
+        this->set_top(0_vl);
+    } else if (this->lv_sync_selection_and_top) {
+        this->set_top(this->lv_selection);
+    } else if (this->lv_selection == this->get_inner_height() - 1_vl) {
+        this->set_top(this->get_top_for_last_row());
+    } else if (this->lv_selection
+               >= (this->lv_top + height - this->lv_tail_space - 1_vl))
+    {
+        auto diff = this->lv_selection
+            - (this->lv_top + height - this->lv_tail_space - 1_vl);
+
+        if (height < 10 || diff < (height / 8_vl)) {
+            // for small differences between the bottom and the
+            // selection, just move a little bit.
+            this->set_top(
+                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
+        } else {
+            // for large differences, put the focus in the middle
+            this->set_top(this->lv_selection - height / 2_vl, true);
+        }
+    } else if (this->lv_selection <= this->lv_top) {
+        auto diff = this->lv_top - this->lv_selection;
+
+        if (this->lv_selection > 0 && (height < 10 || diff < (height / 8_vl))) {
+            this->set_top(this->lv_selection - 1_vl);
+        } else if (this->lv_selection < height) {
+            this->set_top(0_vl);
+        } else {
+            this->set_top(this->lv_selection - height / 2_vl, true);
+        }
+    }
+}
+
+void
 listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
@@ -65,6 +111,8 @@ listview_curses::reload_data()
                 this->lv_selection = -1_vl;
                 this->set_selection(curr_sel);
             }
+
+            this->update_top_from_selection();
         }
     }
     this->vc_needs_update = true;
@@ -199,42 +247,8 @@ listview_curses::do_update()
     vis_line_t height;
     unsigned long width;
 
+    this->update_top_from_selection();
     this->get_dimensions(height, width);
-
-    if (this->lv_selectable) {
-        if (this->lv_selection < 0_vl) {
-            this->set_top(0_vl);
-        } else if (this->lv_sync_selection_and_top) {
-            this->set_top(this->lv_selection);
-        } else if (this->lv_selection
-                   >= (this->lv_top + height - this->lv_tail_space - 1_vl))
-        {
-            auto diff = this->lv_selection
-                - (this->lv_top + height - this->lv_tail_space - 1_vl);
-
-            if (diff < (height / 8_vl)) {
-                // for small differences between the bottom and the selection,
-                // just move a little bit.
-                this->set_top(
-                    this->lv_selection - height + 1_vl + this->lv_tail_space,
-                    true);
-            } else {
-                // for large differences, put the focus in the middle
-                this->set_top(this->lv_selection - height / 2_vl, true);
-            }
-        } else if (this->lv_selection <= this->lv_top) {
-            auto diff = this->lv_top - this->lv_selection;
-
-            if (this->lv_selection > 0 && diff < (height / 8_vl)) {
-                this->set_top(this->lv_selection - 1_vl);
-            } else if (this->lv_selection < height) {
-                this->set_top(0_vl);
-            } else {
-                this->set_top(this->lv_selection - height / 2_vl, true);
-            }
-        }
-    }
-
     while (this->vc_needs_update) {
         auto& vc = view_colors::singleton();
         vis_line_t row;
@@ -669,4 +683,27 @@ listview_curses::set_selection(vis_line_t sel)
     } else {
         this->set_top(sel);
     }
+}
+
+vis_line_t
+listview_curses::get_top_for_last_row()
+{
+    auto inner_height = this->get_inner_height();
+    auto retval = 0_vl;
+
+    if (inner_height > 0) {
+        auto last_line = inner_height - 1_vl;
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
+        retval = last_line - this->rows_available(last_line, RD_UP) + 1_vl;
+        if (inner_height >= (height - this->lv_tail_space)
+            && (retval + this->lv_tail_space) < inner_height)
+        {
+            retval += this->lv_tail_space;
+        }
+    }
+
+    return retval;
 }

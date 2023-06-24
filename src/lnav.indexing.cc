@@ -333,16 +333,16 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         auto& scroll_view = lnav_data.ld_views[lpc];
 
-        if (scroll_downs[lpc]
-            && scroll_view.get_top_for_last_row() > scroll_view.get_top())
-        {
+        if (scroll_downs[lpc]) {
             if (scroll_view.is_selectable()) {
                 auto inner_height = scroll_view.get_inner_height();
 
                 if (inner_height > 0_vl) {
                     scroll_view.set_selection(inner_height - 1_vl);
                 }
-            } else {
+            } else if (scroll_view.get_top_for_last_row()
+                       > scroll_view.get_top())
+            {
                 scroll_view.set_top(scroll_view.get_top_for_last_row());
             }
         }

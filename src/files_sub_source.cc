@@ -84,37 +84,38 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
         case '\r': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match([](files_model::no_selection) {},
-                      [](files_model::error_selection) {},
-                      [](files_model::other_selection) {},
-                      [&](files_model::file_selection& fs) {
-                          auto& lss = lnav_data.ld_log_source;
-                          auto lf = *fs.sb_iter;
+            sel.match(
+                [](files_model::no_selection) {},
+                [](files_model::error_selection) {},
+                [](files_model::other_selection) {},
+                [&](files_model::file_selection& fs) {
+                    auto& lss = lnav_data.ld_log_source;
+                    auto lf = *fs.sb_iter;
 
-                          lss.find_data(lf) | [](auto ld) {
-                              ld->set_visibility(true);
-                              lnav_data.ld_log_source.text_filters_changed();
-                          };
+                    lss.find_data(lf) | [](auto ld) {
+                        ld->set_visibility(true);
+                        lnav_data.ld_log_source.text_filters_changed();
+                    };
 
-                          if (lf->get_format() != nullptr) {
-                              auto& log_view = lnav_data.ld_views[LNV_LOG];
-                              lss.row_for_time(lf->front().get_timeval()) |
-                                  [](auto row) {
-                                      lnav_data.ld_views[LNV_LOG].set_top(row);
-                                  };
-                              ensure_view(&log_view);
-                          } else {
-                              auto& tv = lnav_data.ld_views[LNV_TEXT];
-                              auto& tss = lnav_data.ld_text_source;
+                    if (lf->get_format() != nullptr) {
+                        auto& log_view = lnav_data.ld_views[LNV_LOG];
+                        lss.row_for_time(lf->front().get_timeval()) |
+                            [](auto row) {
+                                lnav_data.ld_views[LNV_LOG].set_selection(row);
+                            };
+                        ensure_view(&log_view);
+                    } else {
+                        auto& tv = lnav_data.ld_views[LNV_TEXT];
+                        auto& tss = lnav_data.ld_text_source;
 
-                              tss.to_front(lf);
-                              tv.reload_data();
-                              ensure_view(&tv);
-                          }
+                        tss.to_front(lf);
+                        tv.reload_data();
+                        ensure_view(&tv);
+                    }
 
-                          lv.reload_data();
-                          lnav_data.ld_mode = ln_mode_t::PAGING;
-                      });
+                    lv.reload_data();
+                    lnav_data.ld_mode = ln_mode_t::PAGING;
+                });
 
             return true;
         }
@@ -308,29 +309,25 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
                    std::max((size_t) 40, (size_t) dim.second - 30));
 
     if (selected) {
-        value_out.emplace_back(line_range{0, 1},
-                               VC_GRAPHIC.value(ACS_RARROW));
+        value_out.emplace_back(line_range{0, 1}, VC_GRAPHIC.value(ACS_RARROW));
     }
 
     if (line < fc.fc_name_to_errors.size()) {
         if (selected) {
-            value_out.emplace_back(
-                line_range{0, -1},
-                VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+            value_out.emplace_back(line_range{0, -1},
+                                   VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
         }
 
-        value_out.emplace_back(
-            line_range{4 + (int) filename_width, -1},
-            VC_ROLE_FG.value(role_t::VCR_ERROR));
+        value_out.emplace_back(line_range{4 + (int) filename_width, -1},
+                               VC_ROLE_FG.value(role_t::VCR_ERROR));
         return;
     }
     line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
         if (selected) {
-            value_out.emplace_back(
-                line_range{0, -1},
-                VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+            value_out.emplace_back(line_range{0, -1},
+                                   VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
         }
         if (line == fc.fc_other_files.size() - 1) {
             value_out.emplace_back(line_range{0, -1},
@@ -342,9 +339,8 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
     line -= fc.fc_other_files.size();
 
     if (selected) {
-        value_out.emplace_back(
-            line_range{0, -1},
-            VC_ROLE.value(role_t::VCR_FOCUSED));
+        value_out.emplace_back(line_range{0, -1},
+                               VC_ROLE.value(role_t::VCR_FOCUSED));
     }
 
     auto& lss = lnav_data.ld_log_source;
@@ -355,8 +351,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
     if (ld_opt && !ld_opt.value()->ld_visible) {
         visible = ' ';
     }
-    value_out.emplace_back(line_range{2, 3},
-                           VC_GRAPHIC.value(visible));
+    value_out.emplace_back(line_range{2, 3}, VC_GRAPHIC.value(visible));
     if (visible == ACS_DIAMOND) {
         value_out.emplace_back(line_range{2, 3},
                                VC_FOREGROUND.value(COLOR_GREEN));

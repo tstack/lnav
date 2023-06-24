@@ -315,22 +315,7 @@ public:
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom() const;
 
-    vis_line_t get_top_for_last_row()
-    {
-        auto retval = 0_vl;
-
-        if (this->get_inner_height() > 0) {
-            vis_line_t last_line(this->get_inner_height() - 1);
-
-            retval = last_line
-                - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
-            if ((retval + this->lv_tail_space) < this->get_inner_height()) {
-                retval += this->lv_tail_space;
-            }
-        }
-
-        return retval;
-    }
+    vis_line_t get_top_for_last_row();
 
     /** @return True if the given line is visible. */
     bool is_line_visible(vis_line_t line) const
@@ -535,6 +520,8 @@ protected:
             lv_input_delegate->list_input_handle_scroll_out(*this);
         }
     }
+
+    void update_top_from_selection();
 
     enum class lv_mode_t {
         NONE,
