@@ -3109,6 +3109,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
 #ifdef HAVE_ARCHIVE_H
             log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
+            log_info("    details=%s", archive_version_details());
 #endif
             log_info("  ncurses=%s", NCURSES_VERSION);
             log_info("  pcre2=%s", pcre2_version);
