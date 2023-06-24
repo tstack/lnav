@@ -21,6 +21,7 @@ RUN apk update && apk add --no-cache \
     lz4-static \
     zip \
     zstd \
+    zstd-dev \
     zstd-static \
     perl \
     autoconf \
