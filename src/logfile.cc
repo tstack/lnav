@@ -380,8 +380,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             auto& last_line = this->lf_index.back();
 
             last_line.set_valid_utf(last_line.is_valid_utf()
-                                    && li.li_valid_utf);
-            last_line.set_has_ansi(last_line.has_ansi() || li.li_has_ansi);
+                                    && li.li_utf8_scan_result.is_valid());
+            last_line.set_has_ansi(last_line.has_ansi()
+                                   || li.li_utf8_scan_result.usr_has_ansi);
         }
         if (prescan_size > 0 && this->lf_index.size() >= prescan_size
             && prescan_time != this->lf_index[prescan_size - 1].get_time())
@@ -437,8 +438,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                     last_level,
                                     last_mod,
                                     last_opid);
-        this->lf_index.back().set_valid_utf(li.li_valid_utf);
-        this->lf_index.back().set_has_ansi(li.li_has_ansi);
+        this->lf_index.back().set_valid_utf(li.li_utf8_scan_result.is_valid());
+        this->lf_index.back().set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
     }
 
     return retval;
@@ -608,18 +609,36 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             }
             prev_range = li.li_file_range;
 
-            if (!this->lf_options.loo_non_utf_is_visible && !li.li_valid_utf) {
+            if (this->lf_format == nullptr
+                && !this->lf_options.loo_non_utf_is_visible
+                && !li.li_utf8_scan_result.is_valid())
+            {
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
                 this->lf_options.loo_is_visible = false;
+                auto note_text = fmt::format(
+                    FMT_STRING("not indexing non-UTF-8 file -- line: "
+                               "{}; column: {}; error: {}"),
+                    this->lf_index.size() + 1,
+                    li.li_utf8_scan_result.usr_valid_frag.sf_end,
+                    li.li_utf8_scan_result.usr_message);
                 this->lf_notes.writeAccess()->emplace(note_type::not_utf,
-                                                      "hiding non-UTF-8 file");
+                                                      note_text);
                 if (this->lf_logfile_observer != nullptr) {
                     this->lf_logfile_observer->logfile_indexing(
                         this->shared_from_this(), 0, 0);
                 }
                 break;
+            }
+            if (this->lf_format != nullptr
+                && !li.li_utf8_scan_result.is_valid())
+            {
+                log_warning("%s: invalid UTF-8 detected at %d:%d -- %s",
+                            this->lf_filename.c_str(),
+                            this->lf_index.size() + 1,
+                            li.li_utf8_scan_result.usr_valid_frag.sf_end,
+                            li.li_utf8_scan_result.usr_message);
             }
 
             size_t old_size = this->lf_index.size();
@@ -641,7 +660,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);
             }
-            if (!li.li_valid_utf
+            if (!li.li_utf8_scan_result.is_valid()
                 && this->lf_text_format != text_format_t::TF_MARKDOWN
                 && this->lf_text_format != text_format_t::TF_LOG)
             {
@@ -661,7 +680,9 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             auto sbr = read_result.unwrap();
             sbr.rtrim(is_line_ending);
 
-            if (li.li_valid_utf && li.li_has_ansi) {
+            if (li.li_utf8_scan_result.is_valid()
+                && li.li_utf8_scan_result.usr_has_ansi)
+            {
                 sbr.erase_ansi();
             }
 

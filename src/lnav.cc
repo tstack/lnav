@@ -3205,6 +3205,22 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     return EXIT_FAILURE;
                 }
 
+                for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                    for (const auto& note : lf->get_notes()) {
+                        switch (note.first) {
+                            case logfile::note_type::not_utf: {
+                                auto um = lnav::console::user_message::error(
+                                    note.second);
+                                lnav::console::print(stderr, um);
+                                break;
+                            }
+
+                            default:
+                                break;
+                        }
+                    }
+                }
+
                 for (auto& pair : cmd_results) {
                     if (pair.first.isErr()) {
                         lnav::console::print(stderr, pair.first.unwrapErr());

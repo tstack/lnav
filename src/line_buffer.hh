@@ -45,6 +45,7 @@
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
 #include "base/file_range.hh"
+#include "base/is_utf8.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"
 #include "safe/safe.h"
@@ -53,8 +54,7 @@
 struct line_info {
     file_range li_file_range;
     bool li_partial{false};
-    bool li_valid_utf{true};
-    bool li_has_ansi{false};
+    utf8_scan_result li_utf8_scan_result{};
 };
 
 /**

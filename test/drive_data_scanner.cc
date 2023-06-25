@@ -157,9 +157,9 @@ main(int argc, char* argv[])
 
                 auto& root_formats = log_format::get_root_formats();
                 std::vector<std::shared_ptr<log_format>>::iterator iter;
-                std::vector<logline> index;
 
                 if (is_log) {
+                    std::vector<logline> index;
                     logfile_open_options loo;
                     auto open_res = logfile::open(argv[lpc], loo);
                     auto lf = open_res.unwrap();

@@ -37,7 +37,7 @@
 struct utf8_scan_result {
     const char* usr_message{nullptr};
     size_t usr_faulty_bytes{0};
-    string_fragment usr_valid_frag;
+    string_fragment usr_valid_frag{string_fragment::invalid()};
     nonstd::optional<string_fragment> usr_remaining;
     bool usr_has_ansi{false};
 

@@ -1084,8 +1084,7 @@ line_buffer::load_next_line(file_range prev_line)
             if (lf != nullptr) {
                 lf -= 1;
             }
-            retval.li_valid_utf = scan_res.is_valid();
-            retval.li_has_ansi = scan_res.usr_has_ansi;
+            retval.li_utf8_scan_result = scan_res;
         }
 
         auto got_new_data = old_retval_size != retval.li_file_range.fr_size;
@@ -1174,8 +1173,10 @@ line_buffer::load_next_line(file_range prev_line)
               (int) retval.li_partial);
 #endif
 
-    retval.li_file_range.fr_metadata.m_has_ansi = retval.li_has_ansi;
-    retval.li_file_range.fr_metadata.m_valid_utf = retval.li_valid_utf;
+    retval.li_file_range.fr_metadata.m_has_ansi
+        = retval.li_utf8_scan_result.usr_has_ansi;
+    retval.li_file_range.fr_metadata.m_valid_utf
+        = retval.li_utf8_scan_result.is_valid();
     return Ok(retval);
 }
 
