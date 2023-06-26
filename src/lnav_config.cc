@@ -1384,6 +1384,7 @@ load_config_from(_lnav_config& lconfig,
     struct config_userdata ud(errors);
     auto_fd fd;
 
+    log_info("loading configuration from %s", path.c_str());
     ypc.ypc_locations = &lnav_config_locations;
     ypc.with_obj(lconfig);
     ypc.ypc_userdata = &ud;
@@ -1501,7 +1502,7 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
         log_info("loading builtin configuration into base");
         load_default_configs(lnav_config, "*", errors);
 
-        log_info("loading user configuration files");
+        log_info("loading installed configuration files");
         for (const auto& extra_path : extra_paths) {
             auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;
