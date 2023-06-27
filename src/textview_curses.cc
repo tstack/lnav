@@ -291,7 +291,7 @@ void
 textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 {
     if (this->tc_follow_deadline.tv_sec
-        && this->tc_follow_top == this->get_top())
+        && this->tc_follow_selection == this->get_selection())
     {
         struct timeval now;
 

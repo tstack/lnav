@@ -509,6 +509,10 @@ public:
         log_debug("  lv_title=%s", this->lv_title.c_str());
         log_debug("  lv_y=%u", this->lv_y);
         log_debug("  lv_top=%d", (int) this->lv_top);
+        log_debug("  lv_left=%d", (int) this->lv_left);
+        log_debug("  lv_height=%d", this->lv_height);
+        log_debug("  lv_selection=%d", (int) this->lv_selection);
+        log_debug("  inner_height=%d", (int) this->get_inner_height());
     }
 
     virtual void invoke_scroll() { this->lv_scroll(this); }

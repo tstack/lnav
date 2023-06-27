@@ -604,7 +604,7 @@ public:
         tv.tv_usec = (ms_to_deadline % 1000) * 1000;
         gettimeofday(&now, nullptr);
         timeradd(&now, &tv, &this->tc_follow_deadline);
-        this->tc_follow_top = this->get_top();
+        this->tc_follow_selection = this->get_selection();
         this->tc_follow_func = func;
     }
 
@@ -753,7 +753,7 @@ protected:
     struct timeval tc_follow_deadline {
         0, 0
     };
-    vis_line_t tc_follow_top{-1_vl};
+    vis_line_t tc_follow_selection{-1_vl};
     std::function<bool()> tc_follow_func;
     action tc_search_action;
 

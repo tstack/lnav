@@ -2686,11 +2686,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     };
     lnav_data.ld_views[LNV_LOG].set_reload_config_delegate(sel_reload_delegate);
+    lnav_data.ld_views[LNV_PRETTY].set_reload_config_delegate(
+        sel_reload_delegate);
     lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_TEXT].set_reload_config_delegate(
         sel_reload_delegate);
-    lnav_data.ld_views[LNV_HISTOGRAM].set_sub_source(
-        &lnav_data.ld_hist_source2);
+    lnav_data.ld_views[LNV_HISTOGRAM]
+        .set_reload_config_delegate(sel_reload_delegate)
+        .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
     lnav_data.ld_views[LNV_DB]
@@ -2698,6 +2701,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_spectro_source = std::make_unique<spectrogram_source>();
     lnav_data.ld_views[LNV_SPECTRO]
+        .set_reload_config_delegate(sel_reload_delegate)
         .set_sub_source(lnav_data.ld_spectro_source.get())
         .set_overlay_source(lnav_data.ld_spectro_source.get())
         .add_input_delegate(*lnav_data.ld_spectro_source)

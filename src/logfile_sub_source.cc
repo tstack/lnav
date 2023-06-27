@@ -162,8 +162,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 {
     content_line_t line(0);
 
-    require(row >= 0);
-    require((size_t) row < this->lss_filtered_index.size());
+    require_ge(row, 0);
+    require_lt((size_t) row, this->lss_filtered_index.size());
 
     line = this->at(vis_line_t(row));
 
@@ -175,7 +175,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         return;
     }
 
-    require(!this->lss_in_value_for_line);
+    require_false(this->lss_in_value_for_line);
 
     this->lss_in_value_for_line = true;
     this->lss_token_flags = flags;
@@ -1263,7 +1263,7 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
 {
     iterator existing;
 
-    require(lf->size() < MAX_LINES_PER_FILE);
+    require_lt(lf->size(), MAX_LINES_PER_FILE);
 
     existing = std::find_if(this->lss_files.begin(),
                             this->lss_files.end(),

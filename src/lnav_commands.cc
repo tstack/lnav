@@ -4720,7 +4720,7 @@ search_prompt(std::vector<std::string>& args)
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
     lnav_data.ld_mode = ln_mode_t::SEARCH;
-    lnav_data.ld_search_start_line = tc->get_top();
+    lnav_data.ld_search_start_line = tc->get_selection();
     add_view_text_possibilities(
         lnav_data.ld_rl_view, ln_mode_t::SEARCH, "*", tc, text_quoting::regex);
     lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH,

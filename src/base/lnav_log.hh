@@ -127,6 +127,45 @@ extern enum lnav_log_level_t lnav_log_level;
      log_abort(), \
      1)
 
+#define require_true(lhs) \
+    ((void) ((lhs) ? 0 : lnav_require_unary(#lhs, lhs, __FILE__, __LINE__)))
+#define require_false(lhs) \
+    ((void) ((!lhs) ? 0 : lnav_require_unary(#lhs, lhs, __FILE__, __LINE__)))
+#define lnav_require_unary(e, lhs, file, line) \
+    (log_msg(lnav_log_level_t::ERROR, \
+             file, \
+             line, \
+             "failed precondition `%s' (lhs=%s)", \
+             e, \
+             std::to_string(lhs).c_str()), \
+     log_abort(), \
+     1)
+
+#define require_ge(lhs, rhs) \
+    ((void) ((lhs >= rhs) \
+                 ? 0 \
+                 : lnav_require_binary( \
+                     #lhs " >= " #rhs, lhs, rhs, __FILE__, __LINE__)))
+#define require_gt(lhs, rhs) \
+    ((void) ((lhs > rhs) ? 0 \
+                         : lnav_require_binary( \
+                             #lhs " > " #rhs, lhs, rhs, __FILE__, __LINE__)))
+#define require_lt(lhs, rhs) \
+    ((void) ((lhs < rhs) ? 0 \
+                         : lnav_require_binary( \
+                             #lhs " < " #rhs, lhs, rhs, __FILE__, __LINE__)))
+
+#define lnav_require_binary(e, lhs, rhs, file, line) \
+    (log_msg(lnav_log_level_t::ERROR, \
+             file, \
+             line, \
+             "failed precondition `%s' (lhs=%s; rhs=%s)", \
+             e, \
+             std::to_string(lhs).c_str(), \
+             std::to_string(rhs).c_str()), \
+     log_abort(), \
+     1)
+
 #define ensure(e) ((void) ((e) ? 0 : lnav_ensure(#e, __FILE__, __LINE__)))
 #define lnav_ensure(e, file, line) \
     (log_msg( \

@@ -43,6 +43,27 @@ Q: How can I force a format for a file?
 
   See :ref:`format_order` for more information.
 
+
+Q: How can I search backwards, like pressing :kbd:`?` in less?
+-------------------------------------------------------------
+
+:Answer: Searches in **lnav** runs in the background and do not block input
+  waiting to find the first hit.  While the search prompt is open, pressing
+  :kbd:`CTRL` + :kbd:`j` will jump to the previous hit that was found.  A
+  preview panel is also opened that shows the hits that have been found so
+  far.
+
+  After pressing :kbd:`Enter` at the search prompt, the view will jump to
+  the first hit that was found.  Then, you can press :kbd:`n` to move to
+  the next search hit and :kbd:`N` to move to the previous one.  If you
+  would like to add a hotkey for jumping to the previous hit by default,
+  enter the following configuration command:
+
+  .. code-block:: lnav
+
+     :config /ui/keymap-defs/default/x3f/command :prompt --alt search ?
+
+
 Q: Why isn't my log file highlighted correctly?
 -----------------------------------------------
 
