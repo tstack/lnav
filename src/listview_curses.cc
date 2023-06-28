@@ -186,9 +186,30 @@ listview_curses::handle_key(int ch)
             break;
 
         case ' ':
-        case KEY_NPAGE:
-            this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - 1_vl);
+        case KEY_NPAGE: {
+            auto rows_avail
+                = this->rows_available(this->lv_top, RD_DOWN) - 1_vl;
+            auto top_for_last = this->get_top_for_last_row();
+
+            if ((this->lv_top < top_for_last)
+                && (this->lv_top + rows_avail > top_for_last))
+            {
+                this->set_top(top_for_last);
+                if (this->lv_selection <= top_for_last) {
+                    this->set_selection(top_for_last + 1_vl);
+                }
+            } else {
+                this->shift_top(rows_avail);
+
+                auto inner_height = this->get_inner_height();
+                if (this->lv_selectable && this->lv_top >= top_for_last
+                    && inner_height > 0_vl)
+                {
+                    this->set_selection(inner_height - 1_vl);
+                }
+            }
             break;
+        }
 
         case 'g':
         case KEY_HOME:
@@ -650,7 +671,10 @@ listview_curses::set_selection(vis_line_t sel)
         }
 
         auto inner_height = this->get_inner_height();
-        if (sel >= 0_vl && sel < inner_height) {
+        if (sel >= inner_height) {
+            sel = inner_height - 1_vl;
+        }
+        if (sel >= 0_vl) {
             auto found = false;
             vis_line_t step;
 
