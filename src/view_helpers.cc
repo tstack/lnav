@@ -739,10 +739,9 @@ update_hits(textview_curses* tc)
             attr_line_t all_matches;
             char linebuf[64];
             int last_line = tc->get_inner_height();
-            int max_line_width;
 
             snprintf(linebuf, sizeof(linebuf), "%d", last_line);
-            max_line_width = strlen(linebuf);
+            auto max_line_width = static_cast<int>(strlen(linebuf));
 
             tc->get_dimensions(height, width);
             vl += height;
@@ -753,23 +752,40 @@ update_hits(textview_curses* tc)
             auto prev_vl = bv.prev(tc->get_top());
 
             if (prev_vl) {
-                attr_line_t al;
+                if (prev_vl.value() < 0_vl
+                    || prev_vl.value() >= tc->get_inner_height())
+                {
+                    log_error("stale search bookmark for %s: %d",
+                              tc->get_title().c_str(),
+                              prev_vl.value());
+                } else {
+                    attr_line_t al;
 
-                tc->textview_value_for_row(prev_vl.value(), al);
-                if (preview_count > 0) {
-                    all_matches.append("\n");
+                    tc->textview_value_for_row(prev_vl.value(), al);
+                    if (preview_count > 0) {
+                        all_matches.append("\n");
+                    }
+                    snprintf(linebuf,
+                             sizeof(linebuf),
+                             "L%*d: ",
+                             max_line_width,
+                             (int) prev_vl.value());
+                    all_matches.append(linebuf).append(al);
+                    preview_count += 1;
                 }
-                snprintf(linebuf,
-                         sizeof(linebuf),
-                         "L%*d: ",
-                         max_line_width,
-                         (int) prev_vl.value());
-                all_matches.append(linebuf).append(al);
-                preview_count += 1;
             }
 
             nonstd::optional<vis_line_t> next_vl;
             while ((next_vl = bv.next(vl)) && preview_count < MAX_MATCH_COUNT) {
+                if (next_vl.value() < 0_vl
+                    || next_vl.value() >= tc->get_inner_height())
+                {
+                    log_error("stale search bookmark for %s: %d",
+                              tc->get_title().c_str(),
+                              next_vl.value());
+                    break;
+                }
+
                 attr_line_t al;
 
                 vl = next_vl.value();

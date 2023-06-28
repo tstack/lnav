@@ -72,6 +72,7 @@ void log_install_handlers();
 void log_abort() lnav_dead2;
 void log_pipe_err(int fd);
 void log_set_thread_prefix(std::string prefix);
+void log_backtrace(lnav_log_level_t level);
 
 struct log_state_dumper {
 public:

@@ -392,6 +392,21 @@ log_msg_extra_complete()
     };
 }
 
+void
+log_backtrace(lnav_log_level_t level)
+{
+#ifdef HAVE_EXECINFO_H
+    int frame_count;
+    void* frames[128];
+
+    frame_count = backtrace(frames, 128);
+    auto bt = backtrace_symbols(frames, frame_count);
+    for (int lpc = 0; lpc < frame_count; lpc++) {
+        log_msg(level, __FILE__, __LINE__, "%s", bt[lpc]);
+    }
+#endif
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
 static void
