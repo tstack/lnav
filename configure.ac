@@ -17,36 +17,6 @@ CC="$PTHREAD_CC"
 AC_LANG(C++)
 AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
-AC_ARG_ENABLE(
-    [system-paths],
-    AS_HELP_STRING([--disable-system-paths],
-                   [Add extra system paths]),,[enable_system_paths=yes])
-
-if test x"${enable_system_paths}" != x"no"; then
-    for defdir in /opt/local /usr/local; do
-        if test -d "$defdir/include"; then
-            echo "Adding include path: $defdir/include"
-            CPPFLAGS="$CPPFLAGS -I$defdir/include"
-        fi
-    done
-
-    for defdir in /opt/local /usr/local /usr /; do
-
-        if test -d "$defdir/lib64"; then
-            LDFLAGS="$LDFLAGS -L$defdir/lib64"
-        fi
-        if test -d "$defdir/lib"; then
-            LDFLAGS="$LDFLAGS -L$defdir/lib"
-        fi
-
-        if test -d "$defdir/lib/x86_64-linux-gnu"; then
-            LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
-        fi
-    done
-else
-    echo "Not including extra system paths"
-fi
-
 dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)
 AS_CASE([x$srcdir],
@@ -190,6 +160,36 @@ AX_PATH_LIB_READLINE
 AX_CODE_COVERAGE
 
 LNAV_WITH_SQLITE3("3.9.0")
+
+AC_ARG_ENABLE(
+    [system-paths],
+    AS_HELP_STRING([--disable-system-paths],
+                   [Add extra system paths]),,[enable_system_paths=yes])
+
+if test x"${enable_system_paths}" != x"no"; then
+    for defdir in /opt/local /usr/local; do
+        if test -d "$defdir/include"; then
+            echo "Adding include path: $defdir/include"
+            CPPFLAGS="$CPPFLAGS -I$defdir/include"
+        fi
+    done
+
+    for defdir in /opt/local /usr/local /usr /; do
+
+        if test -d "$defdir/lib64"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib64"
+        fi
+        if test -d "$defdir/lib"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib"
+        fi
+
+        if test -d "$defdir/lib/x86_64-linux-gnu"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
+        fi
+    done
+else
+    echo "Not including extra system paths"
+fi
 
 dnl case "$host_os" in
 dnl     *)
