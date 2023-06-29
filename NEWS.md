@@ -18,6 +18,14 @@ Features:
   `prefix` and `suffix` to `line-format` elements so a
   string can optionally be prepended/appended if the value
   is not empty.
+* JSON log format detection has been improved to not rely
+  on matching the file name.  All possible formats are
+  tried and the one with the most available fields for a
+  given `line-format` is used.  For example, if the first
+  log message has 8 fields and format A contains 5 of
+  those fields in its `line-format` while format B only
+  contains 2 of those fields in its `line-format`, format
+  A will be used for the file.
 
 Changes:
 * For JSON-lines logs, line-feeds at the end of a value are

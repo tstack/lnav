@@ -3,6 +3,10 @@ name: tailer-ape
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - docs
+      - README.md
+      - NEWS.md
 
 jobs:
   build:
