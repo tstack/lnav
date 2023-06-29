@@ -9,9 +9,11 @@ the following tables/views:
 * `environ`_
 * `lnav_events`_
 * `lnav_file`_
+* `lnav_file_metadata`_
 * `lnav_user_notifications`_
 * `lnav_views`_
 * `lnav_views_echo`_
+* `lnav_view_files`_
 * `lnav_view_stack`_
 * `lnav_view_filters`_
 * `lnav_view_filter_stats`_
@@ -30,8 +32,8 @@ environ
 -------
 
 The **environ** table gives you access to the **lnav** process' environment
-variables.  You can SELECT, INSERT, and UPDATE environment variables, like
-so:
+variables.  You can :code:`SELECT`, :code:`INSERT`, and :code:`UPDATE`
+environment variables, like so:
 
 .. code-block:: custsqlite
 
@@ -43,7 +45,7 @@ so:
 
 Environment variables can be used to store simple values or pass values
 from **lnav**'s SQL environment to **lnav**'s commands.  For example, the
-"open" command will do variable substitution, so you can insert a variable
+:code:`:open` command will do variable substitution, so you can insert a variable
 named "FILENAME" and then open it in **lnav** by referencing it with
 "$FILENAME":
 
@@ -58,7 +60,7 @@ named "FILENAME" and then open it in **lnav** by referencing it with
 lnav_events
 -----------
 
-The **lnav_events** table allows you to react to events that occur while
+The :code:`lnav_events` table allows you to react to events that occur while
 **lnav** is running using SQLite triggers.  For example, when a file is
 opened, a row is inserted into the :code:`lnav_events` table that contains
 a timestamp and a JSON object with the event ID and the path of the file.
@@ -72,7 +74,7 @@ The following columns are available in this table:
 lnav_file
 ---------
 
-The **lnav_file** table allows you to examine and perform limited updates to
+The :code:`lnav_file` table allows you to examine and perform limited updates to
 the metadata for the files that are currently loaded into **lnav**.  The
 following columns are available in this table:
 
@@ -85,6 +87,30 @@ following columns are available in this table:
   :lines: The number of lines in the file.
   :time_offset: The millisecond offset for timestamps.  This column can be
     UPDATEd to change the offset of timestamps in the file.
+
+lnav_file_metadata
+------------------
+
+The :code:`lnav_file_metadata` table gives access to metadata associated with a
+loaded file.  Currently,
+
+:filepath: The path to the file.
+:descriptor: A descriptor that identifies the source of the metadata.  The
+  following descriptors are supported:
+
+  :net.zlib.gzip.header: The header on a gzipped file.  The content is a
+     JSON object with the following properties:
+
+        :name: The original name of the file.
+        :mtime: The last modified time of the file when it was compressed.
+        :comment: A text comment associated with the file.
+  :net.daringfireball.markdown.frontmatter: The frontmatter on a
+      markdown file.  If the frontmatter is delimited by three dashes
+      (:code:`---`), the :code:`mimetype` will be :code:`application/yaml`.
+      If the frontmatter is delimited by three pluses (:code:`+++`) the
+      :code:`mimetype` will be :code:`application/toml`.
+:mimetype: The MIME type of the metadata.
+:content: The metadata itself.
 
 .. _table_lnav_user_notifications:
 
@@ -120,7 +146,7 @@ This table will most likely be used in combination with :ref:`Events` and the
 lnav_views
 ----------
 
-The **lnav_views** table allows you to SELECT and UPDATE information related
+The :code:`lnav_views` table allows you to SELECT and UPDATE information related
 to **lnav**'s "views" (e.g. log, text, ...).  The following columns are
 available in this table:
 
@@ -155,12 +181,25 @@ TRIGGERs on in order to react to users moving around in a view.
     The table is periodically updated to reflect the current state of the views.
     The changes are *not* performed immediately after the user action.
 
+lnav_view_files
+---------------
+
+The :code:`lnav_view_files` table provides access to details about the files
+displayed in a particular view.  The main purpose of this table is to allow
+you to programmatically control which files are shown / hidden in the view.
+The following columns are available in this table:
+
+:view_name: The name of the view.
+:filepath: The file's path.
+:visible: Determines whether the file is visible in the view.  This column
+  can be changed using an :code:`UPDATE` statement to hide or show the file.
+
 lnav_view_stack
 ---------------
 
-The **lnav_view_stack** table allows you to SELECT and DELETE from the stack of
-**lnav** "views" (e.g. log, text, ...).  The following columns are available in
-this table:
+The :code:`lnav_view_stack` table allows you to :code:`SELECT` and :code:`DELETE`
+from the stack of **lnav** "views" (e.g. log, text, ...).  The following columns
+are available in this table:
 
   :name: The name of the view.
 
@@ -169,7 +208,7 @@ this table:
 lnav_view_filters
 -----------------
 
-The **lnav_view_filters** table allows you to manipulate the filters in the
+The :code:`lnav_view_filters` table allows you to manipulate the filters in the
 **lnav** views.  The following columns are available in this table:
 
   :view_name: The name of the view the filter is applied to.
@@ -178,13 +217,14 @@ The **lnav_view_filters** table allows you to manipulate the filters in the
   :type: The type of filter, either 'in' or 'out'.
   :pattern: The regular expression to filter on.
 
-This table supports SELECT, INSERT, UPDATE, and DELETE on the table rows to
-read, create, update, and delete filters for the views.
+This table supports :code:`SELECT`, :code:`INSERT`, :code:`UPDATE`, and
+:code:`DELETE` on the table rows to read, create, update, and delete
+filters for the views.
 
 lnav_view_filter_stats
 ----------------------
 
-The **lnav_view_filter_stats** table allows you to get information about how
+The :code:`lnav_view_filter_stats` table allows you to get information about how
 many lines matched a given filter.  The following columns are available in
 this table:
 
@@ -197,27 +237,27 @@ This table is read-only.
 lnav_view_filters_and_stats
 ---------------------------
 
-The **lnav_view_filters_and_stats** view joins the **lnav_view_filters** table
-with the **lnav_view_filter_stats** table into a single view for ease of use.
+The :code:`lnav_view_filters_and_stats` view joins the :code:`lnav_view_filters`
+table with the :code:`lnav_view_filter_stats` table into a single view for ease of use.
 
 all_logs
 --------
 
 .. f0:sql.tables.all_logs
 
-The **all_logs** table lets you query the format derived from the **lnav**
+The :code:`all_logs` table lets you query the format derived from the **lnav**
 log message parser that is used to automatically extract data, see
 :ref:`data-ext` for more details.
 
 http_status_codes
 -----------------
 
-The **http_status_codes** table is a handy reference that can be used to turn
+The :code:`http_status_codes` table is a handy reference that can be used to turn
 HTTP status codes into human-readable messages.
 
 regexp_capture(<string>, <regex>)
 ---------------------------------
 
-The **regexp_capture()** table-valued function applies the regular expression
+The :code:`regexp_capture()` table-valued function applies the regular expression
 to the given string and returns detailed results for the captured portions of
 the string.

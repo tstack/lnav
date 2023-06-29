@@ -45,7 +45,7 @@ Q: How can I force a format for a file?
 
 
 Q: How can I search backwards, like pressing :kbd:`?` in less?
--------------------------------------------------------------
+--------------------------------------------------------------
 
 :Answer: Searches in **lnav** runs in the background and do not block input
   waiting to find the first hit.  While the search prompt is open, pressing
