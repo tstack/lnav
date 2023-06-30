@@ -85,7 +85,7 @@ install -D -m0644 "%{SOURCE1}" "%{buildroot}%{_datadir}/applications/%{name}.des
 %license LICENSE
 %doc AUTHORS NEWS.md README
 %{_bindir}/lnav
-%{_mandir}/man1/lnav.1%{ext_man}
+%{_mandir}/man1/lnav.1.gz
 %if %{defined suse_version}
 %{_datadir}/applications/%{name}.desktop
 %endif
