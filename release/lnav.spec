@@ -23,7 +23,7 @@ Group:          System/Monitoring
 URL:            https://lnav.org
 # Git-Clone:    https://github.com/tstack/lnav.git
 # Source:       https://github.com/tstack/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
-Source:         /github/home/rpmbuild/SOURCES/${name}-${version}.tar.gz
+Source:         /github/home/rpmbuild/SOURCES/%{name}-%{version}.tar.gz
 # Source1:      lnav.desktop
 BuildRequires:  gcc-toolset-11
 BuildRequires:  autoconf
