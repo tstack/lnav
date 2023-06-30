@@ -60,8 +60,7 @@ quickly and efficiently focus on problems.
 %autosetup -p1
 
 %build
-export CC=gcc-11
-export CXX=g++-11
+source /opt/rh/gcc-toolset-11/enable
 autoreconf -fiv
 %configure \
      --disable-silent-rules \
