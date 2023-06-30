@@ -66,8 +66,7 @@ autoreconf -fiv
      --disable-silent-rules \
      --disable-static \
      --with-ncurses \
-     --with-readline
-#     --with-yajl       local copy contains changes that will probably be merged for next release (after 2.1.0).
+     --with-readline || cat config.log
 
 %make_build
 
