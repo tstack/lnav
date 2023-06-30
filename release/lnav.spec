@@ -14,17 +14,6 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via https://bugs.opensuse.org/
-#
-
-
-%if 0%{?suse_version} >= 1500
-%define cxx g++
-BuildRequires:  gcc-c++
-%else
-%define cxx g++-6
-BuildRequires:  gcc6-c++
-%endif
 Name:           lnav
 Version:        0.11.2
 Release:        0
@@ -36,6 +25,8 @@ URL:            https://lnav.org
 # Source:       https://github.com/tstack/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source:         /github/home/rpmbuild/SOURCES/${name}-${version}.tar.gz
 # Source1:      lnav.desktop
+BuildRequires:  devtoolset-11-gcc
+BuildRequires:  devtoolset-11-gcc-c++
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libarchive-devel

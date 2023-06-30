@@ -20,6 +20,7 @@ jobs:
         uses: naveenrajm7/rpmbuild@master
         with:
           spec_file: "release/lnav.spec"
+          additional_repos: '["centos-release-scl"]'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
