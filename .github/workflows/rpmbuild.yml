@@ -28,7 +28,7 @@ jobs:
           path: ${{ steps.rpm.outputs.rpm_dir_path }}
 
       - name: Push to packagecloud.io
-        uses: tstack/upload-packagecloud@master
+        uses: tstack/upload-packagecloud@main
         with:
           userrepo: tstack/lnav
           apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
