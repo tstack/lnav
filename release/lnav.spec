@@ -26,6 +26,8 @@ URL:            https://lnav.org
 Source:         /github/home/rpmbuild/SOURCES/%{name}-%{version}.tar.gz
 # Source1:      lnav.desktop
 BuildRequires:  gcc-toolset-11
+BuildRequires:  gcc-toolset-11-annobin-plugin-gcc
+BuildRequires:  gcc-toolset-11-annobin-annocheck
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libarchive-devel
