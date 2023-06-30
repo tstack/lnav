@@ -34,7 +34,7 @@ Group:          System/Monitoring
 URL:            https://lnav.org
 # Git-Clone:    https://github.com/tstack/lnav.git
 # Source:       https://github.com/tstack/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
-Source:         %{getenv:GITHUB_WORKSPACE}
+Source:         /github/home/rpmbuild/SOURCES/${name}-${version}.tar.gz
 # Source1:      lnav.desktop
 BuildRequires:  autoconf
 BuildRequires:  automake
