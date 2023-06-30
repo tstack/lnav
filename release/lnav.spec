@@ -63,7 +63,7 @@ quickly and efficiently focus on problems.
 
 %build
 source /opt/rh/gcc-toolset-12/enable
-(cd /opt/rh/gcc-toolset-12/root/usr/lib/gcc/aarch64-redhat-linux/12/plugin/ && ln -s annobin.so gcc-annobin.so)
+(cd /opt/rh/gcc-toolset-12/root/usr/lib/gcc/x86_64-redhat-linux/12/plugin/ && ln -s annobin.so gcc-annobin.so)
 autoreconf -fiv
 %configure \
      --disable-silent-rules \
