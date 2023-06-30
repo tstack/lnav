@@ -17,7 +17,7 @@ jobs:
 
       - name: build RPM package
         id: rpm
-        uses: naveenrajm7/rpmbuild@master
+        uses: tstack/rpmbuild@master
         with:
           spec_file: "release/lnav.spec"
           additional_repos: '["centos-release-scl"]'
