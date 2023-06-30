@@ -1,0 +1,29 @@
+
+name: RPM Build
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - docs
+      - README.md
+      - NEWS.md
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: build RPM package
+        id: rpm
+        uses: naveenrajm7/rpmbuild@master
+        with:
+          spec_file: "release/lnav.spec"
+          additional_repos: "['centos-release-scl']"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: Binary RPM
+          path: ${{ steps.rpm.outputs.rpm_dir_path }}
