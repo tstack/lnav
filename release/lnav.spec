@@ -25,8 +25,7 @@ URL:            https://lnav.org
 # Source:       https://github.com/tstack/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source:         /github/home/rpmbuild/SOURCES/${name}-${version}.tar.gz
 # Source1:      lnav.desktop
-BuildRequires:  gcc
-BuildRequires:  g++
+BuildRequires:  gcc-toolset-11
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libarchive-devel
