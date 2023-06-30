@@ -32,5 +32,5 @@ jobs:
         with:
           userrepo: tstack/lnav
           apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
-          packages: ${{ steps.rpm.outputs.rpm_dir_path }}*
+          packages: ${{ steps.rpm.outputs.rpm_dir_path }}x86_64
           rpmdists: el/8
