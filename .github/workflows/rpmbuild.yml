@@ -26,3 +26,11 @@ jobs:
         with:
           name: Binary RPM
           path: ${{ steps.rpm.outputs.rpm_dir_path }}
+
+      - name: Push to packagecloud.io
+        uses: golift/upload-packagecloud@v1
+        with:
+          userrepo: tstack/lnav
+          apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          packages: ${{ steps.rpm.outputs.rpm_dir_path }}
+          rpmdists: el/8
