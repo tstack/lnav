@@ -26,6 +26,7 @@ jobs:
           echo "LNAV_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "LNAV_VERSION_NUMBER=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           echo "version is: ${{ env.LNAV_VERSION }}"
+          make -C release lnav.spec
       - name: build RPM package
         id: rpm
         uses: tstack/rpmbuild@master

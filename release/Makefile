@@ -100,3 +100,6 @@ push:
 clean:
 	cd vagrant-static && vagrant destroy -f
 	rm -rf vagrant-static/pkgs
+
+lnav.spec: lnav.spec.in makespec.sh
+	./makespec.sh < lnav.spec.in > $@

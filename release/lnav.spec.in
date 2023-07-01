@@ -15,7 +15,7 @@
 # published by the Open Source Initiative.
 
 Name:           lnav
-Version:        0.11.2
+Version:        @@LNAV_VERSION_NUMBER@@
 Release:        0
 Summary:        Logfile Navigator
 License:        BSD-2-Clause
