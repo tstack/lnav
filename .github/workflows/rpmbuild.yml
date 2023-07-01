@@ -8,6 +8,8 @@ on:
       - docs
       - README.md
       - NEWS.md
+    tags:
+      - '*'
 
 jobs:
   build:
