@@ -17,6 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Get the release version from the tag
+        shell: bash
+        run: |
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "LNAV_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "LNAV_VERSION_NUMBER=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "version is: ${{ env.LNAV_VERSION }}"
       - name: build RPM package
         id: rpm
         uses: tstack/rpmbuild@master
@@ -31,6 +40,7 @@ jobs:
 
       - name: Push to packagecloud.io
         uses: tstack/upload-packagecloud@main
+        if: ${{ env.LNAV_VERSION != '' }}
         with:
           userrepo: tstack/lnav
           apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
