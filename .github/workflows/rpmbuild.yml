@@ -41,7 +41,7 @@ jobs:
 
       - name: Push to packagecloud.io
         uses: tstack/upload-packagecloud@main
-        if: github.ref == 'tag'
+        if: github.ref_type == 'tag'
         with:
           userrepo: tstack/lnav
           apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
