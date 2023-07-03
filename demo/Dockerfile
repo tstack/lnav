@@ -1,5 +1,5 @@
 
-FROM debian:11.3-slim
+FROM --platform=linux/amd64 debian:11.3-slim
 
 RUN set -eux; \
 	export DEBIAN_FRONTEND=noninteractive; \
