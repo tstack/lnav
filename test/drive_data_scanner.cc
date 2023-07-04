@@ -157,9 +157,9 @@ main(int argc, char* argv[])
 
                 auto& root_formats = log_format::get_root_formats();
                 std::vector<std::shared_ptr<log_format>>::iterator iter;
-                std::vector<logline> index;
 
                 if (is_log) {
+                    std::vector<logline> index;
                     logfile_open_options loo;
                     auto open_res = logfile::open(argv[lpc], loo);
                     auto lf = open_res.unwrap();
@@ -172,8 +172,9 @@ main(int argc, char* argv[])
                         line_info li = {{13}};
 
                         (*iter)->clear();
-                        if ((*iter)->scan(*lf, index, li, sbr, sbc)
-                            == log_format::SCAN_MATCH)
+                        if ((*iter)
+                                ->scan(*lf, index, li, sbr, sbc)
+                                .is<log_format::scan_match>())
                         {
                             format = (*iter)->specialized();
                             found = true;
@@ -276,7 +277,8 @@ main(int argc, char* argv[])
 
                 fclose(out);
 
-                sprintf(cmd, "diff -u %s %s", argv[lpc], TMP_NAME);
+                snprintf(
+                    cmd, sizeof(cmd), "diff -u %s %s", argv[lpc], TMP_NAME);
                 rc = system(cmd);
                 if (rc != 0) {
                     if (prompt) {

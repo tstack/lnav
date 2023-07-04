@@ -371,9 +371,9 @@ EOF
 run_test ${lnav_test} -n ${srcdir}/logfile_tcf.1
 
 check_output "timestamps with no dates are not rewritten?" <<EOF
-TCF 2014-04-06 09:59:47.191000: Server-Properties: {"Name":"TCF Protocol Logger","OSName":"Linux 3.2.0-60-generic","UserName":"xavier","AgentID":"1fde3dd1-d4be-4f79-8090-6f8d212f03bf","TransportName":"TCP","Proxy":"","ValueAdd":"1","Port":"1534"}
-TCF 2014-04-06 10:30:11.474000: 0: ---> C 2 RunControl getChildren null <eom>
-TCF 2014-04-06 11:01:11.475000: 0: <--- R 2  ["P1"] <eom>
+TCF 2014-04-06 09:59:47.191234: Server-Properties: {"Name":"TCF Protocol Logger","OSName":"Linux 3.2.0-60-generic","UserName":"xavier","AgentID":"1fde3dd1-d4be-4f79-8090-6f8d212f03bf","TransportName":"TCP","Proxy":"","ValueAdd":"1","Port":"1534"}
+TCF 2014-04-06 10:30:11.474442: 0: ---> C 2 RunControl getChildren null <eom>
+TCF 2014-04-06 11:01:11.475557: 0: <--- R 2  ["P1"] <eom>
 EOF
 
 
@@ -688,6 +688,8 @@ EOF
 
 export YES_COLOR=1
 
+touch -t 202211030923 ${test_dir}/logfile_ansi.1
+
 run_cap_test ${lnav_test} -n \
     -c ';SELECT log_time, log_body FROM syslog_log' \
     ${test_dir}/logfile_ansi.1
@@ -699,3 +701,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT basename(filepath),descriptor,mimetype,content FROM lnav_file_metadata' \
     logfile_syslog.1.gz
+
+run_cap_test ${lnav_test} -n \
+    -c ':filter-in Air Mob' \
+    ${test_dir}/logfile_ansi.1

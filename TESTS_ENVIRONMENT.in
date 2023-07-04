@@ -1,5 +1,7 @@
 #! /bin/bash
 
+unset NO_COLOR
+
 top_srcdir="@abssrcdir@"
 export top_srcdir
 

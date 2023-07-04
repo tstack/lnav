@@ -396,8 +396,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv)
         qname = sql_quote_ident(xml_pair.first.first.get());
         xp_call = sqlite3_mprintf(
             "xpath(%Q, %s)", xml_pair.first.second.c_str(), qname.in());
-        this->fos_lines.emplace_back(
-            fmt::format(FMT_STRING("   {} = {}"), xp_call, xml_pair.second));
+        this->fos_lines.emplace_back(fmt::format(
+            FMT_STRING("   {} = {}"), xp_call.in(), xml_pair.second));
         this->add_key_line_attrs(0);
     }
 

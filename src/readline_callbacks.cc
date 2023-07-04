@@ -299,6 +299,7 @@ rl_change(readline_curses* rc)
                             top_ctx.c_prefix = "";
                             top_ctx.c_show = false;
                         }
+                        tc->set_sync_selection_and_top(top_ctx.c_show);
                     }
                 }
             }
@@ -515,7 +516,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
     }
 
     if (!complete) {
-        tc->set_top(lnav_data.ld_search_start_line);
+        tc->set_selection(lnav_data.ld_search_start_line);
     }
     tc->execute_search(rc->get_value().get_string());
 }
@@ -552,7 +553,7 @@ lnav_rl_abort(readline_curses* rc)
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SEARCH:
-            tc->set_top(lnav_data.ld_search_start_line);
+            tc->set_selection(lnav_data.ld_search_start_line);
             tc->revert_search();
             break;
         case ln_mode_t::SQL:
@@ -649,11 +650,11 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             if (!rc->get_value().empty()) {
                 auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
-                auto vl = is_alt ? bv.prev(tc->get_top())
+                auto vl = is_alt ? bv.prev(tc->get_selection())
                                  : bv.next(tc->get_top());
 
                 if (vl) {
-                    tc->set_top(vl.value());
+                    tc->set_selection(vl.value());
                 } else {
                     tc->set_follow_search_for(2000, [tc, is_alt, &bm]() {
                         if (bm[&textview_curses::BM_SEARCH].empty()) {
@@ -668,17 +669,21 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
                         if (is_alt) {
                             first_hit = bm[&textview_curses::BM_SEARCH].prev(
-                                vis_line_t(tc->get_top()));
+                                vis_line_t(tc->get_selection()));
                         } else {
                             first_hit = bm[&textview_curses::BM_SEARCH].next(
                                 vis_line_t(tc->get_top() - 1));
                         }
                         if (first_hit) {
                             auto first_hit_vl = first_hit.value();
-                            if (first_hit_vl > 0_vl) {
-                                --first_hit_vl;
+                            if (tc->is_selectable()) {
+                                tc->set_selection(first_hit_vl);
+                            } else {
+                                if (first_hit_vl > 0_vl) {
+                                    --first_hit_vl;
+                                }
+                                tc->set_top(first_hit_vl);
                             }
-                            tc->set_top(first_hit_vl);
                         }
 
                         return true;
@@ -897,5 +902,7 @@ rl_blur(readline_curses* rc)
                    .get_overlay_source();
 
     fos->fos_contexts.pop();
+    lnav_data.ld_views[LNV_LOG].set_sync_selection_and_top(
+        fos->fos_contexts.top().c_show);
     lnav_data.ld_preview_generation += 1;
 }

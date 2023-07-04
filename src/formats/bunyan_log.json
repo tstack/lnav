@@ -1,0 +1,105 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "bunyan": {
+        "title": "Bunyan log",
+        "url": "https://github.com/trentm/node-bunyan",
+        "description": "Bunyan JSON logging library for node.js",
+        "json": true,
+        "line-format": [
+            {
+                "field": "time"
+            },
+            " ",
+            {
+                "field": "name"
+            },
+            "[",
+            {
+                "field": "pid"
+            },
+            "] ",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase",
+                "auto-width": true
+            },
+            {
+                "field": "src/file",
+                "default-value": "",
+                "prefix": "["
+            },
+            {
+                "field": "src/line",
+                "default-value": "",
+                "prefix": ":"
+            },
+            {
+                "field": "src/func",
+                "default-value": "",
+                "prefix": ":",
+                "suffix": "]"
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "level-field": "level",
+        "level": {
+            "fatal": 60,
+            "error": 50,
+            "warning": 40,
+            "info": 30,
+            "debug": 20,
+            "trace": 10
+        },
+        "value": {
+            "pid": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "hostname": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            },
+            "time": {
+                "kind": "string",
+                "identifier": false
+            },
+            "level": {
+                "kind": "integer",
+                "identifier": true,
+                "foreign-key": true
+            },
+            "v": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "msg": {
+                "kind": "string"
+            },
+            "src": {
+                "kind": "json",
+                "hidden": true
+            },
+            "src/file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src/line": {
+                "kind": "integer"
+            },
+            "src/func": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "timestamp-field": "time",
+        "body-field": "msg"
+    }
+}

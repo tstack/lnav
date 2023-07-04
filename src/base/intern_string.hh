@@ -170,6 +170,13 @@ struct string_fragment {
 
     char back() const { return this->sf_string[this->sf_end - 1]; }
 
+    void pop_back()
+    {
+        if (!this->empty()) {
+            this->sf_end -= 1;
+        }
+    }
+
     iterator begin() const { return &this->sf_string[this->sf_begin]; }
 
     iterator end() const { return &this->sf_string[this->sf_end]; }
@@ -196,7 +203,7 @@ struct string_fragment {
         return Ok(retval);
     }
 
-    char operator[](int index) const
+    const char& operator[](int index) const
     {
         return this->sf_string[sf_begin + index];
     }
@@ -283,7 +290,8 @@ struct string_fragment {
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
     }
 
-    size_t count(char ch) const {
+    size_t count(char ch) const
+    {
         size_t retval = 0;
 
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {

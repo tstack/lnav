@@ -392,6 +392,14 @@ code_border(S str)
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
+snippet_border(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_SNIPPET_BORDER));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
 table_border(S str)
 {
     return std::make_pair(std::move(str),

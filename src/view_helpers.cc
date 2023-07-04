@@ -739,10 +739,9 @@ update_hits(textview_curses* tc)
             attr_line_t all_matches;
             char linebuf[64];
             int last_line = tc->get_inner_height();
-            int max_line_width;
 
             snprintf(linebuf, sizeof(linebuf), "%d", last_line);
-            max_line_width = strlen(linebuf);
+            auto max_line_width = static_cast<int>(strlen(linebuf));
 
             tc->get_dimensions(height, width);
             vl += height;
@@ -753,23 +752,40 @@ update_hits(textview_curses* tc)
             auto prev_vl = bv.prev(tc->get_top());
 
             if (prev_vl) {
-                attr_line_t al;
+                if (prev_vl.value() < 0_vl
+                    || prev_vl.value() >= tc->get_inner_height())
+                {
+                    log_error("stale search bookmark for %s: %d",
+                              tc->get_title().c_str(),
+                              prev_vl.value());
+                } else {
+                    attr_line_t al;
 
-                tc->textview_value_for_row(prev_vl.value(), al);
-                if (preview_count > 0) {
-                    all_matches.append("\n");
+                    tc->textview_value_for_row(prev_vl.value(), al);
+                    if (preview_count > 0) {
+                        all_matches.append("\n");
+                    }
+                    snprintf(linebuf,
+                             sizeof(linebuf),
+                             "L%*d: ",
+                             max_line_width,
+                             (int) prev_vl.value());
+                    all_matches.append(linebuf).append(al);
+                    preview_count += 1;
                 }
-                snprintf(linebuf,
-                         sizeof(linebuf),
-                         "L%*d: ",
-                         max_line_width,
-                         (int) prev_vl.value());
-                all_matches.append(linebuf).append(al);
-                preview_count += 1;
             }
 
             nonstd::optional<vis_line_t> next_vl;
             while ((next_vl = bv.next(vl)) && preview_count < MAX_MATCH_COUNT) {
+                if (next_vl.value() < 0_vl
+                    || next_vl.value() >= tc->get_inner_height())
+                {
+                    log_error("stale search bookmark for %s: %d",
+                              tc->get_title().c_str(),
+                              next_vl.value());
+                    break;
+                }
+
                 attr_line_t al;
 
                 vl = next_vl.value();
@@ -970,7 +986,7 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         int diff = new_top.value() - last_top;
 
         hit_count += 1;
-        if (!top_is_marked || diff > 1) {
+        if (tc->is_selectable() || !top_is_marked || diff > 1) {
             return new_top;
         }
         if (hit_count > 1 && std::abs(new_top.value() - top) >= tc_height) {
@@ -1009,8 +1025,7 @@ moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     auto new_top = next_cluster(f, bt, top);
 
     if (!new_top) {
-        new_top = next_cluster(
-            f, bt, tc->is_selectable() ? tc->get_selection() : tc->get_top());
+        new_top = next_cluster(f, bt, tc->get_selection());
     }
     if (new_top != -1) {
         tc->get_sub_source()->get_location_history() |
@@ -1029,55 +1044,21 @@ moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     return false;
 }
 
-void
-previous_cluster(const bookmark_type_t* bt, textview_curses* tc)
-{
-    key_repeat_history& krh = lnav_data.ld_key_repeat_history;
-    vis_line_t height, initial_top;
-    unsigned long width;
-
-    if (tc->is_selectable()) {
-        initial_top = tc->get_selection();
-    } else {
-        initial_top = tc->get_top();
-    }
-    auto new_top
-        = next_cluster(&bookmark_vector<vis_line_t>::prev, bt, initial_top);
-
-    tc->get_dimensions(height, width);
-    if (krh.krh_count > 1 && initial_top < (krh.krh_start_line - (1.5 * height))
-        && (!new_top || ((initial_top - new_top.value()) < height)))
-    {
-        bookmark_vector<vis_line_t>& bv = tc->get_bookmarks()[bt];
-        new_top = bv.next(std::max(0_vl, initial_top - height));
-    }
-
-    if (new_top) {
-        tc->get_sub_source()->get_location_history() |
-            [new_top](auto lh) { lh->loc_history_append(new_top.value()); };
-
-        if (tc->is_selectable()) {
-            tc->set_selection(new_top.value());
-        } else {
-            tc->set_top(new_top.value());
-        }
-    } else {
-        alerter::singleton().chime("no previous bookmark");
-    }
-}
-
 vis_line_t
 search_forward_from(textview_curses* tc)
 {
-    vis_line_t height,
-        retval = tc->is_selectable() ? tc->get_selection() : tc->get_top();
-    auto& krh = lnav_data.ld_key_repeat_history;
-    unsigned long width;
+    vis_line_t height, retval = tc->get_selection();
 
-    tc->get_dimensions(height, width);
+    if (!tc->is_selectable()) {
+        auto& krh = lnav_data.ld_key_repeat_history;
+        unsigned long width;
 
-    if (krh.krh_count > 1 && retval > (krh.krh_start_line + (1.5 * height))) {
-        retval += vis_line_t(0.90 * height);
+        tc->get_dimensions(height, width);
+
+        if (krh.krh_count > 1 && retval > (krh.krh_start_line + (1.5 * height)))
+        {
+            retval += vis_line_t(0.90 * height);
+        }
     }
 
     return retval;
@@ -1226,7 +1207,7 @@ lnav_crumb_source()
 
     auto* tss = top_view->get_sub_source();
     if (tss != nullptr) {
-        tss->text_crumbs_for_line(top_view->get_top(), retval);
+        tss->text_crumbs_for_line(top_view->get_selection(), retval);
     }
 
     return retval;

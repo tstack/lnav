@@ -16,25 +16,25 @@
             " ",
             {
                 "field": "source",
-                "min-width": 15,
+                "auto-width": true,
                 "align": "right"
             },
             " → ",
             {
                 "field": "destination",
-                "min-width": 15,
+                "auto-width": true,
                 "align": "left"
             },
             " ",
             {
                 "field": "protocol",
-                "min-width": 7,
+                "auto-width": true,
                 "align": "left"
             },
             " ",
             {
                 "field": "length",
-                "min-width": 4,
+                "auto-width": true,
                 "align": "right"
             },
             " ",

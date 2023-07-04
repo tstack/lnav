@@ -411,7 +411,7 @@ attr_line_t::apply_hide()
 
     for (auto& sattr : sa) {
         if (sattr.sa_type == &SA_HIDDEN && sattr.sa_range.length() > 3) {
-            struct line_range& lr = sattr.sa_range;
+            auto& lr = sattr.sa_range;
 
             std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
                 if (attr.sa_type == &VC_STYLE && lr.contains(attr.sa_range)) {

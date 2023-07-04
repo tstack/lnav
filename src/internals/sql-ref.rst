@@ -1528,7 +1528,7 @@ humanize_duration(*secs*)
     .. code-block::  custsqlite
 
       ;SELECT humanize_duration(15 * 60)
-      15m0s
+      15m00s
 
     To format a sub-second value:
 

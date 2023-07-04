@@ -136,6 +136,21 @@ protected:
         return retval;
     }
 
+    int get_actual_width()
+    {
+        auto retval = getmaxx(this->vc_window);
+
+        if (this->vc_width < 0) {
+            retval -= this->vc_left;
+            retval += this->vc_width;
+        } else if (this->vc_width > 0) {
+            retval = this->vc_width;
+        } else {
+            retval = retval - this->vc_left;
+        }
+        return retval;
+    }
+
     WINDOW* vc_window{nullptr}; /*< The window that contains this view. */
     int vc_left{0};
     int vc_x{0}; /*< The X position of the cursor. */

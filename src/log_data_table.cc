@@ -119,7 +119,10 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
     content_line_t cl;
 
     cl = lss.at(lc.lc_curr_line);
-    std::shared_ptr<logfile> lf = lss.find(cl);
+    auto* lf = lss.find_file_ptr(cl);
+    if (lf->get_format()->get_name() != this->ldt_format_impl->get_name()) {
+        return false;
+    }
     auto lf_iter = lf->begin() + cl;
 
     if (!lf_iter->is_message()) {

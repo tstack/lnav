@@ -112,13 +112,18 @@ public:
 
     file_range::metadata& get_metadata() { return this->sb_metadata; }
 
-    char* get_writable_data()
+    char* get_writable_data(size_t length)
     {
-        if (this->take_ownership()) {
+        if (this->take_ownership(length)) {
             return const_cast<char*>(this->sb_data);
         }
 
         return nullptr;
+    }
+
+    char* get_writable_data()
+    {
+        return this->get_writable_data(this->sb_length);
     }
 
     string_fragment to_string_fragment(off_t offset, size_t len) const
@@ -151,7 +156,9 @@ public:
 
     void erase_ansi();
 
-    bool take_ownership();
+    bool take_ownership(size_t length);
+
+    bool take_ownership() { return this->take_ownership(this->sb_length); }
 
     void disown();
 

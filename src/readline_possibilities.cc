@@ -268,7 +268,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
             auto_mem<char> ident(sqlite3_free);
 
             ident = sql_quote_ident(lv.lv_meta.lvm_name.get());
-            auto bound_name = fmt::format(FMT_STRING(":{}"), ident);
+            auto bound_name = fmt::format(FMT_STRING(":{}"), ident.in());
             rlc->add_possibility(context, type, bound_name);
             switch (lv.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_BOOLEAN:
@@ -442,9 +442,23 @@ add_config_possibilities()
         } else {
             rc->add_possibility(ln_mode_t::COMMAND, "config-option", path);
             if (jph.jph_synopsis) {
-                rc->add_prefix(ln_mode_t::COMMAND,
-                               std::vector<std::string>{"config", path},
-                               jph.jph_synopsis);
+                if (jph.jph_enum_values) {
+                    rc->add_prefix(ln_mode_t::COMMAND,
+                                   std::vector<std::string>{"config", path},
+                                   path);
+                    for (size_t lpc = 0;
+                         jph.jph_enum_values[lpc].first != nullptr;
+                         lpc++)
+                    {
+                        rc->add_possibility(ln_mode_t::COMMAND,
+                                            path,
+                                            jph.jph_enum_values[lpc].first);
+                    }
+                } else {
+                    rc->add_prefix(ln_mode_t::COMMAND,
+                                   std::vector<std::string>{"config", path},
+                                   jph.jph_synopsis);
+                }
             }
         }
     };

@@ -1,0 +1,114 @@
+name: bins
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - docs
+      - README.md
+      - NEWS.md
+  workflow_call:
+    inputs:
+      lnav_version_number:
+        description: The version number of the release
+        required: false
+        type: string
+      upload_url:
+        description: The URL to upload release assets
+        required: false
+        type: string
+
+jobs:
+  build-musl:
+    runs-on: ubuntu-latest
+    container:
+      image: tstack/lnav-build:1
+    env:
+      LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-linux-musl.zip
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: make
+        run: /entrypoint.sh
+      - name: Build musl package
+        if: ${{ inputs.lnav_version_number != '' }}
+        run: >-
+          mkdir ${{ env.LNAV_BASENAME }} &&
+          cd ${{ env.LNAV_BASENAME }} &&
+          cp ../NEWS.md ../README . &&
+          cp ../lbuild/src/lnav . &&
+          cd .. &&
+          zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          # Artifact name
+          name: lnav-linux-musl-64bit.zip
+          # A file, directory or wildcard pattern that describes what to upload
+          path: lbuild/src/lnav
+      - name: Upload musl-binary archive
+        uses: actions/upload-release-asset@v1.0.2
+        if: ${{ inputs.upload_url != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ${{ env.LNAV_ZIPNAME }}
+          asset_name: ${{ env.LNAV_ZIPNAME }}
+          asset_content_type: application/octet-stream
+
+  build-macos:
+    runs-on: macos-12
+    env:
+      LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-macos.zip
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install packages
+        run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
+      - name: autogen
+        run: ./autogen.sh
+      - name: configure
+        run: >-
+          ./configure --enable-static \
+            --with-libcurl=/usr \
+            --with-pcre2=$(brew --prefix pcre2) \
+            --with-sqlite3=$(brew --prefix sqlite3) \
+            "CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2" \
+            'CFLAGS=-O2 -g2' \
+            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/" \
+            --with-readline=$(brew --prefix readline) \
+            --with-libarchive=$(brew --prefix libarchive) \
+            "LIBS=-llzma -lzstd -lbrotlidec-static -liconv -llz4"
+      - name: make
+        run: make -j2
+      - name: Build macos package
+        if: ${{ inputs.lnav_version_number != '' }}
+        run: >-
+          mkdir ${{ env.LNAV_BASENAME }} &&
+          cd ${{ env.LNAV_BASENAME }} &&
+          cp ../NEWS.md ../README . &&
+          cp ../src/lnav . &&
+          cd .. &&
+          zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+      - name: Upload config.log artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          # Artifact name
+          name: config-log.zip
+          # A file, directory or wildcard pattern that describes what to upload
+          path: config.log
+      - name: Upload macos archive
+        uses: actions/upload-release-asset@v1.0.2
+        if: ${{ inputs.upload_url != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ${{ env.LNAV_ZIPNAME }}
+          asset_name: ${{ env.LNAV_ZIPNAME }}
+          asset_content_type: application/octet-stream

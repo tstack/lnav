@@ -212,7 +212,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         = injector::get<const lnav::logfile::config&>()
               .lc_max_unrecognized_lines;
 
-    log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
+    log_format::scan_result_t found = log_format::scan_no_match{};
     size_t prescan_size = this->lf_index.size();
     time_t prescan_time = 0;
     bool retval = false;
@@ -225,174 +225,221 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
     } else if (this->lf_options.loo_detect_format) {
         const auto& root_formats = log_format::get_root_formats();
+        nonstd::optional<std::pair<log_format*, log_format::scan_match>>
+            best_match;
+        size_t scan_count = 0;
 
         /*
          * Try each scanner until we get a match.  Fortunately, the formats
          * tend to be sufficiently different that there are few ambiguities...
          */
-        for (auto iter = root_formats.begin();
-             iter != root_formats.end() && (found != log_format::SCAN_MATCH);
-             ++iter)
-        {
+        log_trace("logfile[%s]: scanning line %d (offset: %d; size: %d)",
+                  this->lf_filename.c_str(),
+                  this->lf_index.size(),
+                  li.li_file_range.fr_offset,
+                  li.li_file_range.fr_size);
+        size_t prev_index_size = this->lf_index.size();
+        for (const auto& curr : root_formats) {
             if (this->lf_index.size()
-                >= (*iter)->lf_max_unrecognized_lines.value_or(
+                >= curr->lf_max_unrecognized_lines.value_or(
                     max_unrecognized_lines))
             {
                 continue;
             }
 
-            if (this->lf_mismatched_formats.count((*iter)->get_name()) > 0) {
+            if (this->lf_mismatched_formats.count(curr->get_name()) > 0) {
                 continue;
             }
 
-            if (!(*iter)->match_name(this->lf_filename)) {
+            if (!curr->match_name(this->lf_filename)) {
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file name: %s",
-                              (*iter)->get_name().get(),
+                              curr->get_name().get(),
                               this->lf_filename.c_str());
                 }
-                this->lf_mismatched_formats.insert((*iter)->get_name());
+                this->lf_mismatched_formats.insert(curr->get_name());
                 continue;
             }
-            if (!(*iter)->match_mime_type(this->lf_options.loo_file_format)) {
+            if (!curr->match_mime_type(this->lf_options.loo_file_format)) {
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file format: %s",
-                              (*iter)->get_name().get(),
+                              curr->get_name().get(),
                               fmt::to_string(this->lf_options.loo_file_format)
                                   .c_str());
                 }
                 continue;
             }
 
-            (*iter)->clear();
-            this->set_format_base_time(iter->get());
-            found = (*iter)->scan(*this, this->lf_index, li, sbr, sbc);
-            if (found == log_format::SCAN_MATCH) {
-#if 0
-                require(this->lf_index.size() == 1 ||
-                       (this->lf_index[this->lf_index.size() - 2] <
-                        this->lf_index[this->lf_index.size() - 1]));
-#endif
-                log_info("%s:%d:log format found -- %s",
-                         this->lf_filename.c_str(),
-                         this->lf_index.size(),
-                         (*iter)->get_name().get());
+            scan_count += 1;
+            curr->clear();
+            this->set_format_base_time(curr.get());
+            auto scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc);
 
-                this->lf_text_format = text_format_t::TF_LOG;
-                this->lf_format = (*iter)->specialized();
-                this->set_format_base_time(this->lf_format.get());
-                this->lf_content_id
-                    = hasher().update(sbr.get_data(), sbr.length()).to_string();
-
-                for (auto& td_pair : this->lf_format->lf_tag_defs) {
-                    bool matches = td_pair.second->ftd_paths.empty();
-                    for (const auto& pr : td_pair.second->ftd_paths) {
-                        if (pr.matches(this->lf_filename.c_str())) {
-                            matches = true;
-                            break;
+            scan_res.match(
+                [this, &curr, &best_match, &prev_index_size](
+                    const log_format::scan_match& sm) {
+                    if (!best_match
+                        || sm.sm_quality > best_match->second.sm_quality)
+                    {
+                        log_info(
+                            "  scan with format (%s) matched with quality (%d)",
+                            curr->get_name().c_str(),
+                            sm.sm_quality);
+                        if (best_match) {
+                            auto last = this->lf_index.begin();
+                            std::advance(last, prev_index_size);
+                            this->lf_index.erase(this->lf_index.begin(), last);
+                        }
+                        best_match = std::make_pair(curr.get(), sm);
+                        prev_index_size = this->lf_index.size();
+                    } else {
+                        log_info(
+                            "  scan with format (%s) matched, but "
+                            "is low quality (%d)",
+                            curr->get_name().c_str(),
+                            sm.sm_quality);
+                        while (this->lf_index.size() > prev_index_size) {
+                            this->lf_index.pop_back();
                         }
                     }
-                    if (!matches) {
-                        continue;
-                    }
+                },
+                [curr](const log_format::scan_incomplete& si) {
+                    log_trace(
+                        "  scan with format (%s) is incomplete, "
+                        "more data required",
+                        curr->get_name().c_str());
+                },
+                [curr](const log_format::scan_no_match& snm) {
+                    log_trace("  scan with format (%s) does not match -- %s",
+                              curr->get_name().c_str(),
+                              snm.snm_reason);
+                });
+        }
 
-                    log_info("%s: found applicable tag definition /%s/tags/%s",
-                             this->lf_filename.c_str(),
-                             this->lf_format->get_name().get(),
-                             td_pair.second->ftd_name.c_str());
-                    this->lf_applicable_taggers.emplace_back(td_pair.second);
+        if (!scan_count) {
+            log_info("%s: no formats available to scan, no longer detecting",
+                     this->lf_filename.c_str());
+            this->lf_options.loo_detect_format = false;
+        }
+
+        if (best_match) {
+            auto winner = best_match.value();
+            auto* curr = winner.first;
+            log_info("%s:%d:log format found -- %s",
+                     this->lf_filename.c_str(),
+                     this->lf_index.size(),
+                     curr->get_name().get());
+
+            this->lf_text_format = text_format_t::TF_LOG;
+            this->lf_format = curr->specialized();
+            this->set_format_base_time(this->lf_format.get());
+            this->lf_content_id
+                = hasher().update(sbr.get_data(), sbr.length()).to_string();
+
+            for (auto& td_pair : this->lf_format->lf_tag_defs) {
+                bool matches = td_pair.second->ftd_paths.empty();
+                for (const auto& pr : td_pair.second->ftd_paths) {
+                    if (pr.matches(this->lf_filename.c_str())) {
+                        matches = true;
+                        break;
+                    }
+                }
+                if (!matches) {
+                    continue;
                 }
 
-                /*
-                 * We'll go ahead and assume that any previous lines were
-                 * written out at the same time as the last one, so we need to
-                 * go back and update everything.
-                 */
-                auto& last_line = this->lf_index[this->lf_index.size() - 1];
-
-                for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
-                    if (this->lf_format->lf_multiline) {
-                        this->lf_index[lpc].set_time(last_line.get_time());
-                        this->lf_index[lpc].set_millis(last_line.get_millis());
-                    } else {
-                        this->lf_index[lpc].set_ignore(true);
-                    }
-                }
-                break;
+                log_info("%s: found applicable tag definition /%s/tags/%s",
+                         this->lf_filename.c_str(),
+                         this->lf_format->get_name().get(),
+                         td_pair.second->ftd_name.c_str());
+                this->lf_applicable_taggers.emplace_back(td_pair.second);
             }
+
+            /*
+             * We'll go ahead and assume that any previous lines were
+             * written out at the same time as the last one, so we need to
+             * go back and update everything.
+             */
+            auto& last_line = this->lf_index[this->lf_index.size() - 1];
+
+            for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
+                if (this->lf_format->lf_multiline) {
+                    this->lf_index[lpc].set_time(last_line.get_time());
+                    this->lf_index[lpc].set_millis(last_line.get_millis());
+                } else {
+                    this->lf_index[lpc].set_ignore(true);
+                }
+            }
+
+            found = best_match->second;
         }
     }
 
-    switch (found) {
-        case log_format::SCAN_MATCH: {
-            if (!this->lf_index.empty()) {
-                this->lf_index.back().set_valid_utf(li.li_valid_utf);
-                this->lf_index.back().set_has_ansi(li.li_has_ansi);
-            }
-            if (prescan_size > 0 && this->lf_index.size() >= prescan_size
-                && prescan_time != this->lf_index[prescan_size - 1].get_time())
-            {
-                retval = true;
-            }
-            if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
-                auto& second_to_last = this->lf_index[prescan_size - 1];
-                auto& latest = this->lf_index[prescan_size];
+    if (found.is<log_format::scan_match>()) {
+        if (!this->lf_index.empty()) {
+            auto& last_line = this->lf_index.back();
 
-                if (!second_to_last.is_ignored() && latest < second_to_last) {
-                    if (this->lf_format->lf_time_ordered) {
-                        this->lf_out_of_time_order_count += 1;
-                        for (size_t lpc = prescan_size;
-                             lpc < this->lf_index.size();
-                             lpc++)
-                        {
-                            auto& line_to_update = this->lf_index[lpc];
+            last_line.set_valid_utf(last_line.is_valid_utf()
+                                    && li.li_utf8_scan_result.is_valid());
+            last_line.set_has_ansi(last_line.has_ansi()
+                                   || li.li_utf8_scan_result.usr_has_ansi);
+        }
+        if (prescan_size > 0 && this->lf_index.size() >= prescan_size
+            && prescan_time != this->lf_index[prescan_size - 1].get_time())
+        {
+            retval = true;
+        }
+        if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
+            auto& second_to_last = this->lf_index[prescan_size - 1];
+            auto& latest = this->lf_index[prescan_size];
 
-                            line_to_update.set_time_skew(true);
-                            line_to_update.set_time(second_to_last.get_time());
-                            line_to_update.set_millis(
-                                second_to_last.get_millis());
-                        }
-                    } else {
-                        retval = true;
+            if (!second_to_last.is_ignored() && latest < second_to_last) {
+                if (this->lf_format->lf_time_ordered) {
+                    this->lf_out_of_time_order_count += 1;
+                    for (size_t lpc = prescan_size; lpc < this->lf_index.size();
+                         lpc++)
+                    {
+                        auto& line_to_update = this->lf_index[lpc];
+
+                        line_to_update.set_time_skew(true);
+                        line_to_update.set_time(second_to_last.get_time());
+                        line_to_update.set_millis(second_to_last.get_millis());
                     }
+                } else {
+                    retval = true;
                 }
             }
-            break;
         }
-        case log_format::SCAN_NO_MATCH: {
-            log_level_t last_level = LEVEL_UNKNOWN;
-            time_t last_time = this->lf_index_time;
-            short last_millis = 0;
-            uint8_t last_mod = 0, last_opid = 0;
+    } else if (found.is<log_format::scan_no_match>()) {
+        log_level_t last_level = LEVEL_UNKNOWN;
+        time_t last_time = this->lf_index_time;
+        short last_millis = 0;
+        uint8_t last_mod = 0, last_opid = 0;
 
-            if (!this->lf_index.empty()) {
-                logline& ll = this->lf_index.back();
+        if (!this->lf_index.empty()) {
+            logline& ll = this->lf_index.back();
 
-                /*
-                 * Assume this line is part of the previous one(s) and copy the
-                 * metadata over.
-                 */
-                last_time = ll.get_time();
-                last_millis = ll.get_millis();
-                if (this->lf_format.get() != nullptr) {
-                    last_level = (log_level_t) (ll.get_level_and_flags()
-                                                | LEVEL_CONTINUED);
-                }
-                last_mod = ll.get_module_id();
-                last_opid = ll.get_opid();
+            /*
+             * Assume this line is part of the previous one(s) and copy the
+             * metadata over.
+             */
+            last_time = ll.get_time();
+            last_millis = ll.get_millis();
+            if (this->lf_format.get() != nullptr) {
+                last_level = (log_level_t) (ll.get_level_and_flags()
+                                            | LEVEL_CONTINUED);
             }
-            this->lf_index.emplace_back(li.li_file_range.fr_offset,
-                                        last_time,
-                                        last_millis,
-                                        last_level,
-                                        last_mod,
-                                        last_opid);
-            this->lf_index.back().set_valid_utf(li.li_valid_utf);
-            this->lf_index.back().set_has_ansi(li.li_has_ansi);
-            break;
+            last_mod = ll.get_module_id();
+            last_opid = ll.get_opid();
         }
-        case log_format::SCAN_INCOMPLETE:
-            break;
+        this->lf_index.emplace_back(li.li_file_range.fr_offset,
+                                    last_time,
+                                    last_millis,
+                                    last_level,
+                                    last_mod,
+                                    last_opid);
+        this->lf_index.back().set_valid_utf(li.li_utf8_scan_result.is_valid());
+        this->lf_index.back().set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
     }
 
     return retval;
@@ -407,6 +454,16 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             return rebuild_result_t::NEW_ORDER;
         }
         return rebuild_result_t::NO_NEW_LINES;
+    }
+
+    if (this->lf_format != nullptr && this->lf_format->format_changed()) {
+        log_info("%s: format has changed, rebuilding",
+                 this->lf_filename.c_str());
+        this->lf_index.clear();
+        this->lf_index_size = 0;
+        this->lf_partial_line = false;
+        this->lf_longest_line = 0;
+        this->lf_sort_needed = true;
     }
 
     auto retval = rebuild_result_t::NO_NEW_LINES;
@@ -509,8 +566,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             this->lf_logline_observer->logline_restart(*this, rollback_size);
         }
 
-        bool sort_needed = this->lf_sort_needed;
-        this->lf_sort_needed = false;
+        bool sort_needed = std::exchange(this->lf_sort_needed, false);
         size_t limit = SIZE_MAX;
 
         if (deadline) {
@@ -553,18 +609,36 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             }
             prev_range = li.li_file_range;
 
-            if (!this->lf_options.loo_non_utf_is_visible && !li.li_valid_utf) {
+            if (this->lf_format == nullptr
+                && !this->lf_options.loo_non_utf_is_visible
+                && !li.li_utf8_scan_result.is_valid())
+            {
                 log_info("file is not utf, hiding: %s",
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
                 this->lf_options.loo_is_visible = false;
+                auto note_text = fmt::format(
+                    FMT_STRING("not indexing non-UTF-8 file -- line: "
+                               "{}; column: {}; error: {}"),
+                    this->lf_index.size() + 1,
+                    li.li_utf8_scan_result.usr_valid_frag.sf_end,
+                    li.li_utf8_scan_result.usr_message);
                 this->lf_notes.writeAccess()->emplace(note_type::not_utf,
-                                                      "hiding non-UTF-8 file");
+                                                      note_text);
                 if (this->lf_logfile_observer != nullptr) {
                     this->lf_logfile_observer->logfile_indexing(
                         this->shared_from_this(), 0, 0);
                 }
                 break;
+            }
+            if (this->lf_format != nullptr
+                && !li.li_utf8_scan_result.is_valid())
+            {
+                log_warning("%s: invalid UTF-8 detected at %d:%d -- %s",
+                            this->lf_filename.c_str(),
+                            this->lf_index.size() + 1,
+                            li.li_utf8_scan_result.usr_valid_frag.sf_end,
+                            li.li_utf8_scan_result.usr_message);
             }
 
             size_t old_size = this->lf_index.size();
@@ -586,7 +660,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);
             }
-            if (!li.li_valid_utf
+            if (!li.li_utf8_scan_result.is_valid()
                 && this->lf_text_format != text_format_t::TF_MARKDOWN
                 && this->lf_text_format != text_format_t::TF_LOG)
             {
@@ -606,14 +680,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             auto sbr = read_result.unwrap();
             sbr.rtrim(is_line_ending);
 
-            if (li.li_valid_utf && li.li_has_ansi) {
-                auto tmp_line = sbr.to_string_fragment().to_string();
-
-                scrub_ansi_string(tmp_line, nullptr);
-                memcpy(sbr.get_writable_data(),
-                       tmp_line.c_str(),
-                       tmp_line.length());
-                sbr.narrow(0, tmp_line.length());
+            if (li.li_utf8_scan_result.is_valid()
+                && li.li_utf8_scan_result.usr_has_ansi)
+            {
+                sbr.erase_ansi();
             }
 
             this->lf_longest_line
@@ -853,6 +923,9 @@ logfile::read_full_message(logfile::const_iterator ll,
     msg_out.disown();
     auto range_for_line = this->get_file_range(ll);
     try {
+        if (range_for_line.fr_size > line_buffer::MAX_LINE_BUFFER_SIZE) {
+            range_for_line.fr_size = line_buffer::MAX_LINE_BUFFER_SIZE;
+        }
         auto read_result = this->lf_line_buffer.read_range(range_for_line);
 
         if (read_result.isErr()) {

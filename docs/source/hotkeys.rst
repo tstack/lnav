@@ -48,7 +48,7 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`←`
      -
      - Left half a page.  In the log view, pressing left while at the start of
-       the message text will reveal the source file name for each line.
+       the message text will reveal the shortened source file name for each line.
        Pressing again will reveal the full path.
    * - :kbd:`Shift` + :kbd:`h`
      - :kbd:`Shift` + :kbd:`←`
@@ -187,7 +187,7 @@ Bookmarks
    * - Keypress
      - Command
    * - :kbd:`m`
-     - Mark/unmark the top line
+     - Mark/unmark the top line or focused line when in cursor mode
    * - :kbd:`Shift` + :kbd:`m`
      - Mark/unmark the range of lines from the last marked to the top
    * - :kbd:`Shift` + :kbd:`j`
@@ -255,7 +255,7 @@ Display
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.
    * - :kbd:`Ctrl` + :kbd:`x`
-     - Toggle the cursor mode. Allows moving the selected line instead of
+     - Toggle the cursor mode. Allows moving the focused line instead of
        keeping it fixed at the top of the current screen.
    * - :kbd:`=`
      - Pause/unpause loading of new file data.

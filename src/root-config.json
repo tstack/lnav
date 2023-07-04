@@ -1,11 +1,14 @@
 {
     "$schema": "https://lnav.org/schemas/config-v1.schema.json",
-    "ui" : {
+    "ui": {
         "clock-format": "%Y-%m-%dT%H:%M:%S %Z",
         "dim-text": false,
         "default-colors": true,
         "keymap": "default",
-        "theme": "default"
+        "theme": "default",
+        "movement": {
+            "mode": "top"
+        }
     },
     "tuning": {
         "archive-manager": {

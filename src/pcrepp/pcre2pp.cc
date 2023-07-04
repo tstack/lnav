@@ -290,7 +290,7 @@ code::replace(string_fragment str, const char* repl) const
 
             if (in_escape) {
                 if (isdigit(ch)) {
-                    auto capture_index = (ch - '0');
+                    auto capture_index = size_t(ch - '0');
 
                     if (capture_index < md.get_count()) {
                         auto cap = md[capture_index];

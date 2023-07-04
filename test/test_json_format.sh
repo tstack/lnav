@@ -12,6 +12,11 @@ run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json.json
 
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':filter-in up service' \
+    ${test_dir}/logfile_json.json
+
 # json log format is not working"
 run_cap_test ${lnav_test} -n -I ${test_dir} \
     -c ':switch-to-view pretty' \
@@ -139,3 +144,13 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json_subsec.json
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_bunyan.0
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_cloudflare.json
+
+run_cap_test ${lnav_test} -n \
+    -c ':show-fields RayID' \
+    ${test_dir}/logfile_cloudflare.json

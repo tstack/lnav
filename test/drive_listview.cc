@@ -53,15 +53,15 @@ public:
                                  vector<attr_line_t>& rows)
     {
         for (auto& value_out : rows) {
-            if (row == 0) {
-                value_out = "Hello";
-            } else if (row == 1) {
-                value_out = "World!";
-            } else if (row < this->ms_rows) {
-                char buffer[32];
+            value_out = (lv.is_selectable() && row == lv.get_selection()) ? "+"
+                                                                          : "";
 
-                snprintf(buffer, sizeof(buffer), "%d", (int) row);
-                value_out = string(buffer);
+            if (row == 0) {
+                value_out.al_string += "Hello";
+            } else if (row == 1) {
+                value_out.al_string += "World!";
+            } else if (row < this->ms_rows) {
+                value_out.al_string += std::to_string(static_cast<int>(row));
             } else {
                 assert(0);
             }
@@ -98,8 +98,12 @@ main(int argc, char* argv[])
     lv.set_window(win);
     noecho();
 
-    while ((c = getopt(argc, argv, "y:t:l:r:h:w")) != -1) {
+    while ((c = getopt(argc, argv, "cy:t:k:l:r:h:w")) != -1) {
         switch (c) {
+            case 'c':
+                // Enable cursor mode
+                lv.set_selectable(true);
+                break;
             case 'y':
                 lv.set_y(atoi(optarg));
                 break;
@@ -107,8 +111,17 @@ main(int argc, char* argv[])
                 lv.set_height(vis_line_t(atoi(optarg)));
                 set_height = true;
                 break;
+            case 'k': {
+                // Treats the string argument as sequence of key presses (only
+                // individual characters supported as key input)
+                for (char* ptr = optarg; ptr != nullptr && *ptr != '\0'; ++ptr)
+                {
+                    lv.handle_key(static_cast<int>(*ptr));
+                }
+                break;
+            }
             case 't':
-                lv.set_top(vis_line_t(atoi(optarg)));
+                lv.set_selection(vis_line_t(atoi(optarg)));
                 break;
             case 'l':
                 lv.set_left(atoi(optarg));

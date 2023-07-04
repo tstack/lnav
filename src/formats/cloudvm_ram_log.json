@@ -1,0 +1,22 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "cloudvm_ram_log": {
+        "title": "CloudVM Ram Log",
+        "description": "Periodic dumps of ram sizes",
+        "regex": {
+            "std": {
+                "pattern": "========== Start of cloudvm ram size dump at (?<timestamp>[^=]+)==========(?<body>.*)"
+            }
+        },
+        "sample": [
+            {
+                "line": "========== Start of cloudvm ram size dump at Thu Jun 2 08:00:01 UTC 2022 =========="
+            }
+        ],
+        "search-table": {
+            "cloudvm_ram_sizes": {
+                "pattern": "^(?!TOTAL)(?<ServiceName>\\S+)\\s+(?<AllocatedMB>-?\\d+)\\s+(?<MaxMB>-?\\d+)\\s+(?<CurrentMB>-?\\d+)\\s+(?<CurrRSS>-?\\d+)\\s+(?<Cache>-?\\d+)\\s+(?<MapFiles>-?\\d+)\\s+(?<MemoryLimit>-?\\d+)"
+            }
+        }
+    }
+}

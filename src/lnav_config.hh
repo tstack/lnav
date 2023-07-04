@@ -91,7 +91,7 @@ enum class config_movement_mode : unsigned int {
 };
 
 struct movement_config {
-    config_movement_mode mode;
+    config_movement_mode mode{config_movement_mode::TOP};
 };
 
 struct _lnav_config {

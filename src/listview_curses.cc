@@ -44,6 +44,52 @@ list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 
 void
+listview_curses::update_top_from_selection()
+{
+    if (!this->lv_selectable) {
+        return;
+    }
+
+    vis_line_t height;
+    unsigned long width;
+
+    this->get_dimensions(height, width);
+
+    if (this->lv_selection < 0_vl) {
+        this->set_top(0_vl);
+    } else if (this->lv_sync_selection_and_top) {
+        this->set_top(this->lv_selection);
+    } else if (this->lv_selection == this->get_inner_height() - 1_vl) {
+        this->set_top(this->get_top_for_last_row());
+    } else if (this->lv_selection
+               >= (this->lv_top + height - this->lv_tail_space - 1_vl))
+    {
+        auto diff = this->lv_selection
+            - (this->lv_top + height - this->lv_tail_space - 1_vl);
+
+        if (height < 10 || diff < (height / 8_vl)) {
+            // for small differences between the bottom and the
+            // selection, just move a little bit.
+            this->set_top(
+                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
+        } else {
+            // for large differences, put the focus in the middle
+            this->set_top(this->lv_selection - height / 2_vl, true);
+        }
+    } else if (this->lv_selection <= this->lv_top) {
+        auto diff = this->lv_top - this->lv_selection;
+
+        if (this->lv_selection > 0 && (height < 10 || diff < (height / 8_vl))) {
+            this->set_top(this->lv_selection - 1_vl);
+        } else if (this->lv_selection < height) {
+            this->set_top(0_vl);
+        } else {
+            this->set_top(this->lv_selection - height / 2_vl, true);
+        }
+    }
+}
+
+void
 listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
@@ -65,6 +111,8 @@ listview_curses::reload_data()
                 this->lv_selection = -1_vl;
                 this->set_selection(curr_sel);
             }
+
+            this->update_top_from_selection();
         }
     }
     this->vc_needs_update = true;
@@ -127,14 +175,41 @@ listview_curses::handle_key(int ch)
         case 'b':
         case KEY_BACKSPACE:
         case KEY_PPAGE:
-            this->shift_top(
-                -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+            if (this->lv_top == 0_vl && this->lv_selectable
+                && this->lv_selection != 0_vl)
+            {
+                this->set_selection(0_vl);
+            } else {
+                this->shift_top(
+                    -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+            }
             break;
 
         case ' ':
-        case KEY_NPAGE:
-            this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - 1_vl);
+        case KEY_NPAGE: {
+            auto rows_avail
+                = this->rows_available(this->lv_top, RD_DOWN) - 1_vl;
+            auto top_for_last = this->get_top_for_last_row();
+
+            if ((this->lv_top < top_for_last)
+                && (this->lv_top + rows_avail > top_for_last))
+            {
+                this->set_top(top_for_last);
+                if (this->lv_selection <= top_for_last) {
+                    this->set_selection(top_for_last + 1_vl);
+                }
+            } else {
+                this->shift_top(rows_avail);
+
+                auto inner_height = this->get_inner_height();
+                if (this->lv_selectable && this->lv_top >= top_for_last
+                    && inner_height > 0_vl)
+                {
+                    this->set_selection(inner_height - 1_vl);
+                }
+            }
             break;
+        }
 
         case 'g':
         case KEY_HOME:
@@ -193,21 +268,8 @@ listview_curses::do_update()
     vis_line_t height;
     unsigned long width;
 
+    this->update_top_from_selection();
     this->get_dimensions(height, width);
-
-    if (this->lv_selectable) {
-        if (this->lv_selection < 0_vl) {
-            this->set_top(0_vl);
-        } else if (this->lv_selection
-                   >= (this->lv_top + height - this->lv_tail_space - 1_vl))
-        {
-            this->set_top(
-                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
-        } else if (this->lv_selection < this->lv_top) {
-            this->set_top(this->lv_selection, true);
-        }
-    }
-
     while (this->vc_needs_update) {
         auto& vc = view_colors::singleton();
         vis_line_t row;
@@ -512,12 +574,15 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
+        auto old_top = this->lv_top;
         this->lv_top = top;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
-                this->set_selection(top);
+                auto sel_diff = this->lv_selection - old_top;
+                this->set_selection(top + sel_diff);
             } else {
+                auto sel_diff = this->lv_selection - old_top;
                 auto bot = this->get_bottom();
                 unsigned long width;
                 vis_line_t height;
@@ -526,7 +591,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
 
                 if (bot != -1_vl && (bot - top) >= (height - 1)) {
                     if (this->lv_selection > (bot - this->lv_tail_space)) {
-                        this->set_selection(bot - this->lv_tail_space);
+                        this->set_selection(top + sel_diff);
                     }
                 }
             }
@@ -606,7 +671,10 @@ listview_curses::set_selection(vis_line_t sel)
         }
 
         auto inner_height = this->get_inner_height();
-        if (sel >= 0_vl && sel < inner_height) {
+        if (sel >= inner_height) {
+            sel = inner_height - 1_vl;
+        }
+        if (sel >= 0_vl) {
             auto found = false;
             vis_line_t step;
 
@@ -628,6 +696,9 @@ listview_curses::set_selection(vis_line_t sel)
             }
             if (found) {
                 this->lv_selection = sel;
+                if (this->lv_sync_selection_and_top) {
+                    this->lv_top = sel;
+                }
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
                 this->invoke_scroll();
@@ -636,4 +707,27 @@ listview_curses::set_selection(vis_line_t sel)
     } else {
         this->set_top(sel);
     }
+}
+
+vis_line_t
+listview_curses::get_top_for_last_row()
+{
+    auto inner_height = this->get_inner_height();
+    auto retval = 0_vl;
+
+    if (inner_height > 0) {
+        auto last_line = inner_height - 1_vl;
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
+        retval = last_line - this->rows_available(last_line, RD_UP) + 1_vl;
+        if (inner_height >= (height - this->lv_tail_space)
+            && (retval + this->lv_tail_space) < inner_height)
+        {
+            retval += this->lv_tail_space;
+        }
+    }
+
+    return retval;
 }

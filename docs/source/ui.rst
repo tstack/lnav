@@ -24,6 +24,16 @@ pressing :kbd:`q`.  You can switch forward to the new view by pressing
 :kbd:`Shift` + :kbd:`q` and :kbd:`Shift` + :kbd:`a` will synchronize the top
 times in the views.
 
+**lnav** provides many operations to work with the log/text data in the
+main view.  For example, you can add comments and tags to log messages.
+By default, the top line is used as the reference point to edit the
+comment or tags.  Alternatively, you can press :kbd:`Ctrl` + :kbd:`x`
+to switch to "cursor" mode where the "focused" line is highlighted and
+most operations now work with that line.  When in "cursor" mode, the
+:kbd:`↑` and :kbd:`↓` keys now move the focused line instead of scrolling
+the view.  Jumping to bookmarks, like errors, will also move the focused
+line instead of moving the next error to the top of the view.
+
 The right side of the display has a proportionally sized 'scrollbar' that
 shows:
 
@@ -40,7 +50,7 @@ The top status bar shows the current time and messages stored in the
 :ref:`table_lnav_user_notifications` table.
 
 Below the top status bar is the breadcrumb bar that displays the semantic
-location of the top line in the main view.  For example, within a
+location of the focused line in the main view.  For example, within a
 pretty-printed JSON document, it will show the path to property at the top
 of the view.  The actual content of the bar depends on the current view and
 will be updated as you navigate around the main view.  The bar can also be
@@ -124,7 +134,7 @@ Bottom Status Bar
 
 The second to last line is the bottom status bar, which shows the following:
 
-* the line number of the top line, starting from zero;
+* the line number of the focused line, starting from zero;
 * the location within the view, as a percentage;
 * the current search hit, the total number of hits, and the search term;
 * the loading indicator.
@@ -193,12 +203,18 @@ On color displays, the log messages will be highlighted as follows:
   time" is the original textual timestamp.  The "received time" is the time
   of an earlier message that is larger than this log message's time.
 
+The source file name for each message can be displayed by scrolling left.
+Scrolling left once will show the shortened version of the file name relative
+to the other files that are loaded.  In the shortened version, the unique
+portion of the file name will be in square brackets.  Scrolling left a second
+time will show the full path.
+
 The breadcrumb bar will show the following crumbs:
 
-* the timestamp for the top line;
-* the log format for the top line;
-* the name of the file the top line was pulled from;
-* the "operation ID" of the top log message, if it is supported by the log
+* the timestamp for the focused line;
+* the log format for the focused line;
+* the name of the file the focused line was pulled from;
+* the "operation ID" of the focused log message, if it is supported by the log
   format.
 
 These crumbs are interactive and can be used to navigate to different parts
@@ -210,35 +226,48 @@ TEXT
 
 The text view displays files for which lnav could not detect any log messages.
 
+Press :kbd:`t` to switch to the text view.  While in the text view, you can
+press :kbd:`f` or :kbd:`Shift` + :kbd:`F` to switch to the next / previous
+text file.
+
 Markdown
 """"""""
 
 Files with an :code:`.md` (or :code:`.markdown`) extension will be treated as
 Markdown files and rendered separately.
 
+  .. figure:: lnav-markdown-example.png
+     :align: center
+
+     Viewing the **lnav** :file:`README.md` file.
+
+
 DB
 ^^
 
 The DB view shows the results of queries done through the SQLite interface.
 You can execute a query by pressing :kbd:`;` and then entering a SQL statement.
-You can switch to the SQL view by pressing :kbd:`v`.
+
+Press :kbd:`v` to switch to the database result view.
 
 HELP
 ^^^^
 
-The help view displays the builtin help text.  Press :kbd:`?` to switch to the
-help view at any time.  While in the help view, the breadcrumb bar can be used
-to navigate to different sections of the document.
+The help view displays the builtin help text.  While in the help view, the
+breadcrumb bar can be used to navigate to different sections of the document.
+
+Press :kbd:`?` to switch to the help view.
 
 HIST
 ^^^^
 
 The histogram view displays a stacked bar chart of messages over time
-classified by their log level and whether they've been bookmarked.  Press
-:kbd:`i` to switch back and forth to the histogram view.  You can also press
-:kbd:`Shift`+:kbd:`i` to toggle the histogram view while synchronizing the top
-time.  While in the histogram view, pressing :kbd:`z`/:kbd:`Shift`+:kbd:`z`
-will zoom in/out.
+classified by their log level and whether they've been bookmarked.
+
+Press :kbd:`i` to switch back and forth to the histogram view.  You
+can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
+while synchronizing the top time.  While in the histogram view,
+pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
 
 PRETTY
 ^^^^^^
@@ -248,10 +277,28 @@ the result of a pretty-printer run on that text.  For example, if a log
 message contained an XML message on a single line, the pretty-printer would
 break the XML across multiple lines with appropriate indentation.
 
+.. figure:: lnav-pretty-view-before.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of a log message with a flat JSON object.
+
+.. figure:: lnav-pretty-view-after.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the same log message in the PRETTY view.  The JSON object
+   is now indented for easier reading.
+
+Press :kbd:`Shift` + :kbd:`P` to switch to the pretty-print view.
+
 SCHEMA
 ^^^^^^
 
 The schema view displays the current schema of the builtin SQLite database.
+
+Press :kbd:`;` to enter the SQL prompt and then enter :code:`.schema` to
+open the schema view.
 
 SPECTRO
 ^^^^^^^

@@ -3847,7 +3847,7 @@ com_toggle_field(exec_context& ec,
             // TODO: highlight the fields to be hidden.
             retval = "";
         } else {
-            logfile_sub_source& lss = lnav_data.ld_log_source;
+            auto& lss = lnav_data.ld_log_source;
             bool hide = args[0] == "hide-fields";
             std::vector<std::string> found_fields, missing_fields;
 
@@ -3870,8 +3870,8 @@ com_toggle_field(exec_context& ec,
                 } else if (tc->get_inner_height() == 0) {
                     return ec.make_error("no log messages to hide");
                 } else {
-                    content_line_t cl = lss.at(tc->get_selection());
-                    std::shared_ptr<logfile> lf = lss.find(cl);
+                    auto cl = lss.at(tc->get_selection());
+                    auto lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
                 }
@@ -4720,7 +4720,7 @@ search_prompt(std::vector<std::string>& args)
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
     lnav_data.ld_mode = ln_mode_t::SEARCH;
-    lnav_data.ld_search_start_line = tc->get_top();
+    lnav_data.ld_search_start_line = tc->get_selection();
     add_view_text_possibilities(
         lnav_data.ld_rl_view, ln_mode_t::SEARCH, "*", tc, text_quoting::regex);
     lnav_data.ld_rl_view->focus(ln_mode_t::SEARCH,
@@ -4812,6 +4812,7 @@ sql_prompt(std::vector<std::string>& args)
 
     auto* fos = (field_overlay_source*) log_view.get_overlay_source();
     fos->fos_contexts.top().c_show = true;
+    tc->set_sync_selection_and_top(true);
     tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");

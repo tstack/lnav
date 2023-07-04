@@ -1,0 +1,49 @@
+
+name: RPM Build
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - docs
+      - README.md
+      - NEWS.md
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get the release version from the tag
+        shell: bash
+        run: |
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "LNAV_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "LNAV_VERSION_NUMBER=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "version is: ${{ env.LNAV_VERSION }}"
+          make -C release lnav.spec
+      - name: build RPM package
+        id: rpm
+        uses: tstack/rpmbuild@master
+        with:
+          spec_file: "release/lnav.spec"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: Binary RPM
+          path: ${{ steps.rpm.outputs.rpm_dir_path }}
+
+      - name: Push to packagecloud.io
+        uses: tstack/upload-packagecloud@main
+        if: github.ref_type == 'tag'
+        with:
+          userrepo: tstack/lnav
+          apitoken: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          packages: ${{ steps.rpm.outputs.rpm_dir_path }}x86_64
+          rpmdists: el/8

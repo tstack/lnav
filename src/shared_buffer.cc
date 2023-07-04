@@ -109,19 +109,23 @@ shared_buffer_ref::shared_buffer_ref(shared_buffer_ref&& other) noexcept
         other.sb_data = nullptr;
         other.sb_length = 0;
     }
+    this->sb_metadata = other.sb_metadata;
+    other.sb_metadata = {};
 }
 
 bool
-shared_buffer_ref::take_ownership()
+shared_buffer_ref::take_ownership(size_t length)
 {
-    if (this->sb_owner != nullptr && this->sb_data != nullptr) {
-        char* new_data;
-
-        if ((new_data = (char*) malloc(this->sb_length)) == nullptr) {
+    if ((this->sb_owner != nullptr && this->sb_data != nullptr)
+        || this->sb_length != length)
+    {
+        auto* new_data = (char*) malloc(length);
+        if (new_data == nullptr) {
             return false;
         }
 
-        memcpy(new_data, this->sb_data, this->sb_length);
+        memcpy(new_data, this->sb_data, std::min(length, this->sb_length));
+        this->sb_length = length;
         this->sb_data = new_data;
         this->sb_owner->sb_refs.erase(find(this->sb_owner->sb_refs.begin(),
                                            this->sb_owner->sb_refs.end(),
@@ -146,6 +150,7 @@ shared_buffer_ref::disown()
     this->sb_owner = nullptr;
     this->sb_data = nullptr;
     this->sb_length = 0;
+    this->sb_metadata = {};
 }
 
 void

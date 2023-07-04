@@ -43,7 +43,6 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "k_merge_tree.h"
-#include "lnav.events.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "md2attr_line.hh"
@@ -163,8 +162,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 {
     content_line_t line(0);
 
-    require(row >= 0);
-    require((size_t) row < this->lss_filtered_index.size());
+    require_ge(row, 0);
+    require_lt((size_t) row, this->lss_filtered_index.size());
 
     line = this->at(vis_line_t(row));
 
@@ -176,7 +175,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         return;
     }
 
-    require(!this->lss_in_value_for_line);
+    require_false(this->lss_in_value_for_line);
 
     this->lss_in_value_for_line = true;
     this->lss_token_flags = flags;
@@ -221,9 +220,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
               (char*) this->lss_token_value.c_str(),
               this->lss_token_value.size());
     format->annotate(line, this->lss_token_attrs, this->lss_token_values);
-    if (this->lss_token_line->get_sub_offset() != 0) {
-        this->lss_token_attrs.clear();
-    }
     if (flags & RF_REWRITE) {
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
@@ -261,6 +257,20 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             {
                 adjusted_time = this->lss_token_line->get_timeval();
                 fmt = "%Y-%m-%d %H:%M:%S.%f";
+                if (format->lf_timestamp_flags & ETF_MICROS_SET) {
+                    struct timeval actual_tv;
+                    struct exttm tm;
+                    if (format->lf_date_time.scan(
+                            this->lss_token_value.data() + time_range.lr_start,
+                            time_range.length(),
+                            format->get_timestamp_formats(),
+                            &tm,
+                            actual_tv,
+                            false))
+                    {
+                        adjusted_time.tv_usec = actual_tv.tv_usec;
+                    }
+                }
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                 adjusted_tm.et_nsec
                     = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -381,7 +391,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     lr.lr_start = time_offset_end;
     lr.lr_end = -1;
 
-    value_out.emplace_back(lr, VC_STYLE.value(attrs));
+    if (!attrs.empty()) {
+        value_out.emplace_back(lr, VC_STYLE.value(attrs));
+    }
 
     if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
         for (auto& token_attr : this->lss_token_attrs) {
@@ -413,13 +425,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             continue;
         }
 
-        line_range ident_range = line_value.lv_origin;
-        if (this->lss_token_flags & RF_FULL) {
-            ident_range = line_value.origin_in_full_msg(
-                this->lss_token_value.c_str(), this->lss_token_value.length());
-        }
-
-        value_out.emplace_back(ident_range,
+        value_out.emplace_back(line_value.lv_origin,
                                VC_ROLE.value(role_t::VCR_IDENTIFIER));
     }
 
@@ -1033,14 +1039,17 @@ logfile_sub_source::rebuild_index(
         case rebuild_result::rr_full_rebuild:
             log_debug("redoing search");
             this->lss_index_generation += 1;
+            this->tss_view->reload_data();
             this->tss_view->redo_search();
             break;
         case rebuild_result::rr_partial_rebuild:
             log_debug("redoing search from: %d", (int) search_start);
             this->lss_index_generation += 1;
+            this->tss_view->reload_data();
             this->tss_view->search_new_data(search_start);
             break;
         case rebuild_result::rr_appended_lines:
+            this->tss_view->reload_data();
             this->tss_view->search_new_data();
             break;
     }
@@ -1254,7 +1263,7 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
 {
     iterator existing;
 
-    require(lf->size() < MAX_LINES_PER_FILE);
+    require_lt(lf->size(), MAX_LINES_PER_FILE);
 
     existing = std::find_if(this->lss_files.begin(),
                             this->lss_files.end(),
@@ -1884,7 +1893,7 @@ log_location_history::loc_history_forward(vis_line_t current_top)
 bool
 sql_filter::matches(const logfile& lf,
                     logfile::const_iterator ll,
-                    shared_buffer_ref& line)
+                    const shared_buffer_ref& line)
 {
     if (!ll->is_message()) {
         return false;
@@ -2175,7 +2184,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& format_name) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
+     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
      WHERE name = 'log'
 )";
 
@@ -2207,7 +2216,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& uniq_path) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET top = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
+     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
      WHERE name = 'log'
 )";
 
@@ -2221,8 +2230,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
     auto& sbr = values.lvv_sbr;
 
     lf->read_full_message(msg_start_iter, sbr);
-    sbr.erase_ansi();
     attr_line_t al(to_string(sbr));
+    if (sbr.get_metadata().m_has_ansi) {
+        // bleh
+        scrub_ansi_string(al.get_string(), &al.al_attrs);
+        sbr.erase_ansi();
+    }
     format->annotate(file_line_number, al.get_attrs(), values);
 
     auto opid_opt = get_string_attr(al.get_attrs(), logline::L_OPID);
@@ -2253,7 +2266,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
             },
             [ec = this->lss_exec_context](const auto& opid) {
                 static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-                         SET top = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
+                         SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
                          WHERE name = 'log'
                     )";
 
@@ -2265,10 +2278,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
 
     auto sf = sbr.to_string_fragment();
     auto body_opt = get_string_attr(al.get_attrs(), SA_BODY);
-    auto sf_lines = sf.split_lines();
+    auto nl_pos_opt = sf.find('\n');
     auto msg_line_number = std::distance(msg_start_iter, line_pair.second);
     auto line_from_top = line - msg_line_number;
-    if (sf_lines.size() > 1 && body_opt) {
+    if (body_opt && nl_pos_opt) {
         if (this->lss_token_meta_line != file_line_number
             || this->lss_token_meta_size != sf.length())
         {
@@ -2279,11 +2292,14 @@ logfile_sub_source::text_crumbs_for_line(int line,
         }
 
         const auto initial_size = crumbs.size();
+        auto sf_body
+            = sf.sub_range(body_opt->saw_string_attr->sa_range.lr_start,
+                           body_opt->saw_string_attr->sa_range.lr_end);
         file_off_t line_offset = 0;
         file_off_t line_end_offset = sf.length();
         size_t line_number = 0;
 
-        for (const auto& sf_line : sf_lines) {
+        for (const auto& sf_line : sf_body.split_lines()) {
             if (line_number >= msg_line_number) {
                 line_end_offset = line_offset + sf_line.length();
                 break;
@@ -2325,7 +2341,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 return parent_node->find_line_number(index);
                             })
                             | [this, line_from_top](auto line_number) {
-                                  this->tss_view->set_top(
+                                  this->tss_view->set_selection(
                                       vis_line_t(line_from_top + line_number));
                               };
                     });
@@ -2371,7 +2387,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                               return curr_node->find_line_number(index);
                           })
                           | [this, line_from_top](size_t line_number) {
-                                this->tss_view->set_top(
+                                this->tss_view->set_selection(
                                     vis_line_t(line_from_top + line_number));
                             };
                   };

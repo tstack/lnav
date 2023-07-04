@@ -19,6 +19,13 @@ Install from the [Snap Store](https://snapcraft.io/lnav):
 $ sudo snap install lnav
 ```
 
+Install RPMs from [Package Cloud](https://packagecloud.io/tstack/lnav):
+
+```console
+$ curl -s https://packagecloud.io/install/repositories/tstack/lnav/script.rpm.sh | sudo bash
+$ sudo yum install lnav
+```
+
 ## MacOS
 
 <!-- markdown-link-check-disable-next-line -->

@@ -71,7 +71,6 @@ public:
         bool vd_foreign_key{false};
         intern_string_t vd_unit_field;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
-        ssize_t vd_values_index{-1};
         bool vd_internal{false};
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
@@ -138,29 +137,30 @@ public:
         this->jlf_line_offsets.reserve(128);
     }
 
-    const intern_string_t get_name() const { return this->elf_name; }
+    const intern_string_t get_name() const override { return this->elf_name; }
 
-    bool match_name(const std::string& filename);
+    bool match_name(const std::string& filename) override;
 
-    bool match_mime_type(const file_format_t ff) const;
+    bool match_mime_type(const file_format_t ff) const override;
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
                        const line_info& offset,
                        shared_buffer_ref& sbr,
-                       scan_batch_context& sbc);
+                       scan_batch_context& sbc) override;
 
-    bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const;
+    bool scan_for_partial(shared_buffer_ref& sbr,
+                          size_t& len_out) const override;
 
     void annotate(uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
-                  bool annotate_module = true) const;
+                  bool annotate_module = true) const override;
 
     void rewrite(exec_context& ec,
                  shared_buffer_ref& line,
                  string_attrs_t& sa,
-                 std::string& value_out);
+                 std::string& value_out) override;
 
     void build(std::vector<lnav::console::user_message>& errors);
 
@@ -169,44 +169,21 @@ public:
 
     bool match_samples(const std::vector<sample>& samples) const;
 
-    bool hide_field(const intern_string_t field_name, bool val)
-    {
-        auto vd_iter = this->elf_value_defs.find(field_name);
+    bool hide_field(const intern_string_t field_name, bool val) override;
 
-        if (vd_iter == this->elf_value_defs.end()) {
-            return false;
-        }
-
-        vd_iter->second->vd_meta.lvm_user_hidden = val;
-        return true;
-    }
-
-    std::shared_ptr<log_format> specialized(int fmt_lock);
+    std::shared_ptr<log_format> specialized(int fmt_lock) override;
 
     const logline_value_stats* stats_for_value(
-        const intern_string_t& name) const
-    {
-        const logline_value_stats* retval = nullptr;
-
-        for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
-            value_def& vd = *this->elf_numeric_value_defs[lpc];
-
-            if (vd.vd_meta.lvm_name == name) {
-                retval = &this->lf_value_stats[lpc];
-                break;
-            }
-        }
-
-        return retval;
-    }
+        const intern_string_t& name) const override;
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message);
+                     bool full_message) override;
 
-    std::shared_ptr<log_vtab_impl> get_vtab_impl() const;
+    std::shared_ptr<log_vtab_impl> get_vtab_impl() const override;
 
-    const std::vector<std::string>* get_actions(const logline_value& lv) const
+    const std::vector<std::string>* get_actions(
+        const logline_value& lv) const override
     {
         const std::vector<std::string>* retval = nullptr;
 
@@ -218,12 +195,14 @@ public:
         return retval;
     }
 
-    std::set<std::string> get_source_path() const
+    bool format_changed() override;
+
+    std::set<std::string> get_source_path() const override
     {
         return this->elf_source_path;
     }
 
-    std::vector<logline_value_meta> get_value_metadata() const;
+    std::vector<logline_value_meta> get_value_metadata() const override;
 
     enum class json_log_field {
         CONSTANT,
@@ -232,6 +211,7 @@ public:
 
     struct json_format_element {
         enum class align_t {
+            NONE,
             LEFT,
             RIGHT,
         };
@@ -253,11 +233,14 @@ public:
         positioned_property<intern_string_t> jfe_value;
         std::string jfe_default_value{"-"};
         long long jfe_min_width{0};
+        bool jfe_auto_width{false};
         long long jfe_max_width{LLONG_MAX};
-        align_t jfe_align{align_t::LEFT};
+        align_t jfe_align{align_t::NONE};
         overflow_t jfe_overflow{overflow_t::ABBREV};
         transform_t jfe_text_transform{transform_t::NONE};
         std::string jfe_ts_format;
+        std::string jfe_prefix;
+        std::string jfe_suffix;
     };
 
     struct json_field_cmp {
@@ -284,10 +267,19 @@ public:
         bool hd_blink{false};
     };
 
-    long value_line_count(const intern_string_t ist,
-                          bool top_level,
-                          const unsigned char* str = nullptr,
-                          ssize_t len = -1) const;
+    struct value_line_count_result {
+        size_t vlcr_count{1};
+        size_t vlcr_line_format_count{0};
+        bool vlcr_has_ansi{false};
+        bool vlcr_valid_utf{true};
+    };
+
+    value_line_count_result value_line_count(const intern_string_t ist,
+                                             bool top_level,
+                                             nonstd::optional<double> val
+                                             = nonstd::nullopt,
+                                             const unsigned char* str = nullptr,
+                                             ssize_t len = -1);
 
     bool has_value_def(const intern_string_t ist) const
     {
@@ -296,7 +288,7 @@ public:
         return iter != this->elf_value_defs.end();
     }
 
-    std::string get_pattern_path(uint64_t line_number) const
+    std::string get_pattern_path(uint64_t line_number) const override
     {
         if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "structured";
@@ -305,17 +297,9 @@ public:
         return this->elf_pattern_order[pat_index]->p_config_path;
     }
 
-    intern_string_t get_pattern_name(uint64_t line_number) const;
+    intern_string_t get_pattern_name(uint64_t line_number) const override;
 
-    std::string get_pattern_regex(uint64_t line_number) const
-    {
-        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
-            return "";
-        }
-        int pat_index = this->pattern_index_for_line(line_number);
-        return this->elf_pattern_order[pat_index]
-            ->p_pcre.pp_value->get_pattern();
-    }
+    std::string get_pattern_regex(uint64_t line_number) const override;
 
     log_level_t convert_level(string_fragment str,
                               scan_batch_context* sbc) const;
@@ -336,6 +320,15 @@ public:
     std::vector<sample> elf_samples;
     std::unordered_map<const intern_string_t, std::shared_ptr<value_def>>
         elf_value_defs;
+
+    struct value_defs_state {
+        size_t vds_generation{0};
+    };
+
+    std::shared_ptr<value_defs_state> elf_value_defs_state{
+        std::make_shared<value_defs_state>()};
+    value_defs_state elf_specialized_value_defs_state;
+
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     int elf_column_count{0};
@@ -374,6 +367,10 @@ public:
 
     void json_append_to_cache(const char* value, ssize_t len)
     {
+        if (len <= 0) {
+            return;
+        }
+
         size_t old_size = this->jlf_cached_line.size();
         if (len == -1) {
             len = strlen(value);
@@ -382,14 +379,23 @@ public:
         memcpy(&(this->jlf_cached_line[old_size]), value, len);
     }
 
+    void json_append_to_cache(const string_fragment& sf)
+    {
+        this->json_append_to_cache(sf.data(), sf.length());
+    }
+
     void json_append_to_cache(ssize_t len)
     {
+        if (len <= 0) {
+            return;
+        }
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
     }
 
     void json_append(const json_format_element& jfe,
+                     const value_def* vd,
                      const char* value,
                      ssize_t len);
 
@@ -405,6 +411,7 @@ public:
     logline_value_vector jlf_line_values;
 
     off_t jlf_cached_offset{-1};
+    line_range jlf_cached_sub_range;
     bool jlf_cached_full{false};
     std::vector<off_t> jlf_line_offsets;
     std::vector<char> jlf_cached_line;

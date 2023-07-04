@@ -240,7 +240,21 @@ TEST_CASE("get_captures-namedq")
 {
     auto re = lnav::pcre2pp::code::from_const("(?'named'b)");
 
-    assert(re.get_captures().size() == 1);
-    assert(re.get_captures()[0].sf_begin == 0);
-    assert(re.get_captures()[0].sf_end == 11);
+    CHECK(re.get_captures().size() == 1);
+    CHECK(re.get_captures()[0].sf_begin == 0);
+    CHECK(re.get_captures()[0].sf_end == 11);
+}
+
+TEST_CASE("anchored")
+{
+    auto re = lnav::pcre2pp::code::from_const(
+        "abc", PCRE2_ANCHORED | PCRE2_ENDANCHORED);
+
+    const auto sub1 = string_fragment::from_const("abc");
+    const auto sub2 = string_fragment::from_const("abcd");
+    const auto sub3 = string_fragment::from_const("0abc");
+
+    CHECK(re.find_in(sub1).ignore_error().has_value());
+    CHECK_FALSE(re.find_in(sub2).ignore_error().has_value());
+    CHECK_FALSE(re.find_in(sub3).ignore_error().has_value());
 }

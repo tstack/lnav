@@ -652,6 +652,17 @@ textfile_sub_source::rescan_files(
                                 lnav::document::discover_structure(
                                     content, line_range{0, -1}),
                             };
+                    } else {
+                        log_error(
+                            "%s: unable to read file for meta discover -- %s",
+                            lf->get_filename().c_str(),
+                            read_res.unwrapErr().c_str());
+                        this->tss_doc_metadata[lf->get_filename()]
+                            = metadata_state{
+                                st.st_mtime,
+                                static_cast<file_ssize_t>(st.st_size),
+                                {},
+                            };
                     }
                 }
             }
@@ -703,7 +714,7 @@ textfile_sub_source::set_top_from_off(file_off_t off)
             std::distance(lf->cbegin(), new_top_iter));
 
         if (new_top_opt) {
-            this->tss_view->set_top(vis_line_t(new_top_opt.value()));
+            this->tss_view->set_selection(vis_line_t(new_top_opt.value()));
         }
     };
 }

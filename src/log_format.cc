@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "base/is_utf8.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
@@ -418,14 +419,33 @@ struct json_log_userdata {
     {
     }
 
+    void add_sub_lines_for(const intern_string_t ist,
+                           bool top_level,
+                           nonstd::optional<double> val = nonstd::nullopt,
+                           const unsigned char* str = nullptr,
+                           ssize_t len = -1)
+    {
+        auto res
+            = this->jlu_format->value_line_count(ist, top_level, val, str, len);
+        this->jlu_has_ansi |= res.vlcr_has_ansi;
+        if (!res.vlcr_valid_utf) {
+            this->jlu_valid_utf = false;
+        }
+        this->jlu_sub_line_count += res.vlcr_count;
+        this->jlu_quality += res.vlcr_line_format_count;
+    }
+
     external_log_format* jlu_format{nullptr};
     const logline* jlu_line{nullptr};
     logline* jlu_base_line{nullptr};
     int jlu_sub_line_count{1};
+    bool jlu_has_ansi{false};
+    bool jlu_valid_utf{true};
     yajl_handle jlu_handle{nullptr};
     const char* jlu_line_value{nullptr};
     size_t jlu_line_size{0};
     size_t jlu_sub_start{0};
+    uint32_t jlu_quality{0};
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
 };
@@ -440,8 +460,7 @@ read_json_null(yajlpp_parse_context* ypc)
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
+    jlu->add_sub_lines_for(field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -452,24 +471,33 @@ read_json_bool(yajlpp_parse_context* ypc, int val)
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
+    jlu->add_sub_lines_for(field_name, ypc->is_level(1));
 
     return 1;
 }
 
 static int
-read_json_int(yajlpp_parse_context* ypc, long long val)
+read_json_number(yajlpp_parse_context* ypc,
+                 const char* numberVal,
+                 size_t numberLen)
 {
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
+    auto number_frag = string_fragment::from_bytes(numberVal, numberLen);
+    auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
+    if (!scan_res) {
+        log_error("invalid number %.*s", numberLen, numberVal);
+        return 0;
+    }
+
+    auto val = scan_res.value();
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
 
         tv.tv_sec = val / divisor;
-        tv.tv_usec = (val % divisor) * (1000000.0 / divisor);
+        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
         if (jlu->jlu_format->lf_date_time.dts_local_time) {
             struct tm ltm;
             localtime_r(&tv.tv_sec, &ltm);
@@ -488,72 +516,37 @@ read_json_int(yajlpp_parse_context* ypc, long long val)
                 break;
             case log_format::subsecond_unit::micro:
                 millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::microseconds(val))
+                             std::chrono::microseconds((int64_t) val))
                              .count();
                 break;
             case log_format::subsecond_unit::nano:
                 millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::nanoseconds(val))
+                             std::chrono::nanoseconds((int64_t) val))
                              .count();
                 break;
         }
         jlu->jlu_base_line->set_millis(millis);
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         if (jlu->jlu_format->elf_level_pairs.empty()) {
-            char level_buf[128];
-
-            snprintf(level_buf, sizeof(level_buf), "%lld", val);
-
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-                string_fragment::from_c_str(level_buf),
-                jlu->jlu_batch_context));
+                number_frag, jlu->jlu_batch_context));
         } else {
-            std::vector<std::pair<int64_t, log_level_t>>::iterator iter;
+            int64_t level_int = val;
 
-            for (iter = jlu->jlu_format->elf_level_pairs.begin();
-                 iter != jlu->jlu_format->elf_level_pairs.end();
-                 ++iter)
-            {
-                if (iter->first == val) {
-                    jlu->jlu_base_line->set_level(iter->second);
+            for (const auto& pair : jlu->jlu_format->elf_level_pairs) {
+                if (pair.first == level_int) {
+                    jlu->jlu_base_line->set_level(pair.second);
                     break;
                 }
             }
         }
     }
 
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
-
-    return 1;
-}
-
-static int
-read_json_double(yajlpp_parse_context* ypc, double val)
-{
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
-
-    if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        double divisor = jlu->jlu_format->elf_timestamp_divisor;
-        struct timeval tv;
-
-        tv.tv_sec = val / divisor;
-        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
-        if (jlu->jlu_format->lf_date_time.dts_local_time) {
-            struct tm ltm;
-            localtime_r(&tv.tv_sec, &ltm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-            ltm.tm_zone = nullptr;
-#endif
-            ltm.tm_isdst = 0;
-            tv.tv_sec = tm2sec(&ltm);
-        }
-        jlu->jlu_base_line->set_time(tv);
-    }
-
-    jlu->jlu_sub_line_count
-        += jlu->jlu_format->value_line_count(field_name, ypc->is_level(1));
+    jlu->add_sub_lines_for(field_name,
+                           ypc->is_level(1),
+                           val,
+                           (const unsigned char*) numberVal,
+                           numberLen);
 
     return 1;
 }
@@ -567,8 +560,7 @@ json_array_start(void* ctx)
     if (ypc->ypc_path_index_stack.size() == 2) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
 
-        jlu->jlu_sub_line_count
-            += jlu->jlu_format->value_line_count(field_name, true);
+        jlu->add_sub_lines_for(field_name, true);
         jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
     }
 
@@ -599,8 +591,7 @@ static const struct json_path_container json_log_handlers = {
     yajlpp::pattern_property_handler("\\w+")
         .add_cb(read_json_null)
         .add_cb(read_json_bool)
-        .add_cb(read_json_int)
-        .add_cb(read_json_double)
+        .add_cb(read_json_number)
         .add_cb(read_json_field),
 };
 
@@ -730,13 +721,13 @@ external_log_format::scan(logfile& lf,
 
         if (!line_frag.startswith("{")) {
             if (!this->lf_specialized) {
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{"line is not a JSON object"};
             }
 
             ll.set_time(dst.back().get_timeval());
             ll.set_level(LEVEL_INVALID);
             dst.emplace_back(ll);
-            return log_format::SCAN_MATCH;
+            return log_format::scan_match{0};
         }
 
         auto& ypc = *(this->jlf_parse_context);
@@ -744,7 +735,7 @@ external_log_format::scan(logfile& lf,
         json_log_userdata jlu(sbr, &sbc);
 
         if (!this->lf_specialized && dst.size() >= 3) {
-            return log_format::SCAN_NO_MATCH;
+            return log_format::scan_no_match{"file is not JSON-lines"};
         }
 
         if (li.li_partial) {
@@ -754,7 +745,7 @@ external_log_format::scan(logfile& lf,
                 ll.set_level(LEVEL_INVALID);
                 dst.emplace_back(ll);
             }
-            return log_format::SCAN_INCOMPLETE;
+            return log_format::scan_incomplete{};
         }
 
         const auto* line_data = (const unsigned char*) sbr.get_data();
@@ -779,11 +770,11 @@ external_log_format::scan(logfile& lf,
                 if (this->lf_specialized) {
                     ll.set_ignore(true);
                     dst.emplace_back(ll);
-                    return log_format::SCAN_MATCH;
+                    return log_format::scan_match{0};
                 }
 
-                log_debug("no match! %.*s", sbr.length(), line_data);
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{
+                    "JSON message does not have expected timestamp property"};
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -793,6 +784,8 @@ external_log_format::scan(logfile& lf,
                     ll.set_level((log_level_t) (ll.get_level_and_flags()
                                                 | LEVEL_CONTINUED));
                 }
+                ll.set_has_ansi(jlu.jlu_has_ansi);
+                ll.set_valid_utf(jlu.jlu_valid_utf);
                 dst.emplace_back(ll);
             }
         } else {
@@ -810,7 +803,7 @@ external_log_format::scan(logfile& lf,
                 yajl_free_error(handle, msg);
             }
             if (!this->lf_specialized) {
-                return log_format::SCAN_NO_MATCH;
+                return log_format::scan_no_match{"JSON parsing failed"};
             }
             for (int lpc = 0; lpc < line_count; lpc++) {
                 log_level_t level = LEVEL_INVALID;
@@ -825,7 +818,7 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{jlu.jlu_quality};
     }
 
     int curr_fmt = -1, orig_lock = this->last_pattern_index();
@@ -965,6 +958,23 @@ external_log_format::scan(logfile& lf,
             }
         }
 
+        for (const auto& ivd : fpat->p_value_by_index) {
+            if (!ivd.ivd_value_def->vd_meta.lvm_values_index) {
+                continue;
+            }
+
+            auto cap = md[ivd.ivd_index];
+
+            if (cap && cap->is_valid()) {
+                auto& lvs = this->lf_value_stats[ivd.ivd_value_def->vd_meta
+                                                     .lvm_values_index.value()];
+
+                if (cap->length() > lvs.lvs_width) {
+                    lvs.lvs_width = cap->length();
+                }
+            }
+        }
+
         for (auto value_index : fpat->p_numeric_value_indexes) {
             const indexed_value_def& ivd = fpat->p_value_by_index[value_index];
             const value_def& vd = *ivd.ivd_value_def;
@@ -996,7 +1006,8 @@ external_log_format::scan(logfile& lf,
                     if (scaling != nullptr) {
                         scaling->scale(dvalue);
                     }
-                    this->lf_value_stats[vd.vd_values_index].add_value(dvalue);
+                    this->lf_value_stats[vd.vd_meta.lvm_values_index.value()]
+                        .add_value(dvalue);
                 }
             }
         }
@@ -1018,7 +1029,7 @@ external_log_format::scan(logfile& lf,
             }
             this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
         }
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{0};
     }
 
     if (this->lf_specialized && !this->lf_multiline) {
@@ -1029,10 +1040,10 @@ external_log_format::scan(logfile& lf,
                          last_line.get_timeval(),
                          log_level_t::LEVEL_INVALID);
 
-        return log_format::SCAN_MATCH;
+        return log_format::scan_match{0};
     }
 
-    return log_format::SCAN_NO_MATCH;
+    return log_format::scan_no_match{"no patterns matched"};
 }
 
 uint8_t
@@ -1097,8 +1108,25 @@ external_log_format::annotate(uint64_t line_number,
 
     line.erase_ansi();
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
-        values = this->jlf_line_values;
-        sa = this->jlf_line_attrs;
+        if (this->jlf_cached_full) {
+            values = this->jlf_line_values;
+            sa = this->jlf_line_attrs;
+        } else {
+            values.lvv_sbr = this->jlf_line_values.lvv_sbr;
+            for (const auto& llv : this->jlf_line_values.lvv_values) {
+                if (this->jlf_cached_sub_range.contains(llv.lv_origin)) {
+                    values.lvv_values.emplace_back(llv);
+                    values.lvv_values.back().lv_origin.shift(
+                        this->jlf_cached_sub_range.lr_start,
+                        -this->jlf_cached_sub_range.lr_start);
+                }
+            }
+            for (const auto& attr : this->jlf_line_attrs) {
+                if (this->jlf_cached_sub_range.contains(attr.sa_range)) {
+                    sa.emplace_back(attr);
+                }
+            }
+        }
         return;
     }
 
@@ -1273,21 +1301,18 @@ external_log_format::rewrite(exec_context& ec,
         } else {
             field_value = exec_res.unwrapErr().to_attr_line().get_string();
         }
-        auto adj_origin
-            = iter->origin_in_full_msg(value_out.c_str(), value_out.length());
-
-        value_out.erase(adj_origin.lr_start, adj_origin.length());
+        value_out.erase(iter->lv_origin.lr_start, iter->lv_origin.length());
 
         int32_t shift_amount
-            = ((int32_t) field_value.length()) - adj_origin.length();
-        value_out.insert(adj_origin.lr_start, field_value);
+            = ((int32_t) field_value.length()) - iter->lv_origin.length();
+        value_out.insert(iter->lv_origin.lr_start, field_value);
         for (shift_iter = values.lvv_values.begin();
              shift_iter != values.lvv_values.end();
              ++shift_iter)
         {
-            shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
+            shift_iter->lv_origin.shift(iter->lv_origin.lr_start, shift_amount);
         }
-        shift_string_attrs(sa, adj_origin.lr_start, shift_amount);
+        shift_string_attrs(sa, iter->lv_origin.lr_start, shift_amount);
     }
 }
 
@@ -1329,8 +1354,8 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         jlu->jlu_base_line->set_opid(opid);
     }
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
-        field_name, ypc->is_level(1), str, len);
+    jlu->add_sub_lines_for(
+        field_name, ypc->is_level(1), nonstd::nullopt, str, len);
 
     return 1;
 }
@@ -1524,12 +1549,16 @@ external_log_format::get_subline(const logline& ll,
                             logline_value_cmp(&jfe.jfe_value.pp_value));
                         if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                             auto str = lv_iter->to_string();
+                            while (endswith(str, "\n")) {
+                                str.pop_back();
+                            }
                             size_t nl_pos = str.find('\n');
 
+                            if (!jfe.jfe_prefix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_prefix);
+                            }
                             lr.lr_start = this->jlf_cached_line.size();
 
-                            lv_iter->lv_meta.lvm_hidden
-                                = lv_iter->lv_meta.lvm_user_hidden;
                             if ((int) str.size() > jfe.jfe_max_width) {
                                 switch (jfe.jfe_overflow) {
                                     case json_format_element::overflow_t::
@@ -1567,9 +1596,18 @@ external_log_format::get_subline(const logline& ll,
                                     }
                                 }
                             } else {
+                                value_def* vd = nullptr;
+
+                                if (lv_iter->lv_meta.lvm_values_index) {
+                                    vd = this->elf_value_def_order
+                                             [lv_iter->lv_meta.lvm_values_index
+                                                  .value()]
+                                                 .get();
+                                }
                                 sub_offset
-                                    += count(str.begin(), str.end(), '\n');
-                                this->json_append(jfe, str.c_str(), str.size());
+                                    += std::count(str.begin(), str.end(), '\n');
+                                this->json_append(
+                                    jfe, vd, str.c_str(), str.size());
                             }
 
                             if (nl_pos == std::string::npos || full_message) {
@@ -1595,10 +1633,14 @@ external_log_format::get_subline(const logline& ll,
                                     lr, logline::L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
-                            used_values[distance(
+                            used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)]
                                 = true;
+
+                            if (!jfe.jfe_suffix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_suffix);
+                            }
                         } else if (jfe.jfe_value.pp_value == ts_field) {
                             struct line_range lr;
                             ssize_t ts_len;
@@ -1638,11 +1680,25 @@ external_log_format::get_subline(const logline& ll,
                                    || jfe.jfe_value.pp_value
                                        == this->elf_level_field)
                         {
-                            this->json_append(jfe, ll.get_level_name(), -1);
-                        } else {
+                            const auto* level_name = ll.get_level_name();
+                            auto level_len = strlen(level_name);
+                            this->json_append(
+                                jfe, nullptr, level_name, level_len);
+                            if (jfe.jfe_auto_width) {
+                                this->json_append_to_cache(MAX_LEVEL_NAME_LEN
+                                                           - level_len);
+                            }
+                        } else if (!jfe.jfe_default_value.empty()) {
+                            if (!jfe.jfe_prefix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_prefix);
+                            }
                             this->json_append(jfe,
+                                              nullptr,
                                               jfe.jfe_default_value.c_str(),
                                               jfe.jfe_default_value.size());
+                            if (!jfe.jfe_suffix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_suffix);
+                            }
                         }
 
                         switch (jfe.jfe_text_transform) {
@@ -1699,34 +1755,37 @@ external_log_format::get_subline(const logline& ll,
                     = intern_string::lookup("body", -1);
                 auto& lv = this->jlf_line_values.lvv_values[lpc];
 
-                if (lv.lv_meta.lvm_hidden || used_values[lpc]
+                if (lv.lv_meta.is_hidden() || used_values[lpc]
                     || body_name == lv.lv_meta.lvm_name)
                 {
                     continue;
                 }
 
-                const std::string str = lv.to_string();
-                size_t curr_pos = 0, nl_pos, line_len = -1;
+                auto str = lv.to_string();
+                while (endswith(str, "\n")) {
+                    str.pop_back();
+                }
 
                 lv.lv_sub_offset = sub_offset;
-                lv.lv_origin.lr_start = 2 + lv.lv_meta.lvm_name.size() + 2;
-                do {
-                    nl_pos = str.find('\n', curr_pos);
-                    if (nl_pos != std::string::npos) {
-                        line_len = nl_pos - curr_pos;
-                    } else {
-                        line_len = str.size() - curr_pos;
-                    }
+                lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
+                    + lv.lv_meta.lvm_name.size() + 2;
+                auto frag = string_fragment::from_str(str);
+                while (true) {
+                    auto utf_scan_res = is_utf8(frag, '\n');
+
                     this->json_append_to_cache("  ", 2);
-                    this->json_append_to_cache(lv.lv_meta.lvm_name.get(),
-                                               lv.lv_meta.lvm_name.size());
+                    this->json_append_to_cache(
+                        lv.lv_meta.lvm_name.to_string_fragment());
                     this->json_append_to_cache(": ", 2);
-                    this->json_append_to_cache(&str.c_str()[curr_pos],
-                                               line_len);
+                    this->json_append_to_cache(utf_scan_res.usr_valid_frag);
                     this->json_append_to_cache("\n", 1);
-                    curr_pos = nl_pos + 1;
                     sub_offset += 1;
-                } while (nl_pos != std::string::npos && nl_pos < str.size());
+                    if (utf_scan_res.usr_remaining) {
+                        frag = utf_scan_res.usr_remaining.value();
+                    } else {
+                        break;
+                    }
+                }
             }
         }
 
@@ -1770,6 +1829,10 @@ external_log_format::get_subline(const logline& ll,
                   this->jlf_cached_line.data() + this_off,
                   next_off - this_off);
     }
+    sbr.get_metadata().m_valid_utf = ll.is_valid_utf();
+    sbr.get_metadata().m_has_ansi = ll.has_ansi();
+    this->jlf_cached_sub_range.lr_start = this_off;
+    this->jlf_cached_sub_range.lr_end = next_off;
     this->jlf_line_values.lvv_sbr = sbr;
 }
 
@@ -2232,19 +2295,75 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .append("\n")
                     .append("captured level = ")
                     .append_quoted(level_cap->to_string());
-                errors.emplace_back(
-                    lnav::console::user_message::error(
-                        attr_line_t("invalid sample log message: ")
-                            .append(lnav::to_json(elf_sample.s_line.pp_value)))
-                        .with_reason(attr_line_t()
-                                         .append_quoted(lnav::roles::symbol(
-                                             level_names[level]))
-                                         .append(" does not match the expected "
-                                                 "level of ")
-                                         .append_quoted(lnav::roles::symbol(
-                                             level_names[elf_sample.s_level])))
-                        .with_snippet(elf_sample.s_line.to_snippet())
-                        .with_note(note_al));
+                if (level_cap && !this->elf_level_patterns.empty()) {
+                    static thread_local auto md
+                        = lnav::pcre2pp::match_data::unitialized();
+
+                    note_al.append("\nlevel regular expression match results:");
+                    for (const auto& level_pattern : this->elf_level_patterns) {
+                        attr_line_t regex_al = level_pattern.second.lp_pcre
+                                                   .pp_value->get_pattern();
+                        lnav::snippets::regex_highlighter(
+                            regex_al,
+                            -1,
+                            line_range{0, (int) regex_al.length()});
+                        note_al.append("\n  ")
+                            .append(
+                                lnav::roles::symbol(level_pattern.second.lp_pcre
+                                                        .pp_path.to_string()))
+                            .append(" = ")
+                            .append(regex_al)
+                            .append("\n    ");
+                        auto match_res = level_pattern.second.lp_pcre.pp_value
+                                             ->capture_from(level_cap.value())
+                                             .into(md)
+                                             .matches(PCRE2_NO_UTF_CHECK)
+                                             .ignore_error();
+                        if (!match_res) {
+                            note_al.append(lnav::roles::warning("no match"));
+                            continue;
+                        }
+
+                        note_al.append(level_cap.value())
+                            .append("\n    ")
+                            .append(md.leading().length(), ' ')
+                            .append("^"_snippet_border);
+                        if (match_res->f_all.length() > 2) {
+                            note_al.append(
+                                lnav::roles::snippet_border(std::string(
+                                    match_res->f_all.length() - 2, '-')));
+                        }
+                        if (match_res->f_all.length() > 1) {
+                            note_al.append("^"_snippet_border);
+                        }
+                    }
+                }
+                auto um
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid sample log message: ")
+                              .append(
+                                  lnav::to_json(elf_sample.s_line.pp_value)))
+                          .with_reason(
+                              attr_line_t()
+                                  .append_quoted(
+                                      lnav::roles::symbol(level_names[level]))
+                                  .append(" does not match the expected "
+                                          "level of ")
+                                  .append_quoted(lnav::roles::symbol(
+                                      level_names[elf_sample.s_level])))
+                          .with_snippet(elf_sample.s_line.to_snippet())
+                          .with_note(note_al);
+                if (!this->elf_level_patterns.empty()) {
+                    um.with_help(
+                        attr_line_t("Level regexes are not anchored to the "
+                                    "start/end of the string.  Prepend ")
+                            .append_quoted("^"_symbol)
+                            .append(" to the expression to match from the "
+                                    "start of the string and append ")
+                            .append_quoted("$"_symbol)
+                            .append(" to match up to the end of the string."));
+                }
+                errors.emplace_back(um);
             }
 
             {
@@ -2433,26 +2552,26 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    for (auto& elf_value_def : this->elf_value_defs) {
-        if (elf_value_def.second->vd_foreign_key
-            || elf_value_def.second->vd_meta.lvm_identifier)
+    size_t value_def_index = 0;
+    for (auto& elf_value_def : this->elf_value_def_order) {
+        elf_value_def->vd_meta.lvm_values_index
+            = nonstd::make_optional(value_def_index++);
+
+        if (elf_value_def->vd_foreign_key
+            || elf_value_def->vd_meta.lvm_identifier)
         {
             continue;
         }
 
-        switch (elf_value_def.second->vd_meta.lvm_kind) {
+        switch (elf_value_def->vd_meta.lvm_kind) {
             case value_kind_t::VALUE_INTEGER:
             case value_kind_t::VALUE_FLOAT:
-                elf_value_def.second->vd_values_index
-                    = this->elf_numeric_value_defs.size();
-                this->elf_numeric_value_defs.push_back(elf_value_def.second);
+                this->elf_numeric_value_defs.push_back(elf_value_def);
                 break;
             default:
                 break;
         }
     }
-
-    this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
 
     int format_index = 0;
     for (auto iter = this->jlf_line_format.begin();
@@ -2507,6 +2626,20 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                     .append_quoted(jfe.jfe_value.pp_value)
                                     .append(" is not a defined value"))
                             .with_snippet(jfe.jfe_value.to_snippet()));
+                } else {
+                    switch (vd_iter->second->vd_meta.lvm_kind) {
+                        case value_kind_t::VALUE_INTEGER:
+                        case value_kind_t::VALUE_FLOAT:
+                            if (jfe.jfe_align
+                                == json_format_element::align_t::NONE)
+                            {
+                                jfe.jfe_align
+                                    = json_format_element::align_t::RIGHT;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 break;
             }
@@ -2580,6 +2713,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 .with_attrs(attrs);
         }
     }
+
+    this->lf_value_stats.resize(this->elf_value_defs.size());
 }
 
 void
@@ -2796,7 +2931,8 @@ external_log_format::specialized(int fmt_lock)
     }
 
     this->lf_value_stats.clear();
-    this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
+    this->lf_value_stats.resize(this->elf_value_defs.size());
+    this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
 
     return retval;
 }
@@ -2823,22 +2959,51 @@ external_log_format::match_mime_type(const file_format_t ff) const
     return this->elf_mime_types.count(ff) == 1;
 }
 
-long
+auto
 external_log_format::value_line_count(const intern_string_t ist,
                                       bool top_level,
+                                      nonstd::optional<double> val,
                                       const unsigned char* str,
-                                      ssize_t len) const
+                                      ssize_t len) -> value_line_count_result
 {
     const auto iter = this->elf_value_defs.find(ist);
-    long line_count
-        = (str != nullptr) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
-
-    if (iter == this->elf_value_defs.end()) {
-        return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
+    value_line_count_result retval;
+    if (str != nullptr) {
+        auto frag = string_fragment::from_bytes(str, len);
+        while (frag.endswith("\n")) {
+            frag.pop_back();
+        }
+        while (!frag.empty()) {
+            auto utf_res = is_utf8(frag, '\n');
+            if (!utf_res.is_valid()) {
+                retval.vlcr_valid_utf = false;
+            }
+            retval.vlcr_has_ansi |= utf_res.usr_has_ansi;
+            if (!utf_res.usr_remaining) {
+                break;
+            }
+            frag = utf_res.usr_remaining.value();
+            retval.vlcr_count += 1;
+        }
     }
 
-    if (iter->second->vd_meta.lvm_hidden) {
-        return 0;
+    if (iter == this->elf_value_defs.end()) {
+        if (this->jlf_hide_extra || !top_level) {
+            retval.vlcr_count = 0;
+        }
+
+        return retval;
+    }
+
+    if (iter->second->vd_meta.lvm_values_index) {
+        auto& lvs = this->lf_value_stats[iter->second->vd_meta.lvm_values_index
+                                             .value()];
+        if (len > lvs.lvs_width) {
+            lvs.lvs_width = len;
+        }
+        if (val) {
+            lvs.add_value(val.value());
+        }
     }
 
     if (std::find_if(this->jlf_line_format.begin(),
@@ -2846,10 +3011,15 @@ external_log_format::value_line_count(const intern_string_t ist,
                      json_field_cmp(json_log_field::VARIABLE, ist))
         != this->jlf_line_format.end())
     {
-        return line_count - 1;
+        retval.vlcr_line_format_count += 1;
+        retval.vlcr_count -= 1;
     }
 
-    return line_count;
+    if (iter->second->vd_meta.is_hidden()) {
+        retval.vlcr_count = 0;
+    }
+
+    return retval;
 }
 
 log_level_t
@@ -2936,6 +3106,7 @@ external_log_format::get_value_meta(intern_string_t field_name,
 void
 external_log_format::json_append(
     const external_log_format::json_format_element& jfe,
+    const value_def* vd,
     const char* value,
     ssize_t len)
 {
@@ -2945,12 +3116,32 @@ external_log_format::json_append(
     if (jfe.jfe_align == json_format_element::align_t::RIGHT) {
         if (len < jfe.jfe_min_width) {
             this->json_append_to_cache(jfe.jfe_min_width - len);
+        } else if (jfe.jfe_auto_width && vd != nullptr
+                   && len < this->lf_value_stats[vd->vd_meta.lvm_values_index
+                                                     .value()]
+                                .lvs_width)
+        {
+            this->json_append_to_cache(
+                this->lf_value_stats[vd->vd_meta.lvm_values_index.value()]
+                    .lvs_width
+                - len);
         }
     }
     this->json_append_to_cache(value, len);
-    if (jfe.jfe_align == json_format_element::align_t::LEFT) {
+    if (jfe.jfe_align == json_format_element::align_t::LEFT
+        || jfe.jfe_align == json_format_element::align_t::NONE)
+    {
         if (len < jfe.jfe_min_width) {
             this->json_append_to_cache(jfe.jfe_min_width - len);
+        } else if (jfe.jfe_auto_width && vd != nullptr
+                   && len < this->lf_value_stats[vd->vd_meta.lvm_values_index
+                                                     .value()]
+                                .lvs_width)
+        {
+            this->json_append_to_cache(
+                this->lf_value_stats[vd->vd_meta.lvm_values_index.value()]
+                    .lvs_width
+                - len);
         }
     }
 }
@@ -3028,6 +3219,9 @@ logline_value_stats::merge(const logline_value_stats& other)
 
     require(other.lvs_min_value <= other.lvs_max_value);
 
+    if (other.lvs_width > this->lvs_width) {
+        this->lvs_width = other.lvs_width;
+    }
     if (other.lvs_min_value < this->lvs_min_value) {
         this->lvs_min_value = other.lvs_min_value;
     }
@@ -3064,6 +3258,72 @@ external_log_format::get_value_metadata() const
     }
 
     return retval;
+}
+
+const logline_value_stats*
+external_log_format::stats_for_value(const intern_string_t& name) const
+{
+    auto iter = this->elf_value_defs.find(name);
+    if (iter != this->elf_value_defs.end()
+        && iter->second->vd_meta.lvm_values_index)
+    {
+        return &this->lf_value_stats[iter->second->vd_meta.lvm_values_index
+                                         .value()];
+    }
+
+    return nullptr;
+}
+
+std::string
+external_log_format::get_pattern_regex(uint64_t line_number) const
+{
+    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+        return "";
+    }
+    int pat_index = this->pattern_index_for_line(line_number);
+    return this->elf_pattern_order[pat_index]->p_pcre.pp_value->get_pattern();
+}
+
+bool
+external_log_format::hide_field(const intern_string_t field_name, bool val)
+{
+    auto vd_iter = this->elf_value_defs.find(field_name);
+
+    if (vd_iter == this->elf_value_defs.end()) {
+        return false;
+    }
+
+    vd_iter->second->vd_meta.lvm_user_hidden = val;
+    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+        bool found = false;
+
+        for (const auto& jfe : this->jlf_line_format) {
+            if (jfe.jfe_value.pp_value == field_name) {
+                found = true;
+            }
+        }
+        if (!found) {
+            log_info("format field %s.%s changed, rebuilding",
+                     this->elf_name.get(),
+                     field_name.get());
+            this->elf_value_defs_state->vds_generation += 1;
+        }
+    }
+    return true;
+}
+
+bool
+external_log_format::format_changed()
+{
+    if (this->elf_specialized_value_defs_state.vds_generation
+        != this->elf_value_defs_state->vds_generation)
+    {
+        this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
+        this->jlf_cached_offset = -1;
+        return true;
+    }
+
+    return false;
 }
 
 bool

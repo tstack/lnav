@@ -217,6 +217,14 @@ public:
         return this->lv_top;
     }
 
+    void set_sync_selection_and_top(bool value)
+    {
+        this->lv_sync_selection_and_top = value;
+        if (value) {
+            this->set_top(this->get_selection());
+        }
+    }
+
     listview_curses& set_word_wrap(bool ww)
     {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
@@ -307,22 +315,7 @@ public:
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom() const;
 
-    vis_line_t get_top_for_last_row()
-    {
-        auto retval = 0_vl;
-
-        if (this->get_inner_height() > 0) {
-            vis_line_t last_line(this->get_inner_height() - 1);
-
-            retval = last_line
-                - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
-            if ((retval + this->lv_tail_space) < this->get_inner_height()) {
-                retval += this->lv_tail_space;
-            }
-        }
-
-        return retval;
-    }
+    vis_line_t get_top_for_last_row();
 
     /** @return True if the given line is visible. */
     bool is_line_visible(vis_line_t line) const
@@ -508,12 +501,18 @@ public:
         return *this;
     }
 
+    vis_line_t get_tail_space() const { return this->lv_tail_space; }
+
     void log_state()
     {
         log_debug("listview_curses=%p", this);
         log_debug("  lv_title=%s", this->lv_title.c_str());
         log_debug("  lv_y=%u", this->lv_y);
         log_debug("  lv_top=%d", (int) this->lv_top);
+        log_debug("  lv_left=%d", (int) this->lv_left);
+        log_debug("  lv_height=%d", this->lv_height);
+        log_debug("  lv_selection=%d", (int) this->lv_selection);
+        log_debug("  inner_height=%d", (int) this->get_inner_height());
     }
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
@@ -525,6 +524,8 @@ protected:
             lv_input_delegate->list_input_handle_scroll_out(*this);
         }
     }
+
+    void update_top_from_selection();
 
     enum class lv_mode_t {
         NONE,
@@ -554,6 +555,7 @@ protected:
     bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{0};
+    bool lv_sync_selection_and_top{false};
 
     struct timeval lv_mouse_time {
         0, 0

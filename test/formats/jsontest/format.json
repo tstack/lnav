@@ -1,35 +1,46 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
-    "test_log" : {
-        "title" : "Test JSON Log",
-        "json" : true,
-        "file-pattern" : "logfile_json\\.json",
-        "description" : "Test config",
-        "line-format" : [
+    "test_log": {
+        "title": "Test JSON Log",
+        "json": true,
+        "file-pattern": "logfile_json\\.json",
+        "description": "Test config",
+        "line-format": [
             "\n[",
-            { "field" : "ts" },
+            {
+                "field": "ts"
+            },
             "] ",
-            { "field" : "lvl" },
+            {
+                "field": "lvl",
+                "auto-width": true
+            },
             " ",
-            { "field" : "msg" }
+            {
+                "field": "msg"
+            }
         ],
-        "level-field" : "lvl",
+        "level-field": "lvl",
         "timestamp-field": "ts",
-        "body-field" : "msg",
-        "value" : {
-            "msg" : {
-                "rewriter" : ";SELECT :msg || 'bork bork bork'"
+        "body-field": "msg",
+        "value": {
+            "msg": {
+                "rewriter": ";SELECT :msg || 'bork bork bork'"
             },
-            "arr" : {
-                "kind" : "json"
+            "arr": {
+                "kind": "json"
             },
-            "obj" : {
-                "kind" : "json"
+            "obj": {
+                "kind": "json"
             },
-            "user" : {
-                "kind" : "string",
-                "identifier" : true,
-                "rewriter" : "|rewrite-user"
+            "lvl": {
+                "kind": "string",
+                "hidden": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true,
+                "rewriter": "|rewrite-user"
             }
         }
     }

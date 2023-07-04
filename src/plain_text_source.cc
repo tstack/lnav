@@ -257,7 +257,7 @@ plain_text_source::text_crumbs_for_line(int line,
                             auto sib = parent_node->hn_children[index].get();
                             this->line_for_offset(sib->hn_start) |
                                 [this](const auto new_top) {
-                                    this->tss_view->set_top(new_top);
+                                    this->tss_view->set_selection(new_top);
                                 };
                         });
                 });

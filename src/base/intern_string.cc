@@ -219,7 +219,7 @@ string_fragment::split_lines() const
     int start = this->sf_begin;
 
     for (auto index = start; index < this->sf_end; index++) {
-        if ((*this)[index] == '\n') {
+        if (this->sf_string[index] == '\n') {
             retval.emplace_back(this->sf_string, start, index + 1);
             start = index + 1;
         }

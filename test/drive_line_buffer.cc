@@ -167,14 +167,15 @@ main(int argc, char* argv[])
 
                     auto sbr = read_result.unwrap();
 
-                    if (!li.li_valid_utf) {
+                    if (!li.li_utf8_scan_result.is_valid()) {
                         scrub_to_utf8(sbr.get_writable_data(), sbr.length());
                     }
 
                     printf("%.*s", (int) sbr.length(), sbr.get_data());
                     if ((off_t) (li.li_file_range.fr_offset
                                  + li.li_file_range.fr_size)
-                        < offset) {
+                        < offset)
+                    {
                         printf("\n");
                     }
                     last_range = li.li_file_range;

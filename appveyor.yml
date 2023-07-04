@@ -3,8 +3,6 @@ image: Visual Studio 2022
 
 environment:
   matrix:
-  - cygwin: cygwin
-    cygsetup: setup-x86.exe
   - cygwin: cygwin64
     cygsetup: setup-x86_64.exe
 

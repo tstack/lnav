@@ -118,7 +118,13 @@ struct logline_value_meta {
     {
     }
 
-    bool is_hidden() const { return this->lvm_hidden || this->lvm_user_hidden; }
+    bool is_hidden() const
+    {
+        if (this->lvm_user_hidden) {
+            return this->lvm_user_hidden.value();
+        }
+        return this->lvm_hidden;
+    }
 
     logline_value_meta& with_struct_name(intern_string_t name)
     {
@@ -129,9 +135,10 @@ struct logline_value_meta {
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
     int lvm_column{-1};
+    nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
     bool lvm_hidden{false};
-    bool lvm_user_hidden{false};
+    nonstd::optional<bool> lvm_user_hidden;
     bool lvm_from_module{false};
     intern_string_t lvm_struct_name;
     nonstd::optional<log_format*> lvm_format;
@@ -258,6 +265,7 @@ struct logline_value_stats {
 
     void clear()
     {
+        this->lvs_width = 0;
         this->lvs_count = 0;
         this->lvs_total = 0;
         this->lvs_min_value = std::numeric_limits<double>::max();
@@ -268,6 +276,7 @@ struct logline_value_stats {
 
     void add_value(double value);
 
+    int64_t lvs_width;
     int64_t lvs_count;
     double lvs_total;
     double lvs_min_value;
@@ -351,11 +360,18 @@ public:
         return false;
     }
 
-    enum scan_result_t {
-        SCAN_MATCH,
-        SCAN_NO_MATCH,
-        SCAN_INCOMPLETE,
+    struct scan_match {
+        uint32_t sm_quality;
     };
+
+    struct scan_no_match {
+        const char* snm_reason{nullptr};
+    };
+
+    struct scan_incomplete {};
+
+    using scan_result_t
+        = mapbox::util::variant<scan_match, scan_no_match, scan_incomplete>;
 
     /**
      * Scan a log line to see if it matches this log format.
@@ -468,6 +484,8 @@ public:
     {
         return {};
     }
+
+    virtual bool format_changed() { return false; }
 
     struct pattern_for_lines {
         pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);

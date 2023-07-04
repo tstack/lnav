@@ -716,7 +716,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
         if (jph.jph_regex->capture_from(path_frag)
                 .into(md)
                 .matches()
-                .ignore_error())
+                .ignore_error()
+            && (md.remaining().empty() || md.remaining().startswith("/")))
         {
             auto cap = md[0].value();
 
@@ -762,6 +763,9 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
             if (jph.jph_callbacks.yajl_integer != nullptr) {
                 this->ypc_callbacks.yajl_integer
                     = jph.jph_callbacks.yajl_integer;
+            }
+            if (jph.jph_callbacks.yajl_number != nullptr) {
+                this->ypc_callbacks.yajl_number = jph.jph_callbacks.yajl_number;
             }
             if (jph.jph_callbacks.yajl_double != nullptr) {
                 this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
@@ -1123,6 +1127,11 @@ yajlpp_parse_context::set_static_handler(const json_path_handler_base& jph)
     }
     if (jph.jph_callbacks.yajl_integer != nullptr) {
         this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
+    }
+    if (jph.jph_callbacks.yajl_number != nullptr) {
+        this->ypc_callbacks.yajl_number = jph.jph_callbacks.yajl_number;
+    } else {
+        this->ypc_callbacks.yajl_number = nullptr;
     }
     if (jph.jph_callbacks.yajl_double != nullptr) {
         this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;

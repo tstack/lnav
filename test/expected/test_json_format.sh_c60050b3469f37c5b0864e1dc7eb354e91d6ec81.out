@@ -36,7 +36,6 @@
 [31m	at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1720)[0m
 [31m	at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1571)[0m
 [31m	... 33 common frames omitted[0m
-
 [31m  @version: 1[0m
 [31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
 [31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m

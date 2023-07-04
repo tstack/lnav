@@ -352,7 +352,7 @@ update_installs_from_git()
     auto git_formats = lnav::paths::dotlnav() / "formats/*/.git";
     bool found = false, retval = true;
 
-    if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+    if (glob(git_formats.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             auto git_dir
                 = ghc::filesystem::path(gl->gl_pathv[lpc]).parent_path();
@@ -533,7 +533,7 @@ static const json_path_handler_base::enum_value_t _movement_values[] = {
 
 static const struct json_path_container movement_handlers = {
     yajlpp::property_handler("mode")
-        .with_synopsis("mode_name")
+        .with_synopsis("top|cursor")
         .with_enum_values(_movement_values)
         .with_example("top")
         .with_example("cursor")
@@ -1384,6 +1384,7 @@ load_config_from(_lnav_config& lconfig,
     struct config_userdata ud(errors);
     auto_fd fd;
 
+    log_info("loading configuration from %s", path.c_str());
     ypc.ypc_locations = &lnav_config_locations;
     ypc.with_obj(lconfig);
     ypc.ypc_userdata = &ud;
@@ -1501,7 +1502,7 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
         log_info("loading builtin configuration into base");
         load_default_configs(lnav_config, "*", errors);
 
-        log_info("loading user configuration files");
+        log_info("loading installed configuration files");
         for (const auto& extra_path : extra_paths) {
             auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;

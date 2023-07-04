@@ -472,6 +472,11 @@
                                 "type": "integer",
                                 "minimum": 0
                             },
+                            "auto-width": {
+                                "title": "/<format_name>/line-format/auto-width",
+                                "description": "Automatically detect the necessary width of the field based on the observed values",
+                                "type": "boolean"
+                            },
                             "max-width": {
                                 "title": "/<format_name>/line-format/max-width",
                                 "description": "The maximum width of the field",
@@ -507,6 +512,16 @@
                                     "lowercase",
                                     "capitalize"
                                 ]
+                            },
+                            "prefix": {
+                                "title": "/<format_name>/line-format/prefix",
+                                "description": "Text to prepend to the value",
+                                "type": "string"
+                            },
+                            "suffix": {
+                                "title": "/<format_name>/line-format/suffix",
+                                "description": "Text to append to the value",
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false

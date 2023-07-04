@@ -300,6 +300,7 @@ read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     log_level_t level = string2level(level_name_or_number.c_str());
     auto value_frag = string_fragment::from_bytes(str, len);
 
+    elf->elf_level_patterns[level].lp_pcre.pp_path = ypc->get_full_path();
     auto compile_res = lnav::pcre2pp::code::from(value_frag);
     if (compile_res.isErr()) {
         static const intern_string_t PATTERN_SRC
@@ -480,6 +481,11 @@ static const struct json_path_container line_format_handlers = {
         .with_description("The minimum width of the field")
         .for_field(&external_log_format::json_format_element::jfe_min_width),
 
+    yajlpp::property_handler("auto-width")
+        .with_description("Automatically detect the necessary width of the "
+                          "field based on the observed values")
+        .for_field(&external_log_format::json_format_element::jfe_auto_width),
+
     yajlpp::property_handler("max-width")
         .with_min_value(0)
         .with_synopsis("<size>")
@@ -505,6 +511,16 @@ static const struct json_path_container line_format_handlers = {
         .with_enum_values(TRANSFORM_ENUM)
         .for_field(
             &external_log_format::json_format_element::jfe_text_transform),
+
+    yajlpp::property_handler("prefix")
+        .with_synopsis("<str>")
+        .with_description("Text to prepend to the value")
+        .for_field(&external_log_format::json_format_element::jfe_prefix),
+
+    yajlpp::property_handler("suffix")
+        .with_synopsis("<str>")
+        .with_description("Text to append to the value")
+        .for_field(&external_log_format::json_format_element::jfe_suffix),
 };
 
 static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
@@ -529,12 +545,11 @@ static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[] = {
 };
 
 static const struct json_path_container scaling_factor_handlers = {
-    yajlpp::pattern_property_handler("op")
+    yajlpp::property_handler("op")
         .with_enum_values(SCALE_OP_ENUM)
         .for_field(&scaling_factor::sf_op),
 
-    yajlpp::pattern_property_handler("value").for_field(
-        &scaling_factor::sf_value),
+    yajlpp::property_handler("value").for_field(&scaling_factor::sf_value),
 };
 
 static const struct json_path_container scale_handlers = {

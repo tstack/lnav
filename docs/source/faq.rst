@@ -1,4 +1,3 @@
-
 .. _faq:
 
 Frequently Asked Questions
@@ -7,10 +6,18 @@ Frequently Asked Questions
 Q: How can I copy & paste without decorations?
 ----------------------------------------------
 
-:Answer: There are a few ways to do this:
+:Answer: There are a couple ways to do this:
 
   * Use the :ref:`bookmark<hotkeys_bookmarks>` hotkeys to mark lines and then
-    press :kbd:`c` to copy to the local system keyboard.
+    press :kbd:`c` to copy to the local system keyboard.  The system clipboard
+    is accessed using commands like :code:`pbcopy` and :code:`xclip`.  See the
+    :ref:`tuning` section for more details.
+
+    If a system clipboard is not available,
+    the `OSC 52 <https://www.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/>`_
+    terminal escape sequence will be tried.  If your terminal supports this
+    escape sequence, the selected text will be copied to the clipboard, even
+    if you are on an SSH connection.
 
   * Press :kbd:`CTRL` + :kbd:`l` to temporarily switch to "lo-fi"
     mode where the contents of the current view are printed to the terminal.
@@ -35,6 +42,27 @@ Q: How can I force a format for a file?
   defined by that format are not matching the first few lines of the file.
 
   See :ref:`format_order` for more information.
+
+
+Q: How can I search backwards, like pressing :kbd:`?` in less?
+--------------------------------------------------------------
+
+:Answer: Searches in **lnav** runs in the background and do not block input
+  waiting to find the first hit.  While the search prompt is open, pressing
+  :kbd:`CTRL` + :kbd:`j` will jump to the previous hit that was found.  A
+  preview panel is also opened that shows the hits that have been found so
+  far.
+
+  After pressing :kbd:`Enter` at the search prompt, the view will jump to
+  the first hit that was found.  Then, you can press :kbd:`n` to move to
+  the next search hit and :kbd:`N` to move to the previous one.  If you
+  would like to add a hotkey for jumping to the previous hit by default,
+  enter the following configuration command:
+
+  .. code-block:: lnav
+
+     :config /ui/keymap-defs/default/x3f/command :prompt --alt search ?
+
 
 Q: Why isn't my log file highlighted correctly?
 -----------------------------------------------

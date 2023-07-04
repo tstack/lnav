@@ -96,53 +96,19 @@ public:
 
     virtual ~curl_request() = default;
 
-    const std::string& get_name() const
-    {
-        return this->cr_name;
-    }
+    const std::string& get_name() const { return this->cr_name; }
 
-    virtual void close()
-    {
-        this->cr_open = false;
-    }
+    virtual void close() { this->cr_open = false; }
 
-    bool is_open() const
-    {
-        return this->cr_open;
-    }
+    bool is_open() const { return this->cr_open; }
 
-    CURL* get_handle() const
-    {
-        return this->cr_handle;
-    }
+    CURL* get_handle() const { return this->cr_handle; }
 
-    operator CURL*() const
-    {
-        return this->cr_handle;
-    }
+    operator CURL*() const { return this->cr_handle; }
 
-    int get_completions() const
-    {
-        return this->cr_completions;
-    }
+    int get_completions() const { return this->cr_completions; }
 
-    virtual long complete(CURLcode result)
-    {
-        double total_time = 0, download_size = 0, download_speed = 0;
-
-        this->cr_completions += 1;
-        curl_easy_getinfo(this->cr_handle, CURLINFO_TOTAL_TIME, &total_time);
-        log_debug("%s: total_time=%f", this->cr_name.c_str(), total_time);
-        curl_easy_getinfo(
-            this->cr_handle, CURLINFO_SIZE_DOWNLOAD, &download_size);
-        log_debug("%s: download_size=%f", this->cr_name.c_str(), download_size);
-        curl_easy_getinfo(
-            this->cr_handle, CURLINFO_SPEED_DOWNLOAD, &download_speed);
-        log_debug(
-            "%s: download_speed=%f", this->cr_name.c_str(), download_speed);
-
-        return -1;
-    }
+    virtual long complete(CURLcode result);
 
     Result<std::string, CURLcode> perform()
     {

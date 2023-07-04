@@ -218,7 +218,7 @@ static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
     "st_gid",
 };
 
-const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
+const static file_ssize_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
 
 static auto bound_pollable_supervisor
     = injector::bind<pollable_supervisor>::to_singleton();
@@ -321,7 +321,7 @@ setup_logline_table(exec_context& ec)
 
     if (log_view.get_inner_height()) {
         static intern_string_t logline = intern_string::lookup("logline");
-        vis_line_t vl = log_view.get_top();
+        vis_line_t vl = log_view.get_selection();
         content_line_t cl = lnav_data.ld_log_source.at_base(vl);
 
         lnav_data.ld_vtab_manager->unregister_vtab(logline);
@@ -454,7 +454,13 @@ append_default_files()
 static void
 sigint(int sig)
 {
+    static size_t counter = 0;
+
     lnav_data.ld_looping = false;
+    counter += 1;
+    if (counter >= 3) {
+        abort();
+    }
 }
 
 static void
@@ -703,6 +709,13 @@ make it easier to navigate through files quickly.
         .append(ex3_term)
         .append("\n\n")
         .append("Paths"_h2)
+        .append("\n ")
+        .append("\u2022"_list_glyph)
+        .append(" Format files are read from:")
+        .append("\n    \U0001F4C2 ")
+        .append(lnav::roles::file("/etc/lnav"))
+        .append("\n    \U0001F4C2 ")
+        .append(lnav::roles::file(SYSCONFDIR "/lnav"))
         .append("\n ")
         .append("\u2022"_list_glyph)
         .append(" Configuration, session, and format files are stored in:\n")
@@ -1912,6 +1925,7 @@ looper()
                         || lnav_data.ld_text_source.text_line_count() > 0
                         || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
+                    log_debug("restoring view states");
                     for (size_t view_index = 0; view_index < LNV__MAX;
                          view_index++)
                     {
@@ -1919,12 +1933,19 @@ looper()
                             = session_data.sd_view_states[view_index];
                         auto& tview = lnav_data.ld_views[view_index];
 
-                        if (vs.vs_top > 0 && tview.get_top() == 0_vl) {
+                        if (vs.vs_top >= 0
+                            && (view_index == LNV_LOG
+                                || tview.get_top() == 0_vl))
+                        {
                             log_info("restoring %s view top: %d",
                                      lnav_view_strings[view_index],
                                      vs.vs_top);
                             lnav_data.ld_views[view_index].set_top(
                                 vis_line_t(vs.vs_top));
+                            if (vs.vs_selection) {
+                                lnav_data.ld_views[view_index].set_selection(
+                                    vis_line_t(vs.vs_selection.value()));
+                            }
                         }
                     }
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
@@ -2623,9 +2644,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    bool selectable
-        = (lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR);
-
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
@@ -2661,18 +2679,29 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }))
         .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(2_vl)
-        .set_overlay_source(log_fos)
-        .set_selectable(selectable);
-    lnav_data.ld_views[LNV_TEXT]
-        .set_sub_source(&lnav_data.ld_text_source)
-        .set_selectable(selectable);
-    lnav_data.ld_views[LNV_HISTOGRAM].set_sub_source(
-        &lnav_data.ld_hist_source2);
+        .set_overlay_source(log_fos);
+    auto sel_reload_delegate = [](textview_curses& tc) {
+        if (lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR) {
+            tc.set_selectable(true);
+        }
+    };
+    lnav_data.ld_views[LNV_LOG].set_reload_config_delegate(sel_reload_delegate);
+    lnav_data.ld_views[LNV_PRETTY].set_reload_config_delegate(
+        sel_reload_delegate);
+    lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);
+    lnav_data.ld_views[LNV_TEXT].set_reload_config_delegate(
+        sel_reload_delegate);
+    lnav_data.ld_views[LNV_HISTOGRAM]
+        .set_reload_config_delegate(sel_reload_delegate)
+        .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
-    lnav_data.ld_views[LNV_DB].set_overlay_source(&lnav_data.ld_db_overlay);
+    lnav_data.ld_views[LNV_DB]
+        .set_reload_config_delegate(sel_reload_delegate)
+        .set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_spectro_source = std::make_unique<spectrogram_source>();
     lnav_data.ld_views[LNV_SPECTRO]
+        .set_reload_config_delegate(sel_reload_delegate)
         .set_sub_source(lnav_data.ld_spectro_source.get())
         .set_overlay_source(lnav_data.ld_spectro_source.get())
         .add_input_delegate(*lnav_data.ld_spectro_source)
@@ -2816,7 +2845,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         auto colon_index = file_path.rfind(':');
         if (colon_index != std::string::npos) {
-            file_path_without_trailer = file_path.substr(0, colon_index);
             auto top_range = scn::string_view{&file_path[colon_index + 1],
                                               &(*file_path.cend())};
             auto scan_res = scn::scan_value<int>(top_range);
@@ -3092,6 +3120,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
 #ifdef HAVE_ARCHIVE_H
             log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
+            log_info("    details=%s", archive_version_details());
 #endif
             log_info("  ncurses=%s", NCURSES_VERSION);
             log_info("  pcre2=%s", pcre2_version);
@@ -3185,6 +3214,22 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
 
                     return EXIT_FAILURE;
+                }
+
+                for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                    for (const auto& note : lf->get_notes()) {
+                        switch (note.first) {
+                            case logfile::note_type::not_utf: {
+                                auto um = lnav::console::user_message::error(
+                                    note.second);
+                                lnav::console::print(stderr, um);
+                                break;
+                            }
+
+                            default:
+                                break;
+                        }
+                    }
                 }
 
                 for (auto& pair : cmd_results) {

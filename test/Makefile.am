@@ -277,6 +277,13 @@ dist_noinst_DATA = \
 	listview_output.4 \
 	listview_output.5 \
 	listview_output.6 \
+	listview_output_cursor.0 \
+	listview_output_cursor.1 \
+	listview_output_cursor.2 \
+	listview_output_cursor.3 \
+	listview_output_cursor.4 \
+	listview_output_cursor.5 \
+	listview_output_cursor.6 \
 	log.clog \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
@@ -289,7 +296,9 @@ dist_noinst_DATA = \
 	logfile_blued.0 \
 	logfile_bro_conn.log.0 \
 	logfile_bro_http.log.0 \
+	logfile_bunyan.0 \
 	logfile_crlf.0 \
+	logfile_cloudflare.json \
 	logfile_cxx.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
@@ -354,6 +363,7 @@ dist_noinst_DATA = \
 	mvwattrline_output.0 \
 	textfile_0.md \
 	textfile_ansi.0 \
+	textfile_ansi_expanding.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
 	textfile_quoted_json.0 \

@@ -1,0 +1,8 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "bad-name-log": {
+        "title": "bad-format",
+        "description": "Log format with a name that has invalid characters",
+        "json": true
+    }
+}

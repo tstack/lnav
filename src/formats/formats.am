@@ -3,8 +3,11 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/access_log.json \
     $(srcdir)/%reldir%/alb_log.json \
     $(srcdir)/%reldir%/block_log.json \
+    $(srcdir)/%reldir%/bunyan_log.json \
     $(srcdir)/%reldir%/candlepin_log.json \
     $(srcdir)/%reldir%/choose_repo_log.json \
+    $(srcdir)/%reldir%/cloudflare_log.json \
+    $(srcdir)/%reldir%/cloudvm_ram_log.json \
     $(srcdir)/%reldir%/cups_log.json \
     $(srcdir)/%reldir%/dpkg_log.json \
     $(srcdir)/%reldir%/elb_log.json \

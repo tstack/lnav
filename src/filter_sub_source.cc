@@ -42,6 +42,8 @@ using namespace lnav::roles::literals;
 filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
+    this->fss_editor->set_left(25);
+    this->fss_editor->set_width(-1);
     this->fss_editor->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
         .set_append_character(0);
@@ -174,8 +176,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             this->fss_editor->set_visible(true);
             this->fss_editor->set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor->set_left(25);
-            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
+            this->fss_editor->window_change();
             this->fss_editor->focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
@@ -210,8 +211,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             this->fss_editor->set_visible(true);
             this->fss_editor->set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor->set_left(25);
-            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
+            this->fss_editor->window_change();
             this->fss_editor->focus(filter_lang_t::REGEX, "", "");
             this->fss_filter_state = true;
             ef->disable();
@@ -244,8 +244,6 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             this->fss_editor->set_visible(true);
             this->fss_editor->set_y(
                 lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor->set_left(25);
-            this->fss_editor->set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor->focus(tf->get_lang(), "");
             this->fss_editor->rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();

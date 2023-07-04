@@ -3,10 +3,37 @@
 Features:
 * A "cursor" mode has been added to the main view that can
   be toggled by pressing CTRL-X.  While in cursor mode, any
-  operations that would normally work on the "top" line now
-  operate on the selected line instead.
+  operations that would normally work on the "top" line will
+  now operate on the focused line instead.
 * Added CTRL-D and CTRL-U hotkeys to move down/up by half
   a page.
+* Added an `auto-width` flag to the elements of the
+  `line-format` array that indicates that the width of the
+  field should automatically be determined by the observed
+  values.
+* Added bunyan log format from Tobias Gruetzmacher.
+* Added cloudlare log format from @minusf.
+* Number fields used in a JSON log format `line-format`
+  array now default to being right-aligned.  Also, added
+  `prefix` and `suffix` to `line-format` elements so a
+  string can optionally be prepended/appended if the value
+  is not empty.
+* JSON log format detection has been improved to not rely
+  on matching the file name.  All possible formats are
+  tried and the one with the most available fields for a
+  given `line-format` is used.  For example, if the first
+  log message has 8 fields and format A contains 5 of
+  those fields in its `line-format` while format B only
+  contains 2 of those fields in its `line-format`, format
+  A will be used for the file.
+
+Changes:
+* For JSON-lines logs, line-feeds at the end of a value are
+  automatically stripped.
+
+Bug Fixes:
+* Hidden values in JSON logs are now hidden by default.
+* Text with ANSI-escapes is now filtered properly.
 
 ## lnav v0.11.1
 

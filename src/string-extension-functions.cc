@@ -76,7 +76,7 @@ find_re(string_fragment re)
         auto pair = cache.insert(
             std::make_pair(string_fragment::from_str(c.re2->get_pattern()), c));
 
-        for (int lpc = 0; lpc < c.re2->get_capture_count(); lpc++) {
+        for (size_t lpc = 0; lpc < c.re2->get_capture_count(); lpc++) {
             c.cn->add_column(string_fragment::from_c_str(
                 c.re2->get_name_for_capture(lpc + 1)));
         }
@@ -141,7 +141,7 @@ regexp_match(string_fragment re, string_fragment str)
     } else {
         yajlpp_map root_map(gen);
 
-        for (int lpc = 0; lpc < extractor.get_capture_count(); lpc++) {
+        for (size_t lpc = 0; lpc < extractor.get_capture_count(); lpc++) {
             const auto& colname = reobj->cn->cn_names[lpc];
             const auto cap = md[lpc + 1];
 

@@ -41,18 +41,15 @@
 void
 scrub_to_utf8(char* buffer, size_t length)
 {
-    const char* msg;
-    int faulty_bytes;
-
     while (true) {
-        auto scan_res
-            = is_utf8((unsigned char*) buffer, length, &msg, &faulty_bytes);
+        auto frag = string_fragment::from_bytes(buffer, length);
+        auto scan_res = is_utf8(frag);
 
-        if (msg == nullptr) {
+        if (scan_res.is_valid()) {
             break;
         }
-        for (int lpc = 0; lpc < faulty_bytes; lpc++) {
-            buffer[scan_res.usr_end + lpc] = '?';
+        for (size_t lpc = 0; lpc < scan_res.usr_faulty_bytes; lpc++) {
+            buffer[scan_res.usr_valid_frag.sf_end + lpc] = '?';
         }
     }
 }

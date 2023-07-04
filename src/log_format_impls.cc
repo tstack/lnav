@@ -127,10 +127,10 @@ class generic_log_format : public log_format {
             }
 
             dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
-            return SCAN_MATCH;
+            return scan_match{0};
         }
 
-        return SCAN_NO_MATCH;
+        return scan_no_match{"no patterns matched"};
     }
 
     void annotate(uint64_t line_number,
@@ -391,7 +391,7 @@ public:
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
             if (iter.index() == 0 && *iter == "#close") {
-                return SCAN_MATCH;
+                return scan_match{0};
             }
 
             if (iter.index() >= this->blf_field_defs.size()) {
@@ -449,9 +449,9 @@ public:
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
-            return SCAN_MATCH;
+            return scan_match{0};
         }
-        return SCAN_NO_MATCH;
+        return scan_no_match{};
     }
 
     scan_result_t scan(logfile& lf,
@@ -470,14 +470,14 @@ public:
         if (dst.empty() || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
-            return SCAN_NO_MATCH;
+            return scan_no_match{};
         }
 
         auto line_iter = dst.begin();
         auto read_result = lf.read_line(line_iter);
 
         if (read_result.isErr()) {
-            return SCAN_NO_MATCH;
+            return scan_no_match{"unable to read first line"};
         }
 
         auto line = read_result.unwrap();
@@ -488,7 +488,7 @@ public:
                              .matches(PCRE2_NO_UTF_CHECK)
                              .ignore_error();
         if (!match_res) {
-            return SCAN_NO_MATCH;
+            return scan_no_match{"cannot read separator header"};
         }
 
         this->clear();
@@ -500,7 +500,7 @@ public:
             auto next_read_result = lf.read_line(line_iter);
 
             if (next_read_result.isErr()) {
-                return SCAN_NO_MATCH;
+                return scan_no_match{"unable to read header line"};
             }
 
             line = next_read_result.unwrap();
@@ -608,7 +608,7 @@ public:
         this->blf_format_name.clear();
         this->lf_value_stats.clear();
 
-        return SCAN_NO_MATCH;
+        return scan_no_match{};
     }
 
     void annotate(uint64_t line_number,
@@ -1019,7 +1019,7 @@ public:
                 }
                 dst.emplace_back(
                     li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
-                return SCAN_MATCH;
+                return scan_match{0};
             }
 
             sf = sf.trim("\" \t");
@@ -1088,10 +1088,10 @@ public:
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0);
-            return SCAN_MATCH;
+            return scan_match{0};
         }
 
-        return SCAN_NO_MATCH;
+        return scan_no_match{};
     }
 
     scan_result_t scan(logfile& lf,
@@ -1105,7 +1105,7 @@ public:
         static auto X_FIELDS_IDX = 0;
 
         if (li.li_partial) {
-            return SCAN_INCOMPLETE;
+            return scan_incomplete{};
         }
 
         if (!this->wlf_format_name.empty()) {
@@ -1115,7 +1115,7 @@ public:
         if (dst.empty() || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
-            return SCAN_NO_MATCH;
+            return scan_no_match{};
         }
 
         this->clear();
@@ -1125,7 +1125,7 @@ public:
             auto next_read_result = lf.read_line(line_iter);
 
             if (next_read_result.isErr()) {
-                return SCAN_NO_MATCH;
+                return scan_no_match{"unable to read first line"};
             }
 
             auto line = next_read_result.unwrap();
@@ -1233,7 +1233,7 @@ public:
         this->wlf_format_name.clear();
         this->lf_value_stats.clear();
 
-        return SCAN_NO_MATCH;
+        return scan_no_match{};
     }
 
     void annotate(uint64_t line_number,
@@ -1585,7 +1585,7 @@ public:
                        scan_batch_context& sbc) override
     {
         auto p = logfmt::parser(sbr.to_string_fragment());
-        scan_result_t retval = scan_result_t::SCAN_NO_MATCH;
+        scan_result_t retval = scan_no_match{};
         bool done = false;
         logfmt_pair_handler lph(this->lf_date_time);
 
@@ -1655,7 +1655,7 @@ public:
         if (lph.lph_found_time) {
             dst.emplace_back(
                 li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
-            retval = scan_result_t::SCAN_MATCH;
+            retval = scan_match{0};
         }
 
         return retval;

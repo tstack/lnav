@@ -47,6 +47,7 @@ struct file_state {
 
 struct view_state {
     int64_t vs_top{0};
+    nonstd::optional<int64_t> vs_selection;
 };
 
 struct session_data_t {

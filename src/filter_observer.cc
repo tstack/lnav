@@ -36,7 +36,7 @@ void
 line_filter_observer::logline_new_lines(const logfile& lf,
                                         logfile::const_iterator ll_begin,
                                         logfile::const_iterator ll_end,
-                                        shared_buffer_ref& sbr)
+                                        const shared_buffer_ref& sbr)
 {
     size_t offset = std::distance(lf.begin(), ll_begin);
 
@@ -48,9 +48,11 @@ line_filter_observer::logline_new_lines(const logfile& lf,
     }
 
     for (; ll_begin != ll_end; ++ll_begin) {
+        auto sbr_copy = sbr;
         if (lf.get_format() != nullptr) {
-            lf.get_format()->get_subline(*ll_begin, sbr);
+            lf.get_format()->get_subline(*ll_begin, sbr_copy);
         }
+        sbr_copy.erase_ansi();
         for (auto& filter : this->lfo_filter_stack) {
             if (filter->lf_deleted) {
                 continue;
@@ -58,7 +60,7 @@ line_filter_observer::logline_new_lines(const logfile& lf,
             if (offset
                 >= this->lfo_filter_state.tfs_filter_count[filter->get_index()])
             {
-                filter->add_line(this->lfo_filter_state, ll_begin, sbr);
+                filter->add_line(this->lfo_filter_state, ll_begin, sbr_copy);
             }
         }
     }

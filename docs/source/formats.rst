@@ -46,13 +46,13 @@ Defining a New Format
 ---------------------
 
 New log formats can be defined by placing JSON configuration files in
-subdirectories of the :file:`~/.lnav/formats/` directory.  The directories and
-files can be named anything you like, but the files must have the '.json' suffix.  A
-sample file containing the builtin configuration will be written to this
-directory when **lnav** starts up.  You can consult that file when writing your
-own formats or if you need to modify existing ones.  Format directories can
-also contain '.sql' and '.lnav' script files that can be used automate log file
-analysis.
+subdirectories of the :file:`/etc/lnav/formats` and :file:`~/.lnav/formats/`
+directories. The directories and files can be named anything you like, but the
+files must have the '.json' suffix.  A sample file containing the builtin
+configuration will be written to this directory when **lnav** starts up.
+You can consult that file when writing your own formats or if you need to
+modify existing ones.  Format directories can also contain '.sql' and '.lnav'
+script files that can be used automate log file analysis.
 
 Creating a Format Using Regex101.com (v0.11.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,9 +95,10 @@ like so:
    }
 
 Each format to be defined in the file should be a separate field in the top-level
-object.  The field name should be the symbolic name of the format.  This value
-will also be used as the SQL table name for the log.  The value for each field
-should be another object with the following fields:
+object.  The field name should be the symbolic name of the format and consist
+only of alphanumeric characters and underscores.  This value will also be used
+as the SQL table name for the log.  The value for each field should be another
+object with the following fields:
 
 :title: The short and human-readable name for the format.
 :description: A longer description of the format.
@@ -137,13 +138,15 @@ should be another object with the following fields:
   converted from the raw JSON encoding into this format.  Each element
   is either an object that defines which fields should be inserted into
   the final message string and or a string constant that should be
-  inserted.  For example, the following configuration will tranform each
+  inserted.  For example, the following configuration will transform each
   log message object into a string that contains the timestamp, followed
   by a space, and then the message body:
 
   .. code-block:: json
 
       [ { "field": "ts" }, " ", { "field": "msg" } ]
+
+  .. note:: Line-feeds at the end of a value are automatically stripped.
 
   :field: The name or `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_
     of the message field that should be inserted at this point in the
@@ -163,6 +166,8 @@ should be another object with the following fields:
   :max-width: The maximum width for the field.  If the value for the field
     in a given log message is longer, the overflow algorithm will be applied
     to try and shorten the field. (v0.8.2+)
+  :auto-width: Flag that indicates that the width of the field should
+    automatically be set to the widest value seen. (v0.11.2)
   :align: Specifies the alignment for the field, either "left" or "right".
     If "left", padding to meet the minimum-width will be added on the right.
     If "right", padding will be added on the left. (v0.8.2+)
@@ -182,6 +187,10 @@ should be another object with the following fields:
     in the current log message.  The built-in default is "-".
   :text-transform: Transform the text in the field.  Supported options are:
     none, uppercase, lowercase, capitalize
+  :prefix: Text to prepend to the value.  If the value is empty, this prefix
+    will not be added.
+  :suffix: Text to append to the value.  If the value is empty, this suffix
+    will not be added.
 
 :timestamp-field: The name of the field that contains the log message
   timestamp.  Defaults to "timestamp".
@@ -254,6 +263,11 @@ should be another object with the following fields:
   level can be supplied.  If the JSON log format uses numeric ranges instead
   of exact numbers, you can supply a pattern and the number found in the log
   will be converted to a string for pattern-matching.
+
+  .. note:: The regular expression is not anchored to the start of the
+     string by default, so an expression like :code:`1` will match
+     :code:`-1`.  If you want to exactly match :code:`1`, you would
+     use :code:`^1$` as the expression.
 
 :multiline: If false, **lnav** will consider any log lines that do not
   match one of the message patterns to be in error when checking files with
@@ -394,6 +408,21 @@ with the following contents:
         }
     }
 
+
+This example overrides the default `syslog_log <https://github.com/tstack/lnav/blob/master/src/formats/syslog_log.json>`_
+error detection regex to **not** match the :code:`errors=` string.
+
+.. code-block:: json
+
+  {
+    "syslog_log": {
+        "level": {
+            "error": "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?(?!=))(?:(?![a-zA-Z]))|failed|failure)"
+        }
+    }
+  }
+
+
 .. _scripts:
 
 Scripts
@@ -522,6 +551,11 @@ log file for the "Format order" message:
 .. prompt:: bash
 
     lnav -d /tmp/lnav.log
+
+For JSON-lines log files, the log message must have the timestamp property
+specified in the format in order to match.  If multiple formats match a
+message, the format that has the most matching :code:`line-format` elements
+will win.
 
 .. [#] The maximum number of lines to check can be configured.  See the
        :ref:`tuning` section for more details.
