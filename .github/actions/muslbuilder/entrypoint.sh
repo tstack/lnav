@@ -2,7 +2,13 @@
 
 set -Eeuxo pipefail
 
-cd $GITHUB_WORKSPACE
+if [ -z ${GITHUB_WORKSPACE:-} ]; then
+    git clone https://github.com/tstack/lnav.git
+    cd lnav
+else
+    cd ${GITHUB_WORKSPACE}
+fi
+
 ./autogen.sh
 mkdir lbuild
 cd lbuild
