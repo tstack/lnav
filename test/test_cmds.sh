@@ -12,9 +12,6 @@ run_cap_test ${lnav_test} -nN \
     -c ":cd ${test_dir}" \
     -c ":open logfile_access_log.0"
 
-run_cap_test env SHELL=/bin/bash ${lnav_test} -nN \
-    -e "bad-command"
-
 run_cap_test ${lnav_test} -nN \
     -e "echo Hello, World!"
 

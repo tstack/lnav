@@ -3034,14 +3034,24 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     .with_errno_reason());
             retval = EXIT_FAILURE;
         } else if (S_ISFIFO(stdin_st.st_mode)) {
-            auto stdin_piper_res = lnav::piper::create_looper(
-                STDIN_NAME, auto_fd::dup_of(STDIN_FILENO), auto_fd{});
-            if (stdin_piper_res.isOk()) {
-                auto stdin_piper = stdin_piper_res.unwrap();
-                stdin_pattern = stdin_piper.get_out_pattern();
-                lnav_data.ld_active_files.fc_file_names[stdin_piper.get_name()]
-                    .with_piper(stdin_piper)
-                    .with_include_in_session(false);
+            struct pollfd pfd[1];
+
+            pfd[0].fd = STDIN_FILENO;
+            pfd[0].events = POLLIN;
+            pfd[0].revents = 0;
+            auto prc = poll(pfd, 1, 0);
+
+            if (prc == 0 || (pfd[0].revents & POLLIN)) {
+                auto stdin_piper_res = lnav::piper::create_looper(
+                    STDIN_NAME, auto_fd::dup_of(STDIN_FILENO), auto_fd{});
+                if (stdin_piper_res.isOk()) {
+                    auto stdin_piper = stdin_piper_res.unwrap();
+                    stdin_pattern = stdin_piper.get_out_pattern();
+                    lnav_data.ld_active_files
+                        .fc_file_names[stdin_piper.get_name()]
+                        .with_piper(stdin_piper)
+                        .with_include_in_session(false);
+                }
             }
         } else if (S_ISREG(stdin_st.st_mode)) {
             // The shell connected a file directly, just open it up and add it
