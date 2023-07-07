@@ -162,7 +162,9 @@ looper::loop()
         }
         for (auto& cap : captured_fds) {
             while (this->l_looping) {
-                if (cap.pfd == nullptr || !(cap.pfd->revents & POLLIN)) {
+                if (cap.pfd == nullptr
+                    || !(cap.pfd->revents & (POLLIN | POLLHUP)))
+                {
                     break;
                 }
 
