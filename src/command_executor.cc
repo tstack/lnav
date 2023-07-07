@@ -528,7 +528,7 @@ execute_file_contents(exec_context& ec,
             return ec.make_error("stdin has already been consumed");
         }
         file = stdin;
-    } else if ((file = fopen(path.c_str(), "r")) == nullptr) {
+    } else if ((file = fopen(path.c_str(), "re")) == nullptr) {
         return ec.make_error("unable to open file");
     }
 
@@ -568,10 +568,14 @@ execute_file_contents(exec_context& ec,
                 break;
             default:
                 if (multiline) {
-                    cmdline = fmt::format("{}{}", cmdline.value(), line.in());
+                    cmdline = fmt::format(
+                        FMT_STRING("{}{}"), cmdline.value(), line.in());
                 } else {
                     retval = TRY(execute_from_file(
-                        ec, path, line_number, fmt::format(":{}", line.in())));
+                        ec,
+                        path,
+                        line_number,
+                        fmt::format(FMT_STRING(":{}"), line.in())));
                 }
                 break;
         }
@@ -786,7 +790,9 @@ execute_init_commands(
                               "");
             return;
         }
+        fcntl(fileno(tmpout), F_SETFD, FD_CLOEXEC);
         fd_copy = auto_fd::dup_of(fileno(tmpout));
+        fd_copy.close_on_exec();
         ec_out = std::make_pair(tmpout.release(), fclose);
     }
 

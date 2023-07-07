@@ -714,7 +714,9 @@ readline_curses::start()
     }
 
     this->rc_command_pipe[RCF_MASTER] = sp[RCF_MASTER];
+    this->rc_command_pipe[RCF_MASTER].close_on_exec();
     this->rc_command_pipe[RCF_SLAVE] = sp[RCF_SLAVE];
+    this->rc_command_pipe[RCF_SLAVE].close_on_exec();
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
         throw error(errno);
@@ -736,6 +738,9 @@ readline_curses::start()
         perror("error: failed to open terminal(openpty)");
         throw error(errno);
     }
+
+    this->rc_pty[RCF_MASTER].close_on_exec();
+    this->rc_pty[RCF_SLAVE].close_on_exec();
 
     if ((this->rc_child = fork()) == -1) {
         throw error(errno);

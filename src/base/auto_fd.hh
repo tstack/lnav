@@ -261,7 +261,13 @@ public:
         }
     }
 
-    int open() { return auto_fd::pipe(this->ap_fd); }
+    int open()
+    {
+        int retval = auto_fd::pipe(this->ap_fd);
+        this->ap_fd[0].close_on_exec();
+        this->ap_fd[1].close_on_exec();
+        return retval;
+    }
 
     void close()
     {

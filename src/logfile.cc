@@ -101,7 +101,7 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     auto_fd lf_fd;
     if (fd.has_value()) {
         lf_fd = std::move(fd);
-    } else if ((lf_fd = ::open(resolved_path, O_RDONLY)) == -1) {
+    } else if ((lf_fd = ::open(resolved_path, O_RDONLY | O_CLOEXEC)) == -1) {
         return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
                                lf->lf_filename,
                                strerror(errno)));

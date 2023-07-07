@@ -190,7 +190,7 @@ log_argv(int argc, char* argv[])
     const char* log_path = getenv("LNAV_LOG_PATH");
 
     if (log_path != nullptr) {
-        lnav_log_file = make_optional_from_nullable(fopen(log_path, "a"));
+        lnav_log_file = make_optional_from_nullable(fopen(log_path, "ae"));
     }
 
     log_info("argv[%d] =", argc);

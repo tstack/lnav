@@ -57,7 +57,7 @@ convert(const std::string& filename)
 
     err_pipe.after_fork(child.in());
     if (child.in_child()) {
-        auto dev_null = open("/dev/null", O_RDONLY);
+        auto dev_null = open("/dev/null", O_RDONLY | O_CLOEXEC);
 
         dup2(dev_null, STDIN_FILENO);
         dup2(outfile.second.get(), STDOUT_FILENO);

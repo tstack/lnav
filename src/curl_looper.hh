@@ -148,10 +148,7 @@ protected:
 
 class curl_looper : public isc::service<curl_looper> {
 public:
-    curl_looper() : cl_curl_multi(curl_multi_cleanup)
-    {
-        this->cl_curl_multi.reset(curl_multi_init());
-    }
+    curl_looper();
 
     void process_all();
 
