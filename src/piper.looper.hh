@@ -100,16 +100,6 @@ public:
 
     bool is_finished() const { return this->h_looper->is_finished(); }
 
-    handle<state::finished> close() &&
-    {
-        static_assert(LooperState == state::running,
-                      "this method is only available in the running state");
-
-        this->h_looper->close();
-
-        return handle<state::finished>{nullptr};
-    }
-
     bool operator==(const handle& other) const
     {
         return this->h_looper.get() == other.h_looper.get();
