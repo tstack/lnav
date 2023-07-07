@@ -41,13 +41,12 @@
 class textfile_sub_source
     : public text_sub_source
     , public vis_location_history
+    , public text_accel_source
     , public text_anchors {
 public:
     using file_iterator = std::deque<std::shared_ptr<logfile>>::iterator;
 
     textfile_sub_source() { this->tss_supports_filtering = true; }
-
-    ~textfile_sub_source() override = default;
 
     bool empty() const { return this->tss_files.empty(); }
 
@@ -109,6 +108,8 @@ public:
 
     class scan_callback {
     public:
+        virtual ~scan_callback() = default;
+
         virtual void closed_files(
             const std::vector<std::shared_ptr<logfile>>& files)
             = 0;
@@ -143,6 +144,18 @@ public:
     std::unordered_set<std::string> get_anchors() override;
 
     void quiesce() override;
+
+    bool is_time_offset_supported() const override
+    {
+        const auto lf = this->current_file();
+        if (lf != nullptr && lf->has_line_metadata()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    logline* text_accel_get_line(vis_line_t vl) override;
 
 private:
     void detach_observer(std::shared_ptr<logfile> lf)

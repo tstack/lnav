@@ -1,0 +1,7 @@
+[1m[31m✘ error[0m: cannot access -- /bad-dir
+ [1m[31mreason[0m: No such file or directory
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mcd[0m[37m[40m /bad-dir                            [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mcd[0m[4m [0m[4mdir[0m
+         ══════════════════════════════════════════════════════════════════════
+           Change the current directory

@@ -240,6 +240,7 @@ private:
 class logfile_sub_source
     : public text_sub_source
     , public text_time_translator
+    , public text_accel_source
     , public list_input_delegate {
 public:
     const static bookmark_type_t BM_ERRORS;
@@ -251,12 +252,6 @@ public:
     logfile_sub_source();
 
     ~logfile_sub_source() = default;
-
-    void toggle_time_offset()
-    {
-        this->lss_flags ^= F_TIME_OFFSET;
-        this->clear_line_size_cache();
-    }
 
     void increase_line_context()
     {
@@ -303,20 +298,6 @@ public:
         }
 
         return 0;
-    }
-
-    void set_time_offset(bool enabled)
-    {
-        if (enabled)
-            this->lss_flags |= F_TIME_OFFSET;
-        else
-            this->lss_flags &= ~F_TIME_OFFSET;
-        this->clear_line_size_cache();
-    }
-
-    bool is_time_offset_enabled() const
-    {
-        return (bool) (this->lss_flags & F_TIME_OFFSET);
     }
 
     bool is_filename_enabled() const
@@ -650,8 +631,6 @@ public:
         return logline_window(*this, start_vl, end_vl);
     }
 
-    log_accel::direction_t get_line_accel_direction(vis_line_t vl);
-
     /**
      * Container for logfile references that keeps of how many lines in the
      * logfile have been indexed.
@@ -834,19 +813,25 @@ public:
 
     void quiesce();
 
+protected:
+    void text_accel_display_changed() { this->clear_line_size_cache(); }
+
+    logline* text_accel_get_line(vis_line_t vl)
+    {
+        return this->find_line(this->at(vl));
+    }
+
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
 
     enum {
         B_SCRUB,
-        B_TIME_OFFSET,
         B_FILENAME,
         B_BASENAME,
     };
 
     enum {
         F_SCRUB = (1UL << B_SCRUB),
-        F_TIME_OFFSET = (1UL << B_TIME_OFFSET),
         F_FILENAME = (1UL << B_FILENAME),
         F_BASENAME = (1UL << B_BASENAME),
 

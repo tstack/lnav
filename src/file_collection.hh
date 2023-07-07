@@ -175,6 +175,8 @@ struct file_collection {
     void close_files(const std::vector<std::shared_ptr<logfile>>& files);
 
     void regenerate_unique_file_names();
+
+    size_t active_pipers() const;
 };
 
 #endif

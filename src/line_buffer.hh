@@ -48,11 +48,16 @@
 #include "base/is_utf8.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"
+#include "log_level.hh"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
 
 struct line_info {
     file_range li_file_range;
+    struct timeval li_timestamp {
+        0, 0
+    };
+    log_level_t li_level{LEVEL_UNKNOWN};
     bool li_partial{false};
     utf8_scan_result li_utf8_scan_result{};
 };
@@ -174,6 +179,10 @@ public:
     }
 
     bool is_compressed() const { return this->lb_compressed; }
+
+    bool is_header_utf8() const { return this->lb_is_utf8; }
+
+    bool has_line_metadata() const { return this->lb_line_metadata; }
 
     file_off_t get_read_offset(file_off_t off) const
     {
@@ -331,6 +340,7 @@ private:
     auto_fd lb_fd; /*< The file to read data from. */
     safe_gz_indexed lb_gz_file; /*< File reader for gzipped files. */
     bool lb_bz_file{false}; /*< Flag set for bzip2 compressed files. */
+    bool lb_line_metadata{false};
 
     auto_buffer lb_buffer{auto_buffer::alloc(DEFAULT_LINE_BUFFER_SIZE)};
     nonstd::optional<auto_buffer> lb_alt_buffer;
@@ -355,6 +365,7 @@ private:
     time_t lb_file_time{0};
     bool lb_seekable{false}; /*< Flag set for seekable file descriptors. */
     bool lb_compressed{false};
+    bool lb_is_utf8{true};
     file_off_t lb_last_line_offset{-1}; /*< */
 
     std::vector<uint32_t> lb_line_starts;

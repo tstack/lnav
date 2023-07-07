@@ -72,15 +72,9 @@ struct exec_context {
                  sql_callback_t sql_callback = ::sql_callback,
                  pipe_callback_t pipe_callback = nullptr);
 
-    bool is_read_write() const
-    {
-        return this->ec_perms == perm_t::READ_WRITE;
-    }
+    bool is_read_write() const { return this->ec_perms == perm_t::READ_WRITE; }
 
-    bool is_read_only() const
-    {
-        return this->ec_perms == perm_t::READ_ONLY;
-    }
+    bool is_read_only() const { return this->ec_perms == perm_t::READ_ONLY; }
 
     exec_context& with_perms(perm_t perms)
     {
@@ -91,15 +85,22 @@ struct exec_context {
     void add_error_context(lnav::console::user_message& um);
 
     template<typename... Args>
-    Result<std::string, lnav::console::user_message> make_error(
-        fmt::string_view format_str, const Args&... args)
+    lnav::console::user_message make_error_msg(fmt::string_view format_str,
+                                               const Args&... args)
     {
         auto retval = lnav::console::user_message::error(
             fmt::vformat(format_str, fmt::make_format_args(args...)));
 
         this->add_error_context(retval);
 
-        return Err(retval);
+        return retval;
+    }
+
+    template<typename... Args>
+    Result<std::string, lnav::console::user_message> make_error(
+        fmt::string_view format_str, const Args&... args)
+    {
+        return Err(this->make_error_msg(format_str, args...));
     }
 
     nonstd::optional<FILE*> get_output()

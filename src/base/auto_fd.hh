@@ -194,6 +194,8 @@ public:
      */
     int get() const { return this->af_fd; }
 
+    bool has_value() const { return this->af_fd != -1; }
+
     /**
      * Closes the current file descriptor and replaces its value with the given
      * one.

@@ -87,6 +87,9 @@ static auto fvc = injector::bind<file_vtab::config>::to_instance(
 static auto lc = injector::bind<lnav::logfile::config>::to_instance(
     +[]() { return &lnav_config.lc_logfile; });
 
+static auto p = injector::bind<lnav::piper::config>::to_instance(
+    +[]() { return &lnav_config.lc_piper; });
+
 static auto tc = injector::bind<tailer::config>::to_instance(
     +[]() { return &lnav_config.lc_tailer; });
 
@@ -1057,6 +1060,19 @@ static const struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
+static const struct json_path_container piper_handlers = {
+    yajlpp::property_handler("max-size")
+        .with_synopsis("<bytes>")
+        .with_description("The maximum size of a capture file")
+        .with_min_value(128)
+        .for_field(&_lnav_config::lc_piper, &lnav::piper::config::c_max_size),
+    yajlpp::property_handler("rotations")
+        .with_synopsis("<count>")
+        .with_min_value(2)
+        .with_description("The number of rotated files to keep")
+        .for_field(&_lnav_config::lc_piper, &lnav::piper::config::c_rotations),
+};
+
 static const struct json_path_container file_vtab_handlers = {
     yajlpp::property_handler("max-content-size")
         .with_synopsis("<bytes>")
@@ -1245,6 +1261,9 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
         .with_children(archive_handlers),
+    yajlpp::property_handler("piper")
+        .with_description("Settings related to capturing piped data")
+        .with_children(piper_handlers),
     yajlpp::property_handler("file-vtab")
         .with_description("Settings related to the lnav_file virtual-table")
         .with_children(file_vtab_handlers),

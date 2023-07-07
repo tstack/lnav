@@ -37,20 +37,21 @@
 #    include <paths.h>
 
 #    include "base/fs_util.hh"
+#    include "base/paths.hh"
 #    include "curl_looper.hh"
 
 class url_loader : public curl_request {
 public:
     url_loader(const std::string& url) : curl_request(url)
     {
-        auto tmp_res = lnav::filesystem::open_temp_file(
-            ghc::filesystem::temp_directory_path() / "lnav.url.XXXXXX");
+        auto tmp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
+                                                        / "url.XXXXXX");
         if (tmp_res.isErr()) {
             return;
         }
 
         auto tmp_pair = tmp_res.unwrap();
-        ghc::filesystem::remove(tmp_pair.first);
+        this->ul_path = tmp_pair.first;
         this->ul_fd = std::move(tmp_pair.second);
 
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->cr_name.c_str());
@@ -60,9 +61,7 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_BUFFERSIZE, 128L * 1024L);
     }
 
-    int get_fd() const { return this->ul_fd.get(); }
-
-    auto_fd copy_fd() const { return this->ul_fd.dup(); }
+    ghc::filesystem::path get_path() const { return this->ul_path; }
 
     long complete(CURLcode result)
     {
@@ -93,7 +92,8 @@ public:
 
             time(&current_time);
             if (file_time == -1
-                || (current_time - file_time) < FOLLOW_IF_MODIFIED_SINCE) {
+                || (current_time - file_time) < FOLLOW_IF_MODIFIED_SINCE)
+            {
                 char range[64];
                 struct stat st;
                 off_t start;
@@ -142,6 +142,7 @@ private:
         return retval;
     }
 
+    ghc::filesystem::path ul_path;
     auto_fd ul_fd;
     off_t ul_resume_offset{0};
 };

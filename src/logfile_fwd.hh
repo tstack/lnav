@@ -37,6 +37,7 @@
 
 #include "base/auto_fd.hh"
 #include "file_format.hh"
+#include "piper.looper.hh"
 
 using ui_clock = std::chrono::steady_clock;
 
@@ -65,6 +66,7 @@ struct logfile_open_options_base {
     ssize_t loo_visible_size_limit{-1};
     bool loo_tail{true};
     file_format_t loo_file_format{file_format_t::UNKNOWN};
+    nonstd::optional<lnav::piper::running_handle> loo_piper;
 };
 
 struct logfile_open_options : public logfile_open_options_base {
@@ -78,14 +80,6 @@ struct logfile_open_options : public logfile_open_options_base {
     logfile_open_options& with_filename(const std::string& val)
     {
         this->loo_filename = val;
-
-        return *this;
-    }
-
-    logfile_open_options& with_fd(auto_fd fd)
-    {
-        this->loo_fd = std::move(fd);
-        this->loo_temp_file = true;
 
         return *this;
     }
@@ -131,7 +125,7 @@ struct logfile_open_options : public logfile_open_options_base {
         this->loo_non_utf_is_visible = val;
 
         return *this;
-    };
+    }
 
     logfile_open_options& with_visible_size_limit(ssize_t val)
     {
@@ -154,7 +148,13 @@ struct logfile_open_options : public logfile_open_options_base {
         return *this;
     }
 
-    auto_fd loo_fd;
+    logfile_open_options& with_piper(lnav::piper::running_handle handle)
+    {
+        this->loo_piper = handle;
+        this->loo_filename = handle.get_name();
+
+        return *this;
+    }
 };
 
 #endif

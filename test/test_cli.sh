@@ -5,7 +5,7 @@ export YES_COLOR=1
 
 run_cap_test ${lnav_test} -n -c 'foo'
 
-run_cap_test ${lnav_test} -d /tmp/lnav.err -t -n <<EOF
+run_cap_test ${lnav_test} -d /tmp/lnav.err -n <<EOF
 Hello, World!
 Goodbye, World!
 EOF
@@ -29,3 +29,12 @@ printf "a\ba _\ba a\b_" | run_cap_test env TEST_COMMENT="overstrike bold" \
 grep abcd textfile_long_lines.0 | run_cap_test \
     ${lnav_test} -n -d /tmp/lnav.err \
     -c ';SELECT filepath, lines FROM lnav_file'
+
+export HOME="./piper-config"
+rm -rf ./piper-config
+mkdir -p $HOME/.config
+
+${lnav_test} -Nn -c ':config /tuning/piper/max-size 128'
+
+cat ${test_dir}/logfile_haproxy.0 | run_cap_test \
+    env TEST_COMMENT="stdin rotation" ${lnav_test} -n

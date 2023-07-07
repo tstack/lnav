@@ -203,18 +203,20 @@ CREATE TABLE lnav_file (
                 = this->lf_collection.fc_file_names.find(lf->get_filename());
 
             if (iter != this->lf_collection.fc_file_names.end()) {
-                auto loo = std::move(iter->second);
+                auto loo = iter->second;
 
                 this->lf_collection.fc_file_names.erase(iter);
 
                 loo.loo_include_in_session = true;
-                this->lf_collection.fc_file_names[path] = std::move(loo);
-                lf->set_filename(path);
-                this->lf_collection.regenerate_unique_file_names();
-
-                init_session();
-                load_session();
+                this->lf_collection.fc_file_names[path] = loo;
             }
+
+            lf->set_filename(path);
+            lf->set_include_in_session(true);
+            this->lf_collection.regenerate_unique_file_names();
+
+            init_session();
+            load_session();
         }
 
         return SQLITE_OK;
