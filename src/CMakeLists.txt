@@ -412,7 +412,7 @@ add_library(
         statusview_curses.cc
         string-extension-functions.cc
         sysclip.cc
-        piper_proc.cc
+        piper.looper.cc
         spectro_impls.cc
         spectro_source.cc
         sql_commands.cc
@@ -503,6 +503,8 @@ add_library(
         md4cpp.hh
         optional.hpp
         pcap_manager.hh
+        piper.looper.hh
+        piper.looper.cfg.hh
         plain_text_source.hh
         pretty_printer.hh
         preview_status_source.hh

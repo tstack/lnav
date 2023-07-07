@@ -259,7 +259,8 @@ noinst_HEADERS = \
 	md4cpp.hh \
 	optional.hpp \
 	pcap_manager.hh \
-	piper_proc.hh \
+	piper.looper.hh \
+	piper.looper.cfg.hh \
 	plain_text_source.hh \
 	pollable.hh \
 	pretty_printer.hh \
@@ -428,6 +429,7 @@ libdiag_a_SOURCES = \
 	network-extension-functions.cc \
 	data_parser.cc \
 	pcap_manager.cc \
+	piper.looper.cc \
 	plain_text_source.cc \
 	pollable.cc \
 	pretty_printer.cc \
@@ -456,7 +458,6 @@ libdiag_a_SOURCES = \
 	text_format.cc \
 	textfile_sub_source.cc \
 	timer.cc \
-	piper_proc.cc \
 	sql_commands.cc \
 	sql_util.cc \
 	state-extension-functions.cc \

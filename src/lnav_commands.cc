@@ -2528,8 +2528,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (!ec.ec_dry_run) {
                     auto ul = std::make_shared<url_loader>(fn);
 
-                    lnav_data.ld_active_files.fc_file_names[fn].with_fd(
-                        ul->copy_fd());
+                    lnav_data.ld_active_files.fc_file_names[ul->get_path()]
+                        .with_filename(fn);
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
                     lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
@@ -2571,25 +2571,20 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 } else if (ec.ec_dry_run) {
                     retval = "";
                 } else {
-                    auto fifo_piper = std::make_shared<piper_proc>(
-                        std::move(fifo_fd),
-                        false,
-                        lnav::filesystem::open_temp_file(
-                            ghc::filesystem::temp_directory_path()
-                            / "lnav.fifo.XXXXXX")
-                            .map([](auto pair) {
-                                ghc::filesystem::remove(pair.first);
-
-                                return pair;
-                            })
-                            .expect("Cannot create temporary file for FIFO")
-                            .second);
-                    auto fifo_out_fd = fifo_piper->get_fd();
                     auto desc = fmt::format(FMT_STRING("FIFO [{}]"),
                                             lnav_data.ld_fifo_counter++);
-                    lnav_data.ld_active_files.fc_file_names[desc].with_fd(
-                        std::move(fifo_out_fd));
-                    lnav_data.ld_pipers.push_back(fifo_piper);
+                    auto create_piper_res = lnav::piper::create_looper(
+                        desc, std::move(fifo_fd), auto_fd{});
+                    if (create_piper_res.isErr()) {
+                        auto um = lnav::console::user_message::error(
+                                      attr_line_t("cannot create piper: ")
+                                          .append(lnav::roles::file(fn)))
+                                      .with_reason(create_piper_res.unwrapErr())
+                                      .with_snippets(ec.ec_source);
+                        return Err(um);
+                    }
+                    lnav_data.ld_active_files.fc_file_names[desc].with_piper(
+                        create_piper_res.unwrap());
                 }
             } else if ((abspath = realpath(fn.c_str(), nullptr)) == nullptr) {
                 auto um = lnav::console::user_message::error(
@@ -4079,6 +4074,127 @@ com_rebuild(exec_context& ec,
     } else if (!ec.ec_dry_run) {
         rescan_files(true);
         rebuild_indexes_repeatedly();
+    }
+
+    return Ok(std::string());
+}
+
+static Result<std::string, lnav::console::user_message>
+com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        args.emplace_back("dirname");
+        return Ok(std::string());
+    }
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
+    }
+
+    std::vector<std::string> word_exp;
+    std::string pat;
+
+    pat = trim(remaining_args(cmdline, args));
+
+    std::vector<std::string> split_args;
+    shlex lexer(pat);
+    scoped_resolver scopes = {
+        &ec.ec_local_vars.top(),
+        &ec.ec_global_vars,
+    };
+
+    if (!lexer.split(split_args, scopes)) {
+        return ec.make_error("unable to parse arguments");
+    }
+
+    if (split_args.size() != 1) {
+        return ec.make_error("expecting a single argument");
+    }
+
+    struct stat st;
+
+    if (stat(split_args[0].c_str(), &st) != 0) {
+        return Err(ec.make_error_msg("cannot access -- {}", split_args[0])
+                       .with_errno_reason());
+    }
+
+    if (!S_ISDIR(st.st_mode)) {
+        return ec.make_error("{} is not a directory", split_args[0]);
+    }
+
+    if (!ec.ec_dry_run) {
+        chdir(split_args[0].c_str());
+    }
+
+    return Ok(std::string());
+}
+
+static Result<std::string, lnav::console::user_message>
+com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        return Ok(std::string());
+    }
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
+    }
+
+    if (!ec.ec_dry_run) {
+        auto carg = trim(cmdline.substr(args[0].size()));
+
+        log_info("executing: %s", carg.c_str());
+
+        auto out_pipe_res = auto_pipe::for_child_fd(STDOUT_FILENO);
+        auto err_pipe_res = auto_pipe::for_child_fd(STDERR_FILENO);
+        auto child_res = lnav::pid::from_fork();
+        if (child_res.isErr()) {
+            auto um
+                = lnav::console::user_message::error("unable to fork() child")
+                      .with_reason(child_res.unwrapErr());
+            ec.add_error_context(um);
+            return Err(um);
+        }
+
+        auto out_pipe = out_pipe_res.unwrap();
+        auto err_pipe = err_pipe_res.unwrap();
+
+        auto child = child_res.unwrap();
+        out_pipe.after_fork(child.in());
+        err_pipe.after_fork(child.in());
+        if (child.in_child()) {
+            auto dev_null = open("/dev/null", O_RDONLY);
+
+            dup2(dev_null, STDIN_FILENO);
+            const char* exec_args[] = {
+                getenv_opt("SHELL").value_or("bash"),
+                "-c",
+                carg.c_str(),
+                nullptr,
+            };
+
+            execvp(exec_args[0], (char**) exec_args);
+            _exit(EXIT_FAILURE);
+        }
+
+        auto create_piper_res
+            = lnav::piper::create_looper(carg,
+                                         std::move(out_pipe.read_end()),
+                                         std::move(err_pipe.read_end()));
+
+        if (create_piper_res.isErr()) {
+            auto um
+                = lnav::console::user_message::error("unable to create piper")
+                      .with_reason(child_res.unwrapErr());
+            ec.add_error_context(um);
+            return Err(um);
+        }
+
+        lnav_data.ld_active_files.fc_file_names[carg].with_piper(
+            create_piper_res.unwrap());
+        lnav_data.ld_child_pollers.emplace_back(
+            child_poller{std::move(child), [](auto& fc, auto& child) {}});
+        lnav_data.ld_files_to_front.emplace_back(carg, file_location_t{});
     }
 
     return Ok(std::string());
@@ -5691,6 +5807,29 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_tags({"scripting"})
          .with_examples({{"To substitute the table name from a variable",
                           ";SELECT * FROM ${table}"}})},
+
+    {
+        "sh",
+        com_sh,
+
+        help_text(":sh")
+            .with_summary("Execute the given command-line and display the "
+                          "captured output")
+            .with_parameter(
+                help_text("cmdline", "The command-line to execute."))
+            .with_tags({"scripting"}),
+    },
+
+    {
+        "cd",
+        com_cd,
+
+        help_text(":cd")
+            .with_summary("Change the current directory")
+            .with_parameter(help_text("dir", "The new current directory"))
+            .with_tags({"scripting"}),
+    },
+
     {"config",
      com_config,
 

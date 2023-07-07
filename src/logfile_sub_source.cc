@@ -324,33 +324,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         value_out.insert(0, 1, ' ');
     }
 
-    if (this->lss_flags & F_TIME_OFFSET) {
-        auto curr_tv = this->lss_token_line->get_timeval();
-        struct timeval diff_tv;
+    if (this->tas_display_time_offset) {
         auto row_vl = vis_line_t(row);
-
-        auto prev_umark
-            = tc.get_bookmarks()[&textview_curses::BM_USER].prev(row_vl);
-        auto next_umark
-            = tc.get_bookmarks()[&textview_curses::BM_USER].next(row_vl);
-        auto prev_emark
-            = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].prev(row_vl);
-        auto next_emark
-            = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].next(row_vl);
-        if (!prev_umark && !prev_emark && (next_umark || next_emark)) {
-            auto next_line = this->find_line(this->at(
-                std::max(next_umark.value_or(0), next_emark.value_or(0))));
-
-            diff_tv = curr_tv - next_line->get_timeval();
-        } else {
-            auto prev_row
-                = std::max(prev_umark.value_or(0), prev_emark.value_or(0));
-            auto first_line = this->find_line(this->at(prev_row));
-            auto start_tv = first_line->get_timeval();
-            diff_tv = curr_tv - start_tv;
-        }
-
-        auto relstr = humanize::time::duration::from_tv(diff_tv).to_string();
+        auto relstr = this->get_time_offset_for_line(tc, row_vl);
         value_out = fmt::format(FMT_STRING("{: >12}|{}"), relstr, value_out);
     }
     this->lss_in_value_for_line = false;
@@ -492,7 +468,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                    this->lss_token_file->get_filename())));
     }
 
-    if (this->lss_flags & F_TIME_OFFSET) {
+    if (this->tas_display_time_offset) {
         time_offset_end = 13;
         lr.lr_start = 0;
         lr.lr_end = time_offset_end;
@@ -1115,29 +1091,6 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 
         last_file = lf;
     }
-}
-
-log_accel::direction_t
-logfile_sub_source::get_line_accel_direction(vis_line_t vl)
-{
-    log_accel la;
-
-    while (vl >= 0) {
-        logline* curr_line = this->find_line(this->at(vl));
-
-        if (!curr_line->is_message()) {
-            --vl;
-            continue;
-        }
-
-        if (!la.add_point(curr_line->get_time_in_millis())) {
-            break;
-        }
-
-        --vl;
-    }
-
-    return la.get_direction();
 }
 
 void

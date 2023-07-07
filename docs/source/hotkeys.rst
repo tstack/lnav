@@ -223,7 +223,9 @@ Display
    * - :kbd:`Shift` + :kbd:`p`
      - Switch to/from the pretty-printed view of the displayed log or text files
    * - :kbd:`Shift` + :kbd:`t`
-     - Display elapsed time between lines
+     - Display the elapsed time from a bookmark to a given line.  In the TEXT view,
+       this only works for content that was captured from stdin or a :code:`:sh`
+       command.
    * - :kbd:`t`
      - Switch to/from the text file view
    * - :kbd:`i`

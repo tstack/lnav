@@ -62,7 +62,6 @@
 #include "log_format_loader.hh"
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
-#include "piper_proc.hh"
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
 #include "readline_curses.hh"
@@ -243,7 +242,6 @@ struct lnav_data_t {
     std::unordered_map<std::string, std::string> ld_table_ddl;
 
     std::list<pid_t> ld_children;
-    std::list<std::shared_ptr<piper_proc>> ld_pipers;
 
     input_state_tracker ld_input_state;
     input_dispatcher ld_input_dispatcher;

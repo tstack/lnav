@@ -75,10 +75,18 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
             if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
                 value_out.clear();
             } else {
-                auto read_result = lf->read_line(
-                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+                auto read_result = lf->read_line(ll);
                 if (read_result.isOk()) {
                     value_out = to_string(read_result.unwrap());
+                    if (lf->has_line_metadata()
+                        && this->tas_display_time_offset)
+                    {
+                        auto relstr = this->get_time_offset_for_line(
+                            tc, vis_line_t(line));
+                        value_out = fmt::format(
+                            FMT_STRING("{: >12}|{}"), relstr, value_out);
+                    }
                 }
             }
         } else {
@@ -100,16 +108,53 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
         return;
     }
 
-    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
-    if (rend_iter != this->tss_rendered_files.end()) {
-        rend_iter->second.rf_text_source->text_attrs_for_line(
-            tc, row, value_out);
-    }
-
     struct line_range lr;
 
     lr.lr_start = 0;
     lr.lr_end = -1;
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        rend_iter->second.rf_text_source->text_attrs_for_line(
+            tc, row, value_out);
+    } else {
+        auto* lfo
+            = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+        if (row >= 0 && row < lfo->lfo_filter_state.tfs_index.size()) {
+            auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[row];
+
+            value_out.emplace_back(lr, SA_LEVEL.value(ll->get_msg_level()));
+            if (lf->has_line_metadata() && this->tas_display_time_offset) {
+                auto time_offset_end = 13;
+                lr.lr_start = 0;
+                lr.lr_end = time_offset_end;
+
+                shift_string_attrs(value_out, 0, time_offset_end);
+
+                value_out.emplace_back(lr,
+                                       VC_ROLE.value(role_t::VCR_OFFSET_TIME));
+                value_out.emplace_back(line_range(12, 13),
+                                       VC_GRAPHIC.value(ACS_VLINE));
+
+                role_t bar_role = role_t::VCR_NONE;
+
+                switch (this->get_line_accel_direction(vis_line_t(row))) {
+                    case log_accel::A_STEADY:
+                        break;
+                    case log_accel::A_DECEL:
+                        bar_role = role_t::VCR_DIFF_DELETE;
+                        break;
+                    case log_accel::A_ACCEL:
+                        bar_role = role_t::VCR_DIFF_ADD;
+                        break;
+                }
+                if (bar_role != role_t::VCR_NONE) {
+                    value_out.emplace_back(line_range(12, 13),
+                                           VC_ROLE.value(bar_role));
+                }
+            }
+        }
+    }
+
     value_out.emplace_back(lr, logline::L_FILE.value(this->current_file()));
 }
 
@@ -157,6 +202,7 @@ textfile_sub_source::to_front(const std::shared_ptr<logfile>& lf)
         }
     }
     this->tss_files.push_front(lf);
+    this->set_time_offset(false);
     this->tss_view->reload_data();
 }
 
@@ -166,6 +212,7 @@ textfile_sub_source::rotate_left()
     if (this->tss_files.size() > 1) {
         this->tss_files.push_back(this->tss_files.front());
         this->tss_files.pop_front();
+        this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
     }
@@ -177,6 +224,7 @@ textfile_sub_source::rotate_right()
     if (this->tss_files.size() > 1) {
         this->tss_files.push_front(this->tss_files.back());
         this->tss_files.pop_back();
+        this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
     }
@@ -197,6 +245,7 @@ textfile_sub_source::remove(const std::shared_ptr<logfile>& lf)
             detach_observer(lf);
         }
     }
+    this->set_time_offset(false);
 }
 
 void
@@ -872,4 +921,12 @@ textfile_sub_source::to_front(const std::string& filename)
     this->to_front(*(lf_opt.value()));
 
     return true;
+}
+
+logline*
+textfile_sub_source::text_accel_get_line(vis_line_t vl)
+{
+    auto lf = this->current_file();
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    return (lf->begin() + lfo->lfo_filter_state.tfs_index[vl]).base();
 }

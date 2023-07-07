@@ -1,3 +1,39 @@
+## lnav v0.12.0
+
+Features:
+* Added the `:sh` command and `-e` option to execute a shell
+  command-line and display its output within **lnav**.   The
+  captured output will be displayed in the TEXT view.  The
+  lines from stdout and stderr are recorded separately so
+  that the lines from stderr can be shown in the theme's
+  "error" highlight.  The time that the lines were received
+  are also recorded internally so that the "time-offset"
+  display (enabled by pressing `Shift` + `T`) can be shown
+  and the "jump to slow-down" hotkeys (`s`/`Shift` + `S`)
+  work.  Since the line-by-line timestamps are recorded
+  internally, they will not interfere with timestamps that
+  are in the commands output.
+* Added a `:cd` command to change **lnav**'s current directory.
+
+Bug Fixes:
+* When piping data into **lnav**'s stdin, the input used to
+  only be written to a single file without any rotation.
+  Now, the input is written to a directory of rotating files.
+  The same is true for the command-lines executed through the
+  new `:sh` command.
+* Binary data piped into stdin should now be treated the same
+  as if it was in a file that was passed on the command-line.
+
+Breaking changes:
+* Removed the `-w` command-line option.  This option was
+  useful when stdin was not automatically preserved.  Since
+  the data is now stored (and cleaned up) as well as being
+  spread across multiple files, this option doesn't make
+  sense anymore.
+* Removed the `-t` command-line flag.  Text data fed in
+  on stdin and captured from a `:sh` execution is
+  automatically timestamped.
+
 ## lnav v0.11.2
 
 Features:
@@ -12,7 +48,7 @@ Features:
   field should automatically be determined by the observed
   values.
 * Added bunyan log format from Tobias Gruetzmacher.
-* Added cloudlare log format from @minusf.
+* Added cloudflare log format from @minusf.
 * Number fields used in a JSON log format `line-format`
   array now default to being right-aligned.  Also, added
   `prefix` and `suffix` to `line-format` elements so a

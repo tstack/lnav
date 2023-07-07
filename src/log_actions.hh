@@ -30,11 +30,12 @@
 #ifndef log_actions_hh
 #define log_actions_hh
 
-#include <functional>
-#include <utility>
+#if 0
+#    include <functional>
+#    include <utility>
 
-#include "log_data_helper.hh"
-#include "logfile_sub_source.hh"
+#    include "log_data_helper.hh"
+#    include "logfile_sub_source.hh"
 
 class piper_proc;
 
@@ -63,5 +64,6 @@ private:
     int ad_press_value{-1};
     size_t ad_line_index{0};
 };
+#endif
 
 #endif

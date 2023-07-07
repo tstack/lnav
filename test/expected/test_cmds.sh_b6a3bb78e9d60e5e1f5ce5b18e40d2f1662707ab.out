@@ -702,7 +702,7 @@ For support questions, email:
 [4mParameter[0m
   [4mmsg[0m   The message to display
 [4mSee Also[0m
-  [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -725,6 +725,16 @@ For support questions, email:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
    
 
+
+[4m:[0m[1m[4mcd[0m[4m [0m[4mdir[0m
+══════════════════════════════════════════════════════════════════════
+  Change the current directory
+[4mParameter[0m
+  [4mdir[0m   The new current directory
+[4mSee Also[0m
+  [1m:alt-msg[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1m[4mclear-comment[0m
 ══════════════════════════════════════════════════════════════════════
@@ -934,12 +944,13 @@ For support questions, email:
   [4m-n[0m    Do not print a line-feed at the end of the output
   [4mmsg[0m   The message to display
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
    [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
@@ -974,7 +985,7 @@ For support questions, email:
 [4mParameter[0m
   [4mcommand[0m   The command or query to perform substitution on.
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -990,9 +1001,9 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
-  [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
@@ -1336,7 +1347,7 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Forcefully rebuild file indexes
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:redirect-to[0m, 
+  [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 
@@ -1348,12 +1359,12 @@ For support questions, email:
   [4mpath[0m   The path to the file to write.  If not specified, the
          current redirect will be cleared
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:write-csv-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file /tmp/script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
@@ -1429,6 +1440,17 @@ For support questions, email:
    [37m[40m:[0m[1m[36m[40mset-min-log-level[0m[37m[40m error                          [0m
    
 
+
+[4m:[0m[1m[4msh[0m[4m [0m[4mcmdline[0m
+══════════════════════════════════════════════════════════════════════
+  Execute the given command-line and display the captured output
+[4mParameter[0m
+  [4mcmdline[0m   The command-line to execute.
+[4mSee Also[0m
+  [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m
 
 [4m:[0m[1m[4mshow-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1577,9 +1599,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the table contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
@@ -1599,9 +1621,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the row contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
@@ -1620,9 +1642,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the JSON values
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
@@ -1641,9 +1663,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the JSON values
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
@@ -1666,9 +1688,9 @@ For support questions, email:
   [4m--anonymize[0m       Anonymize the lines
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, 
@@ -1689,9 +1711,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
@@ -1711,9 +1733,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the table contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
@@ -1733,9 +1755,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
@@ -1754,9 +1776,9 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
+  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 

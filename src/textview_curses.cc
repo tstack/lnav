@@ -33,6 +33,7 @@
 #include "textview_curses.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/humanize.time.hh"
 #include "base/injector.hh"
 #include "base/time_util.hh"
 #include "config.h"
@@ -122,6 +123,58 @@ text_filter::end_of_message(logfile_filter_state& lfs)
         = lfs.tfs_lines_for_message[this->lf_index];
     lfs.tfs_message_matched[this->lf_index] = false;
     lfs.tfs_lines_for_message[this->lf_index] = 0;
+}
+
+log_accel::direction_t
+text_accel_source::get_line_accel_direction(vis_line_t vl)
+{
+    log_accel la;
+
+    while (vl >= 0) {
+        const auto* curr_line = this->text_accel_get_line(vl);
+
+        if (!curr_line->is_message()) {
+            --vl;
+            continue;
+        }
+
+        if (!la.add_point(curr_line->get_time_in_millis())) {
+            break;
+        }
+
+        --vl;
+    }
+
+    return la.get_direction();
+}
+
+std::string
+text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
+{
+    auto ll = this->text_accel_get_line(vl);
+    auto curr_tv = ll->get_timeval();
+    struct timeval diff_tv;
+
+    auto prev_umark = tc.get_bookmarks()[&textview_curses::BM_USER].prev(vl);
+    auto next_umark = tc.get_bookmarks()[&textview_curses::BM_USER].next(vl);
+    auto prev_emark
+        = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].prev(vl);
+    auto next_emark
+        = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].next(vl);
+    if (!prev_umark && !prev_emark && (next_umark || next_emark)) {
+        auto next_line = this->text_accel_get_line(
+            std::max(next_umark.value_or(0), next_emark.value_or(0)));
+
+        diff_tv = curr_tv - next_line->get_timeval();
+    } else {
+        auto prev_row
+            = std::max(prev_umark.value_or(0), prev_emark.value_or(0));
+        auto first_line = this->text_accel_get_line(prev_row);
+        auto start_tv = first_line->get_timeval();
+        diff_tv = curr_tv - start_tv;
+    }
+
+    return humanize::time::duration::from_tv(diff_tv).to_string();
 }
 
 const bookmark_type_t textview_curses::BM_USER("user");

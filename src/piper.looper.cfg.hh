@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,62 +25,22 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file piper_proc.hh
  */
 
-#ifndef piper_proc_hh
-#define piper_proc_hh
+#ifndef piper_looper_cfg_hh
+#define piper_looper_cfg_hh
 
-#include <string>
+#include <stdint.h>
 
-#include <sys/types.h>
+namespace lnav {
+namespace piper {
 
-#include "base/auto_fd.hh"
-
-/**
- * Creates a subprocess that reads data from a pipe and writes it to a file so
- * lnav can treat it like any other file and do preads.
- *
- * TODO: Add support for gzipped files.
- */
-class piper_proc {
-public:
-    class error : public std::exception {
-    public:
-        error(int err) : e_err(err) {}
-
-        int e_err;
-    };
-
-    /**
-     * Forks a subprocess that will read data from the given file descriptor
-     * and write it to a temporary file.
-     *
-     * @param pipefd The file descriptor to read the file contents from.
-     * @param timestamp True if an ISO 8601 timestamp should be prepended onto
-     *   the lines read from pipefd.
-     * @param filefd The descriptor for the backing file.
-     */
-    piper_proc(auto_fd pipefd, bool timestamp, auto_fd filefd);
-
-    bool has_exited();
-
-    /**
-     * Terminates the child process.
-     */
-    virtual ~piper_proc();
-
-    /** @return The file descriptor for the temporary file. */
-    auto_fd get_fd() { return this->pp_fd.dup(); }
-
-    pid_t get_child_pid() const { return this->pp_child; }
-
-private:
-    /** A file descriptor that refers to the temporary file. */
-    auto_fd pp_fd;
-
-    /** The child process' pid. */
-    pid_t pp_child;
+struct config {
+    uint64_t c_max_size{10ULL * 1024ULL * 1024ULL};
+    uint32_t c_rotations{4};
 };
+
+}  // namespace piper
+}  // namespace lnav
+
 #endif

@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include "base/fs_util.hh"
+#include "base/paths.hh"
 #include "config.h"
 #include "line_buffer.hh"
 
@@ -48,9 +49,9 @@ convert(const std::string& filename)
 {
     log_info("attempting to convert pcap file -- %s", filename.c_str());
 
-    auto outfile = TRY(lnav::filesystem::open_temp_file(
-        ghc::filesystem::temp_directory_path() / "lnav.pcap.XXXXXX"));
-    ghc::filesystem::remove(outfile.first);
+    ghc::filesystem::create_directories(lnav::paths::workdir());
+    auto outfile = TRY(lnav::filesystem::open_temp_file(lnav::paths::workdir()
+                                                        / "pcap.XXXXXX"));
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child = TRY(lnav::pid::from_fork());
 
@@ -59,7 +60,8 @@ convert(const std::string& filename)
         auto dev_null = open("/dev/null", O_RDONLY);
 
         dup2(dev_null, STDIN_FILENO);
-        dup2(outfile.second.release(), STDOUT_FILENO);
+        dup2(outfile.second.get(), STDOUT_FILENO);
+        outfile.second.reset();
         setenv("TZ", "UTC", 1);
 
         const char* args[] = {
@@ -131,7 +133,7 @@ convert(const std::string& filename)
 
     return Ok(convert_result{
         std::move(child),
-        std::move(outfile.second),
+        outfile.first,
         error_queue,
     });
 }

@@ -27,8 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
+#include "base/paths.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "field_overlay_source.hh"
@@ -736,23 +738,26 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         }
 
         case ln_mode_t::EXEC: {
-            auto_mem<FILE> tmpout(fclose);
+            auto open_temp_res = lnav::filesystem::open_temp_file(
+                lnav::paths::workdir() / "exec.XXXXXX");
 
-            tmpout = std::tmpfile();
-
-            if (!tmpout) {
+            if (open_temp_res.isErr()) {
                 rc->set_value(fmt::format(
                     FMT_STRING("Unable to open temporary output file: {}"),
-                    strerror(errno)));
+                    open_temp_res.unwrapErr()));
             } else {
-                auto fd_copy = auto_fd::dup_of(fileno(tmpout));
                 char desc[256], timestamp[32];
                 time_t current_time = time(nullptr);
                 const auto path_and_args = rc->get_value();
+                auto tmp_pair = open_temp_res.unwrap();
+                auto fd_copy = tmp_pair.second.dup();
 
                 {
                     exec_context::output_guard og(
-                        ec, "tmp", std::make_pair(tmpout.release(), fclose));
+                        ec,
+                        "tmp",
+                        std::make_pair(fdopen(tmp_pair.second.release(), "w"),
+                                       fclose));
 
                     auto exec_res
                         = execute_file(ec, path_and_args.get_string());
@@ -782,8 +787,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                              "Output of %s (%s)",
                              path_and_args.get_string().c_str(),
                              timestamp);
-                    lnav_data.ld_active_files.fc_file_names[desc]
-                        .with_fd(std::move(fd_copy))
+                    lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
+                        .with_filename(desc)
                         .with_include_in_session(false)
                         .with_detect_format(false);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);

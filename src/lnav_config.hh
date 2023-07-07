@@ -49,6 +49,7 @@
 #include "log_level.hh"
 #include "logfile.cfg.hh"
 #include "logfile_sub_source.cfg.hh"
+#include "piper.looper.cfg.hh"
 #include "styling.hh"
 #include "sysclip.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
@@ -109,6 +110,7 @@ struct _lnav_config {
     key_map lc_active_keymap;
 
     archive_manager::config lc_archive_manager;
+    lnav::piper::config lc_piper;
     file_vtab::config lc_file_vtab;
     lnav::logfile::config lc_logfile;
     tailer::config lc_tailer;

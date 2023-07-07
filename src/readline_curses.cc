@@ -421,6 +421,30 @@ readline_context::attempted_completion(const char* text, int start, int end)
 
                 if (proto.empty()) {
                     arg_possibilities = nullptr;
+                } else if (proto[0] == "dirname") {
+                    shlex fn_lexer(rl_line_buffer, rl_point);
+                    std::vector<std::string> fn_list;
+
+                    fn_lexer.split(fn_list, scope);
+
+                    const auto& last_fn = fn_list.size() <= 1 ? ""
+                                                              : fn_list.back();
+
+                    static std::set<std::string> dir_name_set;
+
+                    dir_name_set.clear();
+                    auto_mem<char> completed_fn;
+                    int fn_state = 0;
+
+                    while ((completed_fn = rl_filename_completion_function(
+                                last_fn.c_str(), fn_state))
+                           != nullptr)
+                    {
+                        dir_name_set.insert(completed_fn.in());
+                        fn_state += 1;
+                    }
+                    arg_possibilities = &dir_name_set;
+                    arg_needs_shlex = true;
                 } else if (proto[0] == "filename") {
                     shlex fn_lexer(rl_line_buffer, rl_point);
                     std::vector<std::string> fn_list;
@@ -862,7 +886,7 @@ readline_curses::start()
                 }
             }
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
-                char msg[1024 + 1];
+                char msg[8 + MAXPATHLEN + 1024];
 
                 if ((rc = recvstring(this->rc_command_pipe[RCF_SLAVE],
                                      msg,
@@ -875,7 +899,13 @@ readline_curses::start()
                     char type[1024];
 
                     msg[rc] = '\0';
-                    if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start) == 1) {
+                    if (startswith(msg, "cd:")) {
+                        const char* cwd = &msg[3];
+
+                        log_perror(chdir(cwd));
+                    } else if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start)
+                               == 1)
+                    {
                         const char* initial = &msg[prompt_start];
 
                         rl_extend_line_buffer(strlen(initial) + 1);
@@ -1247,12 +1277,21 @@ readline_curses::focus(int context,
                        const std::string& prompt,
                        const std::string& initial)
 {
-    char buffer[1024];
+    char cwd[MAXPATHLEN + 1024];
+    char buffer[8 + sizeof(cwd)];
 
     curs_set(1);
 
     this->rc_active_context = context;
 
+    getcwd(cwd, sizeof(cwd));
+    snprintf(buffer, sizeof(buffer), "cd:%s", cwd);
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
+        perror("focus: write failed");
+    }
     snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt.c_str());
     if (sendstring(
             this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)

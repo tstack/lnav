@@ -39,6 +39,26 @@
                     },
                     "additionalProperties": false
                 },
+                "piper": {
+                    "description": "Settings related to capturing piped data",
+                    "title": "/tuning/piper",
+                    "type": "object",
+                    "properties": {
+                        "max-size": {
+                            "title": "/tuning/piper/max-size",
+                            "description": "The maximum size of a capture file",
+                            "type": "integer",
+                            "minimum": 128
+                        },
+                        "rotations": {
+                            "title": "/tuning/piper/rotations",
+                            "description": "The number of rotated files to keep",
+                            "type": "integer",
+                            "minimum": 2
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "file-vtab": {
                     "description": "Settings related to the lnav_file virtual-table",
                     "title": "/tuning/file-vtab",

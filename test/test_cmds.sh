@@ -2,6 +2,25 @@
 
 export YES_COLOR=1
 
+run_cap_test ${lnav_test} -nN \
+    -c ":cd /bad-dir"
+
+run_cap_test ${lnav_test} -nN \
+    -c ":cd ${test_dir}/logfile_access_log.0"
+
+run_cap_test ${lnav_test} -nN \
+    -c ":cd ${test_dir}" \
+    -c ":open logfile_access_log.0"
+
+run_cap_test env SHELL=/bin/bash ${lnav_test} -nN \
+    -e "bad-command"
+
+run_cap_test ${lnav_test} -nN \
+    -e "echo Hello, World!"
+
+run_cap_test ${lnav_test} -nN \
+    -e "echo Hello, World! > /dev/stderr"
+
 run_cap_test ${lnav_test} -n \
     -c ":switch-to-view help" \
     ${test_dir}/logfile_access_log.0

@@ -206,7 +206,6 @@ handle_paging_key(int ch)
 
     textview_curses* tc = *lnav_data.ld_view_stack.top();
     exec_context& ec = lnav_data.ld_exec_context;
-    logfile_sub_source* lss = nullptr;
     text_sub_source* tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type& bm = tc->get_bookmarks();
 
@@ -219,7 +218,8 @@ handle_paging_key(int ch)
         return true;
     }
 
-    lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto text_accel_p = dynamic_cast<text_accel_source*>(tc->get_sub_source());
 
     /* process the command keystroke */
     switch (ch) {
@@ -485,20 +485,28 @@ handle_paging_key(int ch)
 #endif
 
         case 's':
-            if (lss) {
-                auto next_top = tc->get_selection() + 2_vl;
+            if (text_accel_p && text_accel_p->is_time_offset_supported()) {
+                auto next_top = tc->get_selection() + 1_vl;
 
-                if (!lss->is_time_offset_enabled()) {
+                if (!tc->is_selectable()) {
+                    next_top += 1_vl;
+                }
+
+                if (!text_accel_p->is_time_offset_enabled()) {
                     lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_1(T, "to disable elapsed-time mode"));
                 }
-                lss->set_time_offset(true);
+                text_accel_p->set_time_offset(true);
                 while (next_top < tc->get_inner_height()) {
-                    if (!lss->find_line(lss->at(next_top))->is_message()) {
-                    } else if (lss->get_line_accel_direction(next_top)
+                    if (!text_accel_p->text_accel_get_line(next_top)
+                             ->is_message())
+                    {
+                    } else if (text_accel_p->get_line_accel_direction(next_top)
                                == log_accel::A_DECEL)
                     {
-                        --next_top;
+                        if (!tc->is_selectable()) {
+                            --next_top;
+                        }
                         tc->set_selection(next_top);
                         break;
                     }
@@ -509,20 +517,27 @@ handle_paging_key(int ch)
             break;
 
         case 'S':
-            if (lss) {
+            if (text_accel_p && text_accel_p->is_time_offset_supported()) {
                 auto next_top = tc->get_selection();
 
-                if (!lss->is_time_offset_enabled()) {
+                if (tc->is_selectable() && next_top > 0_vl) {
+                    next_top -= 1_vl;
+                }
+                if (!text_accel_p->is_time_offset_enabled()) {
                     lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_1(T, "to disable elapsed-time mode"));
                 }
-                lss->set_time_offset(true);
+                text_accel_p->set_time_offset(true);
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
-                    if (!lss->find_line(lss->at(next_top))->is_message()) {
-                    } else if (lss->get_line_accel_direction(next_top)
+                    if (!text_accel_p->text_accel_get_line(next_top)
+                             ->is_message())
+                    {
+                    } else if (text_accel_p->get_line_accel_direction(next_top)
                                == log_accel::A_DECEL)
                     {
-                        --next_top;
+                        if (!tc->is_selectable()) {
+                            --next_top;
+                        }
                         tc->set_selection(next_top);
                         break;
                     }
@@ -724,12 +739,16 @@ handle_paging_key(int ch)
             break;
 
         case 'T':
-            lnav_data.ld_log_source.toggle_time_offset();
-            if (lss && lss->is_time_offset_enabled()) {
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    s, S, "to move forward/backward through slow downs"));
+            if (text_accel_p != nullptr
+                && text_accel_p->is_time_offset_supported())
+            {
+                text_accel_p->toggle_time_offset();
+                if (text_accel_p->is_time_offset_enabled()) {
+                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+                        s, S, "to move forward/backward through slow downs"));
+                }
+                tc->reload_data();
             }
-            tc->reload_data();
             break;
 
         case 'I': {

@@ -114,7 +114,9 @@ public:
      * descriptor needs to be seekable.
      */
     static Result<std::shared_ptr<logfile>, std::string> open(
-        std::string filename, logfile_open_options& loo);
+        std::string filename,
+        const logfile_open_options& loo,
+        auto_fd fd = auto_fd{});
 
     ~logfile() override;
 
@@ -145,6 +147,11 @@ public:
     size_t get_longest_line_length() const { return this->lf_longest_line; }
 
     bool is_compressed() const { return this->lf_line_buffer.is_compressed(); }
+
+    bool has_line_metadata() const
+    {
+        return this->lf_line_buffer.has_line_metadata();
+    }
 
     bool is_valid_filename() const { return this->lf_valid_filename; }
 
@@ -193,6 +200,11 @@ public:
     const logfile_open_options& get_open_options() const
     {
         return this->lf_options;
+    }
+
+    void set_include_in_session(bool enabled)
+    {
+        this->lf_options.with_include_in_session(enabled);
     }
 
     void reset_state();
@@ -399,7 +411,7 @@ protected:
     void set_format_base_time(log_format* lf);
 
 private:
-    logfile(std::string filename, logfile_open_options& loo);
+    logfile(std::string filename, const logfile_open_options& loo);
 
     std::string lf_filename;
     logfile_open_options lf_options;

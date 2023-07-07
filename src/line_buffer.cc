@@ -59,6 +59,7 @@
 #include "fmtlib/fmt/format.h"
 #include "line_buffer.hh"
 #include "lnav_util.hh"
+#include "scn/scn.h"
 
 using namespace std::chrono_literals;
 
@@ -408,7 +409,12 @@ line_buffer::set_fd(auto_fd& fd)
             char gz_id[2 + 1 + 1 + 4];
 
             if (pread(fd, gz_id, sizeof(gz_id), 0) == sizeof(gz_id)) {
-                if (gz_id[0] == '\037' && gz_id[1] == '\213') {
+                if (gz_id[0] == 'L' && gz_id[1] == 0 && gz_id[2] == 'N'
+                    && gz_id[3] == 1 && gz_id[4] == 0)
+                {
+                    this->lb_line_metadata = true;
+                    this->lb_file_offset = 8;
+                } else if (gz_id[0] == '\037' && gz_id[1] == '\213') {
                     int gzfd = dup(fd);
 
                     log_perror(fcntl(gzfd, F_SETFD, FD_CLOEXEC));
@@ -1022,10 +1028,15 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
 Result<line_info, std::string>
 line_buffer::load_next_line(file_range prev_line)
 {
+    const char* line_start = nullptr;
     bool done = false;
     line_info retval;
 
     require(this->lb_fd != -1);
+
+    if (this->lb_line_metadata && prev_line.fr_offset == 0) {
+        prev_line.fr_offset = 8;
+    }
 
     auto offset = prev_line.next_offset();
     ssize_t request_size = INITIAL_REQUEST_SIZE;
@@ -1044,9 +1055,17 @@ line_buffer::load_next_line(file_range prev_line)
             return Ok(retval);
         }
     }
+    if (prev_line.next_offset() == 0) {
+        auto is_utf_res = is_utf8(string_fragment::from_bytes(
+            this->lb_buffer.begin(), this->lb_buffer.size()));
+        this->lb_is_utf8 = is_utf_res.is_valid();
+        if (!this->lb_is_utf8) {
+            log_warning("input is not utf8 -- %s", is_utf_res.usr_message);
+        }
+    }
     while (!done) {
         auto old_retval_size = retval.li_file_range.fr_size;
-        const char *line_start, *lf = nullptr;
+        const char* lf = nullptr;
 
         /* Find the data in the cache and */
         line_start = this->get_range(offset, retval.li_file_range.fr_size);
@@ -1177,11 +1196,29 @@ line_buffer::load_next_line(file_range prev_line)
         = retval.li_utf8_scan_result.usr_has_ansi;
     retval.li_file_range.fr_metadata.m_valid_utf
         = retval.li_utf8_scan_result.is_valid();
+
+    if (this->lb_line_metadata) {
+        auto sv = scn::string_view{
+            line_start,
+            (size_t) retval.li_file_range.fr_size,
+        };
+
+        char level;
+        auto scan_res = scn::scan(sv,
+                                  "{}.{}:{};",
+                                  retval.li_timestamp.tv_sec,
+                                  retval.li_timestamp.tv_usec,
+                                  level);
+        if (scan_res) {
+            retval.li_level = abbrev2level(&level, 1);
+        }
+    }
+
     return Ok(retval);
 }
 
 Result<shared_buffer_ref, std::string>
-line_buffer::read_range(const file_range fr)
+line_buffer::read_range(file_range fr)
 {
     shared_buffer_ref retval;
     const char* line_start;
@@ -1213,6 +1250,15 @@ line_buffer::read_range(const file_range fr)
     if (fr.fr_size > avail) {
         return Err(fmt::format(
             FMT_STRING("short-read (need: {}; avail: {})"), fr.fr_size, avail));
+    }
+    if (this->lb_line_metadata) {
+        auto new_start
+            = static_cast<const char*>(memchr(line_start, ';', fr.fr_size));
+        if (new_start) {
+            auto offset = new_start - line_start + 1;
+            line_start += offset;
+            fr.fr_size -= offset;
+        }
     }
     retval.share(this->lb_share_manager, line_start, fr.fr_size);
     retval.get_metadata() = fr.fr_metadata;

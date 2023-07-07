@@ -43,6 +43,7 @@
 #include "highlighter.hh"
 #include "listview_curses.hh"
 #include "lnav_config_fwd.hh"
+#include "log_accel.hh"
 #include "logfile_fwd.hh"
 #include "ring_span.hh"
 #include "text_format.hh"
@@ -235,6 +236,43 @@ protected:
     struct timeval ttt_top_time {
         0, 0
     };
+};
+
+class text_accel_source {
+public:
+    virtual ~text_accel_source() = default;
+
+    virtual log_accel::direction_t get_line_accel_direction(vis_line_t vl);
+
+    void toggle_time_offset()
+    {
+        this->tas_display_time_offset = !this->tas_display_time_offset;
+        this->text_accel_display_changed();
+    }
+
+    void set_time_offset(bool enabled)
+    {
+        if (this->tas_display_time_offset != enabled) {
+            this->tas_display_time_offset = enabled;
+            this->text_accel_display_changed();
+        }
+    }
+
+    bool is_time_offset_enabled() const
+    {
+        return this->tas_display_time_offset;
+    }
+
+    virtual bool is_time_offset_supported() const { return true; }
+
+    virtual logline* text_accel_get_line(vis_line_t vl) = 0;
+
+    std::string get_time_offset_for_line(textview_curses& tc, vis_line_t vl);
+
+protected:
+    virtual void text_accel_display_changed() {}
+
+    bool tas_display_time_offset{false};
 };
 
 class text_anchors {

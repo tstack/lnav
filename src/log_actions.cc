@@ -27,13 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "log_actions.hh"
+#if 0
+#    include "log_actions.hh"
 
-#include "base/fs_util.hh"
-#include "base/injector.hh"
-#include "bound_tags.hh"
-#include "config.h"
-#include "piper_proc.hh"
+#    include "base/fs_util.hh"
+#    include "base/injector.hh"
+#    include "bound_tags.hh"
+#    include "config.h"
+#    include "piper_proc.hh"
 
 std::string
 action_delegate::execute_action(const std::string& action_name)
@@ -235,3 +236,4 @@ action_delegate::text_handle_mouse(textview_curses& tc, mouse_event& me)
 
     return retval;
 }
+#endif

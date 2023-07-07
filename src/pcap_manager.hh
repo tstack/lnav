@@ -38,12 +38,13 @@
 #include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/result.h"
+#include "ghc/filesystem.hpp"
 
 namespace pcap_manager {
 
 struct convert_result {
     auto_pid<process_state::running> cr_child;
-    auto_fd cr_destination;
+    ghc::filesystem::path cr_destination;
     std::shared_ptr<std::vector<std::string>> cr_error_queue;
 };
 

@@ -35,6 +35,7 @@
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
@@ -842,15 +843,19 @@ execute_init_commands(
     if (ec_out && fstat(fd_copy, &st) != -1 && st.st_size > 0) {
         static const auto OUTPUT_NAME = std::string("Initial command output");
 
-        lnav_data.ld_active_files.fc_file_names[OUTPUT_NAME]
-            .with_fd(std::move(fd_copy))
-            .with_include_in_session(false)
-            .with_detect_format(false);
-        lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
+        auto create_piper_res = lnav::piper::create_looper(
+            OUTPUT_NAME, std::move(fd_copy), auto_fd{});
+        if (create_piper_res.isOk()) {
+            lnav_data.ld_active_files.fc_file_names[OUTPUT_NAME]
+                .with_piper(create_piper_res.unwrap())
+                .with_include_in_session(false)
+                .with_detect_format(false);
+            lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
 
-        if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_1(X, "to close the file"));
+            if (lnav_data.ld_rl_view != nullptr) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_1(X, "to close the file"));
+            }
         }
     }
 
@@ -978,24 +983,21 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
             return std::string();
         });
     }
-    auto tmp_fd
-        = lnav::filesystem::open_temp_file(
-              ghc::filesystem::temp_directory_path() / "lnav.out.XXXXXX")
-              .map([](auto pair) {
-                  ghc::filesystem::remove(pair.first);
+    auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
+                                                          / "exec.XXXXXX");
+    if (open_temp_res.isErr()) {
+        return lnav::futures::make_ready_future(
+            fmt::format(FMT_STRING("error: cannot open temp file -- {}"),
+                        open_temp_res.unwrapErr()));
+    }
 
-                  return std::move(pair.second);
-              })
-              .expect("Cannot create temporary file for callback");
-    auto pp
-        = std::make_shared<piper_proc>(std::move(fd), false, std::move(tmp_fd));
+    auto tmp_pair = open_temp_res.unwrap();
+
     static int exec_count = 0;
-
-    lnav_data.ld_pipers.push_back(pp);
     auto desc
         = fmt::format(FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
-    lnav_data.ld_active_files.fc_file_names[desc]
-        .with_fd(pp->get_fd())
+    lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
+        .with_filename(desc)
         .with_include_in_session(false)
         .with_detect_format(false);
     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);

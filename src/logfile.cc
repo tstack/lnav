@@ -68,16 +68,16 @@ static const typed_json_path_container<line_buffer::header_data>
 };
 
 Result<std::shared_ptr<logfile>, std::string>
-logfile::open(std::string filename, logfile_open_options& loo)
+logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
 {
     require(!filename.empty());
 
     auto lf = std::shared_ptr<logfile>(new logfile(std::move(filename), loo));
 
     memset(&lf->lf_stat, 0, sizeof(lf->lf_stat));
-    if (lf->lf_options.loo_fd == -1) {
-        char resolved_path[PATH_MAX];
+    char resolved_path[PATH_MAX] = "";
 
+    if (!fd.has_value()) {
         errno = 0;
         if (realpath(lf->lf_filename.c_str(), resolved_path) == nullptr) {
             return Err(fmt::format(FMT_STRING("realpath({}) failed with: {}"),
@@ -96,29 +96,28 @@ logfile::open(std::string filename, logfile_open_options& loo)
                                    lf->lf_filename,
                                    strerror(errno)));
         }
+    }
 
-        if ((lf->lf_options.loo_fd = ::open(resolved_path, O_RDONLY)) == -1) {
-            return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
-                                   lf->lf_filename,
-                                   strerror(errno)));
-        }
-
-        lf->lf_options.loo_fd.close_on_exec();
-
-        log_info("Creating logfile: fd=%d; size=%" PRId64 "; mtime=%" PRId64
-                 "; filename=%s",
-                 (int) lf->lf_options.loo_fd,
-                 (long long) lf->lf_stat.st_size,
-                 (long long) lf->lf_stat.st_mtime,
-                 lf->lf_filename.c_str());
-
+    auto_fd lf_fd;
+    if (fd.has_value()) {
+        lf_fd = std::move(fd);
+    } else if ((lf_fd = ::open(resolved_path, O_RDONLY)) == -1) {
+        return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
+                               lf->lf_filename,
+                               strerror(errno)));
+    } else {
         lf->lf_actual_path = lf->lf_filename;
         lf->lf_valid_filename = true;
-    } else {
-        log_perror(fstat(lf->lf_options.loo_fd, &lf->lf_stat));
-        lf->lf_named_file = false;
-        lf->lf_valid_filename = false;
     }
+
+    lf_fd.close_on_exec();
+
+    log_info("Creating logfile: fd=%d; size=%" PRId64 "; mtime=%" PRId64
+             "; filename=%s",
+             (int) lf_fd,
+             (long long) lf->lf_stat.st_size,
+             (long long) lf->lf_stat.st_mtime,
+             lf->lf_filename.c_str());
 
     if (!lf->lf_options.loo_filename.empty()) {
         lf->set_filename(lf->lf_options.loo_filename);
@@ -126,7 +125,7 @@ logfile::open(std::string filename, logfile_open_options& loo)
     }
 
     lf->lf_content_id = hasher().update(lf->lf_filename).to_string();
-    lf->lf_line_buffer.set_fd(lf->lf_options.loo_fd);
+    lf->lf_line_buffer.set_fd(lf_fd);
     lf->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     lf->lf_indexing = lf->lf_options.loo_is_visible;
@@ -142,8 +141,8 @@ logfile::open(std::string filename, logfile_open_options& loo)
     return Ok(lf);
 }
 
-logfile::logfile(std::string filename, logfile_open_options& loo)
-    : lf_filename(std::move(filename)), lf_options(std::move(loo))
+logfile::logfile(std::string filename, const logfile_open_options& loo)
+    : lf_filename(std::move(filename)), lf_options(loo)
 {
     this->lf_opids.writeAccess()->reserve(64);
 }
@@ -416,8 +415,15 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         short last_millis = 0;
         uint8_t last_mod = 0, last_opid = 0;
 
-        if (!this->lf_index.empty()) {
-            logline& ll = this->lf_index.back();
+        if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
+            last_time = li.li_timestamp.tv_sec;
+            last_millis
+                = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::microseconds(li.li_timestamp.tv_usec))
+                      .count();
+            last_level = li.li_level;
+        } else if (!this->lf_index.empty()) {
+            const auto& ll = this->lf_index.back();
 
             /*
              * Assume this line is part of the previous one(s) and copy the

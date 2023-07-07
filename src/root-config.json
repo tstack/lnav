@@ -26,6 +26,10 @@
                 "transfer-command": "cat > {0:} && chmod ugo+rx ./{0:}"
             }
         },
+        "piper": {
+            "max-size": 10485760,
+            "rotations": 4
+        },
         "clipboard": {
             "impls": {
                 "MacOS": {
