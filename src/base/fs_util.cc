@@ -73,7 +73,7 @@ open_temp_file(const ghc::filesystem::path& pattern)
     int fd;
 
     strcpy(pattern_copy, pattern_str.c_str());
-    if ((fd = mkstemp(pattern_copy)) == -1) {
+    if ((fd = mkostemp(pattern_copy, O_CLOEXEC)) == -1) {
         return Err(
             fmt::format(FMT_STRING("unable to create temporary file: {} -- {}"),
                         pattern.string(),

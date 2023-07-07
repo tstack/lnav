@@ -1220,6 +1220,8 @@ looper()
         auto_fd errpipe[2];
         auto_fd::pipe(errpipe);
 
+        errpipe[0].close_on_exec();
+        errpipe[1].close_on_exec();
         dup2(errpipe[1], STDERR_FILENO);
         errpipe[1].reset();
         log_pipe_err(errpipe[0]);
@@ -1458,13 +1460,13 @@ looper()
                 // pre-filled with a suggestion that the user can complete.
                 // This quick-fix key could be used for other stuff as well
                 lnav_data.ld_rl_view->set_value(fmt::format(
-                    ANSI_CSI ANSI_COLOR_PARAM(
+                    FMT_STRING(ANSI_CSI ANSI_COLOR_PARAM(
                         COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
                                       "Unrecognized key" ANSI_NORM
                                       ", bind to a command using "
                                       "\u2014 " ANSI_BOLD(
                                           ":config") " /ui/keymap-defs/{}/{}/"
-                                                     "command <cmd>",
+                                                     "command <cmd>"),
                     encoded_name,
                     keyseq));
                 alerter::singleton().chime("unrecognized key");
@@ -2397,13 +2399,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     } catch (const CLI::CallForHelp& e) {
         if (is_mmode) {
-            fmt::print("{}\n", app.help());
+            fmt::print(FMT_STRING("{}\n"), app.help());
         } else {
             usage();
         }
         return EXIT_SUCCESS;
     } catch (const CLI::CallForVersion& e) {
-        fmt::print("{}\n", VCS_PACKAGE_STRING);
+        fmt::print(FMT_STRING("{}\n"), VCS_PACKAGE_STRING);
         return EXIT_SUCCESS;
     } catch (const CLI::ParseError& e) {
         if (!arg_errors.empty()) {
@@ -2430,7 +2432,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     lnav_log_file = make_optional_from_nullable(
-        fopen(lnav_data.ld_debug_log_name.c_str(), "a"));
+        fopen(lnav_data.ld_debug_log_name.c_str(), "ae"));
+    lnav_log_file |
+        [](auto* file) { fcntl(fileno(file), F_SETFD, FD_CLOEXEC); };
     log_info("lnav started");
 
     {

@@ -1031,9 +1031,9 @@ com_save_to(exec_context& ec,
     }
 
     if (args[0] == "append-to") {
-        mode = "a";
+        mode = "ae";
     } else {
-        mode = "w";
+        mode = "we";
     }
 
     auto& dls = lnav_data.ld_db_row_source;
@@ -3926,16 +3926,16 @@ com_hide_line(exec_context& ec,
                 sql_strftime(max_time_str, sizeof(max_time_str), max_time);
             }
             if (have_min_time && have_max_time) {
-                retval
-                    = fmt::format("info: hiding lines before {} and after {}",
-                                  min_time_str,
-                                  max_time_str);
+                retval = fmt::format(
+                    FMT_STRING("info: hiding lines before {} and after {}"),
+                    min_time_str,
+                    max_time_str);
             } else if (have_min_time) {
-                retval
-                    = fmt::format("info: hiding lines before {}", min_time_str);
+                retval = fmt::format(FMT_STRING("info: hiding lines before {}"),
+                                     min_time_str);
             } else if (have_max_time) {
-                retval
-                    = fmt::format("info: hiding lines after {}", max_time_str);
+                retval = fmt::format(FMT_STRING("info: hiding lines after {}"),
+                                     max_time_str);
             } else {
                 retval
                     = "info: no lines hidden by time, pass an absolute or "
@@ -4163,7 +4163,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         out_pipe.after_fork(child.in());
         err_pipe.after_fork(child.in());
         if (child.in_child()) {
-            auto dev_null = open("/dev/null", O_RDONLY);
+            auto dev_null = open("/dev/null", O_RDONLY | O_CLOEXEC);
 
             dup2(dev_null, STDIN_FILENO);
             const char* exec_args[] = {
